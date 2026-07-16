@@ -27,7 +27,7 @@ import (
 
 // Overridden at link time by make build: -X main.version=$(VERSION)
 // (must be a var, not const, for -ldflags -X).
-var version = "0.2.0"
+var version = "0.3.0"
 
 func main() {
 	os.Exit(run(os.Args[1:]))
@@ -179,7 +179,7 @@ func run(args []string) int {
 		rt.AttachMCP(mgr)
 	}
 
-	// Memory Palace hooks (require MCP server named [memory].server).
+	// Memory Palace hooks (MCP server and/or dual-write MEMORY_INGEST).
 	if cfg.Memory.Enabled {
 		rt.AttachMemory(agent.MemoryConfig{
 			Enabled:         true,
@@ -187,6 +187,7 @@ func run(args []string) int {
 			Tenant:          cfg.Memory.Tenant,
 			AutoRecall:      cfg.Memory.AutoRecall,
 			AutoIngest:      cfg.Memory.AutoIngest,
+			DualWrite:       cfg.Memory.DualWrite,
 			Limit:           cfg.Memory.Limit,
 			MaxSnippetBytes: cfg.Memory.MaxSnippetBytes,
 		})

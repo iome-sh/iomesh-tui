@@ -157,15 +157,18 @@ type MCPSection struct {
 }
 
 // MemorySection configures Memory Palace MCP hooks (auto-recall / auto-ingest).
-// Requires a connected [[mcp.servers]] entry (stdio aion-memory-mcp or HTTP later).
+// MCP path: connected [[mcp.servers]] entry (stdio or HTTP aion-memory-mcp).
+// DualWrite: optional async publish to mesh MEMORY_INGEST (no SDK dep).
 type MemorySection struct {
-	Enabled         bool   `toml:"enabled"`
-	Server          string `toml:"server"` // MCP server name; default "memory"
-	Tenant          string `toml:"tenant"`
-	AutoRecall      bool   `toml:"auto_recall"`
-	AutoIngest      bool   `toml:"auto_ingest"`
-	Limit           int    `toml:"limit"`
-	MaxSnippetBytes int    `toml:"max_snippet_bytes"`
+	Enabled    bool   `toml:"enabled"`
+	Server     string `toml:"server"` // MCP server name; default "memory"
+	Tenant     string `toml:"tenant"`
+	AutoRecall bool   `toml:"auto_recall"`
+	AutoIngest bool   `toml:"auto_ingest"`
+	// DualWrite also emits memory_ingest envelopes to MEMORY_INGEST when mesh is enabled.
+	DualWrite       bool `toml:"dual_write"`
+	Limit           int  `toml:"limit"`
+	MaxSnippetBytes int  `toml:"max_snippet_bytes"`
 }
 
 // SubagentsSection tunes child-session orchestration.
@@ -229,6 +232,7 @@ func Default() *Config {
 			Server:          "memory",
 			AutoRecall:      true,  // when enabled
 			AutoIngest:      false, // opt-in write path
+			DualWrite:       false, // opt-in mesh MEMORY_INGEST dual-write
 			Limit:           8,
 			MaxSnippetBytes: 6000,
 		},
@@ -488,6 +492,14 @@ func (c *Config) applyEnvOverrides() {
 			c.Memory.AutoIngest = false
 		case "1", "true", "on", "yes":
 			c.Memory.AutoIngest = true
+		}
+	}
+	if v := os.Getenv("IOMESH_MEMORY_DUAL_WRITE"); v != "" {
+		switch strings.ToLower(v) {
+		case "0", "false", "off", "no":
+			c.Memory.DualWrite = false
+		case "1", "true", "on", "yes":
+			c.Memory.DualWrite = true
 		}
 	}
 	if c.Memory.Server == "" {

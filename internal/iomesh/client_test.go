@@ -2,6 +2,7 @@ package iomesh
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -120,5 +121,80 @@ func TestHealth(t *testing.T) {
 	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
 	if err := c.Health(context.Background()); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestPublishMemoryIngest_PathSubjectAndPayload(t *testing.T) {
+	var gotPath string
+	var gotBody map[string]any
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"stream":  "MEMORY_INGEST",
+			"seq":     9,
+			"subject": gotBody["subject"],
+		})
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "dept.research"}, nil)
+	ack, err := c.PublishMemoryIngest(context.Background(), "dept.research", MemoryEnvelope{
+		Role:       "user",
+		Content:    "remember this",
+		SessionID:  "sess-1",
+		EventTime:  "2026-07-16T12:00:00Z",
+		SessionSeq: 3,
+	})
+	if err != nil {
+		t.Fatalf("PublishMemoryIngest: %v", err)
+	}
+	if gotPath != "/v1/streams/MEMORY_INGEST/publish" {
+		t.Fatalf("path=%q", gotPath)
+	}
+	if gotBody["subject"] != "dept.research.memory.ingest.turn" {
+		t.Fatalf("subject=%v", gotBody["subject"])
+	}
+	payloadB64, _ := gotBody["payload"].(string)
+	if payloadB64 == "" {
+		t.Fatal("expected base64 payload")
+	}
+	raw, err := base64.StdEncoding.DecodeString(payloadB64)
+	if err != nil {
+		t.Fatalf("b64: %v", err)
+	}
+	var env map[string]any
+	if err := json.Unmarshal(raw, &env); err != nil {
+		t.Fatal(err)
+	}
+	if env["type"] != "memory_ingest" {
+		t.Fatalf("type=%v", env["type"])
+	}
+	if env["event_time"] != "2026-07-16T12:00:00Z" {
+		t.Fatalf("event_time=%v", env["event_time"])
+	}
+	if env["session_seq"] != float64(3) {
+		t.Fatalf("session_seq=%v", env["session_seq"])
+	}
+	if env["session_id"] != "sess-1" || env["role"] != "user" || env["content"] != "remember this" {
+		t.Fatalf("env=%v", env)
+	}
+	if ack == nil || ack.Seq != 9 {
+		t.Fatalf("ack=%+v", ack)
+	}
+}
+
+func TestPublishMemoryIngest_RequiresContentAndTenant(t *testing.T) {
+	c := New(Config{Enabled: true, Endpoint: "http://127.0.0.1:9"}, nil)
+	if _, err := c.PublishMemoryIngest(context.Background(), "", MemoryEnvelope{Content: "x"}); err == nil {
+		t.Fatal("expected tenant error")
+	}
+	if _, err := c.PublishMemoryIngest(context.Background(), "t", MemoryEnvelope{}); err == nil {
+		t.Fatal("expected content error")
+	}
+	off := New(Config{Enabled: false}, nil)
+	if _, err := off.PublishMemoryIngest(context.Background(), "t", MemoryEnvelope{Content: "x"}); err == nil {
+		t.Fatal("expected disabled error")
 	}
 }

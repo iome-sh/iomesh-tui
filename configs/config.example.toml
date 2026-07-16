@@ -144,28 +144,30 @@ enabled = false
 # # allow_loopback = true
 # # mutating = true
 
-# --- Memory Palace (aion-memory-mcp stdio) — see docs/architecture/memory-mcp.md ---
-# Build: go build -o $HOME/bin/aion-memory-mcp ./cmd/aion-memory-mcp  (aion monorepo)
+# --- Memory Palace (aion-memory-mcp) — see docs/architecture/memory-mcp.md ---
+# Preferred: streamable HTTP (aion-memory-mcp -http-addr :8080)
 # [mcp]
 # enabled = true
 # [[mcp.servers]]
 # name = "memory"
-# command = "aion-memory-mcp"
-# args = ["-palace-root", "/data/memory-palaces"]
-# # env = { "MEMORY_TENANT" = "dept.research" }
+# url = "http://127.0.0.1:8080/mcp"
+# allow_loopback = true
 # mutating = true
-# # Streamable HTTP (platform M1 / s227 — aion-memory-mcp -http-addr :8080):
-# # url = "http://127.0.0.1:8080/mcp"
-# # allow_loopback = true
-# # mutating = true
+#
+# Alternate stdio:
+# # command = "aion-memory-mcp"
+# # args = ["-palace-root", "/data/memory-palaces"]
+# # env = { "MEMORY_TENANT" = "dept.research" }
 
 # [memory] hooks use the MCP server above (no Palace embedded in TUI).
+# Optional dual_write also publishes async MEMORY_INGEST when [iomesh] is enabled.
 # [memory]
 # enabled = true
 # server = "memory"
 # tenant = "dept.research"
 # auto_recall = true     # inject <memory-context> each turn (fail-open)
 # auto_ingest = false    # opt-in: persist user+assistant after successful turn
+# dual_write = false     # opt-in: mesh MEMORY_INGEST (IOMESH_MEMORY_DUAL_WRITE=1)
 # limit = 8
 # max_snippet_bytes = 6000
-# IOMESH_MEMORY=1 · IOMESH_MEMORY_TENANT · IOMESH_MEMORY_AUTO_RECALL · IOMESH_MEMORY_AUTO_INGEST
+# IOMESH_MEMORY=1 · IOMESH_MEMORY_TENANT · IOMESH_MEMORY_AUTO_RECALL · IOMESH_MEMORY_AUTO_INGEST · IOMESH_MEMORY_DUAL_WRITE
