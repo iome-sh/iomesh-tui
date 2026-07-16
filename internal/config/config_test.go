@@ -39,6 +39,8 @@ max_attempts = 5
 enabled = true
 endpoint = "https://mesh.example.com"
 tenant = "acme"
+org = "org_dev-org"
+workspace = "ws_alpha"
 
 [subagents]
 enabled = true
@@ -59,6 +61,9 @@ max_depth = 3
 	}
 	if !cfg.IOMesh.Enabled || cfg.IOMesh.Tenant != "acme" {
 		t.Fatalf("iomesh=%+v", cfg.IOMesh)
+	}
+	if cfg.IOMesh.Org != "org_dev-org" || cfg.IOMesh.Workspace != "ws_alpha" {
+		t.Fatalf("iomesh org/workspace=%+v", cfg.IOMesh)
 	}
 	if cfg.Subagents.MaxDepth != 3 {
 		t.Fatalf("max_depth=%d", cfg.Subagents.MaxDepth)
@@ -182,6 +187,30 @@ func TestEnv_SubagentsOff(t *testing.T) {
 	}
 	if cfg.Subagents.Enabled {
 		t.Fatal("expected disabled via env")
+	}
+}
+
+func TestEnv_IOMeshOrgWorkspace(t *testing.T) {
+	t.Setenv("IOMESH_ORG", "org_from_env")
+	t.Setenv("IOMESH_WORKSPACE", "ws_from_env")
+	cfg, err := Load(filepath.Join(t.TempDir(), "missing.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.IOMesh.Org != "org_from_env" || cfg.IOMesh.Workspace != "ws_from_env" {
+		t.Fatalf("iomesh org/workspace=%+v", cfg.IOMesh)
+	}
+}
+
+func TestEnv_MemoryOrgFallback(t *testing.T) {
+	t.Setenv("IOMESH_ORG", "")
+	t.Setenv("MEMORY_ORG", "org_memory")
+	cfg, err := Load(filepath.Join(t.TempDir(), "missing.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.IOMesh.Org != "org_memory" {
+		t.Fatalf("expected MEMORY_ORG fallback, got %q", cfg.IOMesh.Org)
 	}
 }
 

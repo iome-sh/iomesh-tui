@@ -395,6 +395,8 @@ func (s *Server) newRuntime(cwd string) (*agent.Runtime, *session.Store, error) 
 		Endpoint:        cfg.IOMesh.Endpoint,
 		Tenant:          cfg.IOMesh.Tenant,
 		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
+		OrgID:           cfg.IOMesh.Org,
+		WorkspaceID:     cfg.IOMesh.Workspace,
 		EmitDeptStreams: cfg.IOMesh.EmitDeptStreams,
 		ContextPlane:    cfg.IOMesh.ContextPlane,
 		IncludeLineage:  cfg.IOMesh.IncludeLineage,

@@ -82,6 +82,11 @@ type IOMeshSection struct {
 	Endpoint  string `toml:"endpoint"`
 	Tenant    string `toml:"tenant"`
 	APIKeyEnv string `toml:"api_key_env"`
+	// Org is optional org id for PlanGate / MEMORY_INGEST entitlements (X-IOMesh-Org).
+	Org string `toml:"org"`
+	// Workspace is optional workspace id for memory entitlements (X-IOMesh-Workspace).
+	// Distinct from [agent].workspace (filesystem path).
+	Workspace string `toml:"workspace"`
 	// EmitDeptStreams publishes dept.* operational events when true.
 	EmitDeptStreams bool `toml:"emit_dept_streams"`
 	// ContextPlane injects governed operational context into prompts.
@@ -404,6 +409,14 @@ func (c *Config) applyEnvOverrides() {
 	}
 	if v := os.Getenv("IOMESH_TENANT"); v != "" {
 		c.IOMesh.Tenant = v
+	}
+	if v := os.Getenv("IOMESH_ORG"); v != "" {
+		c.IOMesh.Org = v
+	} else if v := os.Getenv("MEMORY_ORG"); v != "" && c.IOMesh.Org == "" {
+		c.IOMesh.Org = v
+	}
+	if v := os.Getenv("IOMESH_WORKSPACE"); v != "" {
+		c.IOMesh.Workspace = v
 	}
 	if v := os.Getenv("IOMESH_POLICY_MODE"); v != "" {
 		c.IOMesh.PolicyMode = strings.ToLower(strings.TrimSpace(v))

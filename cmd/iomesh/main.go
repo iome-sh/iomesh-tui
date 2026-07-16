@@ -103,6 +103,8 @@ func run(args []string) int {
 		Endpoint:        cfg.IOMesh.Endpoint,
 		Tenant:          cfg.IOMesh.Tenant,
 		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
+		OrgID:           cfg.IOMesh.Org,
+		WorkspaceID:     cfg.IOMesh.Workspace,
 		EmitDeptStreams: cfg.IOMesh.EmitDeptStreams,
 		ContextPlane:    cfg.IOMesh.ContextPlane,
 		IncludeLineage:  cfg.IOMesh.IncludeLineage,
@@ -526,6 +528,8 @@ func cmdMeshCatalog(args []string) int {
 		Endpoint:     cfg.IOMesh.Endpoint,
 		Tenant:       cfg.IOMesh.Tenant,
 		APIKeyEnv:    cfg.IOMesh.APIKeyEnv,
+		OrgID:        cfg.IOMesh.Org,
+		WorkspaceID:  cfg.IOMesh.Workspace,
 		CatalogPlane: true,
 	}, logger)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -588,6 +592,8 @@ func cmdMeshDogfood(args []string) int {
 		Endpoint:        cfg.IOMesh.Endpoint,
 		Tenant:          cfg.IOMesh.Tenant,
 		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
+		OrgID:           cfg.IOMesh.Org,
+		WorkspaceID:     cfg.IOMesh.Workspace,
 		EmitDeptStreams: cfg.IOMesh.EmitDeptStreams,
 		ContextPlane:    cfg.IOMesh.ContextPlane,
 		IncludeLineage:  cfg.IOMesh.IncludeLineage,
