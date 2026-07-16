@@ -1,66 +1,186 @@
+# Continuous integration for pull requests and merges to main.
+# Required checks (recommended branch protection):
+#   - lint
+#   - test
+#   - build
+#   - govulncheck
 name: ci
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main, master]
   push:
     branches: [main, master]
-  pull_request:
+  # GitHub merge queue (when enabled on the repo)
+  merge_group:
     branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
-jobs:
-  test:
-    name: test
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        # Match go.mod; keep one older stable for portability signal.
-        go-version: ["1.24.x", "1.26.x"]
-    steps:
-      - uses: actions/checkout@v4
+env:
+  GOTOOLCHAIN: local
 
-      - uses: actions/setup-go@v5
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version-file: go.mod
           cache: true
 
-      - name: go mod verify
-        run: go mod verify
+      - name: Module verify
+        run: |
+          go mod download
+          go mod verify
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum || {
+            echo "::error::go.mod/go.sum dirty after 'go mod tidy' — run tidy and commit"
+            exit 1
+          }
 
-      - name: fmt check
+      - name: gofmt
         run: |
           unformatted=$(gofmt -l .)
           if [ -n "$unformatted" ]; then
-            echo "gofmt needed on:"
+            echo "::error::gofmt needed on:"
             echo "$unformatted"
             exit 1
           fi
 
-      - name: vet
+      - name: go vet
         run: go vet ./...
 
-      - name: test
-        run: go test ./... -count=1
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        # Primary = go.mod; keep one prior minor for portability signal when toolchain allows.
+        go-version: ["1.26.x"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: test race
-        run: go test ./... -race -count=1
+      - name: Set up Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
 
-      - name: coverage
+      - name: Unit tests
+        run: go test ./... -count=1 -timeout=10m
+
+      - name: Race detector
+        run: go test ./... -race -count=1 -timeout=15m
+
+      - name: Coverage
         run: |
-          go test ./... -coverprofile=coverage.out -covermode=atomic
-          go tool cover -func=coverage.out | tail -5
+          go test ./... -coverprofile=coverage.out -covermode=atomic -timeout=10m
+          go tool cover -func=coverage.out | tee coverage.txt
+          echo "----- total -----"
+          go tool cover -func=coverage.out | tail -1
 
-  vuln:
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-go${{ matrix.go-version }}
+          path: |
+            coverage.out
+            coverage.txt
+          retention-days: 14
+          if-no-files-found: ignore
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build binary
+        run: |
+          VERSION="${{ github.sha }}"
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            VERSION="${{ github.ref_name }}"
+          fi
+          go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o bin/iomesh ./cmd/iomesh
+          ./bin/iomesh version
+          ./bin/iomesh models | head -20
+
+      - name: Upload binary artifact (main only)
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        uses: actions/upload-artifact@v4
+        with:
+          name: iomesh-linux-amd64
+          path: bin/iomesh
+          retention-days: 7
+
+  govulncheck:
     name: govulncheck
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          go-version: "1.26.x"
+          go-version-file: go.mod
           cache: true
-      - name: govulncheck
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Run govulncheck
+        run: govulncheck ./...
+
+  # Aggregate gate for branch protection (single required check name).
+  ci-success:
+    name: ci-success
+    if: always()
+    needs: [lint, test, build, govulncheck]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check job results
         run: |
-          go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./...
+          echo "lint=${{ needs.lint.result }}"
+          echo "test=${{ needs.test.result }}"
+          echo "build=${{ needs.build.result }}"
+          echo "govulncheck=${{ needs.govulncheck.result }}"
+          for r in \
+            "${{ needs.lint.result }}" \
+            "${{ needs.test.result }}" \
+            "${{ needs.build.result }}" \
+            "${{ needs.govulncheck.result }}"
+          do
+            if [ "$r" != "success" ]; then
+              echo "::error::CI gate failed (got $r)"
+              exit 1
+            fi
+          done
+          echo "All required CI jobs passed."
