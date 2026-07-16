@@ -48,9 +48,10 @@ env_key = "XAI_API_KEY"
 # [model.gemini-2.5-pro]
 # env_key = "GEMINI_API_KEY"
 
-# --- Vertex AI Gemini — OpenAI-compatible (GCP project + access token) ---
+# --- Vertex AI Gemini — OpenAI-compatible ---
 # export GOOGLE_CLOUD_PROJECT=iomesh-stage-001
-# export VERTEX_API_KEY=$(gcloud auth print-access-token)   # ~1h; or GOOGLE_OAUTH_ACCESS_TOKEN
+# Default: auto token via gcloud auth print-access-token (cached ~50m; 401 retries once)
+# Optional: export VERTEX_API_KEY=$(gcloud auth print-access-token) · VERTEX_ADC=0 disables helper
 # iomesh -m vertex-gemini-2.5-flash -p "hello"
 # Optional region override (default us-central1 in built-in URL):
 # [model.vertex-gemini-2.5-flash]
