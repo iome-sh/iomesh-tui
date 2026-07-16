@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - Org branding: LICENSE/NOTICE/README footer **IOMesh Technology Ltd.** + [iome.sh](https://iome.sh)
+- Positioning: multi-model catalog (DeepSeek · Grok · Gemini · Vertex) in README / architecture docs; GitHub About no longer “DeepSeek-only”
 
 ## [0.1.0] — 2026-07-16
 
