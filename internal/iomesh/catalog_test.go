@@ -43,13 +43,79 @@ func TestListCatalog_ProductsAndFailOpen(t *testing.T) {
 		t.Fatal(snip)
 	}
 
-	// 404 both paths → fail-open
 	empty := httptest.NewServer(http.NotFoundHandler())
 	defer empty.Close()
 	c2 := New(Config{Enabled: true, Endpoint: empty.URL, CatalogPlane: true}, nil)
 	res2 := c2.ListCatalog(context.Background(), "q")
 	if res2.Source != "fail-open" {
 		t.Fatalf("%+v", res2)
+	}
+}
+
+func TestListCatalog_PortalFederation(t *testing.T) {
+	// Broker paths 404; portal v17 succeeds with portal field names.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v17/portal/catalog/data-products":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"version": "v17-test",
+				"products": []map[string]any{
+					{
+						"id":              "engineering-github-events",
+						"name":            "GitHub Events",
+						"mesh_layer":      "operational",
+						"subject_pattern": "dept.engineering.github.>",
+						"summary":         "GitHub webhook stream",
+						"sample_subjects": []string{"dept.engineering.github.push"},
+						"lineage":         []string{"github", "connector", "mesh"},
+						"status":          "ga",
+					},
+				},
+			})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, CatalogPlane: true}, nil)
+	res := c.ListCatalog(context.Background(), "")
+	if res.Source != "portal" || !strings.Contains(res.Detail, "/v17/") {
+		t.Fatalf("%+v", res)
+	}
+	if len(res.Products) != 1 {
+		t.Fatalf("%+v", res)
+	}
+	p := res.Products[0]
+	if p.Layer != "operational" || p.Subject == "" || p.Description == "" {
+		t.Fatalf("normalize failed: %+v", p)
+	}
+	out := FormatCatalog(res)
+	if !strings.Contains(out, "engineering-github") || !strings.Contains(out, "source=portal") {
+		t.Fatal(out)
+	}
+}
+
+func TestGetCatalogProduct_Detail(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v17/portal/catalog/data-products/engineering-github-events" {
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"id": "engineering-github-events", "name": "GitHub Events",
+				"mesh_layer": "operational", "summary": "detail ok",
+			})
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+	c := New(Config{Enabled: true, Endpoint: srv.URL, CatalogPlane: true}, nil)
+	p, meta := c.GetCatalogProduct(context.Background(), "engineering-github-events")
+	if meta.Source != "portal" || p.ID != "engineering-github-events" {
+		t.Fatalf("p=%+v meta=%+v", p, meta)
+	}
+	d := FormatProductDetail(p, meta)
+	if !strings.Contains(d, "detail ok") {
+		t.Fatal(d)
 	}
 }
 
@@ -67,7 +133,11 @@ func TestDecodeCatalogArray(t *testing.T) {
 			http.NotFound(w, r)
 			return
 		}
-		_ = json.NewEncoder(w).Encode([]map[string]string{{"id": "x", "layer": "analytical"}})
+		if r.URL.Path == "/v1/catalog/products" {
+			_ = json.NewEncoder(w).Encode([]map[string]string{{"id": "x", "layer": "analytical"}})
+			return
+		}
+		http.NotFound(w, r)
 	}))
 	defer srv.Close()
 	c := New(Config{Enabled: true, Endpoint: srv.URL, CatalogPlane: true}, nil)

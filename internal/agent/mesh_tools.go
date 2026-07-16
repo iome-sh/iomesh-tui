@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/iome-sh/iomesh-tui/internal/iomesh"
 	"github.com/iome-sh/iomesh-tui/internal/router"
@@ -18,8 +19,8 @@ func (r *ToolRegistry) RegisterMeshTools(mesh *iomesh.Client) {
 		Type: "function",
 		Function: router.ToolFunction{
 			Name:        "list_mesh_catalog",
-			Description: "List governed I/O Mesh data products from the catalog plane (fail-open if mesh/catalog unavailable). Optional query filter.",
-			Parameters:  json.RawMessage(`{"type":"object","properties":{"query":{"type":"string","description":"optional search filter"}},"additionalProperties":false}`),
+			Description: "List governed I/O Mesh data products from the catalog plane or portal federation (fail-open). Optional query or mesh_layer filter (operational|knowledge|analytical).",
+			Parameters:  json.RawMessage(`{"type":"object","properties":{"query":{"type":"string","description":"optional search filter or mesh_layer"}},"additionalProperties":false}`),
 		},
 	}, func(ctx context.Context, args string) (string, error) {
 		var p struct {
@@ -30,6 +31,27 @@ func (r *ToolRegistry) RegisterMeshTools(mesh *iomesh.Client) {
 		}
 		res := mesh.ListCatalog(ctx, p.Query)
 		return iomesh.FormatCatalog(res), nil
+	})
+
+	r.register("get_mesh_catalog_product", false, router.Tool{
+		Type: "function",
+		Function: router.ToolFunction{
+			Name:        "get_mesh_catalog_product",
+			Description: "Fetch one governed data product by id (portal detail or list fallback). Fail-open if missing.",
+			Parameters:  json.RawMessage(`{"type":"object","properties":{"id":{"type":"string","description":"product id"}},"required":["id"],"additionalProperties":false}`),
+		},
+	}, func(ctx context.Context, args string) (string, error) {
+		var p struct {
+			ID string `json:"id"`
+		}
+		if err := json.Unmarshal([]byte(args), &p); err != nil || strings.TrimSpace(p.ID) == "" {
+			return "", fmt.Errorf("id required")
+		}
+		prod, meta := mesh.GetCatalogProduct(ctx, p.ID)
+		if meta.Source == "fail-open" || meta.Source == "off" {
+			return iomesh.FormatProductDetail(prod, meta), nil
+		}
+		return iomesh.FormatProductDetail(prod, meta), nil
 	})
 
 	r.register("mesh_status", false, router.Tool{

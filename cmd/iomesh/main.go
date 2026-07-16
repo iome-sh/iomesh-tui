@@ -457,13 +457,14 @@ func cmdMesh(args []string) int {
   iomesh mesh dogfood   stage smoke (health → ready → context → emit → policy → catalog)
   iomesh mesh probe     alias for dogfood
   iomesh mesh usage     local LLM metering rollup for this process
-  iomesh mesh catalog   list governed data products (catalog plane)
+  iomesh mesh catalog   list governed data products (broker + portal federation)
 
 Flags (dogfood):
   --config path     config.toml
   --strict          require context + emit + ready (+ policy/catalog when on)
   --skip-context    skip context plane
   --skip-emit       skip dept stream emit
+  --json            JSON report for stage CI evidence
   -C dir            workspace for context query
   -v                verbose
 
@@ -544,6 +545,7 @@ func cmdMeshDogfood(args []string) int {
 		strict      = fs.Bool("strict", false, "fail if context/emit/ready soft-fail")
 		skipContext = fs.Bool("skip-context", false, "skip context plane probe")
 		skipEmit    = fs.Bool("skip-emit", false, "skip dept emit probe")
+		jsonOut     = fs.Bool("json", false, "print dogfood report as JSON (stage CI evidence)")
 		verbose     = fs.Bool("v", false, "verbose logs")
 		endpoint    = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
 		tenant      = fs.String("tenant", "", "override tenant")
@@ -601,7 +603,11 @@ func cmdMeshDogfood(args []string) int {
 		SkipContext: *skipContext,
 		SkipEmit:    *skipEmit,
 	})
-	fmt.Print(iomesh.FormatReport(rep))
+	if *jsonOut {
+		fmt.Print(iomesh.FormatReportJSON(rep))
+	} else {
+		fmt.Print(iomesh.FormatReport(rep))
+	}
 	if !rep.OK {
 		return 1
 	}

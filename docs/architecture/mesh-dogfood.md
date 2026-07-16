@@ -21,13 +21,17 @@ Final line: `RESULT=PASS …` or `RESULT=FAIL …`.
 
 ```bash
 export IOMESH_ENDPOINT=https://mesh.stage.example
+# Or control-plane / portal edge for catalog federation:
+# export IOMESH_ENDPOINT=https://cp.stage.example
 export IOMESH_API_KEY=…          # optional
 export IOMESH_TENANT=acme        # optional
 
 iomesh mesh dogfood
 iomesh mesh dogfood --strict
+iomesh mesh dogfood --json       # stage CI evidence
 iomesh mesh dogfood --endpoint "$IOMESH_ENDPOINT" --tenant acme
 iomesh mesh dogfood --skip-context --skip-emit   # health-only
+iomesh mesh catalog              # broker then portal paths
 ```
 
 ## Script / Make

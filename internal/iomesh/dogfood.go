@@ -202,7 +202,7 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 			res := c.ListCatalog(ctx, "")
 			detail := fmt.Sprintf("source=%s n=%d %s", res.Source, len(res.Products), res.Detail)
 			switch res.Source {
-			case "mesh":
+			case "mesh", "portal":
 				return StepPass, detail
 			case "fail-open":
 				if opts.Strict {
@@ -305,6 +305,55 @@ func (c *Client) EmitErr(ctx context.Context, ev DeptEvent) error {
 		return fmt.Errorf("iomesh emit: http %d", resp.StatusCode)
 	}
 	return nil
+}
+
+// FormatReportJSON returns the dogfood report as indented JSON (stage CI evidence).
+func FormatReportJSON(r DogfoodReport) string {
+	type stepJSON struct {
+		Name    string `json:"name"`
+		Status  string `json:"status"`
+		Detail  string `json:"detail,omitempty"`
+		Latency string `json:"latency,omitempty"`
+	}
+	type out struct {
+		Endpoint string     `json:"endpoint"`
+		Tenant   string     `json:"tenant,omitempty"`
+		Strict   bool       `json:"strict"`
+		OK       bool       `json:"ok"`
+		Summary  string     `json:"summary"`
+		Started  time.Time  `json:"started"`
+		Finished time.Time  `json:"finished"`
+		Steps    []stepJSON `json:"steps"`
+		Result   string     `json:"result"` // PASS|FAIL|SKIP mirror of Summary prefix
+	}
+	o := out{
+		Endpoint: r.Endpoint,
+		Tenant:   r.Tenant,
+		Strict:   r.Strict,
+		OK:       r.OK,
+		Summary:  r.Summary,
+		Started:  r.Started,
+		Finished: r.Finished,
+	}
+	if strings.HasPrefix(r.Summary, "PASS") {
+		o.Result = "PASS"
+	} else if strings.HasPrefix(r.Summary, "FAIL") {
+		o.Result = "FAIL"
+	} else {
+		o.Result = "SKIP"
+	}
+	for _, s := range r.Steps {
+		sj := stepJSON{Name: s.Name, Status: string(s.Status), Detail: s.Detail}
+		if s.Latency > 0 {
+			sj.Latency = s.Latency.String()
+		}
+		o.Steps = append(o.Steps, sj)
+	}
+	b, err := json.MarshalIndent(o, "", "  ")
+	if err != nil {
+		return `{"ok":false,"summary":"json marshal error"}` + "\n"
+	}
+	return string(b) + "\n"
 }
 
 // FormatReport returns a human-readable multi-line dogfood report.

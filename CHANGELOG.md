@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Portal catalog federation: after broker `/v1/catalog/*`, try `/v17/portal/catalog/data-products` and marketing catalog; normalize portal fields
+- Agent tool `get_mesh_catalog_product`; dogfood catalog PASS for `source=portal`
+- `iomesh mesh dogfood --json` for stage CI evidence
+
 ## [0.2.0] — 2026-07-16
 
 Minor release: deeper I/O Mesh integration, multi-model honesty, catalog composition, and Vertex ADC ergonomics. Compatible with existing `v0.1.x` configs (new flags default fail-open / off where enforcement matters).
