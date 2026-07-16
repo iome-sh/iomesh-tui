@@ -1,6 +1,6 @@
 # I/O Mesh TUI — Architecture Overview
 
-Go rewrite of [xAI Grok Build](https://github.com/xai-org/grok-build) with first-class **I/O Mesh** platform hooks and a **DeepSeek-first** LLM cascade.
+Go rewrite of [xAI Grok Build](https://github.com/xai-org/grok-build) with a **multi-provider LLM router** (DeepSeek · Grok · Gemini · Vertex; OpenAI-compatible custom endpoints) and optional **I/O Mesh** context / policy / metering hooks. Default auto-cascade remains DeepSeek Flash → Pro → Grok for cost; pin any built-in model with `-m` / `/model`.
 
 ## Goals
 

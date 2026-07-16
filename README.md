@@ -4,15 +4,16 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/github/go-mod/go-version/iome-sh/iomesh-tui)](go.mod)
 
-**I/O Mesh TUI** — a Go coding-agent harness inspired by [xAI Grok Build](https://github.com/xai-org/grok-build), with **I/O Mesh** platform hooks and a **DeepSeek-first** LLM cascade for price-performance.
+**I/O Mesh TUI** — a Go coding-agent harness inspired by [xAI Grok Build](https://github.com/xai-org/grok-build), with a **multi-provider LLM router** and optional **I/O Mesh** context / policy / metering hooks.
 
 Official open-source tooling from [IOMesh](https://iome.sh) (**IOMesh Technology Ltd.**).
 
-> **Status:** public open-source **foundation** (pre-1.0). Agent loop, subagents, full-screen TUI, permissions, ACP, skills, MCP, mesh dogfood, optional Gemini/Vertex. Not a multi-tenant remote sandbox — see [SECURITY.md](SECURITY.md).
+> **Status:** public open-source **foundation** (pre-1.0). Agent loop, subagents, full-screen TUI, permissions, ACP, skills, MCP, mesh dogfood, multi-model catalog (DeepSeek · Grok · Gemini · Vertex). Not a multi-tenant remote sandbox — see [SECURITY.md](SECURITY.md).
 
 ## Table of contents
 
 - [Why this project](#why-this-project)
+- [Supported models](#supported-models)
 - [Quick start](#quick-start)
 - [CLI](#cli)
 - [Configuration](#configuration)
@@ -26,10 +27,27 @@ Official open-source tooling from [IOMesh](https://iome.sh) (**IOMesh Technology
 
 | Concern | Approach |
 |---------|----------|
-| Sustainable agent economics | Default **DeepSeek V4 Flash**; step-up **V4 Pro**; premium **Grok 4.5** |
-| Integration simplicity | OpenAI-compatible HTTP + SSE in pure Go (`internal/router`) |
-| Platform fit | Optional I/O Mesh context plane + `dept.*` usage streams (`internal/iomesh`) |
+| Multi-provider agents | Built-in **DeepSeek**, **xAI Grok**, **Gemini**, **Vertex Gemini**; pin any logical name or add OpenAI-compatible endpoints |
+| Sustainable defaults | Auto-cascade prefers **DeepSeek V4 Flash → Pro → Grok 4.5** for price/performance (override anytime) |
+| Integration simplicity | Pure-Go OpenAI-compatible HTTP + SSE (`internal/router`) |
+| Platform fit | Optional I/O Mesh context plane, policy gates, `dept.*` usage streams (`internal/iomesh`) |
 | Familiar agent UX | TUI / headless / ACP, tools, subagents, workspace root, slash commands |
+
+## Supported models
+
+Built-in catalog (`iomesh models`). **Default cascade** uses the first three rows for automatic step-up/fallback; Google entries are first-class pins (`-m` / `/model` / `IOMESH_DEFAULT_MODEL`).
+
+| Logical name | Provider | API model id | Auth env | Role |
+|--------------|----------|--------------|----------|------|
+| `deepseek-v4-flash` | DeepSeek | `deepseek-v4-flash` | `DEEPSEEK_API_KEY` | **Default** cascade (routine) |
+| `deepseek-v4-pro` | DeepSeek | `deepseek-v4-pro` | `DEEPSEEK_API_KEY` | Cascade step-up (plan) |
+| `grok-4.5` | xAI | `grok-4.5` | `XAI_API_KEY` | Cascade premium / fallback |
+| `gemini-2.5-flash` | Google AI Studio | `gemini-2.5-flash` | `GEMINI_API_KEY` | Opt-in pin |
+| `gemini-2.5-pro` | Google AI Studio | `gemini-2.5-pro` | `GEMINI_API_KEY` | Opt-in pin |
+| `vertex-gemini-2.5-flash` | Vertex AI | `google/gemini-2.5-flash` | `VERTEX_API_KEY` + `GOOGLE_CLOUD_PROJECT` | Opt-in pin |
+| `vertex-gemini-2.5-pro` | Vertex AI | `google/gemini-2.5-pro` | `VERTEX_API_KEY` + `GOOGLE_CLOUD_PROJECT` | Opt-in pin |
+
+Any other **OpenAI-compatible** chat endpoint can be added under `[model.<name>]` in config (OpenAI, Anthropic-compatible gateways, local llama.cpp/vLLM, etc.). Details: [docs/architecture/llm-cascade.md](docs/architecture/llm-cascade.md).
 
 ## Quick start
 
@@ -62,21 +80,16 @@ make dogfood-unit                  # offline mesh tests
 
 Optional: copy [`.env.example`](.env.example) for local env vars (iomesh reads the **process environment**; it does not auto-load `.env` files yet). Copy [`configs/config.example.toml`](configs/config.example.toml) to `~/.iomesh/config.toml` to customize.
 
-### Default model cascade
+### Default cascade (auto step-up / fallback)
+
+When you do **not** pin `-m` / `/model`, the router escalates by task complexity:
 
 ```text
 deepseek-v4-flash  →  deepseek-v4-pro  →  grok-4.5
      (routine)            (plan)          (high-stakes / fallback)
 ```
 
-**Optional Google runtimes** (not in the default cascade — pin with `-m` / `/model`):
-
-| Logical name | Backend | Auth |
-|--------------|---------|------|
-| `gemini-2.5-flash` / `gemini-2.5-pro` | Gemini API (AI Studio) OpenAI-compat | `GEMINI_API_KEY` |
-| `vertex-gemini-2.5-flash` / `vertex-gemini-2.5-pro` | Vertex AI OpenAI-compat | `GOOGLE_CLOUD_PROJECT` + `VERTEX_API_KEY` |
-
-See [docs/architecture/llm-cascade.md](docs/architecture/llm-cascade.md).
+Pin Google (or any catalog entry) explicitly, e.g. `-m gemini-2.5-flash` or `export IOMESH_DEFAULT_MODEL=vertex-gemini-2.5-flash`.
 
 ## CLI
 

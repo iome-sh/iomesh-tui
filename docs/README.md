@@ -4,7 +4,7 @@
 |-----|-------------|
 | [security.md](security.md) | Threat model, controls, residual risks |
 | [architecture/overview.md](architecture/overview.md) | Package map, runtime flow, milestones |
-| [architecture/llm-cascade.md](architecture/llm-cascade.md) | DeepSeek → Grok routing |
+| [architecture/llm-cascade.md](architecture/llm-cascade.md) | Multi-model catalog (DeepSeek, Grok, Gemini, Vertex) + cascade |
 | [architecture/permissions.md](architecture/permissions.md) | Tool approval (y/n/a, yolo) |
 | [architecture/subagents.md](architecture/subagents.md) | Spawn, parallel, worktrees |
 | [architecture/sessions.md](architecture/sessions.md) | Session persistence |

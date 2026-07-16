@@ -14,8 +14,11 @@ max_retries = 8
 [router]
 max_attempts = 3
 
-# Built-in cascade (DeepSeek Flash → Pro → Grok 4.5) is always present.
-# Override fields per model as needed:
+# Built-in catalog always present:
+#   deepseek-v4-flash → deepseek-v4-pro → grok-4.5  (default auto-cascade)
+#   gemini-2.5-flash / gemini-2.5-pro                 (Google AI Studio)
+#   vertex-gemini-2.5-flash / vertex-gemini-2.5-pro  (Vertex AI)
+# Override fields per model as needed; pin with -m / IOMESH_DEFAULT_MODEL:
 
 [model.deepseek-v4-flash]
 # model = "deepseek-v4-flash"
