@@ -1,0 +1,77 @@
+# I/O Mesh TUI — example configuration
+# Copy to ~/.iomesh/config.toml and set API keys via environment variables.
+#
+# SECURITY: prefer env_key over inline api_key. Never commit real secrets.
+# --yolo auto-approves write_file and run_shell — use only in trusted sessions.
+
+[models]
+default = "deepseek-v4-flash"
+temperature = 0.7
+max_completion_tokens = 8192
+max_retries = 8
+# extra_headers = { "X-Request-Tags" = "team=platform,env=dev" }
+
+[router]
+max_attempts = 3
+
+# Built-in cascade (DeepSeek Flash → Pro → Grok 4.5) is always present.
+# Override fields per model as needed:
+
+[model.deepseek-v4-flash]
+# model = "deepseek-v4-flash"
+# base_url = "https://api.deepseek.com/v1"
+env_key = "DEEPSEEK_API_KEY"
+# cost_tier = 1
+# input_cost_per_m = 0.14
+# output_cost_per_m = 0.28
+# cache_hit_cost_per_m = 0.0028
+# context_window = 1000000
+# capabilities = ["fast", "coding", "tool-calling"]
+# priority = 10
+
+[model.deepseek-v4-pro]
+env_key = "DEEPSEEK_API_KEY"
+# priority = 20
+
+[model.grok-4.5]
+env_key = "XAI_API_KEY"
+# priority = 30
+
+# Example custom OpenAI-compatible endpoint:
+# [model.local-llama]
+# model = "llama-3"
+# base_url = "http://127.0.0.1:8080/v1"
+# env_key = "LOCAL_API_KEY"
+# context_window = 128000
+# cost_tier = 0.5
+# capabilities = ["fast", "coding"]
+# priority = 5
+
+[agent]
+system_prompt_label = "iomesh-tui"
+# yolo = false
+# workspace = ""
+
+[iomesh]
+enabled = false
+# endpoint = "https://iomesh.example.com"
+# tenant = "acme"
+api_key_env = "IOMESH_API_KEY"
+emit_dept_streams = true
+context_plane = true
+
+[ui]
+simple_mode = true
+screen_mode = "fullscreen"
+show_thinking_blocks = true
+
+[features]
+telemetry = false
+subagents = true
+codebase_indexing = true
+
+[subagents]
+enabled = true
+max_concurrent = 16   # parallel running children (semaphore)
+max_batch = 32        # max tasks per spawn_subagents call
+max_depth = 2
