@@ -6,6 +6,8 @@
 
 **I/O Mesh TUI** — a Go coding-agent harness inspired by [xAI Grok Build](https://github.com/xai-org/grok-build), with **I/O Mesh** platform hooks and a **DeepSeek-first** LLM cascade for price-performance.
 
+Official open-source tooling from [IOMesh](https://iome.sh) (**IOMesh Technology Ltd.**).
+
 > **Status:** public open-source **foundation** (pre-1.0). Agent loop, subagents, full-screen TUI, permissions, ACP, skills, MCP, mesh dogfood, optional Gemini/Vertex. Not a multi-tenant remote sandbox — see [SECURITY.md](SECURITY.md).
 
 ## Table of contents
@@ -175,6 +177,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT
 
 ## License
 
-MIT — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
+[MIT](LICENSE) © 2026 [IOMesh Technology Ltd.](https://iome.sh) — see [NOTICE](NOTICE).
+
+**Maintained by** [IOMesh Technology Ltd.](https://iome.sh) · Product: [iome.sh](https://iome.sh) · Support: [SUPPORT.md](SUPPORT.md)
 
 Grok Build is a separate project by xAI (Apache-2.0). This repository is an **independent Go implementation** inspired by its product surface, not a fork of the Rust sources.
