@@ -22,7 +22,7 @@ Go rewrite of [xAI Grok Build](https://github.com/xai-org/grok-build) with first
 | `xai-grok-workspace` | `internal/workspace` | Rooted FS + path jail |
 | config / custom models | `internal/config` + `internal/router` | TOML + cascade |
 | — | `internal/iomesh` | Platform client |
-| subagents | `internal/subagent` + agent tools | explore/plan/gp + background |
+| subagents | `internal/subagent` + agent tools | explore/plan/gp + parallel + worktree |
 | MCP / skills / sandbox | TBD | Planned |
 
 ## LLM fallback router
@@ -82,7 +82,8 @@ CLI / TUI / ACP
 1. Full-screen TUI (Bubble Tea / custom renderer) with scrollback + permissions
 2. ACP `agent stdio` JSON-RPC
 3. ~~Subagent orchestration~~ **done** — see [subagents.md](subagents.md)
-4. MCP client + skills loader
-5. Session persistence + compaction
-6. Git worktree isolation for subagents
-7. Deeper I/O Mesh: lineage-aware context, Rego policy gates, metering dashboards
+4. ~~Git worktree isolation~~ **done** — `isolation=worktree`
+5. MCP client + skills loader
+6. Session persistence + compaction
+7. Worktree apply/merge helper tool
+8. Deeper I/O Mesh: lineage-aware context, Rego policy gates, metering dashboards

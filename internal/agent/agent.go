@@ -42,6 +42,10 @@ type Config struct {
 	MaxSubagentConcurrent int
 	// MaxSubagentBatch caps spawn_subagents array size (default 32).
 	MaxSubagentBatch int
+	// WorktreeBase relative path under workspace for git worktrees.
+	WorktreeBase string
+	// WorktreeAutoRemove deletes successful isolation worktrees.
+	WorktreeAutoRemove bool
 }
 
 // Runtime is the agent loop shared by TUI / headless / ACP.
@@ -96,13 +100,21 @@ func New(cfg Config, r *router.Router, mesh *iomesh.Client, logger *slog.Logger)
 		}
 		// Factory closes over rt so children share router/mesh/logger.
 		rt.subagents = subagent.NewManager(subagent.Config{
-			Enabled:       true,
-			MaxConcurrent: maxConc,
-			MaxDepth:      maxDepth,
-			MaxBatch:      maxBatch,
-			Workspace:     ws.Root(),
-			Yolo:          cfg.Yolo,
+			Enabled:            true,
+			MaxConcurrent:      maxConc,
+			MaxDepth:           maxDepth,
+			MaxBatch:           maxBatch,
+			Workspace:          ws.Root(),
+			Yolo:               cfg.Yolo,
+			WorktreeAutoRemove: cfg.WorktreeAutoRemove,
 		}, rt.newChildFactory(), logger)
+		// Prefer real git worktrees when available; Nop otherwise.
+		if gw, ok := subagent.LookupGit().(*subagent.GitWorktree); ok {
+			if cfg.WorktreeBase != "" {
+				gw.BaseDir = cfg.WorktreeBase
+			}
+			rt.subagents.SetWorktreeBackend(gw)
+		}
 		rt.tools.RegisterSubagentTools(rt.subagents)
 	}
 	return rt, nil
