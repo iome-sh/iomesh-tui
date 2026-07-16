@@ -130,4 +130,4 @@ Grok Build is a separate project by SpaceXAI / xAI (Apache-2.0); this repository
 
 ## SR&ED
 
-Program serial **s185** (ledger in [aion docs/sred](https://github.com/iome-sh/aion/tree/main/docs/sred)): planning/log/evidence under `sred-s185-iomesh-tui-go-harness-subagents-*`. Companion aion PR [#994](https://github.com/iome-sh/aion/pull/994).
+Program serial **s186** (ledger in [aion docs/sred](https://github.com/iome-sh/aion/tree/main/docs/sred)): planning/log/evidence under `sred-s186-iomesh-tui-go-harness-subagents-*`. Companion aion PR [#997](https://github.com/iome-sh/aion/pull/997) (serial s186; supersedes #994).
