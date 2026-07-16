@@ -12,9 +12,11 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/iome-sh/iomesh-tui/internal/agent"
 	"github.com/iome-sh/iomesh-tui/internal/router"
+	"github.com/iome-sh/iomesh-tui/internal/session"
 )
 
 // Runner is the subset of agent.Runtime needed by the TUI.
@@ -30,7 +32,8 @@ type workspaceRoot interface {
 
 // runtimeAdapter lets us accept *agent.Runtime without exporting extra interfaces.
 type runtimeAdapter struct {
-	rt *agent.Runtime
+	rt    *agent.Runtime
+	store *session.Store
 }
 
 func (a runtimeAdapter) RunTurn(ctx context.Context, userText string, onEvent func(agent.Event)) (string, error) {
@@ -41,9 +44,14 @@ func (a runtimeAdapter) Workspace() workspaceRoot {
 	return a.rt.Workspace()
 }
 
-// Run starts the interactive REPL (scaffold).
+// Run starts the interactive REPL without a session store.
 func Run(ctx context.Context, rt *agent.Runtime, logger *slog.Logger) error {
-	return runREPL(ctx, runtimeAdapter{rt: rt}, os.Stdin, os.Stdout, logger)
+	return RunWithStore(ctx, rt, nil, logger)
+}
+
+// RunWithStore starts the REPL with optional session persistence.
+func RunWithStore(ctx context.Context, rt *agent.Runtime, store *session.Store, logger *slog.Logger) error {
+	return runREPL(ctx, runtimeAdapter{rt: rt, store: store}, os.Stdin, os.Stdout, logger)
 }
 
 func runREPL(ctx context.Context, rt runtimeAdapter, in io.Reader, out io.Writer, logger *slog.Logger) error {
@@ -51,10 +59,13 @@ func runREPL(ctx context.Context, rt runtimeAdapter, in io.Reader, out io.Writer
 		logger = slog.Default()
 	}
 	fmt.Fprintf(out, "iomesh-tui REPL (scaffold) — workspace %s\n", rt.Workspace().Root())
-	fmt.Fprintf(out, "default model: %s  |  /model <name>  /models  /subagents  /cost  /quit\n\n", rt.Router().DefaultModel())
+	sid := rt.rt.SessionID()
+	if sid != "" {
+		fmt.Fprintf(out, "session: %s\n", sid)
+	}
+	fmt.Fprintf(out, "default model: %s  |  /model /models /subagents /save /sessions /cost /quit\n\n", rt.Router().DefaultModel())
 
 	sc := bufio.NewScanner(in)
-	// Allow long pastes.
 	buf := make([]byte, 0, 64*1024)
 	sc.Buffer(buf, 4*1024*1024)
 
@@ -106,6 +117,11 @@ func runREPL(ctx context.Context, rt runtimeAdapter, in io.Reader, out io.Writer
 		})
 		if err != nil {
 			fmt.Fprintf(out, "\nerror: %v\n", err)
+		} else if rt.store != nil {
+			rt.rt.AutoSaveAfterTurn(rt.store)
+			if id := rt.rt.SessionID(); id != "" {
+				fmt.Fprintf(out, "\033[2m[session %s saved]\033[0m\n", id)
+			}
 		}
 		fmt.Fprintln(out)
 	}
@@ -150,7 +166,6 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		}
 		fmt.Fprintf(out, "model override → %s\n", name)
 	case "/cost":
-		// Sample estimate for 100k in / 4k out on default.
 		name := rt.Router().Override()
 		if name == "" {
 			name = rt.Router().DefaultModel()
@@ -173,11 +188,67 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		for _, rec := range list {
 			fmt.Fprintf(out, "%s  %-12s  %-16s  %s\n", rec.ID, rec.Status, rec.Spec.SubagentType, rec.Spec.Description)
 		}
+	case "/save":
+		if rt.store == nil {
+			fmt.Fprintln(out, "session store unavailable")
+			return false, nil
+		}
+		compact := 0
+		if len(parts) > 1 && parts[1] == "compact" {
+			compact = 8
+		}
+		snap, err := rt.rt.SaveSession(rt.store, compact)
+		if err != nil {
+			fmt.Fprintf(out, "error: %v\n", err)
+			return false, nil
+		}
+		fmt.Fprintf(out, "saved session %s (%d messages, %d subagents)\n", snap.ID, len(snap.Messages), len(snap.Subagents))
+	case "/sessions":
+		if rt.store == nil {
+			fmt.Fprintln(out, "session store unavailable")
+			return false, nil
+		}
+		list, err := rt.store.List()
+		if err != nil {
+			fmt.Fprintf(out, "error: %v\n", err)
+			return false, nil
+		}
+		if len(list) == 0 {
+			fmt.Fprintln(out, "no sessions")
+			return false, nil
+		}
+		cur := rt.rt.SessionID()
+		for _, s := range list {
+			mark := " "
+			if s.ID == cur {
+				mark = "*"
+			}
+			fmt.Fprintf(out, "%s %s  msgs=%d subs=%d  %s  %s\n",
+				mark, s.ID, s.Messages, s.Subagents, s.UpdatedAt.Format(time.RFC3339), s.Title)
+		}
+	case "/load":
+		if rt.store == nil || len(parts) < 2 {
+			fmt.Fprintln(out, "usage: /load <session-id>")
+			return false, nil
+		}
+		snap, err := rt.store.Load(parts[1])
+		if err != nil {
+			fmt.Fprintf(out, "error: %v\n", err)
+			return false, nil
+		}
+		if err := rt.rt.LoadSession(snap); err != nil {
+			fmt.Fprintf(out, "error: %v\n", err)
+			return false, nil
+		}
+		fmt.Fprintf(out, "loaded %s (%d messages, %d subagents)\n", snap.ID, len(snap.Messages), len(snap.Subagents))
 	case "/help", "/?":
 		fmt.Fprint(out, `commands:
   /models          list models
   /model <name>    pin model (or default|auto)
   /subagents       list spawned subagents
+  /save [compact]  save session (optional compact old turns)
+  /sessions        list saved sessions
+  /load <id>       restore session (transcript + subagent catalog)
   /cost            sample cost estimate
   /quit            exit
 `)

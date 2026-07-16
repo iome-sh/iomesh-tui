@@ -87,3 +87,46 @@ func (r *Registry) CountRunning() int {
 	}
 	return n
 }
+
+// Export returns a snapshot of all records and the current seq counter.
+// Running/pending entries are exported as cancelled for safe resume.
+func (r *Registry) Export() (records []Record, seq uint64) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	records = make([]Record, 0, len(r.byID))
+	for _, rec := range r.byID {
+		cp := *rec
+		if cp.Status == StatusRunning || cp.Status == StatusPending {
+			cp.Status = StatusCancelled
+			if cp.Error == "" {
+				cp.Error = "interrupted (session save)"
+			}
+			if cp.FinishedAt.IsZero() {
+				cp.FinishedAt = time.Now().UTC()
+			}
+		}
+		records = append(records, cp)
+	}
+	return records, r.seq
+}
+
+// Import replaces registry contents with records and restores seq.
+// Does not resume running children — only metadata for resume_from / apply.
+func (r *Registry) Import(records []Record, seq uint64) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.byID = make(map[string]*Record, len(records))
+	for i := range records {
+		cp := records[i]
+		if cp.Status == StatusRunning || cp.Status == StatusPending {
+			cp.Status = StatusCancelled
+			if cp.Error == "" {
+				cp.Error = "interrupted (session load)"
+			}
+		}
+		r.byID[cp.ID] = &cp
+	}
+	if seq > r.seq {
+		r.seq = seq
+	}
+}

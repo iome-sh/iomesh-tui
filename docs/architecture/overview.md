@@ -84,6 +84,6 @@ CLI / TUI / ACP
 3. ~~Subagent orchestration~~ **done** — see [subagents.md](subagents.md)
 4. ~~Git worktree isolation~~ **done** — `isolation=worktree`
 5. ~~Worktree apply/merge helper~~ **done** — `apply_worktree` / `diff_worktree`
-6. MCP client + skills loader
-7. Session persistence + compaction
+6. ~~Session persistence + compaction~~ **done** — `.iomesh/sessions`, resume subagent catalog
+7. MCP client + skills loader
 8. Deeper I/O Mesh: lineage-aware context, Rego policy gates, metering dashboards
