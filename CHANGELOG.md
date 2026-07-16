@@ -3,26 +3,31 @@
 All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/) once tagged releases begin.
+and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0] — 2026-07-16
+
+First public tagged release of the I/O Mesh TUI coding agent.
+
 ### Added
 
-- Open-source launch hygiene: issue templates, Dependabot, CHANGELOG, SUPPORT, RELEASING, docs index
-- Expanded security residual-risk documentation for public operators
+- DeepSeek-first LLM cascade + pure-Go OpenAI-compatible router (DeepSeek, OpenAI, Anthropic, Gemini / Vertex OpenAI-compat)
+- Agent loop with workspace tools, path jail, shell policy, and secret scrubbing
+- Subagents (parallel runs, git worktree isolation, apply/merge)
+- Session persistence and interactive permissions
+- Full-screen Bubble Tea TUI and headless `-p` prompt mode
+- ACP over stdio and WebSocket (`iomesh agent serve`)
+- Skills loader and MCP client (stdio/HTTP: tools, resources, prompts, OAuth helpers)
+- Stage I/O Mesh mesh dogfood probe (`iomesh mesh dogfood` / `make dogfood`)
+- Open-source launch pack: LICENSE, SECURITY, SUPPORT, CONTRIBUTING, RELEASING, NOTICE, issue/PR templates, Dependabot
+- CI: lint, test, race, coverage artifact, govulncheck, build (`actions/checkout` / `setup-go` / `upload-artifact` v7)
 
-### Foundation (pre-1.0, main)
+### Security
 
-Features landed on `main` before the first tagged release include:
+- Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
+- ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-- DeepSeek-first LLM cascade + pure-Go OpenAI-compatible router
-- Agent loop, workspace tools, path jail, shell policy, secret scrubbing
-- Subagents (parallel, worktree isolation, apply/merge)
-- Session persistence, interactive permissions, full-screen Bubble Tea TUI
-- ACP stdio + WebSocket, skills loader, MCP (stdio/HTTP, tools/resources/prompts, OAuth helpers)
-- Stage mesh dogfood probe, CI (lint/test/race/govulncheck/build)
-
-## [0.1.0] — TBD
-
-First public tagged release after open-source launch checklist (see [RELEASING.md](RELEASING.md)).
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.1.0

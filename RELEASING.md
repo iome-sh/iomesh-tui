@@ -1,6 +1,6 @@
 # Releasing
 
-Pre-1.0: ship from `main` via PR; tags are optional until the first public release.
+Pre-1.0: ship from `main` via PR; cut annotated tags for public consumers.
 
 ## Checklist before a public tag
 
@@ -9,20 +9,22 @@ Pre-1.0: ship from `main` via PR; tags are optional until the first public relea
 3. [ ] [CHANGELOG.md](CHANGELOG.md) updated (move Unreleased → version section)  
 4. [ ] No secrets in tree (`git grep` for keys; review `configs/`, examples)  
 5. [ ] [SECURITY.md](SECURITY.md) / [docs/security.md](docs/security.md) current  
-6. [ ] Version string in `cmd/iomesh` / `-ldflags` as used by `make build`  
+6. [ ] Default `main.version` string in `cmd/iomesh` matches the tag (ldflags override via `make build`)  
 
 ## Tag and publish (maintainers)
 
 ```bash
 git checkout main
 git pull origin main
-# edit CHANGELOG.md
-git commit -am "chore: release v0.1.0"
-git tag -a v0.1.0 -m "v0.1.0"
-git push origin main --tags
+# edit CHANGELOG.md + main.version default if needed
+git commit -am "chore: release vX.Y.Z"
+git push origin main
+git tag -a vX.Y.Z -m "vX.Y.Z"
+git push origin vX.Y.Z
+gh release create vX.Y.Z --title "vX.Y.Z" --notes-file <(sed -n '/## \[X.Y.Z\]/,/## \[/p' CHANGELOG.md | head -n -1)
 ```
 
-Create a GitHub Release from the tag; attach notes from CHANGELOG.
+`make build` embeds `git describe` (or `VERSION=`) into the binary via `-X main.version=…`.
 
 ## Versioning policy
 
