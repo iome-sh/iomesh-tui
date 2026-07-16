@@ -53,9 +53,12 @@ type DogfoodOptions struct {
 	SkipContext bool
 	// SkipEmit skips dept stream emit check.
 	SkipEmit bool
+	// SkipMemory skips MEMORY_INGEST dual-write publish probe.
+	// When false (default), the step runs whenever mesh is enabled (fail-open unless Strict).
+	SkipMemory bool
 }
 
-// Dogfood runs a stage-oriented mesh smoke: health → ready → context → emit.
+// Dogfood runs a stage-oriented mesh smoke: health → ready → context → emit → policy → catalog → memory_ingest.
 // Disabled client returns a single SKIP step and OK=true (offline-first).
 func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport {
 	rep := DogfoodReport{
@@ -212,6 +215,43 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 			default:
 				return StepSkip, detail
 			}
+		}))
+	}
+
+	// 7) MEMORY_INGEST dual-write (Phase 2 path via PublishMemoryIngest)
+	if opts.SkipMemory {
+		rep.Steps = append(rep.Steps, Step{Name: "memory_ingest", Status: StepSkip, Detail: "skipped (--skip-memory)"})
+	} else {
+		rep.Steps = append(rep.Steps, c.stepTimed("memory_ingest", func() (StepStatus, string) {
+			tenant := strings.TrimSpace(c.cfg.Tenant)
+			ack, err := c.PublishMemoryIngest(ctx, tenant, MemoryEnvelope{
+				Type:       memoryEnvelopeIngest,
+				Role:       "tool",
+				Content:    "iomesh-tui dual-write dogfood",
+				EventTime:  time.Now().UTC().Format(time.RFC3339),
+				SessionSeq: 1,
+			})
+			if err != nil {
+				if opts.Strict {
+					return StepFail, err.Error()
+				}
+				return StepSkip, "memory_ingest soft-fail: " + err.Error()
+			}
+			stream := streamMemoryIngest
+			subject := tenant + ".memory.ingest.turn"
+			if ack != nil {
+				if ack.Stream != "" {
+					stream = ack.Stream
+				}
+				if ack.Subject != "" {
+					subject = ack.Subject
+				}
+			}
+			detail := fmt.Sprintf("POST /v1/streams/%s/publish subject=%s", stream, subject)
+			if ack != nil && ack.Seq > 0 {
+				detail = fmt.Sprintf("%s seq=%d", detail, ack.Seq)
+			}
+			return StepPass, detail
 		}))
 	}
 
