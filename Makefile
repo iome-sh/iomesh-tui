@@ -3,7 +3,7 @@ BIN     := iomesh
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 COVER   ?= coverage.out
 
-.PHONY: all build test test-race cover vet fmt tidy vuln run models clean check ci
+.PHONY: all build test test-race cover vet fmt tidy vuln run models clean check ci dogfood dogfood-unit
 
 all: check build
 
@@ -51,6 +51,17 @@ models:
 # Headless smoke (requires DEEPSEEK_API_KEY for live call)
 smoke-prompt:
 	go run ./cmd/iomesh -p "Reply with exactly: pong" -m deepseek-v4-flash
+
+# Stage I/O Mesh dogfood (requires IOMESH_ENDPOINT for live PASS on health+)
+dogfood:
+	./scripts/mesh_dogfood.sh
+
+dogfood-strict:
+	./scripts/mesh_dogfood.sh --strict
+
+# Offline dogfood (CI-safe unit tests)
+dogfood-unit:
+	./scripts/mesh_dogfood.sh --unit
 
 clean:
 	rm -rf bin/ $(COVER) coverage.html

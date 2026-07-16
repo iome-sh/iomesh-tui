@@ -89,6 +89,7 @@ CLI / TUI / ACP
 8. ~~MCP client + skills loader~~ **done** — see [mcp.md](mcp.md), [skills.md](skills.md)
 9. ~~ACP WebSocket serve~~ **done** — `iomesh agent serve` (see [acp.md](acp.md))
 10. ~~MCP HTTP/SSE (streamable HTTP)~~ **done** — see [mcp.md](mcp.md)
-11. Stage mesh dogfood
-12. MCP resources/prompts + OAuth helpers
-13. Deeper I/O Mesh: lineage-aware context, Rego policy gates, metering dashboards
+11. ~~Stage mesh dogfood~~ **done** — see [mesh-dogfood.md](mesh-dogfood.md)
+12. TUI polish (multi-line edit, themes)
+13. MCP resources/prompts + OAuth helpers
+14. Deeper I/O Mesh: lineage-aware context, Rego policy gates, metering dashboards
