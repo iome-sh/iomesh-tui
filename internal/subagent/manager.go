@@ -94,6 +94,17 @@ type WorktreeBackend interface {
 	Create(ctx context.Context, parentRoot, id string) (path string, cleanup func() error, err error)
 }
 
+// WorktreeLifecycle extends WorktreeBackend with apply/diff/list/remove.
+// GitWorktree implements this; NopWorktree does not.
+type WorktreeLifecycle interface {
+	WorktreeBackend
+	Apply(ctx context.Context, parentRoot, idOrPath string, removeAfter bool) (ApplyResult, error)
+	Diff(ctx context.Context, parentRoot, idOrPath string) (string, error)
+	Remove(ctx context.Context, parentRoot, idOrPath string) error
+	List(parentRoot string) ([]WorktreeInfo, error)
+	ResolveWorktreePath(parentRoot, idOrPath string) (string, error)
+}
+
 // NopWorktree rejects worktree isolation.
 type NopWorktree struct{}
 
@@ -553,6 +564,80 @@ func resolveCapabilities(def Definition, mode CapabilityMode) (allowWrite, allow
 	}
 }
 
+// Lifecycle returns WorktreeLifecycle when the backend supports apply/diff.
+func (m *Manager) Lifecycle() (WorktreeLifecycle, bool) {
+	if m == nil {
+		return nil, false
+	}
+	lc, ok := m.worktree.(WorktreeLifecycle)
+	return lc, ok
+}
+
+// ParentWorkspace returns the manager's configured workspace root.
+func (m *Manager) ParentWorkspace() string {
+	if m == nil {
+		return ""
+	}
+	return m.cfg.Workspace
+}
+
+// ResolveWorktreeForID prefers the registry path for a subagent id, else id as path.
+func (m *Manager) ResolveWorktreeForID(id string) string {
+	if m == nil {
+		return id
+	}
+	if rec, ok := m.reg.Get(id); ok && rec.WorktreePath != "" {
+		return rec.WorktreePath
+	}
+	return id
+}
+
+// ApplyWorktree merges a child worktree into the parent workspace.
+func (m *Manager) ApplyWorktree(ctx context.Context, idOrPath string, removeAfter bool) (ApplyResult, error) {
+	lc, ok := m.Lifecycle()
+	if !ok {
+		return ApplyResult{}, fmt.Errorf("worktree apply not available (need git backend)")
+	}
+	ref := m.ResolveWorktreeForID(idOrPath)
+	return lc.Apply(ctx, m.cfg.Workspace, ref, removeAfter)
+}
+
+// DiffWorktree returns status/diff for a worktree.
+func (m *Manager) DiffWorktree(ctx context.Context, idOrPath string) (string, error) {
+	lc, ok := m.Lifecycle()
+	if !ok {
+		return "", fmt.Errorf("worktree diff not available (need git backend)")
+	}
+	ref := m.ResolveWorktreeForID(idOrPath)
+	return lc.Diff(ctx, m.cfg.Workspace, ref)
+}
+
+// RemoveWorktree removes an isolation worktree.
+func (m *Manager) RemoveWorktree(ctx context.Context, idOrPath string) error {
+	lc, ok := m.Lifecycle()
+	if !ok {
+		return fmt.Errorf("worktree remove not available (need git backend)")
+	}
+	ref := m.ResolveWorktreeForID(idOrPath)
+	err := lc.Remove(ctx, m.cfg.Workspace, ref)
+	if err == nil {
+		// Clear registry path if id matched.
+		if rec, ok := m.reg.Get(idOrPath); ok {
+			_ = m.reg.Update(rec.ID, func(r *Record) { r.WorktreePath = "" })
+		}
+	}
+	return err
+}
+
+// ListWorktrees lists isolation worktree directories.
+func (m *Manager) ListWorktrees() ([]WorktreeInfo, error) {
+	lc, ok := m.Lifecycle()
+	if !ok {
+		return nil, fmt.Errorf("worktree list not available (need git backend)")
+	}
+	return lc.List(m.cfg.Workspace)
+}
+
 // EffectiveTools lists tool names permitted for a spawn.
 func EffectiveTools(allowWrite, allowShell, allowSpawn bool) []string {
 	tools := []string{"read_file", "list_dir", "grep"}
@@ -566,6 +651,9 @@ func EffectiveTools(allowWrite, allowShell, allowSpawn bool) []string {
 		tools = append(tools,
 			"spawn_subagent", "spawn_subagents",
 			"get_subagent_output", "wait_subagents",
+			// apply/remove are parent-only in practice; included when spawn allowed
+			// so nested AllowSpawn children could merge (builtins keep AllowSpawn false).
+			"apply_worktree", "diff_worktree", "list_worktrees", "remove_worktree",
 		)
 	}
 	return tools

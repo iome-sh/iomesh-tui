@@ -219,6 +219,102 @@ func (r *ToolRegistry) RegisterSubagentTools(mgr *subagent.Manager) {
 		b, _ := json.MarshalIndent(res, "", "  ")
 		return string(b), nil
 	})
+
+	// Worktree apply/merge dance (mutating: copies into parent workspace).
+	r.register("diff_worktree", false, router.Tool{
+		Type: "function",
+		Function: router.ToolFunction{
+			Name:        "diff_worktree",
+			Description: "Show git status/diff for an isolation worktree. Pass subagent id or worktree path from isolation=worktree results.",
+			Parameters: json.RawMessage(`{
+  "type": "object",
+  "properties": {
+    "id": {"type": "string", "description": "Subagent id or worktree path"}
+  },
+  "required": ["id"]
+}`),
+		},
+	}, func(ctx context.Context, args string) (string, error) {
+		var p struct {
+			ID string `json:"id"`
+		}
+		if err := json.Unmarshal([]byte(args), &p); err != nil {
+			return "", err
+		}
+		return mgr.DiffWorktree(ctx, p.ID)
+	})
+
+	r.register("list_worktrees", false, router.Tool{
+		Type: "function",
+		Function: router.ToolFunction{
+			Name:        "list_worktrees",
+			Description: "List isolation worktrees under .iomesh/worktrees (or configured worktree_base).",
+			Parameters:  json.RawMessage(`{"type":"object","properties":{}}`),
+		},
+	}, func(ctx context.Context, args string) (string, error) {
+		list, err := mgr.ListWorktrees()
+		if err != nil {
+			return "", err
+		}
+		b, _ := json.MarshalIndent(list, "", "  ")
+		return string(b), nil
+	})
+
+	r.register("apply_worktree", true, router.Tool{
+		Type: "function",
+		Function: router.ToolFunction{
+			Name:        "apply_worktree",
+			Description: "Merge file changes from an isolation worktree into the parent workspace (path-jailed copy). Use after a general-purpose subagent with isolation=worktree. Requires approval/--yolo. Optional remove=true deletes the worktree after apply.",
+			Parameters: json.RawMessage(`{
+  "type": "object",
+  "properties": {
+    "id": {"type": "string", "description": "Subagent id or worktree path"},
+    "remove": {"type": "boolean", "description": "Remove worktree after successful apply"}
+  },
+  "required": ["id"]
+}`),
+		},
+	}, func(ctx context.Context, args string) (string, error) {
+		var p struct {
+			ID     string `json:"id"`
+			Remove bool   `json:"remove"`
+		}
+		if err := json.Unmarshal([]byte(args), &p); err != nil {
+			return "", err
+		}
+		res, err := mgr.ApplyWorktree(ctx, p.ID, p.Remove)
+		if err != nil {
+			return "", err
+		}
+		b, _ := json.MarshalIndent(res, "", "  ")
+		return string(b), nil
+	})
+
+	r.register("remove_worktree", true, router.Tool{
+		Type: "function",
+		Function: router.ToolFunction{
+			Name:        "remove_worktree",
+			Description: "Delete an isolation git worktree without applying. Requires approval/--yolo.",
+			Parameters: json.RawMessage(`{
+  "type": "object",
+  "properties": {
+    "id": {"type": "string", "description": "Subagent id or worktree path"}
+  },
+  "required": ["id"]
+}`),
+		},
+	}, func(ctx context.Context, args string) (string, error) {
+		var p struct {
+			ID string `json:"id"`
+		}
+		if err := json.Unmarshal([]byte(args), &p); err != nil {
+			return "", err
+		}
+		if err := mgr.RemoveWorktree(ctx, p.ID); err != nil {
+			return "", err
+		}
+		return `{"removed":true,"id":` + fmt.Sprintf("%q", p.ID) + `}`, nil
+	})
 }
 
 // childRunner adapts Runtime for subagent.Manager.

@@ -83,7 +83,7 @@ CLI / TUI / ACP
 2. ACP `agent stdio` JSON-RPC
 3. ~~Subagent orchestration~~ **done** — see [subagents.md](subagents.md)
 4. ~~Git worktree isolation~~ **done** — `isolation=worktree`
-5. MCP client + skills loader
-6. Session persistence + compaction
-7. Worktree apply/merge helper tool
+5. ~~Worktree apply/merge helper~~ **done** — `apply_worktree` / `diff_worktree`
+6. MCP client + skills loader
+7. Session persistence + compaction
 8. Deeper I/O Mesh: lineage-aware context, Rego policy gates, metering dashboards
