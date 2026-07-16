@@ -1,8 +1,9 @@
 // Package acp implements a minimal Agent Client Protocol (ACP) server over
-// stdio JSON-RPC for IDE and automation clients.
+// stdio or WebSocket JSON-RPC for IDE and automation clients.
 //
-// Wire format: newline-delimited JSON-RPC 2.0 (one object per line on stdin/stdout).
-// Logs must go to stderr only so stdout stays a clean protocol stream.
+// Stdio wire format: newline-delimited JSON-RPC 2.0 (one object per line).
+// WebSocket: one JSON-RPC object per text frame (optional trailing newline).
+// Logs must go to stderr only so protocol streams stay clean.
 package acp
 
 import "encoding/json"
