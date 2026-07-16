@@ -109,12 +109,15 @@ type SkillsSection struct {
 	Dirs    []string `toml:"dirs"` // extra dirs; workspace/user defaults always scanned when enabled
 }
 
-// MCPServerTOML is one stdio MCP server.
+// MCPServerTOML is one MCP server (stdio command and/or HTTP url).
 type MCPServerTOML struct {
 	Name              string            `toml:"name"`
 	Command           string            `toml:"command"`
 	Args              []string          `toml:"args"`
 	Env               map[string]string `toml:"env"`
+	URL               string            `toml:"url"`
+	Headers           map[string]string `toml:"headers"`
+	AllowLoopback     *bool             `toml:"allow_loopback"`
 	Enabled           *bool             `toml:"enabled"`
 	Mutating          *bool             `toml:"mutating"`
 	StartupTimeoutSec int               `toml:"startup_timeout_sec"`

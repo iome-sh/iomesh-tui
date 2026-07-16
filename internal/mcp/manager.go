@@ -38,17 +38,29 @@ func NewManager(ctx context.Context, servers []ServerConfig, logger *slog.Logger
 		if cfg.Name == "" || !cfg.isEnabled() {
 			continue
 		}
-		if cfg.Command == "" {
-			logger.Warn("mcp server skipped: empty command", "name", cfg.Name)
+		var (
+			c   *Client
+			err error
+		)
+		switch {
+		case cfg.URL != "":
+			c, err = DialHTTP(ctx, cfg, logger)
+		case cfg.Command != "":
+			c, err = DialStdio(ctx, cfg, logger)
+		default:
+			logger.Warn("mcp server skipped: need command or url", "name", cfg.Name)
 			continue
 		}
-		c, err := DialStdio(ctx, cfg, logger)
 		if err != nil {
 			logger.Warn("mcp server connect failed", "name", cfg.Name, "err", err)
 			continue
 		}
 		m.attachLocked(c)
-		logger.Info("mcp server connected", "name", cfg.Name, "tools", len(c.Tools()))
+		transport := "stdio"
+		if c.isHTTP() {
+			transport = "http"
+		}
+		logger.Info("mcp server connected", "name", cfg.Name, "transport", transport, "tools", len(c.Tools()))
 	}
 	return m
 }

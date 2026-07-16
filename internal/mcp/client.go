@@ -1,5 +1,6 @@
 // Package mcp implements a minimal Model Context Protocol client over stdio
-// JSON-RPC (initialize, tools/list, tools/call). Fail-open at manager level.
+// or streamable HTTP/SSE JSON-RPC (initialize, tools/list, tools/call).
+// Fail-open at manager level.
 package mcp
 
 import (
@@ -9,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net/http"
 	"os/exec"
 	"strings"
 	"sync"
@@ -24,12 +26,19 @@ const ProtocolVersion = "2024-11-05"
 // DefaultMaxOutputBytes caps tools/call text results.
 const DefaultMaxOutputBytes = 20_000
 
-// ServerConfig describes one stdio MCP server.
+// ServerConfig describes one MCP server (stdio and/or HTTP).
+// Set Command for stdio, or URL for streamable HTTP. URL wins if both set.
 type ServerConfig struct {
 	Name    string            `toml:"name" json:"name"`
 	Command string            `toml:"command" json:"command"`
 	Args    []string          `toml:"args" json:"args"`
 	Env     map[string]string `toml:"env" json:"env"`
+	// URL enables streamable HTTP transport (POST JSON-RPC; JSON or SSE responses).
+	URL string `toml:"url" json:"url"`
+	// Headers are extra HTTP request headers (Authorization, etc.).
+	Headers map[string]string `toml:"headers" json:"headers"`
+	// AllowLoopback permits http://127.0.0.1 for local MCP servers (default true when unset via dial).
+	AllowLoopback *bool `toml:"allow_loopback" json:"allow_loopback"`
 	// Enabled defaults true when unset via manager.
 	Enabled *bool `toml:"enabled" json:"enabled"`
 	// Mutating: all tools from this server require approval (default true).
@@ -54,18 +63,24 @@ func (c ServerConfig) isMutating() bool {
 	return *c.Mutating
 }
 
-// Client is a connected stdio MCP server.
+// Client is a connected MCP server (stdio or HTTP).
 type Client struct {
 	cfg    ServerConfig
 	logger *slog.Logger
 
+	// stdio transport
 	cmd    *exec.Cmd
 	stdin  io.WriteCloser
 	stdout io.ReadCloser
 	// optional owned process cancel
 	cancel context.CancelFunc
 
-	mu      sync.Mutex // pending map + tools
+	// http transport (streamable HTTP / SSE responses)
+	httpClient *http.Client
+	baseURL    string
+	sessionID  string
+
+	mu      sync.Mutex // pending map + tools + sessionID
 	writeMu sync.Mutex // serialize stdin writes (do not hold mu during Write — pipe deadlock)
 	pending map[int64]chan rpcResponse
 	nextID  atomic.Int64
@@ -74,6 +89,8 @@ type Client struct {
 
 	maxOut int
 }
+
+func (c *Client) isHTTP() bool { return c.httpClient != nil }
 
 // DialStdio starts command and performs MCP initialize + tools/list.
 func DialStdio(ctx context.Context, cfg ServerConfig, logger *slog.Logger) (*Client, error) {
@@ -234,6 +251,9 @@ func (c *Client) CallTool(ctx context.Context, name string, arguments map[string
 }
 
 func (c *Client) call(ctx context.Context, method string, params any, result any) error {
+	if c.isHTTP() {
+		return c.callHTTP(ctx, method, params, result)
+	}
 	id := c.nextID.Add(1)
 	rawParams, err := json.Marshal(params)
 	if err != nil {
@@ -284,6 +304,9 @@ func (c *Client) call(ctx context.Context, method string, params any, result any
 }
 
 func (c *Client) notify(method string, params any) error {
+	if c.isHTTP() {
+		return c.notifyHTTP(context.Background(), method, params)
+	}
 	rawParams, err := json.Marshal(params)
 	if err != nil {
 		return err
@@ -334,7 +357,32 @@ func (c *Client) Close() error {
 	if !c.closed.CompareAndSwap(false, true) {
 		return nil
 	}
-	_ = c.stdin.Close()
+	if c.isHTTP() {
+		// Best-effort session teardown (streamable HTTP optional DELETE).
+		c.mu.Lock()
+		sid := c.sessionID
+		url := c.baseURL
+		c.mu.Unlock()
+		if sid != "" && url != "" {
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+			if err == nil {
+				req.Header.Set("Mcp-Session-Id", sid)
+				for k, v := range c.cfg.Headers {
+					req.Header.Set(k, v)
+				}
+				resp, err := c.httpClient.Do(req)
+				if err == nil {
+					_ = resp.Body.Close()
+				}
+			}
+			cancel()
+		}
+		return nil
+	}
+	if c.stdin != nil {
+		_ = c.stdin.Close()
+	}
 	if c.cancel != nil {
 		c.cancel()
 	}
