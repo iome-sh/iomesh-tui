@@ -25,6 +25,7 @@ Included **by default** when mesh is enabled (not gated on agent `[memory].dual_
 - Envelope: `type=memory_ingest`, `role=tool`, `content=iomesh-tui dual-write dogfood`, `event_time=now`, `session_seq=1`
 - Soft mode: publish/transport errors → **SKIP** (fail-open); `--strict` → **FAIL**
 - Offline / mesh disabled: whole report is SKIP (no memory step)
+- **PASS detail** includes stream, subject, and seq when available. When Client `[iomesh] org` / `workspace` (`OrgID` / `WorkspaceID`) are set, detail also appends `org=…` and/or `workspace=…` as operator-visible evidence that dual-write publish used those headers (`X-IOMesh-Org` / `X-IOMesh-Workspace`). Empty values are omitted (no `org=` token).
 
 Final line: `RESULT=PASS …` or `RESULT=FAIL …`.
 

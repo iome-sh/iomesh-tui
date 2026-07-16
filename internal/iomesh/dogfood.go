@@ -251,6 +251,13 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 			if ack != nil && ack.Seq > 0 {
 				detail = fmt.Sprintf("%s seq=%d", detail, ack.Seq)
 			}
+			// Operator-visible evidence that dual-write publish used org/workspace headers (s231).
+			if org := strings.TrimSpace(c.cfg.OrgID); org != "" {
+				detail = fmt.Sprintf("%s org=%s", detail, org)
+			}
+			if ws := strings.TrimSpace(c.cfg.WorkspaceID); ws != "" {
+				detail = fmt.Sprintf("%s workspace=%s", detail, ws)
+			}
 			return StepPass, detail
 		}))
 	}
