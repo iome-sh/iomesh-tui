@@ -56,10 +56,15 @@ func Run(ctx context.Context, rt *agent.Runtime, logger *slog.Logger) error {
 // RunWithStore starts the full-screen TUI with optional session persistence.
 // Falls back to the classic line REPL when stdout is not a terminal.
 func RunWithStore(ctx context.Context, rt *agent.Runtime, store *session.Store, logger *slog.Logger) error {
+	return RunWithStoreOpts(ctx, rt, store, logger, UIOptions{})
+}
+
+// RunWithStoreOpts is RunWithStore plus UI theme options.
+func RunWithStoreOpts(ctx context.Context, rt *agent.Runtime, store *session.Store, logger *slog.Logger, opts UIOptions) error {
 	if !isTerminal(os.Stdout) {
 		return runREPL(ctx, rt, store, os.Stdin, os.Stdout, logger)
 	}
-	return RunFullscreen(ctx, rt, store, logger)
+	return RunFullscreenOpts(ctx, rt, store, logger, opts)
 }
 
 // RunREPL forces the classic line-oriented REPL (tests, pipes, --repl).
@@ -316,10 +321,22 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			return false, nil
 		}
 		fmt.Fprintf(out, "loaded %s (%d messages, %d subagents)\n", snap.ID, len(snap.Messages), len(snap.Subagents))
+	case "/theme", "/themes":
+		if len(parts) < 2 {
+			fmt.Fprintf(out, "themes: %s\nusage: /theme <name>  (fullscreen only applies live)\n", strings.Join(ThemeNames(), ", "))
+			return false, nil
+		}
+		th, err := ParseTheme(parts[1])
+		if err != nil {
+			fmt.Fprintf(out, "error: %v\n", err)
+			return false, nil
+		}
+		fmt.Fprintf(out, "theme %s (apply in fullscreen TUI with /theme)\n", th.Name)
 	case "/help", "/?":
 		fmt.Fprint(out, `commands:
   /models              list models (numbered)
   /model <name|#>      pin model (or default)
+  /theme [name]        list or set UI theme (default|mono|high-contrast|dim)
   /subagents           list subagents (id, status, worktree)
   /permissions         show session always-allow tools
   /save [compact]      save session
@@ -328,6 +345,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /cost                sample cost estimate
   /quit                exit
 
+Fullscreen keys: enter send · ctrl+j newline · pgup/pgdn scroll
 On mutating tools (write_file, run_shell, apply_worktree, …) you will be prompted:
   [y]es  [n]o  [a]lways this session
 `)

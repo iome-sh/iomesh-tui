@@ -64,6 +64,7 @@ context_plane = true
 simple_mode = true
 screen_mode = "fullscreen"
 show_thinking_blocks = true
+# theme = "default"   # default | mono | high-contrast | dim  (fullscreen /theme)
 
 [features]
 telemetry = false

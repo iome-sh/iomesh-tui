@@ -53,7 +53,7 @@ func TestFullscreenModel_WindowSizeAndView(t *testing.T) {
 	rt := fsTestRuntime(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	m := newFullscreenModel(ctx, cancel, rt, nil, nil)
+	m := newFullscreenModel(ctx, cancel, rt, nil, nil, UIOptions{})
 
 	mod, _ := m.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
 	fm := mod.(*fullscreenModel)
@@ -76,7 +76,7 @@ func TestFullscreenModel_SlashQuit(t *testing.T) {
 	rt := fsTestRuntime(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	m := newFullscreenModel(ctx, cancel, rt, nil, nil)
+	m := newFullscreenModel(ctx, cancel, rt, nil, nil, UIOptions{})
 	mod, _ := m.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 	fm := mod.(*fullscreenModel)
 
@@ -101,7 +101,7 @@ func TestFullscreenModel_AgentEvents(t *testing.T) {
 	rt := fsTestRuntime(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	m := newFullscreenModel(ctx, cancel, rt, nil, nil)
+	m := newFullscreenModel(ctx, cancel, rt, nil, nil, UIOptions{})
 	mod, _ := m.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 	fm := mod.(*fullscreenModel)
 
@@ -136,7 +136,7 @@ func TestFullscreenModel_ApprovalKeys(t *testing.T) {
 	rt := fsTestRuntime(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	m := newFullscreenModel(ctx, cancel, rt, nil, nil)
+	m := newFullscreenModel(ctx, cancel, rt, nil, nil, UIOptions{})
 	mod, _ := m.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 	fm := mod.(*fullscreenModel)
 
@@ -193,7 +193,7 @@ func TestFullscreenModel_SubmitTurn(t *testing.T) {
 	rt := fsTestRuntime(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	m := newFullscreenModel(ctx, cancel, rt, nil, nil)
+	m := newFullscreenModel(ctx, cancel, rt, nil, nil, UIOptions{})
 	mod, _ := m.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 	fm := mod.(*fullscreenModel)
 
@@ -224,10 +224,46 @@ func TestHandleAgentEvent_Denied(t *testing.T) {
 	rt := fsTestRuntime(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	m := newFullscreenModel(ctx, cancel, rt, nil, nil)
+	m := newFullscreenModel(ctx, cancel, rt, nil, nil, UIOptions{})
 	m.handleAgentEvent(agent.Event{Type: agent.EventToolDenied, Tool: "write_file", Text: "nope"})
 	joined := strings.Join(m.lines, "\n")
 	if !strings.Contains(joined, "write_file") || !strings.Contains(joined, "nope") {
 		t.Fatal(joined)
+	}
+}
+
+func TestFullscreenModel_ThemeSlash(t *testing.T) {
+	rt := fsTestRuntime(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	m := newFullscreenModel(ctx, cancel, rt, nil, nil, UIOptions{Theme: "default"})
+	mod, _ := m.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+	fm := mod.(*fullscreenModel)
+	_ = fm.handleThemeSlash([]string{"/theme", "mono"})
+	if fm.theme.Name != "mono" {
+		t.Fatalf("theme=%s", fm.theme.Name)
+	}
+	_ = fm.submitLine("hello\nworld")
+	joined := strings.Join(fm.lines, "\n")
+	if !strings.Contains(joined, "hello") || !strings.Contains(joined, "world") {
+		t.Fatal(joined)
+	}
+}
+
+func TestFullscreenModel_InputHeight(t *testing.T) {
+	rt := fsTestRuntime(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	m := newFullscreenModel(ctx, cancel, rt, nil, nil, UIOptions{})
+	if m.inputHeight() != 3 {
+		t.Fatalf("min height=%d", m.inputHeight())
+	}
+	m.input.SetValue("a\nb\nc\nd\ne")
+	if m.inputHeight() != 5 {
+		t.Fatalf("height=%d", m.inputHeight())
+	}
+	m.input.SetValue(strings.Repeat("x\n", 20))
+	if m.inputHeight() != 8 {
+		t.Fatalf("cap height=%d", m.inputHeight())
 	}
 }

@@ -8,7 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -17,22 +18,19 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/session"
 )
 
-// Styles for the full-screen TUI.
-var (
-	styleTitle   = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("86"))
-	styleStatus  = lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
-	styleDim     = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
-	styleUser    = lipgloss.NewStyle().Foreground(lipgloss.Color("39")).Bold(true)
-	styleTool    = lipgloss.NewStyle().Foreground(lipgloss.Color("214"))
-	styleOK      = lipgloss.NewStyle().Foreground(lipgloss.Color("78"))
-	styleErr     = lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
-	styleMesh    = lipgloss.NewStyle().Foreground(lipgloss.Color("45"))
-	styleApprove = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("226")).Background(lipgloss.Color("235"))
-	styleHelp    = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
-)
+// UIOptions configures full-screen presentation.
+type UIOptions struct {
+	// Theme is default|mono|high-contrast|dim (empty → default).
+	Theme string
+}
 
 // RunFullscreen starts the alt-screen Bubble Tea UI (scrollback + streaming + approvals).
 func RunFullscreen(ctx context.Context, rt *agent.Runtime, store *session.Store, logger *slog.Logger) error {
+	return RunFullscreenOpts(ctx, rt, store, logger, UIOptions{})
+}
+
+// RunFullscreenOpts is RunFullscreen with theme / UI options.
+func RunFullscreenOpts(ctx context.Context, rt *agent.Runtime, store *session.Store, logger *slog.Logger, opts UIOptions) error {
 	if logger == nil {
 		logger = slog.Default()
 	}
@@ -42,7 +40,7 @@ func RunFullscreen(ctx context.Context, rt *agent.Runtime, store *session.Store,
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	m := newFullscreenModel(ctx, cancel, rt, store, logger)
+	m := newFullscreenModel(ctx, cancel, rt, store, logger, opts)
 	p := tea.NewProgram(m,
 		tea.WithAltScreen(),
 		tea.WithMouseCellMotion(),
@@ -86,8 +84,6 @@ type approvalRequestMsg struct {
 	reply chan agent.Approval
 }
 
-type tickMsg time.Time
-
 // --- model ---
 
 type fullscreenModel struct {
@@ -96,12 +92,13 @@ type fullscreenModel struct {
 	rt     *agent.Runtime
 	store  *session.Store
 	logger *slog.Logger
+	theme  Theme
 
 	mu   sync.Mutex
 	prog *tea.Program
 
 	vp     viewport.Model
-	input  textinput.Model
+	input  textarea.Model
 	ready  bool
 	width  int
 	height int
@@ -121,14 +118,29 @@ type fullscreenModel struct {
 	approval *approvalRequestMsg
 }
 
-func newFullscreenModel(ctx context.Context, cancel context.CancelFunc, rt *agent.Runtime, store *session.Store, logger *slog.Logger) *fullscreenModel {
-	ti := textinput.New()
-	ti.Placeholder = "message or /help  ·  ctrl+c quit"
-	ti.Focus()
-	ti.CharLimit = 32 * 1024
-	ti.Width = 80
-	ti.Prompt = "❯ "
-	ti.PromptStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("86"))
+func newFullscreenModel(ctx context.Context, cancel context.CancelFunc, rt *agent.Runtime, store *session.Store, logger *slog.Logger, opts UIOptions) *fullscreenModel {
+	th, err := ParseTheme(opts.Theme)
+	if err != nil {
+		th = ThemeDefault()
+	}
+
+	ta := textarea.New()
+	ta.Placeholder = "message or /help  ·  enter send · ctrl+j newline · /theme"
+	ta.Focus()
+	ta.CharLimit = 32 * 1024
+	ta.SetWidth(80)
+	ta.SetHeight(3)
+	ta.ShowLineNumbers = false
+	ta.Prompt = "❯ "
+	// Enter is for send (handled in Update); newline via ctrl+j / alt+enter.
+	ta.KeyMap.InsertNewline = key.NewBinding(
+		key.WithKeys("ctrl+j", "alt+enter", "shift+enter"),
+		key.WithHelp("ctrl+j", "newline"),
+	)
+	ta.FocusedStyle.CursorLine = lipgloss.NewStyle()
+	ta.FocusedStyle.Base = lipgloss.NewStyle()
+	ta.FocusedStyle.Prompt = th.Prompt
+	ta.BlurredStyle.Prompt = th.Prompt
 
 	m := &fullscreenModel{
 		ctx:    ctx,
@@ -136,17 +148,18 @@ func newFullscreenModel(ctx context.Context, cancel context.CancelFunc, rt *agen
 		rt:     rt,
 		store:  store,
 		logger: logger,
+		theme:  th,
 		vp:     viewport.New(80, 20),
-		input:  ti,
+		input:  ta,
 		status: "ready",
 	}
-	m.appendLine(styleTitle.Render("iomesh-tui") + "  " + styleDim.Render("fullscreen · scroll · approvals"))
-	m.appendLine(styleStatus.Render(fmt.Sprintf("workspace %s", rt.Workspace().Root())))
+	m.appendLine(m.theme.Title.Render("iomesh-tui") + "  " + m.theme.Dim.Render("fullscreen · multi-line · theme="+th.Name))
+	m.appendLine(m.theme.Status.Render(fmt.Sprintf("workspace %s", rt.Workspace().Root())))
 	if sid := rt.SessionID(); sid != "" {
-		m.appendLine(styleStatus.Render("session " + sid))
+		m.appendLine(m.theme.Status.Render("session " + sid))
 	}
-	m.appendLine(styleStatus.Render(fmt.Sprintf("model %s  ·  mutating tools prompt y/n/a unless --yolo", displayModel(rt.Router()))))
-	m.appendLine(styleHelp.Render("keys: enter send · pgup/pgdn scroll · ctrl+c quit · /help"))
+	m.appendLine(m.theme.Status.Render(fmt.Sprintf("model %s  ·  mutating tools prompt y/n/a unless --yolo", displayModel(rt.Router()))))
+	m.appendLine(m.theme.Help.Render("keys: enter send · ctrl+j newline · pgup/pgdn · /theme · ctrl+c quit"))
 	m.appendLine("")
 	return m
 }
@@ -157,8 +170,42 @@ func (m *fullscreenModel) setProgram(p *tea.Program) {
 	m.mu.Unlock()
 }
 
+func (m *fullscreenModel) applyTheme(th Theme) {
+	m.theme = th
+	m.input.FocusedStyle.Prompt = th.Prompt
+	m.input.BlurredStyle.Prompt = th.Prompt
+}
+
+func (m *fullscreenModel) inputHeight() int {
+	n := strings.Count(m.input.Value(), "\n") + 1
+	if n < 3 {
+		n = 3
+	}
+	if n > 8 {
+		n = 8
+	}
+	return n
+}
+
+func (m *fullscreenModel) layout() {
+	headerH := 2
+	inH := m.inputHeight()
+	footerH := inH + 2 // separator + meta
+	if m.approval != nil {
+		footerH = 5
+	}
+	vpH := m.height - headerH - footerH
+	if vpH < 3 {
+		vpH = 3
+	}
+	m.vp.Width = m.width
+	m.vp.Height = vpH
+	m.input.SetWidth(max(10, m.width-2))
+	m.input.SetHeight(inH)
+}
+
 func (m *fullscreenModel) Init() tea.Cmd {
-	return textinput.Blink
+	return textarea.Blink
 }
 
 func (m *fullscreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -168,18 +215,7 @@ func (m *fullscreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		headerH := 2
-		footerH := 3
-		if m.approval != nil {
-			footerH = 5
-		}
-		vpH := msg.Height - headerH - footerH
-		if vpH < 3 {
-			vpH = 3
-		}
-		m.vp.Width = msg.Width
-		m.vp.Height = vpH
-		m.input.Width = max(10, msg.Width-4)
+		m.layout()
 		m.ready = true
 		m.refreshViewport(true)
 		return m, nil
@@ -190,7 +226,6 @@ func (m *fullscreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.handleApprovalKey(msg)
 		}
 		if m.busy {
-			// Allow scroll while busy; block send.
 			switch msg.String() {
 			case "ctrl+c":
 				m.cancel()
@@ -202,7 +237,6 @@ func (m *fullscreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.vp.HalfViewDown()
 				return m, nil
 			}
-			// Still allow viewport mouse/keys via vp update below for up/down.
 		}
 
 		switch msg.String() {
@@ -214,12 +248,15 @@ func (m *fullscreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.helpShown = false
 				return m, nil
 			}
-		case "enter":
+		case "enter", "ctrl+m":
+			// Send (newline is ctrl+j).
 			if m.busy {
 				return m, nil
 			}
 			line := strings.TrimSpace(m.input.Value())
-			m.input.SetValue("")
+			m.input.Reset()
+			m.input.SetHeight(3)
+			m.layout()
 			if line == "" {
 				return m, nil
 			}
@@ -235,9 +272,10 @@ func (m *fullscreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case approvalRequestMsg:
 		m.approval = &msg
 		m.status = "awaiting approval"
-		m.appendLine(styleApprove.Render(fmt.Sprintf(" ⚠ approve tool %s? ", msg.tool)))
-		m.appendLine(styleDim.Render("  " + truncate(msg.args, 200)))
-		m.appendLine(styleHelp.Render("  [y]es  [n]o  [a]lways this session"))
+		m.appendLine(m.theme.Approve.Render(fmt.Sprintf(" ⚠ approve tool %s? ", msg.tool)))
+		m.appendLine(m.theme.Dim.Render("  " + truncate(msg.args, 200)))
+		m.appendLine(m.theme.Help.Render("  [y]es  [n]o  [a]lways this session"))
+		m.layout()
 		m.refreshViewport(true)
 		return m, nil
 
@@ -250,14 +288,14 @@ func (m *fullscreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.busy = false
 		m.streamOpen = false
 		if msg.err != nil {
-			m.appendLine(styleErr.Render("error: " + msg.err.Error()))
+			m.appendLine(m.theme.Err.Render("error: " + msg.err.Error()))
 			m.status = "error"
 		} else {
 			m.status = "ready"
 			if m.store != nil {
 				m.rt.AutoSaveAfterTurn(m.store)
 				if id := m.rt.SessionID(); id != "" {
-					m.appendLine(styleDim.Render(fmt.Sprintf("[session %s saved]", id)))
+					m.appendLine(m.theme.Dim.Render(fmt.Sprintf("[session %s saved]", id)))
 				}
 			}
 		}
@@ -266,10 +304,21 @@ func (m *fullscreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	// Forward to subcomponents.
+	// Forward to subcomponents (textarea gets ctrl+j newline, typing, etc.).
 	var cmd tea.Cmd
+	prevH := m.input.Height()
 	m.input, cmd = m.input.Update(msg)
 	cmds = append(cmds, cmd)
+	if m.input.Height() != prevH || m.ready {
+		// Grow/shrink with content when not approval-focused.
+		if m.approval == nil && m.width > 0 {
+			want := m.inputHeight()
+			if m.input.Height() != want {
+				m.input.SetHeight(want)
+				m.layout()
+			}
+		}
+	}
 	m.vp, cmd = m.vp.Update(msg)
 	cmds = append(cmds, cmd)
 	return m, tea.Batch(cmds...)
@@ -283,13 +332,13 @@ func (m *fullscreenModel) handleApprovalKey(msg tea.KeyMsg) (tea.Model, tea.Cmd)
 	switch strings.ToLower(msg.String()) {
 	case "y", "enter":
 		dec = agent.ApprovalOnce
-		m.appendLine(styleOK.Render("  → approved once"))
+		m.appendLine(m.theme.OK.Render("  → approved once"))
 	case "a":
 		dec = agent.ApprovalAlways
-		m.appendLine(styleOK.Render("  → always allow " + m.approval.tool + " this session"))
+		m.appendLine(m.theme.OK.Render("  → always allow " + m.approval.tool + " this session"))
 	case "n", "esc":
 		dec = agent.ApprovalDeny
-		m.appendLine(styleErr.Render("  → denied"))
+		m.appendLine(m.theme.Err.Render("  → denied"))
 	case "ctrl+c":
 		dec = agent.ApprovalDeny
 		m.approval.reply <- dec
@@ -302,8 +351,8 @@ func (m *fullscreenModel) handleApprovalKey(msg tea.KeyMsg) (tea.Model, tea.Cmd)
 	ch := m.approval.reply
 	m.approval = nil
 	m.status = "running"
+	m.layout()
 	m.refreshViewport(true)
-	// Non-blocking send in case agent already cancelled.
 	select {
 	case ch <- dec:
 	default:
@@ -315,7 +364,12 @@ func (m *fullscreenModel) submitLine(line string) tea.Cmd {
 	if strings.HasPrefix(line, "/") {
 		return m.runSlash(line)
 	}
-	m.appendLine(styleUser.Render("you › ") + line)
+	// Multi-line user bubbles: show first line with marker; indent rest.
+	parts := strings.Split(line, "\n")
+	m.appendLine(m.theme.User.Render("you › ") + parts[0])
+	for _, p := range parts[1:] {
+		m.appendLine(m.theme.User.Render("     ") + p)
+	}
 	m.appendLine("")
 	m.busy = true
 	m.status = "thinking…"
@@ -338,17 +392,21 @@ func (m *fullscreenModel) submitLine(line string) tea.Cmd {
 }
 
 func (m *fullscreenModel) runSlash(line string) tea.Cmd {
+	parts := strings.Fields(line)
+	if len(parts) > 0 && (parts[0] == "/theme" || parts[0] == "/themes") {
+		return m.handleThemeSlash(parts)
+	}
 	adapter := runtimeAdapter{rt: m.rt, store: m.store}
 	var buf strings.Builder
 	quit, err := handleSlash(&buf, adapter, line)
 	out := strings.TrimRight(buf.String(), "\n")
 	if out != "" {
 		for _, ln := range strings.Split(out, "\n") {
-			m.appendLine(styleDim.Render(ln))
+			m.appendLine(m.theme.Dim.Render(ln))
 		}
 	}
 	if err != nil {
-		m.appendLine(styleErr.Render(err.Error()))
+		m.appendLine(m.theme.Err.Render(err.Error()))
 	}
 	m.refreshViewport(true)
 	if quit {
@@ -358,28 +416,47 @@ func (m *fullscreenModel) runSlash(line string) tea.Cmd {
 	return nil
 }
 
+func (m *fullscreenModel) handleThemeSlash(parts []string) tea.Cmd {
+	if len(parts) < 2 {
+		m.appendLine(m.theme.Status.Render("themes: " + strings.Join(ThemeNames(), ", ")))
+		m.appendLine(m.theme.Dim.Render("current: " + m.theme.Name + "  ·  usage: /theme <name>"))
+		m.refreshViewport(true)
+		return nil
+	}
+	th, err := ParseTheme(parts[1])
+	if err != nil {
+		m.appendLine(m.theme.Err.Render(err.Error()))
+		m.refreshViewport(true)
+		return nil
+	}
+	m.applyTheme(th)
+	m.appendLine(m.theme.OK.Render("theme → " + th.Name))
+	m.refreshViewport(true)
+	return nil
+}
+
 func (m *fullscreenModel) handleAgentEvent(ev agent.Event) {
 	switch ev.Type {
 	case agent.EventModelSelected:
-		m.appendLine(styleDim.Render("[model " + ev.Model + "]"))
+		m.appendLine(m.theme.Dim.Render("[model " + ev.Model + "]"))
 	case agent.EventTextDelta:
 		m.appendStream(ev.Text)
 	case agent.EventThinkingDelta:
-		m.appendStream(styleDim.Render(ev.Text))
+		m.appendStream(m.theme.Dim.Render(ev.Text))
 	case agent.EventToolStart:
 		m.closeStream()
-		m.appendLine(styleTool.Render("→ tool " + ev.Tool))
+		m.appendLine(m.theme.Tool.Render("→ tool " + ev.Tool))
 	case agent.EventToolEnd:
-		m.appendLine(styleOK.Render("✓ "+ev.Tool) + " " + styleDim.Render(truncate(ev.Text, 100)))
+		m.appendLine(m.theme.OK.Render("✓ "+ev.Tool) + " " + m.theme.Dim.Render(truncate(ev.Text, 100)))
 	case agent.EventToolError, agent.EventToolDenied:
-		m.appendLine(styleErr.Render("✗ " + ev.Tool + " " + ev.Text))
+		m.appendLine(m.theme.Err.Render("✗ " + ev.Tool + " " + ev.Text))
 	case agent.EventLLMDone:
 		m.closeStream()
 		m.lastCost = fmt.Sprintf("%s · %d tok · $%.5f · %s",
 			ev.Model, ev.Tokens, ev.CostUSD, ev.Duration.Round(time.Millisecond))
-		m.appendLine(styleDim.Render("— " + m.lastCost))
+		m.appendLine(m.theme.Dim.Render("— " + m.lastCost))
 	case agent.EventMeshContext:
-		m.appendLine(styleMesh.Render("[iomesh] " + ev.Text))
+		m.appendLine(m.theme.Mesh.Render("[iomesh] " + ev.Text))
 	}
 }
 
@@ -392,7 +469,6 @@ func (m *fullscreenModel) appendStream(s string) {
 		m.streamOpen = true
 		return
 	}
-	// Append to last line; split on newlines.
 	last := len(m.lines) - 1
 	parts := strings.Split(s, "\n")
 	m.lines[last] += parts[0]
@@ -430,31 +506,31 @@ func (m *fullscreenModel) View() string {
 }
 
 func (m *fullscreenModel) renderHeader() string {
-	left := styleTitle.Render("iomesh") + " " + styleDim.Render(displayModel(m.rt.Router()))
-	right := styleStatus.Render(m.status)
+	left := m.theme.Title.Render("iomesh") + " " + m.theme.Dim.Render(displayModel(m.rt.Router())+" · "+m.theme.Name)
+	right := m.theme.Status.Render(m.status)
 	if m.lastCost != "" && !m.busy {
-		right = styleDim.Render(m.lastCost) + "  " + right
+		right = m.theme.Dim.Render(m.lastCost) + "  " + right
 	}
 	gap := m.width - lipgloss.Width(left) - lipgloss.Width(right)
 	if gap < 1 {
 		gap = 1
 	}
 	line := left + strings.Repeat(" ", gap) + right
-	sep := styleDim.Render(strings.Repeat("─", max(1, m.width)))
+	sep := m.theme.Dim.Render(strings.Repeat("─", max(1, m.width)))
 	return line + "\n" + sep
 }
 
 func (m *fullscreenModel) renderFooter() string {
-	sep := styleDim.Render(strings.Repeat("─", max(1, m.width)))
+	sep := m.theme.Dim.Render(strings.Repeat("─", max(1, m.width)))
 	if m.approval != nil {
-		hint := styleApprove.Render(" APPROVE ") + styleHelp.Render(" y=once  n=deny  a=always  ·  tool "+m.approval.tool)
-		return sep + "\n" + hint + "\n" + styleDim.Render("keyboard focus: approval")
+		hint := m.theme.Approve.Render(" APPROVE ") + m.theme.Help.Render(" y=once  n=deny  a=always  ·  tool "+m.approval.tool)
+		return sep + "\n" + hint + "\n" + m.theme.Dim.Render("keyboard focus: approval")
 	}
 	ws := ""
 	if m.rt != nil {
 		ws = truncate(m.rt.Workspace().Root(), 40)
 	}
-	meta := styleDim.Render(fmt.Sprintf("%s  ·  %s", ws, m.status))
+	meta := m.theme.Dim.Render(fmt.Sprintf("%s  ·  %s  ·  enter send · ctrl+j ⏎", ws, m.status))
 	return sep + "\n" + m.input.View() + "\n" + meta
 }
 

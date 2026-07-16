@@ -92,6 +92,8 @@ type UISection struct {
 	SimpleMode   bool   `toml:"simple_mode"`
 	ScreenMode   string `toml:"screen_mode"`
 	ShowThinking bool   `toml:"show_thinking_blocks"`
+	// Theme: default | mono | high-contrast | dim
+	Theme string `toml:"theme"`
 }
 
 // FeaturesSection holds feature flags.
@@ -163,6 +165,7 @@ func Default() *Config {
 			SimpleMode:   true,
 			ScreenMode:   "fullscreen",
 			ShowThinking: true,
+			Theme:        "default",
 		},
 		Features: FeaturesSection{
 			Subagents:     true,

@@ -2,7 +2,7 @@
 
 **I/O Mesh TUI** — a Go rewrite of [xAI Grok Build](https://github.com/xai-org/grok-build) with tighter **I/O Mesh** platform integration and a **DeepSeek-first** LLM cascade for price-performance.
 
-> Status: **foundation** (router, agent, subagents, full-screen TUI, permissions, ACP stdio+WS, skills, MCP stdio+HTTP, **mesh dogfood**). TUI polish and MCP resources/OAuth are next. Hardened for open-source readiness (path jail, secret scrubbing, CI).
+> Status: **foundation** (router, agent, subagents, full-screen TUI with **multi-line + themes**, permissions, ACP, skills, MCP, mesh dogfood). MCP resources/OAuth and deeper mesh are next. Hardened for open-source readiness (path jail, secret scrubbing, CI).
 
 ## Why this rewrite
 
