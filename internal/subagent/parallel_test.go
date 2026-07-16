@@ -158,15 +158,3 @@ func TestGetMany(t *testing.T) {
 		t.Fatalf("%+v", got)
 	}
 }
-
-func TestDefaultMaxConcurrentIsSixteen(t *testing.T) {
-	m := NewManager(Config{Enabled: true, Workspace: t.TempDir()}, func(ctx context.Context, sp SpawnParams) (Runner, error) {
-		return &fakeRunner{summary: "ok"}, nil
-	}, nil)
-	if m.MaxConcurrent() != DefaultMaxConcurrent || DefaultMaxConcurrent != 16 {
-		t.Fatalf("max=%d", m.MaxConcurrent())
-	}
-	if m.MaxBatch() != DefaultMaxBatch {
-		t.Fatalf("batch=%d", m.MaxBatch())
-	}
-}

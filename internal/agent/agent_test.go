@@ -121,19 +121,19 @@ func TestRuntime_SubagentsRegisterTools(t *testing.T) {
 	}
 	for _, need := range []string{
 		"spawn_subagent", "spawn_subagents", "get_subagent_output", "wait_subagents",
-		"apply_worktree", "diff_worktree", "list_worktrees", "remove_worktree",
+		"apply_worktree", "apply_worktrees", "diff_worktree", "list_worktrees", "remove_worktree",
 	} {
 		if !names[need] {
 			t.Fatalf("missing tool %s in %v", need, names)
 		}
 	}
-	if !rt.tools.IsMutating("apply_worktree") || !rt.tools.IsMutating("remove_worktree") {
+	if !rt.tools.IsMutating("apply_worktree") || !rt.tools.IsMutating("apply_worktrees") || !rt.tools.IsMutating("remove_worktree") {
 		t.Fatal("apply/remove should be mutating")
 	}
 	if rt.tools.IsMutating("diff_worktree") {
 		t.Fatal("diff should not mutate")
 	}
-	if rt.Subagents().MaxConcurrent() != 16 {
+	if rt.Subagents().MaxConcurrent() != 32 {
 		t.Fatalf("default max concurrent=%d", rt.Subagents().MaxConcurrent())
 	}
 }

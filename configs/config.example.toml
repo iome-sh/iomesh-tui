@@ -72,8 +72,8 @@ codebase_indexing = true
 
 [subagents]
 enabled = true
-max_concurrent = 16   # parallel running children (semaphore)
-max_batch = 32        # max tasks per spawn_subagents call
+max_concurrent = 32   # parallel running children (semaphore; hard cap 128)
+max_batch = 64        # max tasks per spawn_subagents call (hard cap 256)
 max_depth = 2
 # worktree_base = ".iomesh/worktrees"  # isolation=worktree paths
 # worktree_auto_remove = false         # keep worktrees after success for inspection

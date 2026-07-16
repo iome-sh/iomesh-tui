@@ -21,6 +21,7 @@ type ApplyResult struct {
 	Skipped      []string `json:"skipped,omitempty"`   // refused or empty
 	Removed      bool     `json:"removed"`             // worktree removed after apply
 	DiffStat     string   `json:"diff_stat,omitempty"` // pre-apply shortstat when available
+	Error        string   `json:"error,omitempty"`     // set by ApplyMany on per-item failure
 }
 
 // WorktreeInfo is a listed isolation worktree directory.
