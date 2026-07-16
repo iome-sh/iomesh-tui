@@ -1,6 +1,13 @@
-# MCP client (stdio)
+# MCP client
 
-Minimal [Model Context Protocol](https://modelcontextprotocol.io) client over **stdio JSON-RPC**.
+Minimal [Model Context Protocol](https://modelcontextprotocol.io) client supporting:
+
+| Transport | Config | Notes |
+|-----------|--------|--------|
+| **stdio** | `command` + `args` | Local process; scrubbed env + explicit `env` |
+| **Streamable HTTP** | `url` (+ optional `headers`) | POST JSON-RPC; `application/json` or `text/event-stream` (SSE) responses |
+
+If both `url` and `command` are set, **URL wins**.
 
 ## Supported methods
 
@@ -8,7 +15,7 @@ Minimal [Model Context Protocol](https://modelcontextprotocol.io) client over **
 - `tools/list`
 - `tools/call`
 
-HTTP/SSE transports are not implemented yet.
+Session header `Mcp-Session-Id` is stored and sent on subsequent HTTP requests; `DELETE` on close is best-effort.
 
 ## Configuration
 
@@ -16,18 +23,25 @@ HTTP/SSE transports are not implemented yet.
 [mcp]
 enabled = true
 
+# Stdio
 [[mcp.servers]]
 name = "everything"
 command = "npx"
 args = ["-y", "@modelcontextprotocol/server-everything"]
-# mutating = true   # default: tools require approval
+# mutating = true
 # env = { "FOO" = "bar" }
-# startup_timeout_sec = 30
-# tool_timeout_sec = 120
+
+# Streamable HTTP
+[[mcp.servers]]
+name = "remote"
+url = "https://mcp.example.com/mcp"
+# headers = { "Authorization" = "Bearer …" }
+# allow_loopback = true
+# mutating = false
 ```
 
-- **Fail-open**: a single server that fails to start is skipped; others still connect.
-- **Env**: child process starts from scrubbed env + explicit `env` map only (no ambient API keys).
+- **Fail-open**: a single server that fails to connect is skipped; others still connect.
+- **HTTP URL policy**: `http`/`https` only via `security.ValidateHTTPURL` (loopback allowed by default).
 - **Output**: tool results redacted and truncated (default 20_000 bytes).
 
 ## Agent tool names
@@ -36,18 +50,18 @@ args = ["-y", "@modelcontextprotocol/server-everything"]
 mcp__<server>__<tool>
 ```
 
-Example: server `github` tool `create_issue` → `mcp__github__create_issue`.
-
-Servers default to **mutating=true** so tools go through the same y/n/a approval path as `write_file` / `run_shell`. Set `mutating = false` for read-only servers.
+Servers default to **mutating=true** so tools go through y/n/a approval. Set `mutating = false` for read-only servers.
 
 ## CLI
 
 ```bash
-iomesh mcp              # list configured servers
-iomesh mcp --connect    # spawn + tools/list (slow; requires enabled=true)
+iomesh mcp              # list configured servers (shows stdio vs http)
+iomesh mcp --connect    # connect + tools/list (requires enabled=true)
 ```
 
 ## Package
 
-- `internal/mcp` — client, manager, bindings
-- `internal/agent/mcp_tools.go` — registration into the tool registry
+- `internal/mcp/client.go` — stdio client
+- `internal/mcp/http.go` — streamable HTTP + SSE parse
+- `internal/mcp/manager.go` — multi-server, fail-open
+- `internal/agent/mcp_tools.go` — agent registry binding

@@ -85,12 +85,13 @@ max_depth = 2
 enabled = true
 # dirs = ["/path/to/extra/skills"]
 
-# MCP: Model Context Protocol stdio servers (opt-in).
+# MCP: Model Context Protocol servers (opt-in). stdio and/or streamable HTTP.
 # Tools appear as mcp__<server>__<tool>; mutating=true (default) requires approval.
 [mcp]
 enabled = false
 # max_output_bytes = 20000
 
+# Stdio transport:
 # [[mcp.servers]]
 # name = "example"
 # command = "npx"
@@ -100,3 +101,11 @@ enabled = false
 # # mutating = true
 # # startup_timeout_sec = 30
 # # tool_timeout_sec = 120
+
+# Streamable HTTP (JSON or SSE responses); URL takes precedence over command:
+# [[mcp.servers]]
+# name = "remote"
+# url = "https://mcp.example.com/mcp"
+# # headers = { "Authorization" = "Bearer …" }
+# # allow_loopback = true   # permit http://127.0.0.1 for local servers
+# # mutating = true

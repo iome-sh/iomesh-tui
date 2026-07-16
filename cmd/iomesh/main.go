@@ -167,6 +167,9 @@ func run(args []string) int {
 				Command:           s.Command,
 				Args:              s.Args,
 				Env:               s.Env,
+				URL:               s.URL,
+				Headers:           s.Headers,
+				AllowLoopback:     s.AllowLoopback,
 				Enabled:           s.Enabled,
 				Mutating:          s.Mutating,
 				StartupTimeoutSec: s.StartupTimeoutSec,
@@ -341,7 +344,7 @@ func cmdMCP(args []string) int {
 		return 0
 	}
 	fmt.Printf("mcp.enabled=%v features.mcp=%v\n", cfg.MCP.Enabled, cfg.Features.MCP)
-	fmt.Printf("%-16s %-8s %-8s %s\n", "NAME", "ENABLED", "MUTATING", "COMMAND")
+	fmt.Printf("%-16s %-8s %-8s %-6s %s\n", "NAME", "ENABLED", "MUTATING", "MODE", "ENDPOINT")
 	for _, s := range cfg.MCP.Servers {
 		en := true
 		if s.Enabled != nil {
@@ -351,7 +354,11 @@ func cmdMCP(args []string) int {
 		if s.Mutating != nil {
 			mut = *s.Mutating
 		}
-		fmt.Printf("%-16s %-8v %-8v %s %s\n", s.Name, en, mut, s.Command, strings.Join(s.Args, " "))
+		mode, ep := "stdio", s.Command+" "+strings.Join(s.Args, " ")
+		if s.URL != "" {
+			mode, ep = "http", s.URL
+		}
+		fmt.Printf("%-16s %-8v %-8v %-6s %s\n", s.Name, en, mut, mode, strings.TrimSpace(ep))
 	}
 	if !*connect || !cfg.MCP.Enabled {
 		if !*connect {
@@ -363,6 +370,7 @@ func cmdMCP(args []string) int {
 	for _, s := range cfg.MCP.Servers {
 		servers = append(servers, mcp.ServerConfig{
 			Name: s.Name, Command: s.Command, Args: s.Args, Env: s.Env,
+			URL: s.URL, Headers: s.Headers, AllowLoopback: s.AllowLoopback,
 			Enabled: s.Enabled, Mutating: s.Mutating,
 			StartupTimeoutSec: s.StartupTimeoutSec, ToolTimeoutSec: s.ToolTimeoutSec,
 		})
