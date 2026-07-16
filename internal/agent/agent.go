@@ -164,7 +164,7 @@ func (rt *Runtime) AttachMeshTools() {
 		return
 	}
 	rt.tools.RegisterMeshTools(rt.mesh)
-	rt.appendSystemNote("iomesh-tools", "I/O Mesh tools: list_mesh_catalog (data products), mesh_status (flags + local usage). Fail-open when catalog unavailable.")
+	rt.appendSystemNote("iomesh-tools", "I/O Mesh tools: list_mesh_catalog, get_mesh_catalog_product, mesh_status. Catalog tries broker then portal federation. Fail-open when unavailable.")
 }
 
 // AttachSkills registers list/read skill tools and appends a catalog block to the system prompt.

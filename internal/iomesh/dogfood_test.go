@@ -83,6 +83,10 @@ func TestDogfood_FullPass(t *testing.T) {
 	if !strings.Contains(out, "health") || !strings.Contains(out, "context") {
 		t.Fatal(out)
 	}
+	js := FormatReportJSON(rep)
+	if !strings.Contains(js, `"result": "PASS"`) || !strings.Contains(js, `"ok": true`) {
+		t.Fatal(js)
+	}
 }
 
 func TestDogfood_HealthFail(t *testing.T) {

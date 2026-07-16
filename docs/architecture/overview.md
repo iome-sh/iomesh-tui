@@ -94,4 +94,5 @@ CLI / TUI / ACP
 13. ~~MCP resources/prompts + OAuth helpers~~ **done** — see [mcp.md](mcp.md)
 14. ~~Deeper I/O Mesh: lineage-aware context, Rego policy gates, local metering~~ **done** — see [mesh-deeper.md](mesh-deeper.md)
 15. ~~Mesh catalog composition + TUI cost/mesh slash cmds~~ **done** — see [mesh-deeper.md](mesh-deeper.md)
-16. Optional: remote multi-tenant metering dashboards / portal catalog federation
+16. ~~Portal catalog federation + dogfood JSON~~ **done** — see [mesh-deeper.md](mesh-deeper.md)
+17. Optional: remote multi-tenant metering dashboards / goreleaser binaries

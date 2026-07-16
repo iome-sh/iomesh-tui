@@ -68,18 +68,27 @@ Env: `IOMESH_INCLUDE_LINEAGE`, `IOMESH_POLICY_MODE`.
 
 `iomesh mesh dogfood` adds a **policy** step when mode ≠ off (SKIP on 404/fail-open unless `--strict`).
 
-## Catalog composition
+## Catalog composition + portal federation
 
-When `catalog_plane = true` (default):
+When `catalog_plane = true` (default), discovery tries **broker then portal** (aion control plane):
+
+| Order | Path | Source label |
+|------|------|--------------|
+| 1 | `GET /v1/catalog/data-products` | `mesh` |
+| 2 | `GET /v1/catalog/products` | `mesh` |
+| 3 | `GET /v17/portal/catalog/data-products` | `portal` |
+| 4 | `GET /v16/portal/catalog/marketing/data-products` | `portal` |
+
+Portal JSON fields (`mesh_layer`, `subject_pattern`, `sample_subjects`, `summary`) normalize into the shared product shape.
 
 | Surface | Behaviour |
 |---------|-----------|
-| `GET /v1/catalog/data-products` (fallback `/v1/catalog/products`) | Fail-open list of data products |
-| CLI `iomesh mesh catalog [--query q]` | Operator table |
+| CLI `iomesh mesh catalog [--query q]` | Operator table (`source=mesh\|portal`) |
 | TUI `/catalog [query]` | Same |
-| Agent tools `list_mesh_catalog` / `mesh_status` | Read-only |
+| Agent `list_mesh_catalog` / `get_mesh_catalog_product` / `mesh_status` | Read-only |
 | `inject_catalog = true` | Per-turn `<iomesh-catalog>` system block (opt-in) |
-| Dogfood **catalog** step | PASS when mesh returns products; soft-skip on 404 |
+| Dogfood **catalog** step | PASS for mesh **or** portal; soft-skip on 404 |
+| Dogfood `--json` | Machine-readable report for stage CI |
 
 ## Packages
 
