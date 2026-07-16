@@ -20,7 +20,8 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 |-------|--------|------|
 | **0** | **this doc + config** | Attach `aion-memory-mcp` via existing MCP client; documented example |
 | **1** | **this PR** | `[memory]` auto-recall inject, opt-in auto-ingest, `/memory` slash |
-| **2+** | planned | Depends on platform M1 (HTTP MCP) + M2 (sync retrieve API) for remote stage; dual-write emit; v0.3.0 |
+| **2** | ready when platform M1 live | Prefer `[[mcp.servers]]` **url** = `http://host:8080/mcp` (aion-memory-mcp `-http-addr`) |
+| **2+** | planned | Dual-write emit + v0.3.0; depends on M2 sync retrieve for pure SDK paths |
 
 **Non-goals:** private monorepo imports in public TUI; embedding Qdrant/Palace in-process.
 
@@ -130,3 +131,34 @@ Phase 0–1 work on **stdio** without M1–M2.
 - Local Palace via stdio ≠ multi-tenant Cloud Run Memory Palace.
 - “Native Vertex” / G4S claims are separate (see marketing claim matrix); memory is **Palace + MCP**, not Vertex.
 - Do not claim temporal pipeline is live unless stage/prod embedding + temporal flags are on.
+
+
+## Remote HTTP (platform M1 / s227)
+
+`aion-memory-mcp` can serve **streamable HTTP** instead of stdio:
+
+```bash
+aion-memory-mcp -http-addr :8080 -palace-root /data/memory-palaces
+# MCP endpoint: http://127.0.0.1:8080/mcp
+# health:       http://127.0.0.1:8080/healthz
+```
+
+TUI config:
+
+```toml
+[mcp]
+enabled = true
+
+[[mcp.servers]]
+name = "memory"
+url = "http://127.0.0.1:8080/mcp"
+allow_loopback = true
+mutating = true
+
+[memory]
+enabled = true
+server = "memory"
+auto_recall = true
+```
+
+Env: `MEMORY_MCP_HTTP_ADDR` / `AION_MEMORY_MCP_HTTP_ADDR`, path `MEMORY_MCP_HTTP_PATH` (default `/mcp`).
