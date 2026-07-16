@@ -68,9 +68,23 @@ Env: `IOMESH_INCLUDE_LINEAGE`, `IOMESH_POLICY_MODE`.
 
 `iomesh mesh dogfood` adds a **policy** step when mode ≠ off (SKIP on 404/fail-open unless `--strict`).
 
+## Catalog composition
+
+When `catalog_plane = true` (default):
+
+| Surface | Behaviour |
+|---------|-----------|
+| `GET /v1/catalog/data-products` (fallback `/v1/catalog/products`) | Fail-open list of data products |
+| CLI `iomesh mesh catalog [--query q]` | Operator table |
+| TUI `/catalog [query]` | Same |
+| Agent tools `list_mesh_catalog` / `mesh_status` | Read-only |
+| `inject_catalog = true` | Per-turn `<iomesh-catalog>` system block (opt-in) |
+| Dogfood **catalog** step | PASS when mesh returns products; soft-skip on 404 |
+
 ## Packages
 
 - `internal/iomesh/client.go` — QueryContext, lineage format, meter hook
 - `internal/iomesh/policy.go` — EvaluatePolicy
 - `internal/iomesh/meter.go` — UsageMeter / FormatUsage
-- `internal/agent` — policy before tool execute; `EventMeshPolicy`
+- `internal/iomesh/catalog.go` — ListCatalog / FormatCatalog / CatalogSnippet
+- `internal/agent` — policy before tool execute; mesh catalog tools; `EventMeshPolicy`

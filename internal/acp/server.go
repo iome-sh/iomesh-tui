@@ -392,6 +392,8 @@ func (s *Server) newRuntime(cwd string) (*agent.Runtime, *session.Store, error) 
 		ContextPlane:    cfg.IOMesh.ContextPlane,
 		IncludeLineage:  cfg.IOMesh.IncludeLineage,
 		PolicyMode:      iomesh.PolicyMode(cfg.IOMesh.PolicyMode),
+		CatalogPlane:    cfg.IOMesh.CatalogPlane,
+		InjectCatalog:   cfg.IOMesh.InjectCatalog,
 	}, s.logger)
 	if mesh.Enabled() {
 		metrics = mesh
@@ -420,6 +422,7 @@ func (s *Server) newRuntime(cwd string) (*agent.Runtime, *session.Store, error) 
 	if err != nil {
 		return nil, nil, err
 	}
+	rt.AttachMeshTools()
 	store, err := session.Open(abs)
 	if err != nil {
 		return nil, nil, err

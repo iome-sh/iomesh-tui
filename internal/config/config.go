@@ -89,6 +89,10 @@ type IOMeshSection struct {
 	IncludeLineage bool `toml:"include_lineage"`
 	// PolicyMode: off | advisory | enforce (remote Rego/OPA evaluate; fail-open on transport).
 	PolicyMode string `toml:"policy_mode"`
+	// CatalogPlane enables catalog data-product discovery (list_mesh_catalog, mesh catalog CLI).
+	CatalogPlane bool `toml:"catalog_plane"`
+	// InjectCatalog injects a short catalog snippet each agent turn (fail-open).
+	InjectCatalog bool `toml:"inject_catalog"`
 }
 
 // UISection is reserved for TUI preferences.
@@ -180,6 +184,8 @@ func Default() *Config {
 			ContextPlane:    true,
 			IncludeLineage:  true,
 			PolicyMode:      "off",
+			CatalogPlane:    true,
+			InjectCatalog:   false, // opt-in: use list_mesh_catalog or set true
 		},
 		UI: UISection{
 			SimpleMode:   true,
@@ -383,6 +389,22 @@ func (c *Config) applyEnvOverrides() {
 			c.IOMesh.IncludeLineage = false
 		case "1", "true", "on", "yes":
 			c.IOMesh.IncludeLineage = true
+		}
+	}
+	if v := os.Getenv("IOMESH_CATALOG_PLANE"); v != "" {
+		switch strings.ToLower(v) {
+		case "0", "false", "off", "no":
+			c.IOMesh.CatalogPlane = false
+		case "1", "true", "on", "yes":
+			c.IOMesh.CatalogPlane = true
+		}
+	}
+	if v := os.Getenv("IOMESH_INJECT_CATALOG"); v != "" {
+		switch strings.ToLower(v) {
+		case "0", "false", "off", "no":
+			c.IOMesh.InjectCatalog = false
+		case "1", "true", "on", "yes":
+			c.IOMesh.InjectCatalog = true
 		}
 	}
 	if strings.EqualFold(os.Getenv("IOMESH_YOLO"), "1") || strings.EqualFold(os.Getenv("IOMESH_YOLO"), "true") {
