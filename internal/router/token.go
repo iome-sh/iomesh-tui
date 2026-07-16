@@ -22,9 +22,9 @@ import (
 const defaultVertexTokenTTL = 50 * time.Minute
 
 var (
-	vertexTokMu   sync.Mutex
-	vertexTok     string
-	vertexTokExp  time.Time
+	vertexTokMu  sync.Mutex
+	vertexTok    string
+	vertexTokExp time.Time
 	// gcloudTokenRunner is swappable for tests.
 	gcloudTokenRunner = runGcloudPrintAccessToken
 )
