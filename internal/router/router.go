@@ -108,12 +108,24 @@ func New(models []ModelConfig, defaultModel string, opts ...Option) (*Router, er
 		if m.ModelID == "" {
 			return nil, fmt.Errorf("router: model %q missing model_id", m.Name)
 		}
+		// Validate URL shape. Vertex templates may contain ${GOOGLE_CLOUD_PROJECT};
+		// full expansion is enforced at request time in HTTPClient.newRequest.
+		validateURL := m.BaseURL
+		if strings.Contains(validateURL, "${") || strings.Contains(validateURL, "$") {
+			// Expand for validation when env is set; otherwise use a dummy project so
+			// host/scheme checks still run without requiring GCP env at catalog load.
+			validateURL = expandEnvPlaceholders(validateURL)
+			if strings.Contains(validateURL, "${GOOGLE_CLOUD_PROJECT}") || strings.Contains(validateURL, "$GOOGLE_CLOUD_PROJECT") {
+				validateURL = strings.ReplaceAll(validateURL, "${GOOGLE_CLOUD_PROJECT}", "validation-project")
+				validateURL = strings.ReplaceAll(validateURL, "$GOOGLE_CLOUD_PROJECT", "validation-project")
+			}
+		}
 		// Allow loopback so local OpenAI-compatible servers and tests work.
 		// file:// and non-http schemes are always rejected.
-		if err := security.ValidateHTTPURL(m.BaseURL, true); err != nil {
+		if err := security.ValidateHTTPURL(validateURL, true); err != nil {
 			return nil, fmt.Errorf("router: model %q base_url: %w", m.Name, err)
 		}
-		// Strip any accidental userinfo (user:pass@host) from base URL.
+		// Strip any accidental userinfo (user:pass@host) from base URL template.
 		if cleaned, err := stripURLUserinfo(m.BaseURL); err == nil {
 			m.BaseURL = cleaned
 		}
@@ -575,6 +587,11 @@ func stripURLUserinfo(raw string) (string, error) {
 	u, err := url.Parse(raw)
 	if err != nil {
 		return raw, err
+	}
+	// Preserve raw when no userinfo — url.String() percent-encodes `$`/`{}` and
+	// breaks ${GOOGLE_CLOUD_PROJECT} templates used by Vertex OpenAI base URLs.
+	if u.User == nil {
+		return raw, nil
 	}
 	u.User = nil
 	return u.String(), nil

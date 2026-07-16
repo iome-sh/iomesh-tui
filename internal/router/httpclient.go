@@ -109,7 +109,19 @@ func (c *HTTPClient) ChatCompletionStream(ctx context.Context, req ChatRequest, 
 }
 
 func (c *HTTPClient) newRequest(ctx context.Context, body []byte) (*http.Request, error) {
-	url := strings.TrimRight(c.cfg.BaseURL, "/") + "/chat/completions"
+	base := c.cfg.ResolvedBaseURL()
+	if base == "" {
+		return nil, fmt.Errorf("empty base_url")
+	}
+	// Reject missing GCP project (unexpanded ${…} or expanded-empty path segment).
+	if strings.Contains(base, "${GOOGLE_CLOUD_PROJECT}") || strings.Contains(base, "$GOOGLE_CLOUD_PROJECT") ||
+		strings.Contains(base, "projects//locations") {
+		return nil, fmt.Errorf("base_url missing GOOGLE_CLOUD_PROJECT — set GOOGLE_CLOUD_PROJECT for Vertex models")
+	}
+	if err := security.ValidateHTTPURL(base, true); err != nil {
+		return nil, fmt.Errorf("base_url: %w", err)
+	}
+	url := strings.TrimRight(base, "/") + "/chat/completions"
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("new request: %w", err)
@@ -120,7 +132,7 @@ func (c *HTTPClient) newRequest(ctx context.Context, body []byte) (*http.Request
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 	for k, v := range c.cfg.ExtraHeaders {
-		httpReq.Header.Set(k, v)
+		httpReq.Header.Set(k, expandEnvPlaceholders(v))
 	}
 	return httpReq, nil
 }

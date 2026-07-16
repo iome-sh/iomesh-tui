@@ -23,10 +23,18 @@ cd iomesh-tui
 export DEEPSEEK_API_KEY=sk-...
 # optional premium fallback:
 # export XAI_API_KEY=...
+# optional Google Gemini (AI Studio OpenAI-compat):
+# export GEMINI_API_KEY=...
+# optional Vertex AI Gemini (GCP access token + project):
+# export GOOGLE_CLOUD_PROJECT=iomesh-stage-001
+# export VERTEX_API_KEY=$(gcloud auth print-access-token)
 
 make build
 ./bin/iomesh models
 ./bin/iomesh -p "List the top-level packages in this repo"
+# pin Gemini / Vertex:
+# ./bin/iomesh -m gemini-2.5-flash -p "Reply with ok"
+# ./bin/iomesh -m vertex-gemini-2.5-flash -p "Reply with ok"
 ./bin/iomesh -c       # continue latest session (transcript + subagents)
 ./bin/iomesh sessions
 ./bin/iomesh          # full-screen TUI (Bubble Tea)
@@ -47,10 +55,17 @@ deepseek-v4-flash  →  deepseek-v4-pro  →  grok-4.5
      (routine)            (plan)          (high-stakes / fallback)
 ```
 
+**Optional Google runtimes** (not in default cascade — pin explicitly):
+
+| Logical name | Backend | Auth |
+|--------------|---------|------|
+| `gemini-2.5-flash` / `gemini-2.5-pro` | Gemini API (AI Studio) OpenAI-compat | `GEMINI_API_KEY` |
+| `vertex-gemini-2.5-flash` / `vertex-gemini-2.5-pro` | Vertex AI OpenAI-compat | `GOOGLE_CLOUD_PROJECT` + `VERTEX_API_KEY` (access token) |
+
 - Heuristic routing by task complexity and context size  
 - Automatic fallback on rate limits / 5xx / network errors  
 - Cost estimates (including cache hits) logged per call  
-- Override: `iomesh -m deepseek-v4-pro` or `/model grok-4.5` in the REPL  
+- Override: `iomesh -m deepseek-v4-pro` or `/model gemini-2.5-flash` in the REPL  
 
 See [docs/architecture/llm-cascade.md](docs/architecture/llm-cascade.md).
 
