@@ -160,11 +160,11 @@ type MCPSection struct {
 // MCP path: connected [[mcp.servers]] entry (stdio or HTTP aion-memory-mcp).
 // DualWrite: optional async publish to mesh MEMORY_INGEST (no SDK dep).
 type MemorySection struct {
-	Enabled         bool   `toml:"enabled"`
-	Server          string `toml:"server"` // MCP server name; default "memory"
-	Tenant          string `toml:"tenant"`
-	AutoRecall      bool   `toml:"auto_recall"`
-	AutoIngest      bool   `toml:"auto_ingest"`
+	Enabled    bool   `toml:"enabled"`
+	Server     string `toml:"server"` // MCP server name; default "memory"
+	Tenant     string `toml:"tenant"`
+	AutoRecall bool   `toml:"auto_recall"`
+	AutoIngest bool   `toml:"auto_ingest"`
 	// DualWrite also emits memory_ingest envelopes to MEMORY_INGEST when mesh is enabled.
 	DualWrite       bool `toml:"dual_write"`
 	Limit           int  `toml:"limit"`

@@ -15,11 +15,11 @@ import (
 // Does not embed Palace — only calls MCP tools on a connected server.
 // Optional DualWrite also publishes async MEMORY_INGEST envelopes to the mesh.
 type MemoryConfig struct {
-	Enabled         bool
-	Server          string // MCP server name (default "memory")
-	Tenant          string
-	AutoRecall      bool
-	AutoIngest      bool
+	Enabled    bool
+	Server     string // MCP server name (default "memory")
+	Tenant     string
+	AutoRecall bool
+	AutoIngest bool
 	// DualWrite publishes memory_ingest to mesh MEMORY_INGEST when mesh client is enabled (fail-open).
 	DualWrite       bool
 	Limit           int // retrieve limit (default 8)
