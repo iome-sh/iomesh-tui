@@ -4,9 +4,10 @@
 
 | Version | Supported |
 |---------|-----------|
-| `v0.1.x` (latest minor on `main`) | ✅ security fixes |
+| `v0.2.x` (latest minor on `main`) | ✅ security fixes |
+| `v0.1.x` | best-effort until EOL notice |
 | `main` (unreleased) | ✅ development tip |
-| older 0.x tags | best-effort until EOL notice |
+| older 0.x tags | best-effort |
 
 ## Reporting a vulnerability
 
