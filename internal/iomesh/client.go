@@ -44,6 +44,10 @@ type Config struct {
 	IncludeLineage bool
 	// PolicyMode: off | advisory | enforce (default off).
 	PolicyMode PolicyMode
+	// CatalogPlane enables GET catalog data-product discovery (fail-open).
+	CatalogPlane bool
+	// InjectCatalog adds a short catalog snippet into agent turns when true.
+	InjectCatalog bool
 }
 
 // Client talks to I/O Mesh control/data planes (OpenHTTP, fail-open).
@@ -327,6 +331,51 @@ func (c *Client) PolicyMode() PolicyMode {
 		return PolicyOff
 	}
 	return c.cfg.PolicyMode
+}
+
+// CatalogEnabled reports whether catalog discovery is configured.
+func (c *Client) CatalogEnabled() bool {
+	return c != nil && c.Enabled() && c.cfg.CatalogPlane
+}
+
+// InjectCatalog reports whether agent turns should inject a catalog snippet.
+func (c *Client) InjectCatalog() bool {
+	return c != nil && c.CatalogEnabled() && c.cfg.InjectCatalog
+}
+
+// Endpoint returns the configured mesh endpoint (may be empty).
+func (c *Client) Endpoint() string {
+	if c == nil {
+		return ""
+	}
+	return c.cfg.Endpoint
+}
+
+// Tenant returns the configured tenant (may be empty).
+func (c *Client) Tenant() string {
+	if c == nil {
+		return ""
+	}
+	return c.cfg.Tenant
+}
+
+// StatusLine is a one-line operator summary for TUI /mesh.
+func (c *Client) StatusLine() string {
+	if c == nil || !c.Enabled() {
+		return "mesh: disabled (offline-first)"
+	}
+	parts := []string{"mesh: enabled", "endpoint=" + c.cfg.Endpoint}
+	if c.cfg.Tenant != "" {
+		parts = append(parts, "tenant="+c.cfg.Tenant)
+	}
+	parts = append(parts,
+		fmt.Sprintf("context=%v", c.cfg.ContextPlane),
+		fmt.Sprintf("lineage=%v", c.cfg.IncludeLineage),
+		fmt.Sprintf("catalog=%v", c.cfg.CatalogPlane),
+		fmt.Sprintf("policy=%s", c.cfg.PolicyMode),
+		fmt.Sprintf("emit=%v", c.cfg.EmitDeptStreams),
+	)
+	return strings.Join(parts, " · ")
 }
 
 func (c *Client) auth(req *http.Request) {

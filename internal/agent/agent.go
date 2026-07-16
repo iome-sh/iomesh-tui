@@ -147,6 +147,26 @@ func (rt *Runtime) Skills() *skills.Catalog { return rt.skills }
 // MCP returns the MCP manager (may be nil).
 func (rt *Runtime) MCP() *mcp.Manager { return rt.mcp }
 
+// Mesh returns the I/O Mesh client (may be nil or disabled).
+func (rt *Runtime) Mesh() *iomesh.Client { return rt.mesh }
+
+// MeshUsage returns the process-local LLM usage snapshot (empty if no mesh client).
+func (rt *Runtime) MeshUsage() iomesh.UsageSnapshot {
+	if rt == nil || rt.mesh == nil {
+		return iomesh.UsageSnapshot{}
+	}
+	return rt.mesh.Usage()
+}
+
+// AttachMeshTools registers list_mesh_catalog / mesh_status when catalog plane is enabled.
+func (rt *Runtime) AttachMeshTools() {
+	if rt == nil || rt.mesh == nil || !rt.mesh.CatalogEnabled() {
+		return
+	}
+	rt.tools.RegisterMeshTools(rt.mesh)
+	rt.appendSystemNote("iomesh-tools", "I/O Mesh tools: list_mesh_catalog (data products), mesh_status (flags + local usage). Fail-open when catalog unavailable.")
+}
+
 // AttachSkills registers list/read skill tools and appends a catalog block to the system prompt.
 func (rt *Runtime) AttachSkills(cat *skills.Catalog) {
 	if rt == nil || cat == nil || cat.Len() == 0 {
@@ -212,7 +232,7 @@ func (rt *Runtime) RunTurn(ctx context.Context, userText string, onEvent func(Ev
 		onEvent = func(Event) {}
 	}
 
-	// Optional I/O Mesh context plane injection (fail-open).
+	// Optional I/O Mesh context plane + catalog composition (fail-open).
 	if rt.mesh != nil {
 		if snippet := rt.mesh.ContextSnippet(ctx, rt.ws.Root(), userText); snippet != "" {
 			rt.messages = append(rt.messages, router.Message{
@@ -220,6 +240,16 @@ func (rt *Runtime) RunTurn(ctx context.Context, userText string, onEvent func(Ev
 				Content: "<iomesh-context>\n" + snippet + "\n</iomesh-context>",
 			})
 			onEvent(Event{Type: EventMeshContext, Text: "injected I/O Mesh context"})
+		}
+		if rt.mesh.InjectCatalog() {
+			cat := rt.mesh.ListCatalog(ctx, userText)
+			if block := iomesh.CatalogSnippet(cat, 12); block != "" {
+				rt.messages = append(rt.messages, router.Message{
+					Role:    "system",
+					Content: "<iomesh-catalog>\n" + block + "\n</iomesh-catalog>",
+				})
+				onEvent(Event{Type: EventMeshContext, Text: fmt.Sprintf("injected I/O Mesh catalog (%d products, source=%s)", len(cat.Products), cat.Source)})
+			}
 		}
 	}
 

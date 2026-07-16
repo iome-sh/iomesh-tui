@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Deeper I/O Mesh: lineage-aware context plane (`include_lineage`), remote policy evaluate (`policy_mode` advisory|enforce, fail-open), local LLM usage meter + `iomesh mesh usage` / headless stderr rollup
 - Dogfood policy step; docs: [docs/architecture/mesh-deeper.md](docs/architecture/mesh-deeper.md)
+- Mesh **catalog plane**: `list_mesh_catalog` / `mesh_status` tools, `iomesh mesh catalog`, TUI `/catalog` `/mesh`, optional `inject_catalog`, dogfood catalog step
+- TUI `/cost` shows process usage meter + sample estimate
 
 ### Changed
 

@@ -81,8 +81,10 @@ api_key_env = "IOMESH_API_KEY"
 emit_dept_streams = true
 context_plane = true
 include_lineage = true
+catalog_plane = true
+# inject_catalog = false    # inject short catalog snippet each turn (or use list_mesh_catalog tool)
 # policy_mode = "off"       # off | advisory | enforce (remote /v1/policy/evaluate; fail-open on transport)
-# IOMESH_POLICY_MODE / IOMESH_INCLUDE_LINEAGE env overrides also apply
+# IOMESH_POLICY_MODE / IOMESH_INCLUDE_LINEAGE / IOMESH_CATALOG_PLANE / IOMESH_INJECT_CATALOG
 
 [ui]
 simple_mode = true

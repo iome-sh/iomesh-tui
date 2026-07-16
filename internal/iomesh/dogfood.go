@@ -194,6 +194,27 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		}))
 	}
 
+	// 6) Catalog plane
+	if !c.cfg.CatalogPlane {
+		rep.Steps = append(rep.Steps, Step{Name: "catalog", Status: StepSkip, Detail: "catalog plane disabled"})
+	} else {
+		rep.Steps = append(rep.Steps, c.stepTimed("catalog", func() (StepStatus, string) {
+			res := c.ListCatalog(ctx, "")
+			detail := fmt.Sprintf("source=%s n=%d %s", res.Source, len(res.Products), res.Detail)
+			switch res.Source {
+			case "mesh":
+				return StepPass, detail
+			case "fail-open":
+				if opts.Strict {
+					return StepFail, detail
+				}
+				return StepSkip, detail
+			default:
+				return StepSkip, detail
+			}
+		}))
+	}
+
 	// Aggregate: any FAIL ⇒ not OK; SKIP/PASS ok.
 	rep.OK = true
 	var fails, passes, skips int

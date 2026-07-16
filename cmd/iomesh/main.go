@@ -107,6 +107,8 @@ func run(args []string) int {
 		ContextPlane:    cfg.IOMesh.ContextPlane,
 		IncludeLineage:  cfg.IOMesh.IncludeLineage,
 		PolicyMode:      iomesh.PolicyMode(cfg.IOMesh.PolicyMode),
+		CatalogPlane:    cfg.IOMesh.CatalogPlane,
+		InjectCatalog:   cfg.IOMesh.InjectCatalog,
 	}, logger)
 	if mesh.Enabled() {
 		metrics = mesh
@@ -151,6 +153,9 @@ func run(args []string) int {
 		return 1
 	}
 	defer func() { _ = rt.Close() }()
+
+	// Mesh catalog tools (list_mesh_catalog / mesh_status) when catalog plane on.
+	rt.AttachMeshTools()
 
 	// Skills: workspace + user dirs (+ config extras). Fail-open on load errors.
 	if cfg.Skills.Enabled && cfg.Features.Skills {
@@ -436,7 +441,7 @@ func cmdModels(args []string) int {
 
 func cmdMesh(args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: iomesh mesh dogfood|probe|usage [flags]")
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh dogfood|probe|usage|catalog [flags]")
 		return 2
 	}
 	switch args[0] {
@@ -444,25 +449,79 @@ func cmdMesh(args []string) int {
 		return cmdMeshDogfood(args[1:])
 	case "usage":
 		return cmdMeshUsage(args[1:])
+	case "catalog":
+		return cmdMeshCatalog(args[1:])
 	case "help", "-h", "--help":
 		fmt.Fprintln(os.Stderr, `iomesh mesh — I/O Mesh platform probes
 
-  iomesh mesh dogfood   stage smoke (health → ready → context → emit → policy)
+  iomesh mesh dogfood   stage smoke (health → ready → context → emit → policy → catalog)
   iomesh mesh probe     alias for dogfood
   iomesh mesh usage     local LLM metering rollup for this process
+  iomesh mesh catalog   list governed data products (catalog plane)
 
 Flags (dogfood):
   --config path     config.toml
-  --strict          require context + emit + ready (+ policy when mode on)
+  --strict          require context + emit + ready (+ policy/catalog when on)
   --skip-context    skip context plane
   --skip-emit       skip dept stream emit
   -C dir            workspace for context query
-  -v                verbose`)
+  -v                verbose
+
+Flags (catalog):
+  --query q         optional search filter
+  --endpoint url    override mesh endpoint
+  --tenant id       override tenant`)
 		return 0
 	default:
 		fmt.Fprintf(os.Stderr, "unknown mesh subcommand %q\n", args[0])
 		return 2
 	}
+}
+
+func cmdMeshCatalog(args []string) int {
+	fs := flag.NewFlagSet("mesh catalog", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	var (
+		configPath = fs.String("config", "", "config.toml path")
+		query      = fs.String("query", "", "optional catalog search filter")
+		endpoint   = fs.String("endpoint", "", "override IOMESH_ENDPOINT")
+		tenant     = fs.String("tenant", "", "override tenant")
+		verbose    = fs.Bool("v", false, "verbose logs")
+	)
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	logger := newLogger(*verbose)
+	cfg, err := loadConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "config: %v\n", err)
+		return 1
+	}
+	if *endpoint != "" {
+		cfg.IOMesh.Endpoint = *endpoint
+		cfg.IOMesh.Enabled = true
+	}
+	if *tenant != "" {
+		cfg.IOMesh.Tenant = *tenant
+	}
+	cfg.IOMesh.CatalogPlane = true
+	mesh := iomesh.New(iomesh.Config{
+		Enabled:      cfg.IOMesh.Enabled,
+		Endpoint:     cfg.IOMesh.Endpoint,
+		Tenant:       cfg.IOMesh.Tenant,
+		APIKeyEnv:    cfg.IOMesh.APIKeyEnv,
+		CatalogPlane: true,
+	}, logger)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	res := mesh.ListCatalog(ctx, *query)
+	fmt.Print(iomesh.FormatCatalog(res))
+	if res.Source == "off" {
+		return 1
+	}
+	return 0
 }
 
 func cmdMeshUsage(args []string) int {
@@ -515,6 +574,8 @@ func cmdMeshDogfood(args []string) int {
 		ContextPlane:    cfg.IOMesh.ContextPlane,
 		IncludeLineage:  cfg.IOMesh.IncludeLineage,
 		PolicyMode:      iomesh.PolicyMode(cfg.IOMesh.PolicyMode),
+		CatalogPlane:    cfg.IOMesh.CatalogPlane,
+		InjectCatalog:   cfg.IOMesh.InjectCatalog,
 	}, logger)
 
 	ws := *workspace

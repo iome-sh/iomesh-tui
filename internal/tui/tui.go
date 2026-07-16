@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/iome-sh/iomesh-tui/internal/agent"
+	"github.com/iome-sh/iomesh-tui/internal/iomesh"
 	"github.com/iome-sh/iomesh-tui/internal/router"
 	"github.com/iome-sh/iomesh-tui/internal/session"
 )
@@ -125,7 +126,7 @@ func runREPL(ctx context.Context, rt *agent.Runtime, store *session.Store, in io
 	if sid := rt.SessionID(); sid != "" {
 		fmt.Fprintf(out, "session: %s\n", sid)
 	}
-	fmt.Fprintf(out, "model: %s  |  /model /models /subagents /save /sessions /permissions /cost /quit\n", displayModel(rt.Router()))
+	fmt.Fprintf(out, "model: %s  |  /model /models /subagents /save /sessions /permissions /cost /mesh /catalog /quit\n", displayModel(rt.Router()))
 	fmt.Fprintln(out, "mutating tools (write/shell/apply_worktree/…) prompt for approval unless --yolo")
 
 	for {
@@ -233,10 +234,40 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		if name == "" {
 			name = rt.Router().DefaultModel()
 		}
+		// Session / process actuals (via mesh MetricsSink when enabled).
+		snap := rt.rt.MeshUsage()
+		if snap.Calls > 0 {
+			fmt.Fprint(out, iomesh.FormatUsage(snap))
+		} else {
+			fmt.Fprintln(out, "session usage: (no LLM calls recorded yet in this process)")
+		}
 		est := rt.Router().EstimateCostTokens(name, 100_000, 4_000, 0)
-		fmt.Fprintf(out, "estimate for %s @ 100k in / 4k out: $%.5f\n", name, est.USD)
+		fmt.Fprintf(out, "sample estimate for %s @ 100k in / 4k out: $%.5f\n", name, est.USD)
 		estHit := rt.Router().EstimateCostTokens(name, 100_000, 4_000, 80_000)
-		fmt.Fprintf(out, "with 80%% cache hit: $%.5f\n", estHit.USD)
+		fmt.Fprintf(out, "sample with 80%% cache hit: $%.5f\n", estHit.USD)
+	case "/mesh":
+		m := rt.rt.Mesh()
+		if m == nil {
+			fmt.Fprintln(out, "mesh: no client")
+			return false, nil
+		}
+		fmt.Fprintln(out, m.StatusLine())
+		snap := m.Usage()
+		if snap.Calls > 0 {
+			fmt.Fprint(out, iomesh.FormatUsage(snap))
+		}
+	case "/catalog":
+		m := rt.rt.Mesh()
+		if m == nil || !m.CatalogEnabled() {
+			fmt.Fprintln(out, "catalog: mesh catalog plane disabled (enable [iomesh] catalog_plane + endpoint)")
+			return false, nil
+		}
+		q := ""
+		if len(parts) > 1 {
+			q = strings.Join(parts[1:], " ")
+		}
+		res := m.ListCatalog(context.Background(), q)
+		fmt.Print(iomesh.FormatCatalog(res))
 	case "/subagents", "/sa":
 		mgr := rt.rt.Subagents()
 		if mgr == nil || !mgr.Enabled() {
@@ -342,7 +373,9 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /save [compact]      save session
   /sessions            list saved sessions
   /load <id>           restore session
-  /cost                sample cost estimate
+  /cost                session usage meter + sample estimate
+  /mesh                I/O Mesh status + usage
+  /catalog [query]     list mesh data products (catalog plane)
   /quit                exit
 
 Fullscreen keys: enter send · ctrl+j newline · pgup/pgdn scroll
