@@ -193,6 +193,22 @@ func (m *Manager) Registry() *Registry {
 	return m.reg
 }
 
+// ExportRegistry snapshots subagent records for session persistence.
+func (m *Manager) ExportRegistry() (records []Record, seq uint64) {
+	if m == nil || m.reg == nil {
+		return nil, 0
+	}
+	return m.reg.Export()
+}
+
+// ImportRegistry restores subagent metadata after session load.
+func (m *Manager) ImportRegistry(records []Record, seq uint64) {
+	if m == nil || m.reg == nil {
+		return
+	}
+	m.reg.Import(records, seq)
+}
+
 // Spawn starts a subagent per Spec. Synchronous unless Spec.Background.
 func (m *Manager) Spawn(ctx context.Context, spec Spec) (Result, error) {
 	if m == nil || !m.cfg.Enabled {

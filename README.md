@@ -27,6 +27,8 @@ export DEEPSEEK_API_KEY=sk-...
 make build
 ./bin/iomesh models
 ./bin/iomesh -p "List the top-level packages in this repo"
+./bin/iomesh -c       # continue latest session (transcript + subagents)
+./bin/iomesh sessions
 ./bin/iomesh          # interactive REPL scaffold
 ```
 

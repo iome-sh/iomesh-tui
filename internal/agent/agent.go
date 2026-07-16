@@ -58,8 +58,10 @@ type Runtime struct {
 	tools     ToolRegistry
 	subagents *subagent.Manager
 
-	// Session transcript (minimal for scaffold).
-	messages []router.Message
+	// Session transcript and persistence hooks.
+	messages  []router.Message
+	sessionID string
+	autoSave  bool
 }
 
 // New constructs a Runtime. mesh may be nil.

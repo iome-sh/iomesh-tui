@@ -11,11 +11,13 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/iome-sh/iomesh-tui/internal/agent"
 	"github.com/iome-sh/iomesh-tui/internal/config"
 	"github.com/iome-sh/iomesh-tui/internal/iomesh"
 	"github.com/iome-sh/iomesh-tui/internal/router"
+	"github.com/iome-sh/iomesh-tui/internal/session"
 	"github.com/iome-sh/iomesh-tui/internal/tui"
 )
 
@@ -33,6 +35,8 @@ func run(args []string) int {
 			return 0
 		case "models":
 			return cmdModels(args[1:])
+		case "sessions":
+			return cmdSessions(args[1:])
 		case "agent":
 			return cmdAgent(args[1:])
 		case "help", "-h", "--help":
@@ -44,12 +48,16 @@ func run(args []string) int {
 	fs := flag.NewFlagSet("iomesh", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	var (
-		prompt     = fs.String("p", "", "headless single-prompt mode (print response and exit)")
-		model      = fs.String("m", "", "logical model name override (e.g. deepseek-v4-flash)")
-		configPath = fs.String("config", "", "path to config.toml (default: ~/.iomesh/config.toml)")
-		workspace  = fs.String("C", "", "workspace directory (default: cwd)")
-		yolo       = fs.Bool("yolo", false, "auto-approve mutating tools")
-		verbose    = fs.Bool("v", false, "verbose logging")
+		prompt       = fs.String("p", "", "headless single-prompt mode (print response and exit)")
+		model        = fs.String("m", "", "logical model name override (e.g. deepseek-v4-flash)")
+		configPath   = fs.String("config", "", "path to config.toml (default: ~/.iomesh/config.toml)")
+		workspace    = fs.String("C", "", "workspace directory (default: cwd)")
+		yolo         = fs.Bool("yolo", false, "auto-approve mutating tools")
+		verbose      = fs.Bool("v", false, "verbose logging")
+		continueS    = fs.Bool("c", false, "continue latest session in workspace")
+		continueLong = fs.Bool("continue", false, "alias for -c")
+		sessionID    = fs.String("session", "", "load session id from .iomesh/sessions")
+		noSave       = fs.Bool("no-save", false, "disable session autosave")
 	)
 	// Also accept --prompt long form.
 	promptLong := fs.String("prompt", "", "alias for -p")
@@ -58,6 +66,9 @@ func run(args []string) int {
 	}
 	if *prompt == "" && *promptLong != "" {
 		*prompt = *promptLong
+	}
+	if *continueLong {
+		*continueS = true
 	}
 
 	logger := newLogger(*verbose)
@@ -125,19 +136,96 @@ func run(args []string) int {
 		return 1
 	}
 
+	store, err := session.Open(rt.Workspace().Root())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "session store: %v\n", err)
+		return 1
+	}
+	if !*noSave {
+		rt.EnableAutoSave(true)
+	}
+
+	// Resume session (subagent registry + transcript).
+	if *sessionID != "" || *continueS {
+		var snap *session.Snapshot
+		if *sessionID != "" {
+			snap, err = store.Load(*sessionID)
+		} else {
+			snap, err = store.Latest()
+		}
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "session load: %v\n", err)
+			return 1
+		}
+		if snap == nil {
+			fmt.Fprintln(os.Stderr, "session: no saved sessions in workspace")
+			return 1
+		}
+		if err := rt.LoadSession(snap); err != nil {
+			fmt.Fprintf(os.Stderr, "session restore: %v\n", err)
+			return 1
+		}
+		logger.Info("session resumed", "id", snap.ID, "messages", len(snap.Messages), "subagents", len(snap.Subagents))
+		fmt.Fprintf(os.Stderr, "resumed session %s (%d messages, %d subagents)\n", snap.ID, len(snap.Messages), len(snap.Subagents))
+	}
+
 	// Headless single prompt.
 	if *prompt != "" {
 		if err := rt.RunHeadless(ctx, *prompt, os.Stdout); err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			return 1
 		}
+		if rt.SessionID() == "" || !*noSave {
+			if _, err := rt.SaveSession(store, 0); err != nil {
+				logger.Warn("session save", "err", err)
+			} else {
+				fmt.Fprintf(os.Stderr, "session saved: %s\n", rt.SessionID())
+			}
+		}
 		return 0
 	}
 
-	// Interactive TUI (scaffold).
-	if err := tui.Run(ctx, rt, logger); err != nil {
+	// Interactive TUI (scaffold) with session store for /save and autosave.
+	if err := tui.RunWithStore(ctx, rt, store, logger); err != nil {
 		fmt.Fprintf(os.Stderr, "tui: %v\n", err)
 		return 1
+	}
+	return 0
+}
+
+func cmdSessions(args []string) int {
+	fs := flag.NewFlagSet("sessions", flag.ContinueOnError)
+	workspace := fs.String("C", "", "workspace directory")
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	ws := *workspace
+	if ws == "" {
+		wd, err := os.Getwd()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		ws = wd
+	}
+	st, err := session.Open(ws)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "session: %v\n", err)
+		return 1
+	}
+	list, err := st.List()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "session list: %v\n", err)
+		return 1
+	}
+	if len(list) == 0 {
+		fmt.Println("no sessions")
+		return 0
+	}
+	fmt.Printf("%-28s %5s %5s  %-20s  %s\n", "ID", "MSGS", "SUBS", "UPDATED", "TITLE")
+	for _, s := range list {
+		fmt.Printf("%-28s %5d %5d  %-20s  %s\n",
+			s.ID, s.Messages, s.Subagents, s.UpdatedAt.Format(time.RFC3339), s.Title)
 	}
 	return 0
 }
@@ -210,6 +298,9 @@ func printUsage() {
 Usage:
   iomesh [flags]                 interactive TUI
   iomesh -p "prompt"             headless single prompt
+  iomesh -c                      continue latest session
+  iomesh --session <id>          resume session by id
+  iomesh sessions                list sessions in workspace
   iomesh models                  list configured models
   iomesh agent stdio             ACP server (scaffold)
   iomesh version
@@ -218,6 +309,9 @@ Flags:
   -p, --prompt string   headless prompt
   -m string             model override (logical name)
   -C string             workspace directory
+  -c, --continue        resume latest session
+  --session id          resume specific session id
+  --no-save             disable session autosave
   --config path         config.toml path
   --yolo                auto-approve mutating tools
   -v                    verbose logs
