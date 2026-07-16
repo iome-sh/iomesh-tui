@@ -56,13 +56,18 @@ iomesh -m gemini-2.5-flash -p "Reply with ok"
 
 ```bash
 export GOOGLE_CLOUD_PROJECT=iomesh-stage-001   # required — expanded into base_url
-export VERTEX_LOCATION=us-central1             # built-in URL uses us-central1; override base_url for other regions
-export VERTEX_API_KEY=$(gcloud auth print-access-token)  # ~1h; alias: GOOGLE_OAUTH_ACCESS_TOKEN
+# Auth (pick one):
+# A) Auto (default): gcloud ADC helper — no hourly re-export
+#    requires: gcloud auth login (or application-default) + aiplatform API enabled
+# B) Explicit short-lived token (~1h):
+#    export VERTEX_API_KEY=$(gcloud auth print-access-token)
+# C) Disable gcloud helper: VERTEX_ADC=0 and set VERTEX_API_KEY yourself
 iomesh -m vertex-gemini-2.5-flash -p "Reply with ok"
 ```
 
 - Base URL template: `https://us-central1-aiplatform.googleapis.com/v1/projects/${GOOGLE_CLOUD_PROJECT}/locations/us-central1/endpoints/openapi`
-- Auth: short-lived OAuth access token as Bearer (not a Gemini API key)
+- Auth: OAuth access token as Bearer (not a Gemini API key). **s221:** in-process cache (~50m) + auto `gcloud auth print-access-token` when env unset; **401 → invalidate + one retry**
+- Env: `VERTEX_API_KEY` / `GOOGLE_OAUTH_ACCESS_TOKEN` override; `VERTEX_ADC=0` disables gcloud helper
 - Model ids often use publisher prefix: `google/gemini-2.5-flash`
 
 If model ids change, override in `~/.iomesh/config.toml`:

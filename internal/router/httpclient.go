@@ -48,31 +48,7 @@ func (c *HTTPClient) ChatCompletion(ctx context.Context, req ChatRequest) (ChatR
 		return ChatResponse{}, fmt.Errorf("marshal request: %w", err)
 	}
 
-	httpReq, err := c.newRequest(ctx, body)
-	if err != nil {
-		return ChatResponse{}, err
-	}
-
-	resp, err := c.httpClient.Do(httpReq)
-	if err != nil {
-		return ChatResponse{}, fmt.Errorf("http do: %w", err)
-	}
-	defer resp.Body.Close()
-
-	// Cap error/success body reads to avoid memory blowups from misbehaving endpoints.
-	respBody, err := io.ReadAll(io.LimitReader(resp.Body, 32<<20))
-	if err != nil {
-		return ChatResponse{}, fmt.Errorf("read body: %w", err)
-	}
-	if err := checkStatus(resp.StatusCode, respBody); err != nil {
-		return ChatResponse{}, err
-	}
-
-	var result ChatResponse
-	if err := json.Unmarshal(respBody, &result); err != nil {
-		return ChatResponse{}, fmt.Errorf("decode response: %w", err)
-	}
-	return result, nil
+	return c.doJSON(ctx, body, false)
 }
 
 // ChatCompletionStream implements LLMClient with SSE parsing.
@@ -88,24 +64,71 @@ func (c *HTTPClient) ChatCompletionStream(ctx context.Context, req ChatRequest, 
 		return ChatResponse{}, fmt.Errorf("marshal request: %w", err)
 	}
 
-	httpReq, err := c.newRequest(ctx, body)
-	if err != nil {
-		return ChatResponse{}, err
-	}
-	httpReq.Header.Set("Accept", "text/event-stream")
+	// One 401 → invalidate Vertex cache and retry (token expiry).
+	for attempt := 0; attempt < 2; attempt++ {
+		httpReq, err := c.newRequest(ctx, body)
+		if err != nil {
+			return ChatResponse{}, err
+		}
+		httpReq.Header.Set("Accept", "text/event-stream")
 
-	resp, err := c.httpClient.Do(httpReq)
-	if err != nil {
-		return ChatResponse{}, fmt.Errorf("http do: %w", err)
-	}
-	defer resp.Body.Close()
+		resp, err := c.httpClient.Do(httpReq)
+		if err != nil {
+			return ChatResponse{}, fmt.Errorf("http do: %w", err)
+		}
 
-	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 64*1024))
-		return ChatResponse{}, checkStatus(resp.StatusCode, respBody)
-	}
+		if resp.StatusCode == http.StatusUnauthorized && attempt == 0 && hasCapability(c.cfg.Capabilities, "vertex") {
+			resp.Body.Close()
+			InvalidateVertexAccessToken()
+			continue
+		}
 
-	return consumeSSE(resp.Body, onDelta)
+		if resp.StatusCode != http.StatusOK {
+			respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 64*1024))
+			resp.Body.Close()
+			return ChatResponse{}, checkStatus(resp.StatusCode, respBody)
+		}
+
+		out, err := consumeSSE(resp.Body, onDelta)
+		resp.Body.Close()
+		return out, err
+	}
+	return ChatResponse{}, fmt.Errorf("vertex auth: unauthorized after token refresh")
+}
+
+func (c *HTTPClient) doJSON(ctx context.Context, body []byte, _ bool) (ChatResponse, error) {
+	for attempt := 0; attempt < 2; attempt++ {
+		httpReq, err := c.newRequest(ctx, body)
+		if err != nil {
+			return ChatResponse{}, err
+		}
+
+		resp, err := c.httpClient.Do(httpReq)
+		if err != nil {
+			return ChatResponse{}, fmt.Errorf("http do: %w", err)
+		}
+
+		respBody, err := io.ReadAll(io.LimitReader(resp.Body, 32<<20))
+		resp.Body.Close()
+		if err != nil {
+			return ChatResponse{}, fmt.Errorf("read body: %w", err)
+		}
+
+		if resp.StatusCode == http.StatusUnauthorized && attempt == 0 && hasCapability(c.cfg.Capabilities, "vertex") {
+			InvalidateVertexAccessToken()
+			continue
+		}
+		if err := checkStatus(resp.StatusCode, respBody); err != nil {
+			return ChatResponse{}, err
+		}
+
+		var result ChatResponse
+		if err := json.Unmarshal(respBody, &result); err != nil {
+			return ChatResponse{}, fmt.Errorf("decode response: %w", err)
+		}
+		return result, nil
+	}
+	return ChatResponse{}, fmt.Errorf("vertex auth: unauthorized after token refresh")
 }
 
 func (c *HTTPClient) newRequest(ctx context.Context, body []byte) (*http.Request, error) {
@@ -126,7 +149,10 @@ func (c *HTTPClient) newRequest(ctx context.Context, body []byte) (*http.Request
 	if err != nil {
 		return nil, fmt.Errorf("new request: %w", err)
 	}
-	key := c.cfg.ResolvedAPIKey()
+	key, err := c.resolveAuth(ctx)
+	if err != nil {
+		return nil, err
+	}
 	if key != "" {
 		httpReq.Header.Set("Authorization", "Bearer "+key)
 	}
@@ -135,6 +161,16 @@ func (c *HTTPClient) newRequest(ctx context.Context, body []byte) (*http.Request
 		httpReq.Header.Set(k, expandEnvPlaceholders(v))
 	}
 	return httpReq, nil
+}
+
+func (c *HTTPClient) resolveAuth(ctx context.Context) (string, error) {
+	if c.cfg.APIKey != "" {
+		return expandEnvPlaceholders(c.cfg.APIKey), nil
+	}
+	if hasCapability(c.cfg.Capabilities, "vertex") {
+		return ResolveVertexAccessToken(ctx)
+	}
+	return c.cfg.ResolvedAPIKey(), nil
 }
 
 func checkStatus(code int, body []byte) error {

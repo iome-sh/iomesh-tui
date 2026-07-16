@@ -44,8 +44,8 @@ Built-in catalog (`iomesh models`). **Default cascade** uses the first three row
 | `grok-4.5` | xAI | `grok-4.5` | `XAI_API_KEY` | Cascade premium / fallback |
 | `gemini-2.5-flash` | Google AI Studio | `gemini-2.5-flash` | `GEMINI_API_KEY` | Opt-in pin |
 | `gemini-2.5-pro` | Google AI Studio | `gemini-2.5-pro` | `GEMINI_API_KEY` | Opt-in pin |
-| `vertex-gemini-2.5-flash` | Vertex AI | `google/gemini-2.5-flash` | `VERTEX_API_KEY` + `GOOGLE_CLOUD_PROJECT` | Opt-in pin |
-| `vertex-gemini-2.5-pro` | Vertex AI | `google/gemini-2.5-pro` | `VERTEX_API_KEY` + `GOOGLE_CLOUD_PROJECT` | Opt-in pin |
+| `vertex-gemini-2.5-flash` | Vertex AI | `google/gemini-2.5-flash` | `GOOGLE_CLOUD_PROJECT` + ADC/`gcloud` token (or `VERTEX_API_KEY`) | Opt-in pin |
+| `vertex-gemini-2.5-pro` | Vertex AI | `google/gemini-2.5-pro` | same | Opt-in pin |
 
 Any other **OpenAI-compatible** chat endpoint can be added under `[model.<name>]` in config (OpenAI, Anthropic-compatible gateways, local llama.cpp/vLLM, etc.). Details: [docs/architecture/llm-cascade.md](docs/architecture/llm-cascade.md).
 
@@ -60,8 +60,8 @@ cd iomesh-tui
 export DEEPSEEK_API_KEY=…          # required for default cascade
 # export XAI_API_KEY=…             # optional Grok fallback
 # export GEMINI_API_KEY=…          # optional Gemini AI Studio
-# export GOOGLE_CLOUD_PROJECT=…    # optional Vertex
-# export VERTEX_API_KEY=…          # GCP access token for Vertex OpenAI-compat
+# export GOOGLE_CLOUD_PROJECT=…    # required for Vertex models
+# # Vertex auth: auto gcloud print-access-token (cache ~50m) or VERTEX_API_KEY override
 
 make build
 ./bin/iomesh models
