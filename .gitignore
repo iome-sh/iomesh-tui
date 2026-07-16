@@ -25,6 +25,9 @@ coverage.html
 *.pem
 *.key
 
+# Agent isolation worktrees (local runtime)
+.iomesh/
+
 # Dependency directories (remove the comment below to include it)
 # vendor/
 

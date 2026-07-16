@@ -68,8 +68,27 @@ Env: `IOMESH_SUBAGENTS=0` disables.
 
 ## Isolation
 
-- `none` (default) — shared workspace root  
-- `worktree` — reserved; returns clear error until git worktree backend lands  
+| Mode | Behavior |
+|------|----------|
+| `none` (default) | Shared workspace root with the parent |
+| `worktree` | Detached **`git worktree`** under `<workspace>/.iomesh/worktrees/<id>` |
+
+Requirements for `worktree`:
+
+- Parent path must be a git work tree with at least one commit  
+- `git` on `PATH`  
+- Safe id characters only (enforced)  
+
+Successful runs **keep** the worktree by default (`worktree_path` in the result) so the parent can inspect or merge. Set `worktree_auto_remove = true` to delete after success. Failures always remove the worktree.
+
+```bash
+# inspect
+ls .iomesh/worktrees/
+# remove when done
+git worktree remove --force .iomesh/worktrees/<id>
+```
+
+`spawn_subagents` accepts per-task `isolation` or batch `default_isolation`.
 
 ## REPL
 

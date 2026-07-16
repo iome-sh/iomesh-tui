@@ -105,6 +105,10 @@ type SubagentsSection struct {
 	MaxConcurrent int  `toml:"max_concurrent"`
 	MaxDepth      int  `toml:"max_depth"`
 	MaxBatch      int  `toml:"max_batch"`
+	// WorktreeBase is relative to the workspace (default .iomesh/worktrees).
+	WorktreeBase string `toml:"worktree_base"`
+	// WorktreeAutoRemove deletes successful worktrees (default false = keep for inspection).
+	WorktreeAutoRemove bool `toml:"worktree_auto_remove"`
 }
 
 // Default returns built-in configuration (DeepSeek Flash primary cascade).

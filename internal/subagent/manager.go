@@ -52,6 +52,10 @@ type Config struct {
 	// Workspace is the default child cwd.
 	Workspace string
 	Yolo      bool
+	// WorktreeAutoRemove deletes git worktrees after successful runs.
+	// Default false leaves WorktreePath for parent inspection/merge.
+	// Failures always clean up the worktree.
+	WorktreeAutoRemove bool
 }
 
 // SpawnManyOptions controls batch fan-out.
@@ -98,6 +102,7 @@ func (NopWorktree) Create(context.Context, string, string) (string, func() error
 }
 
 // NewManager constructs a Manager. factory must not be nil when Enabled.
+// Worktree isolation defaults to LookupGit() (git worktree) when available.
 func NewManager(cfg Config, factory RunnerFactory, logger *slog.Logger) *Manager {
 	if cfg.MaxConcurrent <= 0 {
 		cfg.MaxConcurrent = DefaultMaxConcurrent
@@ -111,14 +116,15 @@ func NewManager(cfg Config, factory RunnerFactory, logger *slog.Logger) *Manager
 	if logger == nil {
 		logger = slog.Default()
 	}
-	return &Manager{
+	m := &Manager{
 		cfg:      cfg,
 		reg:      NewRegistry(),
 		factory:  factory,
 		logger:   logger,
 		sem:      make(chan struct{}, cfg.MaxConcurrent),
-		worktree: NopWorktree{},
+		worktree: LookupGit(),
 	}
+	return m
 }
 
 // MaxConcurrent returns the configured parallel slot count.
@@ -274,6 +280,8 @@ func (m *Manager) Spawn(ctx context.Context, spec Spec) (Result, error) {
 			"desc", spec.Description,
 			"background", spec.Background,
 			"capability", capMode,
+			"isolation", spec.Isolation,
+			"workspace", workspace,
 		)
 
 		runner, err := m.factory(ctx, params)
@@ -293,6 +301,9 @@ func (m *Manager) Spawn(ctx context.Context, spec Spec) (Result, error) {
 		if resumeNote != "" {
 			userPrompt = "Prior subagent summary (resume_from):\n" + resumeNote + "\n\n---\n\nNew task:\n" + spec.Prompt
 		}
+		if spec.Isolation == IsolationWorktree && workspace != "" {
+			userPrompt = userPrompt + "\n\n<system-reminder>You are running in an isolated git worktree at: " + workspace + ". Edits stay here until the parent merges them.</system-reminder>"
+		}
 
 		summary, err := runner.Run(ctx, def.SystemPrompt, userPrompt)
 		finished := time.Now().UTC()
@@ -304,15 +315,21 @@ func (m *Manager) Spawn(ctx context.Context, spec Spec) (Result, error) {
 				r.FinishedAt = finished
 			})
 			m.logger.Warn("subagent failed", "id", id, "err", err)
+			if cleanup != nil {
+				_ = cleanup()
+			}
 		} else {
 			_ = m.reg.Update(id, func(r *Record) {
 				r.Status = StatusCompleted
 				r.Summary = summary
 				r.FinishedAt = finished
 			})
-			m.logger.Info("subagent completed", "id", id, "chars", len(summary))
+			m.logger.Info("subagent completed", "id", id, "chars", len(summary), "worktree", m.resultOf(id).WorktreePath)
+			if cleanup != nil && m.cfg.WorktreeAutoRemove {
+				_ = cleanup()
+				_ = m.reg.Update(id, func(r *Record) { r.WorktreePath = "" })
+			}
 		}
-		// Keep worktree for inspection; cleanup is optional later.
 		return m.resultOf(id)
 	}
 

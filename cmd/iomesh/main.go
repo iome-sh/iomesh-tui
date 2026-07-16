@@ -117,6 +117,8 @@ func run(args []string) int {
 		MaxSubagentDepth:      cfg.Subagents.MaxDepth,
 		MaxSubagentConcurrent: cfg.Subagents.MaxConcurrent,
 		MaxSubagentBatch:      cfg.Subagents.MaxBatch,
+		WorktreeBase:          cfg.Subagents.WorktreeBase,
+		WorktreeAutoRemove:    cfg.Subagents.WorktreeAutoRemove,
 	}, rtr, mesh, logger)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "agent: %v\n", err)

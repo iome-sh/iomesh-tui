@@ -19,7 +19,7 @@ func (r *ToolRegistry) RegisterSubagentTools(mgr *subagent.Manager) {
 		Type: "function",
 		Function: router.ToolFunction{
 			Name:        "spawn_subagent",
-			Description: "Spawn one child agent. Types: general-purpose, explore (no edits), plan (no edits). Prefer spawn_subagents for parallel fan-out. Use background=true to free the parent immediately.",
+			Description: "Spawn one child agent. Types: general-purpose, explore (no edits), plan (no edits). Prefer spawn_subagents for parallel fan-out. Use background=true to free the parent. isolation=worktree runs the child in a detached git worktree under .iomesh/worktrees/<id>.",
 			Parameters: json.RawMessage(`{
   "type": "object",
   "properties": {
@@ -88,13 +88,15 @@ func (r *ToolRegistry) RegisterSubagentTools(mgr *subagent.Manager) {
           "description": {"type": "string"},
           "subagent_type": {"type": "string", "enum": ["general-purpose", "explore", "plan"]},
           "capability_mode": {"type": "string", "enum": ["read-only", "read-write", "execute", "all"]},
+          "isolation": {"type": "string", "enum": ["none", "worktree"]},
           "cwd": {"type": "string"}
         },
         "required": ["prompt"]
       }
     },
     "wait": {"type": "boolean", "description": "If true, wait for all tasks to finish before returning summaries"},
-    "default_subagent_type": {"type": "string", "enum": ["general-purpose", "explore", "plan"]}
+    "default_subagent_type": {"type": "string", "enum": ["general-purpose", "explore", "plan"]},
+    "default_isolation": {"type": "string", "enum": ["none", "worktree"]}
   },
   "required": ["tasks"]
 }`),
@@ -106,10 +108,12 @@ func (r *ToolRegistry) RegisterSubagentTools(mgr *subagent.Manager) {
 				Description    string `json:"description"`
 				SubagentType   string `json:"subagent_type"`
 				CapabilityMode string `json:"capability_mode"`
+				Isolation      string `json:"isolation"`
 				CWD            string `json:"cwd"`
 			} `json:"tasks"`
 			Wait                bool   `json:"wait"`
 			DefaultSubagentType string `json:"default_subagent_type"`
+			DefaultIsolation    string `json:"default_isolation"`
 		}
 		if err := json.Unmarshal([]byte(args), &p); err != nil {
 			return "", err
@@ -118,17 +122,26 @@ func (r *ToolRegistry) RegisterSubagentTools(mgr *subagent.Manager) {
 		if defType == "" {
 			defType = subagent.TypeExplore
 		}
+		defIso := subagent.Isolation(p.DefaultIsolation)
+		if defIso == "" {
+			defIso = subagent.IsolationNone
+		}
 		specs := make([]subagent.Spec, 0, len(p.Tasks))
 		for _, t := range p.Tasks {
 			st := subagent.Type(t.SubagentType)
 			if st == "" {
 				st = defType
 			}
+			iso := subagent.Isolation(t.Isolation)
+			if iso == "" {
+				iso = defIso
+			}
 			specs = append(specs, subagent.Spec{
 				Prompt:         t.Prompt,
 				Description:    t.Description,
 				SubagentType:   st,
 				CapabilityMode: subagent.CapabilityMode(t.CapabilityMode),
+				Isolation:      iso,
 				CWD:            t.CWD,
 				Background:     true,
 			})
