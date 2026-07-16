@@ -44,7 +44,7 @@ This document describes the security posture of **iomesh-tui** for operators and
 
 ### Shell (`run_shell`)
 
-- Marked **mutating** → denied unless `--yolo` / future interactive approve
+- Marked **mutating** → denied unless interactive approval (TUI y/n/a) or `--yolo` / `--always-approve`
 - `security.ValidateShellCommand` blocks empty, oversized, non-UTF8, NUL, and known catastrophic patterns (e.g. `rm -rf /`, curl\|bash)
 - Child `Env` = `security.ScrubEnv` (drops `*_API_KEY`, tokens, etc.)
 - Output truncated + redacted before return to the model
@@ -70,6 +70,30 @@ This document describes the security posture of **iomesh-tui** for operators and
 - Depth and concurrency caps
 - Built-in explore/plan cannot write files
 - Nested spawn disabled on builtins
+- Isolation worktrees are path-jailed; apply/remove require approval
+
+### MCP
+
+- Tools default **mutating** (approval required)
+- HTTP: `http`/`https` only; OAuth secrets only via env (`oauth_token_env`, `client_secret_env`)
+- Resources/prompts are read-only meta tools
+- Child MCP stdio processes use scrubbed env + explicit `env` map
+
+### ACP WebSocket (`iomesh agent serve`)
+
+- Default bind **loopback** `127.0.0.1:7400`
+- Prefer `--token` when binding non-loopback; warn without token
+- Each connection is an isolated session map
+
+## Residual risks (honest)
+
+| Risk | Mitigation / residual |
+|------|------------------------|
+| Approved shell is still powerful | OS sandbox not included; use containers/Seatbelt for untrusted workloads |
+| Prompt injection → tool calls | Approval gates; never `--yolo` on untrusted input |
+| Loopback LLM / MCP for DX | Allowed by design; do not expose without auth |
+| MCP OAuth client_credentials | Secret must stay in env; token cached in process memory only |
+| No multi-tenant remote sandbox | Single-user local tool |
 
 ## Operator recommendations
 
