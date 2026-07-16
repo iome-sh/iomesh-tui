@@ -310,6 +310,87 @@ func TestDogfood_SkipMemory(t *testing.T) {
 	}
 }
 
+func TestDogfood_MemoryIngestOrgWorkspaceEvidence(t *testing.T) {
+	srv := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+	}{})
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		EmitDeptStreams: true,
+		OrgID:           "org_dev-org",
+		WorkspaceID:     "ws_alpha",
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{Strict: true})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	var found bool
+	for _, s := range rep.Steps {
+		if s.Name == "memory_ingest" && s.Status == StepPass {
+			found = true
+			if !strings.Contains(s.Detail, "org=org_dev-org") {
+				t.Fatalf("expected org evidence in detail: %s", s.Detail)
+			}
+			if !strings.Contains(s.Detail, "workspace=ws_alpha") {
+				t.Fatalf("expected workspace evidence in detail: %s", s.Detail)
+			}
+			if !strings.Contains(s.Detail, "MEMORY_INGEST") || !strings.Contains(s.Detail, "seq=") {
+				t.Fatalf("expected stream/seq in detail: %s", s.Detail)
+			}
+		}
+	}
+	if !found {
+		t.Fatal(FormatReport(rep))
+	}
+}
+
+func TestDogfood_MemoryIngestOmitsEmptyOrgWorkspace(t *testing.T) {
+	srv := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+	}{})
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		EmitDeptStreams: true,
+		// OrgID / WorkspaceID intentionally unset
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{Strict: true})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	var found bool
+	for _, s := range rep.Steps {
+		if s.Name == "memory_ingest" && s.Status == StepPass {
+			found = true
+			if strings.Contains(s.Detail, "org=") {
+				t.Fatalf("unset OrgID must not print org=: %s", s.Detail)
+			}
+			if strings.Contains(s.Detail, "workspace=") {
+				t.Fatalf("unset WorkspaceID must not print workspace=: %s", s.Detail)
+			}
+			if !strings.Contains(s.Detail, "MEMORY_INGEST") {
+				t.Fatalf("detail: %s", s.Detail)
+			}
+		}
+	}
+	if !found {
+		t.Fatal(FormatReport(rep))
+	}
+}
+
 func TestReady_OK(t *testing.T) {
 	srv := mockMeshServer(t, struct {
 		failHealth bool
