@@ -24,8 +24,9 @@ concurrency:
 permissions:
   contents: read
 
+# Allow Go to fetch a matching toolchain when the runner image lags go.mod.
 env:
-  GOTOOLCHAIN: local
+  GOTOOLCHAIN: auto
 
 jobs:
   lint:
@@ -71,8 +72,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Primary = go.mod; keep one prior minor for portability signal when toolchain allows.
-        go-version: ["1.26.x"]
+        # Keep in sync with go.mod (patch releases for stdlib vuln fixes).
+        go-version: ["1.26.5"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4

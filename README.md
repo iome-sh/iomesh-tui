@@ -16,7 +16,7 @@
 ## Quick start
 
 ```bash
-# Requirements: Go 1.22+
+# Requirements: Go 1.26.5+ (see go.mod)
 git clone https://github.com/iome-sh/iomesh-tui.git
 cd iomesh-tui
 
