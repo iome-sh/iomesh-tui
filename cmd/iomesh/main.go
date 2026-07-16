@@ -579,15 +579,23 @@ func cmdAgent(args []string) int {
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
 		// Prefer loopback; warn if binding non-loopback without token.
-		if !strings.HasPrefix(*listen, "127.") && !strings.HasPrefix(*listen, "localhost") &&
-			!strings.HasPrefix(*listen, "[::1]") && *token == "" {
+		loopback := strings.HasPrefix(*listen, "127.") ||
+			strings.HasPrefix(*listen, "localhost") ||
+			strings.HasPrefix(*listen, "[::1]") ||
+			strings.HasPrefix(*listen, ":") // :port binds all interfaces — not loopback
+		// ":7400" binds 0.0.0.0 — treat as non-loopback.
+		if strings.HasPrefix(*listen, ":") {
+			loopback = false
+		}
+		if !loopback && *token == "" {
 			fmt.Fprintln(os.Stderr, "warning: binding non-loopback without --token is unsafe")
 		}
+		// Allow any browser Origin only on loopback (local IDE DX). Remote binds reject cross-origin by default.
 		err := acp.ListenAndServe(ctx, acp.ServeOptions{
 			Listen:         *listen,
 			Path:           *wsPath,
 			Token:          *token,
-			AllowAnyOrigin: true,
+			AllowAnyOrigin: loopback,
 			Options:        opts,
 		})
 		if err != nil && err != context.Canceled {

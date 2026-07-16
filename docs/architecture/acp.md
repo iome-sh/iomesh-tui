@@ -62,6 +62,7 @@ Mutating tools respect agent approval rules. Pass `--yolo` / `--always-approve` 
 - **Default bind** is `127.0.0.1:7400` (loopback only).
 - **`--token`**: require `Authorization: Bearer <token>` or `?token=` on upgrade.
 - Binding non-loopback without `--token` prints a warning.
+- **Origin**: `AllowAnyOrigin` only when listening on loopback (local browser/IDE DX). Non-loopback binds do not accept arbitrary browser Origins by default.
 - Each WebSocket connection gets an **isolated** ACP session map (not shared across clients).
 
 ## Wire format example (stdio NDJSON / WS text frames)

@@ -11,11 +11,16 @@
 
 **Please do not open a public GitHub issue for security vulnerabilities.**
 
-Email **security@iome.sh** (or open a private security advisory on GitHub if available) with:
+Preferred channels (in order):
 
-- Description of the issue and impact
-- Reproduction steps or proof-of-concept
-- Affected commit / tag if known
+1. **GitHub Security Advisory** (private) — Security → Advisories → Report a vulnerability on this repository  
+2. Email **security@iome.sh**
+
+Include:
+
+- Description of the issue and impact  
+- Reproduction steps or proof-of-concept  
+- Affected commit / tag if known  
 
 We aim to acknowledge reports within **72 hours** and provide a remediation timeline after triage.
 
@@ -39,13 +44,17 @@ We aim to acknowledge reports within **72 hours** and provide a remediation time
 
 ## Hardening checklist for operators
 
-1. Prefer **interactive approval** (no `--yolo`) for untrusted prompts/repos
-2. Scope `-C` / workspace to the smallest project directory
-3. Store API keys in environment variables (`DEEPSEEK_API_KEY`, `XAI_API_KEY`, `IOMESH_API_KEY`)
-4. Do not put secrets in `config.toml` committed to git
-5. Review shell tool output before pasting into tickets/logs
-6. Disable subagents if not needed: `IOMESH_SUBAGENTS=0`
-7. Point model `base_url` only at trusted OpenAI-compatible endpoints
+1. Prefer **interactive approval** (no `--yolo`) for untrusted prompts/repos  
+2. Scope `-C` / workspace to the smallest project directory  
+3. Store API keys in environment variables (`DEEPSEEK_API_KEY`, `XAI_API_KEY`, `IOMESH_API_KEY`, MCP token envs)  
+4. Do not put secrets in `config.toml` committed to git  
+5. Review shell tool output before pasting into tickets/logs  
+6. Disable subagents if not needed: `IOMESH_SUBAGENTS=0`  
+7. Point model `base_url` only at trusted OpenAI-compatible endpoints  
+8. ACP serve: keep loopback default; use `--token` if binding beyond localhost  
+9. MCP HTTP: use `oauth_token_env` / `client_secret_env`, never inline secrets  
+
+See also [docs/security.md](docs/security.md) (architecture + residual risks).
 
 ## Dependency security
 
