@@ -80,7 +80,7 @@ CLI / TUI / ACP
 ## Next milestones
 
 1. Full-screen TUI (Bubble Tea / custom renderer) with scrollback + permissions
-2. ACP `agent stdio` JSON-RPC
+2. ~~ACP `agent stdio`~~ **done** — see [acp.md](acp.md)
 3. ~~Subagent orchestration~~ **done** — see [subagents.md](subagents.md)
 4. ~~Git worktree isolation~~ **done** — `isolation=worktree`
 5. ~~Worktree apply/merge helper~~ **done** — `apply_worktree` / `diff_worktree`

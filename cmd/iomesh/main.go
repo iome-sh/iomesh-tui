@@ -6,6 +6,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -13,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/iome-sh/iomesh-tui/internal/acp"
 	"github.com/iome-sh/iomesh-tui/internal/agent"
 	"github.com/iome-sh/iomesh-tui/internal/config"
 	"github.com/iome-sh/iomesh-tui/internal/iomesh"
@@ -260,19 +262,53 @@ func cmdModels(args []string) int {
 }
 
 func cmdAgent(args []string) int {
-	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: iomesh agent stdio | serve")
+	fs := flag.NewFlagSet("agent", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	var (
+		model      = fs.String("m", "", "model override")
+		configPath = fs.String("config", "", "config.toml path")
+		workspace  = fs.String("C", "", "workspace directory")
+		yolo       = fs.Bool("yolo", false, "auto-approve mutating tools")
+		yoloAlias  = fs.Bool("always-approve", false, "alias for --yolo")
+		verbose    = fs.Bool("v", false, "verbose logging to stderr")
+	)
+	// Parse flags; remaining is mode (stdio|serve).
+	if err := fs.Parse(args); err != nil {
 		return 2
 	}
-	switch args[0] {
+	rest := fs.Args()
+	if len(rest) == 0 {
+		fmt.Fprintln(os.Stderr, "usage: iomesh agent [flags] stdio|serve")
+		return 2
+	}
+	if *yoloAlias {
+		*yolo = true
+	}
+	logger := newLogger(*verbose)
+
+	switch rest[0] {
 	case "stdio":
-		fmt.Fprintln(os.Stderr, "ACP stdio mode: scaffold — not yet implemented (see docs/architecture)")
-		return 1
+		srv := acp.New(acp.Options{
+			ConfigPath: *configPath,
+			Workspace:  *workspace,
+			Model:      *model,
+			Yolo:       *yolo,
+			Version:    version,
+			Logger:     logger,
+		})
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+		// Protocol on stdout; logs on stderr only.
+		if err := srv.Run(ctx, os.Stdin, os.Stdout); err != nil && err != context.Canceled && err != io.EOF {
+			fmt.Fprintf(os.Stderr, "acp: %v\n", err)
+			return 1
+		}
+		return 0
 	case "serve":
-		fmt.Fprintln(os.Stderr, "ACP serve mode: scaffold — not yet implemented")
+		fmt.Fprintln(os.Stderr, "ACP serve mode: not yet implemented (use agent stdio)")
 		return 1
 	default:
-		fmt.Fprintf(os.Stderr, "unknown agent mode %q\n", args[0])
+		fmt.Fprintf(os.Stderr, "unknown agent mode %q\n", rest[0])
 		return 2
 	}
 }
@@ -302,7 +338,8 @@ Usage:
   iomesh --session <id>          resume session by id
   iomesh sessions                list sessions in workspace
   iomesh models                  list configured models
-  iomesh agent stdio             ACP server (scaffold)
+  iomesh agent stdio             ACP JSON-RPC over stdio (IDE integration)
+  iomesh agent --yolo stdio      ACP with auto-approve tools
   iomesh version
 
 Flags:
