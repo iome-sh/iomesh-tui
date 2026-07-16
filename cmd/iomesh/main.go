@@ -661,6 +661,7 @@ Agent serve (WebSocket) flags:
   --token secret        require Bearer or ?token=
 
 Default model cascade: deepseek-v4-flash → deepseek-v4-pro → grok-4.5
+  Optional Google: gemini-2.5-flash|pro (GEMINI_API_KEY) · vertex-gemini-2.5-* (VERTEX_API_KEY + GOOGLE_CLOUD_PROJECT)
 Config: ~/.iomesh/config.toml  (or $IOMESH_CONFIG)
 
 Environment:

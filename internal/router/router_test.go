@@ -292,11 +292,58 @@ func TestDefaultModels_CascadeOrder(t *testing.T) {
 		t.Fatal(err)
 	}
 	names := r.fallbackChain("deepseek-v4-flash")
-	if len(names) != 3 {
+	// DeepSeek cascade first; Gemini/Vertex are opt-in (later priority) but present in catalog.
+	if len(names) < 3 {
 		t.Fatalf("chain=%v", names)
 	}
 	if names[0] != "deepseek-v4-flash" || names[1] != "deepseek-v4-pro" || names[2] != "grok-4.5" {
 		t.Fatalf("chain=%v", names)
+	}
+	// Gemini / Vertex built-ins must load without GOOGLE_CLOUD_PROJECT set.
+	foundGemini, foundVertex := false, false
+	for _, n := range names {
+		if n == GeminiFlashModelName {
+			foundGemini = true
+		}
+		if n == VertexGeminiFlashModelName {
+			foundVertex = true
+		}
+	}
+	if !foundGemini || !foundVertex {
+		t.Fatalf("expected gemini+vertex in catalog, chain=%v", names)
+	}
+}
+
+func TestResolvedBaseURL_ExpandsProject(t *testing.T) {
+	t.Setenv("GOOGLE_CLOUD_PROJECT", "iomesh-stage-001")
+	m := ModelConfig{BaseURL: VertexOpenAIBaseURLTemplate}
+	got := m.ResolvedBaseURL()
+	if !strings.Contains(got, "iomesh-stage-001") {
+		t.Fatalf("got %q", got)
+	}
+	if strings.Contains(got, "${") {
+		t.Fatalf("unexpanded placeholder in %q", got)
+	}
+}
+
+func TestResolvedAPIKey_VertexFallback(t *testing.T) {
+	t.Setenv("VERTEX_API_KEY", "")
+	t.Setenv("GOOGLE_OAUTH_ACCESS_TOKEN", "ya29.test-token")
+	m := ModelConfig{Capabilities: []string{"vertex", "gemini"}, EnvKey: "VERTEX_API_KEY"}
+	if got := m.ResolvedAPIKey(); got != "ya29.test-token" {
+		t.Fatalf("got %q", got)
+	}
+}
+
+func TestNewRequest_RejectsUnexpandedVertexProject(t *testing.T) {
+	t.Setenv("GOOGLE_CLOUD_PROJECT", "")
+	c := NewHTTPClient(ModelConfig{
+		Name: "v", BaseURL: VertexOpenAIBaseURLTemplate, ModelID: "google/gemini-2.5-flash",
+		APIKey: "tok", Capabilities: []string{"vertex"},
+	}, nil)
+	_, err := c.newRequest(context.Background(), []byte(`{}`))
+	if err == nil || !strings.Contains(err.Error(), "GOOGLE_CLOUD_PROJECT") {
+		t.Fatalf("want missing GOOGLE_CLOUD_PROJECT error, got %v", err)
 	}
 }
 

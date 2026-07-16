@@ -87,14 +87,50 @@ type ModelConfig struct {
 }
 
 // ResolvedAPIKey returns APIKey or the value of EnvKey.
+// For Vertex models (capability "vertex"), also tries GOOGLE_OAUTH_ACCESS_TOKEN
+// when VERTEX_API_KEY is unset (both hold a short-lived gcloud access token).
 func (m ModelConfig) ResolvedAPIKey() string {
 	if m.APIKey != "" {
 		return expandEnvPlaceholders(m.APIKey)
 	}
 	if m.EnvKey != "" {
-		return getenv(m.EnvKey)
+		if v := getenv(m.EnvKey); v != "" {
+			return v
+		}
+	}
+	// Vertex OpenAI-compat uses OAuth access tokens, not a long-lived API key.
+	if hasCapability(m.Capabilities, "vertex") {
+		if v := getenv("VERTEX_API_KEY"); v != "" {
+			return v
+		}
+		if v := getenv("GOOGLE_OAUTH_ACCESS_TOKEN"); v != "" {
+			return v
+		}
+	}
+	// Gemini AI Studio common alias.
+	if hasCapability(m.Capabilities, "gemini") && !hasCapability(m.Capabilities, "vertex") {
+		if v := getenv("GEMINI_API_KEY"); v != "" {
+			return v
+		}
+		if v := getenv("GOOGLE_API_KEY"); v != "" {
+			return v
+		}
 	}
 	return ""
+}
+
+// ResolvedBaseURL expands ${ENV} placeholders in BaseURL (e.g. GOOGLE_CLOUD_PROJECT).
+func (m ModelConfig) ResolvedBaseURL() string {
+	return expandEnvPlaceholders(m.BaseURL)
+}
+
+func hasCapability(caps []string, want string) bool {
+	for _, c := range caps {
+		if c == want {
+			return true
+		}
+	}
+	return false
 }
 
 // LLMClient abstracts an OpenAI-compatible chat completions endpoint.

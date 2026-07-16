@@ -37,6 +37,24 @@ env_key = "DEEPSEEK_API_KEY"
 env_key = "XAI_API_KEY"
 # priority = 30
 
+# --- Google Gemini (AI Studio) — OpenAI-compatible ---
+# export GEMINI_API_KEY=…   # https://aistudio.google.com/apikey
+# iomesh -m gemini-2.5-flash -p "hello"
+# [model.gemini-2.5-flash]
+# env_key = "GEMINI_API_KEY"
+# [model.gemini-2.5-pro]
+# env_key = "GEMINI_API_KEY"
+
+# --- Vertex AI Gemini — OpenAI-compatible (GCP project + access token) ---
+# export GOOGLE_CLOUD_PROJECT=iomesh-stage-001
+# export VERTEX_API_KEY=$(gcloud auth print-access-token)   # ~1h; or GOOGLE_OAUTH_ACCESS_TOKEN
+# iomesh -m vertex-gemini-2.5-flash -p "hello"
+# Optional region override (default us-central1 in built-in URL):
+# [model.vertex-gemini-2.5-flash]
+# base_url = "https://us-east4-aiplatform.googleapis.com/v1/projects/${GOOGLE_CLOUD_PROJECT}/locations/us-east4/endpoints/openapi"
+# env_key = "VERTEX_API_KEY"
+# model = "google/gemini-2.5-flash"
+
 # Example custom OpenAI-compatible endpoint:
 # [model.local-llama]
 # model = "llama-3"
