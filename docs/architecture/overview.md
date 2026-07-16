@@ -87,6 +87,7 @@ CLI / TUI / ACP
 6. ~~Worktree apply/merge helper~~ **done** — `apply_worktree` / `diff_worktree`
 7. ~~Session persistence + compaction~~ **done** — `.iomesh/sessions`, resume subagent catalog
 8. ~~MCP client + skills loader~~ **done** — see [mcp.md](mcp.md), [skills.md](skills.md)
-9. ACP WebSocket serve (beyond stdio)
+9. ~~ACP WebSocket serve~~ **done** — `iomesh agent serve` (see [acp.md](acp.md))
 10. MCP HTTP/SSE transport + richer resources/prompts
-11. Deeper I/O Mesh: lineage-aware context, Rego policy gates, metering dashboards
+11. Stage mesh dogfood
+12. Deeper I/O Mesh: lineage-aware context, Rego policy gates, metering dashboards

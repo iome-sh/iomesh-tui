@@ -411,12 +411,16 @@ func cmdAgent(args []string) int {
 	fs := flag.NewFlagSet("agent", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	var (
-		model      = fs.String("m", "", "model override")
-		configPath = fs.String("config", "", "config.toml path")
-		workspace  = fs.String("C", "", "workspace directory")
-		yolo       = fs.Bool("yolo", false, "auto-approve mutating tools")
-		yoloAlias  = fs.Bool("always-approve", false, "alias for --yolo")
-		verbose    = fs.Bool("v", false, "verbose logging to stderr")
+		model       = fs.String("m", "", "model override")
+		configPath  = fs.String("config", "", "config.toml path")
+		workspace   = fs.String("C", "", "workspace directory")
+		yolo        = fs.Bool("yolo", false, "auto-approve mutating tools")
+		yoloAlias   = fs.Bool("always-approve", false, "alias for --yolo")
+		verbose     = fs.Bool("v", false, "verbose logging to stderr")
+		listen      = fs.String("listen", acp.DefaultListen, "WebSocket listen addr (serve mode; default loopback)")
+		listenShort = fs.String("l", "", "alias for --listen")
+		wsPath      = fs.String("path", acp.DefaultWSPath, "WebSocket path (serve mode)")
+		token       = fs.String("token", "", "require Bearer/?token= for WebSocket (serve mode)")
 	)
 	// Parse flags; remaining is mode (stdio|serve).
 	if err := fs.Parse(args); err != nil {
@@ -430,18 +434,23 @@ func cmdAgent(args []string) int {
 	if *yoloAlias {
 		*yolo = true
 	}
+	if *listenShort != "" {
+		*listen = *listenShort
+	}
 	logger := newLogger(*verbose)
+
+	opts := acp.Options{
+		ConfigPath: *configPath,
+		Workspace:  *workspace,
+		Model:      *model,
+		Yolo:       *yolo,
+		Version:    version,
+		Logger:     logger,
+	}
 
 	switch rest[0] {
 	case "stdio":
-		srv := acp.New(acp.Options{
-			ConfigPath: *configPath,
-			Workspace:  *workspace,
-			Model:      *model,
-			Yolo:       *yolo,
-			Version:    version,
-			Logger:     logger,
-		})
+		srv := acp.New(opts)
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
 		// Protocol on stdout; logs on stderr only.
@@ -451,8 +460,25 @@ func cmdAgent(args []string) int {
 		}
 		return 0
 	case "serve":
-		fmt.Fprintln(os.Stderr, "ACP serve mode: not yet implemented (use agent stdio)")
-		return 1
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+		// Prefer loopback; warn if binding non-loopback without token.
+		if !strings.HasPrefix(*listen, "127.") && !strings.HasPrefix(*listen, "localhost") &&
+			!strings.HasPrefix(*listen, "[::1]") && *token == "" {
+			fmt.Fprintln(os.Stderr, "warning: binding non-loopback without --token is unsafe")
+		}
+		err := acp.ListenAndServe(ctx, acp.ServeOptions{
+			Listen:         *listen,
+			Path:           *wsPath,
+			Token:          *token,
+			AllowAnyOrigin: true,
+			Options:        opts,
+		})
+		if err != nil && err != context.Canceled {
+			fmt.Fprintf(os.Stderr, "acp serve: %v\n", err)
+			return 1
+		}
+		return 0
 	default:
 		fmt.Fprintf(os.Stderr, "unknown agent mode %q\n", rest[0])
 		return 2
@@ -488,6 +514,7 @@ Usage:
   iomesh mcp [--connect]         list configured MCP servers
   iomesh models                  list configured models
   iomesh agent stdio             ACP JSON-RPC over stdio (IDE integration)
+  iomesh agent serve             ACP JSON-RPC over WebSocket (default 127.0.0.1:7400/acp)
   iomesh agent --yolo stdio      ACP with auto-approve tools
   iomesh version
 
@@ -502,6 +529,11 @@ Flags:
   --config path         config.toml path
   --yolo                auto-approve mutating tools
   -v                    verbose logs
+
+Agent serve (WebSocket) flags:
+  --listen, -l addr     bind address (default 127.0.0.1:7400)
+  --path /acp           WebSocket path
+  --token secret        require Bearer or ?token=
 
 Default model cascade: deepseek-v4-flash → deepseek-v4-pro → grok-4.5
 Config: ~/.iomesh/config.toml  (or $IOMESH_CONFIG)
