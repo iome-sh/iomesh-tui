@@ -15,7 +15,7 @@ Read-only tools (`read_file`, `list_dir`, `grep`, `diff_worktree`, `list_worktre
 
 ## TUI / REPL
 
-When a mutating tool is requested:
+When a mutating tool is requested (full-screen overlay or classic REPL prompt):
 
 ```text
 ⚠ approve tool apply_worktree?
@@ -29,7 +29,7 @@ When a mutating tool is requested:
 | `n` | Deny (tool result explains denial) |
 | `a` | Allow this tool name for the rest of the session |
 
-`/permissions` lists session always-allow tools.
+`/permissions` lists session always-allow tools. Full-screen layout: [tui.md](tui.md).
 
 ## Headless / ACP
 

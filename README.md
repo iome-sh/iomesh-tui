@@ -2,7 +2,7 @@
 
 **I/O Mesh TUI** — a Go rewrite of [xAI Grok Build](https://github.com/xai-org/grok-build) with tighter **I/O Mesh** platform integration and a **DeepSeek-first** LLM cascade for price-performance.
 
-> Status: **foundation** (router, config, agent loop, workspace tools, subagents, REPL with interactive permissions + model picker, ACP stdio). Full-screen Bubble Tea TUI, MCP, and skills are next. Hardened for open-source readiness (path jail, secret scrubbing, CI).
+> Status: **foundation** (router, agent loop, subagents, full-screen Bubble Tea TUI + REPL, interactive permissions, ACP stdio). MCP, skills, and ACP WebSocket are next. Hardened for open-source readiness (path jail, secret scrubbing, CI).
 
 ## Why this rewrite
 
@@ -29,7 +29,8 @@ make build
 ./bin/iomesh -p "List the top-level packages in this repo"
 ./bin/iomesh -c       # continue latest session (transcript + subagents)
 ./bin/iomesh sessions
-./bin/iomesh          # interactive REPL scaffold
+./bin/iomesh          # full-screen TUI (Bubble Tea)
+./bin/iomesh --repl   # classic line REPL
 ```
 
 Copy [`configs/config.example.toml`](configs/config.example.toml) to `~/.iomesh/config.toml` to customize.
@@ -51,7 +52,8 @@ See [docs/architecture/llm-cascade.md](docs/architecture/llm-cascade.md).
 ## CLI
 
 ```text
-iomesh [flags]              interactive REPL (TUI scaffold)
+iomesh [flags]              full-screen TUI (Bubble Tea)
+iomesh --repl               classic line REPL
 iomesh -p "prompt"          headless one-shot
 iomesh -m <model>           pin logical model
 iomesh -C <dir>             workspace root
@@ -60,7 +62,7 @@ iomesh --config <path>      config.toml
 iomesh models               list catalog
 iomesh version
 
-# REPL slash commands (interactive)
+# TUI / REPL slash commands
 # /model <name|#>   pin model (or /models, /model default)
 # /permissions      session always-allow tools
 # /subagents        list child agents + worktree flag
@@ -79,7 +81,7 @@ internal/
   workspace/          rooted filesystem + path jail
   security/           redaction, env scrub, shell/URL policy
   iomesh/             I/O Mesh client (fail-open)
-  tui/                interactive REPL scaffold
+  tui/                full-screen Bubble Tea + classic REPL
 configs/              example config.toml
 docs/architecture/    design notes
 docs/security.md      threat model

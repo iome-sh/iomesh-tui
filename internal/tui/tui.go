@@ -1,8 +1,8 @@
 // Package tui is the interactive terminal front-end.
 //
-// Provides a REPL with interactive tool approval (subagent apply/shell/write),
-// model picker, session commands, and subagent listing. Full-screen Bubble Tea
-// remains a follow-on.
+// Default interactive mode is a full-screen Bubble Tea UI (scrollback, streaming,
+// approvals). Classic line REPL remains available via RunREPL / --repl for
+// scripts, tests, and non-TTY environments.
 package tui
 
 import (
@@ -48,14 +48,34 @@ func (a runtimeAdapter) Workspace() workspaceRoot {
 	return a.rt.Workspace()
 }
 
-// Run starts the interactive REPL without a session store.
+// Run starts the interactive UI without a session store (full-screen when possible).
 func Run(ctx context.Context, rt *agent.Runtime, logger *slog.Logger) error {
 	return RunWithStore(ctx, rt, nil, logger)
 }
 
-// RunWithStore starts the REPL with optional session persistence and interactive approvals.
+// RunWithStore starts the full-screen TUI with optional session persistence.
+// Falls back to the classic line REPL when stdout is not a terminal.
 func RunWithStore(ctx context.Context, rt *agent.Runtime, store *session.Store, logger *slog.Logger) error {
+	if !isTerminal(os.Stdout) {
+		return runREPL(ctx, rt, store, os.Stdin, os.Stdout, logger)
+	}
+	return RunFullscreen(ctx, rt, store, logger)
+}
+
+// RunREPL forces the classic line-oriented REPL (tests, pipes, --repl).
+func RunREPL(ctx context.Context, rt *agent.Runtime, store *session.Store, logger *slog.Logger) error {
 	return runREPL(ctx, rt, store, os.Stdin, os.Stdout, logger)
+}
+
+func isTerminal(f *os.File) bool {
+	if f == nil {
+		return false
+	}
+	fi, err := f.Stat()
+	if err != nil {
+		return false
+	}
+	return (fi.Mode() & os.ModeCharDevice) != 0
 }
 
 func runREPL(ctx context.Context, rt *agent.Runtime, store *session.Store, in io.Reader, out io.Writer, logger *slog.Logger) error {
