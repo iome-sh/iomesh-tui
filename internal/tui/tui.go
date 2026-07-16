@@ -126,7 +126,7 @@ func runREPL(ctx context.Context, rt *agent.Runtime, store *session.Store, in io
 	if sid := rt.SessionID(); sid != "" {
 		fmt.Fprintf(out, "session: %s\n", sid)
 	}
-	fmt.Fprintf(out, "model: %s  |  /model /models /subagents /save /sessions /permissions /cost /mesh /catalog /quit\n", displayModel(rt.Router()))
+	fmt.Fprintf(out, "model: %s  |  /model /models /subagents /save /sessions /permissions /cost /mesh /catalog /memory /quit\n", displayModel(rt.Router()))
 	fmt.Fprintln(out, "mutating tools (write/shell/apply_worktree/…) prompt for approval unless --yolo")
 
 	for {
@@ -267,7 +267,58 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			q = strings.Join(parts[1:], " ")
 		}
 		res := m.ListCatalog(context.Background(), q)
-		fmt.Print(iomesh.FormatCatalog(res))
+		fmt.Fprint(out, iomesh.FormatCatalog(res))
+	case "/memory", "/mem":
+		if len(parts) < 2 {
+			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
+			fmt.Fprintln(out, "usage: /memory [recall [query] | ingest <text>]")
+			return false, nil
+		}
+		sub := strings.ToLower(parts[1])
+		switch sub {
+		case "status", "st":
+			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
+		case "recall", "r":
+			q := strings.Join(parts[2:], " ")
+			if strings.TrimSpace(q) == "" {
+				q = "*"
+			}
+			text, err := rt.rt.MemoryRecall(context.Background(), q)
+			if err != nil {
+				fmt.Fprintf(out, "memory recall: %v\n", err)
+				return false, nil
+			}
+			if strings.TrimSpace(text) == "" {
+				fmt.Fprintln(out, "(no memories)")
+				return false, nil
+			}
+			fmt.Fprintln(out, text)
+		case "ingest", "i":
+			content := strings.Join(parts[2:], " ")
+			if strings.TrimSpace(content) == "" {
+				fmt.Fprintln(out, "usage: /memory ingest <text>")
+				return false, nil
+			}
+			text, err := rt.rt.MemoryIngestTurn(context.Background(), "user", content)
+			if err != nil {
+				fmt.Fprintf(out, "memory ingest: %v\n", err)
+				return false, nil
+			}
+			fmt.Fprintln(out, text)
+		default:
+			// Treat remainder as recall query: /memory what did we decide
+			q := strings.Join(parts[1:], " ")
+			text, err := rt.rt.MemoryRecall(context.Background(), q)
+			if err != nil {
+				fmt.Fprintf(out, "memory: %v (try /memory status|recall|ingest)\n", err)
+				return false, nil
+			}
+			if strings.TrimSpace(text) == "" {
+				fmt.Fprintln(out, "(no memories)")
+				return false, nil
+			}
+			fmt.Fprintln(out, text)
+		}
 	case "/subagents", "/sa":
 		mgr := rt.rt.Subagents()
 		if mgr == nil || !mgr.Enabled() {
@@ -376,6 +427,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /cost                session usage meter + sample estimate
   /mesh                I/O Mesh status + usage
   /catalog [query]     list mesh data products (catalog plane)
+  /memory [recall|ingest|status]  Memory Palace MCP (see memory-mcp.md)
   /quit                exit
 
 Fullscreen keys: enter send · ctrl+j newline · pgup/pgdn scroll

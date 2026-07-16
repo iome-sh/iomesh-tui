@@ -169,7 +169,7 @@ func run(args []string) int {
 		}
 	}
 
-	// MCP stdio servers (opt-in). Fail-open per server inside manager.
+	// MCP stdio/HTTP servers (opt-in). Fail-open per server inside manager.
 	if cfg.MCP.Enabled && cfg.Features.MCP && len(cfg.MCP.Servers) > 0 {
 		var servers []mcp.ServerConfig
 		for _, s := range cfg.MCP.Servers {
@@ -177,6 +177,19 @@ func run(args []string) int {
 		}
 		mgr := mcp.NewManager(ctx, servers, logger)
 		rt.AttachMCP(mgr)
+	}
+
+	// Memory Palace hooks (require MCP server named [memory].server).
+	if cfg.Memory.Enabled {
+		rt.AttachMemory(agent.MemoryConfig{
+			Enabled:         true,
+			Server:          cfg.Memory.Server,
+			Tenant:          cfg.Memory.Tenant,
+			AutoRecall:      cfg.Memory.AutoRecall,
+			AutoIngest:      cfg.Memory.AutoIngest,
+			Limit:           cfg.Memory.Limit,
+			MaxSnippetBytes: cfg.Memory.MaxSnippetBytes,
+		})
 	}
 
 	store, err := session.Open(rt.Workspace().Root())

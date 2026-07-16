@@ -457,6 +457,8 @@ func (m *fullscreenModel) handleAgentEvent(ev agent.Event) {
 		m.appendLine(m.theme.Dim.Render("— " + m.lastCost))
 	case agent.EventMeshContext:
 		m.appendLine(m.theme.Mesh.Render("[iomesh] " + ev.Text))
+	case agent.EventMemoryRecall, agent.EventMemoryIngest:
+		m.appendLine(m.theme.Dim.Render("[memory] " + ev.Text))
 	}
 }
 

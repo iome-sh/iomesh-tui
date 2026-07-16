@@ -62,6 +62,7 @@ type Runtime struct {
 	subagents *subagent.Manager
 	skills    *skills.Catalog
 	mcp       *mcp.Manager
+	memory    MemoryConfig
 
 	// Session transcript and persistence hooks.
 	messages  []router.Message
@@ -253,6 +254,9 @@ func (rt *Runtime) RunTurn(ctx context.Context, userText string, onEvent func(Ev
 		}
 	}
 
+	// Optional Memory Palace MCP auto-recall (fail-open).
+	rt.maybeInjectMemoryRecall(ctx, userText, onEvent)
+
 	rt.messages = append(rt.messages, router.Message{Role: "user", Content: userText})
 
 	complexity := rt.cfg.DefaultComplexity
@@ -338,6 +342,8 @@ func (rt *Runtime) RunTurn(ctx context.Context, userText string, onEvent func(Ev
 		final.WriteString(msg.Content)
 
 		if len(msg.ToolCalls) == 0 {
+			// Opt-in Palace auto-ingest after final assistant answer (fail-open).
+			rt.maybeAutoIngest(ctx, userText, final.String(), onEvent)
 			return final.String(), nil
 		}
 
@@ -435,7 +441,8 @@ MAXIMUM PARALLELISM: for independent tasks always use spawn_subagents (never ser
 ISOLATED EDITS: isolation=worktree → diff_worktree → apply_worktree / apply_worktrees (approval/--yolo).
 SKILLS: when a <skills> catalog is present, use list_skills/read_skill before inventing process.
 MCP: tools prefixed mcp__ require approval when the server is mutating (default).
-When I/O Mesh context is provided inside <iomesh-context>, treat it as governed operational truth for production systems.`, root)
+When I/O Mesh context is provided inside <iomesh-context>, treat it as governed operational truth for production systems.
+When <memory-context> is present, treat it as recalled Memory Palace turns/facts (temporal when timestamps/session_id apply); do not invent memories not present there.`, root)
 }
 
 func estimateTokens(msgs []router.Message) int {

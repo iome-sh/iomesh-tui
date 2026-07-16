@@ -76,6 +76,33 @@ max_depth = 3
 	}
 }
 
+func TestLoad_MemorySection(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.toml")
+	content := `
+[memory]
+enabled = true
+server = "palace"
+tenant = "acme"
+auto_recall = true
+auto_ingest = true
+limit = 12
+`
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.Memory.Enabled || cfg.Memory.Server != "palace" || cfg.Memory.Tenant != "acme" {
+		t.Fatalf("memory=%+v", cfg.Memory)
+	}
+	if !cfg.Memory.AutoIngest || cfg.Memory.Limit != 12 {
+		t.Fatalf("memory flags=%+v", cfg.Memory)
+	}
+}
+
 func TestLoad_MissingFileUsesDefaults(t *testing.T) {
 	cfg, err := Load(filepath.Join(t.TempDir(), "nope.toml"))
 	if err != nil {
