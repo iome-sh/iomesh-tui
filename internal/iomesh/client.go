@@ -48,6 +48,10 @@ type Config struct {
 	CatalogPlane bool
 	// InjectCatalog adds a short catalog snippet into agent turns when true.
 	InjectCatalog bool
+	// OrgID is optional PlanGate / entitlements org (X-IOMesh-Org on MEMORY_INGEST dual-write).
+	OrgID string
+	// WorkspaceID is optional workspace scope (X-IOMesh-Workspace on MEMORY_INGEST dual-write).
+	WorkspaceID string
 }
 
 // Client talks to I/O Mesh control/data planes (OpenHTTP, fail-open).

@@ -198,3 +198,54 @@ func TestPublishMemoryIngest_RequiresContentAndTenant(t *testing.T) {
 		t.Fatal("expected disabled error")
 	}
 }
+
+func TestPublishMemoryIngest_OrgWorkspaceHeaders(t *testing.T) {
+	var gotOrg, gotWS, gotTenant string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotOrg = r.Header.Get("X-IOMesh-Org")
+		gotWS = r.Header.Get("X-IOMesh-Workspace")
+		gotTenant = r.Header.Get("X-IOMesh-Tenant")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"stream":"MEMORY_INGEST","seq":1}`))
+	}))
+	defer srv.Close()
+
+	c := New(Config{
+		Enabled:     true,
+		Endpoint:    srv.URL,
+		Tenant:      "dept.research",
+		OrgID:       "org_dev-org",
+		WorkspaceID: "ws_alpha",
+	}, nil)
+	if _, err := c.PublishMemoryIngest(context.Background(), "dept.research", MemoryEnvelope{Content: "hi"}); err != nil {
+		t.Fatalf("PublishMemoryIngest: %v", err)
+	}
+	if gotOrg != "org_dev-org" {
+		t.Fatalf("X-IOMesh-Org=%q", gotOrg)
+	}
+	if gotWS != "ws_alpha" {
+		t.Fatalf("X-IOMesh-Workspace=%q", gotWS)
+	}
+	if gotTenant != "dept.research" {
+		t.Fatalf("X-IOMesh-Tenant=%q", gotTenant)
+	}
+}
+
+func TestPublishMemoryIngest_OmitsOrgWorkspaceWhenUnset(t *testing.T) {
+	var hadOrg, hadWS bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, hadOrg = r.Header["X-IOMesh-Org"]
+		_, hadWS = r.Header["X-IOMesh-Workspace"]
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "t"}, nil)
+	if _, err := c.PublishMemoryIngest(context.Background(), "t", MemoryEnvelope{Content: "x"}); err != nil {
+		t.Fatal(err)
+	}
+	if hadOrg || hadWS {
+		t.Fatalf("expected no org/workspace headers; hadOrg=%v hadWS=%v", hadOrg, hadWS)
+	}
+}
