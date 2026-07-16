@@ -154,9 +154,10 @@ enabled = false
 # args = ["-palace-root", "/data/memory-palaces"]
 # # env = { "MEMORY_TENANT" = "dept.research" }
 # mutating = true
-# # Optional: streamable HTTP when platform M1 ships:
-# # url = "https://memory-mcp.example/mcp"
+# # Streamable HTTP (platform M1 / s227 — aion-memory-mcp -http-addr :8080):
+# # url = "http://127.0.0.1:8080/mcp"
 # # allow_loopback = true
+# # mutating = true
 
 # [memory] hooks use the MCP server above (no Palace embedded in TUI).
 # [memory]
