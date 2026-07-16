@@ -236,7 +236,9 @@ func run(args []string) int {
 	if *repl {
 		tuiErr = tui.RunREPL(ctx, rt, store, logger)
 	} else {
-		tuiErr = tui.RunWithStore(ctx, rt, store, logger)
+		tuiErr = tui.RunWithStoreOpts(ctx, rt, store, logger, tui.UIOptions{
+			Theme: cfg.UI.Theme,
+		})
 	}
 	if tuiErr != nil {
 		fmt.Fprintf(os.Stderr, "tui: %v\n", tuiErr)
