@@ -60,6 +60,32 @@ Report vulnerabilities privately — see [SECURITY.md](SECURITY.md).
 - Ensure CI is green
 - Do not commit API keys, `.env`, or real workspace secrets
 
+### CI on PR and merge
+
+GitHub Actions workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on:
+
+| Event | When |
+|-------|------|
+| `pull_request` | opened / synchronize / reopened / ready_for_review → `main` |
+| `push` | commits to `main` (after merge) |
+| `merge_group` | GitHub merge queue (if enabled) |
+| `workflow_dispatch` | manual re-run |
+
+Jobs: **lint** · **test** (race + coverage artifact) · **build** (`iomesh version` / `models`) · **govulncheck** · **ci-success** (aggregate gate).
+
+Recommended branch protection on `main` (Settings → Branches):
+
+1. Require a pull request before merging  
+2. Require status checks to pass: **`ci-success`** (or each of lint/test/build/govulncheck)  
+3. Require branches to be up to date before merging  
+4. Do not allow bypassing the above for admins (optional but preferred for OSS)
+
+Local parity:
+
+```bash
+make ci   # fmt-check + vet + test + race + cover + vuln + build
+```
+
 ## License
 
 By contributing, you agree that your contributions are licensed under the MIT License (see [LICENSE](LICENSE)).

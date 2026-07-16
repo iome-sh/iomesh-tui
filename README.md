@@ -16,7 +16,7 @@
 ## Quick start
 
 ```bash
-# Requirements: Go 1.22+
+# Requirements: Go 1.26.5+ (see go.mod)
 git clone https://github.com/iome-sh/iomesh-tui.git
 cd iomesh-tui
 
@@ -118,7 +118,7 @@ make vuln       # govulncheck
 make build
 ```
 
-CI (GitHub Actions): multi-Go test matrix, race detector, coverage, `govulncheck`.
+CI (GitHub Actions on every PR + merge to `main`): **lint**, **test** (race + coverage), **build**, **govulncheck**, aggregate **ci-success**. See [CONTRIBUTING.md](CONTRIBUTING.md#ci-on-pr-and-merge).
 
 Contributions: [CONTRIBUTING.md](CONTRIBUTING.md).
 

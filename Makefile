@@ -39,7 +39,8 @@ vuln:
 
 check: fmt-check vet test
 
-ci: check test-race cover vuln build
+# Mirrors GitHub Actions CI gate (lint + test + race + cover + vuln + build).
+ci: fmt-check vet test test-race cover vuln build
 
 run:
 	go run ./cmd/iomesh
