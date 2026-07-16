@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/iome-sh/iomesh-tui/internal/iomesh"
@@ -68,6 +69,8 @@ type Runtime struct {
 	messages  []router.Message
 	sessionID string
 	autoSave  bool
+	// sessionSeq is a monotonic counter for dual-write memory_ingest envelopes.
+	sessionSeq atomic.Int64
 
 	// Permission / approval for mutating tools (subagent apply, shell, write, …).
 	mu           sync.Mutex

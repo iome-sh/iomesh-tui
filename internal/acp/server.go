@@ -466,6 +466,7 @@ func (s *Server) newRuntime(cwd string) (*agent.Runtime, *session.Store, error) 
 			Tenant:          cfg.Memory.Tenant,
 			AutoRecall:      cfg.Memory.AutoRecall,
 			AutoIngest:      cfg.Memory.AutoIngest,
+			DualWrite:       cfg.Memory.DualWrite,
 			Limit:           cfg.Memory.Limit,
 			MaxSnippetBytes: cfg.Memory.MaxSnippetBytes,
 		})

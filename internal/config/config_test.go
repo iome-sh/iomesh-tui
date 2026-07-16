@@ -86,6 +86,7 @@ server = "palace"
 tenant = "acme"
 auto_recall = true
 auto_ingest = true
+dual_write = true
 limit = 12
 `
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
@@ -98,7 +99,7 @@ limit = 12
 	if !cfg.Memory.Enabled || cfg.Memory.Server != "palace" || cfg.Memory.Tenant != "acme" {
 		t.Fatalf("memory=%+v", cfg.Memory)
 	}
-	if !cfg.Memory.AutoIngest || cfg.Memory.Limit != 12 {
+	if !cfg.Memory.AutoIngest || !cfg.Memory.DualWrite || cfg.Memory.Limit != 12 {
 		t.Fatalf("memory flags=%+v", cfg.Memory)
 	}
 }

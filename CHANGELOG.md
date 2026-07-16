@@ -7,12 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-07-16
+
+Minor release: Memory Palace Phase 2 (HTTP MCP + dual-write `MEMORY_INGEST`) and catalog federation polish. Compatible with existing `v0.2.x` configs (new flags default off).
+
 ### Added
 
-- **Memory Palace MCP (Phase 0–1)** — attach `aion-memory-mcp` via stdio MCP; `[memory]` auto-recall inject + opt-in auto-ingest; TUI `/memory` slash ([docs/architecture/memory-mcp.md](docs/architecture/memory-mcp.md))
+- **Memory Palace MCP (Phase 0–2)** — attach `aion-memory-mcp` via stdio or streamable HTTP MCP; `[memory]` auto-recall inject + opt-in auto-ingest; TUI `/memory` slash ([docs/architecture/memory-mcp.md](docs/architecture/memory-mcp.md))
+- **Memory dual-write** — optional `dual_write` / `IOMESH_MEMORY_DUAL_WRITE` publishes async `memory_ingest` envelopes to mesh `MEMORY_INGEST` (temporal fields: `event_time`, `session_seq`, `session_id`, `role`, `content`); fail-open; no SDK dependency
 - Portal catalog federation: after broker `/v1/catalog/*`, try `/v17/portal/catalog/data-products` and marketing catalog; normalize portal fields
 - Agent tool `get_mesh_catalog_product`; dogfood catalog PASS for `source=portal`
 - `iomesh mesh dogfood --json` for stage CI evidence
+
+### Config / env (new)
+
+| Key | Default | Notes |
+|-----|---------|--------|
+| `dual_write` / `IOMESH_MEMORY_DUAL_WRITE` | false | Mesh `MEMORY_INGEST` dual-write when `[iomesh]` enabled |
 
 ## [0.2.0] — 2026-07-16
 
@@ -65,6 +76,7 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.3.0
 [0.2.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.2.0
 [0.1.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.1.0

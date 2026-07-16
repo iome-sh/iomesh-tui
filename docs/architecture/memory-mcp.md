@@ -2,7 +2,7 @@
 
 First-class **Agentic Memory Palace** and **temporal recall** for `iomesh-tui`, without embedding Palace inside the TUI process.
 
-Platform ships `aion-memory-mcp` (stdio) with tools:
+Platform ships `aion-memory-mcp` (stdio **and** streamable HTTP) with tools:
 
 | Tool | Purpose |
 |------|---------|
@@ -18,23 +18,52 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 
 | Phase | Status | Work |
 |-------|--------|------|
-| **0** | **this doc + config** | Attach `aion-memory-mcp` via existing MCP client; documented example |
-| **1** | **this PR** | `[memory]` auto-recall inject, opt-in auto-ingest, `/memory` slash |
-| **2** | ready when platform M1 live | Prefer `[[mcp.servers]]` **url** = `http://host:8080/mcp` (aion-memory-mcp `-http-addr`) |
-| **2+** | planned | Dual-write emit + v0.3.0; depends on M2 sync retrieve for pure SDK paths |
+| **0** | **done** | Attach `aion-memory-mcp` via existing MCP client; documented example |
+| **1** | **done** | `[memory]` auto-recall inject, opt-in auto-ingest, `/memory` slash |
+| **2** | **done (v0.3.0)** | HTTP MCP primary path + optional dual-write to mesh `MEMORY_INGEST` |
+| **3+** | planned | Pure SDK sync retrieve paths when operators want non-MCP clients |
 
-**Non-goals:** private monorepo imports in public TUI; embedding Qdrant/Palace in-process.
+**Non-goals:** private monorepo imports in public TUI; embedding Qdrant/Palace in-process; dependency on `iomesh-client-sdk-go`.
 
-## Phase 0 — attach stdio today
+## Phase 0–1 — MCP hooks (stdio or HTTP)
 
-1. Build platform binary (private monorepo):
+### Preferred: streamable HTTP (platform M1)
+
+```bash
+aion-memory-mcp -http-addr :8080 -palace-root /data/memory-palaces
+# MCP endpoint: http://127.0.0.1:8080/mcp
+# health:       http://127.0.0.1:8080/healthz
+```
+
+```toml
+[mcp]
+enabled = true
+
+[[mcp.servers]]
+name = "memory"
+url = "http://127.0.0.1:8080/mcp"
+allow_loopback = true
+mutating = true
+
+[memory]
+enabled = true
+server = "memory"          # must match [[mcp.servers]].name
+tenant = "dept.research"   # or MEMORY_TENANT / IOMESH_MEMORY_TENANT
+auto_recall = true         # inject <memory-context> each turn (fail-open)
+auto_ingest = false        # opt-in: write user+assistant turns after success
+# dual_write = false       # opt-in: also publish MEMORY_INGEST (needs [iomesh])
+# limit = 8
+# max_snippet_bytes = 6000
+```
+
+Env: `MEMORY_MCP_HTTP_ADDR` / `AION_MEMORY_MCP_HTTP_ADDR`, path `MEMORY_MCP_HTTP_PATH` (default `/mcp`).
+
+### Alternate: stdio
 
 ```bash
 # from aion monorepo
 go build -o "$HOME/bin/aion-memory-mcp" ./cmd/aion-memory-mcp
 ```
-
-2. Enable MCP + memory hooks in `~/.iomesh/config.toml`:
 
 ```toml
 [mcp]
@@ -50,15 +79,13 @@ mutating = true   # ingest tools need approval unless --yolo
 
 [memory]
 enabled = true
-server = "memory"          # must match [[mcp.servers]].name
-tenant = "dept.research"   # or MEMORY_TENANT / IOMESH_MEMORY_TENANT
-auto_recall = true         # inject <memory-context> each turn (fail-open)
-auto_ingest = false        # opt-in: write user+assistant turns after success
-# limit = 8
-# max_snippet_bytes = 6000
+server = "memory"
+tenant = "dept.research"
+auto_recall = true
+auto_ingest = false
 ```
 
-3. Verify:
+### Verify
 
 ```bash
 iomesh mcp --connect
@@ -78,7 +105,8 @@ Agent tools also appear as `mcp__memory__memory_retrieve` (etc.) when MCP is att
 | `IOMESH_MEMORY=1` | Enable `[memory]` hooks |
 | `IOMESH_MEMORY_TENANT` / `MEMORY_TENANT` | Default tenant for hooks + slash |
 | `IOMESH_MEMORY_AUTO_RECALL=0` | Disable per-turn retrieve inject |
-| `IOMESH_MEMORY_AUTO_INGEST=1` | Enable post-turn ingest (still uses MCP tools) |
+| `IOMESH_MEMORY_AUTO_INGEST=1` | Enable post-turn ingest (MCP and/or dual-write) |
+| `IOMESH_MEMORY_DUAL_WRITE=1` | Also publish async `MEMORY_INGEST` when mesh enabled |
 | `IOMESH_MCP=1` | Enable MCP section |
 
 ## Phase 1 — runtime loop
@@ -87,20 +115,63 @@ Agent tools also appear as `mcp__memory__memory_retrieve` (etc.) when MCP is att
 user turn
   → [optional] memory_retrieve(query=userText) → <memory-context> system msg
   → LLM + tools
-  → [optional auto_ingest] memory_ingest_turn(user) + memory_ingest_turn(assistant)
+  → [optional auto_ingest]
+        memory_ingest_turn(user) + memory_ingest_turn(assistant)   # MCP when connected
+        + PublishMemoryIngest → MEMORY_INGEST                      # when dual_write
 ```
 
-- **Fail-open**: MCP down, empty hits, or tool errors never fail the turn.
-- **No Palace import**: only MCP `tools/call` over the existing client.
+- **Fail-open**: MCP down, empty hits, dual-write errors, or tool errors never fail the turn.
+- **No Palace import**: only MCP `tools/call` over the existing client (+ lean HTTP publish).
 - **Mutating**: auto-ingest bypasses the interactive approval UI (operator opt-in via `auto_ingest`); interactive `mcp__memory__*` still requires approval when `mutating=true`.
+
+## Phase 2 — dual-write MEMORY_INGEST (v0.3.0)
+
+When `dual_write = true` (or `IOMESH_MEMORY_DUAL_WRITE=1`) **and** `[iomesh]` mesh client is enabled:
+
+1. After MCP ingest (or **instead of** MCP when no server is connected), publish an async envelope to  
+   `POST /v1/streams/MEMORY_INGEST/publish`.
+2. Subject: `{tenant}.memory.ingest.turn`
+3. Payload (base64 JSON, same wire as public SDK):
+
+```json
+{
+  "type": "memory_ingest",
+  "session_id": "…",
+  "role": "user|assistant",
+  "content": "…",
+  "event_time": "2026-07-16T12:00:00Z",
+  "session_seq": 1
+}
+```
+
+- `session_seq` is **monotonic per Runtime** (process lifetime of the agent session).
+- Tenant from `[memory].tenant`, else mesh tenant.
+- Dual-write is **independent** of MCP success (fail-open both ways).
+- Useful for durable stream consumers / temporal pipelines without embedding Palace in the TUI.
+
+Requires mesh:
+
+```toml
+[iomesh]
+enabled = true
+endpoint = "https://mesh.example"
+tenant = "dept.research"
+# api_key_env = "IOMESH_API_KEY"
+
+[memory]
+enabled = true
+auto_ingest = true
+dual_write = true
+tenant = "dept.research"
+```
 
 ## Slash commands
 
 | Command | Behavior |
 |---------|----------|
-| `/memory` | Status: enabled, server connected?, flags, tenant |
+| `/memory` | Status: enabled, server connected?, flags (incl. `dual_write`), tenant |
 | `/memory recall [query]` | Retrieve (default query = last user text or `"*"`) |
-| `/memory ingest <text>` | Ingest a user turn (requires connected server) |
+| `/memory ingest <text>` | Ingest a user turn (MCP and/or dual-write) |
 
 ## Platform gaps (aion backlog)
 
@@ -108,57 +179,26 @@ Tracked in aion `aion-foundation-pending-todos.md`:
 
 | ID | Gap |
 |----|-----|
-| M1 | Streamable HTTP for `aion-memory-mcp` (remote / Cloud Run) |
-| M2 | Sync `POST /v1/memory/retrieve` (SDK recall is async publish today) |
-| M3 | SDK temporal envelope fields |
+| M1 | Streamable HTTP for `aion-memory-mcp` — **shipped** (TUI HTTP path ready) |
+| M2 | Sync `POST /v5/memory/retrieve` (SDK) — optional non-MCP clients |
+| M3 | SDK temporal envelope fields — **shipped** (TUI dual-write mirrors subset) |
 | M4 | Stage warm `aion-memory` path (prod lean absent) |
 | M5 | Entitlements fail-closed on MCP |
-
-Phase 0–1 work on **stdio** without M1–M2.
 
 ## Package map
 
 | Path | Role |
 |------|------|
-| `internal/config` | `[memory]` section + env |
-| `internal/agent/memory.go` | Recall / ingest helpers |
+| `internal/config` | `[memory]` section + env (`dual_write`) |
+| `internal/iomesh/memory.go` | `PublishMemoryIngest` lean HTTP (no SDK dep) |
+| `internal/agent/memory.go` | Recall / ingest / dual-write helpers |
 | `internal/agent/agent.go` | `RunTurn` hooks |
 | `internal/tui/tui.go` | `/memory` slash |
 | `configs/config.example.toml` | Copy-paste wire-up |
 
 ## Honesty
 
-- Local Palace via stdio ≠ multi-tenant Cloud Run Memory Palace.
+- Local Palace via stdio/HTTP MCP ≠ multi-tenant Cloud Run Memory Palace with full entitlements.
+- Dual-write is **best-effort** stream publish; it does not guarantee Palace persistence by itself.
 - “Native Vertex” / G4S claims are separate (see marketing claim matrix); memory is **Palace + MCP**, not Vertex.
 - Do not claim temporal pipeline is live unless stage/prod embedding + temporal flags are on.
-
-
-## Remote HTTP (platform M1 / s227)
-
-`aion-memory-mcp` can serve **streamable HTTP** instead of stdio:
-
-```bash
-aion-memory-mcp -http-addr :8080 -palace-root /data/memory-palaces
-# MCP endpoint: http://127.0.0.1:8080/mcp
-# health:       http://127.0.0.1:8080/healthz
-```
-
-TUI config:
-
-```toml
-[mcp]
-enabled = true
-
-[[mcp.servers]]
-name = "memory"
-url = "http://127.0.0.1:8080/mcp"
-allow_loopback = true
-mutating = true
-
-[memory]
-enabled = true
-server = "memory"
-auto_recall = true
-```
-
-Env: `MEMORY_MCP_HTTP_ADDR` / `AION_MEMORY_MCP_HTTP_ADDR`, path `MEMORY_MCP_HTTP_PATH` (default `/mcp`).
