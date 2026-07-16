@@ -72,7 +72,7 @@ func (r *ToolRegistry) RegisterSubagentTools(mgr *subagent.Manager) {
 		Function: router.ToolFunction{
 			Name: "spawn_subagents",
 			Description: fmt.Sprintf(
-				"Spawn MANY child agents in parallel (up to max_concurrent=%d running, max_batch=%d tasks). Prefer this over serial spawn_subagent when tasks are independent. Set wait=true to block until all finish; wait=false returns ids immediately for wait_subagents.",
+				"MAXIMUM PARALLEL fan-out: spawn up to max_concurrent=%d running (max_batch=%d tasks). Joins wait concurrently. For isolated parallel edits use default_isolation=worktree and optionally apply_after=true (requires wait=true) to merge all worktrees in parallel.",
 				mgr.MaxConcurrent(), mgr.MaxBatch(),
 			),
 			Parameters: json.RawMessage(`{
@@ -94,7 +94,9 @@ func (r *ToolRegistry) RegisterSubagentTools(mgr *subagent.Manager) {
         "required": ["prompt"]
       }
     },
-    "wait": {"type": "boolean", "description": "If true, wait for all tasks to finish before returning summaries"},
+    "wait": {"type": "boolean", "description": "If true, wait for ALL tasks concurrently before returning"},
+    "apply_after": {"type": "boolean", "description": "After wait, parallel-apply isolation worktrees into parent (requires wait=true; mutating)"},
+    "remove_after_apply": {"type": "boolean", "description": "With apply_after, delete worktrees after successful apply"},
     "default_subagent_type": {"type": "string", "enum": ["general-purpose", "explore", "plan"]},
     "default_isolation": {"type": "string", "enum": ["none", "worktree"]}
   },
@@ -112,12 +114,17 @@ func (r *ToolRegistry) RegisterSubagentTools(mgr *subagent.Manager) {
 				CWD            string `json:"cwd"`
 			} `json:"tasks"`
 			Wait                bool   `json:"wait"`
+			ApplyAfter          bool   `json:"apply_after"`
+			RemoveAfterApply    bool   `json:"remove_after_apply"`
 			DefaultSubagentType string `json:"default_subagent_type"`
 			DefaultIsolation    string `json:"default_isolation"`
 		}
 		if err := json.Unmarshal([]byte(args), &p); err != nil {
 			return "", err
 		}
+		// Note: apply_after performs parent writes; prefer explicit apply_worktrees when
+		// approval UX is required. spawn_subagents remains non-mutating for the outer tool
+		// classification; operators should use --yolo for unattended apply_after.
 		defType := subagent.Type(p.DefaultSubagentType)
 		if defType == "" {
 			defType = subagent.TypeExplore
@@ -146,7 +153,11 @@ func (r *ToolRegistry) RegisterSubagentTools(mgr *subagent.Manager) {
 				Background:     true,
 			})
 		}
-		batch, err := mgr.SpawnMany(ctx, specs, subagent.SpawnManyOptions{Wait: p.Wait})
+		batch, err := mgr.SpawnMany(ctx, specs, subagent.SpawnManyOptions{
+			Wait:             p.Wait,
+			ApplyAfter:       p.ApplyAfter,
+			RemoveAfterApply: p.RemoveAfterApply,
+		})
 		if err != nil {
 			return "", err
 		}
@@ -283,6 +294,36 @@ func (r *ToolRegistry) RegisterSubagentTools(mgr *subagent.Manager) {
 			return "", err
 		}
 		res, err := mgr.ApplyWorktree(ctx, p.ID, p.Remove)
+		if err != nil {
+			return "", err
+		}
+		b, _ := json.MarshalIndent(res, "", "  ")
+		return string(b), nil
+	})
+
+	r.register("apply_worktrees", true, router.Tool{
+		Type: "function",
+		Function: router.ToolFunction{
+			Name:        "apply_worktrees",
+			Description: "MAXIMUM PARALLEL merge: apply many isolation worktrees into the parent concurrently (bounded by max_concurrent). Requires approval/--yolo. Prefer after spawn_subagents with default_isolation=worktree and wait=true.",
+			Parameters: json.RawMessage(`{
+  "type": "object",
+  "properties": {
+    "ids": {"type": "array", "items": {"type": "string"}, "description": "Subagent ids or worktree paths"},
+    "remove": {"type": "boolean", "description": "Remove each worktree after successful apply"}
+  },
+  "required": ["ids"]
+}`),
+		},
+	}, func(ctx context.Context, args string) (string, error) {
+		var p struct {
+			IDs    []string `json:"ids"`
+			Remove bool     `json:"remove"`
+		}
+		if err := json.Unmarshal([]byte(args), &p); err != nil {
+			return "", err
+		}
+		res, err := mgr.ApplyMany(ctx, p.IDs, p.Remove)
 		if err != nil {
 			return "", err
 		}

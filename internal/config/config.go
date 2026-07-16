@@ -138,9 +138,9 @@ func Default() *Config {
 		},
 		Subagents: SubagentsSection{
 			Enabled:       true,
-			MaxConcurrent: 16, // max parallel running children
+			MaxConcurrent: 32, // max parallel running children
 			MaxDepth:      2,
-			MaxBatch:      32, // max tasks per spawn_subagents call
+			MaxBatch:      64, // max tasks per spawn_subagents call
 		},
 		Catalog: router.DefaultModels(),
 	}

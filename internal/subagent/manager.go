@@ -35,11 +35,14 @@ type SpawnParams struct {
 	ResumeMessages any
 }
 
-// Default concurrency / batch limits (open-source agent fan-out).
+// Default concurrency / batch limits (maximum practical fan-out).
 const (
-	DefaultMaxConcurrent = 16
-	DefaultMaxBatch      = 32
+	DefaultMaxConcurrent = 32
+	DefaultMaxBatch      = 64
 	DefaultMaxDepth      = 2
+	// Absolute caps reject misconfiguration / runaway tool args.
+	AbsoluteMaxConcurrent = 128
+	AbsoluteMaxBatch      = 256
 )
 
 // Config tunes the manager.
@@ -61,18 +64,28 @@ type Config struct {
 // SpawnManyOptions controls batch fan-out.
 type SpawnManyOptions struct {
 	// Wait blocks until every spawned child finishes (completed/failed/cancelled).
+	// Joins run in parallel (not serial).
 	Wait bool
+	// ApplyAfter merges isolation worktrees into the parent after Wait (parallel apply).
+	// Requires Wait=true; no-ops for children without worktree_path.
+	ApplyAfter bool
+	// RemoveAfterApply deletes worktrees after a successful apply (only if ApplyAfter).
+	RemoveAfterApply bool
 }
 
 // BatchResult is the response for parallel multi-spawn.
 type BatchResult struct {
-	Results       []Result `json:"results"`
-	MaxConcurrent int      `json:"max_concurrent"`
-	Spawned       int      `json:"spawned"`
-	Completed     int      `json:"completed,omitempty"`
-	Failed        int      `json:"failed,omitempty"`
-	Running       int      `json:"running,omitempty"`
-	Waited        bool     `json:"waited"`
+	Results       []Result      `json:"results"`
+	MaxConcurrent int           `json:"max_concurrent"`
+	Spawned       int           `json:"spawned"`
+	Completed     int           `json:"completed,omitempty"`
+	Failed        int           `json:"failed,omitempty"`
+	Running       int           `json:"running,omitempty"`
+	Waited        bool          `json:"waited"`
+	ElapsedMS     int64         `json:"elapsed_ms,omitempty"`
+	Applies       []ApplyResult `json:"applies,omitempty"`
+	AppliesOK     int           `json:"applies_ok,omitempty"`
+	AppliesFailed int           `json:"applies_failed,omitempty"`
 }
 
 // Manager orchestrates spawn, tracking, and retrieval.
@@ -118,11 +131,17 @@ func NewManager(cfg Config, factory RunnerFactory, logger *slog.Logger) *Manager
 	if cfg.MaxConcurrent <= 0 {
 		cfg.MaxConcurrent = DefaultMaxConcurrent
 	}
+	if cfg.MaxConcurrent > AbsoluteMaxConcurrent {
+		cfg.MaxConcurrent = AbsoluteMaxConcurrent
+	}
 	if cfg.MaxDepth <= 0 {
 		cfg.MaxDepth = DefaultMaxDepth
 	}
 	if cfg.MaxBatch <= 0 {
 		cfg.MaxBatch = DefaultMaxBatch
+	}
+	if cfg.MaxBatch > AbsoluteMaxBatch {
+		cfg.MaxBatch = AbsoluteMaxBatch
 	}
 	if logger == nil {
 		logger = slog.Default()
@@ -405,8 +424,8 @@ func (m *Manager) Wait(ctx context.Context, id string) (Result, error) {
 }
 
 // SpawnMany starts many subagents in parallel (always background-started so the
-// semaphore fans out up to MaxConcurrent). When opts.Wait is true, blocks until
-// every child reaches a terminal status.
+// semaphore fans out up to MaxConcurrent). When opts.Wait is true, joins all
+// children concurrently. Optional ApplyAfter merges worktrees in parallel.
 func (m *Manager) SpawnMany(ctx context.Context, specs []Spec, opts SpawnManyOptions) (BatchResult, error) {
 	if m == nil || !m.cfg.Enabled {
 		return BatchResult{}, fmt.Errorf("subagents disabled")
@@ -417,7 +436,11 @@ func (m *Manager) SpawnMany(ctx context.Context, specs []Spec, opts SpawnManyOpt
 	if len(specs) > m.cfg.MaxBatch {
 		return BatchResult{}, fmt.Errorf("spawn_subagents: %d tasks exceeds max_batch %d", len(specs), m.cfg.MaxBatch)
 	}
+	if opts.ApplyAfter && !opts.Wait {
+		return BatchResult{}, fmt.Errorf("spawn_subagents: apply_after requires wait=true")
+	}
 
+	start := time.Now()
 	out := BatchResult{
 		Results:       make([]Result, 0, len(specs)),
 		MaxConcurrent: m.cfg.MaxConcurrent,
@@ -446,21 +469,31 @@ func (m *Manager) SpawnMany(ctx context.Context, specs []Spec, opts SpawnManyOpt
 	}
 
 	if opts.Wait {
-		waited := make([]Result, 0, len(out.Results))
+		out.Results = m.waitAllParallel(ctx, out.Results)
+	}
+
+	if opts.ApplyAfter {
+		ids := make([]string, 0, len(out.Results))
 		for _, r := range out.Results {
-			if r.ID == "" {
-				waited = append(waited, r)
-				continue
+			if r.Status == StatusCompleted && (r.WorktreePath != "" || r.ID != "") {
+				ids = append(ids, r.ID)
 			}
-			final, err := m.Wait(ctx, r.ID)
-			if err != nil && final.ID == "" {
-				final = r
-				final.Error = err.Error()
-				final.Status = StatusCancelled
-			}
-			waited = append(waited, final)
 		}
-		out.Results = waited
+		applies, err := m.ApplyMany(ctx, ids, opts.RemoveAfterApply)
+		if err != nil {
+			// Still return spawn results; surface apply error on batch.
+			out.AppliesFailed = len(ids)
+			m.logger.Warn("batch apply failed", "err", err)
+		} else {
+			out.Applies = applies
+			for _, a := range applies {
+				if a.Error != "" {
+					out.AppliesFailed++
+				} else {
+					out.AppliesOK++
+				}
+			}
+		}
 	}
 
 	out.Completed, out.Failed, out.Running = 0, 0, 0
@@ -474,6 +507,7 @@ func (m *Manager) SpawnMany(ctx context.Context, specs []Spec, opts SpawnManyOpt
 			out.Running++
 		}
 	}
+	out.ElapsedMS = time.Since(start).Milliseconds()
 	m.logger.Info("subagent batch",
 		"spawned", out.Spawned,
 		"completed", out.Completed,
@@ -481,11 +515,91 @@ func (m *Manager) SpawnMany(ctx context.Context, specs []Spec, opts SpawnManyOpt
 		"running", out.Running,
 		"max_concurrent", out.MaxConcurrent,
 		"waited", out.Waited,
+		"elapsed_ms", out.ElapsedMS,
+		"applies_ok", out.AppliesOK,
+		"applies_failed", out.AppliesFailed,
 	)
 	return out, nil
 }
 
-// WaitAll waits for every listed id (order preserved). Missing ids become Failed results.
+// waitAllParallel joins each result's id concurrently (order-preserving).
+func (m *Manager) waitAllParallel(ctx context.Context, in []Result) []Result {
+	out := make([]Result, len(in))
+	var wg sync.WaitGroup
+	for i, r := range in {
+		if r.ID == "" {
+			out[i] = r
+			continue
+		}
+		wg.Add(1)
+		go func(i int, r Result) {
+			defer wg.Done()
+			final, err := m.Wait(ctx, r.ID)
+			if err != nil && final.ID == "" {
+				final = r
+				final.Error = err.Error()
+				final.Status = StatusCancelled
+			}
+			out[i] = final
+		}(i, r)
+	}
+	wg.Wait()
+	return out
+}
+
+// ApplyMany applies multiple worktrees in parallel (bounded by MaxConcurrent).
+// Each ApplyResult.Error is set on failure instead of aborting the batch.
+func (m *Manager) ApplyMany(ctx context.Context, ids []string, removeAfter bool) ([]ApplyResult, error) {
+	if m == nil || !m.cfg.Enabled {
+		return nil, fmt.Errorf("subagents disabled")
+	}
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	if len(ids) > m.cfg.MaxBatch {
+		return nil, fmt.Errorf("apply_worktrees: %d ids exceeds max_batch %d", len(ids), m.cfg.MaxBatch)
+	}
+	lc, ok := m.Lifecycle()
+	if !ok {
+		return nil, fmt.Errorf("worktree apply not available (need git backend)")
+	}
+
+	out := make([]ApplyResult, len(ids))
+	sem := make(chan struct{}, m.cfg.MaxConcurrent)
+	var wg sync.WaitGroup
+	for i, id := range ids {
+		wg.Add(1)
+		go func(i int, id string) {
+			defer wg.Done()
+			select {
+			case sem <- struct{}{}:
+				defer func() { <-sem }()
+			case <-ctx.Done():
+				out[i] = ApplyResult{Error: ctx.Err().Error()}
+				return
+			}
+			ref := m.ResolveWorktreeForID(id)
+			ar, err := lc.Apply(ctx, m.cfg.Workspace, ref, removeAfter)
+			if err != nil {
+				ar.Error = err.Error()
+				if ar.WorktreePath == "" {
+					ar.WorktreePath = ref
+				}
+			}
+			if removeAfter && err == nil {
+				if rec, ok := m.reg.Get(id); ok {
+					_ = m.reg.Update(rec.ID, func(r *Record) { r.WorktreePath = "" })
+				}
+			}
+			out[i] = ar
+		}(i, id)
+	}
+	wg.Wait()
+	return out, nil
+}
+
+// WaitAll waits for every listed id concurrently (order preserved).
+// Missing ids become Failed results.
 func (m *Manager) WaitAll(ctx context.Context, ids []string) ([]Result, error) {
 	if m == nil || !m.cfg.Enabled {
 		return nil, fmt.Errorf("subagents disabled")
@@ -493,16 +607,11 @@ func (m *Manager) WaitAll(ctx context.Context, ids []string) ([]Result, error) {
 	if len(ids) == 0 {
 		return nil, fmt.Errorf("wait_subagents: empty ids")
 	}
-	out := make([]Result, 0, len(ids))
-	for _, id := range ids {
-		res, err := m.Wait(ctx, id)
-		if err != nil {
-			out = append(out, Result{ID: id, Status: StatusFailed, Error: err.Error()})
-			continue
-		}
-		out = append(out, res)
+	placeholders := make([]Result, len(ids))
+	for i, id := range ids {
+		placeholders[i] = Result{ID: id}
 	}
-	return out, nil
+	return m.waitAllParallel(ctx, placeholders), nil
 }
 
 // GetMany returns current status for each id without blocking.
@@ -653,7 +762,8 @@ func EffectiveTools(allowWrite, allowShell, allowSpawn bool) []string {
 			"get_subagent_output", "wait_subagents",
 			// apply/remove are parent-only in practice; included when spawn allowed
 			// so nested AllowSpawn children could merge (builtins keep AllowSpawn false).
-			"apply_worktree", "diff_worktree", "list_worktrees", "remove_worktree",
+			"apply_worktree", "apply_worktrees",
+			"diff_worktree", "list_worktrees", "remove_worktree",
 		)
 	}
 	return tools

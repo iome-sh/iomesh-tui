@@ -46,9 +46,11 @@ Type defaults: explore/plan → `execute`; general-purpose → `all`.
 }
 ```
 
-- Tasks start as **background** so the semaphore fills up to `max_concurrent`.
-- `wait=true` joins all; `wait=false` returns ids for later `wait_subagents`.
-- Batch size capped by `max_batch` (default **32**).
+- Tasks start as **background** so the semaphore fills up to `max_concurrent` (default **32**, hard cap **128**).
+- `wait=true` joins **all children concurrently** (not serial); `wait=false` returns ids for `wait_subagents`.
+- Batch size capped by `max_batch` (default **64**, hard cap **256**).
+- Isolated parallel implementers: `default_isolation=worktree` + `wait=true` + optional `apply_after=true` (parallel merge) / `remove_after_apply`.
+- Or join then `apply_worktrees` for maximum parallel merge of many worktrees.
 
 ## Cost routing
 
@@ -59,8 +61,8 @@ Children force `TaskSubagent` + `ComplexityRoutine` so the cascade prefers **Dee
 ```toml
 [subagents]
 enabled = true
-max_concurrent = 16   # parallel running children
-max_batch = 32        # max tasks per spawn_subagents
+max_concurrent = 32   # parallel running children (cap 128)
+max_batch = 64        # max tasks per spawn_subagents (cap 256)
 max_depth = 2
 ```
 
@@ -99,6 +101,7 @@ After a child finishes in a worktree, the **parent** merges changes:
 | `diff_worktree` | no | `git status` + diff stat for id/path |
 | `list_worktrees` | no | List `.iomesh/worktrees/*` |
 | `apply_worktree` | **yes** | Path-jailed copy of changed files into parent; optional `remove=true` |
+| `apply_worktrees` | **yes** | **Parallel** apply of many ids (bounded by `max_concurrent`) |
 | `remove_worktree` | **yes** | Drop worktree without applying |
 
 ```text
