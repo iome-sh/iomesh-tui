@@ -45,6 +45,8 @@ func run(args []string) int {
 			return cmdSkills(args[1:])
 		case "mcp":
 			return cmdMCP(args[1:])
+		case "mesh":
+			return cmdMesh(args[1:])
 		case "agent":
 			return cmdAgent(args[1:])
 		case "help", "-h", "--help":
@@ -415,6 +417,103 @@ func cmdModels(args []string) int {
 	return 0
 }
 
+func cmdMesh(args []string) int {
+	if len(args) == 0 {
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh dogfood|probe [flags]")
+		return 2
+	}
+	switch args[0] {
+	case "dogfood", "probe":
+		return cmdMeshDogfood(args[1:])
+	case "help", "-h", "--help":
+		fmt.Fprintln(os.Stderr, `iomesh mesh — I/O Mesh platform probes
+
+  iomesh mesh dogfood   stage smoke (health → ready → context → emit)
+  iomesh mesh probe     alias for dogfood
+
+Flags:
+  --config path     config.toml
+  --strict          require context + emit + ready
+  --skip-context    skip context plane
+  --skip-emit       skip dept stream emit
+  -C dir            workspace for context query
+  -v                verbose`)
+		return 0
+	default:
+		fmt.Fprintf(os.Stderr, "unknown mesh subcommand %q\n", args[0])
+		return 2
+	}
+}
+
+func cmdMeshDogfood(args []string) int {
+	fs := flag.NewFlagSet("mesh dogfood", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	var (
+		configPath  = fs.String("config", "", "config.toml path")
+		workspace   = fs.String("C", "", "workspace for context query")
+		strict      = fs.Bool("strict", false, "fail if context/emit/ready soft-fail")
+		skipContext = fs.Bool("skip-context", false, "skip context plane probe")
+		skipEmit    = fs.Bool("skip-emit", false, "skip dept emit probe")
+		verbose     = fs.Bool("v", false, "verbose logs")
+		endpoint    = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
+		tenant      = fs.String("tenant", "", "override tenant")
+	)
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	logger := newLogger(*verbose)
+	cfg, err := loadConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "config: %v\n", err)
+		return 1
+	}
+	if *endpoint != "" {
+		cfg.IOMesh.Endpoint = *endpoint
+		cfg.IOMesh.Enabled = true
+	}
+	if *tenant != "" {
+		cfg.IOMesh.Tenant = *tenant
+	}
+	// Env already applied by config.Load; allow empty endpoint → SKIP report.
+	mesh := iomesh.New(iomesh.Config{
+		Enabled:         cfg.IOMesh.Enabled,
+		Endpoint:        cfg.IOMesh.Endpoint,
+		Tenant:          cfg.IOMesh.Tenant,
+		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
+		EmitDeptStreams: cfg.IOMesh.EmitDeptStreams,
+		ContextPlane:    cfg.IOMesh.ContextPlane,
+	}, logger)
+
+	ws := *workspace
+	if ws == "" {
+		ws = cfg.Agent.Workspace
+	}
+	if ws == "" {
+		if wd, err := os.Getwd(); err == nil {
+			ws = wd
+		} else {
+			ws = "."
+		}
+	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	ctx, cancel := context.WithTimeout(ctx, 45*time.Second)
+	defer cancel()
+
+	rep := mesh.Dogfood(ctx, iomesh.DogfoodOptions{
+		Workspace:   ws,
+		Strict:      *strict,
+		SkipContext: *skipContext,
+		SkipEmit:    *skipEmit,
+	})
+	fmt.Print(iomesh.FormatReport(rep))
+	if !rep.OK {
+		return 1
+	}
+	return 0
+}
+
 func cmdAgent(args []string) int {
 	fs := flag.NewFlagSet("agent", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
@@ -520,6 +619,7 @@ Usage:
   iomesh sessions                list sessions in workspace
   iomesh skills                  list SKILL.md catalogs
   iomesh mcp [--connect]         list configured MCP servers
+  iomesh mesh dogfood            stage I/O Mesh smoke (health/context/emit)
   iomesh models                  list configured models
   iomesh agent stdio             ACP JSON-RPC over stdio (IDE integration)
   iomesh agent serve             ACP JSON-RPC over WebSocket (default 127.0.0.1:7400/acp)
