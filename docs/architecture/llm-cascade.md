@@ -9,12 +9,53 @@ Research baseline: **July 2026** public pricing and coding-agent benchmarks.
 | **Default** | DeepSeek V4 Flash | `deepseek-v4-flash` | $0.14 | $0.28 | $0.0028 | 1M |
 | **Step-up** | DeepSeek V4 Pro | `deepseek-v4-pro` | $0.435 | $0.87 | ~$0.0036 | 1M |
 | **Premium** | Grok 4.5 | `grok-4.5` | ~$2.00 | ~$6.00 | — | 500K |
+| **Google (opt-in)** | Gemini 2.5 Flash | `gemini-2.5-flash` | ~$0.30 | ~$2.50 | — | 1M |
+| **Google (opt-in)** | Gemini 2.5 Pro | `gemini-2.5-pro` | ~$1.25 | ~$10 | — | 1M |
+| **Vertex (opt-in)** | Vertex Gemini Flash | `google/gemini-2.5-flash` | (GCP list) | (GCP list) | — | 1M |
+| **Vertex (opt-in)** | Vertex Gemini Pro | `google/gemini-2.5-pro` | (GCP list) | (GCP list) | — | 1M |
 
 > Legacy DeepSeek ids `deepseek-chat` / `deepseek-reasoner` are deprecated (July 2026). Always use `deepseek-v4-flash` / `deepseek-v4-pro`.
 
 **Why Flash default:** near-frontier coding / agentic quality at the best Score/$ on cost-adjusted leaderboards; OpenAI-compatible; strong tool calling; 1M context makes repo-scale prompts economical especially with cache hits.
 
 **When to escalate:** multi-file refactors and plan mode → Pro; production migrations / security reviews / Flash+Pro failures → Grok (or Claude if configured).
+
+**Google Gemini / Vertex (opt-in):** pin with `-m gemini-2.5-flash` or `-m vertex-gemini-2.5-flash`. Default cascade stays DeepSeek-first so bootstrap cost remains lean. Use Vertex when burning Google Cloud credits or dogfooding GCP OpenAI-compat.
+
+### Gemini API (AI Studio)
+
+```bash
+export GEMINI_API_KEY=…   # https://aistudio.google.com/apikey
+iomesh -m gemini-2.5-flash -p "Reply with ok"
+# or set default:
+# export IOMESH_DEFAULT_MODEL=gemini-2.5-flash
+```
+
+- Base URL: `https://generativelanguage.googleapis.com/v1beta/openai`
+- Auth: `Authorization: Bearer $GEMINI_API_KEY`
+- Docs: [OpenAI compatibility](https://ai.google.dev/gemini-api/docs/openai)
+
+### Vertex AI (OpenAI-compatible)
+
+```bash
+export GOOGLE_CLOUD_PROJECT=iomesh-stage-001   # required — expanded into base_url
+export VERTEX_LOCATION=us-central1             # built-in URL uses us-central1; override base_url for other regions
+export VERTEX_API_KEY=$(gcloud auth print-access-token)  # ~1h; alias: GOOGLE_OAUTH_ACCESS_TOKEN
+iomesh -m vertex-gemini-2.5-flash -p "Reply with ok"
+```
+
+- Base URL template: `https://us-central1-aiplatform.googleapis.com/v1/projects/${GOOGLE_CLOUD_PROJECT}/locations/us-central1/endpoints/openapi`
+- Auth: short-lived OAuth access token as Bearer (not a Gemini API key)
+- Model ids often use publisher prefix: `google/gemini-2.5-flash`
+
+If model ids change, override in `~/.iomesh/config.toml`:
+
+```toml
+[model.vertex-gemini-2.5-flash]
+model = "google/gemini-2.5-flash"
+base_url = "https://us-east4-aiplatform.googleapis.com/v1/projects/${GOOGLE_CLOUD_PROJECT}/locations/us-east4/endpoints/openapi"
+env_key = "VERTEX_API_KEY"
+```
 
 ## Router behavior in this repo
 
