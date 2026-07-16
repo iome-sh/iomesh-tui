@@ -94,12 +94,22 @@ func TestRunREPL_Quit(t *testing.T) {
 	rt := testRuntime(t)
 	in := strings.NewReader("/quit\n")
 	var out bytes.Buffer
-	err := runREPL(context.Background(), runtimeAdapter{rt: rt}, in, &out, nil)
+	err := runREPL(context.Background(), rt, nil, in, &out, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(out.String(), "iomesh") {
 		t.Fatalf("%s", out.String())
+	}
+}
+
+func TestModelPickerNumber(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+	_, _ = handleSlash(&out, adapter, "/model 1")
+	if !strings.Contains(out.String(), "override") {
+		t.Fatal(out.String())
 	}
 }
 

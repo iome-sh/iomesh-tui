@@ -2,7 +2,7 @@
 
 **I/O Mesh TUI** — a Go rewrite of [xAI Grok Build](https://github.com/xai-org/grok-build) with tighter **I/O Mesh** platform integration and a **DeepSeek-first** LLM cascade for price-performance.
 
-> Status: **foundation** (router, config, agent loop, workspace tools, subagents, REPL). Full-screen TUI, ACP, and MCP are next. Hardened for open-source readiness (path jail, secret scrubbing, CI).
+> Status: **foundation** (router, config, agent loop, workspace tools, subagents, REPL with interactive permissions + model picker, ACP stdio). Full-screen Bubble Tea TUI, MCP, and skills are next. Hardened for open-source readiness (path jail, secret scrubbing, CI).
 
 ## Why this rewrite
 
@@ -59,6 +59,12 @@ iomesh --yolo               auto-approve mutating tools
 iomesh --config <path>      config.toml
 iomesh models               list catalog
 iomesh version
+
+# REPL slash commands (interactive)
+# /model <name|#>   pin model (or /models, /model default)
+# /permissions      session always-allow tools
+# /subagents        list child agents + worktree flag
+# /save /sessions /load /cost /quit
 ```
 
 ## Layout
@@ -102,13 +108,14 @@ Offline / local use needs no mesh configuration.
 Coding agents can read, write, and execute within a workspace. Key controls:
 
 - **Path jail** with symlink escape checks and read size caps
+- **Tool approval**: mutating tools (`write_file`, `run_shell`, `apply_worktree`, …) prompt y/n/a in the REPL; headless/ACP deny without `--yolo` / `--always-approve` (fail-closed)
 - **Shell**: approval/`--yolo` required; API keys scrubbed from child env; dangerous pattern denylist
 - **HTTP**: `http`/`https` only for model/mesh URLs; redacted error bodies
 - Prefer env vars for secrets — never commit keys
 
-See [SECURITY.md](SECURITY.md) and [docs/security.md](docs/security.md). Report vulnerabilities privately (do not open public issues for exploits).
+See [SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md), and [docs/architecture/permissions.md](docs/architecture/permissions.md). Report vulnerabilities privately (do not open public issues for exploits).
 
-⚠️ **`--yolo` auto-approves mutating tools (write + shell). Treat as full trust.**
+⚠️ **`--yolo` auto-approves mutating tools (write + shell + apply). Treat as full trust.**
 
 ## Development
 
