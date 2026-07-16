@@ -10,7 +10,7 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/subagent"
 )
 
-// RegisterSubagentTools adds spawn_subagent and get_subagent_output when mgr is enabled.
+// RegisterSubagentTools adds spawn / batch-parallel / wait tools when mgr is enabled.
 func (r *ToolRegistry) RegisterSubagentTools(mgr *subagent.Manager) {
 	if mgr == nil || !mgr.Enabled() {
 		return
@@ -19,7 +19,7 @@ func (r *ToolRegistry) RegisterSubagentTools(mgr *subagent.Manager) {
 		Type: "function",
 		Function: router.ToolFunction{
 			Name:        "spawn_subagent",
-			Description: "Spawn a child agent with its own context. Types: general-purpose, explore (read/search/shell, no edits), plan (implementation plan, no edits). Use background=true for parallel work; poll with get_subagent_output.",
+			Description: "Spawn one child agent. Types: general-purpose, explore (no edits), plan (no edits). Prefer spawn_subagents for parallel fan-out. Use background=true to free the parent immediately.",
 			Parameters: json.RawMessage(`{
   "type": "object",
   "properties": {
@@ -66,11 +66,86 @@ func (r *ToolRegistry) RegisterSubagentTools(mgr *subagent.Manager) {
 		return string(b), nil
 	})
 
+	// Maximum parallel fan-out: one tool call → many concurrent children.
+	r.register("spawn_subagents", false, router.Tool{
+		Type: "function",
+		Function: router.ToolFunction{
+			Name: "spawn_subagents",
+			Description: fmt.Sprintf(
+				"Spawn MANY child agents in parallel (up to max_concurrent=%d running, max_batch=%d tasks). Prefer this over serial spawn_subagent when tasks are independent. Set wait=true to block until all finish; wait=false returns ids immediately for wait_subagents.",
+				mgr.MaxConcurrent(), mgr.MaxBatch(),
+			),
+			Parameters: json.RawMessage(`{
+  "type": "object",
+  "properties": {
+    "tasks": {
+      "type": "array",
+      "description": "Independent subagent tasks to run in parallel",
+      "items": {
+        "type": "object",
+        "properties": {
+          "prompt": {"type": "string"},
+          "description": {"type": "string"},
+          "subagent_type": {"type": "string", "enum": ["general-purpose", "explore", "plan"]},
+          "capability_mode": {"type": "string", "enum": ["read-only", "read-write", "execute", "all"]},
+          "cwd": {"type": "string"}
+        },
+        "required": ["prompt"]
+      }
+    },
+    "wait": {"type": "boolean", "description": "If true, wait for all tasks to finish before returning summaries"},
+    "default_subagent_type": {"type": "string", "enum": ["general-purpose", "explore", "plan"]}
+  },
+  "required": ["tasks"]
+}`),
+		},
+	}, func(ctx context.Context, args string) (string, error) {
+		var p struct {
+			Tasks []struct {
+				Prompt         string `json:"prompt"`
+				Description    string `json:"description"`
+				SubagentType   string `json:"subagent_type"`
+				CapabilityMode string `json:"capability_mode"`
+				CWD            string `json:"cwd"`
+			} `json:"tasks"`
+			Wait                bool   `json:"wait"`
+			DefaultSubagentType string `json:"default_subagent_type"`
+		}
+		if err := json.Unmarshal([]byte(args), &p); err != nil {
+			return "", err
+		}
+		defType := subagent.Type(p.DefaultSubagentType)
+		if defType == "" {
+			defType = subagent.TypeExplore
+		}
+		specs := make([]subagent.Spec, 0, len(p.Tasks))
+		for _, t := range p.Tasks {
+			st := subagent.Type(t.SubagentType)
+			if st == "" {
+				st = defType
+			}
+			specs = append(specs, subagent.Spec{
+				Prompt:         t.Prompt,
+				Description:    t.Description,
+				SubagentType:   st,
+				CapabilityMode: subagent.CapabilityMode(t.CapabilityMode),
+				CWD:            t.CWD,
+				Background:     true,
+			})
+		}
+		batch, err := mgr.SpawnMany(ctx, specs, subagent.SpawnManyOptions{Wait: p.Wait})
+		if err != nil {
+			return "", err
+		}
+		b, _ := json.MarshalIndent(batch, "", "  ")
+		return string(b), nil
+	})
+
 	r.register("get_subagent_output", false, router.Tool{
 		Type: "function",
 		Function: router.ToolFunction{
 			Name:        "get_subagent_output",
-			Description: "Get status/summary for a subagent id from spawn_subagent (background). Optionally wait until completion.",
+			Description: "Get status/summary for one subagent id. Optionally wait until completion.",
 			Parameters: json.RawMessage(`{
   "type": "object",
   "properties": {
@@ -97,6 +172,34 @@ func (r *ToolRegistry) RegisterSubagentTools(mgr *subagent.Manager) {
 		} else {
 			res, err = mgr.Get(p.ID)
 		}
+		if err != nil {
+			return "", err
+		}
+		b, _ := json.MarshalIndent(res, "", "  ")
+		return string(b), nil
+	})
+
+	r.register("wait_subagents", false, router.Tool{
+		Type: "function",
+		Function: router.ToolFunction{
+			Name:        "wait_subagents",
+			Description: "Wait for multiple subagent ids (from spawn_subagents with wait=false). Returns final summaries in order.",
+			Parameters: json.RawMessage(`{
+  "type": "object",
+  "properties": {
+    "ids": {"type": "array", "items": {"type": "string"}, "description": "Subagent ids to wait on"}
+  },
+  "required": ["ids"]
+}`),
+		},
+	}, func(ctx context.Context, args string) (string, error) {
+		var p struct {
+			IDs []string `json:"ids"`
+		}
+		if err := json.Unmarshal([]byte(args), &p); err != nil {
+			return "", err
+		}
+		res, err := mgr.WaitAll(ctx, p.IDs)
 		if err != nil {
 			return "", err
 		}

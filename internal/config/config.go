@@ -104,6 +104,7 @@ type SubagentsSection struct {
 	Enabled       bool `toml:"enabled"`
 	MaxConcurrent int  `toml:"max_concurrent"`
 	MaxDepth      int  `toml:"max_depth"`
+	MaxBatch      int  `toml:"max_batch"`
 }
 
 // Default returns built-in configuration (DeepSeek Flash primary cascade).
@@ -133,8 +134,9 @@ func Default() *Config {
 		},
 		Subagents: SubagentsSection{
 			Enabled:       true,
-			MaxConcurrent: 4,
+			MaxConcurrent: 16, // max parallel running children
 			MaxDepth:      2,
+			MaxBatch:      32, // max tasks per spawn_subagents call
 		},
 		Catalog: router.DefaultModels(),
 	}

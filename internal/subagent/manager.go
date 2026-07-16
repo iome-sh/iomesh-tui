@@ -35,14 +35,40 @@ type SpawnParams struct {
 	ResumeMessages any
 }
 
+// Default concurrency / batch limits (open-source agent fan-out).
+const (
+	DefaultMaxConcurrent = 16
+	DefaultMaxBatch      = 32
+	DefaultMaxDepth      = 2
+)
+
 // Config tunes the manager.
 type Config struct {
 	Enabled       bool
 	MaxConcurrent int
 	MaxDepth      int
-	// DefaultBackground when true, spawn without explicit background flag still async? keep false.
+	// MaxBatch caps SpawnMany / spawn_subagents array size.
+	MaxBatch int
+	// Workspace is the default child cwd.
 	Workspace string
 	Yolo      bool
+}
+
+// SpawnManyOptions controls batch fan-out.
+type SpawnManyOptions struct {
+	// Wait blocks until every spawned child finishes (completed/failed/cancelled).
+	Wait bool
+}
+
+// BatchResult is the response for parallel multi-spawn.
+type BatchResult struct {
+	Results       []Result `json:"results"`
+	MaxConcurrent int      `json:"max_concurrent"`
+	Spawned       int      `json:"spawned"`
+	Completed     int      `json:"completed,omitempty"`
+	Failed        int      `json:"failed,omitempty"`
+	Running       int      `json:"running,omitempty"`
+	Waited        bool     `json:"waited"`
 }
 
 // Manager orchestrates spawn, tracking, and retrieval.
@@ -74,10 +100,13 @@ func (NopWorktree) Create(context.Context, string, string) (string, func() error
 // NewManager constructs a Manager. factory must not be nil when Enabled.
 func NewManager(cfg Config, factory RunnerFactory, logger *slog.Logger) *Manager {
 	if cfg.MaxConcurrent <= 0 {
-		cfg.MaxConcurrent = 4
+		cfg.MaxConcurrent = DefaultMaxConcurrent
 	}
 	if cfg.MaxDepth <= 0 {
-		cfg.MaxDepth = 2
+		cfg.MaxDepth = DefaultMaxDepth
+	}
+	if cfg.MaxBatch <= 0 {
+		cfg.MaxBatch = DefaultMaxBatch
 	}
 	if logger == nil {
 		logger = slog.Default()
@@ -90,6 +119,22 @@ func NewManager(cfg Config, factory RunnerFactory, logger *slog.Logger) *Manager
 		sem:      make(chan struct{}, cfg.MaxConcurrent),
 		worktree: NopWorktree{},
 	}
+}
+
+// MaxConcurrent returns the configured parallel slot count.
+func (m *Manager) MaxConcurrent() int {
+	if m == nil {
+		return 0
+	}
+	return m.cfg.MaxConcurrent
+}
+
+// MaxBatch returns the configured multi-spawn array cap.
+func (m *Manager) MaxBatch() int {
+	if m == nil {
+		return 0
+	}
+	return m.cfg.MaxBatch
 }
 
 // SetWorktreeBackend replaces the isolation backend.
@@ -331,6 +376,121 @@ func (m *Manager) Wait(ctx context.Context, id string) (Result, error) {
 	}
 }
 
+// SpawnMany starts many subagents in parallel (always background-started so the
+// semaphore fans out up to MaxConcurrent). When opts.Wait is true, blocks until
+// every child reaches a terminal status.
+func (m *Manager) SpawnMany(ctx context.Context, specs []Spec, opts SpawnManyOptions) (BatchResult, error) {
+	if m == nil || !m.cfg.Enabled {
+		return BatchResult{}, fmt.Errorf("subagents disabled")
+	}
+	if len(specs) == 0 {
+		return BatchResult{}, fmt.Errorf("spawn_subagents: empty tasks array")
+	}
+	if len(specs) > m.cfg.MaxBatch {
+		return BatchResult{}, fmt.Errorf("spawn_subagents: %d tasks exceeds max_batch %d", len(specs), m.cfg.MaxBatch)
+	}
+
+	out := BatchResult{
+		Results:       make([]Result, 0, len(specs)),
+		MaxConcurrent: m.cfg.MaxConcurrent,
+		Waited:        opts.Wait,
+	}
+
+	// Fan-out: always background so N tasks start without serializing on Run().
+	for i, s := range specs {
+		s.Background = true
+		if s.Description == "" {
+			s.Description = fmt.Sprintf("parallel-%d", i+1)
+		}
+		res, err := m.Spawn(ctx, s)
+		if err != nil {
+			// Record failure placeholder so callers see partial batch.
+			out.Results = append(out.Results, Result{
+				Status:      StatusFailed,
+				Error:       err.Error(),
+				Description: s.Description,
+			})
+			out.Failed++
+			continue
+		}
+		out.Results = append(out.Results, res)
+		out.Spawned++
+	}
+
+	if opts.Wait {
+		waited := make([]Result, 0, len(out.Results))
+		for _, r := range out.Results {
+			if r.ID == "" {
+				waited = append(waited, r)
+				continue
+			}
+			final, err := m.Wait(ctx, r.ID)
+			if err != nil && final.ID == "" {
+				final = r
+				final.Error = err.Error()
+				final.Status = StatusCancelled
+			}
+			waited = append(waited, final)
+		}
+		out.Results = waited
+	}
+
+	out.Completed, out.Failed, out.Running = 0, 0, 0
+	for _, r := range out.Results {
+		switch r.Status {
+		case StatusCompleted:
+			out.Completed++
+		case StatusFailed, StatusCancelled:
+			out.Failed++
+		default:
+			out.Running++
+		}
+	}
+	m.logger.Info("subagent batch",
+		"spawned", out.Spawned,
+		"completed", out.Completed,
+		"failed", out.Failed,
+		"running", out.Running,
+		"max_concurrent", out.MaxConcurrent,
+		"waited", out.Waited,
+	)
+	return out, nil
+}
+
+// WaitAll waits for every listed id (order preserved). Missing ids become Failed results.
+func (m *Manager) WaitAll(ctx context.Context, ids []string) ([]Result, error) {
+	if m == nil || !m.cfg.Enabled {
+		return nil, fmt.Errorf("subagents disabled")
+	}
+	if len(ids) == 0 {
+		return nil, fmt.Errorf("wait_subagents: empty ids")
+	}
+	out := make([]Result, 0, len(ids))
+	for _, id := range ids {
+		res, err := m.Wait(ctx, id)
+		if err != nil {
+			out = append(out, Result{ID: id, Status: StatusFailed, Error: err.Error()})
+			continue
+		}
+		out = append(out, res)
+	}
+	return out, nil
+}
+
+// GetMany returns current status for each id without blocking.
+func (m *Manager) GetMany(ids []string) []Result {
+	out := make([]Result, 0, len(ids))
+	for _, id := range ids {
+		res, err := m.Get(id)
+		if err != nil {
+			out = append(out, Result{ID: id, Status: StatusFailed, Error: err.Error()})
+			continue
+		}
+		out = append(out, res)
+	}
+	return out
+}
+
 func (m *Manager) resultOf(id string) Result {
 	rec, ok := m.reg.Get(id)
 	if !ok {
@@ -386,7 +546,10 @@ func EffectiveTools(allowWrite, allowShell, allowSpawn bool) []string {
 		tools = append(tools, "write_file")
 	}
 	if allowSpawn {
-		tools = append(tools, "spawn_subagent", "get_subagent_output")
+		tools = append(tools,
+			"spawn_subagent", "spawn_subagents",
+			"get_subagent_output", "wait_subagents",
+		)
 	}
 	return tools
 }

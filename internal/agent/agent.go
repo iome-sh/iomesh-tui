@@ -38,8 +38,10 @@ type Config struct {
 	SubagentsEnabled bool
 	// MaxSubagentDepth limits nesting (default 2).
 	MaxSubagentDepth int
-	// MaxSubagentConcurrent limits parallel children (default 4).
+	// MaxSubagentConcurrent limits parallel children (default 16).
 	MaxSubagentConcurrent int
+	// MaxSubagentBatch caps spawn_subagents array size (default 32).
+	MaxSubagentBatch int
 }
 
 // Runtime is the agent loop shared by TUI / headless / ACP.
@@ -82,17 +84,22 @@ func New(cfg Config, r *router.Router, mesh *iomesh.Client, logger *slog.Logger)
 	if cfg.SubagentsEnabled {
 		maxDepth := cfg.MaxSubagentDepth
 		if maxDepth <= 0 {
-			maxDepth = 2
+			maxDepth = subagent.DefaultMaxDepth
 		}
 		maxConc := cfg.MaxSubagentConcurrent
 		if maxConc <= 0 {
-			maxConc = 4
+			maxConc = subagent.DefaultMaxConcurrent
+		}
+		maxBatch := cfg.MaxSubagentBatch
+		if maxBatch <= 0 {
+			maxBatch = subagent.DefaultMaxBatch
 		}
 		// Factory closes over rt so children share router/mesh/logger.
 		rt.subagents = subagent.NewManager(subagent.Config{
 			Enabled:       true,
 			MaxConcurrent: maxConc,
 			MaxDepth:      maxDepth,
+			MaxBatch:      maxBatch,
 			Workspace:     ws.Root(),
 			Yolo:          cfg.Yolo,
 		}, rt.newChildFactory(), logger)
@@ -288,6 +295,7 @@ Delegate exploration and planning to subagents when it preserves your context:
 - explore: codebase investigation (no edits)
 - plan: structured implementation plan (no edits)
 - general-purpose: full capability delegated work
+MAXIMUM PARALLELISM: when you have multiple independent research/implement tasks, call spawn_subagents once with a tasks array (not serial spawn_subagent). Use wait=true to join, or wait=false then wait_subagents. Prefer default_subagent_type=explore for parallel codebase scans.
 When I/O Mesh context is provided inside <iomesh-context>, treat it as governed operational truth for production systems.`, root)
 }
 

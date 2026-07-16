@@ -72,5 +72,6 @@ codebase_indexing = true
 
 [subagents]
 enabled = true
-max_concurrent = 4
+max_concurrent = 16   # parallel running children (semaphore)
+max_batch = 32        # max tasks per spawn_subagents call
 max_depth = 2

@@ -119,8 +119,11 @@ func TestRuntime_SubagentsRegisterTools(t *testing.T) {
 	for _, s := range rt.tools.Schemas() {
 		names[s.Function.Name] = true
 	}
-	if !names["spawn_subagent"] || !names["get_subagent_output"] {
+	if !names["spawn_subagent"] || !names["spawn_subagents"] || !names["get_subagent_output"] || !names["wait_subagents"] {
 		t.Fatalf("missing subagent tools: %v", names)
+	}
+	if rt.Subagents().MaxConcurrent() != 16 {
+		t.Fatalf("default max concurrent=%d", rt.Subagents().MaxConcurrent())
 	}
 }
 

@@ -116,6 +116,7 @@ func run(args []string) int {
 		SubagentsEnabled:      subEnabled,
 		MaxSubagentDepth:      cfg.Subagents.MaxDepth,
 		MaxSubagentConcurrent: cfg.Subagents.MaxConcurrent,
+		MaxSubagentBatch:      cfg.Subagents.MaxBatch,
 	}, rtr, mesh, logger)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "agent: %v\n", err)
