@@ -13,7 +13,9 @@ import (
 	"time"
 
 	"github.com/iome-sh/iomesh-tui/internal/iomesh"
+	"github.com/iome-sh/iomesh-tui/internal/mcp"
 	"github.com/iome-sh/iomesh-tui/internal/router"
+	"github.com/iome-sh/iomesh-tui/internal/skills"
 	"github.com/iome-sh/iomesh-tui/internal/subagent"
 	"github.com/iome-sh/iomesh-tui/internal/workspace"
 )
@@ -58,6 +60,8 @@ type Runtime struct {
 	logger    *slog.Logger
 	tools     ToolRegistry
 	subagents *subagent.Manager
+	skills    *skills.Catalog
+	mcp       *mcp.Manager
 
 	// Session transcript and persistence hooks.
 	messages  []router.Message
@@ -136,6 +140,63 @@ func (rt *Runtime) Router() *router.Router { return rt.router }
 
 // Workspace returns the bound workspace.
 func (rt *Runtime) Workspace() *workspace.Workspace { return rt.ws }
+
+// Skills returns the loaded skill catalog (may be nil).
+func (rt *Runtime) Skills() *skills.Catalog { return rt.skills }
+
+// MCP returns the MCP manager (may be nil).
+func (rt *Runtime) MCP() *mcp.Manager { return rt.mcp }
+
+// AttachSkills registers list/read skill tools and appends a catalog block to the system prompt.
+func (rt *Runtime) AttachSkills(cat *skills.Catalog) {
+	if rt == nil || cat == nil || cat.Len() == 0 {
+		return
+	}
+	rt.skills = cat
+	rt.tools.RegisterSkillsTools(cat)
+	if block := cat.PromptBlock(); block != "" {
+		rt.appendSystemNote("skills", block)
+	}
+}
+
+// AttachMCP registers mcp__* tools from connected servers.
+func (rt *Runtime) AttachMCP(mgr *mcp.Manager) {
+	if rt == nil || mgr == nil || mgr.Len() == 0 {
+		return
+	}
+	rt.mcp = mgr
+	rt.tools.RegisterMCPTools(mgr)
+	n := 0
+	for range mgr.Bindings() {
+		n++
+	}
+	rt.appendSystemNote("mcp", fmt.Sprintf("MCP: %d server(s), %d tool(s) available as mcp__<server>__<tool> (mutating tools require approval).", mgr.Len(), n))
+}
+
+// Close releases MCP subprocesses and other runtime resources.
+func (rt *Runtime) Close() error {
+	if rt == nil {
+		return nil
+	}
+	if rt.mcp != nil {
+		return rt.mcp.Close()
+	}
+	return nil
+}
+
+func (rt *Runtime) appendSystemNote(tag, body string) {
+	if len(rt.messages) == 0 {
+		return
+	}
+	// Prefer first system message.
+	if rt.messages[0].Role == "system" {
+		rt.messages[0].Content += "\n\n<" + tag + ">\n" + body + "\n</" + tag + ">"
+		return
+	}
+	rt.messages = append([]router.Message{{
+		Role: "system", Content: "<" + tag + ">\n" + body + "\n</" + tag + ">",
+	}}, rt.messages...)
+}
 
 // Messages returns a copy of the transcript.
 func (rt *Runtime) Messages() []router.Message {
@@ -312,7 +373,7 @@ func defaultSystemPrompt(root string) string {
 	return fmt.Sprintf(`You are I/O Mesh TUI (iomesh), a coding agent harness rewritten in Go for tight platform integration.
 You operate in workspace: %s
 
-Capabilities: read/search files, propose edits, run shell commands (when approved), spawn subagents (explore/plan/general-purpose), and reason over repository-scale context.
+Capabilities: read/search files, propose edits, run shell commands (when approved), spawn subagents (explore/plan/general-purpose), optional skills (list_skills/read_skill), optional MCP tools (mcp__server__tool), and reason over repository-scale context.
 Prefer precise, minimal diffs. Use tools instead of inventing file contents.
 Delegate exploration and planning to subagents when it preserves your context:
 - explore: codebase investigation (no edits)
@@ -320,6 +381,8 @@ Delegate exploration and planning to subagents when it preserves your context:
 - general-purpose: full capability delegated work
 MAXIMUM PARALLELISM: for independent tasks always use spawn_subagents (never serial spawn_subagent loops). wait=true joins concurrently. Prefer default_subagent_type=explore for research fan-out. For parallel isolated edits: default_isolation=worktree + wait=true, then apply_worktrees (or apply_after=true). Cap is max_concurrent running children.
 ISOLATED EDITS: isolation=worktree → diff_worktree → apply_worktree / apply_worktrees (approval/--yolo).
+SKILLS: when a <skills> catalog is present, use list_skills/read_skill before inventing process.
+MCP: tools prefixed mcp__ require approval when the server is mutating (default).
 When I/O Mesh context is provided inside <iomesh-context>, treat it as governed operational truth for production systems.`, root)
 }
 

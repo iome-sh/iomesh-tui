@@ -2,7 +2,7 @@
 
 **I/O Mesh TUI** — a Go rewrite of [xAI Grok Build](https://github.com/xai-org/grok-build) with tighter **I/O Mesh** platform integration and a **DeepSeek-first** LLM cascade for price-performance.
 
-> Status: **foundation** (router, agent loop, subagents, full-screen Bubble Tea TUI + REPL, interactive permissions, ACP stdio). MCP, skills, and ACP WebSocket are next. Hardened for open-source readiness (path jail, secret scrubbing, CI).
+> Status: **foundation** (router, agent loop, subagents, full-screen TUI, permissions, ACP stdio, **skills + MCP stdio**). ACP WebSocket, MCP HTTP, and mesh dogfood are next. Hardened for open-source readiness (path jail, secret scrubbing, CI).
 
 ## Why this rewrite
 
@@ -31,6 +31,8 @@ make build
 ./bin/iomesh sessions
 ./bin/iomesh          # full-screen TUI (Bubble Tea)
 ./bin/iomesh --repl   # classic line REPL
+./bin/iomesh skills   # list SKILL.md catalogs
+./bin/iomesh mcp      # list configured MCP servers
 ```
 
 Copy [`configs/config.example.toml`](configs/config.example.toml) to `~/.iomesh/config.toml` to customize.
@@ -82,6 +84,8 @@ internal/
   security/           redaction, env scrub, shell/URL policy
   iomesh/             I/O Mesh client (fail-open)
   tui/                full-screen Bubble Tea + classic REPL
+  skills/             SKILL.md catalog loader
+  mcp/                MCP stdio JSON-RPC client
 configs/              example config.toml
 docs/architecture/    design notes
 docs/security.md      threat model
@@ -110,7 +114,8 @@ Offline / local use needs no mesh configuration.
 Coding agents can read, write, and execute within a workspace. Key controls:
 
 - **Path jail** with symlink escape checks and read size caps
-- **Tool approval**: mutating tools (`write_file`, `run_shell`, `apply_worktree`, …) prompt y/n/a in the REPL; headless/ACP deny without `--yolo` / `--always-approve` (fail-closed)
+- **Tool approval**: mutating tools (`write_file`, `run_shell`, `apply_worktree`, MCP tools by default, …) prompt y/n/a; headless/ACP deny without `--yolo` / `--always-approve` (fail-closed)
+- **Skills / MCP**: project+user `SKILL.md` catalogs; opt-in stdio MCP servers (`mcp__server__tool`)
 - **Shell**: approval/`--yolo` required; API keys scrubbed from child env; dangerous pattern denylist
 - **HTTP**: `http`/`https` only for model/mesh URLs; redacted error bodies
 - Prefer env vars for secrets — never commit keys

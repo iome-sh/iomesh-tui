@@ -25,6 +25,8 @@ type Config struct {
 	UI        UISection            `toml:"ui"`
 	Features  FeaturesSection      `toml:"features"`
 	Subagents SubagentsSection     `toml:"subagents"`
+	Skills    SkillsSection        `toml:"skills"`
+	MCP       MCPSection           `toml:"mcp"`
 	// Catalog is the resolved runtime model list (not from TOML directly).
 	Catalog []router.ModelConfig `toml:"-"`
 }
@@ -97,6 +99,33 @@ type FeaturesSection struct {
 	Telemetry     bool `toml:"telemetry"`
 	Subagents     bool `toml:"subagents"`
 	CodebaseIndex bool `toml:"codebase_indexing"`
+	Skills        bool `toml:"skills"`
+	MCP           bool `toml:"mcp"`
+}
+
+// SkillsSection configures SKILL.md discovery.
+type SkillsSection struct {
+	Enabled bool     `toml:"enabled"`
+	Dirs    []string `toml:"dirs"` // extra dirs; workspace/user defaults always scanned when enabled
+}
+
+// MCPServerTOML is one stdio MCP server.
+type MCPServerTOML struct {
+	Name              string            `toml:"name"`
+	Command           string            `toml:"command"`
+	Args              []string          `toml:"args"`
+	Env               map[string]string `toml:"env"`
+	Enabled           *bool             `toml:"enabled"`
+	Mutating          *bool             `toml:"mutating"`
+	StartupTimeoutSec int               `toml:"startup_timeout_sec"`
+	ToolTimeoutSec    int               `toml:"tool_timeout_sec"`
+}
+
+// MCPSection configures Model Context Protocol clients.
+type MCPSection struct {
+	Enabled        bool            `toml:"enabled"`
+	MaxOutputBytes int             `toml:"max_output_bytes"`
+	Servers        []MCPServerTOML `toml:"servers"`
 }
 
 // SubagentsSection tunes child-session orchestration.
@@ -135,12 +164,20 @@ func Default() *Config {
 		Features: FeaturesSection{
 			Subagents:     true,
 			CodebaseIndex: true,
+			Skills:        true,
+			MCP:           true,
 		},
 		Subagents: SubagentsSection{
 			Enabled:       true,
 			MaxConcurrent: 32, // max parallel running children
 			MaxDepth:      2,
 			MaxBatch:      64, // max tasks per spawn_subagents call
+		},
+		Skills: SkillsSection{
+			Enabled: true,
+		},
+		MCP: MCPSection{
+			Enabled: false, // opt-in: no servers until configured
 		},
 		Catalog: router.DefaultModels(),
 	}
@@ -322,6 +359,26 @@ func (c *Config) applyEnvOverrides() {
 		case "1", "true", "on", "yes":
 			c.Subagents.Enabled = true
 			c.Features.Subagents = true
+		}
+	}
+	if v := os.Getenv("IOMESH_SKILLS"); v != "" {
+		switch strings.ToLower(v) {
+		case "0", "false", "off", "no":
+			c.Skills.Enabled = false
+			c.Features.Skills = false
+		case "1", "true", "on", "yes":
+			c.Skills.Enabled = true
+			c.Features.Skills = true
+		}
+	}
+	if v := os.Getenv("IOMESH_MCP"); v != "" {
+		switch strings.ToLower(v) {
+		case "0", "false", "off", "no":
+			c.MCP.Enabled = false
+			c.Features.MCP = false
+		case "1", "true", "on", "yes":
+			c.MCP.Enabled = true
+			c.Features.MCP = true
 		}
 	}
 }

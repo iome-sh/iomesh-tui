@@ -69,6 +69,8 @@ show_thinking_blocks = true
 telemetry = false
 subagents = true
 codebase_indexing = true
+skills = true
+mcp = true
 
 [subagents]
 enabled = true
@@ -77,3 +79,24 @@ max_batch = 64        # max tasks per spawn_subagents call (hard cap 256)
 max_depth = 2
 # worktree_base = ".iomesh/worktrees"  # isolation=worktree paths
 # worktree_auto_remove = false         # keep worktrees after success for inspection
+
+# Skills: SKILL.md under .iomesh/skills/<name>/ or ~/.iomesh/skills/
+[skills]
+enabled = true
+# dirs = ["/path/to/extra/skills"]
+
+# MCP: Model Context Protocol stdio servers (opt-in).
+# Tools appear as mcp__<server>__<tool>; mutating=true (default) requires approval.
+[mcp]
+enabled = false
+# max_output_bytes = 20000
+
+# [[mcp.servers]]
+# name = "example"
+# command = "npx"
+# args = ["-y", "@modelcontextprotocol/server-everything"]
+# # env = { "API_KEY" = "from-env-preferred" }
+# # enabled = true
+# # mutating = true
+# # startup_timeout_sec = 30
+# # tool_timeout_sec = 120

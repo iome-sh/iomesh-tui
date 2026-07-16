@@ -23,7 +23,7 @@ Go rewrite of [xAI Grok Build](https://github.com/xai-org/grok-build) with first
 | config / custom models | `internal/config` + `internal/router` | TOML + cascade |
 | — | `internal/iomesh` | Platform client |
 | subagents | `internal/subagent` + agent tools | explore/plan/gp + parallel + worktree |
-| MCP / skills / sandbox | TBD | Planned |
+| MCP / skills | `internal/mcp` + `internal/skills` | stdio MCP + SKILL.md loader |
 
 ## LLM fallback router
 
@@ -86,6 +86,7 @@ CLI / TUI / ACP
 5. ~~Git worktree isolation~~ **done** — `isolation=worktree`
 6. ~~Worktree apply/merge helper~~ **done** — `apply_worktree` / `diff_worktree`
 7. ~~Session persistence + compaction~~ **done** — `.iomesh/sessions`, resume subagent catalog
-8. MCP client + skills loader
+8. ~~MCP client + skills loader~~ **done** — see [mcp.md](mcp.md), [skills.md](skills.md)
 9. ACP WebSocket serve (beyond stdio)
-10. Deeper I/O Mesh: lineage-aware context, Rego policy gates, metering dashboards
+10. MCP HTTP/SSE transport + richer resources/prompts
+11. Deeper I/O Mesh: lineage-aware context, Rego policy gates, metering dashboards
