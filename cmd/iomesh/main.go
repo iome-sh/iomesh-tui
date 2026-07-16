@@ -18,8 +18,10 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/agent"
 	"github.com/iome-sh/iomesh-tui/internal/config"
 	"github.com/iome-sh/iomesh-tui/internal/iomesh"
+	"github.com/iome-sh/iomesh-tui/internal/mcp"
 	"github.com/iome-sh/iomesh-tui/internal/router"
 	"github.com/iome-sh/iomesh-tui/internal/session"
+	"github.com/iome-sh/iomesh-tui/internal/skills"
 	"github.com/iome-sh/iomesh-tui/internal/tui"
 )
 
@@ -39,6 +41,10 @@ func run(args []string) int {
 			return cmdModels(args[1:])
 		case "sessions":
 			return cmdSessions(args[1:])
+		case "skills":
+			return cmdSkills(args[1:])
+		case "mcp":
+			return cmdMCP(args[1:])
 		case "agent":
 			return cmdAgent(args[1:])
 		case "help", "-h", "--help":
@@ -138,6 +144,38 @@ func run(args []string) int {
 		fmt.Fprintf(os.Stderr, "agent: %v\n", err)
 		return 1
 	}
+	defer func() { _ = rt.Close() }()
+
+	// Skills: workspace + user dirs (+ config extras). Fail-open on load errors.
+	if cfg.Skills.Enabled && cfg.Features.Skills {
+		dirs := skills.DefaultDirs(rt.Workspace().Root())
+		dirs = append(dirs, cfg.Skills.Dirs...)
+		if cat, err := skills.LoadDirs(dirs...); err != nil {
+			logger.Warn("skills load", "err", err)
+		} else if cat.Len() > 0 {
+			rt.AttachSkills(cat)
+			logger.Info("skills loaded", "count", cat.Len())
+		}
+	}
+
+	// MCP stdio servers (opt-in). Fail-open per server inside manager.
+	if cfg.MCP.Enabled && cfg.Features.MCP && len(cfg.MCP.Servers) > 0 {
+		var servers []mcp.ServerConfig
+		for _, s := range cfg.MCP.Servers {
+			servers = append(servers, mcp.ServerConfig{
+				Name:              s.Name,
+				Command:           s.Command,
+				Args:              s.Args,
+				Env:               s.Env,
+				Enabled:           s.Enabled,
+				Mutating:          s.Mutating,
+				StartupTimeoutSec: s.StartupTimeoutSec,
+				ToolTimeoutSec:    s.ToolTimeoutSec,
+			})
+		}
+		mgr := mcp.NewManager(ctx, servers, logger)
+		rt.AttachMCP(mgr)
+	}
 
 	store, err := session.Open(rt.Workspace().Root())
 	if err != nil {
@@ -235,6 +273,107 @@ func cmdSessions(args []string) int {
 	for _, s := range list {
 		fmt.Printf("%-28s %5d %5d  %-20s  %s\n",
 			s.ID, s.Messages, s.Subagents, s.UpdatedAt.Format(time.RFC3339), s.Title)
+	}
+	return 0
+}
+
+func cmdSkills(args []string) int {
+	fs := flag.NewFlagSet("skills", flag.ContinueOnError)
+	workspace := fs.String("C", "", "workspace directory")
+	configPath := fs.String("config", "", "path to config.toml")
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	cfg, err := loadConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "config: %v\n", err)
+		return 1
+	}
+	ws := *workspace
+	if ws == "" {
+		ws = cfg.Agent.Workspace
+	}
+	if ws == "" {
+		wd, err := os.Getwd()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		ws = wd
+	}
+	dirs := skills.DefaultDirs(ws)
+	dirs = append(dirs, cfg.Skills.Dirs...)
+	cat, err := skills.LoadDirs(dirs...)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "skills: %v\n", err)
+		return 1
+	}
+	if cat.Len() == 0 {
+		fmt.Println("no skills found")
+		fmt.Fprintf(os.Stderr, "searched: %s\n", strings.Join(dirs, ", "))
+		return 0
+	}
+	fmt.Printf("%-24s  %s\n", "NAME", "DESCRIPTION")
+	for _, sk := range cat.List() {
+		desc := strings.ReplaceAll(sk.Description, "\n", " ")
+		if len(desc) > 80 {
+			desc = desc[:77] + "…"
+		}
+		fmt.Printf("%-24s  %s\n", sk.Name, desc)
+	}
+	return 0
+}
+
+func cmdMCP(args []string) int {
+	fs := flag.NewFlagSet("mcp", flag.ContinueOnError)
+	configPath := fs.String("config", "", "path to config.toml")
+	connect := fs.Bool("connect", false, "actually spawn servers and list tools (slow)")
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	cfg, err := loadConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "config: %v\n", err)
+		return 1
+	}
+	if len(cfg.MCP.Servers) == 0 {
+		fmt.Println("no MCP servers configured ([mcp] / [[mcp.servers]] in config.toml)")
+		return 0
+	}
+	fmt.Printf("mcp.enabled=%v features.mcp=%v\n", cfg.MCP.Enabled, cfg.Features.MCP)
+	fmt.Printf("%-16s %-8s %-8s %s\n", "NAME", "ENABLED", "MUTATING", "COMMAND")
+	for _, s := range cfg.MCP.Servers {
+		en := true
+		if s.Enabled != nil {
+			en = *s.Enabled
+		}
+		mut := true
+		if s.Mutating != nil {
+			mut = *s.Mutating
+		}
+		fmt.Printf("%-16s %-8v %-8v %s %s\n", s.Name, en, mut, s.Command, strings.Join(s.Args, " "))
+	}
+	if !*connect || !cfg.MCP.Enabled {
+		if !*connect {
+			fmt.Fprintln(os.Stderr, "(pass --connect to probe tools/list)")
+		}
+		return 0
+	}
+	var servers []mcp.ServerConfig
+	for _, s := range cfg.MCP.Servers {
+		servers = append(servers, mcp.ServerConfig{
+			Name: s.Name, Command: s.Command, Args: s.Args, Env: s.Env,
+			Enabled: s.Enabled, Mutating: s.Mutating,
+			StartupTimeoutSec: s.StartupTimeoutSec, ToolTimeoutSec: s.ToolTimeoutSec,
+		})
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
+	defer cancel()
+	mgr := mcp.NewManager(ctx, servers, slog.Default())
+	defer mgr.Close()
+	fmt.Printf("\nconnected=%d\n", mgr.Len())
+	for _, b := range mgr.Bindings() {
+		fmt.Printf("  %s  (server=%s tool=%s mutating=%v)\n", b.Qualified, b.Server, b.Tool, b.Mutating)
 	}
 	return 0
 }
@@ -345,6 +484,8 @@ Usage:
   iomesh -c                      continue latest session
   iomesh --session <id>          resume session by id
   iomesh sessions                list sessions in workspace
+  iomesh skills                  list SKILL.md catalogs
+  iomesh mcp [--connect]         list configured MCP servers
   iomesh models                  list configured models
   iomesh agent stdio             ACP JSON-RPC over stdio (IDE integration)
   iomesh agent --yolo stdio      ACP with auto-approve tools
