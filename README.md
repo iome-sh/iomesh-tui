@@ -106,3 +106,7 @@ make build
 MIT — see [LICENSE](LICENSE).
 
 Grok Build is a separate project by SpaceXAI / xAI (Apache-2.0); this repository is an independent Go implementation inspired by its product surface, not a fork of the Rust sources.
+
+## SR&ED
+
+Program serial **s185** (ledger in [aion docs/sred](https://github.com/iome-sh/aion/tree/main/docs/sred)): planning/log/evidence under `sred-s185-iomesh-tui-go-harness-subagents-*`. Companion aion PR [#994](https://github.com/iome-sh/aion/pull/994).
