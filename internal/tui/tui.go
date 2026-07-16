@@ -1,7 +1,8 @@
 // Package tui is the interactive terminal front-end.
 //
-// The full-screen Bubble Tea UI will land in a later PR; this scaffold provides
-// a functional REPL so headless/router work is dogfoodable without a GUI.
+// Provides a REPL with interactive tool approval (subagent apply/shell/write),
+// model picker, session commands, and subagent listing. Full-screen Bubble Tea
+// remains a follow-on.
 package tui
 
 import (
@@ -11,6 +12,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -32,8 +34,10 @@ type workspaceRoot interface {
 
 // runtimeAdapter lets us accept *agent.Runtime without exporting extra interfaces.
 type runtimeAdapter struct {
-	rt    *agent.Runtime
-	store *session.Store
+	rt       *agent.Runtime
+	store    *session.Store
+	readLine func() (string, error)
+	out      io.Writer
 }
 
 func (a runtimeAdapter) RunTurn(ctx context.Context, userText string, onEvent func(agent.Event)) (string, error) {
@@ -49,25 +53,55 @@ func Run(ctx context.Context, rt *agent.Runtime, logger *slog.Logger) error {
 	return RunWithStore(ctx, rt, nil, logger)
 }
 
-// RunWithStore starts the REPL with optional session persistence.
+// RunWithStore starts the REPL with optional session persistence and interactive approvals.
 func RunWithStore(ctx context.Context, rt *agent.Runtime, store *session.Store, logger *slog.Logger) error {
-	return runREPL(ctx, runtimeAdapter{rt: rt, store: store}, os.Stdin, os.Stdout, logger)
+	return runREPL(ctx, rt, store, os.Stdin, os.Stdout, logger)
 }
 
-func runREPL(ctx context.Context, rt runtimeAdapter, in io.Reader, out io.Writer, logger *slog.Logger) error {
+func runREPL(ctx context.Context, rt *agent.Runtime, store *session.Store, in io.Reader, out io.Writer, logger *slog.Logger) error {
 	if logger == nil {
 		logger = slog.Default()
 	}
-	fmt.Fprintf(out, "iomesh-tui REPL (scaffold) — workspace %s\n", rt.Workspace().Root())
-	sid := rt.rt.SessionID()
-	if sid != "" {
-		fmt.Fprintf(out, "session: %s\n", sid)
-	}
-	fmt.Fprintf(out, "default model: %s  |  /model /models /subagents /save /sessions /cost /quit\n\n", rt.Router().DefaultModel())
-
 	sc := bufio.NewScanner(in)
 	buf := make([]byte, 0, 64*1024)
 	sc.Buffer(buf, 4*1024*1024)
+
+	readLine := func() (string, error) {
+		if !sc.Scan() {
+			if err := sc.Err(); err != nil {
+				return "", err
+			}
+			return "", io.EOF
+		}
+		return sc.Text(), nil
+	}
+
+	// Interactive approval for mutating tools (apply_worktree, shell, write, …).
+	rt.SetApprover(func(ctx context.Context, tool, args string) (agent.Approval, error) {
+		fmt.Fprintf(out, "\n\033[33m⚠ approve tool %s?\033[0m\n  %s\n[y]es / [n]o / [a]lways this session: ",
+			tool, truncate(args, 240))
+		line, err := readLine()
+		if err != nil {
+			return agent.ApprovalDeny, err
+		}
+		switch strings.ToLower(strings.TrimSpace(line)) {
+		case "y", "yes":
+			return agent.ApprovalOnce, nil
+		case "a", "always":
+			return agent.ApprovalAlways, nil
+		default:
+			return agent.ApprovalDeny, nil
+		}
+	})
+
+	adapter := runtimeAdapter{rt: rt, store: store, readLine: readLine, out: out}
+
+	fmt.Fprintf(out, "iomesh-tui REPL — workspace %s\n", rt.Workspace().Root())
+	if sid := rt.SessionID(); sid != "" {
+		fmt.Fprintf(out, "session: %s\n", sid)
+	}
+	fmt.Fprintf(out, "model: %s  |  /model /models /subagents /save /sessions /permissions /cost /quit\n", displayModel(rt.Router()))
+	fmt.Fprintln(out, "mutating tools (write/shell/apply_worktree/…) prompt for approval unless --yolo")
 
 	for {
 		select {
@@ -76,25 +110,26 @@ func runREPL(ctx context.Context, rt runtimeAdapter, in io.Reader, out io.Writer
 		default:
 		}
 		fmt.Fprint(out, "iomesh> ")
-		if !sc.Scan() {
-			if err := sc.Err(); err != nil {
-				return err
-			}
+		line, err := readLine()
+		if err == io.EOF {
 			fmt.Fprintln(out)
 			return nil
 		}
-		line := strings.TrimSpace(sc.Text())
+		if err != nil {
+			return err
+		}
+		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
 		if strings.HasPrefix(line, "/") {
-			if quit, err := handleSlash(out, rt, line); quit {
+			if quit, err := handleSlash(out, adapter, line); quit {
 				return err
 			}
 			continue
 		}
 
-		_, err := rt.RunTurn(ctx, line, func(ev agent.Event) {
+		_, err = adapter.RunTurn(ctx, line, func(ev agent.Event) {
 			switch ev.Type {
 			case agent.EventModelSelected:
 				fmt.Fprintf(out, "\033[2m[model %s]\033[0m\n", ev.Model)
@@ -117,14 +152,21 @@ func runREPL(ctx context.Context, rt runtimeAdapter, in io.Reader, out io.Writer
 		})
 		if err != nil {
 			fmt.Fprintf(out, "\nerror: %v\n", err)
-		} else if rt.store != nil {
-			rt.rt.AutoSaveAfterTurn(rt.store)
-			if id := rt.rt.SessionID(); id != "" {
+		} else if store != nil {
+			rt.AutoSaveAfterTurn(store)
+			if id := rt.SessionID(); id != "" {
 				fmt.Fprintf(out, "\033[2m[session %s saved]\033[0m\n", id)
 			}
 		}
 		fmt.Fprintln(out)
 	}
+}
+
+func displayModel(r *router.Router) string {
+	if ov := r.Override(); ov != "" {
+		return ov + " (pinned)"
+	}
+	return r.DefaultModel()
 }
 
 func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err error) {
@@ -134,24 +176,11 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 	case "/quit", "/exit", "/q":
 		return true, nil
 	case "/models":
-		for _, m := range rt.Router().Models() {
-			mark := " "
-			if m.Name == rt.Router().DefaultModel() {
-				mark = "*"
-			}
-			if ov := rt.Router().Override(); ov != "" && ov == m.Name {
-				mark = ">"
-			}
-			fmt.Fprintf(out, "%s %s  (%s)  tier=%.1f  ctx=%d\n",
-				mark, m.Name, m.ModelID, m.CostTier, m.MaxContext)
-		}
+		printModelPicker(out, rt.Router())
 	case "/model", "/m":
 		if len(parts) < 2 {
-			cur := rt.Router().Override()
-			if cur == "" {
-				cur = rt.Router().DefaultModel() + " (default)"
-			}
-			fmt.Fprintf(out, "current: %s\n", cur)
+			printModelPicker(out, rt.Router())
+			fmt.Fprintln(out, "usage: /model <name|number> | default")
 			return false, nil
 		}
 		name := parts[1]
@@ -159,6 +188,15 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			_ = rt.Router().SetOverride("")
 			fmt.Fprintln(out, "model override cleared (auto cascade)")
 			return false, nil
+		}
+		// Numeric picker
+		if n, err := strconv.Atoi(name); err == nil {
+			models := rt.Router().Models()
+			if n < 1 || n > len(models) {
+				fmt.Fprintf(out, "error: pick 1..%d\n", len(models))
+				return false, nil
+			}
+			name = models[n-1].Name
 		}
 		if err := rt.Router().SetOverride(name); err != nil {
 			fmt.Fprintf(out, "error: %v\n", err)
@@ -185,9 +223,26 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			fmt.Fprintln(out, "no subagents spawned this session")
 			return false, nil
 		}
+		fmt.Fprintf(out, "%-22s %-12s %-16s %-8s %s\n", "ID", "STATUS", "TYPE", "WT", "DESC")
 		for _, rec := range list {
-			fmt.Fprintf(out, "%s  %-12s  %-16s  %s\n", rec.ID, rec.Status, rec.Spec.SubagentType, rec.Spec.Description)
+			wt := "-"
+			if rec.WorktreePath != "" {
+				wt = "yes"
+			}
+			fmt.Fprintf(out, "%-22s %-12s %-16s %-8s %s\n",
+				rec.ID, rec.Status, rec.Spec.SubagentType, wt, rec.Spec.Description)
 		}
+	case "/permissions", "/perms":
+		fmt.Fprintln(out, "session always-allow tools:")
+		// No export of map keys without iteration API — probe known mutators.
+		for _, name := range []string{
+			"write_file", "run_shell", "apply_worktree", "apply_worktrees", "remove_worktree",
+		} {
+			if rt.rt.ToolAllowedSession(name) {
+				fmt.Fprintf(out, "  ✓ %s\n", name)
+			}
+		}
+		fmt.Fprintln(out, "(use approval prompt [a]lways, or --yolo)")
 	case "/save":
 		if rt.store == nil {
 			fmt.Fprintln(out, "session store unavailable")
@@ -243,19 +298,42 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		fmt.Fprintf(out, "loaded %s (%d messages, %d subagents)\n", snap.ID, len(snap.Messages), len(snap.Subagents))
 	case "/help", "/?":
 		fmt.Fprint(out, `commands:
-  /models          list models
-  /model <name>    pin model (or default|auto)
-  /subagents       list spawned subagents
-  /save [compact]  save session (optional compact old turns)
-  /sessions        list saved sessions
-  /load <id>       restore session (transcript + subagent catalog)
-  /cost            sample cost estimate
-  /quit            exit
+  /models              list models (numbered)
+  /model <name|#>      pin model (or default)
+  /subagents           list subagents (id, status, worktree)
+  /permissions         show session always-allow tools
+  /save [compact]      save session
+  /sessions            list saved sessions
+  /load <id>           restore session
+  /cost                sample cost estimate
+  /quit                exit
+
+On mutating tools (write_file, run_shell, apply_worktree, …) you will be prompted:
+  [y]es  [n]o  [a]lways this session
 `)
 	default:
 		fmt.Fprintf(out, "unknown command %s (try /help)\n", cmd)
 	}
 	return false, nil
+}
+
+func printModelPicker(out io.Writer, r *router.Router) {
+	models := r.Models()
+	cur := r.Override()
+	if cur == "" {
+		cur = r.DefaultModel()
+	}
+	fmt.Fprintf(out, "%3s  %-22s %-28s %s\n", "#", "NAME", "MODEL_ID", "NOTES")
+	for i, m := range models {
+		note := ""
+		if m.Name == r.DefaultModel() {
+			note = "default"
+		}
+		if m.Name == cur && r.Override() != "" {
+			note = "pinned"
+		}
+		fmt.Fprintf(out, "%3d  %-22s %-28s %s\n", i+1, m.Name, m.ModelID, note)
+	}
 }
 
 func truncate(s string, n int) string {

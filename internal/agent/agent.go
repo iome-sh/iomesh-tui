@@ -9,6 +9,7 @@ import (
 	"io"
 	"log/slog"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/iome-sh/iomesh-tui/internal/iomesh"
@@ -62,6 +63,11 @@ type Runtime struct {
 	messages  []router.Message
 	sessionID string
 	autoSave  bool
+
+	// Permission / approval for mutating tools (subagent apply, shell, write, …).
+	mu           sync.Mutex
+	approver     Approver
+	sessionAllow map[string]bool
 }
 
 // New constructs a Runtime. mesh may be nil.
@@ -246,16 +252,19 @@ func (rt *Runtime) RunTurn(ctx context.Context, userText string, onEvent func(Ev
 
 		for _, tc := range msg.ToolCalls {
 			onEvent(Event{Type: EventToolStart, Tool: tc.Function.Name, Text: tc.Function.Arguments})
-			if !rt.cfg.Yolo {
-				// Scaffold: non-yolo still runs read-only tools; mutators require yolo for now.
-				if rt.tools.IsMutating(tc.Function.Name) {
-					onEvent(Event{Type: EventToolDenied, Tool: tc.Function.Name, Text: "approval required (use --yolo)"})
+			if rt.tools.IsMutating(tc.Function.Name) {
+				switch rt.decideApproval(ctx, tc.Function.Name, tc.Function.Arguments) {
+				case ApprovalDeny:
+					msg := "tool denied: user approval required (use --yolo, or approve interactively in TUI)"
+					onEvent(Event{Type: EventToolDenied, Tool: tc.Function.Name, Text: msg})
 					rt.messages = append(rt.messages, router.Message{
 						Role:       "tool",
 						ToolCallID: tc.ID,
-						Content:    "tool denied: user approval required (restart with --yolo or approve in TUI)",
+						Content:    msg,
 					})
 					continue
+				case ApprovalOnce, ApprovalAlways:
+					// proceed
 				}
 			}
 			result, err := rt.tools.Execute(ctx, tc.Function.Name, tc.Function.Arguments)

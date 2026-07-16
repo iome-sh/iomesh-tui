@@ -16,7 +16,7 @@ Go rewrite of [xAI Grok Build](https://github.com/xai-org/grok-build) with first
 | Grok Build (Rust) | Go package | Status |
 |-------------------|------------|--------|
 | `xai-grok-pager-bin` | `cmd/iomesh` | Scaffold |
-| `xai-grok-pager` | `internal/tui` | REPL scaffold (fullscreen TUI next) |
+| `xai-grok-pager` | `internal/tui` | REPL + approvals + model picker (fullscreen next) |
 | `xai-grok-shell` | `internal/agent` | Turn loop + tools |
 | `xai-grok-tools` | `internal/agent` tools | read/list/grep/shell/write |
 | `xai-grok-workspace` | `internal/workspace` | Rooted FS + path jail |
@@ -79,11 +79,12 @@ CLI / TUI / ACP
 
 ## Next milestones
 
-1. Full-screen TUI (Bubble Tea / custom renderer) with scrollback + permissions
-2. ~~ACP `agent stdio`~~ **done** — see [acp.md](acp.md)
-3. ~~Subagent orchestration~~ **done** — see [subagents.md](subagents.md)
-4. ~~Git worktree isolation~~ **done** — `isolation=worktree`
-5. ~~Worktree apply/merge helper~~ **done** — `apply_worktree` / `diff_worktree`
-6. ~~Session persistence + compaction~~ **done** — `.iomesh/sessions`, resume subagent catalog
-7. MCP client + skills loader
-8. Deeper I/O Mesh: lineage-aware context, Rego policy gates, metering dashboards
+1. Full-screen TUI (Bubble Tea / custom renderer) with scrollback
+2. ~~Interactive permissions + model picker in REPL~~ **done** — see [permissions.md](permissions.md)
+3. ~~ACP `agent stdio`~~ **done** — see [acp.md](acp.md)
+4. ~~Subagent orchestration~~ **done** — see [subagents.md](subagents.md)
+5. ~~Git worktree isolation~~ **done** — `isolation=worktree`
+6. ~~Worktree apply/merge helper~~ **done** — `apply_worktree` / `diff_worktree`
+7. ~~Session persistence + compaction~~ **done** — `.iomesh/sessions`, resume subagent catalog
+8. MCP client + skills loader
+9. Deeper I/O Mesh: lineage-aware context, Rego policy gates, metering dashboards
