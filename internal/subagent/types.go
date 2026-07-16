@@ -91,9 +91,9 @@ type Result struct {
 
 // Definition describes a built-in agent type.
 type Definition struct {
-	Type           Type
-	Description    string
-	SystemPrompt   string
+	Type         Type
+	Description  string
+	SystemPrompt string
 	// DefaultCapability applies when Spec.CapabilityMode is empty.
 	DefaultCapability CapabilityMode
 	// AllowShell when true includes run_shell (subject to capability filter).

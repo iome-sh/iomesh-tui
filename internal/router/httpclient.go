@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/iome-sh/iomesh-tui/internal/security"
 )
 
 const defaultHTTPTimeout = 10 * time.Minute
@@ -57,7 +59,8 @@ func (c *HTTPClient) ChatCompletion(ctx context.Context, req ChatRequest) (ChatR
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
+	// Cap error/success body reads to avoid memory blowups from misbehaving endpoints.
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, 32<<20))
 	if err != nil {
 		return ChatResponse{}, fmt.Errorf("read body: %w", err)
 	}
@@ -98,7 +101,7 @@ func (c *HTTPClient) ChatCompletionStream(ctx context.Context, req ChatRequest, 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(resp.Body)
+		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 64*1024))
 		return ChatResponse{}, checkStatus(resp.StatusCode, respBody)
 	}
 
@@ -129,9 +132,10 @@ func checkStatus(code int, body []byte) error {
 	retryable := code == http.StatusTooManyRequests || code == http.StatusRequestTimeout ||
 		code == http.StatusBadGateway || code == http.StatusServiceUnavailable ||
 		code == http.StatusGatewayTimeout || code >= 500
+	// Redact any credentials a provider might echo in error bodies.
 	return &APIError{
 		StatusCode: code,
-		Body:       string(body),
+		Body:       security.Redact(string(body)),
 		Retryable:  retryable,
 		RateLimit:  code == http.StatusTooManyRequests,
 	}

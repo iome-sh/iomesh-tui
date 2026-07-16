@@ -1,5 +1,8 @@
 # I/O Mesh TUI — example configuration
 # Copy to ~/.iomesh/config.toml and set API keys via environment variables.
+#
+# SECURITY: prefer env_key over inline api_key. Never commit real secrets.
+# --yolo auto-approves write_file and run_shell — use only in trusted sessions.
 
 [models]
 default = "deepseek-v4-flash"

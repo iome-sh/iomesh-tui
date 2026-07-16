@@ -2,7 +2,7 @@
 
 **I/O Mesh TUI** — a Go rewrite of [xAI Grok Build](https://github.com/xai-org/grok-build) with tighter **I/O Mesh** platform integration and a **DeepSeek-first** LLM cascade for price-performance.
 
-> Status: **foundation scaffold** (router, config, agent loop, workspace tools, REPL). Full-screen TUI, ACP, MCP, and subagents are planned next.
+> Status: **foundation** (router, config, agent loop, workspace tools, subagents, REPL). Full-screen TUI, ACP, and MCP are next. Hardened for open-source readiness (path jail, secret scrubbing, CI).
 
 ## Why this rewrite
 
@@ -68,11 +68,13 @@ internal/
   config/             TOML + env merge
   agent/              turn loop, tools, events, spawn_subagent wiring
   subagent/           child sessions (explore/plan/gp, background, caps)
-  workspace/          rooted filesystem + grep
+  workspace/          rooted filesystem + path jail
+  security/           redaction, env scrub, shell/URL policy
   iomesh/             I/O Mesh client (fail-open)
   tui/                interactive REPL scaffold
 configs/              example config.toml
 docs/architecture/    design notes
+docs/security.md      threat model
 ```
 
 ## I/O Mesh integration
@@ -93,13 +95,32 @@ When enabled:
 
 Offline / local use needs no mesh configuration.
 
+## Security
+
+Coding agents can read, write, and execute within a workspace. Key controls:
+
+- **Path jail** with symlink escape checks and read size caps
+- **Shell**: approval/`--yolo` required; API keys scrubbed from child env; dangerous pattern denylist
+- **HTTP**: `http`/`https` only for model/mesh URLs; redacted error bodies
+- Prefer env vars for secrets — never commit keys
+
+See [SECURITY.md](SECURITY.md) and [docs/security.md](docs/security.md). Report vulnerabilities privately (do not open public issues for exploits).
+
+⚠️ **`--yolo` auto-approves mutating tools (write + shell). Treat as full trust.**
+
 ## Development
 
 ```bash
-make test
-make vet
+make check      # fmt-check + vet + test
+make test-race
+make cover
+make vuln       # govulncheck
 make build
 ```
+
+CI (GitHub Actions): multi-Go test matrix, race detector, coverage, `govulncheck`.
+
+Contributions: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

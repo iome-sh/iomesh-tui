@@ -185,13 +185,21 @@ func (rt *Runtime) RunTurn(ctx context.Context, userText string, onEvent func(Ev
 			}
 			return nil
 		})
-		if err != nil {
-			// Fall back to non-stream if stream unsupported.
+		// Fall back to non-stream if stream failed, unsupported, or returned an empty
+		// assistant turn (common when a server returns plain JSON without SSE framing).
+		needNonStream := err != nil || len(resp.Choices) == 0
+		if !needNonStream {
+			m := resp.Choices[0].Message
+			if m.Content == "" && len(m.ToolCalls) == 0 {
+				needNonStream = true
+			}
+		}
+		if needNonStream {
 			resp, meta, err = rt.router.ExecuteWithFallback(ctx, req, params)
 			if err != nil {
 				return final.String(), err
 			}
-			if len(resp.Choices) > 0 {
+			if len(resp.Choices) > 0 && resp.Choices[0].Message.Content != "" {
 				onEvent(Event{Type: EventTextDelta, Text: resp.Choices[0].Message.Content, Model: meta.ModelName})
 			}
 		}

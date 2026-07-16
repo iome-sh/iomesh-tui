@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/iome-sh/iomesh-tui/internal/router"
+	"github.com/iome-sh/iomesh-tui/internal/security"
 	"github.com/iome-sh/iomesh-tui/internal/workspace"
 )
 
@@ -37,7 +38,7 @@ func DefaultTools(ws *workspace.Workspace) ToolRegistry {
 		Type: "function",
 		Function: router.ToolFunction{
 			Name:        "read_file",
-			Description: "Read a UTF-8 text file relative to the workspace root.",
+			Description: "Read a UTF-8 text file relative to the workspace root. Paths outside the workspace are rejected.",
 			Parameters:  json.RawMessage(`{"type":"object","properties":{"path":{"type":"string"},"offset":{"type":"integer"},"limit":{"type":"integer"}},"required":["path"]}`),
 		},
 	}, func(ctx context.Context, args string) (string, error) {
@@ -77,7 +78,7 @@ func DefaultTools(ws *workspace.Workspace) ToolRegistry {
 		Type: "function",
 		Function: router.ToolFunction{
 			Name:        "grep",
-			Description: "Search workspace files for a regex pattern.",
+			Description: "Search workspace files for a regex pattern (skips .git/vendor/binaries).",
 			Parameters:  json.RawMessage(`{"type":"object","properties":{"pattern":{"type":"string"},"path":{"type":"string"}},"required":["pattern"]}`),
 		},
 	}, func(ctx context.Context, args string) (string, error) {
@@ -95,7 +96,7 @@ func DefaultTools(ws *workspace.Workspace) ToolRegistry {
 		Type: "function",
 		Function: router.ToolFunction{
 			Name:        "run_shell",
-			Description: "Run a shell command in the workspace root (requires approval).",
+			Description: "Run a shell command in the workspace root (requires approval / --yolo). API keys are scrubbed from the child environment. Dangerous patterns are blocked.",
 			Parameters:  json.RawMessage(`{"type":"object","properties":{"command":{"type":"string"}},"required":["command"]}`),
 		},
 	}, func(ctx context.Context, args string) (string, error) {
@@ -105,22 +106,30 @@ func DefaultTools(ws *workspace.Workspace) ToolRegistry {
 		if err := json.Unmarshal([]byte(args), &p); err != nil {
 			return "", err
 		}
+		if err := security.ValidateShellCommand(p.Command); err != nil {
+			return "", err
+		}
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 		defer cancel()
 		cmd := exec.CommandContext(ctx, "bash", "-lc", p.Command)
 		cmd.Dir = ws.Root()
+		// Do not leak provider / cloud credentials into tool-spawned processes.
+		cmd.Env = security.ScrubEnv(nil)
 		out, err := cmd.CombinedOutput()
+		text := security.TruncateOutput(out, security.MaxShellOutputBytes)
+		// Redact any accidental secret echo from command output.
+		text = security.Redact(text)
 		if err != nil {
-			return string(out) + "\n" + err.Error(), nil
+			return text + "\n" + security.Redact(err.Error()), nil
 		}
-		return string(out), nil
+		return text, nil
 	})
 
 	reg.register("write_file", true, router.Tool{
 		Type: "function",
 		Function: router.ToolFunction{
 			Name:        "write_file",
-			Description: "Write full contents to a file (requires approval).",
+			Description: "Write full contents to a file under the workspace (requires approval / --yolo).",
 			Parameters:  json.RawMessage(`{"type":"object","properties":{"path":{"type":"string"},"content":{"type":"string"}},"required":["path","content"]}`),
 		},
 	}, func(ctx context.Context, args string) (string, error) {
@@ -154,7 +163,7 @@ func (r ToolRegistry) Schemas() []router.Tool {
 	return out
 }
 
-// IsMutating reports whether the tool mutates the system.
+// IsMutating reports whether the tool mutates the system or runs untrusted code.
 func (r ToolRegistry) IsMutating(name string) bool {
 	m, ok := r.meta[name]
 	return ok && m.mutating
@@ -166,5 +175,10 @@ func (r ToolRegistry) Execute(ctx context.Context, name, args string) (string, e
 	if !ok {
 		return "", fmt.Errorf("unknown tool %q", name)
 	}
-	return fn(ctx, args)
+	// Defense in depth: never pass raw secrets back through error paths from tools.
+	out, err := fn(ctx, args)
+	if err != nil {
+		return "", fmt.Errorf("%s", security.Redact(err.Error()))
+	}
+	return out, nil
 }

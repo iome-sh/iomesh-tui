@@ -10,6 +10,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -17,6 +18,7 @@ import (
 	"time"
 
 	"github.com/iome-sh/iomesh-tui/internal/router"
+	"github.com/iome-sh/iomesh-tui/internal/security"
 )
 
 // Config is the runtime subset needed by the client.
@@ -37,14 +39,29 @@ type Client struct {
 }
 
 // New builds a client. A nil or disabled config yields a safe no-op client.
+// When Enabled and Endpoint is set, the endpoint must be a valid http(s) URL.
 func New(cfg Config, logger *slog.Logger) *Client {
 	if logger == nil {
 		logger = slog.Default()
+	}
+	// Validate endpoint early when integration is enabled (allow loopback for local mesh).
+	if cfg.Enabled && cfg.Endpoint != "" {
+		if err := security.ValidateHTTPURL(cfg.Endpoint, true); err != nil {
+			logger.Warn("iomesh: invalid endpoint; disabling client", "err", err)
+			cfg.Enabled = false
+		}
 	}
 	return &Client{
 		cfg: cfg,
 		httpClient: &http.Client{
 			Timeout: 15 * time.Second,
+			// Cap redirects to reduce open-redirect/SSRF chaining risk.
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				if len(via) >= 5 {
+					return fmt.Errorf("stopped after 5 redirects")
+				}
+				return security.ValidateHTTPURL(req.URL.String(), true)
+			},
 		},
 		logger: logger,
 	}
@@ -142,12 +159,12 @@ func (c *Client) RecordLLMCall(meta router.CallMeta, usage router.Usage, err err
 		return
 	}
 	payload := map[string]any{
-		"model":      meta.ModelName,
-		"model_id":   meta.ModelID,
+		"model":       meta.ModelName,
+		"model_id":    meta.ModelID,
 		"duration_ms": meta.Duration.Milliseconds(),
-		"attempts":   meta.Attempts,
-		"fallback":   meta.FallbackUsed,
-		"est_usd":    meta.EstimatedUSD,
+		"attempts":    meta.Attempts,
+		"fallback":    meta.FallbackUsed,
+		"est_usd":     meta.EstimatedUSD,
 		"tokens": map[string]int{
 			"prompt":     usage.PromptTokens,
 			"completion": usage.CompletionTokens,
@@ -155,7 +172,7 @@ func (c *Client) RecordLLMCall(meta router.CallMeta, usage router.Usage, err err
 		},
 	}
 	if err != nil {
-		payload["error"] = err.Error()
+		payload["error"] = security.Redact(err.Error())
 	}
 	// Best-effort background emit with short timeout.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -194,6 +211,7 @@ func (c *Client) Health(ctx context.Context) error {
 		return err
 	}
 	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4096))
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("iomesh health: http %d", resp.StatusCode)
 	}

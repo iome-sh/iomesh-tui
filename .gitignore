@@ -17,6 +17,13 @@
 coverage.*
 *.coverprofile
 profile.cov
+coverage.html
+
+# Local secrets / env
+.env.*
+!.env.example
+*.pem
+*.key
 
 # Dependency directories (remove the comment below to include it)
 # vendor/

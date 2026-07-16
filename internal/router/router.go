@@ -4,10 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/url"
 	"sort"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/iome-sh/iomesh-tui/internal/security"
 )
 
 // MetricsSink receives optional call-level metrics (can be a no-op).
@@ -105,6 +108,17 @@ func New(models []ModelConfig, defaultModel string, opts ...Option) (*Router, er
 		if m.ModelID == "" {
 			return nil, fmt.Errorf("router: model %q missing model_id", m.Name)
 		}
+		// Allow loopback so local OpenAI-compatible servers and tests work.
+		// file:// and non-http schemes are always rejected.
+		if err := security.ValidateHTTPURL(m.BaseURL, true); err != nil {
+			return nil, fmt.Errorf("router: model %q base_url: %w", m.Name, err)
+		}
+		// Strip any accidental userinfo (user:pass@host) from base URL.
+		if cleaned, err := stripURLUserinfo(m.BaseURL); err == nil {
+			m.BaseURL = cleaned
+		}
+		// Never keep inline API keys in long-lived process dumps via Stringers;
+		// keys stay on the struct for auth but are redacted in logs.
 		clients[m.Name] = NewHTTPClient(m, nil)
 	}
 
@@ -311,7 +325,7 @@ func (r *Router) execute(ctx context.Context, req ChatRequest, p SelectParams, s
 		lastErr = err
 		r.logger.Warn("llm call failed, considering fallback",
 			"model", name,
-			"error", err,
+			"error", security.Redact(err.Error()),
 			"attempt", i+1,
 			"retryable", isRetryable(err),
 		)
@@ -555,4 +569,13 @@ func isRateLimit(err error) bool {
 		return api.RateLimit
 	}
 	return strings.Contains(strings.ToLower(err.Error()), "rate limit")
+}
+
+func stripURLUserinfo(raw string) (string, error) {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return raw, err
+	}
+	u.User = nil
+	return u.String(), nil
 }

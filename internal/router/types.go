@@ -201,9 +201,9 @@ type StreamDelta struct {
 
 // SelectParams controls model selection for a single call.
 type SelectParams struct {
-	TaskType         TaskType
-	EstimatedTokens  int
-	Complexity       Complexity
+	TaskType        TaskType
+	EstimatedTokens int
+	Complexity      Complexity
 	// PreferCapabilities requires at least one matching capability when set.
 	PreferCapabilities []string
 	// Override forces a specific logical model name (e.g. from /model or CLI).
@@ -222,11 +222,11 @@ type CallMeta struct {
 
 // CostEstimate is a breakdown of projected or actual USD cost.
 type CostEstimate struct {
-	ModelName        string
-	InputTokens      int
-	OutputTokens     int
+	ModelName         string
+	InputTokens       int
+	OutputTokens      int
 	CachedInputTokens int
-	USD              float64
+	USD               float64
 }
 
 // APIError classifies provider HTTP failures for fallback policy.
