@@ -90,6 +90,26 @@ git worktree remove --force .iomesh/worktrees/<id>
 
 `spawn_subagents` accepts per-task `isolation` or batch `default_isolation`.
 
+### Apply / merge dance
+
+After a child finishes in a worktree, the **parent** merges changes:
+
+| Tool | Mutating | Purpose |
+|------|----------|---------|
+| `diff_worktree` | no | `git status` + diff stat for id/path |
+| `list_worktrees` | no | List `.iomesh/worktrees/*` |
+| `apply_worktree` | **yes** | Path-jailed copy of changed files into parent; optional `remove=true` |
+| `remove_worktree` | **yes** | Drop worktree without applying |
+
+```text
+spawn_subagent(isolation=worktree, subagent_type=general-purpose)
+  → { id, worktree_path, summary }
+diff_worktree(id)
+apply_worktree(id, remove=true)   # requires --yolo / approval
+```
+
+Symlinks and directory-only entries are skipped; file creates/updates/deletes under the jail are applied.
+
 ## REPL
 
 `/subagents` lists ids, status, type, description for the session.

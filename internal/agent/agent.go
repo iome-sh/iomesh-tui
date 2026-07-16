@@ -308,6 +308,7 @@ Delegate exploration and planning to subagents when it preserves your context:
 - plan: structured implementation plan (no edits)
 - general-purpose: full capability delegated work
 MAXIMUM PARALLELISM: when you have multiple independent research/implement tasks, call spawn_subagents once with a tasks array (not serial spawn_subagent). Use wait=true to join, or wait=false then wait_subagents. Prefer default_subagent_type=explore for parallel codebase scans.
+ISOLATED EDITS: for mutating work that must not touch the main tree until review, spawn with isolation=worktree, then parent calls diff_worktree and apply_worktree (approval required) to merge.
 When I/O Mesh context is provided inside <iomesh-context>, treat it as governed operational truth for production systems.`, root)
 }
 
