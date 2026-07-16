@@ -8,7 +8,7 @@
 
 Official open-source tooling from [IOMesh](https://iome.sh) (**IOMesh Technology Ltd.**).
 
-> **Status:** public open-source **foundation** (pre-1.0). Agent loop, subagents, full-screen TUI, permissions, ACP, skills, MCP, mesh dogfood, multi-model catalog (DeepSeek · Grok · Gemini · Vertex). Not a multi-tenant remote sandbox — see [SECURITY.md](SECURITY.md).
+> **Status:** public open-source **v0.2.x** (pre-1.0). Agent loop, subagents, full-screen TUI, permissions, ACP, skills, MCP, deeper mesh (lineage · policy · catalog · metering), multi-model catalog (DeepSeek · Grok · Gemini · Vertex). Not a multi-tenant remote sandbox — see [SECURITY.md](SECURITY.md).
 
 ## Table of contents
 

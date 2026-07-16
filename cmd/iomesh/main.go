@@ -27,7 +27,7 @@ import (
 
 // Overridden at link time by make build: -X main.version=$(VERSION)
 // (must be a var, not const, for -ldflags -X).
-var version = "0.1.0"
+var version = "0.2.0"
 
 func main() {
 	os.Exit(run(os.Args[1:]))

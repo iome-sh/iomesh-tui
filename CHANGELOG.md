@@ -7,17 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-07-16
+
+Minor release: deeper I/O Mesh integration, multi-model honesty, catalog composition, and Vertex ADC ergonomics. Compatible with existing `v0.1.x` configs (new flags default fail-open / off where enforcement matters).
+
 ### Added
 
-- Deeper I/O Mesh: lineage-aware context plane (`include_lineage`), remote policy evaluate (`policy_mode` advisory|enforce, fail-open), local LLM usage meter + `iomesh mesh usage` / headless stderr rollup
-- Dogfood policy step; docs: [docs/architecture/mesh-deeper.md](docs/architecture/mesh-deeper.md)
-- Mesh **catalog plane**: `list_mesh_catalog` / `mesh_status` tools, `iomesh mesh catalog`, TUI `/catalog` `/mesh`, optional `inject_catalog`, dogfood catalog step
-- TUI `/cost` shows process usage meter + sample estimate
+- **Mesh lineage context** — `include_lineage` on context plane queries; `<iomesh-lineage>` prompt block ([#22](https://github.com/iome-sh/iomesh-tui/pull/22))
+- **Mesh policy gates** — `policy_mode` = `off` \| `advisory` \| `enforce` → `POST /v1/policy/evaluate` (fail-open on transport/404) ([#22](https://github.com/iome-sh/iomesh-tui/pull/22))
+- **Local usage meter** — process `UsageMeter` via MetricsSink; `iomesh mesh usage`; headless `-p` stderr rollup ([#22](https://github.com/iome-sh/iomesh-tui/pull/22))
+- **Mesh catalog plane** — `list_mesh_catalog` / `mesh_status` tools, `iomesh mesh catalog`, TUI `/catalog` `/mesh`, optional `inject_catalog`, dogfood catalog step ([#26](https://github.com/iome-sh/iomesh-tui/pull/26))
+- **TUI `/cost`** — session process usage + sample estimate ([#26](https://github.com/iome-sh/iomesh-tui/pull/26))
+- **Vertex ADC auto-refresh** — cached access token + `gcloud` refresh on 401 ([#25](https://github.com/iome-sh/iomesh-tui/pull/25), [#27](https://github.com/iome-sh/iomesh-tui/pull/27))
+- Docs: [mesh-deeper.md](docs/architecture/mesh-deeper.md); multi-model catalog tables in README / llm-cascade
 
 ### Changed
 
-- Org branding: LICENSE/NOTICE/README footer **IOMesh Technology Ltd.** + [iome.sh](https://iome.sh)
-- Positioning: multi-model catalog (DeepSeek · Grok · Gemini · Vertex) in README / architecture docs; GitHub About no longer “DeepSeek-only”
+- Multi-model positioning (DeepSeek · Grok · Gemini · Vertex) — default cascade still Flash → Pro → Grok when unpinned ([#24](https://github.com/iome-sh/iomesh-tui/pull/24))
+- Org branding: **IOMesh Technology Ltd.** + [iome.sh](https://iome.sh) in LICENSE/NOTICE/README; GitHub About homepage ([#23](https://github.com/iome-sh/iomesh-tui/pull/23))
+- CI GitHub Actions pins: `checkout` / `setup-go` / `upload-artifact` v7 ([#18](https://github.com/iome-sh/iomesh-tui/pull/18)–[#20](https://github.com/iome-sh/iomesh-tui/pull/20))
+
+### Config / env (new)
+
+| Key | Default | Notes |
+|-----|---------|--------|
+| `include_lineage` / `IOMESH_INCLUDE_LINEAGE` | true | Context plane lineage |
+| `policy_mode` / `IOMESH_POLICY_MODE` | off | advisory \| enforce |
+| `catalog_plane` / `IOMESH_CATALOG_PLANE` | true | Data-product discovery |
+| `inject_catalog` / `IOMESH_INJECT_CATALOG` | false | Per-turn catalog inject |
 
 ## [0.1.0] — 2026-07-16
 
@@ -34,12 +51,13 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Skills loader and MCP client (stdio/HTTP: tools, resources, prompts, OAuth helpers)
 - Stage I/O Mesh mesh dogfood probe (`iomesh mesh dogfood` / `make dogfood`)
 - Open-source launch pack: LICENSE, SECURITY, SUPPORT, CONTRIBUTING, RELEASING, NOTICE, issue/PR templates, Dependabot
-- CI: lint, test, race, coverage artifact, govulncheck, build (`actions/checkout` / `setup-go` / `upload-artifact` v7)
+- CI: lint, test, race, coverage artifact, govulncheck, build
 
 ### Security
 
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.2.0
 [0.1.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.1.0
