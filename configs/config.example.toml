@@ -119,6 +119,28 @@ enabled = true
 enabled = false
 # max_output_bytes = 20000
 
+# --- Agentic Memory Palace (aion-memory-mcp) — Phase 0–1 ---
+# Requires: aion-memory-mcp on PATH (or full command path) + [mcp] enabled.
+# See docs/architecture/memory-mcp.md
+#
+# [mcp]
+# enabled = true
+# [[mcp.servers]]
+# name = "aion-memory"
+# command = "aion-memory-mcp"
+# args = ["-palace-root", "/data/memory-palaces"]
+# # env = { "MEMORY_TENANT" = "dept.engineering", "PALACE_ROOT" = "/data/memory-palaces" }
+# mutating = true
+#
+# [memory]
+# enabled = true
+# server = "aion-memory"       # must match [[mcp.servers]].name
+# tenant = "dept.engineering"  # or MEMORY_TENANT / IOMESH_MEMORY_TENANT
+# auto_recall = true           # inject <iomesh-memory> before each LLM turn
+# auto_ingest = false          # opt-in: write user+assistant turns with event_time/session_seq
+# recall_limit = 8
+# Env: IOMESH_MEMORY=1 · IOMESH_MEMORY_INGEST=1 · IOMESH_MEMORY_TENANT=…
+
 # Stdio transport:
 # [[mcp.servers]]
 # name = "example"

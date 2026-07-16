@@ -179,6 +179,24 @@ func run(args []string) int {
 		rt.AttachMCP(mgr)
 	}
 
+	// Palace memory via MCP (Phase 0–1): requires connected aion-memory server.
+	if cfg.Memory.Enabled {
+		rt.ConfigureMemory(agent.MemoryConfig{
+			Enabled:     true,
+			Server:      cfg.Memory.Server,
+			Tenant:      cfg.Memory.Tenant,
+			AutoRecall:  cfg.Memory.AutoRecall,
+			AutoIngest:  cfg.Memory.AutoIngest,
+			RecallLimit: cfg.Memory.RecallLimit,
+		})
+		logger.Info("memory configured",
+			"server", cfg.Memory.Server,
+			"tenant", cfg.Memory.Tenant,
+			"auto_recall", cfg.Memory.AutoRecall,
+			"auto_ingest", cfg.Memory.AutoIngest,
+		)
+	}
+
 	store, err := session.Open(rt.Workspace().Root())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "session store: %v\n", err)

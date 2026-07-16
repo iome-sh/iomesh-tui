@@ -96,5 +96,5 @@ CLI / TUI / ACP
 15. ~~Mesh catalog composition + TUI cost/mesh slash cmds~~ **done** — see [mesh-deeper.md](mesh-deeper.md)
 16. ~~Portal catalog federation + dogfood JSON~~ **done** — see [mesh-deeper.md](mesh-deeper.md)
 17. ~~I/O Mesh memory / temporal MCP plan~~ **planned** — see [memory-mcp.md](memory-mcp.md)
-18. Optional: implement memory auto-recall/ingest (Phase 1); aion HTTP MCP + sync recall (Phase 2)
-19. Optional: remote multi-tenant metering dashboards / goreleaser binaries
+18. ~~Memory Phase 0–1 (stdio auto-recall/ingest + `/memory`)~~ **done** — see [memory-mcp.md](memory-mcp.md)
+19. Optional: aion HTTP MCP + sync recall (Phase 2); remote metering / goreleaser

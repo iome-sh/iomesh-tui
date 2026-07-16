@@ -47,9 +47,9 @@ Resources: `memory://{tenant}/stats|timeline|session/{id}/turns|semantic/facts`.
 
 ## Phased delivery
 
-### Phase 0 — Config & docs (iomesh-tui, no aion change)
+### Phase 0 — Config & docs (iomesh-tui, no aion change) — **shipped**
 
-Ship example config + architecture note so operators can attach memory **today** via stdio:
+Example in `configs/config.example.toml` + this doc. Operators can attach memory **today** via stdio:
 
 ```toml
 [mcp]
@@ -60,24 +60,32 @@ name = "aion-memory"
 command = "aion-memory-mcp"   # or path to binary
 args = ["-palace-root", "/data/memory-palaces"]
 env = { MEMORY_TENANT = "dept.engineering" }
-mutating = true   # ingest is mutating → approval / --yolo
+mutating = true   # model-invoked ingest tools still require approval / --yolo
+
+[memory]
+enabled = true
+server = "aion-memory"
+tenant = "dept.engineering"
+auto_recall = true
+auto_ingest = false   # opt-in write-back
+recall_limit = 8
 ```
 
-- Document temporal args: `event_time`, `session_seq`, `since`/`until` on retrieve.
-- CLI: `iomesh mcp --connect` already lists tools/resources.
-- **No new aion code.**
+- Temporal args on MCP tools: `event_time`, `session_seq`, `since`/`until`.
+- CLI: `iomesh mcp --connect` lists tools/resources; TUI `/memory` for status.
+- Env: `IOMESH_MEMORY=1`, `IOMESH_MEMORY_INGEST=1`, `IOMESH_MEMORY_TENANT` / `MEMORY_TENANT`.
 
-### Phase 1 — Agent memory loop (iomesh-tui)
+### Phase 1 — Agent memory loop (iomesh-tui) — **shipped**
 
 | Feature | Behaviour |
 |---------|-----------|
-| Config `[memory]` | `enabled`, `mcp_server` name (default `aion-memory`), `tenant`, `auto_ingest`, `auto_recall`, `recall_limit` |
-| **Auto-recall** (fail-open) | Before LLM: `memory_retrieve` with user text + `session_id`; inject `<iomesh-memory>` system block |
-| **Auto-ingest** (opt-in, mutating policy) | After turn: `memory_ingest_turn` for user + assistant with `event_time=now`, `session_seq` monotonic |
-| **Slash** `/memory` | Status, last recall hit count, force compact status via MCP |
-| Tests | httptest-style MCP mock or fake tool registry |
+| Config `[memory]` | `enabled`, `server` (default `aion-memory`), `tenant`, `auto_ingest`, `auto_recall`, `recall_limit` |
+| **Auto-recall** (fail-open) | Before LLM: `memory_retrieve` with user text + `session_id`; inject `<iomesh-memory>` |
+| **Auto-ingest** (opt-in) | After turn: `memory_ingest_turn` for user + assistant with `event_time=now`, `session_seq` monotonic |
+| **Slash** `/memory` | Connection + last hit count + flags |
+| Tests | `FormatMemoryRecallSnippet` + ConfigureMemory unit tests |
 
-Still **stdio MCP only** if aion HTTP is not ready.
+Still **stdio MCP only** until aion HTTP MCP (platform M1).
 
 ### Phase 2 — aion platform gaps (required for remote / stage)
 

@@ -72,6 +72,11 @@ type Runtime struct {
 	mu           sync.Mutex
 	approver     Approver
 	sessionAllow map[string]bool
+
+	// Optional Palace memory via MCP (aion-memory-mcp).
+	memCfg        MemoryConfig
+	memSessionSeq int
+	memLastHits   int
 }
 
 // New constructs a Runtime. mesh may be nil.
@@ -253,6 +258,9 @@ func (rt *Runtime) RunTurn(ctx context.Context, userText string, onEvent func(Ev
 		}
 	}
 
+	// Optional Palace memory recall (MCP aion-memory-mcp) — fail-open.
+	rt.injectMemoryRecall(ctx, userText, onEvent)
+
 	rt.messages = append(rt.messages, router.Message{Role: "user", Content: userText})
 
 	complexity := rt.cfg.DefaultComplexity
@@ -338,7 +346,9 @@ func (rt *Runtime) RunTurn(ctx context.Context, userText string, onEvent func(Ev
 		final.WriteString(msg.Content)
 
 		if len(msg.ToolCalls) == 0 {
-			return final.String(), nil
+			text := final.String()
+			rt.autoIngestTurns(ctx, userText, text, onEvent)
+			return text, nil
 		}
 
 		for _, tc := range msg.ToolCalls {

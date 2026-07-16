@@ -126,7 +126,7 @@ func runREPL(ctx context.Context, rt *agent.Runtime, store *session.Store, in io
 	if sid := rt.SessionID(); sid != "" {
 		fmt.Fprintf(out, "session: %s\n", sid)
 	}
-	fmt.Fprintf(out, "model: %s  |  /model /models /subagents /save /sessions /permissions /cost /mesh /catalog /quit\n", displayModel(rt.Router()))
+	fmt.Fprintf(out, "model: %s  |  /model /models /subagents /save /sessions /permissions /cost /mesh /catalog /memory /quit\n", displayModel(rt.Router()))
 	fmt.Fprintln(out, "mutating tools (write/shell/apply_worktree/…) prompt for approval unless --yolo")
 
 	for {
@@ -174,6 +174,8 @@ func runREPL(ctx context.Context, rt *agent.Runtime, store *session.Store, in io
 					ev.Model, ev.Tokens, ev.CostUSD, ev.Duration)
 			case agent.EventMeshContext:
 				fmt.Fprintf(out, "\033[36m[iomesh] %s\033[0m\n", ev.Text)
+			case agent.EventMemory:
+				fmt.Fprintf(out, "\033[35m[memory] %s\033[0m\n", ev.Text)
 			}
 		})
 		if err != nil {
@@ -268,6 +270,8 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		}
 		res := m.ListCatalog(context.Background(), q)
 		fmt.Print(iomesh.FormatCatalog(res))
+	case "/memory", "/mem":
+		fmt.Fprintln(out, rt.rt.MemoryStatus())
 	case "/subagents", "/sa":
 		mgr := rt.rt.Subagents()
 		if mgr == nil || !mgr.Enabled() {
@@ -376,6 +380,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /cost                session usage meter + sample estimate
   /mesh                I/O Mesh status + usage
   /catalog [query]     list mesh data products (catalog plane)
+  /memory              Palace memory status (MCP aion-memory)
   /quit                exit
 
 Fullscreen keys: enter send · ctrl+j newline · pgup/pgdn scroll

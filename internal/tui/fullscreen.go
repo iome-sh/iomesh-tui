@@ -455,7 +455,7 @@ func (m *fullscreenModel) handleAgentEvent(ev agent.Event) {
 		m.lastCost = fmt.Sprintf("%s · %d tok · $%.5f · %s",
 			ev.Model, ev.Tokens, ev.CostUSD, ev.Duration.Round(time.Millisecond))
 		m.appendLine(m.theme.Dim.Render("— " + m.lastCost))
-	case agent.EventMeshContext:
+	case agent.EventMeshContext, agent.EventMemory:
 		m.appendLine(m.theme.Mesh.Render("[iomesh] " + ev.Text))
 	}
 }

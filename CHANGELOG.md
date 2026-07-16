@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Agent tool `get_mesh_catalog_product`; dogfood catalog PASS for `source=portal`
 - `iomesh mesh dogfood --json` for stage CI evidence
 - Plan: [docs/architecture/memory-mcp.md](docs/architecture/memory-mcp.md) — Agentic Memory Palace + temporal MCP integration
+- **Memory Phase 0–1**: `[memory]` config + MCP `aion-memory` auto-recall inject / opt-in auto-ingest (`event_time`/`session_seq`); TUI `/memory`
 
 ## [0.2.0] — 2026-07-16
 
