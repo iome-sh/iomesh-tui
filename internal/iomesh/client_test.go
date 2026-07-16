@@ -40,17 +40,28 @@ func TestContextSnippet_SuccessAndFailOpen(t *testing.T) {
 			http.NotFound(w, r)
 			return
 		}
-		_ = json.NewEncoder(w).Encode(map[string]string{"text": "mesh-ctx"})
+		var body map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["include_lineage"] != true {
+			t.Errorf("expected include_lineage, got %v", body["include_lineage"])
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"text": "mesh-ctx",
+			"lineage": []map[string]string{
+				{"id": "dp-1", "subject": "dept.eng.events", "source": "kafka", "freshness": "2m"},
+			},
+		})
 	}))
 	defer srv.Close()
 
 	c := New(Config{
-		Enabled: true, Endpoint: srv.URL, ContextPlane: true, Tenant: "t",
+		Enabled: true, Endpoint: srv.URL, ContextPlane: true, Tenant: "t", IncludeLineage: true,
 	}, nil)
 	if !c.Enabled() {
 		t.Fatal("should enable")
 	}
-	if got := c.ContextSnippet(context.Background(), "/ws", "q"); got != "mesh-ctx" {
+	got := c.ContextSnippet(context.Background(), "/ws", "q")
+	if !strings.Contains(got, "mesh-ctx") || !strings.Contains(got, "dp-1") || !strings.Contains(got, "<iomesh-lineage>") {
 		t.Fatalf("got %q", got)
 	}
 
@@ -62,6 +73,12 @@ func TestContextSnippet_SuccessAndFailOpen(t *testing.T) {
 	c2 := New(Config{Enabled: true, Endpoint: bad.URL, ContextPlane: true}, nil)
 	if got := c2.ContextSnippet(context.Background(), "/ws", "q"); got != "" {
 		t.Fatalf("fail-open got %q", got)
+	}
+}
+
+func TestFormatContextSnippet_TextOnly(t *testing.T) {
+	if got := FormatContextSnippet(ContextResult{Text: "  hello  "}); got != "hello" {
+		t.Fatalf("%q", got)
 	}
 }
 

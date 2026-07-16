@@ -92,4 +92,5 @@ CLI / TUI / ACP
 11. ~~Stage mesh dogfood~~ **done** — see [mesh-dogfood.md](mesh-dogfood.md)
 12. ~~TUI polish (multi-line edit, themes)~~ **done** — see [tui.md](tui.md)
 13. ~~MCP resources/prompts + OAuth helpers~~ **done** — see [mcp.md](mcp.md)
-14. Deeper I/O Mesh: lineage-aware context, Rego policy gates, metering dashboards
+14. ~~Deeper I/O Mesh: lineage-aware context, Rego policy gates, local metering~~ **done** — see [mesh-deeper.md](mesh-deeper.md)
+15. Optional: remote multi-tenant metering dashboards / deeper catalog composition

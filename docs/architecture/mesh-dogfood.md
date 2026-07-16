@@ -11,6 +11,9 @@ Operator smoke for **I/O Mesh** integration from the public `iomesh-tui` harness
 | ready | `GET /ready` or `/readyz` | SKIP if 404 | FAIL if missing/error |
 | context | `POST /v1/context/query` | SKIP if empty (fail-open) | FAIL if empty |
 | emit | `POST /v1/streams/dept` | SKIP on error | FAIL on error |
+| policy | `POST /v1/policy/evaluate` | SKIP if mode off / 404 / fail-open | FAIL if mode on and evaluate soft-fails |
+
+Context requests set `include_lineage` when configured (lineage count shown on PASS detail).
 
 Final line: `RESULT=PASS …` or `RESULT=FAIL …`.
 

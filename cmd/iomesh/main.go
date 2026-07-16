@@ -105,6 +105,8 @@ func run(args []string) int {
 		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
 		EmitDeptStreams: cfg.IOMesh.EmitDeptStreams,
 		ContextPlane:    cfg.IOMesh.ContextPlane,
+		IncludeLineage:  cfg.IOMesh.IncludeLineage,
+		PolicyMode:      iomesh.PolicyMode(cfg.IOMesh.PolicyMode),
 	}, logger)
 	if mesh.Enabled() {
 		metrics = mesh
@@ -217,6 +219,10 @@ func run(args []string) int {
 			} else {
 				fmt.Fprintf(os.Stderr, "session saved: %s\n", rt.SessionID())
 			}
+		}
+		// Local process metering rollup (stderr so stdout stays clean for scripts).
+		if snap := mesh.Usage(); snap.Calls > 0 {
+			fmt.Fprint(os.Stderr, iomesh.FormatUsage(snap))
 		}
 		return 0
 	}
@@ -430,21 +436,24 @@ func cmdModels(args []string) int {
 
 func cmdMesh(args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: iomesh mesh dogfood|probe [flags]")
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh dogfood|probe|usage [flags]")
 		return 2
 	}
 	switch args[0] {
 	case "dogfood", "probe":
 		return cmdMeshDogfood(args[1:])
+	case "usage":
+		return cmdMeshUsage(args[1:])
 	case "help", "-h", "--help":
 		fmt.Fprintln(os.Stderr, `iomesh mesh — I/O Mesh platform probes
 
-  iomesh mesh dogfood   stage smoke (health → ready → context → emit)
+  iomesh mesh dogfood   stage smoke (health → ready → context → emit → policy)
   iomesh mesh probe     alias for dogfood
+  iomesh mesh usage     local LLM metering rollup for this process
 
-Flags:
+Flags (dogfood):
   --config path     config.toml
-  --strict          require context + emit + ready
+  --strict          require context + emit + ready (+ policy when mode on)
   --skip-context    skip context plane
   --skip-emit       skip dept stream emit
   -C dir            workspace for context query
@@ -454,6 +463,17 @@ Flags:
 		fmt.Fprintf(os.Stderr, "unknown mesh subcommand %q\n", args[0])
 		return 2
 	}
+}
+
+func cmdMeshUsage(args []string) int {
+	// Local process meter is empty in a fresh CLI process; still print schema + guidance.
+	// When wired as MetricsSink during agent runs, snapshots are in-process only.
+	_ = args
+	mesh := iomesh.New(iomesh.Config{}, nil)
+	// Seed nothing — show empty table + note.
+	fmt.Print(iomesh.FormatUsage(mesh.Usage()))
+	fmt.Fprintln(os.Stderr, "note: metering accumulates during agent runs in-process (MetricsSink); CLI `mesh usage` shows the current process only.")
+	return 0
 }
 
 func cmdMeshDogfood(args []string) int {
@@ -493,6 +513,8 @@ func cmdMeshDogfood(args []string) int {
 		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
 		EmitDeptStreams: cfg.IOMesh.EmitDeptStreams,
 		ContextPlane:    cfg.IOMesh.ContextPlane,
+		IncludeLineage:  cfg.IOMesh.IncludeLineage,
+		PolicyMode:      iomesh.PolicyMode(cfg.IOMesh.PolicyMode),
 	}, logger)
 
 	ws := *workspace

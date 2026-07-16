@@ -1,0 +1,133 @@
+package iomesh
+
+import (
+	"fmt"
+	"sort"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/iome-sh/iomesh-tui/internal/router"
+)
+
+// ModelUsage is per-model rollup for the local process meter.
+type ModelUsage struct {
+	Model            string  `json:"model"`
+	Calls            int     `json:"calls"`
+	Errors           int     `json:"errors"`
+	PromptTokens     int     `json:"prompt_tokens"`
+	CompletionTokens int     `json:"completion_tokens"`
+	TotalTokens      int     `json:"total_tokens"`
+	EstUSD           float64 `json:"est_usd"`
+	DurationMS       int64   `json:"duration_ms"`
+}
+
+// UsageSnapshot is a point-in-time local metering view (not remote dashboard state).
+type UsageSnapshot struct {
+	Started time.Time    `json:"started"`
+	AsOf    time.Time    `json:"as_of"`
+	Calls   int          `json:"calls"`
+	Errors  int          `json:"errors"`
+	Tokens  int          `json:"tokens"`
+	EstUSD  float64      `json:"est_usd"`
+	ByModel []ModelUsage `json:"by_model"`
+}
+
+// UsageMeter aggregates LLM call metrics in-process for `iomesh mesh usage`.
+type UsageMeter struct {
+	mu      sync.Mutex
+	started time.Time
+	byModel map[string]*ModelUsage
+}
+
+func newUsageMeter() *UsageMeter {
+	return &UsageMeter{
+		started: time.Now().UTC(),
+		byModel: map[string]*ModelUsage{},
+	}
+}
+
+// Record adds one LLM call to the rollup.
+func (m *UsageMeter) Record(meta router.CallMeta, usage router.Usage, err error) {
+	if m == nil {
+		return
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	name := meta.ModelName
+	if name == "" {
+		name = meta.ModelID
+	}
+	if name == "" {
+		name = "unknown"
+	}
+	row, ok := m.byModel[name]
+	if !ok {
+		row = &ModelUsage{Model: name}
+		m.byModel[name] = row
+	}
+	row.Calls++
+	if err != nil {
+		row.Errors++
+	}
+	row.PromptTokens += usage.PromptTokens
+	row.CompletionTokens += usage.CompletionTokens
+	row.TotalTokens += usage.TotalTokens
+	row.EstUSD += meta.EstimatedUSD
+	row.DurationMS += meta.Duration.Milliseconds()
+}
+
+// Snapshot returns a copy of the current rollup.
+func (m *UsageMeter) Snapshot() UsageSnapshot {
+	if m == nil {
+		return UsageSnapshot{}
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	snap := UsageSnapshot{
+		Started: m.started,
+		AsOf:    time.Now().UTC(),
+	}
+	for _, row := range m.byModel {
+		cp := *row
+		snap.ByModel = append(snap.ByModel, cp)
+		snap.Calls += cp.Calls
+		snap.Errors += cp.Errors
+		snap.Tokens += cp.TotalTokens
+		snap.EstUSD += cp.EstUSD
+	}
+	sort.Slice(snap.ByModel, func(i, j int) bool {
+		return snap.ByModel[i].Model < snap.ByModel[j].Model
+	})
+	return snap
+}
+
+// FormatUsage renders a human-readable metering table for the CLI.
+func FormatUsage(s UsageSnapshot) string {
+	var b strings.Builder
+	b.WriteString("iomesh local usage meter (process lifetime)\n")
+	if !s.Started.IsZero() {
+		b.WriteString(fmt.Sprintf("started=%s as_of=%s\n", s.Started.Format(time.RFC3339), s.AsOf.Format(time.RFC3339)))
+	}
+	b.WriteString(fmt.Sprintf("totals: calls=%d errors=%d tokens=%d est_usd=%.6f\n", s.Calls, s.Errors, s.Tokens, s.EstUSD))
+	if len(s.ByModel) == 0 {
+		b.WriteString("(no LLM calls recorded in this process yet)\n")
+		return b.String()
+	}
+	b.WriteString(fmt.Sprintf("%-28s %6s %6s %10s %12s %10s\n", "model", "calls", "err", "tokens", "est_usd", "dur_ms"))
+	for _, row := range s.ByModel {
+		b.WriteString(fmt.Sprintf("%-28s %6d %6d %10d %12.6f %10d\n",
+			truncateRunes(row.Model, 28), row.Calls, row.Errors, row.TotalTokens, row.EstUSD, row.DurationMS))
+	}
+	return b.String()
+}
+
+func truncateRunes(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	if n <= 1 {
+		return s[:n]
+	}
+	return s[:n-1] + "…"
+}

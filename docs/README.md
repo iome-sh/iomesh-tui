@@ -13,5 +13,6 @@
 | [architecture/skills.md](architecture/skills.md) | SKILL.md loader |
 | [architecture/mcp.md](architecture/mcp.md) | MCP stdio/HTTP, resources, prompts, OAuth |
 | [architecture/mesh-dogfood.md](architecture/mesh-dogfood.md) | Stage mesh smoke |
+| [architecture/mesh-deeper.md](architecture/mesh-deeper.md) | Lineage context, policy gates, local metering |
 
 Project process docs (repo root): [CONTRIBUTING](../CONTRIBUTING.md) · [SECURITY](../SECURITY.md) · [SUPPORT](../SUPPORT.md) · [RELEASING](../RELEASING.md) · [CHANGELOG](../CHANGELOG.md)

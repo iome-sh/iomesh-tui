@@ -77,6 +77,9 @@ enabled = false
 api_key_env = "IOMESH_API_KEY"
 emit_dept_streams = true
 context_plane = true
+include_lineage = true
+# policy_mode = "off"       # off | advisory | enforce (remote /v1/policy/evaluate; fail-open on transport)
+# IOMESH_POLICY_MODE / IOMESH_INCLUDE_LINEAGE env overrides also apply
 
 [ui]
 simple_mode = true
