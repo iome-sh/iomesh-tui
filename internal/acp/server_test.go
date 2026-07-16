@@ -1,7 +1,6 @@
 package acp
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -10,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -76,7 +76,8 @@ enabled = true
 		t.Fatal(err)
 	}
 
-	var out bytes.Buffer
+	// Concurrent-safe capture of protocol output (server writes while test reads).
+	out := &syncBuf{}
 	inR, inW, err := os.Pipe()
 	if err != nil {
 		t.Fatal(err)
@@ -93,7 +94,7 @@ enabled = true
 	defer cancel()
 	done := make(chan error, 1)
 	go func() {
-		done <- s.Run(ctx, inR, &out)
+		done <- s.Run(ctx, inR, out)
 	}()
 
 	write := func(obj any) {
@@ -110,8 +111,6 @@ enabled = true
 		"params": map[string]any{"cwd": ws},
 	})
 
-	// Read until we get session id
-	sc := bufio.NewScanner(strings.NewReader(""))
 	// Poll out buffer
 	var sessionID string
 	deadline := time.Now().Add(3 * time.Second)
@@ -179,7 +178,24 @@ enabled = true
 	if !sawText {
 		t.Fatalf("missing message chunk in:\n%s", out.String())
 	}
-	_ = sc
+}
+
+// syncBuf is a race-safe bytes.Buffer for tests.
+type syncBuf struct {
+	mu sync.Mutex
+	b  bytes.Buffer
+}
+
+func (s *syncBuf) Write(p []byte) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.b.Write(p)
+}
+
+func (s *syncBuf) String() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.b.String()
 }
 
 func TestJoinPrompt(t *testing.T) {
