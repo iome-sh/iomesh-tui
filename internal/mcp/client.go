@@ -47,6 +47,10 @@ type ServerConfig struct {
 	StartupTimeoutSec int `toml:"startup_timeout_sec" json:"startup_timeout_sec"`
 	// ToolTimeoutSec per tools/call (default 120).
 	ToolTimeoutSec int `toml:"tool_timeout_sec" json:"tool_timeout_sec"`
+	// OAuth optional bearer resolution for HTTP (see oauth.go).
+	OAuth *OAuthConfig `toml:"oauth" json:"oauth"`
+	// AccessTokenEnv if set injects Authorization: Bearer from that env var (simplest auth).
+	AccessTokenEnv string `toml:"oauth_token_env" json:"oauth_token_env"`
 }
 
 func (c ServerConfig) isEnabled() bool {
@@ -80,14 +84,20 @@ type Client struct {
 	baseURL    string
 	sessionID  string
 
-	mu      sync.Mutex // pending map + tools + sessionID
-	writeMu sync.Mutex // serialize stdin writes (do not hold mu during Write — pipe deadlock)
-	pending map[int64]chan rpcResponse
-	nextID  atomic.Int64
-	tools   []Tool
-	closed  atomic.Bool
+	mu        sync.Mutex // pending map + tools + sessionID
+	writeMu   sync.Mutex // serialize stdin writes (do not hold mu during Write — pipe deadlock)
+	pending   map[int64]chan rpcResponse
+	nextID    atomic.Int64
+	tools     []Tool
+	resources []Resource
+	prompts   []Prompt
+	closed    atomic.Bool
 
 	maxOut int
+	// oauthTok caches client-credentials access token (HTTP).
+	oauthTok string
+	oauthExp time.Time
+	oauthMu  sync.Mutex
 }
 
 func (c *Client) isHTTP() bool { return c.httpClient != nil }
@@ -151,6 +161,9 @@ func DialStdio(ctx context.Context, cfg ServerConfig, logger *slog.Logger) (*Cli
 		_ = c.Close()
 		return nil, fmt.Errorf("mcp: tools/list %s: %w", cfg.Name, err)
 	}
+	// Optional surfaces (fail-open).
+	_ = c.refreshResources(initCtx)
+	_ = c.refreshPrompts(initCtx)
 	return c, nil
 }
 
@@ -176,7 +189,13 @@ func (c *Client) InitForTest(ctx context.Context) error {
 	if err := c.initialize(ctx); err != nil {
 		return err
 	}
-	return c.refreshTools(ctx)
+	if err := c.refreshTools(ctx); err != nil {
+		return err
+	}
+	// Soft: resources/prompts optional on mocks.
+	_ = c.refreshResources(ctx)
+	_ = c.refreshPrompts(ctx)
+	return nil
 }
 
 func (c *Client) Name() string { return c.cfg.Name }
@@ -191,10 +210,31 @@ func (c *Client) Tools() []Tool {
 	return out
 }
 
+// Resources returns cached resources/list (may be empty if unsupported).
+func (c *Client) Resources() []Resource {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	out := make([]Resource, len(c.resources))
+	copy(out, c.resources)
+	return out
+}
+
+// Prompts returns cached prompts/list (may be empty if unsupported).
+func (c *Client) Prompts() []Prompt {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	out := make([]Prompt, len(c.prompts))
+	copy(out, c.prompts)
+	return out
+}
+
 func (c *Client) initialize(ctx context.Context) error {
 	params := map[string]any{
 		"protocolVersion": ProtocolVersion,
-		"capabilities":    map[string]any{},
+		"capabilities": map[string]any{
+			"roots":    map[string]any{"listChanged": false},
+			"sampling": map[string]any{},
+		},
 		"clientInfo": map[string]string{
 			"name":    "iomesh-tui",
 			"version": "0.1.0",
@@ -218,6 +258,124 @@ func (c *Client) refreshTools(ctx context.Context) error {
 	c.tools = res.Tools
 	c.mu.Unlock()
 	return nil
+}
+
+func (c *Client) refreshResources(ctx context.Context) error {
+	var res resourcesListResult
+	if err := c.call(ctx, "resources/list", map[string]any{}, &res); err != nil {
+		// Method not supported — soft empty.
+		c.logger.Debug("mcp resources/list unavailable", "server", c.cfg.Name, "err", err)
+		return err
+	}
+	c.mu.Lock()
+	c.resources = res.Resources
+	c.mu.Unlock()
+	return nil
+}
+
+func (c *Client) refreshPrompts(ctx context.Context) error {
+	var res promptsListResult
+	if err := c.call(ctx, "prompts/list", map[string]any{}, &res); err != nil {
+		c.logger.Debug("mcp prompts/list unavailable", "server", c.cfg.Name, "err", err)
+		return err
+	}
+	c.mu.Lock()
+	c.prompts = res.Prompts
+	c.mu.Unlock()
+	return nil
+}
+
+// ListResources returns resources (refreshes when force or cache empty).
+func (c *Client) ListResources(ctx context.Context, force bool) ([]Resource, error) {
+	c.mu.Lock()
+	empty := len(c.resources) == 0
+	c.mu.Unlock()
+	if force || empty {
+		if err := c.refreshResources(ctx); err != nil && force {
+			return nil, err
+		}
+	}
+	return c.Resources(), nil
+}
+
+// ReadResource calls resources/read and returns concatenated text.
+func (c *Client) ReadResource(ctx context.Context, uri string) (string, error) {
+	if uri == "" {
+		return "", fmt.Errorf("mcp: empty resource uri")
+	}
+	var res resourcesReadResult
+	if err := c.call(ctx, "resources/read", resourcesReadParams{URI: uri}, &res); err != nil {
+		return "", err
+	}
+	var b strings.Builder
+	for _, p := range res.Contents {
+		if p.Text != "" {
+			b.WriteString(p.Text)
+		} else if p.Blob != "" {
+			// Avoid dumping large blobs; note presence.
+			fmt.Fprintf(&b, "[blob mime=%s bytes≈%d]", p.MIME, len(p.Blob))
+		}
+	}
+	text := security.Redact(b.String())
+	return truncate(text, c.maxOut), nil
+}
+
+// ListPrompts returns prompts (refreshes when force or cache empty).
+func (c *Client) ListPrompts(ctx context.Context, force bool) ([]Prompt, error) {
+	c.mu.Lock()
+	empty := len(c.prompts) == 0
+	c.mu.Unlock()
+	if force || empty {
+		if err := c.refreshPrompts(ctx); err != nil && force {
+			return nil, err
+		}
+	}
+	return c.Prompts(), nil
+}
+
+// GetPrompt calls prompts/get and returns a readable message dump.
+func (c *Client) GetPrompt(ctx context.Context, name string, arguments map[string]string) (string, error) {
+	if name == "" {
+		return "", fmt.Errorf("mcp: empty prompt name")
+	}
+	var res promptsGetResult
+	if err := c.call(ctx, "prompts/get", promptsGetParams{Name: name, Arguments: arguments}, &res); err != nil {
+		return "", err
+	}
+	var b strings.Builder
+	if res.Description != "" {
+		fmt.Fprintf(&b, "description: %s\n\n", res.Description)
+	}
+	for _, msg := range res.Messages {
+		fmt.Fprintf(&b, "[%s] %s\n", msg.Role, formatPromptContent(msg.Content))
+	}
+	text := security.Redact(b.String())
+	return truncate(text, c.maxOut), nil
+}
+
+func formatPromptContent(raw json.RawMessage) string {
+	if len(raw) == 0 {
+		return ""
+	}
+	// content may be a string
+	var s string
+	if err := json.Unmarshal(raw, &s); err == nil {
+		return s
+	}
+	var p contentPart
+	if err := json.Unmarshal(raw, &p); err == nil && p.Text != "" {
+		return p.Text
+	}
+	// array of parts
+	var parts []contentPart
+	if err := json.Unmarshal(raw, &parts); err == nil {
+		var b strings.Builder
+		for _, part := range parts {
+			b.WriteString(part.Text)
+		}
+		return b.String()
+	}
+	return string(raw)
 }
 
 // CallTool invokes tools/call and returns concatenated text content.

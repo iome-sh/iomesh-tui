@@ -108,5 +108,11 @@ enabled = false
 # name = "remote"
 # url = "https://mcp.example.com/mcp"
 # # headers = { "Authorization" = "Bearer …" }
-# # allow_loopback = true   # permit http://127.0.0.1 for local servers
+# # oauth_token_env = "MCP_TOKEN"   # static Bearer from env
+# # [mcp.servers.oauth]            # or client_credentials:
+# # token_url = "https://auth.example/oauth/token"
+# # client_id = "iomesh"
+# # client_secret_env = "MCP_CLIENT_SECRET"
+# # scopes = ["mcp"]
+# # allow_loopback = true
 # # mutating = true

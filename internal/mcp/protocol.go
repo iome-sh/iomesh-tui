@@ -57,4 +57,61 @@ type callToolResult struct {
 type contentPart struct {
 	Type string `json:"type"`
 	Text string `json:"text"`
+	// resources/read may use blob/uri fields; text is primary for agents.
+	URI  string `json:"uri,omitempty"`
+	Blob string `json:"blob,omitempty"`
+	MIME string `json:"mimeType,omitempty"`
+}
+
+// Resource is an MCP resource from resources/list.
+type Resource struct {
+	URI         string `json:"uri"`
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+	MimeType    string `json:"mimeType,omitempty"`
+}
+
+type resourcesListResult struct {
+	Resources []Resource `json:"resources"`
+}
+
+type resourcesReadParams struct {
+	URI string `json:"uri"`
+}
+
+type resourcesReadResult struct {
+	Contents []contentPart `json:"contents"`
+}
+
+// Prompt is an MCP prompt template from prompts/list.
+type Prompt struct {
+	Name        string           `json:"name"`
+	Description string           `json:"description,omitempty"`
+	Arguments   []PromptArgument `json:"arguments,omitempty"`
+}
+
+// PromptArgument describes one prompts/get argument.
+type PromptArgument struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Required    bool   `json:"required,omitempty"`
+}
+
+type promptsListResult struct {
+	Prompts []Prompt `json:"prompts"`
+}
+
+type promptsGetParams struct {
+	Name      string            `json:"name"`
+	Arguments map[string]string `json:"arguments,omitempty"`
+}
+
+type promptsGetResult struct {
+	Description string          `json:"description,omitempty"`
+	Messages    []promptMessage `json:"messages"`
+}
+
+type promptMessage struct {
+	Role    string          `json:"role"`
+	Content json.RawMessage `json:"content"` // string or contentPart object
 }

@@ -164,19 +164,7 @@ func run(args []string) int {
 	if cfg.MCP.Enabled && cfg.Features.MCP && len(cfg.MCP.Servers) > 0 {
 		var servers []mcp.ServerConfig
 		for _, s := range cfg.MCP.Servers {
-			servers = append(servers, mcp.ServerConfig{
-				Name:              s.Name,
-				Command:           s.Command,
-				Args:              s.Args,
-				Env:               s.Env,
-				URL:               s.URL,
-				Headers:           s.Headers,
-				AllowLoopback:     s.AllowLoopback,
-				Enabled:           s.Enabled,
-				Mutating:          s.Mutating,
-				StartupTimeoutSec: s.StartupTimeoutSec,
-				ToolTimeoutSec:    s.ToolTimeoutSec,
-			})
+			servers = append(servers, mcpServerFromTOML(s))
 		}
 		mgr := mcp.NewManager(ctx, servers, logger)
 		rt.AttachMCP(mgr)
@@ -372,12 +360,7 @@ func cmdMCP(args []string) int {
 	}
 	var servers []mcp.ServerConfig
 	for _, s := range cfg.MCP.Servers {
-		servers = append(servers, mcp.ServerConfig{
-			Name: s.Name, Command: s.Command, Args: s.Args, Env: s.Env,
-			URL: s.URL, Headers: s.Headers, AllowLoopback: s.AllowLoopback,
-			Enabled: s.Enabled, Mutating: s.Mutating,
-			StartupTimeoutSec: s.StartupTimeoutSec, ToolTimeoutSec: s.ToolTimeoutSec,
-		})
+		servers = append(servers, mcpServerFromTOML(s))
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
@@ -387,7 +370,31 @@ func cmdMCP(args []string) int {
 	for _, b := range mgr.Bindings() {
 		fmt.Printf("  %s  (server=%s tool=%s mutating=%v)\n", b.Qualified, b.Server, b.Tool, b.Mutating)
 	}
+	for _, c := range mgr.Clients() {
+		fmt.Printf("  server %s resources=%d prompts=%d\n", c.Name(), len(c.Resources()), len(c.Prompts()))
+	}
 	return 0
+}
+
+func mcpServerFromTOML(s config.MCPServerTOML) mcp.ServerConfig {
+	sc := mcp.ServerConfig{
+		Name: s.Name, Command: s.Command, Args: s.Args, Env: s.Env,
+		URL: s.URL, Headers: s.Headers, AllowLoopback: s.AllowLoopback,
+		Enabled: s.Enabled, Mutating: s.Mutating,
+		StartupTimeoutSec: s.StartupTimeoutSec, ToolTimeoutSec: s.ToolTimeoutSec,
+		AccessTokenEnv: s.OAuthTokenEnv,
+	}
+	if s.OAuth != nil {
+		sc.OAuth = &mcp.OAuthConfig{
+			TokenURL:        s.OAuth.TokenURL,
+			ClientID:        s.OAuth.ClientID,
+			ClientSecretEnv: s.OAuth.ClientSecretEnv,
+			Scopes:          s.OAuth.Scopes,
+			AccessTokenEnv:  s.OAuth.AccessTokenEnv,
+			AllowLoopback:   s.OAuth.AllowLoopback,
+		}
+	}
+	return sc
 }
 
 func cmdModels(args []string) int {

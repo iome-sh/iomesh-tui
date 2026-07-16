@@ -2,7 +2,7 @@
 
 **I/O Mesh TUI** — a Go rewrite of [xAI Grok Build](https://github.com/xai-org/grok-build) with tighter **I/O Mesh** platform integration and a **DeepSeek-first** LLM cascade for price-performance.
 
-> Status: **foundation** (router, agent, subagents, full-screen TUI with **multi-line + themes**, permissions, ACP, skills, MCP, mesh dogfood). MCP resources/OAuth and deeper mesh are next. Hardened for open-source readiness (path jail, secret scrubbing, CI).
+> Status: **foundation** (router, agent, subagents, full-screen TUI, permissions, ACP, skills, **MCP tools+resources+prompts+OAuth**, mesh dogfood). Deeper mesh (lineage/Rego) is next. Hardened for open-source readiness (path jail, secret scrubbing, CI).
 
 ## Why this rewrite
 
@@ -118,7 +118,7 @@ Coding agents can read, write, and execute within a workspace. Key controls:
 
 - **Path jail** with symlink escape checks and read size caps
 - **Tool approval**: mutating tools (`write_file`, `run_shell`, `apply_worktree`, MCP tools by default, …) prompt y/n/a; headless/ACP deny without `--yolo` / `--always-approve` (fail-closed)
-- **Skills / MCP**: project+user `SKILL.md` catalogs; opt-in MCP via **stdio** or **streamable HTTP/SSE** (`mcp__server__tool`)
+- **Skills / MCP**: SKILL.md catalogs; MCP stdio/HTTP with tools, **resources**, **prompts**, and **OAuth** helpers
 - **Shell**: approval/`--yolo` required; API keys scrubbed from child env; dangerous pattern denylist
 - **HTTP**: `http`/`https` only for model/mesh URLs; redacted error bodies
 - Prefer env vars for secrets — never commit keys

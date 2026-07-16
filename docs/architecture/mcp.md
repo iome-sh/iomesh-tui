@@ -5,63 +5,84 @@ Minimal [Model Context Protocol](https://modelcontextprotocol.io) client support
 | Transport | Config | Notes |
 |-----------|--------|--------|
 | **stdio** | `command` + `args` | Local process; scrubbed env + explicit `env` |
-| **Streamable HTTP** | `url` (+ optional `headers`) | POST JSON-RPC; `application/json` or `text/event-stream` (SSE) responses |
+| **Streamable HTTP** | `url` (+ optional `headers` / OAuth) | POST JSON-RPC; JSON or SSE responses |
 
 If both `url` and `command` are set, **URL wins**.
 
-## Supported methods
+## Methods
 
-- `initialize` / `notifications/initialized`
-- `tools/list`
-- `tools/call`
+| Method | Support |
+|--------|---------|
+| `initialize` / `notifications/initialized` | required |
+| `tools/list` / `tools/call` | required |
+| `resources/list` / `resources/read` | optional (fail-open if unsupported) |
+| `prompts/list` / `prompts/get` | optional (fail-open if unsupported) |
 
-Session header `Mcp-Session-Id` is stored and sent on subsequent HTTP requests; `DELETE` on close is best-effort.
+Session header `Mcp-Session-Id` is stored on HTTP; `DELETE` on close is best-effort.
 
-## Configuration
+## Agent tools
+
+| Tool | Mutating | Purpose |
+|------|----------|---------|
+| `mcp__<server>__<tool>` | per-server (default true) | Server tools |
+| `list_mcp_resources` | no | Catalog URIs |
+| `read_mcp_resource` | no | Read by URI |
+| `list_mcp_prompts` | no | Prompt templates |
+| `get_mcp_prompt` | no | Expand prompt + args |
+
+## OAuth helpers
+
+For HTTP servers:
+
+```toml
+[[mcp.servers]]
+name = "remote"
+url = "https://mcp.example.com/mcp"
+oauth_token_env = "MCP_TOKEN"   # simplest: static Bearer
+
+# Or client_credentials:
+# [mcp.servers.oauth]
+# token_url = "https://auth.example/oauth/token"
+# client_id = "iomesh"
+# client_secret_env = "MCP_CLIENT_SECRET"
+# scopes = ["mcp"]
+```
+
+- Secrets only via **env** (`client_secret_env`, `oauth_token_env`) — never commit tokens.
+- Token URL validated with `security.ValidateHTTPURL`.
+- `PKCEChallenge` / `NewPKCEVerifier` available for future auth-code browser flows.
+
+## Configuration examples
 
 ```toml
 [mcp]
 enabled = true
 
-# Stdio
 [[mcp.servers]]
 name = "everything"
 command = "npx"
 args = ["-y", "@modelcontextprotocol/server-everything"]
-# mutating = true
-# env = { "FOO" = "bar" }
 
-# Streamable HTTP
 [[mcp.servers]]
 name = "remote"
 url = "https://mcp.example.com/mcp"
-# headers = { "Authorization" = "Bearer …" }
-# allow_loopback = true
-# mutating = false
+oauth_token_env = "MCP_TOKEN"
+mutating = false
 ```
 
-- **Fail-open**: a single server that fails to connect is skipped; others still connect.
-- **HTTP URL policy**: `http`/`https` only via `security.ValidateHTTPURL` (loopback allowed by default).
-- **Output**: tool results redacted and truncated (default 20_000 bytes).
-
-## Agent tool names
-
-```text
-mcp__<server>__<tool>
-```
-
-Servers default to **mutating=true** so tools go through y/n/a approval. Set `mutating = false` for read-only servers.
+- **Fail-open**: bad servers skipped; missing resources/prompts soft-empty.
+- **Output**: redacted + truncated (default 20k).
 
 ## CLI
 
 ```bash
-iomesh mcp              # list configured servers (shows stdio vs http)
-iomesh mcp --connect    # connect + tools/list (requires enabled=true)
+iomesh mcp              # list servers
+iomesh mcp --connect    # connect + tools/list (+ resource/prompt counts)
 ```
 
 ## Package
 
-- `internal/mcp/client.go` — stdio client
-- `internal/mcp/http.go` — streamable HTTP + SSE parse
-- `internal/mcp/manager.go` — multi-server, fail-open
-- `internal/agent/mcp_tools.go` — agent registry binding
+- `internal/mcp/client.go` — stdio + resources/prompts APIs  
+- `internal/mcp/http.go` — streamable HTTP + SSE  
+- `internal/mcp/oauth.go` — bearer / client_credentials / PKCE  
+- `internal/agent/mcp_tools.go` — agent registration  

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 )
 
@@ -133,6 +134,110 @@ func (m *Manager) Len() int {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return len(m.clients)
+}
+
+// ClientByName returns a connected client by name (or sanitized match).
+func (m *Manager) ClientByName(name string) *Client {
+	if m == nil || name == "" {
+		return nil
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if c, ok := m.clients[name]; ok {
+		return c
+	}
+	san := sanitize(name)
+	for n, c := range m.clients {
+		if sanitize(n) == san {
+			return c
+		}
+	}
+	return nil
+}
+
+// ListAllResources returns server-prefixed resource lines.
+func (m *Manager) ListAllResources(ctx context.Context, server string, force bool) (string, error) {
+	var clients []*Client
+	if server != "" {
+		c := m.ClientByName(server)
+		if c == nil {
+			return "", fmt.Errorf("mcp: server %q not connected", server)
+		}
+		clients = []*Client{c}
+	} else {
+		clients = m.Clients()
+	}
+	var b strings.Builder
+	for _, c := range clients {
+		list, err := c.ListResources(ctx, force)
+		if err != nil && force {
+			return "", err
+		}
+		for _, r := range list {
+			name := r.Name
+			if name == "" {
+				name = r.URI
+			}
+			fmt.Fprintf(&b, "%s\t%s\t%s\n", c.Name(), r.URI, name)
+		}
+	}
+	return b.String(), nil
+}
+
+// ReadResourceOn server reads a resource URI.
+func (m *Manager) ReadResourceOn(ctx context.Context, server, uri string) (string, error) {
+	c := m.ClientByName(server)
+	if c == nil {
+		// If only one client, allow empty server.
+		all := m.Clients()
+		if server == "" && len(all) == 1 {
+			c = all[0]
+		}
+	}
+	if c == nil {
+		return "", fmt.Errorf("mcp: server %q not connected (pass server name)", server)
+	}
+	return c.ReadResource(ctx, uri)
+}
+
+// ListAllPrompts returns server-prefixed prompt catalog lines.
+func (m *Manager) ListAllPrompts(ctx context.Context, server string, force bool) (string, error) {
+	var clients []*Client
+	if server != "" {
+		c := m.ClientByName(server)
+		if c == nil {
+			return "", fmt.Errorf("mcp: server %q not connected", server)
+		}
+		clients = []*Client{c}
+	} else {
+		clients = m.Clients()
+	}
+	var b strings.Builder
+	for _, c := range clients {
+		list, err := c.ListPrompts(ctx, force)
+		if err != nil && force {
+			return "", err
+		}
+		for _, p := range list {
+			fmt.Fprintf(&b, "%s\t%s\t%s\n", c.Name(), p.Name, strings.ReplaceAll(p.Description, "\n", " "))
+		}
+	}
+	return b.String(), nil
+}
+
+// GetPromptOn fetches a prompt from a named server.
+func (m *Manager) GetPromptOn(ctx context.Context, server, name string, args map[string]string) (string, error) {
+	c := m.ClientByName(server)
+	if c == nil {
+		all := m.Clients()
+		if server == "" && len(all) == 1 {
+			c = all[0]
+		}
+	}
+	if c == nil {
+		return "", fmt.Errorf("mcp: server %q not connected", server)
+	}
+	return c.GetPrompt(ctx, name, args)
 }
 
 // Call routes a qualified tool name mcp__server__tool.
