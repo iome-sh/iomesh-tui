@@ -124,6 +124,20 @@ type MCPServerTOML struct {
 	Mutating          *bool             `toml:"mutating"`
 	StartupTimeoutSec int               `toml:"startup_timeout_sec"`
 	ToolTimeoutSec    int               `toml:"tool_timeout_sec"`
+	// OAuthTokenEnv injects Authorization: Bearer from env (simplest).
+	OAuthTokenEnv string `toml:"oauth_token_env"`
+	// Nested oauth table for client_credentials.
+	OAuth *MCPOAuthTOML `toml:"oauth"`
+}
+
+// MCPOAuthTOML is optional OAuth2 client_credentials for HTTP MCP.
+type MCPOAuthTOML struct {
+	TokenURL        string   `toml:"token_url"`
+	ClientID        string   `toml:"client_id"`
+	ClientSecretEnv string   `toml:"client_secret_env"`
+	Scopes          []string `toml:"scopes"`
+	AccessTokenEnv  string   `toml:"access_token_env"`
+	AllowLoopback   *bool    `toml:"allow_loopback"`
 }
 
 // MCPSection configures Model Context Protocol clients.

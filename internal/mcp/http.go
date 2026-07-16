@@ -55,6 +55,8 @@ func DialHTTP(ctx context.Context, cfg ServerConfig, logger *slog.Logger) (*Clie
 		_ = c.Close()
 		return nil, fmt.Errorf("mcp: tools/list %s: %w", cfg.Name, err)
 	}
+	_ = c.refreshResources(initCtx)
+	_ = c.refreshPrompts(initCtx)
 	return c, nil
 }
 
@@ -154,6 +156,7 @@ func (c *Client) httpPost(ctx context.Context, body []byte, expectJSON bool) (*h
 	for k, v := range c.cfg.Headers {
 		req.Header.Set(k, v)
 	}
+	c.ApplyAuthHeaders(ctx, req.Header)
 	c.mu.Lock()
 	sid := c.sessionID
 	c.mu.Unlock()

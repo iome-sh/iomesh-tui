@@ -91,5 +91,5 @@ CLI / TUI / ACP
 10. ~~MCP HTTP/SSE (streamable HTTP)~~ **done** — see [mcp.md](mcp.md)
 11. ~~Stage mesh dogfood~~ **done** — see [mesh-dogfood.md](mesh-dogfood.md)
 12. ~~TUI polish (multi-line edit, themes)~~ **done** — see [tui.md](tui.md)
-13. MCP resources/prompts + OAuth helpers
+13. ~~MCP resources/prompts + OAuth helpers~~ **done** — see [mcp.md](mcp.md)
 14. Deeper I/O Mesh: lineage-aware context, Rego policy gates, metering dashboards
