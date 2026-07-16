@@ -165,6 +165,19 @@ dual_write = true
 tenant = "dept.research"
 ```
 
+### Dogfood dual-write probe
+
+`iomesh mesh dogfood` includes a **memory_ingest** step by default when mesh is enabled. It exercises the same `PublishMemoryIngest` path (not MCP Palace write):
+
+```bash
+iomesh mesh dogfood --tenant dept.research
+# soft: FAIL on publish → SKIP unless --strict
+iomesh mesh dogfood --strict
+iomesh mesh dogfood --skip-memory   # omit the step
+```
+
+See [mesh-dogfood.md](mesh-dogfood.md) for soft vs strict matrix. Unit coverage: `go test ./internal/iomesh` (httptest mock returns 200 on `/v1/streams/MEMORY_INGEST/publish`).
+
 ## Slash commands
 
 | Command | Behavior |

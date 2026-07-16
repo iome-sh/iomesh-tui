@@ -468,16 +468,17 @@ func cmdMesh(args []string) int {
 	case "help", "-h", "--help":
 		fmt.Fprintln(os.Stderr, `iomesh mesh — I/O Mesh platform probes
 
-  iomesh mesh dogfood   stage smoke (health → ready → context → emit → policy → catalog)
+  iomesh mesh dogfood   stage smoke (health → ready → context → emit → policy → catalog → memory_ingest)
   iomesh mesh probe     alias for dogfood
   iomesh mesh usage     local LLM metering rollup for this process
   iomesh mesh catalog   list governed data products (broker + portal federation)
 
 Flags (dogfood):
   --config path     config.toml
-  --strict          require context + emit + ready (+ policy/catalog when on)
+  --strict          require context + emit + ready (+ policy/catalog/memory when on)
   --skip-context    skip context plane
   --skip-emit       skip dept stream emit
+  --skip-memory     skip MEMORY_INGEST dual-write publish
   --json            JSON report for stage CI evidence
   -C dir            workspace for context query
   -v                verbose
@@ -556,9 +557,10 @@ func cmdMeshDogfood(args []string) int {
 	var (
 		configPath  = fs.String("config", "", "config.toml path")
 		workspace   = fs.String("C", "", "workspace for context query")
-		strict      = fs.Bool("strict", false, "fail if context/emit/ready soft-fail")
+		strict      = fs.Bool("strict", false, "fail if context/emit/ready/memory soft-fail")
 		skipContext = fs.Bool("skip-context", false, "skip context plane probe")
 		skipEmit    = fs.Bool("skip-emit", false, "skip dept emit probe")
+		skipMemory  = fs.Bool("skip-memory", false, "skip MEMORY_INGEST dual-write publish probe")
 		jsonOut     = fs.Bool("json", false, "print dogfood report as JSON (stage CI evidence)")
 		verbose     = fs.Bool("v", false, "verbose logs")
 		endpoint    = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
@@ -616,6 +618,7 @@ func cmdMeshDogfood(args []string) int {
 		Strict:      *strict,
 		SkipContext: *skipContext,
 		SkipEmit:    *skipEmit,
+		SkipMemory:  *skipMemory,
 	})
 	if *jsonOut {
 		fmt.Print(iomesh.FormatReportJSON(rep))
@@ -741,7 +744,7 @@ Usage:
   iomesh sessions                list sessions in workspace
   iomesh skills                  list SKILL.md catalogs
   iomesh mcp [--connect]         list configured MCP servers
-  iomesh mesh dogfood            stage I/O Mesh smoke (health/context/emit)
+  iomesh mesh dogfood            stage I/O Mesh smoke (health/context/emit/memory)
   iomesh models                  list configured models
   iomesh agent stdio             ACP JSON-RPC over stdio (IDE integration)
   iomesh agent serve             ACP JSON-RPC over WebSocket (default 127.0.0.1:7400/acp)
