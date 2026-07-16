@@ -60,6 +60,7 @@ func run(args []string) int {
 		continueLong = fs.Bool("continue", false, "alias for -c")
 		sessionID    = fs.String("session", "", "load session id from .iomesh/sessions")
 		noSave       = fs.Bool("no-save", false, "disable session autosave")
+		repl         = fs.Bool("repl", false, "force classic line REPL instead of full-screen TUI")
 	)
 	// Also accept --prompt long form.
 	promptLong := fs.String("prompt", "", "alias for -p")
@@ -187,9 +188,15 @@ func run(args []string) int {
 		return 0
 	}
 
-	// Interactive TUI (scaffold) with session store for /save and autosave.
-	if err := tui.RunWithStore(ctx, rt, store, logger); err != nil {
-		fmt.Fprintf(os.Stderr, "tui: %v\n", err)
+	// Interactive TUI: full-screen Bubble Tea by default; --repl for classic line mode.
+	var tuiErr error
+	if *repl {
+		tuiErr = tui.RunREPL(ctx, rt, store, logger)
+	} else {
+		tuiErr = tui.RunWithStore(ctx, rt, store, logger)
+	}
+	if tuiErr != nil {
+		fmt.Fprintf(os.Stderr, "tui: %v\n", tuiErr)
 		return 1
 	}
 	return 0
@@ -332,7 +339,8 @@ func printUsage() {
 	fmt.Fprintf(os.Stderr, `iomesh — I/O Mesh coding agent TUI (Go rewrite of Grok Build)
 
 Usage:
-  iomesh [flags]                 interactive TUI
+  iomesh [flags]                 interactive full-screen TUI
+  iomesh --repl                  classic line REPL
   iomesh -p "prompt"             headless single prompt
   iomesh -c                      continue latest session
   iomesh --session <id>          resume session by id
@@ -349,6 +357,7 @@ Flags:
   -c, --continue        resume latest session
   --session id          resume specific session id
   --no-save             disable session autosave
+  --repl                classic line REPL (non-alt-screen)
   --config path         config.toml path
   --yolo                auto-approve mutating tools
   -v                    verbose logs
