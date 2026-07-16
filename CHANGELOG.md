@@ -9,10 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Memory Palace MCP (Phase 0–1)** — attach `aion-memory-mcp` via stdio MCP; `[memory]` auto-recall inject + opt-in auto-ingest; TUI `/memory` slash ([docs/architecture/memory-mcp.md](docs/architecture/memory-mcp.md))
 - Portal catalog federation: after broker `/v1/catalog/*`, try `/v17/portal/catalog/data-products` and marketing catalog; normalize portal fields
 - Agent tool `get_mesh_catalog_product`; dogfood catalog PASS for `source=portal`
 - `iomesh mesh dogfood --json` for stage CI evidence
-- Plan: [docs/architecture/memory-mcp.md](docs/architecture/memory-mcp.md) — Agentic Memory Palace + temporal MCP integration
 
 ## [0.2.0] — 2026-07-16
 

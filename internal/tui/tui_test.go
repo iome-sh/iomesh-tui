@@ -88,6 +88,14 @@ func TestHandleSlash_ModelsAndCost(t *testing.T) {
 	if !strings.Contains(out.String(), "/models") {
 		t.Fatal(out.String())
 	}
+	if !strings.Contains(out.String(), "/memory") {
+		t.Fatalf("help missing /memory: %s", out.String())
+	}
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/memory")
+	if !strings.Contains(out.String(), "memory:") {
+		t.Fatalf("memory status: %q", out.String())
+	}
 }
 
 func TestRunREPL_Quit(t *testing.T) {

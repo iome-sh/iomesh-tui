@@ -16,8 +16,10 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/agent"
 	"github.com/iome-sh/iomesh-tui/internal/config"
 	"github.com/iome-sh/iomesh-tui/internal/iomesh"
+	"github.com/iome-sh/iomesh-tui/internal/mcp"
 	"github.com/iome-sh/iomesh-tui/internal/router"
 	"github.com/iome-sh/iomesh-tui/internal/session"
+	"github.com/iome-sh/iomesh-tui/internal/skills"
 )
 
 // Options configure the ACP stdio server.
@@ -341,6 +343,11 @@ func (s *Server) emitAgentEvent(sessionID string, ev agent.Event) {
 			"sessionUpdate": "agent_thought_chunk",
 			"content":       map[string]string{"type": "text", "text": "[iomesh] " + ev.Text},
 		})
+	case agent.EventMemoryRecall, agent.EventMemoryIngest:
+		_ = s.notifyUpdate(sessionID, map[string]any{
+			"sessionUpdate": "agent_thought_chunk",
+			"content":       map[string]string{"type": "text", "text": "[memory] " + ev.Text},
+		})
 	}
 }
 
@@ -423,6 +430,46 @@ func (s *Server) newRuntime(cwd string) (*agent.Runtime, *session.Store, error) 
 		return nil, nil, err
 	}
 	rt.AttachMeshTools()
+	if cfg.Skills.Enabled && cfg.Features.Skills {
+		dirs := skills.DefaultDirs(abs)
+		dirs = append(dirs, cfg.Skills.Dirs...)
+		if cat, err := skills.LoadDirs(dirs...); err == nil && cat.Len() > 0 {
+			rt.AttachSkills(cat)
+		}
+	}
+	if cfg.MCP.Enabled && cfg.Features.MCP && len(cfg.MCP.Servers) > 0 {
+		var servers []mcp.ServerConfig
+		for _, s := range cfg.MCP.Servers {
+			sc := mcp.ServerConfig{
+				Name: s.Name, Command: s.Command, Args: s.Args, Env: s.Env,
+				URL: s.URL, Headers: s.Headers, AllowLoopback: s.AllowLoopback,
+				Enabled: s.Enabled, Mutating: s.Mutating,
+				StartupTimeoutSec: s.StartupTimeoutSec, ToolTimeoutSec: s.ToolTimeoutSec,
+				AccessTokenEnv: s.OAuthTokenEnv,
+			}
+			if s.OAuth != nil {
+				sc.OAuth = &mcp.OAuthConfig{
+					TokenURL: s.OAuth.TokenURL, ClientID: s.OAuth.ClientID,
+					ClientSecretEnv: s.OAuth.ClientSecretEnv, Scopes: s.OAuth.Scopes,
+					AccessTokenEnv: s.OAuth.AccessTokenEnv, AllowLoopback: s.OAuth.AllowLoopback,
+				}
+			}
+			servers = append(servers, sc)
+		}
+		mgr := mcp.NewManager(context.Background(), servers, s.logger)
+		rt.AttachMCP(mgr)
+	}
+	if cfg.Memory.Enabled {
+		rt.AttachMemory(agent.MemoryConfig{
+			Enabled:         true,
+			Server:          cfg.Memory.Server,
+			Tenant:          cfg.Memory.Tenant,
+			AutoRecall:      cfg.Memory.AutoRecall,
+			AutoIngest:      cfg.Memory.AutoIngest,
+			Limit:           cfg.Memory.Limit,
+			MaxSnippetBytes: cfg.Memory.MaxSnippetBytes,
+		})
+	}
 	store, err := session.Open(abs)
 	if err != nil {
 		return nil, nil, err

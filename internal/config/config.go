@@ -27,6 +27,7 @@ type Config struct {
 	Subagents SubagentsSection     `toml:"subagents"`
 	Skills    SkillsSection        `toml:"skills"`
 	MCP       MCPSection           `toml:"mcp"`
+	Memory    MemorySection        `toml:"memory"`
 	// Catalog is the resolved runtime model list (not from TOML directly).
 	Catalog []router.ModelConfig `toml:"-"`
 }
@@ -155,6 +156,18 @@ type MCPSection struct {
 	Servers        []MCPServerTOML `toml:"servers"`
 }
 
+// MemorySection configures Memory Palace MCP hooks (auto-recall / auto-ingest).
+// Requires a connected [[mcp.servers]] entry (stdio aion-memory-mcp or HTTP later).
+type MemorySection struct {
+	Enabled         bool   `toml:"enabled"`
+	Server          string `toml:"server"` // MCP server name; default "memory"
+	Tenant          string `toml:"tenant"`
+	AutoRecall      bool   `toml:"auto_recall"`
+	AutoIngest      bool   `toml:"auto_ingest"`
+	Limit           int    `toml:"limit"`
+	MaxSnippetBytes int    `toml:"max_snippet_bytes"`
+}
+
 // SubagentsSection tunes child-session orchestration.
 type SubagentsSection struct {
 	Enabled       bool `toml:"enabled"`
@@ -210,6 +223,14 @@ func Default() *Config {
 		},
 		MCP: MCPSection{
 			Enabled: false, // opt-in: no servers until configured
+		},
+		Memory: MemorySection{
+			Enabled:         false,
+			Server:          "memory",
+			AutoRecall:      true,  // when enabled
+			AutoIngest:      false, // opt-in write path
+			Limit:           8,
+			MaxSnippetBytes: 6000,
 		},
 		Catalog: router.DefaultModels(),
 	}
@@ -439,6 +460,38 @@ func (c *Config) applyEnvOverrides() {
 			c.MCP.Enabled = true
 			c.Features.MCP = true
 		}
+	}
+	if v := os.Getenv("IOMESH_MEMORY"); v != "" {
+		switch strings.ToLower(v) {
+		case "0", "false", "off", "no":
+			c.Memory.Enabled = false
+		case "1", "true", "on", "yes":
+			c.Memory.Enabled = true
+		}
+	}
+	if v := os.Getenv("IOMESH_MEMORY_TENANT"); v != "" {
+		c.Memory.Tenant = v
+	} else if v := os.Getenv("MEMORY_TENANT"); v != "" && c.Memory.Tenant == "" {
+		c.Memory.Tenant = v
+	}
+	if v := os.Getenv("IOMESH_MEMORY_AUTO_RECALL"); v != "" {
+		switch strings.ToLower(v) {
+		case "0", "false", "off", "no":
+			c.Memory.AutoRecall = false
+		case "1", "true", "on", "yes":
+			c.Memory.AutoRecall = true
+		}
+	}
+	if v := os.Getenv("IOMESH_MEMORY_AUTO_INGEST"); v != "" {
+		switch strings.ToLower(v) {
+		case "0", "false", "off", "no":
+			c.Memory.AutoIngest = false
+		case "1", "true", "on", "yes":
+			c.Memory.AutoIngest = true
+		}
+	}
+	if c.Memory.Server == "" {
+		c.Memory.Server = "memory"
 	}
 }
 

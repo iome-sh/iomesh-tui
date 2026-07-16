@@ -143,3 +143,28 @@ enabled = false
 # # scopes = ["mcp"]
 # # allow_loopback = true
 # # mutating = true
+
+# --- Memory Palace (aion-memory-mcp stdio) — see docs/architecture/memory-mcp.md ---
+# Build: go build -o $HOME/bin/aion-memory-mcp ./cmd/aion-memory-mcp  (aion monorepo)
+# [mcp]
+# enabled = true
+# [[mcp.servers]]
+# name = "memory"
+# command = "aion-memory-mcp"
+# args = ["-palace-root", "/data/memory-palaces"]
+# # env = { "MEMORY_TENANT" = "dept.research" }
+# mutating = true
+# # Optional: streamable HTTP when platform M1 ships:
+# # url = "https://memory-mcp.example/mcp"
+# # allow_loopback = true
+
+# [memory] hooks use the MCP server above (no Palace embedded in TUI).
+# [memory]
+# enabled = true
+# server = "memory"
+# tenant = "dept.research"
+# auto_recall = true     # inject <memory-context> each turn (fail-open)
+# auto_ingest = false    # opt-in: persist user+assistant after successful turn
+# limit = 8
+# max_snippet_bytes = 6000
+# IOMESH_MEMORY=1 · IOMESH_MEMORY_TENANT · IOMESH_MEMORY_AUTO_RECALL · IOMESH_MEMORY_AUTO_INGEST
