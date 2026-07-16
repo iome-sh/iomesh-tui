@@ -113,12 +113,13 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		return StepSkip, "ready soft-fail: " + err.Error()
 	}))
 
-	// 3) Context plane
+	// 3) Context plane (optionally lineage-aware)
 	if opts.SkipContext || !c.cfg.ContextPlane {
 		rep.Steps = append(rep.Steps, Step{Name: "context", Status: StepSkip, Detail: "context plane disabled or skipped"})
 	} else {
 		rep.Steps = append(rep.Steps, c.stepTimed("context", func() (StepStatus, string) {
-			text := c.ContextSnippet(ctx, opts.Workspace, opts.Query)
+			res := c.QueryContext(ctx, opts.Workspace, opts.Query)
+			text := FormatContextSnippet(res)
 			if text == "" {
 				if opts.Strict {
 					return StepFail, "empty context (strict)"
@@ -130,7 +131,11 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 			if len(detail) > 120 {
 				detail = detail[:117] + "…"
 			}
-			return StepPass, "got context (" + fmt.Sprintf("%d chars", len(text)) + "): " + detail
+			extra := ""
+			if n := len(res.Lineage); n > 0 {
+				extra = fmt.Sprintf(" lineage=%d", n)
+			}
+			return StepPass, fmt.Sprintf("got context (%d chars%s): %s", len(text), extra, detail)
 		}))
 	}
 
@@ -154,6 +159,38 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 				return StepSkip, "emit soft-fail: " + err.Error()
 			}
 			return StepPass, "POST /v1/streams/dept OK"
+		}))
+	}
+
+	// 5) Policy evaluate (optional — skip when mode off)
+	if c.cfg.PolicyMode == PolicyOff || c.cfg.PolicyMode == "" {
+		rep.Steps = append(rep.Steps, Step{Name: "policy", Status: StepSkip, Detail: "policy mode off"})
+	} else {
+		rep.Steps = append(rep.Steps, c.stepTimed("policy", func() (StepStatus, string) {
+			dec := c.EvaluatePolicy(ctx, PolicyInput{
+				Action: "dogfood.probe",
+				Tool:   "mesh_dogfood",
+				Attributes: map[string]any{
+					"source": "iomesh-tui",
+				},
+			})
+			detail := dec.Summary()
+			if dec.Source == "unavailable" {
+				if opts.Strict {
+					return StepFail, detail
+				}
+				return StepSkip, detail
+			}
+			if dec.Source == "fail-open" {
+				if opts.Strict {
+					return StepFail, detail
+				}
+				return StepSkip, detail
+			}
+			if dec.Source == "mesh" {
+				return StepPass, detail
+			}
+			return StepSkip, detail
 		}))
 	}
 

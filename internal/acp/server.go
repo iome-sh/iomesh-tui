@@ -390,6 +390,8 @@ func (s *Server) newRuntime(cwd string) (*agent.Runtime, *session.Store, error) 
 		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
 		EmitDeptStreams: cfg.IOMesh.EmitDeptStreams,
 		ContextPlane:    cfg.IOMesh.ContextPlane,
+		IncludeLineage:  cfg.IOMesh.IncludeLineage,
+		PolicyMode:      iomesh.PolicyMode(cfg.IOMesh.PolicyMode),
 	}, s.logger)
 	if mesh.Enabled() {
 		metrics = mesh

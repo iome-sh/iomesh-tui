@@ -1,0 +1,76 @@
+# Deeper I/O Mesh (lineage · policy · metering)
+
+Extends the offline-first mesh client beyond health/context/emit dogfood.
+
+## Lineage-aware context
+
+When `include_lineage = true` (default) the client POSTs:
+
+```http
+POST /v1/context/query
+{ "tenant", "workspace", "query", "limit", "include_lineage": true }
+```
+
+Response shapes accepted:
+
+```json
+{ "text": "…", "lineage": [{ "id", "product", "subject", "source", "freshness" }] }
+```
+
+or `{ "items": [ { "text", "lineage" }, … ] }`.
+
+Injected system block:
+
+```xml
+<iomesh-context>
+…text…
+<iomesh-lineage>
+- dp-1 · subject=dept.eng.events · source=kafka · freshness=2m
+</iomesh-lineage>
+</iomesh-context>
+```
+
+Fail-open: empty string on transport/HTTP/decode errors.
+
+## Policy gates (Rego / broker evaluate)
+
+Config / env:
+
+| Value | Behaviour |
+|-------|-----------|
+| `off` (default) | no remote calls |
+| `advisory` | `POST /v1/policy/evaluate`; log `EventMeshPolicy` + dept emit; **never block** |
+| `enforce` | same, but **deny tool** when mesh returns `allow:false` |
+
+Fail-open: transport errors, non-OK (except explicit 200 deny), and **404** (`source=unavailable`) never block tools.
+
+Agent order: **mesh policy → interactive approval → execute**.
+
+## Local metering “dashboard”
+
+`Client` implements `router.MetricsSink` and keeps an **in-process** rollup (`UsageMeter`):
+
+- `iomesh mesh usage` — print table for the **current process** (empty in a fresh CLI)
+- After agent LLM calls, totals accumulate; emit still goes to `dept.agent.llm_call` when mesh is enabled
+- Not a remote multi-tenant dashboard (that lives on the platform); this is operator-local cost telemetry
+
+## Config
+
+```toml
+[iomesh]
+include_lineage = true
+policy_mode = "off"   # off | advisory | enforce
+```
+
+Env: `IOMESH_INCLUDE_LINEAGE`, `IOMESH_POLICY_MODE`.
+
+## Dogfood
+
+`iomesh mesh dogfood` adds a **policy** step when mode ≠ off (SKIP on 404/fail-open unless `--strict`).
+
+## Packages
+
+- `internal/iomesh/client.go` — QueryContext, lineage format, meter hook
+- `internal/iomesh/policy.go` — EvaluatePolicy
+- `internal/iomesh/meter.go` — UsageMeter / FormatUsage
+- `internal/agent` — policy before tool execute; `EventMeshPolicy`

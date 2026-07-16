@@ -16,6 +16,7 @@ const (
 	EventToolDenied     EventType = "tool_denied"
 	EventToolPermission EventType = "tool_permission" // optional UI hint before approver runs
 	EventMeshContext    EventType = "mesh_context"
+	EventMeshPolicy     EventType = "mesh_policy"
 	EventSubagentStart  EventType = "subagent_start"
 	EventSubagentEnd    EventType = "subagent_end"
 )

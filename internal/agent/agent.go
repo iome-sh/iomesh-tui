@@ -313,6 +313,28 @@ func (rt *Runtime) RunTurn(ctx context.Context, userText string, onEvent func(Ev
 
 		for _, tc := range msg.ToolCalls {
 			onEvent(Event{Type: EventToolStart, Tool: tc.Function.Name, Text: tc.Function.Arguments})
+			// Optional remote mesh policy (Rego/OPA via broker). Fail-open unless enforce+deny.
+			if rt.mesh != nil && rt.mesh.PolicyEnabled() {
+				dec := rt.mesh.EvaluatePolicy(ctx, iomesh.PolicyInput{
+					Action: "tool." + tc.Function.Name,
+					Tool:   tc.Function.Name,
+					Attributes: map[string]any{
+						"mutating": rt.tools.IsMutating(tc.Function.Name),
+						"args":     truncate(tc.Function.Arguments, 500),
+					},
+				})
+				onEvent(Event{Type: EventMeshPolicy, Tool: tc.Function.Name, Text: dec.Summary()})
+				if dec.ShouldBlockTool() {
+					msg := "tool denied by I/O Mesh policy (" + dec.Summary() + ")"
+					onEvent(Event{Type: EventToolDenied, Tool: tc.Function.Name, Text: msg})
+					rt.messages = append(rt.messages, router.Message{
+						Role:       "tool",
+						ToolCallID: tc.ID,
+						Content:    msg,
+					})
+					continue
+				}
+			}
 			if rt.tools.IsMutating(tc.Function.Name) {
 				switch rt.decideApproval(ctx, tc.Function.Name, tc.Function.Arguments) {
 				case ApprovalDeny:

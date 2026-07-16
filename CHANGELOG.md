@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Deeper I/O Mesh: lineage-aware context plane (`include_lineage`), remote policy evaluate (`policy_mode` advisory|enforce, fail-open), local LLM usage meter + `iomesh mesh usage` / headless stderr rollup
+- Dogfood policy step; docs: [docs/architecture/mesh-deeper.md](docs/architecture/mesh-deeper.md)
+
 ## [0.1.0] — 2026-07-16
 
 First public tagged release of the I/O Mesh TUI coding agent.

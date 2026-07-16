@@ -85,6 +85,10 @@ type IOMeshSection struct {
 	EmitDeptStreams bool `toml:"emit_dept_streams"`
 	// ContextPlane injects governed operational context into prompts.
 	ContextPlane bool `toml:"context_plane"`
+	// IncludeLineage requests lineage refs on context plane queries.
+	IncludeLineage bool `toml:"include_lineage"`
+	// PolicyMode: off | advisory | enforce (remote Rego/OPA evaluate; fail-open on transport).
+	PolicyMode string `toml:"policy_mode"`
 }
 
 // UISection is reserved for TUI preferences.
@@ -174,6 +178,8 @@ func Default() *Config {
 			APIKeyEnv:       "IOMESH_API_KEY",
 			EmitDeptStreams: true,
 			ContextPlane:    true,
+			IncludeLineage:  true,
+			PolicyMode:      "off",
 		},
 		UI: UISection{
 			SimpleMode:   true,
@@ -367,6 +373,17 @@ func (c *Config) applyEnvOverrides() {
 	}
 	if v := os.Getenv("IOMESH_TENANT"); v != "" {
 		c.IOMesh.Tenant = v
+	}
+	if v := os.Getenv("IOMESH_POLICY_MODE"); v != "" {
+		c.IOMesh.PolicyMode = strings.ToLower(strings.TrimSpace(v))
+	}
+	if v := os.Getenv("IOMESH_INCLUDE_LINEAGE"); v != "" {
+		switch strings.ToLower(v) {
+		case "0", "false", "off", "no":
+			c.IOMesh.IncludeLineage = false
+		case "1", "true", "on", "yes":
+			c.IOMesh.IncludeLineage = true
+		}
 	}
 	if strings.EqualFold(os.Getenv("IOMESH_YOLO"), "1") || strings.EqualFold(os.Getenv("IOMESH_YOLO"), "true") {
 		c.Agent.Yolo = true
