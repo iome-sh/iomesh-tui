@@ -233,18 +233,15 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 	}
 
 	// 7) MEMORY_INGEST dual-write (Phase 2 path via PublishMemoryIngest)
+	// 8) MEMORY_RPC async recall request (same session_id for temporal correlation — s247)
+	tenant := strings.TrimSpace(c.cfg.Tenant)
+	sessionID := dogfoodSessionID(tenant)
+	sessionSeq := 1
 	if opts.SkipMemory {
 		rep.Steps = append(rep.Steps, Step{Name: "memory_ingest", Status: StepSkip, Detail: "skipped (--skip-memory)"})
+		rep.Steps = append(rep.Steps, Step{Name: "memory_recall", Status: StepSkip, Detail: "skipped (--skip-memory)"})
 	} else {
 		rep.Steps = append(rep.Steps, c.stepTimed("memory_ingest", func() (StepStatus, string) {
-			tenant := strings.TrimSpace(c.cfg.Tenant)
-			// Stable dogfood session id so temporal correlation fields are non-empty evidence (s243).
-			// Tenant-prefixed when set for multi-tenant log differentiation.
-			sessionID := "mesh-dogfood"
-			if tenant != "" {
-				sessionID = tenant + ".mesh-dogfood"
-			}
-			sessionSeq := 1
 			ack, err := c.PublishMemoryIngest(ctx, tenant, MemoryEnvelope{
 				Type:       memoryEnvelopeIngest,
 				Role:       "tool",
@@ -286,6 +283,42 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 				detail = fmt.Sprintf("%s session_id=%s", detail, sessionID)
 			}
 			// Always emit dual_write mode on PASS detail (s241) so human logs show mode without JSON.
+			detail = fmt.Sprintf("%s dual_write=%v", detail, c.cfg.DualWrite)
+			return StepPass, detail
+		}))
+
+		rep.Steps = append(rep.Steps, c.stepTimed("memory_recall", func() (StepStatus, string) {
+			// Fire-and-forget MEMORY_RPC request; same session_id as ingest for correlation (s247).
+			ack, err := c.PublishMemoryRecall(ctx, tenant, "iomesh-tui dual-write dogfood", 8, sessionID)
+			if err != nil {
+				if opts.Strict {
+					return StepFail, err.Error()
+				}
+				return StepSkip, "memory_recall soft-fail: " + err.Error()
+			}
+			stream := streamMemoryRPC
+			subject := tenant + ".memory.retrieve.request"
+			if ack != nil {
+				if ack.Stream != "" {
+					stream = ack.Stream
+				}
+				if ack.Subject != "" {
+					subject = ack.Subject
+				}
+			}
+			detail := fmt.Sprintf("POST /v1/streams/%s/publish subject=%s", stream, subject)
+			if ack != nil && ack.Seq > 0 {
+				detail = fmt.Sprintf("%s seq=%d", detail, ack.Seq)
+			}
+			if org := strings.TrimSpace(c.cfg.OrgID); org != "" {
+				detail = fmt.Sprintf("%s org=%s", detail, org)
+			}
+			if ws := strings.TrimSpace(c.cfg.WorkspaceID); ws != "" {
+				detail = fmt.Sprintf("%s workspace=%s", detail, ws)
+			}
+			if sessionID != "" {
+				detail = fmt.Sprintf("%s session_id=%s", detail, sessionID)
+			}
 			detail = fmt.Sprintf("%s dual_write=%v", detail, c.cfg.DualWrite)
 			return StepPass, detail
 		}))

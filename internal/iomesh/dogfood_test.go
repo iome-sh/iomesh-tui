@@ -19,6 +19,8 @@ func mockMeshServer(t *testing.T, opts struct {
 	failEmit   bool
 	failMemory bool
 	noMemory   bool
+	failRecall bool
+	noRecall   bool
 }) *httptest.Server {
 	t.Helper()
 	var emits atomic.Int32
@@ -92,6 +94,42 @@ func mockMeshServer(t *testing.T, opts struct {
 				"seq":     1,
 				"subject": subject,
 			})
+		case r.URL.Path == "/v1/streams/MEMORY_RPC/publish" && r.Method == http.MethodPost:
+			if opts.noRecall {
+				w.WriteHeader(404)
+				return
+			}
+			if opts.failRecall {
+				w.WriteHeader(500)
+				return
+			}
+			var body map[string]any
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			subject, _ := body["subject"].(string)
+			if subject == "" || !strings.HasSuffix(subject, ".memory.retrieve.request") {
+				w.WriteHeader(400)
+				return
+			}
+			payloadB64, _ := body["payload"].(string)
+			raw, err := base64.StdEncoding.DecodeString(payloadB64)
+			if err != nil {
+				w.WriteHeader(400)
+				return
+			}
+			var env map[string]any
+			if err := json.Unmarshal(raw, &env); err != nil {
+				w.WriteHeader(400)
+				return
+			}
+			if env["type"] != "memory_recall" || env["query"] == "" {
+				w.WriteHeader(400)
+				return
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"stream":  "MEMORY_RPC",
+				"seq":     2,
+				"subject": subject,
+			})
 		default:
 			http.NotFound(w, r)
 		}
@@ -106,6 +144,8 @@ func TestDogfood_FullPass(t *testing.T) {
 		failEmit   bool
 		failMemory bool
 		noMemory   bool
+		failRecall bool
+		noRecall   bool
 	}{})
 	t.Cleanup(srv.Close)
 
@@ -124,7 +164,7 @@ func TestDogfood_FullPass(t *testing.T) {
 	if !strings.Contains(out, "health") || !strings.Contains(out, "context") {
 		t.Fatal(out)
 	}
-	var memOK bool
+	var memOK, recallOK bool
 	for _, s := range rep.Steps {
 		if s.Name == "memory_ingest" && s.Status == StepPass {
 			memOK = true
@@ -139,8 +179,21 @@ func TestDogfood_FullPass(t *testing.T) {
 				t.Fatalf("expected session_id= in PASS detail: %s", s.Detail)
 			}
 		}
+		if s.Name == "memory_recall" && s.Status == StepPass {
+			recallOK = true
+			if !strings.Contains(s.Detail, "MEMORY_RPC") || !strings.Contains(s.Detail, "stage.memory.retrieve.request") {
+				t.Fatalf("recall detail: %s", s.Detail)
+			}
+			// Same session_id as ingest for temporal correlation (s247).
+			if !strings.Contains(s.Detail, "session_id=stage.mesh-dogfood") {
+				t.Fatalf("expected correlated session_id in recall PASS detail: %s", s.Detail)
+			}
+			if !strings.Contains(s.Detail, "dual_write=") {
+				t.Fatalf("expected dual_write= in recall PASS detail: %s", s.Detail)
+			}
+		}
 	}
-	if !memOK {
+	if !memOK || !recallOK {
 		t.Fatal(FormatReport(rep))
 	}
 	js := FormatReportJSON(rep)
@@ -157,6 +210,8 @@ func TestDogfood_MemoryIngestSessionDetail(t *testing.T) {
 		failEmit   bool
 		failMemory bool
 		noMemory   bool
+		failRecall bool
+		noRecall   bool
 	}{})
 	t.Cleanup(srv.Close)
 
@@ -198,6 +253,8 @@ func TestDogfood_HealthFail(t *testing.T) {
 		failEmit   bool
 		failMemory bool
 		noMemory   bool
+		failRecall bool
+		noRecall   bool
 	}{failHealth: true})
 	t.Cleanup(srv.Close)
 
@@ -219,6 +276,8 @@ func TestDogfood_SoftContextSkip(t *testing.T) {
 		failEmit   bool
 		failMemory bool
 		noMemory   bool
+		failRecall bool
+		noRecall   bool
 	}{emptyCtx: true, noReady: true})
 	t.Cleanup(srv.Close)
 
@@ -247,6 +306,8 @@ func TestDogfood_StrictContextFail(t *testing.T) {
 		failEmit   bool
 		failMemory bool
 		noMemory   bool
+		failRecall bool
+		noRecall   bool
 	}{emptyCtx: true})
 	t.Cleanup(srv.Close)
 
@@ -279,6 +340,8 @@ func TestDogfood_MemoryIngestSoftSkip(t *testing.T) {
 		failEmit   bool
 		failMemory bool
 		noMemory   bool
+		failRecall bool
+		noRecall   bool
 	}{failMemory: true})
 	t.Cleanup(srv.Close)
 
@@ -309,6 +372,8 @@ func TestDogfood_MemoryIngestStrictFail(t *testing.T) {
 		failEmit   bool
 		failMemory bool
 		noMemory   bool
+		failRecall bool
+		noRecall   bool
 	}{failMemory: true})
 	t.Cleanup(srv.Close)
 
@@ -336,7 +401,9 @@ func TestDogfood_SkipMemory(t *testing.T) {
 		failEmit   bool
 		failMemory bool
 		noMemory   bool
-	}{failMemory: true}) // would fail if not skipped
+		failRecall bool
+		noRecall   bool
+	}{failMemory: true, failRecall: true}) // would fail if not skipped
 	t.Cleanup(srv.Close)
 
 	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "stage", EmitDeptStreams: true}, nil)
@@ -344,13 +411,131 @@ func TestDogfood_SkipMemory(t *testing.T) {
 	if !rep.OK {
 		t.Fatalf("skip-memory should pass: %s\n%s", rep.Summary, FormatReport(rep))
 	}
-	var found bool
+	var foundIngest, foundRecall bool
 	for _, s := range rep.Steps {
 		if s.Name == "memory_ingest" && s.Status == StepSkip {
-			found = true
+			foundIngest = true
 			if !strings.Contains(s.Detail, "skip-memory") {
 				t.Fatalf("detail=%s", s.Detail)
 			}
+		}
+		if s.Name == "memory_recall" && s.Status == StepSkip {
+			foundRecall = true
+			if !strings.Contains(s.Detail, "skip-memory") {
+				t.Fatalf("detail=%s", s.Detail)
+			}
+		}
+	}
+	if !foundIngest || !foundRecall {
+		t.Fatal(FormatReport(rep))
+	}
+}
+
+func TestDogfood_MemoryRecallSessionDetail(t *testing.T) {
+	srv := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+		failRecall bool
+		noRecall   bool
+	}{})
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "acme",
+		OrgID: "org_dev", WorkspaceID: "ws_1", DualWrite: true,
+		EmitDeptStreams: true,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{Strict: true})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	var ingestID, recallID string
+	for _, s := range rep.Steps {
+		if s.Name == "memory_ingest" && s.Status == StepPass {
+			if !strings.Contains(s.Detail, "session_id=acme.mesh-dogfood") {
+				t.Fatalf("ingest: %s", s.Detail)
+			}
+			ingestID = "acme.mesh-dogfood"
+		}
+		if s.Name == "memory_recall" && s.Status == StepPass {
+			if !strings.Contains(s.Detail, "MEMORY_RPC") {
+				t.Fatalf("recall stream: %s", s.Detail)
+			}
+			if !strings.Contains(s.Detail, "session_id=acme.mesh-dogfood") {
+				t.Fatalf("recall session: %s", s.Detail)
+			}
+			if !strings.Contains(s.Detail, "org=org_dev") || !strings.Contains(s.Detail, "workspace=ws_1") {
+				t.Fatalf("recall org/ws: %s", s.Detail)
+			}
+			if !strings.Contains(s.Detail, "dual_write=true") {
+				t.Fatalf("recall dual_write: %s", s.Detail)
+			}
+			recallID = "acme.mesh-dogfood"
+		}
+	}
+	if ingestID == "" || recallID == "" || ingestID != recallID {
+		t.Fatalf("correlation ingest=%q recall=%q\n%s", ingestID, recallID, FormatReport(rep))
+	}
+}
+
+func TestDogfood_MemoryRecallSoftSkip(t *testing.T) {
+	srv := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+		failRecall bool
+		noRecall   bool
+	}{failRecall: true})
+	t.Cleanup(srv.Close)
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "stage", EmitDeptStreams: true}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{Strict: false})
+	if !rep.OK {
+		t.Fatalf("soft recall fail should not fail report: %s\n%s", rep.Summary, FormatReport(rep))
+	}
+	var found bool
+	for _, s := range rep.Steps {
+		if s.Name == "memory_recall" && s.Status == StepSkip {
+			found = true
+			if !strings.Contains(s.Detail, "soft-fail") {
+				t.Fatalf("detail=%s", s.Detail)
+			}
+		}
+	}
+	if !found {
+		t.Fatal(FormatReport(rep))
+	}
+}
+
+func TestDogfood_MemoryRecallStrictFail(t *testing.T) {
+	srv := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+		failRecall bool
+		noRecall   bool
+	}{failRecall: true})
+	t.Cleanup(srv.Close)
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "stage", EmitDeptStreams: true}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{Strict: true})
+	if rep.OK {
+		t.Fatal("strict should fail memory_recall")
+	}
+	var found bool
+	for _, s := range rep.Steps {
+		if s.Name == "memory_recall" && s.Status == StepFail {
+			found = true
 		}
 	}
 	if !found {
@@ -366,6 +551,8 @@ func TestDogfood_MemoryIngestOrgWorkspaceEvidence(t *testing.T) {
 		failEmit   bool
 		failMemory bool
 		noMemory   bool
+		failRecall bool
+		noRecall   bool
 	}{})
 	t.Cleanup(srv.Close)
 
@@ -422,6 +609,8 @@ func TestDogfood_MemoryIngestOmitsEmptyOrgWorkspace(t *testing.T) {
 		failEmit   bool
 		failMemory bool
 		noMemory   bool
+		failRecall bool
+		noRecall   bool
 	}{})
 	t.Cleanup(srv.Close)
 
@@ -477,6 +666,8 @@ func TestDogfood_JSONDualWriteTrue(t *testing.T) {
 		failEmit   bool
 		failMemory bool
 		noMemory   bool
+		failRecall bool
+		noRecall   bool
 	}{})
 	t.Cleanup(srv.Close)
 
@@ -527,6 +718,8 @@ func TestDogfood_JSONDualWriteFalse(t *testing.T) {
 		failEmit   bool
 		failMemory bool
 		noMemory   bool
+		failRecall bool
+		noRecall   bool
 	}{})
 	t.Cleanup(srv.Close)
 
@@ -582,6 +775,8 @@ func TestReady_OK(t *testing.T) {
 		failEmit   bool
 		failMemory bool
 		noMemory   bool
+		failRecall bool
+		noRecall   bool
 	}{})
 	t.Cleanup(srv.Close)
 	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)

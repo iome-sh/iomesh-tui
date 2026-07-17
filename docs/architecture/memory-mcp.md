@@ -21,7 +21,8 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 | **0** | **done** | Attach `aion-memory-mcp` via existing MCP client; documented example |
 | **1** | **done** | `[memory]` auto-recall inject, opt-in auto-ingest, `/memory` slash |
 | **2** | **done (v0.3.0)** | HTTP MCP primary path + optional dual-write to mesh `MEMORY_INGEST` |
-| **3+** | planned | Pure SDK sync retrieve paths when operators want non-MCP clients |
+| **3 partial** | **done (dogfood)** | Async `MEMORY_RPC` recall probe in mesh dogfood (`PublishMemoryRecall`, same `session_id` as ingest) |
+| **3+** | planned | Pure SDK **sync** retrieve HTTP when operators want non-MCP request/response hits |
 
 **Non-goals:** private monorepo imports in public TUI; embedding Qdrant/Palace in-process; dependency on `iomesh-client-sdk-go`.
 

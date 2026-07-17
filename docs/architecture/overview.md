@@ -97,4 +97,5 @@ CLI / TUI / ACP
 16. ~~Portal catalog federation + dogfood JSON~~ **done** — see [mesh-deeper.md](mesh-deeper.md)
 17. ~~Memory Palace MCP Phase 0–1~~ **done** — see [memory-mcp.md](memory-mcp.md) (stdio attach, auto-recall, `/memory`, opt-in ingest)
 18. ~~Memory Phase 2~~ **done** — HTTP MCP path + dual-write `MEMORY_INGEST` (v0.3.0); see [memory-mcp.md](memory-mcp.md)
-19. Optional: remote multi-tenant metering dashboards / goreleaser binaries
+19. ~~Dogfood async MEMORY_RPC recall (session correlation)~~ **done** — see [mesh-dogfood.md](mesh-dogfood.md)
+20. Optional: pure SDK sync retrieve (memory Phase 3+); remote metering / goreleaser
