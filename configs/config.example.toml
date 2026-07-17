@@ -161,13 +161,14 @@ enabled = false
 # # args = ["-palace-root", "/data/memory-palaces"]
 # # env = { "MEMORY_TENANT" = "dept.research" }
 
-# [memory] hooks use the MCP server above (no Palace embedded in TUI).
+# [memory] hooks: auto-recall prefers sync POST /v1/memory/retrieve when [iomesh]
+# is enabled (memory sidecar or gateway); falls back to MCP server above.
 # Optional dual_write also publishes async MEMORY_INGEST when [iomesh] is enabled.
 # [memory]
 # enabled = true
 # server = "memory"
 # tenant = "dept.research"
-# auto_recall = true     # inject <memory-context> each turn (fail-open)
+# auto_recall = true     # inject <memory-context> each turn (fail-open; sync then MCP)
 # auto_ingest = false    # opt-in: persist user+assistant after successful turn
 # dual_write = false     # opt-in: mesh MEMORY_INGEST (IOMESH_MEMORY_DUAL_WRITE=1)
 # limit = 8

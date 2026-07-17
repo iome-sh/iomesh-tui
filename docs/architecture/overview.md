@@ -99,4 +99,5 @@ CLI / TUI / ACP
 18. ~~Memory Phase 2~~ **done** — HTTP MCP path + dual-write `MEMORY_INGEST` (v0.3.0); see [memory-mcp.md](memory-mcp.md)
 19. ~~Dogfood async MEMORY_RPC recall (session correlation)~~ **done** — see [mesh-dogfood.md](mesh-dogfood.md)
 20. ~~Sync HTTP memory retrieve + dogfood `memory_retrieve`~~ **done** — see [mesh-dogfood.md](mesh-dogfood.md) / [memory-mcp.md](memory-mcp.md)
-21. Optional: agent auto-recall prefer sync HTTP; remote metering / goreleaser
+21. ~~Agent auto-recall prefer sync HTTP~~ **done** — mesh `RetrieveMemory` first, MCP fallback; see [memory-mcp.md](memory-mcp.md)
+22. Optional: live stage dogfood with warm memory plane; remote metering / goreleaser; v0.4.0

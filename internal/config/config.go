@@ -161,8 +161,9 @@ type MCPSection struct {
 	Servers        []MCPServerTOML `toml:"servers"`
 }
 
-// MemorySection configures Memory Palace MCP hooks (auto-recall / auto-ingest).
-// MCP path: connected [[mcp.servers]] entry (stdio or HTTP aion-memory-mcp).
+// MemorySection configures Memory Palace hooks (auto-recall / auto-ingest).
+// Recall prefers mesh sync HTTP RetrieveMemory when [iomesh] is enabled; else MCP
+// (connected [[mcp.servers]] entry — stdio or HTTP aion-memory-mcp).
 // DualWrite: optional async publish to mesh MEMORY_INGEST (no SDK dep).
 type MemorySection struct {
 	Enabled    bool   `toml:"enabled"`

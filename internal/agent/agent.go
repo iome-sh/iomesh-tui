@@ -257,7 +257,7 @@ func (rt *Runtime) RunTurn(ctx context.Context, userText string, onEvent func(Ev
 		}
 	}
 
-	// Optional Memory Palace MCP auto-recall (fail-open).
+	// Optional Memory Palace auto-recall: sync HTTP then MCP (fail-open).
 	rt.maybeInjectMemoryRecall(ctx, userText, onEvent)
 
 	rt.messages = append(rt.messages, router.Message{Role: "user", Content: userText})

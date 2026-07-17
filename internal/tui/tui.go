@@ -427,7 +427,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /cost                session usage meter + sample estimate
   /mesh                I/O Mesh status + usage
   /catalog [query]     list mesh data products (catalog plane)
-  /memory [recall|ingest|status]  Memory Palace MCP (see memory-mcp.md)
+  /memory [recall|ingest|status]  Memory Palace (sync HTTP + MCP; see memory-mcp.md)
   /quit                exit
 
 Fullscreen keys: enter send · ctrl+j newline · pgup/pgdn scroll
