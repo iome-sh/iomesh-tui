@@ -25,7 +25,7 @@ Included **by default** when mesh is enabled (not gated on agent `[memory].dual_
 - Envelope: `type=memory_ingest`, `role=tool`, `content=iomesh-tui dual-write dogfood`, `event_time=now`, `session_seq=1`
 - Soft mode: publish/transport errors → **SKIP** (fail-open); `--strict` → **FAIL**
 - Offline / mesh disabled: whole report is SKIP (no memory step)
-- **PASS detail** includes stream, subject, and seq when available. When Client `[iomesh] org` / `workspace` (`OrgID` / `WorkspaceID`) are set, detail also appends `org=…` and/or `workspace=…` as operator-visible evidence that dual-write publish used those headers (`X-IOMesh-Org` / `X-IOMesh-Workspace`). Empty values are omitted (no `org=` token).
+- **PASS detail** includes stream, subject, and seq when available. When Client `[iomesh] org` / `workspace` (`OrgID` / `WorkspaceID`) are set, detail also appends `org=…` and/or `workspace=…` as operator-visible evidence that dual-write publish used those headers (`X-IOMesh-Org` / `X-IOMesh-Workspace`). Empty values are omitted (no `org=` token). Detail **always** ends with `dual_write=true` or `dual_write=false` from Client `[memory].dual_write` / `IOMESH_MEMORY_DUAL_WRITE` (report evidence only — does not gate the probe), so human-readable reports and step logs show mode without relying only on top-level JSON.
 
 Final line: `RESULT=PASS …` or `RESULT=FAIL …`.
 
@@ -49,7 +49,7 @@ Final line: `RESULT=PASS …` or `RESULT=FAIL …`.
 
 `org` / `workspace` are structured multi-tenant evidence for operators and aion gates (parseable without scraping step detail). s235 still embeds the same values in the `memory_ingest` PASS detail string when set.
 
-`dual_write` is structured dual-write **mode** evidence for CI (s239): parse top-level JSON instead of grepping detail strings. The CLI wires `cfg.Memory.DualWrite` into `iomesh.Config.DualWrite` when running `mesh dogfood`.
+`dual_write` is structured dual-write **mode** evidence for CI (s239): parse top-level JSON instead of grepping detail strings. The same mode is also always present on the `memory_ingest` PASS detail string as `dual_write=true|false` (s241) for human logs. The CLI wires `cfg.Memory.DualWrite` into `iomesh.Config.DualWrite` when running `mesh dogfood`.
 
 ## CLI
 

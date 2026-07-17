@@ -444,11 +444,14 @@ func TestDogfood_JSONDualWriteTrue(t *testing.T) {
 	if !rep.DualWrite {
 		t.Fatal("expected DualWrite true on report")
 	}
-	// memory_ingest still runs (not gated on DualWrite).
+	// memory_ingest still runs (not gated on DualWrite); PASS detail includes dual_write=true (s241).
 	var memOK bool
 	for _, s := range rep.Steps {
 		if s.Name == "memory_ingest" && s.Status == StepPass {
 			memOK = true
+			if !strings.Contains(s.Detail, "dual_write=true") {
+				t.Fatalf("expected dual_write=true in PASS detail: %s", s.Detail)
+			}
 		}
 	}
 	if !memOK {
@@ -490,6 +493,19 @@ func TestDogfood_JSONDualWriteFalse(t *testing.T) {
 	}
 	if rep.DualWrite {
 		t.Fatal("expected DualWrite false on report when unset")
+	}
+	// PASS detail always includes dual_write=false when unset (s241).
+	var memOK bool
+	for _, s := range rep.Steps {
+		if s.Name == "memory_ingest" && s.Status == StepPass {
+			memOK = true
+			if !strings.Contains(s.Detail, "dual_write=false") {
+				t.Fatalf("expected dual_write=false in PASS detail: %s", s.Detail)
+			}
+		}
+	}
+	if !memOK {
+		t.Fatal(FormatReport(rep))
 	}
 	// Always emit dual_write key (unlike omitempty org/workspace).
 	js := FormatReportJSON(rep)

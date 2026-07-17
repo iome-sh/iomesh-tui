@@ -272,6 +272,8 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 			if ws := strings.TrimSpace(c.cfg.WorkspaceID); ws != "" {
 				detail = fmt.Sprintf("%s workspace=%s", detail, ws)
 			}
+			// Always emit dual_write mode on PASS detail (s241) so human logs show mode without JSON.
+			detail = fmt.Sprintf("%s dual_write=%v", detail, c.cfg.DualWrite)
 			return StepPass, detail
 		}))
 	}
