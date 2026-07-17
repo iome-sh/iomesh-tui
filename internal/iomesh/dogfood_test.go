@@ -331,6 +331,9 @@ func TestDogfood_MemoryIngestOrgWorkspaceEvidence(t *testing.T) {
 	if !rep.OK {
 		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
 	}
+	if rep.Org != "org_dev-org" || rep.Workspace != "ws_alpha" {
+		t.Fatalf("report org/workspace: org=%q workspace=%q", rep.Org, rep.Workspace)
+	}
 	var found bool
 	for _, s := range rep.Steps {
 		if s.Name == "memory_ingest" && s.Status == StepPass {
@@ -348,6 +351,18 @@ func TestDogfood_MemoryIngestOrgWorkspaceEvidence(t *testing.T) {
 	}
 	if !found {
 		t.Fatal(FormatReport(rep))
+	}
+	// Structured JSON fields for stage CI / aion gates (s237).
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if parsed["org"] != "org_dev-org" {
+		t.Fatalf("json org: %v\n%s", parsed["org"], js)
+	}
+	if parsed["workspace"] != "ws_alpha" {
+		t.Fatalf("json workspace: %v\n%s", parsed["workspace"], js)
 	}
 }
 
@@ -371,6 +386,9 @@ func TestDogfood_MemoryIngestOmitsEmptyOrgWorkspace(t *testing.T) {
 	if !rep.OK {
 		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
 	}
+	if rep.Org != "" || rep.Workspace != "" {
+		t.Fatalf("unset org/workspace must be empty: org=%q workspace=%q", rep.Org, rep.Workspace)
+	}
 	var found bool
 	for _, s := range rep.Steps {
 		if s.Name == "memory_ingest" && s.Status == StepPass {
@@ -388,6 +406,18 @@ func TestDogfood_MemoryIngestOmitsEmptyOrgWorkspace(t *testing.T) {
 	}
 	if !found {
 		t.Fatal(FormatReport(rep))
+	}
+	// omitempty: top-level org/workspace keys absent when unset.
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if _, ok := parsed["org"]; ok {
+		t.Fatalf("unset org must be omitted from JSON: %s", js)
+	}
+	if _, ok := parsed["workspace"]; ok {
+		t.Fatalf("unset workspace must be omitted from JSON: %s", js)
 	}
 }
 

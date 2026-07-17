@@ -30,14 +30,21 @@ type Step struct {
 
 // DogfoodReport aggregates probe results for stage/CI evidence.
 type DogfoodReport struct {
-	Endpoint string    `json:"endpoint"`
-	Tenant   string    `json:"tenant,omitempty"`
-	Strict   bool      `json:"strict"`
-	Steps    []Step    `json:"steps"`
-	OK       bool      `json:"ok"`
-	Summary  string    `json:"summary"`
-	Started  time.Time `json:"started"`
-	Finished time.Time `json:"finished"`
+	Endpoint string `json:"endpoint"`
+	Tenant   string `json:"tenant,omitempty"`
+	// Org is optional PlanGate / entitlements org from Client cfg (X-IOMesh-Org).
+	// Populated when [iomesh] org / IOMESH_ORG is set; omitted from JSON when empty.
+	Org string `json:"org,omitempty"`
+	// Workspace is optional workspace scope from Client cfg (X-IOMesh-Workspace).
+	// Populated when [iomesh] workspace / IOMESH_WORKSPACE is set; omitted from JSON when empty.
+	// Distinct from DogfoodOptions.Workspace (context-plane path).
+	Workspace string    `json:"workspace,omitempty"`
+	Strict    bool      `json:"strict"`
+	Steps     []Step    `json:"steps"`
+	OK        bool      `json:"ok"`
+	Summary   string    `json:"summary"`
+	Started   time.Time `json:"started"`
+	Finished  time.Time `json:"finished"`
 }
 
 // DogfoodOptions tune the probe.
@@ -68,6 +75,8 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 	if c != nil {
 		rep.Endpoint = c.cfg.Endpoint
 		rep.Tenant = c.cfg.Tenant
+		rep.Org = strings.TrimSpace(c.cfg.OrgID)
+		rep.Workspace = strings.TrimSpace(c.cfg.WorkspaceID)
 	}
 	if opts.Query == "" {
 		opts.Query = "iomesh-tui stage mesh dogfood"
@@ -363,24 +372,28 @@ func FormatReportJSON(r DogfoodReport) string {
 		Latency string `json:"latency,omitempty"`
 	}
 	type out struct {
-		Endpoint string     `json:"endpoint"`
-		Tenant   string     `json:"tenant,omitempty"`
-		Strict   bool       `json:"strict"`
-		OK       bool       `json:"ok"`
-		Summary  string     `json:"summary"`
-		Started  time.Time  `json:"started"`
-		Finished time.Time  `json:"finished"`
-		Steps    []stepJSON `json:"steps"`
-		Result   string     `json:"result"` // PASS|FAIL|SKIP mirror of Summary prefix
+		Endpoint  string     `json:"endpoint"`
+		Tenant    string     `json:"tenant,omitempty"`
+		Org       string     `json:"org,omitempty"`
+		Workspace string     `json:"workspace,omitempty"`
+		Strict    bool       `json:"strict"`
+		OK        bool       `json:"ok"`
+		Summary   string     `json:"summary"`
+		Started   time.Time  `json:"started"`
+		Finished  time.Time  `json:"finished"`
+		Steps     []stepJSON `json:"steps"`
+		Result    string     `json:"result"` // PASS|FAIL|SKIP mirror of Summary prefix
 	}
 	o := out{
-		Endpoint: r.Endpoint,
-		Tenant:   r.Tenant,
-		Strict:   r.Strict,
-		OK:       r.OK,
-		Summary:  r.Summary,
-		Started:  r.Started,
-		Finished: r.Finished,
+		Endpoint:  r.Endpoint,
+		Tenant:    r.Tenant,
+		Org:       r.Org,
+		Workspace: r.Workspace,
+		Strict:    r.Strict,
+		OK:        r.OK,
+		Summary:   r.Summary,
+		Started:   r.Started,
+		Finished:  r.Finished,
 	}
 	if strings.HasPrefix(r.Summary, "PASS") {
 		o.Result = "PASS"
@@ -410,6 +423,12 @@ func FormatReport(r DogfoodReport) string {
 	fmt.Fprintf(&b, "  endpoint: %s\n", r.Endpoint)
 	if r.Tenant != "" {
 		fmt.Fprintf(&b, "  tenant:   %s\n", r.Tenant)
+	}
+	if r.Org != "" {
+		fmt.Fprintf(&b, "  org:      %s\n", r.Org)
+	}
+	if r.Workspace != "" {
+		fmt.Fprintf(&b, "  workspace: %s\n", r.Workspace)
 	}
 	fmt.Fprintf(&b, "  strict:   %v\n", r.Strict)
 	for _, s := range r.Steps {
