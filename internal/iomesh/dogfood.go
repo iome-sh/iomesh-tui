@@ -38,7 +38,11 @@ type DogfoodReport struct {
 	// Workspace is optional workspace scope from Client cfg (X-IOMesh-Workspace).
 	// Populated when [iomesh] workspace / IOMESH_WORKSPACE is set; omitted from JSON when empty.
 	// Distinct from DogfoodOptions.Workspace (context-plane path).
-	Workspace string    `json:"workspace,omitempty"`
+	Workspace string `json:"workspace,omitempty"`
+	// DualWrite is agent [memory].dual_write / IOMESH_MEMORY_DUAL_WRITE from Client cfg.
+	// Always emitted in JSON (false when unset) so CI sees dual-write mode without
+	// scraping step detail. Does not gate the memory_ingest probe.
+	DualWrite bool      `json:"dual_write"`
 	Strict    bool      `json:"strict"`
 	Steps     []Step    `json:"steps"`
 	OK        bool      `json:"ok"`
@@ -77,6 +81,7 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		rep.Tenant = c.cfg.Tenant
 		rep.Org = strings.TrimSpace(c.cfg.OrgID)
 		rep.Workspace = strings.TrimSpace(c.cfg.WorkspaceID)
+		rep.DualWrite = c.cfg.DualWrite
 	}
 	if opts.Query == "" {
 		opts.Query = "iomesh-tui stage mesh dogfood"
@@ -376,6 +381,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		Tenant    string     `json:"tenant,omitempty"`
 		Org       string     `json:"org,omitempty"`
 		Workspace string     `json:"workspace,omitempty"`
+		DualWrite bool       `json:"dual_write"` // always emit (CI dual-write mode)
 		Strict    bool       `json:"strict"`
 		OK        bool       `json:"ok"`
 		Summary   string     `json:"summary"`
@@ -389,6 +395,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		Tenant:    r.Tenant,
 		Org:       r.Org,
 		Workspace: r.Workspace,
+		DualWrite: r.DualWrite,
 		Strict:    r.Strict,
 		OK:        r.OK,
 		Summary:   r.Summary,
@@ -430,6 +437,7 @@ func FormatReport(r DogfoodReport) string {
 	if r.Workspace != "" {
 		fmt.Fprintf(&b, "  workspace: %s\n", r.Workspace)
 	}
+	fmt.Fprintf(&b, "  dual_write: %v\n", r.DualWrite)
 	fmt.Fprintf(&b, "  strict:   %v\n", r.Strict)
 	for _, s := range r.Steps {
 		lat := ""

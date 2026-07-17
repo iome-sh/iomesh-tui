@@ -39,6 +39,7 @@ Final line: `RESULT=PASS …` or `RESULT=FAIL …`.
 | `tenant` | string | omitted when empty |
 | `org` | string | Client `[iomesh] org` / `IOMESH_ORG` (PlanGate); omitted when empty |
 | `workspace` | string | Client `[iomesh] workspace` / `IOMESH_WORKSPACE`; omitted when empty. **Not** the context-plane path (`DogfoodOptions.Workspace`) |
+| `dual_write` | bool | Agent `[memory].dual_write` / `IOMESH_MEMORY_DUAL_WRITE` from Client cfg (**always emitted**, default `false`). Report-only — does **not** gate the `memory_ingest` probe |
 | `strict` | bool | `--strict` |
 | `ok` | bool | no FAIL steps |
 | `summary` | string | e.g. `PASS (pass=N skip=M)` |
@@ -47,6 +48,8 @@ Final line: `RESULT=PASS …` or `RESULT=FAIL …`.
 | `steps` | array | `{name,status,detail?,latency?}` |
 
 `org` / `workspace` are structured multi-tenant evidence for operators and aion gates (parseable without scraping step detail). s235 still embeds the same values in the `memory_ingest` PASS detail string when set.
+
+`dual_write` is structured dual-write **mode** evidence for CI (s239): parse top-level JSON instead of grepping detail strings. The CLI wires `cfg.Memory.DualWrite` into `iomesh.Config.DualWrite` when running `mesh dogfood`.
 
 ## CLI
 

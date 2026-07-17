@@ -52,6 +52,9 @@ type Config struct {
 	OrgID string
 	// WorkspaceID is optional workspace scope (X-IOMesh-Workspace on MEMORY_INGEST dual-write).
 	WorkspaceID string
+	// DualWrite mirrors agent [memory].dual_write / IOMESH_MEMORY_DUAL_WRITE for dogfood
+	// JSON evidence (does not gate the memory_ingest probe; default false).
+	DualWrite bool
 }
 
 // Client talks to I/O Mesh control/data planes (OpenHTTP, fail-open).

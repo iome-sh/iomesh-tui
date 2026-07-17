@@ -105,6 +105,7 @@ func run(args []string) int {
 		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
 		OrgID:           cfg.IOMesh.Org,
 		WorkspaceID:     cfg.IOMesh.Workspace,
+		DualWrite:       cfg.Memory.DualWrite, // report evidence only; does not gate memory_ingest probe
 		EmitDeptStreams: cfg.IOMesh.EmitDeptStreams,
 		ContextPlane:    cfg.IOMesh.ContextPlane,
 		IncludeLineage:  cfg.IOMesh.IncludeLineage,
@@ -594,6 +595,7 @@ func cmdMeshDogfood(args []string) int {
 		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
 		OrgID:           cfg.IOMesh.Org,
 		WorkspaceID:     cfg.IOMesh.Workspace,
+		DualWrite:       cfg.Memory.DualWrite, // report-only; does not gate memory_ingest probe
 		EmitDeptStreams: cfg.IOMesh.EmitDeptStreams,
 		ContextPlane:    cfg.IOMesh.ContextPlane,
 		IncludeLineage:  cfg.IOMesh.IncludeLineage,
