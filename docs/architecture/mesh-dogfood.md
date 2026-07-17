@@ -15,6 +15,7 @@ Operator smoke for **I/O Mesh** integration from the public `iomesh-tui` harness
 | catalog | broker + portal list | SKIP if plane off / fail-open | FAIL if fail-open |
 | memory_ingest | `POST /v1/streams/MEMORY_INGEST/publish` | SKIP on error (`--skip-memory` forces SKIP) | FAIL on error |
 | memory_recall | `POST /v1/streams/MEMORY_RPC/publish` | SKIP on error (`--skip-memory` forces SKIP) | FAIL on error |
+| memory_retrieve | `POST /v1/memory/retrieve` (fallback `/v5`) | SKIP on error (`--skip-memory` forces SKIP) | FAIL on error |
 
 Context requests set `include_lineage` when configured (lineage count shown on PASS detail).
 
@@ -36,6 +37,16 @@ Runs **after** `memory_ingest` (same `--skip-memory` gate). Calls `PublishMemory
 - Payload: `type=memory_recall`, `tenant_id`, `query=iomesh-tui dual-write dogfood`, `limit=8`, **`session_id` identical to ingest** (`{tenant}.mesh-dogfood`)
 - Soft: transport errors → **SKIP**; `--strict` → **FAIL**
 - **PASS detail**: stream, subject, seq, optional `org=`/`workspace=`, `session_id=…`, `dual_write=true|false`
+
+### memory_retrieve (sync HTTP — Phase 3 / s249)
+
+Runs **after** async `memory_recall`. Calls `RetrieveMemory` (request/response against **memory sidecar** HTTP, not `MEMORY_RPC`):
+
+- Path: `POST /v1/memory/retrieve` then `/v5/memory/retrieve` on 404
+- Body: `tenant_id`, `type=memory_recall`, `query=iomesh-tui dual-write dogfood`, `limit=8`, **`session_id` same as ingest**
+- Soft: transport/HTTP errors → **SKIP** (broker-only endpoints often 404); `--strict` → **FAIL**
+- Empty `memories: []` is still **PASS** with `hits=0` (valid 200)
+- **PASS detail**: `POST /v1/memory/retrieve hits=N [org=] [workspace=] session_id=… dual_write=…` (no `MEMORY_RPC`)
 
 Final line: `RESULT=PASS …` or `RESULT=FAIL …`.
 

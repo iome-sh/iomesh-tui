@@ -206,6 +206,117 @@ func (c *Client) PublishMemoryRecall(ctx context.Context, tenantID, query string
 	return &ack, nil
 }
 
+// MemoryHit is one hit from sync HTTP retrieve (aion memory sidecar M2).
+type MemoryHit struct {
+	ID         string  `json:"id"`
+	Summary    string  `json:"summary"`
+	Full       string  `json:"full"`
+	Score      float64 `json:"score,omitempty"`
+	Confidence float64 `json:"confidence,omitempty"`
+	Timestamp  string  `json:"timestamp,omitempty"`
+	TurnID     string  `json:"turn_id,omitempty"`
+}
+
+// MemoryRetrieveResult is the sync POST /v1/memory/retrieve response.
+type MemoryRetrieveResult struct {
+	Memories []MemoryHit `json:"memories"`
+	// Path is the successful API path (v1 or v5 fallback).
+	Path string `json:"-"`
+}
+
+// RetrieveMemory performs request/response hybrid recall against the memory sidecar HTTP API.
+// Tries POST /v1/memory/retrieve then /v5/memory/retrieve (same handler on aion).
+// This is NOT MEMORY_RPC fire-and-forget — empty hits are a successful 200 with memories=[].
+func (c *Client) RetrieveMemory(ctx context.Context, tenantID, query string, limit int, sessionID string) (*MemoryRetrieveResult, error) {
+	if c == nil || !c.Enabled() {
+		return nil, fmt.Errorf("iomesh: mesh client not enabled")
+	}
+	tenantID = strings.TrimSpace(tenantID)
+	if tenantID == "" {
+		tenantID = strings.TrimSpace(c.cfg.Tenant)
+	}
+	if tenantID == "" {
+		return nil, fmt.Errorf("iomesh: tenant_id required for memory retrieve")
+	}
+	query = strings.TrimSpace(query)
+	sessionID = strings.TrimSpace(sessionID)
+	if query == "" && sessionID == "" {
+		return nil, fmt.Errorf("iomesh: query or session_id required for memory retrieve")
+	}
+	if limit <= 0 {
+		limit = 10
+	}
+	bodyMap := map[string]any{
+		"tenant_id": tenantID,
+		"type":      memoryEnvelopeRecall,
+		"query":     query,
+		"limit":     limit,
+	}
+	if sessionID != "" {
+		bodyMap["session_id"] = sessionID
+	}
+	raw, err := json.Marshal(bodyMap)
+	if err != nil {
+		return nil, err
+	}
+
+	var lastErr error
+	for _, path := range []string{"/v1/memory/retrieve", "/v5/memory/retrieve"} {
+		url := strings.TrimRight(c.cfg.Endpoint, "/") + path
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(raw))
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		c.auth(req)
+		req.Header.Set("Content-Type", "application/json")
+		if org := strings.TrimSpace(c.cfg.OrgID); org != "" {
+			req.Header.Set("X-IOMesh-Org", org)
+		}
+		if ws := strings.TrimSpace(c.cfg.WorkspaceID); ws != "" {
+			req.Header.Set("X-IOMesh-Workspace", ws)
+		}
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			if c.logger != nil {
+				c.logger.Debug("iomesh memory retrieve failed (fail-open)", "err", err, "path", path)
+			}
+			lastErr = err
+			continue
+		}
+		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 256<<10))
+		_ = resp.Body.Close()
+		if resp.StatusCode == http.StatusNotFound {
+			lastErr = fmt.Errorf("iomesh memory retrieve: http 404 path=%s", path)
+			continue
+		}
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			lastErr = fmt.Errorf("iomesh memory retrieve: http %d path=%s", resp.StatusCode, path)
+			if c.logger != nil {
+				c.logger.Debug("iomesh memory retrieve non-OK (fail-open)", "status", resp.StatusCode, "path", path)
+			}
+			// 400 on v1 is unlikely to succeed on v5; still try once.
+			continue
+		}
+		var out MemoryRetrieveResult
+		if len(respBody) > 0 {
+			if err := json.Unmarshal(respBody, &out); err != nil {
+				lastErr = fmt.Errorf("iomesh memory retrieve decode: %w", err)
+				continue
+			}
+		}
+		if out.Memories == nil {
+			out.Memories = []MemoryHit{}
+		}
+		out.Path = path
+		return &out, nil
+	}
+	if lastErr == nil {
+		lastErr = fmt.Errorf("iomesh memory retrieve: no path succeeded")
+	}
+	return nil, lastErr
+}
+
 // dogfoodSessionID returns a stable session id for memory dogfood probes.
 func dogfoodSessionID(tenant string) string {
 	tenant = strings.TrimSpace(tenant)

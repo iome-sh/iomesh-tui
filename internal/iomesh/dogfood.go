@@ -234,12 +234,14 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 
 	// 7) MEMORY_INGEST dual-write (Phase 2 path via PublishMemoryIngest)
 	// 8) MEMORY_RPC async recall request (same session_id for temporal correlation — s247)
+	// 9) Sync HTTP retrieve POST /v1/memory/retrieve (Phase 3 — request/response hits — s249)
 	tenant := strings.TrimSpace(c.cfg.Tenant)
 	sessionID := dogfoodSessionID(tenant)
 	sessionSeq := 1
 	if opts.SkipMemory {
 		rep.Steps = append(rep.Steps, Step{Name: "memory_ingest", Status: StepSkip, Detail: "skipped (--skip-memory)"})
 		rep.Steps = append(rep.Steps, Step{Name: "memory_recall", Status: StepSkip, Detail: "skipped (--skip-memory)"})
+		rep.Steps = append(rep.Steps, Step{Name: "memory_retrieve", Status: StepSkip, Detail: "skipped (--skip-memory)"})
 	} else {
 		rep.Steps = append(rep.Steps, c.stepTimed("memory_ingest", func() (StepStatus, string) {
 			ack, err := c.PublishMemoryIngest(ctx, tenant, MemoryEnvelope{
@@ -310,6 +312,38 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 			if ack != nil && ack.Seq > 0 {
 				detail = fmt.Sprintf("%s seq=%d", detail, ack.Seq)
 			}
+			if org := strings.TrimSpace(c.cfg.OrgID); org != "" {
+				detail = fmt.Sprintf("%s org=%s", detail, org)
+			}
+			if ws := strings.TrimSpace(c.cfg.WorkspaceID); ws != "" {
+				detail = fmt.Sprintf("%s workspace=%s", detail, ws)
+			}
+			if sessionID != "" {
+				detail = fmt.Sprintf("%s session_id=%s", detail, sessionID)
+			}
+			detail = fmt.Sprintf("%s dual_write=%v", detail, c.cfg.DualWrite)
+			return StepPass, detail
+		}))
+
+		rep.Steps = append(rep.Steps, c.stepTimed("memory_retrieve", func() (StepStatus, string) {
+			// Sync request/response against memory sidecar HTTP (not MEMORY_RPC).
+			// Empty hits still PASS (HTTP 200 + memories=[]); transport/404 soft-SKIP unless strict.
+			res, err := c.RetrieveMemory(ctx, tenant, "iomesh-tui dual-write dogfood", 8, sessionID)
+			if err != nil {
+				if opts.Strict {
+					return StepFail, err.Error()
+				}
+				return StepSkip, "memory_retrieve soft-fail: " + err.Error()
+			}
+			path := "/v1/memory/retrieve"
+			if res != nil && res.Path != "" {
+				path = res.Path
+			}
+			hits := 0
+			if res != nil {
+				hits = len(res.Memories)
+			}
+			detail := fmt.Sprintf("POST %s hits=%d", path, hits)
 			if org := strings.TrimSpace(c.cfg.OrgID); org != "" {
 				detail = fmt.Sprintf("%s org=%s", detail, org)
 			}

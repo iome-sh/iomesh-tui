@@ -307,3 +307,67 @@ func TestPublishMemoryRecall_PathSubjectAndSession(t *testing.T) {
 		t.Fatalf("ack=%+v", ack)
 	}
 }
+
+func TestRetrieveMemory_SyncHitsAndFallback(t *testing.T) {
+	var paths []string
+	var gotBody map[string]any
+	var gotOrg string
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		gotOrg = r.Header.Get("X-IOMesh-Org")
+		if r.URL.Path == "/v1/memory/retrieve" {
+			_ = json.NewDecoder(r.Body).Decode(&gotBody)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"memories": []map[string]any{
+					{"id": "h1", "summary": "hit one", "full": "full hit one", "score": 0.8},
+					{"id": "h2", "summary": "hit two", "full": "full hit two"},
+				},
+			})
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "dept.x", OrgID: "org_a"}, nil)
+	res, err := c.RetrieveMemory(context.Background(), "dept.x", "dogfood", 8, "dept.x.mesh-dogfood")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Path != "/v1/memory/retrieve" || len(res.Memories) != 2 {
+		t.Fatalf("%+v", res)
+	}
+	if gotBody["tenant_id"] != "dept.x" || gotBody["session_id"] != "dept.x.mesh-dogfood" {
+		t.Fatalf("body=%v", gotBody)
+	}
+	if gotOrg != "org_a" {
+		t.Fatalf("org header=%q", gotOrg)
+	}
+}
+
+func TestRetrieveMemory_V5Fallback(t *testing.T) {
+	var paths []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		if r.URL.Path == "/v1/memory/retrieve" {
+			w.WriteHeader(404)
+			return
+		}
+		if r.URL.Path == "/v5/memory/retrieve" {
+			_ = json.NewEncoder(w).Encode(map[string]any{"memories": []any{}})
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "t"}, nil)
+	res, err := c.RetrieveMemory(context.Background(), "t", "q", 0, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Path != "/v5/memory/retrieve" || res.Memories == nil {
+		t.Fatalf("%+v paths=%v", res, paths)
+	}
+}
