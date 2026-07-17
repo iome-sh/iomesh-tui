@@ -23,7 +23,7 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 | **2** | **done (v0.3.0)** | HTTP MCP primary path + optional dual-write to mesh `MEMORY_INGEST` |
 | **3 partial** | **done (dogfood)** | Async `MEMORY_RPC` recall probe (`PublishMemoryRecall`) |
 | **3** | **done (dogfood)** | Sync `RetrieveMemory` → `POST /v1/memory/retrieve` (+ `/v5` fallback) + dogfood `memory_retrieve` step |
-| **3+** | planned | Wire agent auto-recall to prefer sync HTTP when available; SDK module extract optional |
+| **3+** | **done (agent)** | Agent auto-recall + `/memory recall` prefer sync HTTP when mesh enabled; MCP fallback; SDK module extract optional |
 
 **Non-goals:** private monorepo imports in public TUI; embedding Qdrant/Palace in-process; dependency on `iomesh-client-sdk-go`.
 
@@ -94,8 +94,8 @@ iomesh mcp --connect
 # expect memory_* tools under server "memory"
 
 iomesh   # interactive
-# /memory                 → status
-# /memory recall <query>  → call memory_retrieve
+# /memory                 → status (sync_http= / mcp=)
+# /memory recall <query>  → sync POST /v1/memory/retrieve when mesh enabled, else MCP memory_retrieve
 ```
 
 Agent tools also appear as `mcp__memory__memory_retrieve` (etc.) when MCP is attached.
@@ -115,7 +115,10 @@ Agent tools also appear as `mcp__memory__memory_retrieve` (etc.) when MCP is att
 
 ```
 user turn
-  → [optional] memory_retrieve(query=userText) → <memory-context> system msg
+  → [optional auto_recall]
+        prefer: RetrieveMemory → POST /v1/memory/retrieve (+ /v5)   # when [iomesh] enabled
+        else:   MCP memory_retrieve                                 # when server connected
+        → <memory-context> system msg (fail-open)
   → LLM + tools
   → [optional auto_ingest]
         memory_ingest_turn(user) + memory_ingest_turn(assistant)   # MCP when connected
@@ -123,8 +126,28 @@ user turn
 ```
 
 - **Fail-open**: MCP down, empty hits, dual-write errors, or tool errors never fail the turn.
-- **No Palace import**: only MCP `tools/call` over the existing client (+ lean HTTP publish).
+- **Sync prefer**: when mesh client is enabled, auto-recall and `/memory recall` try lean HTTP first; on transport/404 (broker-only URL) fall back to MCP.
+- **No Palace import**: only MCP `tools/call` and/or lean HTTP (no SDK module dependency).
 - **Mutating**: auto-ingest bypasses the interactive approval UI (operator opt-in via `auto_ingest`); interactive `mcp__memory__*` still requires approval when `mutating=true`.
+
+### Phase 3+ — sync auto-recall without MCP
+
+Operators with a memory sidecar (or gateway that routes `/v1/memory/retrieve`) can enable auto-recall with mesh only:
+
+```toml
+[iomesh]
+enabled = true
+endpoint = "http://127.0.0.1:8765"   # memory sidecar or mesh gateway with memory routes
+tenant = "dept.research"
+
+[memory]
+enabled = true
+auto_recall = true
+tenant = "dept.research"
+# MCP server optional when sync HTTP works
+```
+
+`/memory` status shows `sync_http=true|false` and `mcp=true|false`. Empty hit lists still succeed (no injection).
 
 ## Phase 2 — dual-write MEMORY_INGEST (v0.3.0)
 
@@ -184,8 +207,8 @@ See [mesh-dogfood.md](mesh-dogfood.md) for soft vs strict matrix. Unit coverage:
 
 | Command | Behavior |
 |---------|----------|
-| `/memory` | Status: enabled, server connected?, flags (incl. `dual_write`), tenant |
-| `/memory recall [query]` | Retrieve (default query = last user text or `"*"`) |
+| `/memory` | Status: enabled, `mcp=`, `sync_http=`, flags (incl. `dual_write`), tenant |
+| `/memory recall [query]` | Sync HTTP retrieve when mesh enabled, else MCP (default query = last user text or `"*"`) |
 | `/memory ingest <text>` | Ingest a user turn (MCP and/or dual-write) |
 
 ## Platform gaps (aion backlog)
@@ -205,15 +228,15 @@ Tracked in aion `aion-foundation-pending-todos.md`:
 | Path | Role |
 |------|------|
 | `internal/config` | `[memory]` section + env (`dual_write`) |
-| `internal/iomesh/memory.go` | `PublishMemoryIngest` lean HTTP (no SDK dep) |
-| `internal/agent/memory.go` | Recall / ingest / dual-write helpers |
+| `internal/iomesh/memory.go` | `PublishMemoryIngest`, `PublishMemoryRecall`, `RetrieveMemory` lean HTTP (no SDK dep) |
+| `internal/agent/memory.go` | Recall (sync prefer → MCP) / ingest / dual-write helpers |
 | `internal/agent/agent.go` | `RunTurn` hooks |
 | `internal/tui/tui.go` | `/memory` slash |
 | `configs/config.example.toml` | Copy-paste wire-up |
 
 ## Honesty
 
-- Local Palace via stdio/HTTP MCP ≠ multi-tenant Cloud Run Memory Palace with full entitlements.
+- Local Palace via stdio/HTTP MCP or lean sidecar HTTP ≠ multi-tenant Cloud Run Memory Palace with full entitlements.
 - Dual-write is **best-effort** stream publish; it does not guarantee Palace persistence by itself.
-- “Native Vertex” / G4S claims are separate (see marketing claim matrix); memory is **Palace + MCP**, not Vertex.
+- “Native Vertex” / G4S claims are separate (see marketing claim matrix); memory is **Palace via MCP and/or lean HTTP sidecar**, not Vertex.
 - Do not claim temporal pipeline is live unless stage/prod embedding + temporal flags are on.

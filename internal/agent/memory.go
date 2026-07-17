@@ -11,9 +11,10 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/router"
 )
 
-// MemoryConfig controls optional Palace MCP auto-recall / auto-ingest.
-// Does not embed Palace — only calls MCP tools on a connected server.
-// Optional DualWrite also publishes async MEMORY_INGEST envelopes to the mesh.
+// MemoryConfig controls optional Palace auto-recall / auto-ingest.
+// Does not embed Palace — recall prefers lean HTTP RetrieveMemory when mesh is
+// enabled, then MCP tools on a connected server. Optional DualWrite also
+// publishes async MEMORY_INGEST envelopes to the mesh.
 type MemoryConfig struct {
 	Enabled    bool
 	Server     string // MCP server name (default "memory")
@@ -41,8 +42,9 @@ func DefaultMemoryConfig() MemoryConfig {
 	}
 }
 
-// AttachMemory configures optional memory hooks (requires MCP manager with server,
-// and/or DualWrite with mesh client for stream ingest).
+// AttachMemory configures optional memory hooks: sync HTTP retrieve and/or MCP
+// server for recall/ingest, and/or DualWrite with mesh client for stream ingest.
+// Auto-recall prefers sync HTTP RetrieveMemory when mesh is enabled, then MCP.
 func (rt *Runtime) AttachMemory(cfg MemoryConfig) {
 	if rt == nil {
 		return
@@ -59,7 +61,7 @@ func (rt *Runtime) AttachMemory(cfg MemoryConfig) {
 	rt.memory = cfg
 	if cfg.Enabled {
 		rt.appendSystemNote("memory", fmt.Sprintf(
-			"Memory Palace MCP: server=%q tenant=%q auto_recall=%v auto_ingest=%v dual_write=%v. Use mcp__%s__memory_* tools or /memory slash. Fail-open when server unavailable.",
+			"Memory: server=%q tenant=%q auto_recall=%v auto_ingest=%v dual_write=%v. Auto-recall prefers sync POST /v1/memory/retrieve when mesh enabled, else MCP mcp__%s__memory_*. Fail-open when unavailable.",
 			cfg.Server, emptyDash(cfg.Tenant), cfg.AutoRecall, cfg.AutoIngest, cfg.DualWrite, cfg.Server,
 		))
 	}
@@ -121,6 +123,12 @@ func (rt *Runtime) mcpMemoryReady() bool {
 		rt.mcp.ClientByName(rt.memory.Server) != nil
 }
 
+// syncMemoryReady reports whether lean HTTP sync retrieve can run (mesh client enabled).
+// Endpoint must serve memory sidecar routes (POST /v1/memory/retrieve); broker-only URLs fail-open to MCP.
+func (rt *Runtime) syncMemoryReady() bool {
+	return rt != nil && rt.memory.Enabled && rt.mesh != nil && rt.mesh.Enabled()
+}
+
 // MemoryStatusLine is a short operator-facing status (slash /memory).
 func (rt *Runtime) MemoryStatusLine() string {
 	if rt == nil {
@@ -128,27 +136,22 @@ func (rt *Runtime) MemoryStatusLine() string {
 	}
 	cfg := rt.memory
 	if !cfg.Enabled {
-		return "memory: hooks disabled (set [memory] enabled=true + MCP server)"
+		return "memory: hooks disabled (set [memory] enabled=true + MCP server or mesh for sync retrieve)"
 	}
 	connected := false
 	if rt.mcp != nil {
 		connected = rt.mcp.ClientByName(cfg.Server) != nil
 	}
-	return fmt.Sprintf("memory: enabled server=%q connected=%v tenant=%q auto_recall=%v auto_ingest=%v dual_write=%v session=%q",
-		cfg.Server, connected, emptyDash(cfg.Tenant), cfg.AutoRecall, cfg.AutoIngest, cfg.DualWrite, emptyDash(rt.memorySessionID()))
+	return fmt.Sprintf("memory: enabled server=%q mcp=%v sync_http=%v tenant=%q auto_recall=%v auto_ingest=%v dual_write=%v session=%q",
+		cfg.Server, connected, rt.syncMemoryReady(), emptyDash(cfg.Tenant), cfg.AutoRecall, cfg.AutoIngest, cfg.DualWrite, emptyDash(rt.memorySessionID()))
 }
 
-// MemoryRecall calls memory_retrieve on the configured MCP server (fail-open → empty).
+// MemoryRecall retrieves context for injection or /memory recall.
+// Prefers sync HTTP RetrieveMemory when mesh is enabled (Phase 3+); falls back to MCP
+// memory_retrieve when sync fails or mesh is unavailable.
 func (rt *Runtime) MemoryRecall(ctx context.Context, query string) (string, error) {
 	if rt == nil || !rt.memory.Enabled {
 		return "", fmt.Errorf("memory hooks disabled")
-	}
-	if rt.mcp == nil {
-		return "", fmt.Errorf("mcp not attached")
-	}
-	c := rt.mcp.ClientByName(rt.memory.Server)
-	if c == nil {
-		return "", fmt.Errorf("mcp server %q not connected", rt.memory.Server)
 	}
 	q := strings.TrimSpace(query)
 	if q == "" {
@@ -158,6 +161,26 @@ func (rt *Runtime) MemoryRecall(ctx context.Context, query string) (string, erro
 	if limit <= 0 {
 		limit = 8
 	}
+
+	// Prefer sync request/response against memory sidecar HTTP when mesh client is live.
+	if rt.syncMemoryReady() {
+		res, err := rt.mesh.RetrieveMemory(ctx, rt.memoryTenant(), q, limit, rt.memorySessionID())
+		if err == nil {
+			return formatMemoryHits(res.Memories), nil
+		}
+		if rt.logger != nil {
+			rt.logger.Debug("memory sync retrieve failed; trying MCP fallback", "err", err)
+		}
+		// Fall through to MCP when sidecar path is missing (e.g. broker-only endpoint).
+	}
+
+	if !rt.mcpMemoryReady() {
+		if rt.syncMemoryReady() {
+			return "", fmt.Errorf("memory sync retrieve failed and mcp server %q not connected", rt.memory.Server)
+		}
+		return "", fmt.Errorf("mcp server %q not connected (and mesh sync unavailable)", rt.memory.Server)
+	}
+	c := rt.mcp.ClientByName(rt.memory.Server)
 	args := map[string]any{
 		"query": q,
 		"limit": limit,
@@ -169,6 +192,34 @@ func (rt *Runtime) MemoryRecall(ctx context.Context, query string) (string, erro
 		args["session_id"] = sid
 	}
 	return c.CallTool(ctx, "memory_retrieve", args)
+}
+
+// formatMemoryHits turns sync RetrieveMemory hits into a compact recall snippet.
+func formatMemoryHits(hits []iomesh.MemoryHit) string {
+	if len(hits) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	n := 0
+	for _, h := range hits {
+		text := strings.TrimSpace(h.Summary)
+		if text == "" {
+			text = strings.TrimSpace(h.Full)
+		}
+		if text == "" {
+			continue
+		}
+		if n > 0 {
+			b.WriteString("\n---\n")
+		}
+		if h.Score > 0 {
+			fmt.Fprintf(&b, "[%.2f] %s", h.Score, text)
+		} else {
+			b.WriteString(text)
+		}
+		n++
+	}
+	return b.String()
 }
 
 // MemoryIngestTurn persists a turn via MCP (when connected) and/or dual-write
@@ -265,11 +316,12 @@ func (rt *Runtime) publishMemoryDualWrite(ctx context.Context, role, content, ev
 }
 
 // maybeInjectMemoryRecall appends a system message when auto_recall is on (fail-open).
+// Uses sync HTTP retrieve when mesh is enabled, else MCP (see MemoryRecall).
 func (rt *Runtime) maybeInjectMemoryRecall(ctx context.Context, userText string, onEvent func(Event)) {
 	if rt == nil || !rt.memory.Enabled || !rt.memory.AutoRecall {
 		return
 	}
-	if !rt.mcpMemoryReady() {
+	if !rt.syncMemoryReady() && !rt.mcpMemoryReady() {
 		return
 	}
 	out, err := rt.MemoryRecall(ctx, userText)
