@@ -421,6 +421,95 @@ func TestDogfood_MemoryIngestOmitsEmptyOrgWorkspace(t *testing.T) {
 	}
 }
 
+func TestDogfood_JSONDualWriteTrue(t *testing.T) {
+	srv := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+	}{})
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		EmitDeptStreams: true,
+		DualWrite:       true,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{Strict: true})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if !rep.DualWrite {
+		t.Fatal("expected DualWrite true on report")
+	}
+	// memory_ingest still runs (not gated on DualWrite).
+	var memOK bool
+	for _, s := range rep.Steps {
+		if s.Name == "memory_ingest" && s.Status == StepPass {
+			memOK = true
+		}
+	}
+	if !memOK {
+		t.Fatal(FormatReport(rep))
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if parsed["dual_write"] != true {
+		t.Fatalf("json dual_write: %v\n%s", parsed["dual_write"], js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "dual_write: true") {
+		t.Fatalf("text report missing dual_write: %s", text)
+	}
+}
+
+func TestDogfood_JSONDualWriteFalse(t *testing.T) {
+	srv := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+	}{})
+	t.Cleanup(srv.Close)
+
+	// DualWrite intentionally unset (default false).
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		EmitDeptStreams: true,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{Strict: true})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if rep.DualWrite {
+		t.Fatal("expected DualWrite false on report when unset")
+	}
+	// Always emit dual_write key (unlike omitempty org/workspace).
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	v, ok := parsed["dual_write"]
+	if !ok {
+		t.Fatalf("dual_write must always be present in JSON: %s", js)
+	}
+	if v != false {
+		t.Fatalf("json dual_write: %v\n%s", v, js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "dual_write: false") {
+		t.Fatalf("text report missing dual_write: %s", text)
+	}
+}
+
 func TestReady_OK(t *testing.T) {
 	srv := mockMeshServer(t, struct {
 		failHealth bool
