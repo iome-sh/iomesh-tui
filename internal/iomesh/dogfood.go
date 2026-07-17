@@ -238,12 +238,20 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 	} else {
 		rep.Steps = append(rep.Steps, c.stepTimed("memory_ingest", func() (StepStatus, string) {
 			tenant := strings.TrimSpace(c.cfg.Tenant)
+			// Stable dogfood session id so temporal correlation fields are non-empty evidence (s243).
+			// Tenant-prefixed when set for multi-tenant log differentiation.
+			sessionID := "mesh-dogfood"
+			if tenant != "" {
+				sessionID = tenant + ".mesh-dogfood"
+			}
+			sessionSeq := 1
 			ack, err := c.PublishMemoryIngest(ctx, tenant, MemoryEnvelope{
 				Type:       memoryEnvelopeIngest,
 				Role:       "tool",
 				Content:    "iomesh-tui dual-write dogfood",
 				EventTime:  time.Now().UTC().Format(time.RFC3339),
-				SessionSeq: 1,
+				SessionID:  sessionID,
+				SessionSeq: sessionSeq,
 			})
 			if err != nil {
 				if opts.Strict {
@@ -271,6 +279,11 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 			}
 			if ws := strings.TrimSpace(c.cfg.WorkspaceID); ws != "" {
 				detail = fmt.Sprintf("%s workspace=%s", detail, ws)
+			}
+			// Temporal correlation from the envelope sent (s243): always session_seq; session_id when set.
+			detail = fmt.Sprintf("%s session_seq=%d", detail, sessionSeq)
+			if sessionID != "" {
+				detail = fmt.Sprintf("%s session_id=%s", detail, sessionID)
 			}
 			// Always emit dual_write mode on PASS detail (s241) so human logs show mode without JSON.
 			detail = fmt.Sprintf("%s dual_write=%v", detail, c.cfg.DualWrite)
