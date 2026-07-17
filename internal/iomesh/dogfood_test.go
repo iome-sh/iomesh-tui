@@ -130,6 +130,34 @@ func mockMeshServer(t *testing.T, opts struct {
 				"seq":     2,
 				"subject": subject,
 			})
+		case (r.URL.Path == "/v1/memory/retrieve" || r.URL.Path == "/v5/memory/retrieve") && r.Method == http.MethodPost:
+			if opts.noRecall {
+				// reuse noRecall for missing sync retrieve surface
+				w.WriteHeader(404)
+				return
+			}
+			if opts.failRecall {
+				w.WriteHeader(500)
+				return
+			}
+			var body map[string]any
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			tenant, _ := body["tenant_id"].(string)
+			query, _ := body["query"].(string)
+			if tenant == "" || query == "" {
+				w.WriteHeader(400)
+				return
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"memories": []map[string]any{
+					{
+						"id":      "mem_dogfood_1",
+						"summary": "iomesh-tui dual-write dogfood",
+						"full":    "iomesh-tui dual-write dogfood",
+						"score":   0.9,
+					},
+				},
+			})
 		default:
 			http.NotFound(w, r)
 		}
@@ -164,7 +192,7 @@ func TestDogfood_FullPass(t *testing.T) {
 	if !strings.Contains(out, "health") || !strings.Contains(out, "context") {
 		t.Fatal(out)
 	}
-	var memOK, recallOK bool
+	var memOK, recallOK, retrieveOK bool
 	for _, s := range rep.Steps {
 		if s.Name == "memory_ingest" && s.Status == StepPass {
 			memOK = true
@@ -192,8 +220,20 @@ func TestDogfood_FullPass(t *testing.T) {
 				t.Fatalf("expected dual_write= in recall PASS detail: %s", s.Detail)
 			}
 		}
+		if s.Name == "memory_retrieve" && s.Status == StepPass {
+			retrieveOK = true
+			if !strings.Contains(s.Detail, "POST /v1/memory/retrieve") || !strings.Contains(s.Detail, "hits=") {
+				t.Fatalf("retrieve detail: %s", s.Detail)
+			}
+			if !strings.Contains(s.Detail, "session_id=stage.mesh-dogfood") {
+				t.Fatalf("expected session_id in retrieve PASS: %s", s.Detail)
+			}
+			if strings.Contains(s.Detail, "MEMORY_RPC") {
+				t.Fatalf("sync retrieve must not use MEMORY_RPC: %s", s.Detail)
+			}
+		}
 	}
-	if !memOK || !recallOK {
+	if !memOK || !recallOK || !retrieveOK {
 		t.Fatal(FormatReport(rep))
 	}
 	js := FormatReportJSON(rep)
@@ -411,7 +451,7 @@ func TestDogfood_SkipMemory(t *testing.T) {
 	if !rep.OK {
 		t.Fatalf("skip-memory should pass: %s\n%s", rep.Summary, FormatReport(rep))
 	}
-	var foundIngest, foundRecall bool
+	var foundIngest, foundRecall, foundRetrieve bool
 	for _, s := range rep.Steps {
 		if s.Name == "memory_ingest" && s.Status == StepSkip {
 			foundIngest = true
@@ -425,8 +465,93 @@ func TestDogfood_SkipMemory(t *testing.T) {
 				t.Fatalf("detail=%s", s.Detail)
 			}
 		}
+		if s.Name == "memory_retrieve" && s.Status == StepSkip {
+			foundRetrieve = true
+			if !strings.Contains(s.Detail, "skip-memory") {
+				t.Fatalf("detail=%s", s.Detail)
+			}
+		}
 	}
-	if !foundIngest || !foundRecall {
+	if !foundIngest || !foundRecall || !foundRetrieve {
+		t.Fatal(FormatReport(rep))
+	}
+}
+
+func TestDogfood_MemoryRetrieveSyncHits(t *testing.T) {
+	srv := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+		failRecall bool
+		noRecall   bool
+	}{})
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "acme",
+		OrgID: "org_sync", WorkspaceID: "ws_sync", DualWrite: false,
+		EmitDeptStreams: true,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{Strict: true})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	var found bool
+	for _, s := range rep.Steps {
+		if s.Name == "memory_retrieve" && s.Status == StepPass {
+			found = true
+			if !strings.Contains(s.Detail, "hits=1") {
+				t.Fatalf("want hits=1: %s", s.Detail)
+			}
+			if !strings.Contains(s.Detail, "session_id=acme.mesh-dogfood") {
+				t.Fatalf("session: %s", s.Detail)
+			}
+			if !strings.Contains(s.Detail, "org=org_sync") || !strings.Contains(s.Detail, "workspace=ws_sync") {
+				t.Fatalf("org/ws: %s", s.Detail)
+			}
+			if !strings.Contains(s.Detail, "dual_write=false") {
+				t.Fatalf("dual_write: %s", s.Detail)
+			}
+		}
+	}
+	if !found {
+		t.Fatal(FormatReport(rep))
+	}
+}
+
+func TestDogfood_MemoryRetrieveSoftSkip(t *testing.T) {
+	// failRecall makes MEMORY_RPC and /v1/memory/retrieve return 500.
+	// memory_recall soft-skips; memory_retrieve should also soft-skip.
+	srv := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+		failRecall bool
+		noRecall   bool
+	}{failRecall: true})
+	t.Cleanup(srv.Close)
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "stage", EmitDeptStreams: true}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{Strict: false})
+	if !rep.OK {
+		t.Fatalf("soft retrieve fail should not fail report: %s\n%s", rep.Summary, FormatReport(rep))
+	}
+	var found bool
+	for _, s := range rep.Steps {
+		if s.Name == "memory_retrieve" && s.Status == StepSkip {
+			found = true
+			if !strings.Contains(s.Detail, "soft-fail") {
+				t.Fatalf("detail=%s", s.Detail)
+			}
+		}
+	}
+	if !found {
 		t.Fatal(FormatReport(rep))
 	}
 }
