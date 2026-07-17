@@ -14,6 +14,7 @@ Operator smoke for **I/O Mesh** integration from the public `iomesh-tui` harness
 | policy | `POST /v1/policy/evaluate` | SKIP if mode off / 404 / fail-open | FAIL if mode on and evaluate soft-fails |
 | catalog | broker + portal list | SKIP if plane off / fail-open | FAIL if fail-open |
 | memory_ingest | `POST /v1/streams/MEMORY_INGEST/publish` | SKIP on error (`--skip-memory` forces SKIP) | FAIL on error |
+| memory_recall | `POST /v1/streams/MEMORY_RPC/publish` | SKIP on error (`--skip-memory` forces SKIP) | FAIL on error |
 
 Context requests set `include_lineage` when configured (lineage count shown on PASS detail).
 
@@ -26,6 +27,15 @@ Included **by default** when mesh is enabled (not gated on agent `[memory].dual_
 - Soft mode: publish/transport errors → **SKIP** (fail-open); `--strict` → **FAIL**
 - Offline / mesh disabled: whole report is SKIP (no memory step)
 - **PASS detail** includes stream, subject, and seq when available. When Client `[iomesh] org` / `workspace` (`OrgID` / `WorkspaceID`) are set, detail also appends `org=…` and/or `workspace=…` as operator-visible evidence that dual-write publish used those headers (`X-IOMesh-Org` / `X-IOMesh-Workspace`). Empty values are omitted (no `org=` token). Detail always includes temporal correlation from the envelope sent: `session_seq=N` and `session_id=…` when non-empty (s243). Detail **always** ends with `dual_write=true` or `dual_write=false` from Client `[memory].dual_write` / `IOMESH_MEMORY_DUAL_WRITE` (report evidence only — does not gate the probe), so human-readable reports and step logs show mode without relying only on top-level JSON.
+
+### memory_recall (async MEMORY_RPC probe — s247)
+
+Runs **after** `memory_ingest` (same `--skip-memory` gate). Calls `PublishMemoryRecall` (SDK-parity fire-and-forget; **not** sync hits):
+
+- Stream: `MEMORY_RPC` · subject: `{tenant}.memory.retrieve.request`
+- Payload: `type=memory_recall`, `tenant_id`, `query=iomesh-tui dual-write dogfood`, `limit=8`, **`session_id` identical to ingest** (`{tenant}.mesh-dogfood`)
+- Soft: transport errors → **SKIP**; `--strict` → **FAIL**
+- **PASS detail**: stream, subject, seq, optional `org=`/`workspace=`, `session_id=…`, `dual_write=true|false`
 
 Final line: `RESULT=PASS …` or `RESULT=FAIL …`.
 

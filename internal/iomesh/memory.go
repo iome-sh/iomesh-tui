@@ -31,7 +31,9 @@ type MemoryPubAck struct {
 
 const (
 	memoryEnvelopeIngest = "memory_ingest"
+	memoryEnvelopeRecall = "memory_recall"
 	streamMemoryIngest   = "MEMORY_INGEST"
+	streamMemoryRPC      = "MEMORY_RPC"
 )
 
 // PublishMemoryIngest posts an async memory_ingest envelope to
@@ -113,4 +115,102 @@ func (c *Client) PublishMemoryIngest(ctx context.Context, tenantID string, env M
 		ack.Subject = subject
 	}
 	return &ack, nil
+}
+
+// PublishMemoryRecall posts an async memory_recall request to
+// POST /v1/streams/MEMORY_RPC/publish (subject = tenant+".memory.retrieve.request").
+// Mirrors public SDK RequestMemoryRecall (fire-and-forget; no sync hits in response).
+// Optional sessionID correlates temporal recall with dual-write ingest (dogfood s247).
+func (c *Client) PublishMemoryRecall(ctx context.Context, tenantID, query string, limit int, sessionID string) (*MemoryPubAck, error) {
+	if c == nil || !c.Enabled() {
+		return nil, fmt.Errorf("iomesh: mesh client not enabled")
+	}
+	tenantID = strings.TrimSpace(tenantID)
+	if tenantID == "" {
+		tenantID = strings.TrimSpace(c.cfg.Tenant)
+	}
+	if tenantID == "" {
+		return nil, fmt.Errorf("iomesh: tenant_id required for memory recall")
+	}
+	query = strings.TrimSpace(query)
+	if query == "" {
+		return nil, fmt.Errorf("iomesh: query required for memory recall")
+	}
+
+	bodyMap := map[string]any{
+		"type":      memoryEnvelopeRecall,
+		"tenant_id": tenantID,
+		"query":     query,
+	}
+	if limit > 0 {
+		bodyMap["limit"] = limit
+	}
+	if sid := strings.TrimSpace(sessionID); sid != "" {
+		bodyMap["session_id"] = sid
+	}
+	payload, err := json.Marshal(bodyMap)
+	if err != nil {
+		return nil, err
+	}
+	subject := tenantID + ".memory.retrieve.request"
+	body := map[string]any{
+		"subject": subject,
+		"payload": base64.StdEncoding.EncodeToString(payload),
+	}
+	raw, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+
+	url := strings.TrimRight(c.cfg.Endpoint, "/") + "/v1/streams/" + streamMemoryRPC + "/publish"
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(raw))
+	if err != nil {
+		return nil, err
+	}
+	c.auth(req)
+	req.Header.Set("Content-Type", "application/json")
+	if org := strings.TrimSpace(c.cfg.OrgID); org != "" {
+		req.Header.Set("X-IOMesh-Org", org)
+	}
+	if ws := strings.TrimSpace(c.cfg.WorkspaceID); ws != "" {
+		req.Header.Set("X-IOMesh-Workspace", ws)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		if c.logger != nil {
+			c.logger.Debug("iomesh memory recall publish failed (fail-open)", "err", err)
+		}
+		return nil, err
+	}
+	defer resp.Body.Close()
+	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 64<<10))
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		err := fmt.Errorf("iomesh memory recall: http %d", resp.StatusCode)
+		if c.logger != nil {
+			c.logger.Debug("iomesh memory recall non-OK (fail-open)", "status", resp.StatusCode)
+		}
+		return nil, err
+	}
+
+	var ack MemoryPubAck
+	if len(respBody) > 0 {
+		_ = json.Unmarshal(respBody, &ack)
+	}
+	if ack.Stream == "" {
+		ack.Stream = streamMemoryRPC
+	}
+	if ack.Subject == "" {
+		ack.Subject = subject
+	}
+	return &ack, nil
+}
+
+// dogfoodSessionID returns a stable session id for memory dogfood probes.
+func dogfoodSessionID(tenant string) string {
+	tenant = strings.TrimSpace(tenant)
+	if tenant == "" {
+		return "mesh-dogfood"
+	}
+	return tenant + ".mesh-dogfood"
 }

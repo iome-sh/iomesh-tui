@@ -249,3 +249,61 @@ func TestPublishMemoryIngest_OmitsOrgWorkspaceWhenUnset(t *testing.T) {
 		t.Fatalf("expected no org/workspace headers; hadOrg=%v hadWS=%v", hadOrg, hadWS)
 	}
 }
+
+func TestPublishMemoryRecall_PathSubjectAndSession(t *testing.T) {
+	var gotPath string
+	var gotBody map[string]any
+	var gotOrg, gotWS string
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotOrg = r.Header.Get("X-IOMesh-Org")
+		gotWS = r.Header.Get("X-IOMesh-Workspace")
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"stream":  "MEMORY_RPC",
+			"seq":     4,
+			"subject": gotBody["subject"],
+		})
+	}))
+	defer srv.Close()
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "dept.research",
+		OrgID: "org_x", WorkspaceID: "ws_y",
+	}, nil)
+	ack, err := c.PublishMemoryRecall(context.Background(), "dept.research", "find dogfood notes", 5, "dept.research.mesh-dogfood")
+	if err != nil {
+		t.Fatalf("PublishMemoryRecall: %v", err)
+	}
+	if gotPath != "/v1/streams/MEMORY_RPC/publish" {
+		t.Fatalf("path=%q", gotPath)
+	}
+	if gotBody["subject"] != "dept.research.memory.retrieve.request" {
+		t.Fatalf("subject=%v", gotBody["subject"])
+	}
+	if gotOrg != "org_x" || gotWS != "ws_y" {
+		t.Fatalf("headers org=%q ws=%q", gotOrg, gotWS)
+	}
+	payloadB64, _ := gotBody["payload"].(string)
+	raw, err := base64.StdEncoding.DecodeString(payloadB64)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var env map[string]any
+	if err := json.Unmarshal(raw, &env); err != nil {
+		t.Fatal(err)
+	}
+	if env["type"] != "memory_recall" || env["query"] != "find dogfood notes" {
+		t.Fatalf("env=%v", env)
+	}
+	if env["session_id"] != "dept.research.mesh-dogfood" {
+		t.Fatalf("session_id=%v", env["session_id"])
+	}
+	if env["limit"] != float64(5) {
+		t.Fatalf("limit=%v", env["limit"])
+	}
+	if ack == nil || ack.Seq != 4 {
+		t.Fatalf("ack=%+v", ack)
+	}
+}
