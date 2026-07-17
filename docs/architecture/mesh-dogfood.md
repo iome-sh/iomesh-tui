@@ -22,10 +22,10 @@ Context requests set `include_lineage` when configured (lineage count shown on P
 Included **by default** when mesh is enabled (not gated on agent `[memory].dual_write`). Calls the same lean path as Phase 2 dual-write (`PublishMemoryIngest`):
 
 - Subject: `{tenant}.memory.ingest.turn`
-- Envelope: `type=memory_ingest`, `role=tool`, `content=iomesh-tui dual-write dogfood`, `event_time=now`, `session_seq=1`
+- Envelope: `type=memory_ingest`, `role=tool`, `content=iomesh-tui dual-write dogfood`, `event_time=now`, `session_seq=1`, `session_id={tenant}.mesh-dogfood` (or `mesh-dogfood` when tenant unset)
 - Soft mode: publish/transport errors → **SKIP** (fail-open); `--strict` → **FAIL**
 - Offline / mesh disabled: whole report is SKIP (no memory step)
-- **PASS detail** includes stream, subject, and seq when available. When Client `[iomesh] org` / `workspace` (`OrgID` / `WorkspaceID`) are set, detail also appends `org=…` and/or `workspace=…` as operator-visible evidence that dual-write publish used those headers (`X-IOMesh-Org` / `X-IOMesh-Workspace`). Empty values are omitted (no `org=` token). Detail **always** ends with `dual_write=true` or `dual_write=false` from Client `[memory].dual_write` / `IOMESH_MEMORY_DUAL_WRITE` (report evidence only — does not gate the probe), so human-readable reports and step logs show mode without relying only on top-level JSON.
+- **PASS detail** includes stream, subject, and seq when available. When Client `[iomesh] org` / `workspace` (`OrgID` / `WorkspaceID`) are set, detail also appends `org=…` and/or `workspace=…` as operator-visible evidence that dual-write publish used those headers (`X-IOMesh-Org` / `X-IOMesh-Workspace`). Empty values are omitted (no `org=` token). Detail always includes temporal correlation from the envelope sent: `session_seq=N` and `session_id=…` when non-empty (s243). Detail **always** ends with `dual_write=true` or `dual_write=false` from Client `[memory].dual_write` / `IOMESH_MEMORY_DUAL_WRITE` (report evidence only — does not gate the probe), so human-readable reports and step logs show mode without relying only on top-level JSON.
 
 Final line: `RESULT=PASS …` or `RESULT=FAIL …`.
 

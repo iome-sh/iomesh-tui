@@ -131,6 +131,13 @@ func TestDogfood_FullPass(t *testing.T) {
 			if !strings.Contains(s.Detail, "MEMORY_INGEST") || !strings.Contains(s.Detail, "stage.memory.ingest.turn") {
 				t.Fatalf("memory detail: %s", s.Detail)
 			}
+			// Temporal correlation fields from envelope (s243).
+			if !strings.Contains(s.Detail, "session_seq=1") {
+				t.Fatalf("expected session_seq= in PASS detail: %s", s.Detail)
+			}
+			if !strings.Contains(s.Detail, "session_id=stage.mesh-dogfood") {
+				t.Fatalf("expected session_id= in PASS detail: %s", s.Detail)
+			}
 		}
 	}
 	if !memOK {
@@ -139,6 +146,47 @@ func TestDogfood_FullPass(t *testing.T) {
 	js := FormatReportJSON(rep)
 	if !strings.Contains(js, `"result": "PASS"`) || !strings.Contains(js, `"ok": true`) {
 		t.Fatal(js)
+	}
+}
+
+func TestDogfood_MemoryIngestSessionDetail(t *testing.T) {
+	srv := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+	}{})
+	t.Cleanup(srv.Close)
+
+	// Tenant-prefixed session_id for multi-tenant evidence (s243).
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "acme",
+		EmitDeptStreams: true,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{Strict: true})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	var found bool
+	for _, s := range rep.Steps {
+		if s.Name == "memory_ingest" && s.Status == StepPass {
+			found = true
+			if !strings.Contains(s.Detail, "session_seq=") {
+				t.Fatalf("PASS detail must contain session_seq=: %s", s.Detail)
+			}
+			if !strings.Contains(s.Detail, "session_id=acme.mesh-dogfood") {
+				t.Fatalf("PASS detail must contain session_id when envelope has id: %s", s.Detail)
+			}
+			// dual_write still present after session fields (s241).
+			if !strings.Contains(s.Detail, "dual_write=false") {
+				t.Fatalf("expected dual_write= in PASS detail: %s", s.Detail)
+			}
+		}
+	}
+	if !found {
+		t.Fatal(FormatReport(rep))
 	}
 }
 
