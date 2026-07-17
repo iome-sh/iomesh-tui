@@ -29,6 +29,25 @@ Included **by default** when mesh is enabled (not gated on agent `[memory].dual_
 
 Final line: `RESULT=PASS …` or `RESULT=FAIL …`.
 
+## JSON report (`--json`)
+
+`iomesh mesh dogfood --json` / `FormatReportJSON` emits indented JSON for stage CI evidence. Top-level fields:
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `endpoint` | string | Mesh base URL |
+| `tenant` | string | omitted when empty |
+| `org` | string | Client `[iomesh] org` / `IOMESH_ORG` (PlanGate); omitted when empty |
+| `workspace` | string | Client `[iomesh] workspace` / `IOMESH_WORKSPACE`; omitted when empty. **Not** the context-plane path (`DogfoodOptions.Workspace`) |
+| `strict` | bool | `--strict` |
+| `ok` | bool | no FAIL steps |
+| `summary` | string | e.g. `PASS (pass=N skip=M)` |
+| `result` | string | `PASS` \| `FAIL` \| `SKIP` (summary prefix) |
+| `started` / `finished` | RFC3339 | probe window |
+| `steps` | array | `{name,status,detail?,latency?}` |
+
+`org` / `workspace` are structured multi-tenant evidence for operators and aion gates (parseable without scraping step detail). s235 still embeds the same values in the `memory_ingest` PASS detail string when set.
+
 ## CLI
 
 ```bash
