@@ -38,7 +38,7 @@ Runs **after** `memory_ingest` (same `--skip-memory` gate). Calls `PublishMemory
 - Soft: transport errors → **SKIP**; `--strict` → **FAIL**
 - **PASS detail**: stream, subject, seq, optional `org=`/`workspace=`, `session_id=…`, `dual_write=true|false`
 
-### memory_retrieve (sync HTTP — Phase 3 / s251 + sidecar s268)
+### memory_retrieve (sync HTTP — Phase 3 / s251 + sidecar s269)
 
 Runs **after** async `memory_recall`. Calls `RetrieveMemory` (request/response against **memory sidecar** HTTP, not `MEMORY_RPC`):
 
