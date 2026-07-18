@@ -38,17 +38,33 @@ Runs **after** `memory_ingest` (same `--skip-memory` gate). Calls `PublishMemory
 - Soft: transport errors → **SKIP**; `--strict` → **FAIL**
 - **PASS detail**: stream, subject, seq, optional `org=`/`workspace=`, `session_id=…`, `dual_write=true|false`
 
-### memory_retrieve (sync HTTP — Phase 3 / s251)
+### memory_retrieve (sync HTTP — Phase 3 / s251 + sidecar s268)
 
 Runs **after** async `memory_recall`. Calls `RetrieveMemory` (request/response against **memory sidecar** HTTP, not `MEMORY_RPC`):
 
 - Path: `POST /v1/memory/retrieve` then `/v5/memory/retrieve` on 404
+- **Base URL**: `[memory].endpoint` / `IOMESH_MEMORY_ENDPOINT` / `MEMORY_SIDECAR_URL` when set (stage **warm plane**); else mesh `IOMESH_ENDPOINT` (broker-only often 404 → soft SKIP)
 - Body: `tenant_id`, `type=memory_recall`, `query=iomesh-tui dual-write dogfood`, `limit=8`, **`session_id` same as ingest**
-- Soft: transport/HTTP errors → **SKIP** (broker-only endpoints often 404); `--strict` → **FAIL**
+- Soft: transport/HTTP errors → **SKIP**; `--strict` → **FAIL**
 - Empty `memories: []` is still **PASS** with `hits=0` (valid 200)
-- **PASS detail**: `POST /v1/memory/retrieve hits=N [org=] [workspace=] session_id=… dual_write=…` (no `MEMORY_RPC`)
+- **PASS detail**: `POST /v1/memory/retrieve hits=N [org=] [workspace=] session_id=… memory_base=sidecar|mesh dual_write=…` (no `MEMORY_RPC`)
 
 Final line: `RESULT=PASS …` or `RESULT=FAIL …`.
+
+### Stage warm memory plane
+
+When the mesh broker does not terminate `/v1/memory/retrieve`, point dogfood (and agent auto-recall) at the sidecar:
+
+```bash
+export IOMESH_ENDPOINT=https://mesh.stage.example   # health, streams, catalog
+export IOMESH_MEMORY_ENDPOINT=http://127.0.0.1:8765 # or stage memory sidecar URL
+# aion-compatible alias: MEMORY_SIDECAR_URL=…
+
+iomesh mesh dogfood --json
+# top-level memory_endpoint set; memory_retrieve detail ends with memory_base=sidecar
+```
+
+CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 
 ## JSON report (`--json`)
 
@@ -61,6 +77,7 @@ Final line: `RESULT=PASS …` or `RESULT=FAIL …`.
 | `org` | string | Client `[iomesh] org` / `IOMESH_ORG` (PlanGate); omitted when empty |
 | `workspace` | string | Client `[iomesh] workspace` / `IOMESH_WORKSPACE`; omitted when empty. **Not** the context-plane path (`DogfoodOptions.Workspace`) |
 | `dual_write` | bool | Agent `[memory].dual_write` / `IOMESH_MEMORY_DUAL_WRITE` from Client cfg (**always emitted**, default `false`). Report-only — does **not** gate the `memory_ingest` probe |
+| `memory_endpoint` | string | Optional memory sidecar base (`[memory].endpoint` / `IOMESH_MEMORY_ENDPOINT`); omitted when empty (retrieve uses mesh `endpoint`) |
 | `strict` | bool | `--strict` |
 | `ok` | bool | no FAIL steps |
 | `summary` | string | e.g. `PASS (pass=N skip=M)` |
@@ -80,11 +97,14 @@ export IOMESH_ENDPOINT=https://mesh.stage.example
 # export IOMESH_ENDPOINT=https://cp.stage.example
 export IOMESH_API_KEY=…          # optional
 export IOMESH_TENANT=acme        # optional
+# Warm memory plane (optional; required for memory_retrieve PASS when broker has no /v1/memory/*):
+# export IOMESH_MEMORY_ENDPOINT=http://127.0.0.1:8765
 
 iomesh mesh dogfood
 iomesh mesh dogfood --strict
 iomesh mesh dogfood --json       # stage CI evidence
 iomesh mesh dogfood --endpoint "$IOMESH_ENDPOINT" --tenant acme
+iomesh mesh dogfood --memory-endpoint "$IOMESH_MEMORY_ENDPOINT"
 iomesh mesh dogfood --skip-context --skip-emit --skip-memory   # health-only-ish
 iomesh mesh catalog              # broker then portal paths
 ```

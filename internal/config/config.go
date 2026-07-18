@@ -162,13 +162,17 @@ type MCPSection struct {
 }
 
 // MemorySection configures Memory Palace hooks (auto-recall / auto-ingest).
-// Recall prefers mesh sync HTTP RetrieveMemory when [iomesh] is enabled; else MCP
-// (connected [[mcp.servers]] entry — stdio or HTTP aion-memory-mcp).
+// Recall prefers mesh sync HTTP RetrieveMemory when [iomesh] is enabled or Endpoint
+// (memory sidecar) is set; else MCP (connected [[mcp.servers]] — stdio or HTTP).
 // DualWrite: optional async publish to mesh MEMORY_INGEST (no SDK dep).
 type MemorySection struct {
 	Enabled    bool   `toml:"enabled"`
 	Server     string `toml:"server"` // MCP server name; default "memory"
 	Tenant     string `toml:"tenant"`
+	// Endpoint is optional memory sidecar base for sync POST /v1/memory/retrieve.
+	// When set, overrides [iomesh] endpoint for retrieve only (stage warm plane).
+	// Env: IOMESH_MEMORY_ENDPOINT / MEMORY_SIDECAR_URL
+	Endpoint   string `toml:"endpoint"`
 	AutoRecall bool   `toml:"auto_recall"`
 	AutoIngest bool   `toml:"auto_ingest"`
 	// DualWrite also emits memory_ingest envelopes to MEMORY_INGEST when mesh is enabled.
@@ -515,6 +519,12 @@ func (c *Config) applyEnvOverrides() {
 		case "1", "true", "on", "yes":
 			c.Memory.DualWrite = true
 		}
+	}
+	// Memory sidecar base for sync retrieve (stage warm plane). Prefer explicit IOMESH_*.
+	if v := os.Getenv("IOMESH_MEMORY_ENDPOINT"); v != "" {
+		c.Memory.Endpoint = v
+	} else if v := os.Getenv("MEMORY_SIDECAR_URL"); v != "" && c.Memory.Endpoint == "" {
+		c.Memory.Endpoint = v
 	}
 	if c.Memory.Server == "" {
 		c.Memory.Server = "memory"

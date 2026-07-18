@@ -371,3 +371,62 @@ func TestRetrieveMemory_V5Fallback(t *testing.T) {
 		t.Fatalf("%+v paths=%v", res, paths)
 	}
 }
+
+func TestRetrieveMemory_PrefersMemoryEndpointSidecar(t *testing.T) {
+	// Mesh broker has no memory routes; sidecar does.
+	broker := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer broker.Close()
+
+	var hitSidecar bool
+	sidecar := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v1/memory/retrieve" {
+			hitSidecar = true
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"memories": []map[string]any{{"summary": "warm palace hit"}},
+			})
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer sidecar.Close()
+
+	c := New(Config{
+		Enabled: true, Endpoint: broker.URL, Tenant: "dept.x",
+		MemoryEndpoint: sidecar.URL,
+	}, nil)
+	if !c.MemoryEndpointConfigured() || c.MemoryBaseURL() != strings.TrimRight(sidecar.URL, "/") {
+		t.Fatalf("base=%q configured=%v", c.MemoryBaseURL(), c.MemoryEndpointConfigured())
+	}
+	res, err := c.RetrieveMemory(context.Background(), "dept.x", "warm", 4, "sess")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !hitSidecar || len(res.Memories) != 1 || res.Memories[0].Summary != "warm palace hit" {
+		t.Fatalf("hit=%v res=%+v", hitSidecar, res)
+	}
+}
+
+func TestRetrieveMemory_SidecarOnlyWithoutMeshEndpoint(t *testing.T) {
+	// Sidecar alone is enough for SyncMemoryReady / RetrieveMemory.
+	sidecar := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{"memories": []any{}})
+	}))
+	defer sidecar.Close()
+
+	c := New(Config{MemoryEndpoint: sidecar.URL, Tenant: "t"}, nil)
+	if c.Enabled() {
+		t.Fatal("mesh should not be enabled without Endpoint")
+	}
+	if !c.SyncMemoryReady() {
+		t.Fatal("expected SyncMemoryReady with sidecar only")
+	}
+	res, err := c.RetrieveMemory(context.Background(), "t", "q", 1, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Memories == nil {
+		t.Fatal("expected empty slice")
+	}
+}

@@ -89,6 +89,7 @@ func TestLoad_MemorySection(t *testing.T) {
 enabled = true
 server = "palace"
 tenant = "acme"
+endpoint = "http://127.0.0.1:8765"
 auto_recall = true
 auto_ingest = true
 dual_write = true
@@ -106,6 +107,29 @@ limit = 12
 	}
 	if !cfg.Memory.AutoIngest || !cfg.Memory.DualWrite || cfg.Memory.Limit != 12 {
 		t.Fatalf("memory flags=%+v", cfg.Memory)
+	}
+	if cfg.Memory.Endpoint != "http://127.0.0.1:8765" {
+		t.Fatalf("endpoint=%q", cfg.Memory.Endpoint)
+	}
+}
+
+func TestLoad_MemoryEndpointEnv(t *testing.T) {
+	t.Setenv("IOMESH_MEMORY_ENDPOINT", "http://sidecar:8765")
+	cfg, err := Load(filepath.Join(t.TempDir(), "nope.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Memory.Endpoint != "http://sidecar:8765" {
+		t.Fatalf("got %q", cfg.Memory.Endpoint)
+	}
+	t.Setenv("IOMESH_MEMORY_ENDPOINT", "")
+	t.Setenv("MEMORY_SIDECAR_URL", "http://legacy:9000")
+	cfg2, err := Load(filepath.Join(t.TempDir(), "nope2.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg2.Memory.Endpoint != "http://legacy:9000" {
+		t.Fatalf("sidecar env=%q", cfg2.Memory.Endpoint)
 	}
 }
 

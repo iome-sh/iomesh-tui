@@ -106,6 +106,7 @@ func run(args []string) int {
 		OrgID:           cfg.IOMesh.Org,
 		WorkspaceID:     cfg.IOMesh.Workspace,
 		DualWrite:       cfg.Memory.DualWrite, // report evidence only; does not gate memory_ingest probe
+		MemoryEndpoint:  cfg.Memory.Endpoint,  // optional sidecar for sync retrieve / auto-recall
 		EmitDeptStreams: cfg.IOMesh.EmitDeptStreams,
 		ContextPlane:    cfg.IOMesh.ContextPlane,
 		IncludeLineage:  cfg.IOMesh.IncludeLineage,
@@ -471,20 +472,22 @@ func cmdMesh(args []string) int {
 	case "help", "-h", "--help":
 		fmt.Fprintln(os.Stderr, `iomesh mesh — I/O Mesh platform probes
 
-  iomesh mesh dogfood   stage smoke (health → ready → context → emit → policy → catalog → memory_ingest)
+  iomesh mesh dogfood   stage smoke (health → ready → context → emit → policy → catalog → memory_*)
   iomesh mesh probe     alias for dogfood
   iomesh mesh usage     local LLM metering rollup for this process
   iomesh mesh catalog   list governed data products (broker + portal federation)
 
 Flags (dogfood):
-  --config path     config.toml
-  --strict          require context + emit + ready (+ policy/catalog/memory when on)
-  --skip-context    skip context plane
-  --skip-emit       skip dept stream emit
-  --skip-memory     skip MEMORY_INGEST dual-write publish
-  --json            JSON report for stage CI evidence
-  -C dir            workspace for context query
-  -v                verbose
+  --config path           config.toml
+  --strict                require context + emit + ready (+ policy/catalog/memory when on)
+  --skip-context          skip context plane
+  --skip-emit             skip dept stream emit
+  --skip-memory           skip memory_ingest / memory_recall / memory_retrieve
+  --endpoint url          override IOMESH_ENDPOINT
+  --memory-endpoint url   memory sidecar base (sync retrieve / warm plane)
+  --json                  JSON report for stage CI evidence
+  -C dir                  workspace for context query
+  -v                      verbose
 
 Flags (catalog):
   --query q         optional search filter
@@ -565,11 +568,12 @@ func cmdMeshDogfood(args []string) int {
 		strict      = fs.Bool("strict", false, "fail if context/emit/ready/memory soft-fail")
 		skipContext = fs.Bool("skip-context", false, "skip context plane probe")
 		skipEmit    = fs.Bool("skip-emit", false, "skip dept emit probe")
-		skipMemory  = fs.Bool("skip-memory", false, "skip MEMORY_INGEST dual-write publish probe")
-		jsonOut     = fs.Bool("json", false, "print dogfood report as JSON (stage CI evidence)")
-		verbose     = fs.Bool("v", false, "verbose logs")
-		endpoint    = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
-		tenant      = fs.String("tenant", "", "override tenant")
+		skipMemory      = fs.Bool("skip-memory", false, "skip memory_ingest / memory_recall / memory_retrieve probes")
+		jsonOut         = fs.Bool("json", false, "print dogfood report as JSON (stage CI evidence)")
+		verbose         = fs.Bool("v", false, "verbose logs")
+		endpoint        = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
+		memoryEndpoint  = fs.String("memory-endpoint", "", "memory sidecar base (IOMESH_MEMORY_ENDPOINT / MEMORY_SIDECAR_URL)")
+		tenant          = fs.String("tenant", "", "override tenant")
 	)
 	if err := fs.Parse(args); err != nil {
 		return 2
@@ -584,6 +588,9 @@ func cmdMeshDogfood(args []string) int {
 		cfg.IOMesh.Endpoint = *endpoint
 		cfg.IOMesh.Enabled = true
 	}
+	if *memoryEndpoint != "" {
+		cfg.Memory.Endpoint = *memoryEndpoint
+	}
 	if *tenant != "" {
 		cfg.IOMesh.Tenant = *tenant
 	}
@@ -596,6 +603,7 @@ func cmdMeshDogfood(args []string) int {
 		OrgID:           cfg.IOMesh.Org,
 		WorkspaceID:     cfg.IOMesh.Workspace,
 		DualWrite:       cfg.Memory.DualWrite, // report-only; does not gate memory_ingest probe
+		MemoryEndpoint:  cfg.Memory.Endpoint,  // stage warm sidecar for memory_retrieve
 		EmitDeptStreams: cfg.IOMesh.EmitDeptStreams,
 		ContextPlane:    cfg.IOMesh.ContextPlane,
 		IncludeLineage:  cfg.IOMesh.IncludeLineage,
@@ -785,6 +793,7 @@ Environment:
   XAI_API_KEY         xAI / Grok fallback
   IOMESH_API_KEY      I/O Mesh platform
   IOMESH_ENDPOINT     enable mesh integration
+  IOMESH_MEMORY_ENDPOINT / MEMORY_SIDECAR_URL  sync memory retrieve base (sidecar)
   IOMESH_DEFAULT_MODEL  override default model name
 `)
 }

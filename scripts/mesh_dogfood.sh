@@ -6,10 +6,12 @@
 # Exit 1 on FAIL.
 #
 # Env (stage):
-#   IOMESH_ENDPOINT   required for live probe (e.g. https://mesh.stage.example)
-#   IOMESH_API_KEY    optional Bearer
-#   IOMESH_TENANT     optional tenant header
-#   IOMESH_CONFIG     optional config.toml
+#   IOMESH_ENDPOINT          required for live probe (e.g. https://mesh.stage.example)
+#   IOMESH_MEMORY_ENDPOINT   optional memory sidecar for sync memory_retrieve (warm plane)
+#   MEMORY_SIDECAR_URL       alias for IOMESH_MEMORY_ENDPOINT when that is unset
+#   IOMESH_API_KEY           optional Bearer
+#   IOMESH_TENANT            optional tenant header
+#   IOMESH_CONFIG            optional config.toml
 #
 # Usage:
 #   ./scripts/mesh_dogfood.sh              # live (uses env/config)

@@ -42,13 +42,16 @@ type DogfoodReport struct {
 	// DualWrite is agent [memory].dual_write / IOMESH_MEMORY_DUAL_WRITE from Client cfg.
 	// Always emitted in JSON (false when unset) so CI sees dual-write mode without
 	// scraping step detail. Does not gate the memory_ingest probe.
-	DualWrite bool      `json:"dual_write"`
-	Strict    bool      `json:"strict"`
-	Steps     []Step    `json:"steps"`
-	OK        bool      `json:"ok"`
-	Summary   string    `json:"summary"`
-	Started   time.Time `json:"started"`
-	Finished  time.Time `json:"finished"`
+	DualWrite bool `json:"dual_write"`
+	// MemoryEndpoint is optional memory sidecar base used for sync memory_retrieve.
+	// Omitted when empty (retrieve uses mesh Endpoint). Stage warm-plane evidence.
+	MemoryEndpoint string    `json:"memory_endpoint,omitempty"`
+	Strict         bool      `json:"strict"`
+	Steps          []Step    `json:"steps"`
+	OK             bool      `json:"ok"`
+	Summary        string    `json:"summary"`
+	Started        time.Time `json:"started"`
+	Finished       time.Time `json:"finished"`
 }
 
 // DogfoodOptions tune the probe.
@@ -82,6 +85,7 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		rep.Org = strings.TrimSpace(c.cfg.OrgID)
 		rep.Workspace = strings.TrimSpace(c.cfg.WorkspaceID)
 		rep.DualWrite = c.cfg.DualWrite
+		rep.MemoryEndpoint = strings.TrimSpace(c.cfg.MemoryEndpoint)
 	}
 	if opts.Query == "" {
 		opts.Query = "iomesh-tui stage mesh dogfood"
@@ -327,6 +331,7 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 
 		rep.Steps = append(rep.Steps, c.stepTimed("memory_retrieve", func() (StepStatus, string) {
 			// Sync request/response against memory sidecar HTTP (not MEMORY_RPC).
+			// Uses MemoryEndpoint when set (stage warm plane); else mesh Endpoint (broker-only often 404).
 			// Empty hits still PASS (HTTP 200 + memories=[]); transport/404 soft-SKIP unless strict.
 			res, err := c.RetrieveMemory(ctx, tenant, "iomesh-tui dual-write dogfood", 8, sessionID)
 			if err != nil {
@@ -352,6 +357,12 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 			}
 			if sessionID != "" {
 				detail = fmt.Sprintf("%s session_id=%s", detail, sessionID)
+			}
+			// memory_base=sidecar when dedicated MemoryEndpoint set; else mesh (same as Endpoint).
+			if c.MemoryEndpointConfigured() {
+				detail = fmt.Sprintf("%s memory_base=sidecar", detail)
+			} else {
+				detail = fmt.Sprintf("%s memory_base=mesh", detail)
 			}
 			detail = fmt.Sprintf("%s dual_write=%v", detail, c.cfg.DualWrite)
 			return StepPass, detail
@@ -459,30 +470,32 @@ func FormatReportJSON(r DogfoodReport) string {
 		Latency string `json:"latency,omitempty"`
 	}
 	type out struct {
-		Endpoint  string     `json:"endpoint"`
-		Tenant    string     `json:"tenant,omitempty"`
-		Org       string     `json:"org,omitempty"`
-		Workspace string     `json:"workspace,omitempty"`
-		DualWrite bool       `json:"dual_write"` // always emit (CI dual-write mode)
-		Strict    bool       `json:"strict"`
-		OK        bool       `json:"ok"`
-		Summary   string     `json:"summary"`
-		Started   time.Time  `json:"started"`
-		Finished  time.Time  `json:"finished"`
-		Steps     []stepJSON `json:"steps"`
-		Result    string     `json:"result"` // PASS|FAIL|SKIP mirror of Summary prefix
+		Endpoint       string     `json:"endpoint"`
+		Tenant         string     `json:"tenant,omitempty"`
+		Org            string     `json:"org,omitempty"`
+		Workspace      string     `json:"workspace,omitempty"`
+		DualWrite      bool       `json:"dual_write"` // always emit (CI dual-write mode)
+		MemoryEndpoint string     `json:"memory_endpoint,omitempty"`
+		Strict         bool       `json:"strict"`
+		OK             bool       `json:"ok"`
+		Summary        string     `json:"summary"`
+		Started        time.Time  `json:"started"`
+		Finished       time.Time  `json:"finished"`
+		Steps          []stepJSON `json:"steps"`
+		Result         string     `json:"result"` // PASS|FAIL|SKIP mirror of Summary prefix
 	}
 	o := out{
-		Endpoint:  r.Endpoint,
-		Tenant:    r.Tenant,
-		Org:       r.Org,
-		Workspace: r.Workspace,
-		DualWrite: r.DualWrite,
-		Strict:    r.Strict,
-		OK:        r.OK,
-		Summary:   r.Summary,
-		Started:   r.Started,
-		Finished:  r.Finished,
+		Endpoint:       r.Endpoint,
+		Tenant:         r.Tenant,
+		Org:            r.Org,
+		Workspace:      r.Workspace,
+		DualWrite:      r.DualWrite,
+		MemoryEndpoint: r.MemoryEndpoint,
+		Strict:         r.Strict,
+		OK:             r.OK,
+		Summary:        r.Summary,
+		Started:        r.Started,
+		Finished:       r.Finished,
 	}
 	if strings.HasPrefix(r.Summary, "PASS") {
 		o.Result = "PASS"
@@ -518,6 +531,9 @@ func FormatReport(r DogfoodReport) string {
 	}
 	if r.Workspace != "" {
 		fmt.Fprintf(&b, "  workspace: %s\n", r.Workspace)
+	}
+	if r.MemoryEndpoint != "" {
+		fmt.Fprintf(&b, "  memory_endpoint: %s\n", r.MemoryEndpoint)
 	}
 	fmt.Fprintf(&b, "  dual_write: %v\n", r.DualWrite)
 	fmt.Fprintf(&b, "  strict:   %v\n", r.Strict)

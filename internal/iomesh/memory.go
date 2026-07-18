@@ -226,11 +226,13 @@ type MemoryRetrieveResult struct {
 
 // RetrieveMemory performs request/response hybrid recall against the memory sidecar HTTP API.
 // Tries POST /v1/memory/retrieve then /v5/memory/retrieve (same handler on aion).
+// Base URL: cfg.MemoryEndpoint when set (stage warm sidecar), else mesh Endpoint.
 // This is NOT MEMORY_RPC fire-and-forget — empty hits are a successful 200 with memories=[].
 func (c *Client) RetrieveMemory(ctx context.Context, tenantID, query string, limit int, sessionID string) (*MemoryRetrieveResult, error) {
-	if c == nil || !c.Enabled() {
-		return nil, fmt.Errorf("iomesh: mesh client not enabled")
+	if c == nil || !c.SyncMemoryReady() {
+		return nil, fmt.Errorf("iomesh: sync memory not configured (mesh endpoint or memory sidecar)")
 	}
+	base := c.MemoryBaseURL()
 	tenantID = strings.TrimSpace(tenantID)
 	if tenantID == "" {
 		tenantID = strings.TrimSpace(c.cfg.Tenant)
@@ -262,7 +264,7 @@ func (c *Client) RetrieveMemory(ctx context.Context, tenantID, query string, lim
 
 	var lastErr error
 	for _, path := range []string{"/v1/memory/retrieve", "/v5/memory/retrieve"} {
-		url := strings.TrimRight(c.cfg.Endpoint, "/") + path
+		url := base + path
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(raw))
 		if err != nil {
 			lastErr = err
