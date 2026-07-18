@@ -72,7 +72,8 @@ type DogfoodOptions struct {
 	SkipMemory bool
 }
 
-// Dogfood runs a stage-oriented mesh smoke: health → ready → context → emit → policy → catalog → memory_ingest.
+// Dogfood runs a stage-oriented mesh smoke:
+// health → ready → context → emit → llm_meter → policy → catalog → memory_*.
 // Disabled client returns a single SKIP step and OK=true (offline-first).
 func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport {
 	rep := DogfoodReport{
@@ -104,6 +105,10 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		rep.Finished = time.Now().UTC()
 		return rep
 	}
+
+	// Stable session id for temporal correlation across emit / llm_meter / memory_* steps.
+	tenant := strings.TrimSpace(c.cfg.Tenant)
+	sessionID := dogfoodSessionID(tenant)
 
 	rep.Steps = append(rep.Steps, Step{Name: "enabled", Status: StepPass, Detail: "endpoint=" + c.cfg.Endpoint})
 
@@ -160,13 +165,15 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		}))
 	}
 
-	// 4) Dept emit
+	// 4) Dept emit (generic dogfood event)
 	if opts.SkipEmit || !c.cfg.EmitDeptStreams {
 		rep.Steps = append(rep.Steps, Step{Name: "emit", Status: StepSkip, Detail: "dept streams disabled or skipped"})
+		rep.Steps = append(rep.Steps, Step{Name: "llm_meter", Status: StepSkip, Detail: "dept streams disabled or skipped"})
 	} else {
 		rep.Steps = append(rep.Steps, c.stepTimed("emit", func() (StepStatus, string) {
 			err := c.EmitErr(ctx, DeptEvent{
-				Type: "dept.agent.dogfood",
+				Type:      "dept.agent.dogfood",
+				SessionID: sessionID,
 				Payload: map[string]any{
 					"source":  "iomesh-tui",
 					"probe":   "stage-mesh-dogfood",
@@ -179,7 +186,63 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 				}
 				return StepSkip, "emit soft-fail: " + err.Error()
 			}
-			return StepPass, "POST /v1/streams/dept OK"
+			detail := "POST /v1/streams/dept type=dept.agent.dogfood"
+			if org := strings.TrimSpace(c.cfg.OrgID); org != "" {
+				detail = fmt.Sprintf("%s org=%s", detail, org)
+			}
+			if ws := strings.TrimSpace(c.cfg.WorkspaceID); ws != "" {
+				detail = fmt.Sprintf("%s workspace=%s", detail, ws)
+			}
+			if sessionID != "" {
+				detail = fmt.Sprintf("%s session_id=%s", detail, sessionID)
+			}
+			return StepPass, detail
+		}))
+
+		// 4b) Remote metering path: dept.agent.llm_call (same shape as RecordLLMCall → platform dashboards)
+		rep.Steps = append(rep.Steps, c.stepTimed("llm_meter", func() (StepStatus, string) {
+			payload := map[string]any{
+				"source":   "iomesh-tui",
+				"probe":    "stage-mesh-dogfood-llm-meter",
+				"model":    "iomesh-tui-dogfood",
+				"model_id": "iomesh-tui-dogfood",
+				"est_usd":  0.0,
+				"tokens": map[string]int{
+					"prompt": 0, "completion": 0, "total": 0,
+				},
+			}
+			if tenant != "" {
+				payload["tenant"] = tenant
+			}
+			if org := strings.TrimSpace(c.cfg.OrgID); org != "" {
+				payload["org"] = org
+			}
+			if ws := strings.TrimSpace(c.cfg.WorkspaceID); ws != "" {
+				payload["workspace"] = ws
+			}
+			err := c.EmitErr(ctx, DeptEvent{
+				Type:      "dept.agent.llm_call",
+				Tenant:    tenant,
+				SessionID: sessionID,
+				Payload:   payload,
+			})
+			if err != nil {
+				if opts.Strict {
+					return StepFail, err.Error()
+				}
+				return StepSkip, "llm_meter soft-fail: " + err.Error()
+			}
+			detail := "POST /v1/streams/dept type=dept.agent.llm_call"
+			if org := strings.TrimSpace(c.cfg.OrgID); org != "" {
+				detail = fmt.Sprintf("%s org=%s", detail, org)
+			}
+			if ws := strings.TrimSpace(c.cfg.WorkspaceID); ws != "" {
+				detail = fmt.Sprintf("%s workspace=%s", detail, ws)
+			}
+			if sessionID != "" {
+				detail = fmt.Sprintf("%s session_id=%s", detail, sessionID)
+			}
+			return StepPass, detail
 		}))
 	}
 
@@ -239,8 +302,6 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 	// 7) MEMORY_INGEST dual-write (Phase 2 path via PublishMemoryIngest)
 	// 8) MEMORY_RPC async recall request (same session_id for temporal correlation — s247)
 	// 9) Sync HTTP retrieve POST /v1/memory/retrieve (Phase 3 — request/response hits — s249)
-	tenant := strings.TrimSpace(c.cfg.Tenant)
-	sessionID := dogfoodSessionID(tenant)
 	sessionSeq := 1
 	if opts.SkipMemory {
 		rep.Steps = append(rep.Steps, Step{Name: "memory_ingest", Status: StepSkip, Detail: "skipped (--skip-memory)"})
@@ -428,6 +489,7 @@ func (c *Client) Ready(ctx context.Context) error {
 }
 
 // EmitErr is like Emit but returns transport/HTTP errors (for dogfood).
+// Sets X-IOMesh-Org / X-IOMesh-Workspace when configured (remote multi-tenant metering).
 func (c *Client) EmitErr(ctx context.Context, ev DeptEvent) error {
 	if !c.Enabled() || !c.cfg.EmitDeptStreams {
 		return nil
@@ -449,6 +511,7 @@ func (c *Client) EmitErr(ctx context.Context, ev DeptEvent) error {
 	}
 	c.auth(req)
 	req.Header.Set("Content-Type", "application/json")
+	c.applyEntitlementHeaders(req)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err

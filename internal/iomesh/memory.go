@@ -79,13 +79,7 @@ func (c *Client) PublishMemoryIngest(ctx context.Context, tenantID string, env M
 	}
 	c.auth(req)
 	req.Header.Set("Content-Type", "application/json")
-	// Metering / M5 entitlements context (parity with aion metering.OrgHeader / WorkspaceHeader).
-	if org := strings.TrimSpace(c.cfg.OrgID); org != "" {
-		req.Header.Set("X-IOMesh-Org", org)
-	}
-	if ws := strings.TrimSpace(c.cfg.WorkspaceID); ws != "" {
-		req.Header.Set("X-IOMesh-Workspace", ws)
-	}
+	c.applyEntitlementHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -169,12 +163,7 @@ func (c *Client) PublishMemoryRecall(ctx context.Context, tenantID, query string
 	}
 	c.auth(req)
 	req.Header.Set("Content-Type", "application/json")
-	if org := strings.TrimSpace(c.cfg.OrgID); org != "" {
-		req.Header.Set("X-IOMesh-Org", org)
-	}
-	if ws := strings.TrimSpace(c.cfg.WorkspaceID); ws != "" {
-		req.Header.Set("X-IOMesh-Workspace", ws)
-	}
+	c.applyEntitlementHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -272,12 +261,7 @@ func (c *Client) RetrieveMemory(ctx context.Context, tenantID, query string, lim
 		}
 		c.auth(req)
 		req.Header.Set("Content-Type", "application/json")
-		if org := strings.TrimSpace(c.cfg.OrgID); org != "" {
-			req.Header.Set("X-IOMesh-Org", org)
-		}
-		if ws := strings.TrimSpace(c.cfg.WorkspaceID); ws != "" {
-			req.Header.Set("X-IOMesh-Workspace", ws)
-		}
+		c.applyEntitlementHeaders(req)
 		resp, err := c.httpClient.Do(req)
 		if err != nil {
 			if c.logger != nil {

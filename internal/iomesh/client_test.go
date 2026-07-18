@@ -85,24 +85,33 @@ func TestFormatContextSnippet_TextOnly(t *testing.T) {
 
 func TestEmitAndRecordLLMCall(t *testing.T) {
 	var gotBody string
+	var gotOrg, gotWS string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		b, _ := io.ReadAll(r.Body)
 		gotBody = string(b)
+		gotOrg = r.Header.Get("X-IOMesh-Org")
+		gotWS = r.Header.Get("X-IOMesh-Workspace")
 		w.WriteHeader(204)
 	}))
 	defer srv.Close()
 
 	c := New(Config{
 		Enabled: true, Endpoint: srv.URL, EmitDeptStreams: true, Tenant: "acme",
+		OrgID: "org_a", WorkspaceID: "ws_1",
 	}, nil)
 	c.RecordLLMCall(router.CallMeta{
 		ModelName: "deepseek-v4-flash", ModelID: "deepseek-v4-flash",
 		Duration: time.Millisecond, EstimatedUSD: 0.001,
 	}, router.Usage{TotalTokens: 10}, nil)
 
-	// Allow async-ish emit to complete (RecordLLMCall is sync with timeout).
 	if !strings.Contains(gotBody, "dept.agent.llm_call") {
 		t.Fatalf("body=%q", gotBody)
+	}
+	if !strings.Contains(gotBody, `"org":"org_a"`) && !strings.Contains(gotBody, `"org": "org_a"`) {
+		t.Fatalf("expected org in payload: %q", gotBody)
+	}
+	if gotOrg != "org_a" || gotWS != "ws_1" {
+		t.Fatalf("headers org=%q ws=%q", gotOrg, gotWS)
 	}
 	if strings.Contains(gotBody, "Bearer ") {
 		t.Fatal("must not log bearer in payload")

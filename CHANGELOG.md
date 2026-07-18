@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Remote metering emit path** — `dept.agent.llm_call` and all dept emit set `X-IOMesh-Org` / `X-IOMesh-Workspace` when configured; LLM payload includes `tenant`/`org`/`workspace` for multi-tenant platform dashboards ([docs/architecture/mesh-deeper.md](docs/architecture/mesh-deeper.md))
+- **Dogfood `llm_meter` step** — zero-token `dept.agent.llm_call` probe after `emit` (same soft/strict + `--skip-emit` gate); PASS detail `org=`/`workspace=`/`session_id=` (s272)
+
 ## [0.5.0] — 2026-07-18
 
 Minor release: GoReleaser multi-platform binaries on `v*` tags and JSON local usage export. Compatible with `v0.4.x` configs.

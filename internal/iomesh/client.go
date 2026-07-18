@@ -48,9 +48,9 @@ type Config struct {
 	CatalogPlane bool
 	// InjectCatalog adds a short catalog snippet into agent turns when true.
 	InjectCatalog bool
-	// OrgID is optional PlanGate / entitlements org (X-IOMesh-Org on MEMORY_INGEST dual-write).
+	// OrgID is optional PlanGate / entitlements org (X-IOMesh-Org on dept emit + memory).
 	OrgID string
-	// WorkspaceID is optional workspace scope (X-IOMesh-Workspace on MEMORY_INGEST dual-write).
+	// WorkspaceID is optional workspace scope (X-IOMesh-Workspace on dept emit + memory).
 	WorkspaceID string
 	// DualWrite mirrors agent [memory].dual_write / IOMESH_MEMORY_DUAL_WRITE for dogfood
 	// JSON evidence (does not gate the memory_ingest probe; default false).
@@ -118,6 +118,20 @@ func New(cfg Config, logger *slog.Logger) *Client {
 // Enabled reports whether platform integration is active.
 func (c *Client) Enabled() bool {
 	return c != nil && c.cfg.Enabled && c.cfg.Endpoint != ""
+}
+
+// applyEntitlementHeaders sets X-IOMesh-Org / X-IOMesh-Workspace for PlanGate / multi-tenant metering.
+// Parity with aion metering.OrgHeader / WorkspaceHeader (memory dual-write + dept emit).
+func (c *Client) applyEntitlementHeaders(req *http.Request) {
+	if c == nil || req == nil {
+		return
+	}
+	if org := strings.TrimSpace(c.cfg.OrgID); org != "" {
+		req.Header.Set("X-IOMesh-Org", org)
+	}
+	if ws := strings.TrimSpace(c.cfg.WorkspaceID); ws != "" {
+		req.Header.Set("X-IOMesh-Workspace", ws)
+	}
 }
 
 // MemoryEndpointConfigured reports whether a dedicated memory sidecar base URL is set.
@@ -289,36 +303,14 @@ type DeptEvent struct {
 
 // Emit publishes a dept.* event. Fail-open on error.
 func (c *Client) Emit(ctx context.Context, ev DeptEvent) {
-	if !c.Enabled() || !c.cfg.EmitDeptStreams {
-		return
-	}
-	if ev.Timestamp.IsZero() {
-		ev.Timestamp = time.Now().UTC()
-	}
-	if ev.Tenant == "" {
-		ev.Tenant = c.cfg.Tenant
-	}
-	url := strings.TrimRight(c.cfg.Endpoint, "/") + "/v1/streams/dept"
-	body, err := json.Marshal(ev)
-	if err != nil {
-		return
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
-	if err != nil {
-		return
-	}
-	c.auth(req)
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
+	if err := c.EmitErr(ctx, ev); err != nil && c.logger != nil {
 		c.logger.Debug("iomesh emit failed (fail-open)", "err", err, "type", ev.Type)
-		return
 	}
-	_ = resp.Body.Close()
 }
 
 // RecordLLMCall implements router.MetricsSink for usage metering.
-// Always updates the local process meter; emits dept.* only when mesh is enabled.
+// Always updates the local process meter; when mesh is enabled and emit_dept_streams is on,
+// publishes dept.agent.llm_call for platform remote metering dashboards (multi-tenant via org/workspace headers).
 func (c *Client) RecordLLMCall(meta router.CallMeta, usage router.Usage, err error) {
 	if c == nil {
 		return
@@ -326,7 +318,7 @@ func (c *Client) RecordLLMCall(meta router.CallMeta, usage router.Usage, err err
 	if c.meter != nil {
 		c.meter.Record(meta, usage, err)
 	}
-	if !c.Enabled() {
+	if !c.Enabled() || !c.cfg.EmitDeptStreams {
 		return
 	}
 	payload := map[string]any{
@@ -342,14 +334,24 @@ func (c *Client) RecordLLMCall(meta router.CallMeta, usage router.Usage, err err
 			"total":      usage.TotalTokens,
 		},
 	}
+	if t := strings.TrimSpace(c.cfg.Tenant); t != "" {
+		payload["tenant"] = t
+	}
+	if org := strings.TrimSpace(c.cfg.OrgID); org != "" {
+		payload["org"] = org
+	}
+	if ws := strings.TrimSpace(c.cfg.WorkspaceID); ws != "" {
+		payload["workspace"] = ws
+	}
 	if err != nil {
 		payload["error"] = security.Redact(err.Error())
 	}
-	// Best-effort background emit with short timeout.
+	// Best-effort emit with short timeout (same path as EmitErr: org/workspace headers).
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	c.Emit(ctx, DeptEvent{
+	_ = c.EmitErr(ctx, DeptEvent{
 		Type:    "dept.agent.llm_call",
+		Tenant:  c.cfg.Tenant,
 		Payload: payload,
 	})
 }

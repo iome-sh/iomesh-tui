@@ -104,4 +104,5 @@ CLI / TUI / ACP
 23. ~~Release v0.4.0~~ **done** — Memory Phase 3+ + dogfood evidence packaged (tag on merge)
 24. ~~GoReleaser multi-platform binaries + usage JSON~~ **done** — see [RELEASING.md](../../RELEASING.md) / [mesh-deeper.md](mesh-deeper.md)
 25. ~~Release v0.5.0~~ **done** — GoReleaser packaging + usage JSON
-26. Optional: remote multi-tenant metering dashboard (platform); richer release SBOM
+26. ~~Remote metering emit path (org/workspace + llm_meter dogfood)~~ **done** — see [mesh-deeper.md](mesh-deeper.md) / [mesh-dogfood.md](mesh-dogfood.md)
+27. Optional: platform remote multi-tenant metering UI (consumes dept.agent.llm_call); richer release SBOM
