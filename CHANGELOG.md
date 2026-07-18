@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-07-18
+
+Minor release: GoReleaser multi-platform binaries on `v*` tags and JSON local usage export. Compatible with `v0.4.x` configs.
+
 ### Added
 
 - **GoReleaser** — multi-platform `iomesh` binaries on `v*` tags (`.goreleaser.yaml` + `.github/workflows/release.yml`); `make release-snapshot` for local dry-run ([RELEASING.md](RELEASING.md))
@@ -107,7 +111,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.5.0
 [0.4.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.4.0
 [0.3.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.3.0
 [0.2.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.2.0

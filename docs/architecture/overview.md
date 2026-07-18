@@ -103,4 +103,5 @@ CLI / TUI / ACP
 22. ~~Stage warm memory plane / sidecar dogfood~~ **done** — `[memory].endpoint` / `IOMESH_MEMORY_ENDPOINT`; see [mesh-dogfood.md](mesh-dogfood.md)
 23. ~~Release v0.4.0~~ **done** — Memory Phase 3+ + dogfood evidence packaged (tag on merge)
 24. ~~GoReleaser multi-platform binaries + usage JSON~~ **done** — see [RELEASING.md](../../RELEASING.md) / [mesh-deeper.md](mesh-deeper.md)
-25. Optional: remote multi-tenant metering dashboard (platform); richer release SBOM
+25. ~~Release v0.5.0~~ **done** — GoReleaser packaging + usage JSON
+26. Optional: remote multi-tenant metering dashboard (platform); richer release SBOM
