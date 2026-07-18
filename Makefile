@@ -3,7 +3,7 @@ BIN     := iomesh
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 COVER   ?= coverage.out
 
-.PHONY: all build test test-race cover vet fmt tidy vuln run models clean check ci dogfood dogfood-unit
+.PHONY: all build test test-race cover vet fmt tidy vuln run models clean check ci dogfood dogfood-unit release-snapshot
 
 all: check build
 
@@ -63,5 +63,10 @@ dogfood-strict:
 dogfood-unit:
 	./scripts/mesh_dogfood.sh --unit
 
+# Local GoReleaser snapshot (no GitHub publish). Requires goreleaser installed.
+#   go install github.com/goreleaser/goreleaser/v2@latest
+release-snapshot:
+	goreleaser release --snapshot --clean
+
 clean:
-	rm -rf bin/ $(COVER) coverage.html
+	rm -rf bin/ dist/ $(COVER) coverage.html

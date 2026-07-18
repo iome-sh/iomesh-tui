@@ -30,7 +30,7 @@ Checklist items that must move with the tag:
 4. [ ] No secrets in tree (`git grep` for keys; review `configs/`, examples)  
 5. [ ] [SECURITY.md](SECURITY.md) / [docs/security.md](docs/security.md) current  
 6. [ ] Default `main.version` string in `cmd/iomesh` matches the tag (ldflags override via `make build`)  
-7. [ ] Annotated tag `vX.Y.Z` + `gh release create` published  
+7. [ ] Annotated tag `vX.Y.Z` pushed (GoReleaser **release** workflow green; assets on GitHub Release; optional `gh release edit` for notes)
 
 ## Tag and publish (maintainers)
 
@@ -40,24 +40,44 @@ git pull origin main
 # edit CHANGELOG.md + main.version + README/SECURITY if needed
 git commit -am "chore: release vX.Y.Z"
 git push origin main
+
+# Annotated tag — triggers .github/workflows/release.yml (GoReleaser)
 git tag -a vX.Y.Z -m "vX.Y.Z — short release title"
 git push origin vX.Y.Z
-gh release create vX.Y.Z --title "vX.Y.Z" --notes-file <(sed -n '/## \[X.Y.Z\]/,/## \[/p' CHANGELOG.md | head -n -1)
+
+# Optional: seed release notes from CHANGELOG if GoReleaser footer is not enough.
+# gh release edit vX.Y.Z --notes-file <(…)
 ```
 
-`make build` embeds `git describe` (or `VERSION=`) into the binary via `-X main.version=…`.
+`make build` embeds `git describe` (or `VERSION=`) into the binary via `-X main.version=…`.  
+GoReleaser ldflags set `main.version` to the tag version on published assets.
+
+### GoReleaser (binaries)
+
+| Piece | Path |
+|-------|------|
+| Config | [`.goreleaser.yaml`](.goreleaser.yaml) |
+| Workflow | [`.github/workflows/release.yml`](.github/workflows/release.yml) (on `v*` tags) |
+| Local dry-run | `make release-snapshot` (needs `goreleaser` on PATH) |
+
+Cross-builds: linux/darwin/windows × amd64/arm64 (windows/arm64 ignored). Archives include LICENSE + README + CHANGELOG; `checksums.txt` attached to the GitHub Release.
 
 ## Versioning policy
 
 - **0.x** — breaking changes allowed without major bump; document in CHANGELOG  
 - **1.0+** — SemVer; breaking CLI/API changes require major bump  
-- Prefer **minor** bumps when shipping a completed backlog wave (memory plane, dogfood, agent path), even if flags default off  
+- Prefer **minor** bumps when shipping a completed backlog wave (memory plane, dogfood, agent path, release packaging), even if flags default off  
 
 ## Artifacts
 
-CI builds and tests; official release binaries may be added later (GitHub Actions release workflow / goreleaser). Until then:
+| Path | Notes |
+|------|--------|
+| GitHub Release assets | GoReleaser on each `v*` tag (primary) |
+| `go install …@vX.Y.Z` | Always works with a Go toolchain |
+| CI `build` job | linux/amd64 artifact on main pushes (smoke) |
 
 ```bash
-make build   # → bin/iomesh
+make build                 # → bin/iomesh
+make release-snapshot      # → dist/ (local multi-arch, no publish)
 go install github.com/iome-sh/iomesh-tui/cmd/iomesh@vX.Y.Z
 ```

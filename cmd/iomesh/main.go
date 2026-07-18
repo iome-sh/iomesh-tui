@@ -474,7 +474,7 @@ func cmdMesh(args []string) int {
 
   iomesh mesh dogfood   stage smoke (health → ready → context → emit → policy → catalog → memory_*)
   iomesh mesh probe     alias for dogfood
-  iomesh mesh usage     local LLM metering rollup for this process
+  iomesh mesh usage     local LLM metering rollup for this process (--json for scrapers)
   iomesh mesh catalog   list governed data products (broker + portal federation)
 
 Flags (dogfood):
@@ -551,11 +551,21 @@ func cmdMeshCatalog(args []string) int {
 func cmdMeshUsage(args []string) int {
 	// Local process meter is empty in a fresh CLI process; still print schema + guidance.
 	// When wired as MetricsSink during agent runs, snapshots are in-process only.
-	_ = args
+	// Remote multi-tenant dashboards consume dept.agent.llm_call on the platform (not this CLI).
+	fs := flag.NewFlagSet("mesh usage", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	jsonOut := fs.Bool("json", false, "print usage snapshot as JSON")
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
 	mesh := iomesh.New(iomesh.Config{}, nil)
-	// Seed nothing — show empty table + note.
-	fmt.Print(iomesh.FormatUsage(mesh.Usage()))
-	fmt.Fprintln(os.Stderr, "note: metering accumulates during agent runs in-process (MetricsSink); CLI `mesh usage` shows the current process only.")
+	snap := mesh.Usage()
+	if *jsonOut {
+		fmt.Print(iomesh.FormatUsageJSON(snap))
+	} else {
+		fmt.Print(iomesh.FormatUsage(snap))
+		fmt.Fprintln(os.Stderr, "note: metering accumulates during agent runs in-process (MetricsSink); CLI `mesh usage` shows the current process only. Use --json for scrapers. Platform remote dashboards use dept.agent.llm_call when mesh is enabled.")
+	}
 	return 0
 }
 

@@ -1,0 +1,70 @@
+# Publish multi-platform binaries via GoReleaser when a version tag is pushed.
+# Local dry-run: make release-snapshot
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      snapshot:
+        description: "Run goreleaser snapshot (no GitHub release publish)"
+        type: boolean
+        default: true
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  GOTOOLCHAIN: auto
+
+jobs:
+  goreleaser:
+    name: goreleaser
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: GoReleaser (snapshot)
+        if: github.event_name == 'workflow_dispatch' && inputs.snapshot
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --snapshot --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: GoReleaser (tag release)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload dist (snapshot / debug)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: goreleaser-dist
+          path: dist/
+          retention-days: 7
+          if-no-files-found: ignore

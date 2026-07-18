@@ -1,6 +1,7 @@
 package iomesh
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -120,6 +121,19 @@ func FormatUsage(s UsageSnapshot) string {
 			truncateRunes(row.Model, 28), row.Calls, row.Errors, row.TotalTokens, row.EstUSD, row.DurationMS))
 	}
 	return b.String()
+}
+
+// FormatUsageJSON returns indented JSON for stage CI / operator scrapers.
+// Same schema as UsageSnapshot (local process meter — not a remote dashboard).
+func FormatUsageJSON(s UsageSnapshot) string {
+	if s.ByModel == nil {
+		s.ByModel = []ModelUsage{}
+	}
+	b, err := json.MarshalIndent(s, "", "  ")
+	if err != nil {
+		return `{"error":"usage json marshal failed"}` + "\n"
+	}
+	return string(b) + "\n"
 }
 
 func truncateRunes(s string, n int) string {

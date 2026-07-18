@@ -102,4 +102,5 @@ CLI / TUI / ACP
 21. ~~Agent auto-recall prefer sync HTTP~~ **done** — mesh `RetrieveMemory` first, MCP fallback; see [memory-mcp.md](memory-mcp.md)
 22. ~~Stage warm memory plane / sidecar dogfood~~ **done** — `[memory].endpoint` / `IOMESH_MEMORY_ENDPOINT`; see [mesh-dogfood.md](mesh-dogfood.md)
 23. ~~Release v0.4.0~~ **done** — Memory Phase 3+ + dogfood evidence packaged (tag on merge)
-24. Optional: remote metering / goreleaser binaries
+24. ~~GoReleaser multi-platform binaries + usage JSON~~ **done** — see [RELEASING.md](../../RELEASING.md) / [mesh-deeper.md](mesh-deeper.md)
+25. Optional: remote multi-tenant metering dashboard (platform); richer release SBOM
