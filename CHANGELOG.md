@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-07-18
+
+Minor release: remote multi-tenant metering emit path (org/workspace headers + dogfood `llm_meter`). Compatible with `v0.5.x` configs.
+
 ### Added
 
 - **Remote metering emit path** — `dept.agent.llm_call` and all dept emit set `X-IOMesh-Org` / `X-IOMesh-Workspace` when configured; LLM payload includes `tenant`/`org`/`workspace` for multi-tenant platform dashboards ([docs/architecture/mesh-deeper.md](docs/architecture/mesh-deeper.md))
@@ -116,7 +120,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.6.0
 [0.5.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.5.0
 [0.4.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.4.0
 [0.3.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.3.0
