@@ -8,7 +8,7 @@
 
 Official open-source tooling from [IOMesh](https://iome.sh) (**IOMesh Technology Ltd.**).
 
-> **Status:** public open-source **v0.3.x** (pre-1.0). Agent loop, subagents, full-screen TUI, permissions, ACP, skills, MCP, Memory Palace hooks (HTTP MCP + dual-write `MEMORY_INGEST`), deeper mesh (lineage · policy · catalog · metering), multi-model catalog (DeepSeek · Grok · Gemini · Vertex). Not a multi-tenant remote sandbox — see [SECURITY.md](SECURITY.md).
+> **Status:** public open-source **v0.4.x** (pre-1.0). Agent loop, subagents, full-screen TUI, permissions, ACP, skills, MCP, Memory Palace (HTTP MCP + dual-write `MEMORY_INGEST` + sync retrieve / sidecar auto-recall), stage mesh dogfood, deeper mesh (lineage · policy · catalog · metering), multi-model catalog (DeepSeek · Grok · Gemini · Vertex). Not a multi-tenant remote sandbox — see [SECURITY.md](SECURITY.md).
 
 ## Table of contents
 
