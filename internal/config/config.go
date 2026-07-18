@@ -166,9 +166,9 @@ type MCPSection struct {
 // (memory sidecar) is set; else MCP (connected [[mcp.servers]] — stdio or HTTP).
 // DualWrite: optional async publish to mesh MEMORY_INGEST (no SDK dep).
 type MemorySection struct {
-	Enabled    bool   `toml:"enabled"`
-	Server     string `toml:"server"` // MCP server name; default "memory"
-	Tenant     string `toml:"tenant"`
+	Enabled bool   `toml:"enabled"`
+	Server  string `toml:"server"` // MCP server name; default "memory"
+	Tenant  string `toml:"tenant"`
 	// Endpoint is optional memory sidecar base for sync POST /v1/memory/retrieve.
 	// When set, overrides [iomesh] endpoint for retrieve only (stage warm plane).
 	// Env: IOMESH_MEMORY_ENDPOINT / MEMORY_SIDECAR_URL
