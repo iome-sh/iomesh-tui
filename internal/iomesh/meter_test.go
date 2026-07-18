@@ -34,6 +34,26 @@ func TestUsageMeter_RecordAndFormat(t *testing.T) {
 	if !strings.Contains(out, "totals:") {
 		t.Fatal(out)
 	}
+	js := FormatUsageJSON(snap)
+	if !strings.Contains(js, `"calls": 3`) || !strings.Contains(js, `"by_model"`) {
+		t.Fatal(js)
+	}
+	if !strings.Contains(js, "deepseek-v4-flash") {
+		t.Fatal(js)
+	}
+}
+
+func TestFormatUsageJSON_Empty(t *testing.T) {
+	js := FormatUsageJSON(UsageSnapshot{})
+	if !strings.Contains(js, `"by_model": []`) && !strings.Contains(js, `"by_model":[]`) {
+		// indented form
+		if !strings.Contains(js, "by_model") {
+			t.Fatal(js)
+		}
+	}
+	if !strings.HasSuffix(js, "\n") {
+		t.Fatal("expected trailing newline")
+	}
 }
 
 type assertErr struct{}

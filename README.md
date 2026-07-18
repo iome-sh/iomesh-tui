@@ -54,8 +54,14 @@ Any other **OpenAI-compatible** chat endpoint can be added under `[model.<name>]
 **Requirements:** Go version in [go.mod](go.mod) (CI uses that toolchain).
 
 ```bash
+# From source
 git clone https://github.com/iome-sh/iomesh-tui.git
 cd iomesh-tui
+make build
+
+# Or install a released version (Go toolchain)
+go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v0.4.0
+# Multi-platform archives: GitHub Releases (GoReleaser on v* tags) — see RELEASING.md
 
 export DEEPSEEK_API_KEY=…          # required for default cascade
 # export XAI_API_KEY=…             # optional Grok fallback
@@ -63,7 +69,6 @@ export DEEPSEEK_API_KEY=…          # required for default cascade
 # export GOOGLE_CLOUD_PROJECT=…    # required for Vertex models
 # # Vertex auth: auto gcloud print-access-token (cache ~50m) or VERTEX_API_KEY override
 
-make build
 ./bin/iomesh models
 ./bin/iomesh -p "List the top-level packages in this repo"
 # optional pins:
@@ -75,6 +80,7 @@ make build
 ./bin/iomesh sessions | skills | mcp
 ./bin/iomesh agent serve           # ACP WebSocket (127.0.0.1:7400/acp)
 ./bin/iomesh mesh dogfood          # mesh smoke (needs IOMESH_ENDPOINT)
+./bin/iomesh mesh usage --json     # local process meter (JSON)
 make dogfood-unit                  # offline mesh tests
 ```
 

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **GoReleaser** — multi-platform `iomesh` binaries on `v*` tags (`.goreleaser.yaml` + `.github/workflows/release.yml`); `make release-snapshot` for local dry-run ([RELEASING.md](RELEASING.md))
+- **`iomesh mesh usage --json`** — JSON usage snapshot for scrapers; documents platform remote dashboards vs local meter ([docs/architecture/mesh-deeper.md](docs/architecture/mesh-deeper.md))
+
 ## [0.4.0] — 2026-07-18
 
 Minor release: Memory Phase 3+ (sync HTTP retrieve, agent auto-recall prefer sidecar, stage warm-plane dogfood) and full mesh memory dogfood evidence. Compatible with existing `v0.3.x` configs (new flags default off / empty).

@@ -51,8 +51,10 @@ Agent order: **mesh policy → interactive approval → execute**.
 `Client` implements `router.MetricsSink` and keeps an **in-process** rollup (`UsageMeter`):
 
 - `iomesh mesh usage` — print table for the **current process** (empty in a fresh CLI)
+- `iomesh mesh usage --json` — same snapshot as indented JSON (stage scrapers / CI)
 - After agent LLM calls, totals accumulate; emit still goes to `dept.agent.llm_call` when mesh is enabled
-- Not a remote multi-tenant dashboard (that lives on the platform); this is operator-local cost telemetry
+- **Not** a remote multi-tenant dashboard — that lives on the platform (ingest `dept.agent.llm_call` / metering planes). This CLI surface is operator-local cost telemetry only.
+
 
 ## Config
 

@@ -1,0 +1,75 @@
+# GoReleaser config for multi-platform iomesh binaries.
+# Docs: https://goreleaser.com
+# Triggered by .github/workflows/release.yml on tags v*.
+version: 2
+
+project_name: iomesh
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: iomesh
+    main: ./cmd/iomesh
+    binary: iomesh
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+    flags:
+      - -trimpath
+
+archives:
+  - id: default
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}
+    files:
+      - LICENSE
+      - README.md
+      - CHANGELOG.md
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+changelog:
+  # Prefer curated CHANGELOG.md / gh release notes over auto-generated.
+  disable: true
+
+release:
+  draft: false
+  prerelease: auto
+  name_template: "v{{.Version}}"
+  footer: |
+    ## Install
+
+    ```bash
+    # Go module (any platform with Go toolchain)
+    go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v{{.Version}}
+
+    # Or download the archive for your OS/arch from the Assets list below.
+    ```
+
+    See [RELEASING.md](https://github.com/iome-sh/iomesh-tui/blob/main/RELEASING.md) and [CHANGELOG.md](https://github.com/iome-sh/iomesh-tui/blob/main/CHANGELOG.md).
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+# SBOM optional later; keep release lean for free-plan CI minutes.
