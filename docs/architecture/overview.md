@@ -101,4 +101,5 @@ CLI / TUI / ACP
 20. ~~Sync HTTP memory retrieve + dogfood `memory_retrieve`~~ **done** — see [mesh-dogfood.md](mesh-dogfood.md) / [memory-mcp.md](memory-mcp.md)
 21. ~~Agent auto-recall prefer sync HTTP~~ **done** — mesh `RetrieveMemory` first, MCP fallback; see [memory-mcp.md](memory-mcp.md)
 22. ~~Stage warm memory plane / sidecar dogfood~~ **done** — `[memory].endpoint` / `IOMESH_MEMORY_ENDPOINT`; see [mesh-dogfood.md](mesh-dogfood.md)
-23. Optional: remote metering / goreleaser; v0.4.0
+23. ~~Release v0.4.0~~ **done** — Memory Phase 3+ + dogfood evidence packaged (tag on merge)
+24. Optional: remote metering / goreleaser binaries

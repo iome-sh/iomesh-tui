@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-07-18
+
+Minor release: Memory Phase 3+ (sync HTTP retrieve, agent auto-recall prefer sidecar, stage warm-plane dogfood) and full mesh memory dogfood evidence. Compatible with existing `v0.3.x` configs (new flags default off / empty).
+
 ### Added
 
 - **Mesh dogfood `memory_ingest` step** — exercises Phase 2 dual-write via `PublishMemoryIngest` (`POST /v1/streams/MEMORY_INGEST/publish`); included by default when mesh enabled (fail-open → SKIP unless `--strict`); CLI `--skip-memory` to omit ([docs/architecture/mesh-dogfood.md](docs/architecture/mesh-dogfood.md))
@@ -18,8 +22,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Dogfood `memory_ingest` session correlation detail** — probe envelope sets stable `session_id` (`{tenant}.mesh-dogfood` or `mesh-dogfood`) + `session_seq=1`; PASS detail appends `session_seq=` and `session_id=` when set (temporal correlation evidence without scraping payload)
 - **Dogfood `memory_recall` step** — async `MEMORY_RPC` publish via `PublishMemoryRecall` (same `session_id` as ingest for temporal correlation); PASS detail includes `MEMORY_RPC`, `session_id=`, `dual_write=` (s247)
 - **Sync memory retrieve** — `RetrieveMemory` → `POST /v1/memory/retrieve` (fallback `/v5`); dogfood step `memory_retrieve` with `hits=N` + correlated `session_id=` (s251); empty hits still PASS
-- **Agent auto-recall prefer sync HTTP** — when `[iomesh]` mesh client is enabled, auto-recall and `/memory recall` use `RetrieveMemory` first; MCP `memory_retrieve` on failure/unavailability; status shows `sync_http=` / `mcp=` (s252)
+- **Agent auto-recall prefer sync HTTP** — when mesh and/or memory sidecar is configured, auto-recall and `/memory recall` use `RetrieveMemory` first; MCP `memory_retrieve` on failure/unavailability; status shows `sync_http=` / `mcp=` (s252)
 - **Memory sidecar / stage warm plane** — optional `[memory].endpoint` (`IOMESH_MEMORY_ENDPOINT` / `MEMORY_SIDECAR_URL` / `--memory-endpoint`) used as base for `RetrieveMemory` + dogfood `memory_retrieve`; JSON `memory_endpoint` + PASS `memory_base=sidecar|mesh` (s269)
+
+### Config / env (new)
+
+| Key | Default | Notes |
+|-----|---------|--------|
+| `[memory].endpoint` / `IOMESH_MEMORY_ENDPOINT` / `MEMORY_SIDECAR_URL` | empty | Sync retrieve base (sidecar); else mesh endpoint |
+| `--memory-endpoint` (dogfood) | empty | CLI override for sidecar base |
+| `[iomesh] org` / `workspace` (dogfood headers) | empty | `X-IOMesh-Org` / `X-IOMesh-Workspace` on memory publish |
 
 ## [0.3.0] — 2026-07-16
 
@@ -90,7 +102,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.4.0
 [0.3.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.3.0
 [0.2.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.2.0
 [0.1.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.1.0

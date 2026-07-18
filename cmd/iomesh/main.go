@@ -27,7 +27,7 @@ import (
 
 // Overridden at link time by make build: -X main.version=$(VERSION)
 // (must be a var, not const, for -ldflags -X).
-var version = "0.3.0"
+var version = "0.4.0"
 
 func main() {
 	os.Exit(run(os.Args[1:]))
@@ -563,17 +563,17 @@ func cmdMeshDogfood(args []string) int {
 	fs := flag.NewFlagSet("mesh dogfood", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	var (
-		configPath  = fs.String("config", "", "config.toml path")
-		workspace   = fs.String("C", "", "workspace for context query")
-		strict      = fs.Bool("strict", false, "fail if context/emit/ready/memory soft-fail")
-		skipContext = fs.Bool("skip-context", false, "skip context plane probe")
-		skipEmit    = fs.Bool("skip-emit", false, "skip dept emit probe")
-		skipMemory      = fs.Bool("skip-memory", false, "skip memory_ingest / memory_recall / memory_retrieve probes")
-		jsonOut         = fs.Bool("json", false, "print dogfood report as JSON (stage CI evidence)")
-		verbose         = fs.Bool("v", false, "verbose logs")
-		endpoint        = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
-		memoryEndpoint  = fs.String("memory-endpoint", "", "memory sidecar base (IOMESH_MEMORY_ENDPOINT / MEMORY_SIDECAR_URL)")
-		tenant          = fs.String("tenant", "", "override tenant")
+		configPath     = fs.String("config", "", "config.toml path")
+		workspace      = fs.String("C", "", "workspace for context query")
+		strict         = fs.Bool("strict", false, "fail if context/emit/ready/memory soft-fail")
+		skipContext    = fs.Bool("skip-context", false, "skip context plane probe")
+		skipEmit       = fs.Bool("skip-emit", false, "skip dept emit probe")
+		skipMemory     = fs.Bool("skip-memory", false, "skip memory_ingest / memory_recall / memory_retrieve probes")
+		jsonOut        = fs.Bool("json", false, "print dogfood report as JSON (stage CI evidence)")
+		verbose        = fs.Bool("v", false, "verbose logs")
+		endpoint       = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
+		memoryEndpoint = fs.String("memory-endpoint", "", "memory sidecar base (IOMESH_MEMORY_ENDPOINT / MEMORY_SIDECAR_URL)")
+		tenant         = fs.String("tenant", "", "override tenant")
 	)
 	if err := fs.Parse(args); err != nil {
 		return 2
