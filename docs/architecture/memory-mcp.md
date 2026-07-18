@@ -23,7 +23,7 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 | **2** | **done (v0.3.0)** | HTTP MCP primary path + optional dual-write to mesh `MEMORY_INGEST` |
 | **3 partial** | **done (dogfood)** | Async `MEMORY_RPC` recall probe (`PublishMemoryRecall`) |
 | **3** | **done (dogfood)** | Sync `RetrieveMemory` → `POST /v1/memory/retrieve` (+ `/v5` fallback) + dogfood `memory_retrieve` step |
-| **3+** | **done (agent)** | Agent auto-recall + `/memory recall` prefer sync HTTP when mesh enabled; MCP fallback; SDK module extract optional |
+| **3+** | **done (agent)** | Agent auto-recall + `/memory recall` prefer sync HTTP when mesh **or** `[memory].endpoint` sidecar is set; MCP fallback |
 
 **Non-goals:** private monorepo imports in public TUI; embedding Qdrant/Palace in-process; dependency on `iomesh-client-sdk-go`.
 
@@ -109,6 +109,7 @@ Agent tools also appear as `mcp__memory__memory_retrieve` (etc.) when MCP is att
 | `IOMESH_MEMORY_AUTO_RECALL=0` | Disable per-turn retrieve inject |
 | `IOMESH_MEMORY_AUTO_INGEST=1` | Enable post-turn ingest (MCP and/or dual-write) |
 | `IOMESH_MEMORY_DUAL_WRITE=1` | Also publish async `MEMORY_INGEST` when mesh enabled |
+| `IOMESH_MEMORY_ENDPOINT` / `MEMORY_SIDECAR_URL` | Sync retrieve base (memory sidecar); overrides mesh endpoint for `RetrieveMemory` only |
 | `IOMESH_MCP=1` | Enable MCP section |
 
 ## Phase 1 — runtime loop
@@ -126,7 +127,7 @@ user turn
 ```
 
 - **Fail-open**: MCP down, empty hits, dual-write errors, or tool errors never fail the turn.
-- **Sync prefer**: when mesh client is enabled, auto-recall and `/memory recall` try lean HTTP first; on transport/404 (broker-only URL) fall back to MCP.
+- **Sync prefer**: when mesh is enabled **or** `[memory].endpoint` / `IOMESH_MEMORY_ENDPOINT` is set, auto-recall and `/memory recall` try lean HTTP first; on transport/404 (broker-only URL without sidecar) fall back to MCP.
 - **No Palace import**: only MCP `tools/call` and/or lean HTTP (no SDK module dependency).
 - **Mutating**: auto-ingest bypasses the interactive approval UI (operator opt-in via `auto_ingest`); interactive `mcp__memory__*` still requires approval when `mutating=true`.
 
@@ -137,13 +138,16 @@ Operators with a memory sidecar (or gateway that routes `/v1/memory/retrieve`) c
 ```toml
 [iomesh]
 enabled = true
-endpoint = "http://127.0.0.1:8765"   # memory sidecar or mesh gateway with memory routes
+endpoint = "https://mesh.stage.example"   # broker / control plane
 tenant = "dept.research"
 
 [memory]
 enabled = true
 auto_recall = true
 tenant = "dept.research"
+# Dedicated sidecar when mesh endpoint is broker-only (stage warm plane):
+endpoint = "http://127.0.0.1:8765"
+# Env: IOMESH_MEMORY_ENDPOINT / MEMORY_SIDECAR_URL
 # MCP server optional when sync HTTP works
 ```
 

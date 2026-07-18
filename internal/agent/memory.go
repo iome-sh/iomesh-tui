@@ -123,10 +123,11 @@ func (rt *Runtime) mcpMemoryReady() bool {
 		rt.mcp.ClientByName(rt.memory.Server) != nil
 }
 
-// syncMemoryReady reports whether lean HTTP sync retrieve can run (mesh client enabled).
-// Endpoint must serve memory sidecar routes (POST /v1/memory/retrieve); broker-only URLs fail-open to MCP.
+// syncMemoryReady reports whether lean HTTP sync retrieve can run.
+// True when mesh is enabled or a dedicated memory sidecar URL is configured.
+// Broker-only mesh URLs fail-open to MCP on 404 unless MemoryEndpoint points at the sidecar.
 func (rt *Runtime) syncMemoryReady() bool {
-	return rt != nil && rt.memory.Enabled && rt.mesh != nil && rt.mesh.Enabled()
+	return rt != nil && rt.memory.Enabled && rt.mesh != nil && rt.mesh.SyncMemoryReady()
 }
 
 // MemoryStatusLine is a short operator-facing status (slash /memory).

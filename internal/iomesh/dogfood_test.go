@@ -228,6 +228,9 @@ func TestDogfood_FullPass(t *testing.T) {
 			if !strings.Contains(s.Detail, "session_id=stage.mesh-dogfood") {
 				t.Fatalf("expected session_id in retrieve PASS: %s", s.Detail)
 			}
+			if !strings.Contains(s.Detail, "memory_base=mesh") {
+				t.Fatalf("expected memory_base=mesh without sidecar: %s", s.Detail)
+			}
 			if strings.Contains(s.Detail, "MEMORY_RPC") {
 				t.Fatalf("sync retrieve must not use MEMORY_RPC: %s", s.Detail)
 			}
@@ -239,6 +242,71 @@ func TestDogfood_FullPass(t *testing.T) {
 	js := FormatReportJSON(rep)
 	if !strings.Contains(js, `"result": "PASS"`) || !strings.Contains(js, `"ok": true`) {
 		t.Fatal(js)
+	}
+}
+
+func TestDogfood_MemorySidecarEndpoint(t *testing.T) {
+	// Broker serves health/streams but not sync retrieve; sidecar serves retrieve.
+	broker := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+		failRecall bool
+		noRecall   bool
+	}{noRecall: true}) // 404 on broker /v1/memory/retrieve
+
+	var sidecarHits int
+	sidecar := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v1/memory/retrieve" && r.Method == http.MethodPost {
+			sidecarHits++
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"memories": []map[string]any{
+					{"id": "w1", "summary": "warm hit", "score": 0.7},
+				},
+			})
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer sidecar.Close()
+
+	c := New(Config{
+		Enabled: true, Endpoint: broker.URL, Tenant: "stage",
+		MemoryEndpoint: sidecar.URL,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{})
+	if !rep.OK {
+		t.Fatal(FormatReport(rep))
+	}
+	wantBase := strings.TrimRight(sidecar.URL, "/")
+	if rep.MemoryEndpoint != wantBase {
+		t.Fatalf("memory_endpoint=%q want=%q", rep.MemoryEndpoint, wantBase)
+	}
+	var retrieveDetail string
+	for _, s := range rep.Steps {
+		if s.Name == "memory_retrieve" {
+			if s.Status != StepPass {
+				t.Fatalf("retrieve=%s detail=%s", s.Status, s.Detail)
+			}
+			retrieveDetail = s.Detail
+		}
+	}
+	if sidecarHits != 1 {
+		t.Fatalf("sidecar hits=%d", sidecarHits)
+	}
+	if !strings.Contains(retrieveDetail, "hits=1") || !strings.Contains(retrieveDetail, "memory_base=sidecar") {
+		t.Fatalf("detail=%q", retrieveDetail)
+	}
+	js := FormatReportJSON(rep)
+	if !strings.Contains(js, `"memory_endpoint"`) {
+		t.Fatal(js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "memory_endpoint:") {
+		t.Fatal(text)
 	}
 }
 

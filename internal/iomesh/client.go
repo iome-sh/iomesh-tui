@@ -55,6 +55,10 @@ type Config struct {
 	// DualWrite mirrors agent [memory].dual_write / IOMESH_MEMORY_DUAL_WRITE for dogfood
 	// JSON evidence (does not gate the memory_ingest probe; default false).
 	DualWrite bool
+	// MemoryEndpoint is optional base URL for sync POST /v1/memory/retrieve (memory sidecar).
+	// When set, RetrieveMemory prefers this over Endpoint (stage warm plane vs broker-only mesh).
+	// Env: IOMESH_MEMORY_ENDPOINT / MEMORY_SIDECAR_URL · config [memory].endpoint
+	MemoryEndpoint string
 }
 
 // Client talks to I/O Mesh control/data planes (OpenHTTP, fail-open).
@@ -76,6 +80,15 @@ func New(cfg Config, logger *slog.Logger) *Client {
 		if err := security.ValidateHTTPURL(cfg.Endpoint, true); err != nil {
 			logger.Warn("iomesh: invalid endpoint; disabling client", "err", err)
 			cfg.Enabled = false
+		}
+	}
+	// Optional memory sidecar base (stage warm plane); clear if invalid.
+	if ep := strings.TrimSpace(cfg.MemoryEndpoint); ep != "" {
+		if err := security.ValidateHTTPURL(ep, true); err != nil {
+			logger.Warn("iomesh: invalid memory_endpoint; clearing", "err", err)
+			cfg.MemoryEndpoint = ""
+		} else {
+			cfg.MemoryEndpoint = strings.TrimRight(ep, "/")
 		}
 	}
 	mode := PolicyMode(strings.ToLower(strings.TrimSpace(string(cfg.PolicyMode))))
@@ -105,6 +118,28 @@ func New(cfg Config, logger *slog.Logger) *Client {
 // Enabled reports whether platform integration is active.
 func (c *Client) Enabled() bool {
 	return c != nil && c.cfg.Enabled && c.cfg.Endpoint != ""
+}
+
+// MemoryEndpointConfigured reports whether a dedicated memory sidecar base URL is set.
+func (c *Client) MemoryEndpointConfigured() bool {
+	return c != nil && strings.TrimSpace(c.cfg.MemoryEndpoint) != ""
+}
+
+// MemoryBaseURL returns the HTTP base for sync memory retrieve (sidecar if set, else mesh endpoint).
+func (c *Client) MemoryBaseURL() string {
+	if c == nil {
+		return ""
+	}
+	if ep := strings.TrimSpace(c.cfg.MemoryEndpoint); ep != "" {
+		return strings.TrimRight(ep, "/")
+	}
+	return strings.TrimRight(strings.TrimSpace(c.cfg.Endpoint), "/")
+}
+
+// SyncMemoryReady reports whether lean HTTP sync retrieve can be attempted.
+// True when mesh is enabled or a dedicated memory sidecar endpoint is configured.
+func (c *Client) SyncMemoryReady() bool {
+	return c != nil && (c.Enabled() || c.MemoryEndpointConfigured()) && c.MemoryBaseURL() != ""
 }
 
 // LineageRef is a governed data-product / stream lineage pointer from the context plane.
