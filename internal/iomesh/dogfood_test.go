@@ -53,7 +53,9 @@ func mockMeshServer(t *testing.T, opts struct {
 				return
 			}
 			b, _ := io.ReadAll(r.Body)
-			if !strings.Contains(string(b), "dept.agent.dogfood") {
+			// Accept generic dogfood emit and llm_meter probe (dept.agent.llm_call).
+			if !strings.Contains(string(b), "dept.agent.dogfood") &&
+				!strings.Contains(string(b), "dept.agent.llm_call") {
 				w.WriteHeader(400)
 				return
 			}
@@ -192,8 +194,14 @@ func TestDogfood_FullPass(t *testing.T) {
 	if !strings.Contains(out, "health") || !strings.Contains(out, "context") {
 		t.Fatal(out)
 	}
-	var memOK, recallOK, retrieveOK bool
+	var memOK, recallOK, retrieveOK, llmMeterOK bool
 	for _, s := range rep.Steps {
+		if s.Name == "llm_meter" && s.Status == StepPass {
+			llmMeterOK = true
+			if !strings.Contains(s.Detail, "dept.agent.llm_call") || !strings.Contains(s.Detail, "session_id=stage.mesh-dogfood") {
+				t.Fatalf("llm_meter detail: %s", s.Detail)
+			}
+		}
 		if s.Name == "memory_ingest" && s.Status == StepPass {
 			memOK = true
 			if !strings.Contains(s.Detail, "MEMORY_INGEST") || !strings.Contains(s.Detail, "stage.memory.ingest.turn") {
@@ -236,12 +244,82 @@ func TestDogfood_FullPass(t *testing.T) {
 			}
 		}
 	}
-	if !memOK || !recallOK || !retrieveOK {
+	if !memOK || !recallOK || !retrieveOK || !llmMeterOK {
 		t.Fatal(FormatReport(rep))
 	}
 	js := FormatReportJSON(rep)
 	if !strings.Contains(js, `"result": "PASS"`) || !strings.Contains(js, `"ok": true`) {
 		t.Fatal(js)
+	}
+}
+
+func TestDogfood_LLMMeterOrgHeaders(t *testing.T) {
+	var gotOrg, gotWS string
+	var llmBodies []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/health", r.URL.Path == "/ready", r.URL.Path == "/readyz":
+			w.WriteHeader(200)
+		case r.URL.Path == "/v1/context/query":
+			_ = json.NewEncoder(w).Encode(map[string]string{"text": "ctx"})
+		case r.URL.Path == "/v1/streams/dept" && r.Method == http.MethodPost:
+			gotOrg = r.Header.Get("X-IOMesh-Org")
+			gotWS = r.Header.Get("X-IOMesh-Workspace")
+			b, _ := io.ReadAll(r.Body)
+			llmBodies = append(llmBodies, string(b))
+			w.WriteHeader(204)
+		case strings.Contains(r.URL.Path, "MEMORY") || strings.Contains(r.URL.Path, "memory"):
+			// soft skip memory paths if hit
+			if strings.HasSuffix(r.URL.Path, "/publish") {
+				_ = json.NewEncoder(w).Encode(map[string]any{"stream": "MEMORY_INGEST", "seq": 1})
+				return
+			}
+			if strings.Contains(r.URL.Path, "retrieve") {
+				_ = json.NewEncoder(w).Encode(map[string]any{"memories": []any{}})
+				return
+			}
+			http.NotFound(w, r)
+		default:
+			// catalog etc
+			if strings.Contains(r.URL.Path, "catalog") {
+				_ = json.NewEncoder(w).Encode(map[string]any{"products": []any{}})
+				return
+			}
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		OrgID: "org_meter", WorkspaceID: "ws_m",
+		ContextPlane: true, EmitDeptStreams: true, CatalogPlane: false,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{SkipMemory: true})
+	if !rep.OK {
+		t.Fatal(FormatReport(rep))
+	}
+	var found bool
+	for _, s := range rep.Steps {
+		if s.Name == "llm_meter" {
+			found = true
+			if s.Status != StepPass {
+				t.Fatalf("llm_meter=%s %s", s.Status, s.Detail)
+			}
+			if !strings.Contains(s.Detail, "org=org_meter") || !strings.Contains(s.Detail, "workspace=ws_m") {
+				t.Fatalf("detail=%s", s.Detail)
+			}
+		}
+	}
+	if !found {
+		t.Fatal(FormatReport(rep))
+	}
+	if gotOrg != "org_meter" || gotWS != "ws_m" {
+		t.Fatalf("headers org=%q ws=%q", gotOrg, gotWS)
+	}
+	joined := strings.Join(llmBodies, "\n")
+	if !strings.Contains(joined, "dept.agent.llm_call") {
+		t.Fatalf("bodies=%v", llmBodies)
 	}
 }
 

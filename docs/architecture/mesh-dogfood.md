@@ -10,7 +10,8 @@ Operator smoke for **I/O Mesh** integration from the public `iomesh-tui` harness
 | health | `GET /health` | **FAIL** if down | **FAIL** |
 | ready | `GET /ready` or `/readyz` | SKIP if 404 | FAIL if missing/error |
 | context | `POST /v1/context/query` | SKIP if empty (fail-open) | FAIL if empty |
-| emit | `POST /v1/streams/dept` | SKIP on error | FAIL on error |
+| emit | `POST /v1/streams/dept` (`dept.agent.dogfood`) | SKIP on error | FAIL on error |
+| llm_meter | `POST /v1/streams/dept` (`dept.agent.llm_call` probe) | SKIP on error (`--skip-emit` / streams off) | FAIL on error |
 | policy | `POST /v1/policy/evaluate` | SKIP if mode off / 404 / fail-open | FAIL if mode on and evaluate soft-fails |
 | catalog | broker + portal list | SKIP if plane off / fail-open | FAIL if fail-open |
 | memory_ingest | `POST /v1/streams/MEMORY_INGEST/publish` | SKIP on error (`--skip-memory` forces SKIP) | FAIL on error |
@@ -18,6 +19,15 @@ Operator smoke for **I/O Mesh** integration from the public `iomesh-tui` harness
 | memory_retrieve | `POST /v1/memory/retrieve` (fallback `/v5`) | SKIP on error (`--skip-memory` forces SKIP) | FAIL on error |
 
 Context requests set `include_lineage` when configured (lineage count shown on PASS detail).
+
+### emit + llm_meter (dept streams / remote metering)
+
+When `emit_dept_streams` is on (default) and not `--skip-emit`:
+
+1. **emit** — `dept.agent.dogfood` probe (generic stage event)
+2. **llm_meter** — `dept.agent.llm_call` zero-token probe (same wire as live `RecordLLMCall` for platform remote metering dashboards)
+
+Both set `session_id={tenant}.mesh-dogfood` for correlation with memory_*. PASS detail appends `org=` / `workspace=` when Client OrgID/WorkspaceID are set (headers `X-IOMesh-Org` / `X-IOMesh-Workspace` on the POST). Soft: transport/HTTP errors → **SKIP**; `--strict` → **FAIL**.
 
 ### memory_ingest (dual-write probe)
 

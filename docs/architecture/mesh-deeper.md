@@ -53,8 +53,27 @@ Agent order: **mesh policy → interactive approval → execute**.
 - `iomesh mesh usage` — print table for the **current process** (empty in a fresh CLI)
 - `iomesh mesh usage --json` — same snapshot as indented JSON (stage scrapers / CI)
 - After agent LLM calls, totals accumulate; emit still goes to `dept.agent.llm_call` when mesh is enabled
-- **Not** a remote multi-tenant dashboard — that lives on the platform (ingest `dept.agent.llm_call` / metering planes). This CLI surface is operator-local cost telemetry only.
+- **Not** a remote multi-tenant dashboard UI — that lives on the platform. This CLI surface is operator-local cost telemetry only.
 
+## Remote metering path (platform dashboards)
+
+When `[iomesh]` is enabled and `emit_dept_streams = true` (default):
+
+1. Each LLM call → local `UsageMeter` **and** `POST /v1/streams/dept` with `type=dept.agent.llm_call`
+2. Request headers: `X-IOMesh-Org` / `X-IOMesh-Workspace` when `[iomesh] org` / `workspace` are set (PlanGate / multi-tenant attribution)
+3. Payload includes `tenant`, `org`, `workspace`, token counts, `est_usd`, model ids (errors redacted)
+
+Stage smoke:
+
+```bash
+export IOMESH_ENDPOINT=…
+export IOMESH_ORG=org_…
+export IOMESH_WORKSPACE=ws_…
+iomesh mesh dogfood --json
+# steps emit + llm_meter PASS with org= / workspace= / session_id=
+```
+
+Dogfood step **`llm_meter`** publishes a zero-token probe event of the same shape so CI can prove the remote path without an LLM round-trip. Soft-SKIP on transport unless `--strict`.
 
 ## Config
 
@@ -62,13 +81,19 @@ Agent order: **mesh policy → interactive approval → execute**.
 [iomesh]
 include_lineage = true
 policy_mode = "off"   # off | advisory | enforce
+emit_dept_streams = true
+# org = "org_…"        # X-IOMesh-Org on dept emit + memory
+# workspace = "ws_…"   # X-IOMesh-Workspace
 ```
 
-Env: `IOMESH_INCLUDE_LINEAGE`, `IOMESH_POLICY_MODE`.
+Env: `IOMESH_INCLUDE_LINEAGE`, `IOMESH_POLICY_MODE`, `IOMESH_ORG`, `IOMESH_WORKSPACE`.
 
 ## Dogfood
 
-`iomesh mesh dogfood` adds a **policy** step when mode ≠ off (SKIP on 404/fail-open unless `--strict`).
+`iomesh mesh dogfood` adds:
+
+- **policy** when mode ≠ off (SKIP on 404/fail-open unless `--strict`)
+- **llm_meter** when dept streams enabled (same soft/strict matrix as **emit**)
 
 ## Catalog composition + portal federation
 
