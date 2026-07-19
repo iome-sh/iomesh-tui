@@ -68,6 +68,9 @@ type DogfoodReport struct {
 	// KVKeyCount is len of KVListKeys from last kv probe (0 on skip/error/unset).
 	// Always emitted in JSON so CI sees kv evidence without scraping step detail.
 	KVKeyCount int `json:"kv_key_count"`
+	// KVEnsured is true only when KVEnsure was requested, create was attempted, and succeeded
+	// (including idempotent 409). Always emitted in JSON (false when unset/skip/soft-fail).
+	KVEnsured bool `json:"kv_ensured"`
 	// WaitReadyMS is the configured WaitReady budget in milliseconds (0 = off / no preflight).
 	// Always emitted in JSON so CI sees soft preflight budget without scraping step detail.
 	// Outcome lives on the wait_ready step (PASS/SKIP/FAIL); not a second boolean.
@@ -115,6 +118,10 @@ type DogfoodOptions struct {
 	// KVBucket, when non-empty, runs a soft non-destructive KVListKeys probe on that bucket.
 	// Empty (default) → kv step SKIP "kv probe unset" (no network). Put/Delete are CLI-only.
 	KVBucket string
+	// KVEnsure, when true with KVBucket set, best-effort KVCreateBucket before list-keys
+	// (idempotent 409 = success). Soft fail-open: create errors never FAIL the step alone;
+	// list-keys still runs. Only meaningful with KVBucket.
+	KVEnsure bool
 	// WaitReady, when >0, polls WaitReady with that max budget (effective deadline is
 	// min of this budget and any parent ctx deadline) before the single-shot ready step.
 	// Soft: timeout → SKIP wait_ready unless Strict (then FAIL). Zero (default) = no wait preflight.
@@ -130,6 +137,7 @@ type DogfoodOptions struct {
 // Optional wait_ready soft-preflight when DogfoodOptions.WaitReady > 0.
 // Soft streams list probe after catalog when mesh enabled.
 // Soft kv list-keys probe when DogfoodOptions.KVBucket is set (non-destructive).
+// Optional KVEnsure best-effort creates the bucket before list (soft fail-open).
 // Disabled client returns a single SKIP step and OK=true (offline-first).
 func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport {
 	rep := DogfoodReport{
@@ -455,23 +463,36 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 	}
 
 	// 6c) Soft KV list-keys probe (non-destructive — only when KVBucket set)
+	// Optional KVEnsure: best-effort KVCreateBucket before list (soft fail-open).
 	kvBucket := strings.TrimSpace(opts.KVBucket)
 	if kvBucket == "" {
 		rep.KVKeyCount = 0
+		rep.KVEnsured = false
 		rep.Steps = append(rep.Steps, Step{Name: "kv", Status: StepSkip, Detail: "kv probe unset"})
 	} else {
 		rep.KVBucket = kvBucket
 		rep.Steps = append(rep.Steps, c.stepTimed("kv", func() (StepStatus, string) {
+			ensureNote := "ensure=skip"
+			if opts.KVEnsure {
+				if _, err := c.KVCreateBucket(ctx, kvBucket); err != nil {
+					// Soft fail-open: create error never fails the step alone; list still runs.
+					ensureNote = "ensure=soft-fail"
+					rep.KVEnsured = false
+				} else {
+					ensureNote = "ensure=ok"
+					rep.KVEnsured = true
+				}
+			}
 			keys, err := c.KVListKeys(ctx, kvBucket, "")
 			if err != nil {
 				rep.KVKeyCount = 0
 				if opts.Strict {
-					return StepFail, err.Error()
+					return StepFail, fmt.Sprintf("%s %s", ensureNote, err.Error())
 				}
-				return StepSkip, "kv soft-fail: " + err.Error()
+				return StepSkip, fmt.Sprintf("%s kv soft-fail: %s", ensureNote, err.Error())
 			}
 			rep.KVKeyCount = len(keys)
-			return StepPass, fmt.Sprintf("bucket=%s n=%d", kvBucket, len(keys))
+			return StepPass, fmt.Sprintf("bucket=%s n=%d %s", kvBucket, len(keys), ensureNote)
 		}))
 	}
 
@@ -739,6 +760,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		StreamsNames        []string   `json:"streams_names"`         // always emit array (CI name sample)
 		KVBucket            string     `json:"kv_bucket,omitempty"`   // set when soft kv probe configured
 		KVKeyCount          int        `json:"kv_key_count"`          // always emit (CI kv list evidence)
+		KVEnsured           bool       `json:"kv_ensured"`            // always emit (true only if ensure create succeeded)
 		WaitReadyMS         int        `json:"wait_ready_ms"`         // always emit (CI wait preflight budget)
 		PolicyMode          string     `json:"policy_mode"`           // always emit (off|advisory|enforce)
 		PolicySource        string     `json:"policy_source,omitempty"`
@@ -775,6 +797,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		StreamsNames:        names,
 		KVBucket:            r.KVBucket,
 		KVKeyCount:          r.KVKeyCount,
+		KVEnsured:           r.KVEnsured,
 		WaitReadyMS:         r.WaitReadyMS,
 		PolicyMode:          policyMode,
 		PolicySource:        r.PolicySource,
@@ -842,6 +865,7 @@ func FormatReport(r DogfoodReport) string {
 		fmt.Fprintf(&b, "  kv_bucket: %s\n", r.KVBucket)
 	}
 	fmt.Fprintf(&b, "  kv_key_count: %d\n", r.KVKeyCount)
+	fmt.Fprintf(&b, "  kv_ensured: %v\n", r.KVEnsured)
 	fmt.Fprintf(&b, "  wait_ready_ms: %d\n", r.WaitReadyMS)
 	policyMode := r.PolicyMode
 	if policyMode == "" {

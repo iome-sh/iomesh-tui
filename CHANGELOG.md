@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Dogfood `--kv-ensure`** — with `--kv-bucket`, best-effort `KVCreateBucket` before list-keys (soft fail-open; step detail `ensure=ok|skip|soft-fail`; top-level `kv_ensured` always emitted)
+- **Ephemeral mesh pub** — lean `Pub` (`POST /v1/pub`; body `{subject, payload string, headers?}` SDK wire) + CLI `iomesh mesh pub --subject S --payload STR|--payload-file F --yes`
+
 ## [0.21.0] — 2026-07-19
 
 Minor release: KV create-bucket lean client and CLI.
