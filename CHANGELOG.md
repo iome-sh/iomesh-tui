@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.17.0] — 2026-07-19
+
+Minor release: streams_names dogfood sample + gated streams delete; public-surface hygiene.
+
 ### Changed
 
 - **Public-surface hygiene** — no private ledger serials / monorepo paths in docs; CONTRIBUTING public repository policy; OPEN_SOURCE_AUDIT residual honesty
@@ -226,7 +230,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.16.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.17.0...HEAD
+[0.17.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.17.0
 [0.16.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.16.0
 [0.15.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.15.0
 [0.14.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.14.0
