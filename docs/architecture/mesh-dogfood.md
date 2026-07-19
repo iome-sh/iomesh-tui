@@ -55,7 +55,7 @@ Builds the client like dogfood/wait. Prints `StatusLine` config summary plus opt
 | context | `POST /v1/context/query` | SKIP if empty (fail-open) | FAIL if empty |
 | emit | `POST /v1/streams/dept/publish` (`dept.agent.dogfood`) | SKIP on error | FAIL on error |
 | llm_meter | `POST /v1/streams/dept/publish` (`dept.agent.llm_call` probe) | SKIP on error (`--skip-emit` / streams off) | FAIL on error |
-| policy | `POST /v1/policy/evaluate` | SKIP if mode off / 404 / fail-open | FAIL if mode on and evaluate soft-fails |
+| policy | `POST /v1/policy/evaluate` | SKIP if mode off / 404 / fail-open; top-level `policy_mode` / `policy_source` / `policy_allow` evidence | FAIL if mode on and evaluate soft-fails |
 | catalog | broker + portal list | SKIP if plane off / fail-open | FAIL if fail-open |
 | streams | `GET /v1/streams` (`ListStreams`) | SKIP on error (`--skip-streams` forces SKIP); empty list is PASS `n=0` | FAIL on error |
 | memory_ingest | `POST /v1/streams/MEMORY_INGEST/publish` | SKIP on error (`--skip-memory` forces SKIP) | FAIL on error |
@@ -64,7 +64,17 @@ Builds the client like dogfood/wait. Prints `StatusLine` config summary plus opt
 
 Context requests set `include_lineage` when configured (lineage count shown on PASS detail).
 
-### streams (list probe — )
+### policy (evaluate evidence)
+
+Runs when mesh is enabled. Mode from Client `[iomesh] policy_mode` / `IOMESH_POLICY_MODE` (default `off`):
+
+- **mode off**: step **SKIP** `policy mode off`; top-level `policy_mode=off`, `policy_source=off`, `policy_allow` **omitted**
+- **advisory / enforce**: `POST /v1/policy/evaluate` with action `dogfood.probe`; sets `policy_source` + `policy_allow` from `PolicyDecision`
+  - `source=mesh` → **PASS** (allow or deny — both are valid evaluate evidence)
+  - `source=unavailable` (404) / `fail-open` → **SKIP** soft; **FAIL** when `--strict`
+- Top-level fields enable CI greps without scraping step detail
+
+### streams (list probe)
 
 Runs **after** `catalog` and **before** `memory_*` whenever mesh is enabled (not gated on a plane flag). Non-destructive `ListStreams` (`GET /v1/streams`):
 
@@ -148,6 +158,9 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `streams_count` | int | `len(ListStreams)` from last streams probe (**always emitted**, `0` on skip/error/disabled) |
 | `streams_names` | string[] | Short sample of stream names from last `ListStreams` (max 8; **always emitted** as JSON array, `[]` on skip/error/disabled). Full count stays in `streams_count` |
 | `wait_ready_ms` | int | Configured WaitReady budget in ms (**always emitted**, `0` = off / no preflight). Outcome on `wait_ready` step detail |
+| `policy_mode` | string | Configured policy mode (`off` \| `advisory` \| `enforce`; **always emitted**, default `off`) |
+| `policy_source` | string | Last policy probe source (`mesh` \| `fail-open` \| `unavailable` \| `off`); `off` when mode off; omitted when mesh disabled before policy step |
+| `policy_allow` | bool | Evaluate decision when policy ran; **omitted** when mode off / skipped without evaluate |
 | `memory_endpoint` | string | Optional memory sidecar base (`[memory].endpoint` / `IOMESH_MEMORY_ENDPOINT`); omitted when empty (retrieve uses mesh `endpoint`) |
 | `user_agent` | string | Package mesh HTTP User-Agent (`iomesh-tui/<version>` via `iomesh.UserAgent`); always set for CI evidence — not scraped from server |
 | `strict` | bool | `--strict` |

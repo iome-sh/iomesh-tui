@@ -1169,8 +1169,207 @@ func TestDogfood_CatalogEvidenceOff(t *testing.T) {
 	}
 }
 
+func TestDogfood_PolicyEvidenceOff(t *testing.T) {
+	// Default policy mode off → policy_mode=off, policy_source=off, policy_allow omitted.
+	srv := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+		failRecall bool
+		noRecall   bool
+	}{})
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		EmitDeptStreams: true,
+		PolicyMode:      PolicyOff,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if rep.PolicyMode != "off" {
+		t.Fatalf("PolicyMode: %q want off", rep.PolicyMode)
+	}
+	if rep.PolicySource != "off" {
+		t.Fatalf("PolicySource: %q want off", rep.PolicySource)
+	}
+	if rep.PolicyAllow != nil {
+		t.Fatalf("PolicyAllow: %v want nil when mode off", *rep.PolicyAllow)
+	}
+	pol, ok := dogfoodStep(rep, "policy")
+	if !ok || pol.Status != StepSkip {
+		t.Fatalf("policy step: ok=%v status=%s", ok, pol.Status)
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if parsed["policy_mode"] != "off" {
+		t.Fatalf("json policy_mode: %v\n%s", parsed["policy_mode"], js)
+	}
+	if parsed["policy_source"] != "off" {
+		t.Fatalf("json policy_source: %v\n%s", parsed["policy_source"], js)
+	}
+	if _, has := parsed["policy_allow"]; has {
+		t.Fatalf("json policy_allow must be omitted when mode off:\n%s", js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "policy_mode: off") {
+		t.Fatalf("text report missing policy_mode:\n%s", text)
+	}
+	if !strings.Contains(text, "policy_source: off") {
+		t.Fatalf("text report missing policy_source:\n%s", text)
+	}
+	if strings.Contains(text, "policy_allow:") {
+		t.Fatalf("text report must omit policy_allow when mode off:\n%s", text)
+	}
+}
+
+func TestDogfood_PolicyEvidenceMeshAllow(t *testing.T) {
+	// Policy mode advisory + mesh allow=true → PASS, policy_source=mesh, policy_allow=true.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case r.URL.Path == "/ready" || r.URL.Path == "/readyz":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		case r.URL.Path == "/v1/policy/evaluate" && r.Method == http.MethodPost:
+			_ = json.NewEncoder(w).Encode(map[string]any{"allow": true, "reasons": []string{"dogfood ok"}})
+		case r.URL.Path == "/v1/streams" && r.Method == http.MethodGet:
+			_ = json.NewEncoder(w).Encode([]map[string]any{})
+		default:
+			// Soft-skip other optional planes.
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		PolicyMode:      PolicyAdvisory,
+		EmitDeptStreams: false,
+		CatalogPlane:    false,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{
+		SkipContext: true,
+		SkipEmit:    true,
+		SkipMemory:  true,
+	})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if rep.PolicyMode != "advisory" {
+		t.Fatalf("PolicyMode: %q want advisory", rep.PolicyMode)
+	}
+	if rep.PolicySource != "mesh" {
+		t.Fatalf("PolicySource: %q want mesh", rep.PolicySource)
+	}
+	if rep.PolicyAllow == nil || !*rep.PolicyAllow {
+		t.Fatalf("PolicyAllow: %v want true", rep.PolicyAllow)
+	}
+	pol, ok := dogfoodStep(rep, "policy")
+	if !ok || pol.Status != StepPass {
+		t.Fatalf("policy step: ok=%v status=%s detail=%s", ok, pol.Status, pol.Detail)
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if parsed["policy_mode"] != "advisory" {
+		t.Fatalf("json policy_mode: %v\n%s", parsed["policy_mode"], js)
+	}
+	if parsed["policy_source"] != "mesh" {
+		t.Fatalf("json policy_source: %v\n%s", parsed["policy_source"], js)
+	}
+	if parsed["policy_allow"] != true {
+		t.Fatalf("json policy_allow: %v want true\n%s", parsed["policy_allow"], js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "policy_mode: advisory") || !strings.Contains(text, "policy_source: mesh") ||
+		!strings.Contains(text, "policy_allow: true") {
+		t.Fatalf("text report missing policy evidence:\n%s", text)
+	}
+}
+
+func TestDogfood_PolicyEvidenceMeshDeny(t *testing.T) {
+	// Policy mode enforce + mesh allow=false → still PASS step (decision evidence), policy_allow=false.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case r.URL.Path == "/ready" || r.URL.Path == "/readyz":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		case r.URL.Path == "/v1/policy/evaluate" && r.Method == http.MethodPost:
+			_ = json.NewEncoder(w).Encode(map[string]any{"allow": false, "reasons": []string{"denied for dogfood"}})
+		case r.URL.Path == "/v1/streams" && r.Method == http.MethodGet:
+			_ = json.NewEncoder(w).Encode([]map[string]any{})
+		default:
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		PolicyMode:      PolicyEnforce,
+		EmitDeptStreams: false,
+		CatalogPlane:    false,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{
+		SkipContext: true,
+		SkipEmit:    true,
+		SkipMemory:  true,
+	})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if rep.PolicyMode != "enforce" {
+		t.Fatalf("PolicyMode: %q want enforce", rep.PolicyMode)
+	}
+	if rep.PolicySource != "mesh" {
+		t.Fatalf("PolicySource: %q want mesh", rep.PolicySource)
+	}
+	if rep.PolicyAllow == nil || *rep.PolicyAllow {
+		t.Fatalf("PolicyAllow: %v want false", rep.PolicyAllow)
+	}
+	pol, ok := dogfoodStep(rep, "policy")
+	if !ok || pol.Status != StepPass {
+		t.Fatalf("policy step: ok=%v status=%s detail=%s", ok, pol.Status, pol.Detail)
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if parsed["policy_mode"] != "enforce" {
+		t.Fatalf("json policy_mode: %v\n%s", parsed["policy_mode"], js)
+	}
+	if parsed["policy_source"] != "mesh" {
+		t.Fatalf("json policy_source: %v\n%s", parsed["policy_source"], js)
+	}
+	if parsed["policy_allow"] != false {
+		t.Fatalf("json policy_allow: %v want false\n%s", parsed["policy_allow"], js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "policy_mode: enforce") || !strings.Contains(text, "policy_source: mesh") ||
+		!strings.Contains(text, "policy_allow: false") {
+		t.Fatalf("text report missing policy deny evidence:\n%s", text)
+	}
+}
+
 func TestDogfood_StreamsEvidence(t *testing.T) {
-	// ListStreams returns 2 streams → step PASS, streams_count=2, streams_names sample, JSON always emits (s300/s302).
+	// ListStreams returns 2 streams → step PASS, streams_count=2, streams_names sample, JSON always emits.
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case r.URL.Path == "/health":

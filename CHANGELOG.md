@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Dogfood policy evidence** — top-level `policy_mode` (always), `policy_source`, and `policy_allow` (when evaluated) on dogfood JSON/text reports for CI without scraping step detail
+- **Mesh KV read CLI** — lean `KVGet` / `KVListKeys` (`GET /v1/kv/{bucket}/{key}`, `GET /v1/kv/{bucket}?prefix=`) + `iomesh mesh kv --bucket NAME --list|--get KEY` (explicit errors; no SDK dep)
+
 ## [0.18.0] — 2026-07-19
 
 Minor release: stream message list CLI.
