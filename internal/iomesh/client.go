@@ -420,6 +420,9 @@ func (c *Client) StatusLine() string {
 		fmt.Sprintf("emit=%v", c.cfg.EmitDeptStreams),
 		"ua="+UserAgent(),
 	)
+	if v := ProductVersion(); v != "" {
+		parts = append(parts, "version="+v)
+	}
 	return strings.Join(parts, " · ")
 }
 
@@ -436,6 +439,20 @@ func SetUserAgent(ua string) {
 
 // UserAgent returns the current package User-Agent string.
 func UserAgent() string { return userAgent }
+
+// productVersion is the package product/binary version for StatusLine and dogfood
+// evidence. Set from main via SetProductVersion(version); default is empty.
+var productVersion string
+
+// SetProductVersion sets the package-level product version (empty keeps current).
+func SetProductVersion(v string) {
+	if s := strings.TrimSpace(v); s != "" {
+		productVersion = s
+	}
+}
+
+// ProductVersion returns the current package product version string (may be empty).
+func ProductVersion() string { return productVersion }
 
 func (c *Client) auth(req *http.Request) {
 	if req == nil {
