@@ -167,6 +167,7 @@ iomesh mesh dogfood --endpoint "$IOMESH_ENDPOINT" --tenant acme
 iomesh mesh dogfood --memory-endpoint "$IOMESH_MEMORY_ENDPOINT"
 iomesh mesh dogfood --skip-context --skip-emit --skip-memory   # health-only-ish
 iomesh mesh catalog              # broker then portal paths
+iomesh mesh streams [--name] [--json]  # lean stream list/get (s298; not a dogfood step)
 iomesh mesh status [--json]      # operator snapshot (StatusLine + Health/Ready)
 ```
 

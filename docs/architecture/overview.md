@@ -115,4 +115,5 @@ CLI / TUI / ACP
 34. ~~Dogfood catalog plane evidence~~ **done** — report `catalog_source` / `catalog_count` for CI (s292); see [mesh-dogfood.md](mesh-dogfood.md)
 35. ~~Dogfood context plane evidence + `mesh status`~~ **done** — report `context_chars` / `context_lineage_count` + operator status CLI (s296); see [mesh-dogfood.md](mesh-dogfood.md)
 36. ~~Dogfood WaitReady soft preflight~~ **done** — optional `--wait-ready` inside mesh dogfood + report `wait_ready_ms` (s297); see [mesh-dogfood.md](mesh-dogfood.md)
-37. Optional: platform remote multi-tenant metering UI
+37. ~~Lean mesh stream discovery + `mesh streams` CLI~~ **done** — `ListStreams` / `GetStream` + `iomesh mesh streams` (s298); see [mesh-deeper.md](mesh-deeper.md)
+38. Optional: platform remote multi-tenant metering UI

@@ -462,7 +462,7 @@ func cmdModels(args []string) int {
 
 func cmdMesh(args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: iomesh mesh dogfood|probe|usage|catalog|wait|status [flags]")
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh dogfood|probe|usage|catalog|streams|wait|status [flags]")
 		return 2
 	}
 	switch args[0] {
@@ -472,6 +472,8 @@ func cmdMesh(args []string) int {
 		return cmdMeshUsage(args[1:])
 	case "catalog":
 		return cmdMeshCatalog(args[1:])
+	case "streams":
+		return cmdMeshStreams(args[1:])
 	case "wait":
 		return cmdMeshWait(args[1:])
 	case "status":
@@ -483,6 +485,7 @@ func cmdMesh(args []string) int {
   iomesh mesh probe     alias for dogfood
   iomesh mesh usage     local LLM metering rollup for this process (--json for scrapers)
   iomesh mesh catalog   list governed data products (broker + portal federation)
+  iomesh mesh streams   list/get broker streams (GET /v1/streams; explicit errors)
   iomesh mesh wait      poll Ready until OK or timeout (operator preflight)
   iomesh mesh status    operator snapshot (StatusLine + optional Health/Ready)
 
@@ -505,6 +508,14 @@ Flags (catalog):
   --query q         optional search filter
   --endpoint url    override mesh endpoint
   --tenant id       override tenant
+
+Flags (streams):
+  --name NAME       get one stream (omit to list all)
+  --json            JSON array (list) or object (get)
+  --endpoint url    override mesh endpoint
+  --config path     config.toml
+  --tenant id       override tenant
+  -v                verbose
 
 Flags (wait):
   --timeout dur       max wait (default 30s)
@@ -739,6 +750,87 @@ func cmdMeshCatalog(args []string) int {
 	if res.Source == "off" {
 		return 1
 	}
+	return 0
+}
+
+// cmdMeshStreams lists or gets broker streams via lean GET /v1/streams (explicit errors; no SDK dep).
+func cmdMeshStreams(args []string) int {
+	fs := flag.NewFlagSet("mesh streams", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	var (
+		configPath = fs.String("config", "", "config.toml path")
+		name       = fs.String("name", "", "get one stream by name (omit to list all)")
+		endpoint   = fs.String("endpoint", "", "override IOMESH_ENDPOINT")
+		tenant     = fs.String("tenant", "", "override tenant")
+		jsonOut    = fs.Bool("json", false, "print streams as JSON")
+		verbose    = fs.Bool("v", false, "verbose logs")
+	)
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	logger := newLogger(*verbose)
+	cfg, err := loadConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "config: %v\n", err)
+		return 1
+	}
+	if *endpoint != "" {
+		cfg.IOMesh.Endpoint = *endpoint
+		cfg.IOMesh.Enabled = true
+	}
+	if *tenant != "" {
+		cfg.IOMesh.Tenant = *tenant
+	}
+	mesh := iomesh.New(iomesh.Config{
+		Enabled:     cfg.IOMesh.Enabled,
+		Endpoint:    cfg.IOMesh.Endpoint,
+		Tenant:      cfg.IOMesh.Tenant,
+		APIKeyEnv:   cfg.IOMesh.APIKeyEnv,
+		OrgID:       cfg.IOMesh.Org,
+		WorkspaceID: cfg.IOMesh.Workspace,
+	}, logger)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	if strings.TrimSpace(*name) != "" {
+		info, err := mesh.GetStream(ctx, *name)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "FAIL mesh streams: %v\n", err)
+			return 1
+		}
+		if *jsonOut {
+			b, err := json.MarshalIndent(info, "", "  ")
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "json: %v\n", err)
+				return 1
+			}
+			fmt.Println(string(b))
+			return 0
+		}
+		fmt.Print(iomesh.FormatStreamDetail(*info))
+		return 0
+	}
+
+	streams, err := mesh.ListStreams(ctx)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "FAIL mesh streams: %v\n", err)
+		return 1
+	}
+	if *jsonOut {
+		if streams == nil {
+			streams = []iomesh.StreamInfo{}
+		}
+		b, err := json.MarshalIndent(streams, "", "  ")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "json: %v\n", err)
+			return 1
+		}
+		fmt.Println(string(b))
+		return 0
+	}
+	fmt.Print(iomesh.FormatStreams(streams))
 	return 0
 }
 
