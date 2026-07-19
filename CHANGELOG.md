@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Mesh HTTP User-Agent** — `iomesh-tui/<version>` on outbound mesh requests (`iomesh.SetUserAgent`); Health/Ready use same auth path (s288)
+
+### Fixed
+
+- **`make release-snapshot`** — passes `--skip=sign` so local dry-runs do not require cosign OIDC (s288)
+
 ## [0.8.0] — 2026-07-19
 
 Minor release: keyless cosign signatures on release checksums (GitHub OIDC).

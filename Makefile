@@ -63,10 +63,11 @@ dogfood-strict:
 dogfood-unit:
 	./scripts/mesh_dogfood.sh --unit
 
-# Local GoReleaser snapshot (no GitHub publish). Requires goreleaser installed.
+# Local GoReleaser snapshot (no GitHub publish). Requires goreleaser (+ syft for SBOM).
+# Skips cosign (no OIDC on laptop). Tag releases sign checksums via GitHub Actions.
 #   go install github.com/goreleaser/goreleaser/v2@latest
 release-snapshot:
-	goreleaser release --snapshot --clean
+	goreleaser release --snapshot --clean --skip=sign
 
 clean:
 	rm -rf bin/ dist/ $(COVER) coverage.html

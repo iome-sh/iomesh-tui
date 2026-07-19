@@ -30,6 +30,8 @@ import (
 var version = "0.8.0"
 
 func main() {
+	// Identify mesh HTTP traffic for operator support (parity with iomesh-client-sdk-go User-Agent).
+	iomesh.SetUserAgent("iomesh-tui/" + version)
 	os.Exit(run(os.Args[1:]))
 }
 

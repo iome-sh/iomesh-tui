@@ -130,17 +130,37 @@ func TestEmitAndRecordLLMCall(t *testing.T) {
 }
 
 func TestHealth(t *testing.T) {
+	var gotUA string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/health" {
+			gotUA = r.Header.Get("User-Agent")
 			w.WriteHeader(200)
 			return
 		}
 		w.WriteHeader(404)
 	}))
 	defer srv.Close()
+	SetUserAgent("iomesh-tui/test")
+	t.Cleanup(func() { SetUserAgent("iomesh-tui") })
 	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
 	if err := c.Health(context.Background()); err != nil {
 		t.Fatal(err)
+	}
+	if gotUA != "iomesh-tui/test" {
+		t.Fatalf("User-Agent=%q", gotUA)
+	}
+}
+
+func TestSetUserAgent(t *testing.T) {
+	prev := UserAgent()
+	t.Cleanup(func() { SetUserAgent(prev) })
+	SetUserAgent("  iomesh-tui/9.9.9  ")
+	if UserAgent() != "iomesh-tui/9.9.9" {
+		t.Fatalf("%q", UserAgent())
+	}
+	SetUserAgent("") // keep current
+	if UserAgent() != "iomesh-tui/9.9.9" {
+		t.Fatalf("empty should keep: %q", UserAgent())
 	}
 }
 

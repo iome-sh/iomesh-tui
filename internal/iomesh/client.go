@@ -422,7 +422,25 @@ func (c *Client) StatusLine() string {
 	return strings.Join(parts, " · ")
 }
 
+// userAgent is the outbound User-Agent for mesh HTTP (operator supportability).
+// Set from main via SetUserAgent("iomesh-tui/"+version); default is "iomesh-tui".
+var userAgent = "iomesh-tui"
+
+// SetUserAgent sets the package-level User-Agent used by all Clients (empty keeps current).
+func SetUserAgent(ua string) {
+	if s := strings.TrimSpace(ua); s != "" {
+		userAgent = s
+	}
+}
+
+// UserAgent returns the current package User-Agent string.
+func UserAgent() string { return userAgent }
+
 func (c *Client) auth(req *http.Request) {
+	if req == nil {
+		return
+	}
+	req.Header.Set("User-Agent", userAgent)
 	env := c.cfg.APIKeyEnv
 	if env == "" {
 		env = "IOMESH_API_KEY"
@@ -445,6 +463,7 @@ func (c *Client) Health(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	c.auth(req)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
