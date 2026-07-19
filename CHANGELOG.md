@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Dogfood consumer identity** — top-level `consumer_stream` / `consumer_name` / `consumer_filter` when both stream+name are configured for the soft consumer probe (set even if create fails; omitted when unset)
+- **Richer `mesh status`** — JSON and text include binary `version`, `policy_mode`, `context_plane`, `catalog_plane`, `include_lineage`, and `emit_dept` from config
+
 ## [0.25.0] — 2026-07-19
 
 Minor release: soft dogfood consumer create and fetch probe.

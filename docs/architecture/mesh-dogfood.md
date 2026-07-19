@@ -40,11 +40,24 @@ One-shot operator snapshot without the full dogfood suite:
 
 ```bash
 iomesh mesh status [--json] [--endpoint url] [--config path]
-# Human: StatusLine + endpoint/tenant/org/workspace/ua + health/ready (ok|err|skipped)
+# Human: StatusLine + version + endpoint/tenant/org/workspace + plane flags + ua + health/ready
 # --json: structured object with the same fields (health/ready fail-open — exit 0 even on probe err)
 ```
 
 Builds the client like dogfood/wait. Prints `StatusLine` config summary plus optional one-shot `Health` / `Ready` probes (errors shown as `err` + message; never fail the command).
+
+JSON/text fields beyond StatusLine identity:
+
+| Field | Source |
+|-------|--------|
+| `version` | Binary version (`main.version` / `iomesh version`) |
+| `policy_mode` | `[iomesh] policy_mode` (default `off`) |
+| `context_plane` | `[iomesh] context_plane` |
+| `catalog_plane` | `[iomesh] catalog_plane` |
+| `include_lineage` | `[iomesh] include_lineage` |
+| `emit_dept` | `[iomesh] emit_dept_streams` |
+| `user_agent` | package mesh HTTP User-Agent |
+| `health` / `ready` | one-shot probe (`ok` \| `err` \| `skipped`) |
 
 | Step | Request | Soft (default) | Strict (`--strict`) |
 |------|---------|----------------|---------------------|
@@ -105,6 +118,7 @@ Optional best-effort durable consumer create after `streams` and before `kv` / `
 - **`--consumer-fetch`**: after create success, `ConsumerFetch` batch=1 max_wait=500ms; empty message list is still **PASS**; fetch errors soft **SKIP** (or **FAIL** when strict); never ack
 - **PASS detail**: `stream=S name=C create=ok [filter=F] [fetch=n=N]`
 - Top-level `consumer_probed`, `consumer_ok`, `consumer_fetch_ok` always emitted (`consumer_probed` true only when both set and create attempt ran; `consumer_fetch_ok` true only when fetch requested and succeeded)
+- Top-level `consumer_stream` / `consumer_name` / `consumer_filter` set when both stream+name provided for the probe (**even if create fails**); omitted when unset/partial
 
 ### kv (soft list-keys probe)
 
@@ -214,6 +228,9 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `kv_ensured` | bool | True only when `--kv-ensure` create was attempted and succeeded (**always emitted**, `false` when unset/skip/soft-fail) |
 | `pub_probed` | bool | True when `--pub-subject` was set and a Pub attempt ran (**always emitted**, `false` when unset) |
 | `pub_ok` | bool | True when soft pub probe succeeded (**always emitted**, `false` when unset/skip/fail) |
+| `consumer_stream` | string | Probe stream when both stream+name configured (**omitted** when unset/partial; set even if create fails) |
+| `consumer_name` | string | Probe consumer name when both stream+name configured (**omitted** when unset/partial) |
+| `consumer_filter` | string | Optional filter_subject when set with stream+name (**omitted** when empty) |
 | `consumer_probed` | bool | True when `--consumer-stream` + `--consumer-name` set and create attempt ran (**always emitted**, `false` when unset) |
 | `consumer_ok` | bool | True when soft consumer create succeeded (201 or 409) (**always emitted**, `false` when unset/skip/fail) |
 | `consumer_fetch_ok` | bool | True when optional soft fetch ran without error (**always emitted**, `false` when not requested/fail/unset) |
