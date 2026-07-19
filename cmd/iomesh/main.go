@@ -34,6 +34,8 @@ var version = "0.27.0"
 func main() {
 	// Identify mesh HTTP traffic for operator support (parity with iomesh-client-sdk-go User-Agent).
 	iomesh.SetUserAgent("iomesh-tui/" + version)
+	// Product version for StatusLine version= and dogfood report default.
+	iomesh.SetProductVersion(version)
 	os.Exit(run(os.Args[1:]))
 }
 

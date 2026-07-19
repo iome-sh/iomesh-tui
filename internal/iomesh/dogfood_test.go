@@ -202,7 +202,7 @@ func TestDogfood_FullPass(t *testing.T) {
 
 	c := New(Config{
 		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
-		ContextPlane: true, EmitDeptStreams: true,
+		ContextPlane: true, CatalogPlane: true, EmitDeptStreams: true,
 	}, nil)
 	rep := c.Dogfood(context.Background(), DogfoodOptions{Strict: true, Workspace: "/ws"})
 	if !rep.OK {
@@ -272,12 +272,22 @@ func TestDogfood_FullPass(t *testing.T) {
 	if !strings.Contains(js, `"result": "PASS"`) || !strings.Contains(js, `"ok": true`) {
 		t.Fatal(js)
 	}
-	// Top-level health_ms / ready_ms always present after health/ready steps (>= 0; often 0 on fast mock).
+	// Top-level health_ms / ready_ms / context_ms / streams_ms / catalog_ms always present
+	// after those steps (>= 0; often 0 on fast mock).
 	if rep.HealthMS < 0 {
 		t.Fatalf("HealthMS: %d want >= 0", rep.HealthMS)
 	}
 	if rep.ReadyMS < 0 {
 		t.Fatalf("ReadyMS: %d want >= 0", rep.ReadyMS)
+	}
+	if rep.ContextMS < 0 {
+		t.Fatalf("ContextMS: %d want >= 0", rep.ContextMS)
+	}
+	if rep.StreamsMS < 0 {
+		t.Fatalf("StreamsMS: %d want >= 0", rep.StreamsMS)
+	}
+	if rep.CatalogMS < 0 {
+		t.Fatalf("CatalogMS: %d want >= 0", rep.CatalogMS)
 	}
 	var parsed map[string]any
 	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
@@ -289,11 +299,23 @@ func TestDogfood_FullPass(t *testing.T) {
 	if _, ok := parsed["ready_ms"].(float64); !ok {
 		t.Fatalf("json ready_ms missing or wrong type: %v\n%s", parsed["ready_ms"], js)
 	}
+	if _, ok := parsed["context_ms"].(float64); !ok {
+		t.Fatalf("json context_ms missing or wrong type: %v\n%s", parsed["context_ms"], js)
+	}
+	if _, ok := parsed["streams_ms"].(float64); !ok {
+		t.Fatalf("json streams_ms missing or wrong type: %v\n%s", parsed["streams_ms"], js)
+	}
+	if _, ok := parsed["catalog_ms"].(float64); !ok {
+		t.Fatalf("json catalog_ms missing or wrong type: %v\n%s", parsed["catalog_ms"], js)
+	}
 	if _, ok := parsed["version"]; !ok {
 		t.Fatalf("json version missing\n%s", js)
 	}
 	if !strings.Contains(out, "health_ms:") || !strings.Contains(out, "ready_ms:") {
 		t.Fatalf("text report missing health_ms/ready_ms:\n%s", out)
+	}
+	if !strings.Contains(out, "context_ms:") || !strings.Contains(out, "streams_ms:") || !strings.Contains(out, "catalog_ms:") {
+		t.Fatalf("text report missing context_ms/streams_ms/catalog_ms:\n%s", out)
 	}
 }
 
@@ -564,12 +586,21 @@ func TestDogfood_Disabled(t *testing.T) {
 			t.Fatalf("unexpected memory_ingest step when disabled: %+v", s)
 		}
 	}
-	// health/ready steps absent → top-level latencies always 0.
+	// health/ready/context/streams/catalog steps absent → top-level latencies always 0.
 	if rep.HealthMS != 0 {
 		t.Fatalf("disabled HealthMS: %d want 0", rep.HealthMS)
 	}
 	if rep.ReadyMS != 0 {
 		t.Fatalf("disabled ReadyMS: %d want 0", rep.ReadyMS)
+	}
+	if rep.ContextMS != 0 {
+		t.Fatalf("disabled ContextMS: %d want 0", rep.ContextMS)
+	}
+	if rep.StreamsMS != 0 {
+		t.Fatalf("disabled StreamsMS: %d want 0", rep.StreamsMS)
+	}
+	if rep.CatalogMS != 0 {
+		t.Fatalf("disabled CatalogMS: %d want 0", rep.CatalogMS)
 	}
 	js := FormatReportJSON(rep)
 	var parsed map[string]any
@@ -582,12 +613,24 @@ func TestDogfood_Disabled(t *testing.T) {
 	if n, ok := parsed["ready_ms"].(float64); !ok || int(n) != 0 {
 		t.Fatalf("json ready_ms: %v want 0\n%s", parsed["ready_ms"], js)
 	}
+	if n, ok := parsed["context_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json context_ms: %v want 0\n%s", parsed["context_ms"], js)
+	}
+	if n, ok := parsed["streams_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json streams_ms: %v want 0\n%s", parsed["streams_ms"], js)
+	}
+	if n, ok := parsed["catalog_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json catalog_ms: %v want 0\n%s", parsed["catalog_ms"], js)
+	}
 	if _, ok := parsed["version"]; !ok {
 		t.Fatalf("json version missing when disabled\n%s", js)
 	}
 	text := FormatReport(rep)
 	if !strings.Contains(text, "health_ms: 0") || !strings.Contains(text, "ready_ms: 0") {
 		t.Fatalf("text report missing health_ms/ready_ms 0:\n%s", text)
+	}
+	if !strings.Contains(text, "context_ms: 0") || !strings.Contains(text, "streams_ms: 0") || !strings.Contains(text, "catalog_ms: 0") {
+		t.Fatalf("text report missing context_ms/streams_ms/catalog_ms 0:\n%s", text)
 	}
 }
 
@@ -629,7 +672,11 @@ func TestDogfood_VersionEvidence(t *testing.T) {
 		t.Fatalf("FormatReport missing version:\n%s", text)
 	}
 
-	// Empty opts.Version → always emit empty string (not omitted).
+	// Empty opts.Version + empty ProductVersion → always emit empty string (not omitted).
+	prevPV := ProductVersion()
+	productVersion = ""
+	t.Cleanup(func() { productVersion = prevPV })
+
 	rep2 := c.Dogfood(context.Background(), DogfoodOptions{SkipMemory: true})
 	if rep2.Version != "" {
 		t.Fatalf("empty Version want \"\", got %q", rep2.Version)
@@ -641,6 +688,18 @@ func TestDogfood_VersionEvidence(t *testing.T) {
 	}
 	if v, ok := parsed["version"].(string); !ok || v != "" {
 		t.Fatalf("json version when unset: %v want \"\"\n%s", parsed["version"], js2)
+	}
+
+	// Empty opts.Version falls back to ProductVersion when set.
+	SetProductVersion("  9.9.9-product  ")
+	rep3 := c.Dogfood(context.Background(), DogfoodOptions{SkipMemory: true})
+	if rep3.Version != "9.9.9-product" {
+		t.Fatalf("ProductVersion default: %q want 9.9.9-product", rep3.Version)
+	}
+	// Explicit opts.Version still wins over ProductVersion.
+	rep4 := c.Dogfood(context.Background(), DogfoodOptions{SkipMemory: true, Version: "opts-wins"})
+	if rep4.Version != "opts-wins" {
+		t.Fatalf("opts.Version should win: %q", rep4.Version)
 	}
 }
 
@@ -1852,6 +1911,32 @@ func TestDogfood_UserAgentEvidence(t *testing.T) {
 	}
 	sl := c.StatusLine()
 	if !strings.Contains(sl, "ua=iomesh-tui/test-s290") {
+		t.Fatalf("StatusLine missing ua=: %s", sl)
+	}
+}
+
+func TestStatusLine_ProductVersion(t *testing.T) {
+	prev := ProductVersion()
+	SetProductVersion("1.2.3-status")
+	t.Cleanup(func() {
+		// SetProductVersion ignores empty; re-apply previous non-empty if any.
+		if prev != "" {
+			SetProductVersion(prev)
+		} else {
+			// leave 1.2.3-status if no previous — force clear via package var not exported.
+			// Other tests set their own ProductVersion with cleanup when needed.
+			productVersion = prev
+		}
+	})
+
+	c := New(Config{
+		Enabled: true, Endpoint: "http://mesh.example", Tenant: "t1",
+	}, nil)
+	sl := c.StatusLine()
+	if !strings.Contains(sl, "version=1.2.3-status") {
+		t.Fatalf("StatusLine missing version=: %s", sl)
+	}
+	if !strings.Contains(sl, "ua=") {
 		t.Fatalf("StatusLine missing ua=: %s", sl)
 	}
 }

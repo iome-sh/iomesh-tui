@@ -164,6 +164,22 @@ func TestSetUserAgent(t *testing.T) {
 	}
 }
 
+func TestSetProductVersion(t *testing.T) {
+	prev := ProductVersion()
+	t.Cleanup(func() {
+		productVersion = prev
+	})
+	productVersion = "" // isolate
+	SetProductVersion("  0.27.0  ")
+	if ProductVersion() != "0.27.0" {
+		t.Fatalf("%q", ProductVersion())
+	}
+	SetProductVersion("") // keep current
+	if ProductVersion() != "0.27.0" {
+		t.Fatalf("empty should keep: %q", ProductVersion())
+	}
+}
+
 func TestPublishMemoryIngest_PathSubjectAndPayload(t *testing.T) {
 	var gotPath string
 	var gotBody map[string]any

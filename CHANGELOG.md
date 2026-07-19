@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Dogfood step latencies** — top-level `context_ms` / `streams_ms` / `catalog_ms` (step latency ms; always emitted, `0` when skipped/absent)
+- **StatusLine product version** — `iomesh.SetProductVersion` / `ProductVersion` (wired from main like User-Agent); `StatusLine` appends `version=` when set; dogfood report `version` defaults from `ProductVersion` when `DogfoodOptions.Version` is empty
+
 ## [0.27.0] — 2026-07-19
 
 Minor release: dogfood version and health/ready latency fields.

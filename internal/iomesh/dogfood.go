@@ -101,6 +101,15 @@ type DogfoodReport struct {
 	// ReadyMS is ready step latency in milliseconds (0 when step skipped/absent).
 	// Always emitted in JSON.
 	ReadyMS int `json:"ready_ms"`
+	// ContextMS is context step latency in milliseconds (0 when step skipped/absent).
+	// Always emitted in JSON so CI sees plane latency without scraping step detail.
+	ContextMS int `json:"context_ms"`
+	// StreamsMS is streams step latency in milliseconds (0 when step skipped/absent).
+	// Always emitted in JSON.
+	StreamsMS int `json:"streams_ms"`
+	// CatalogMS is catalog step latency in milliseconds (0 when step skipped/absent).
+	// Always emitted in JSON.
+	CatalogMS int `json:"catalog_ms"`
 	// PolicyMode is the configured policy mode (off|advisory|enforce). Always emitted (default "off").
 	PolicyMode string `json:"policy_mode"`
 	// PolicySource is last policy probe source (mesh|fail-open|unavailable|off|"").
@@ -112,7 +121,7 @@ type DogfoodReport struct {
 	// MemoryEndpoint is optional memory sidecar base used for sync memory_retrieve.
 	// Omitted when empty (retrieve uses mesh Endpoint). Stage warm-plane evidence.
 	MemoryEndpoint string `json:"memory_endpoint,omitempty"`
-	// Version is the CLI/binary version when provided via DogfoodOptions.Version.
+	// Version is the CLI/binary version from DogfoodOptions.Version, else ProductVersion().
 	// Always emitted in JSON (empty string when unset).
 	Version string `json:"version"`
 	// UserAgent is the package mesh HTTP User-Agent (iomesh-tui/<version>).
@@ -193,7 +202,11 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		PolicyMode: "off",
 	}
 	// Always emit version (empty when unset) for CI/operator evidence.
+	// Prefer opts.Version; fall back to package ProductVersion (set from main).
 	rep.Version = strings.TrimSpace(opts.Version)
+	if rep.Version == "" {
+		rep.Version = ProductVersion()
+	}
 	if opts.WaitReady > 0 {
 		rep.WaitReadyMS = int(opts.WaitReady / time.Millisecond)
 	}
@@ -298,10 +311,10 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 
 	// 3) Context plane (optionally lineage-aware)
 	if opts.SkipContext || !c.cfg.ContextPlane {
-		// ContextChars / ContextLineageCount stay 0 (skip/off evidence, s296).
+		// ContextChars / ContextLineageCount / ContextMS stay 0 (skip/off evidence).
 		rep.Steps = append(rep.Steps, Step{Name: "context", Status: StepSkip, Detail: "context plane disabled or skipped"})
 	} else {
-		rep.Steps = append(rep.Steps, c.stepTimed("context", func() (StepStatus, string) {
+		contextStep := c.stepTimed("context", func() (StepStatus, string) {
 			res := c.QueryContext(ctx, opts.Workspace, opts.Query)
 			text := FormatContextSnippet(res)
 			rep.ContextChars = len(text)
@@ -322,7 +335,9 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 				extra = fmt.Sprintf(" lineage=%d", n)
 			}
 			return StepPass, fmt.Sprintf("got context (%d chars%s): %s", len(text), extra, detail)
-		}))
+		})
+		rep.ContextMS = int(contextStep.Latency.Milliseconds())
+		rep.Steps = append(rep.Steps, contextStep)
 	}
 
 	// 4) Dept emit (generic dogfood event)
@@ -474,9 +489,10 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 	if !c.cfg.CatalogPlane {
 		rep.CatalogSource = "off"
 		rep.CatalogCount = 0
+		// CatalogMS stays 0 when skipped.
 		rep.Steps = append(rep.Steps, Step{Name: "catalog", Status: StepSkip, Detail: "catalog plane disabled"})
 	} else {
-		rep.Steps = append(rep.Steps, c.stepTimed("catalog", func() (StepStatus, string) {
+		catalogStep := c.stepTimed("catalog", func() (StepStatus, string) {
 			res := c.ListCatalog(ctx, "")
 			rep.CatalogSource = res.Source
 			rep.CatalogCount = len(res.Products)
@@ -492,16 +508,19 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 			default:
 				return StepSkip, detail
 			}
-		}))
+		})
+		rep.CatalogMS = int(catalogStep.Latency.Milliseconds())
+		rep.Steps = append(rep.Steps, catalogStep)
 	}
 
-	// 6b) Streams list probe (non-destructive ListStreams — s300; streams_names sample s302)
+	// 6b) Streams list probe (non-destructive ListStreams — streams_names sample)
 	if opts.SkipStreams {
 		rep.StreamsCount = 0
 		rep.StreamsNames = []string{}
+		// StreamsMS stays 0 when skipped.
 		rep.Steps = append(rep.Steps, Step{Name: "streams", Status: StepSkip, Detail: "skipped (--skip-streams)"})
 	} else {
-		rep.Steps = append(rep.Steps, c.stepTimed("streams", func() (StepStatus, string) {
+		streamsStep := c.stepTimed("streams", func() (StepStatus, string) {
 			streams, err := c.ListStreams(ctx)
 			if err != nil {
 				rep.StreamsCount = 0
@@ -535,7 +554,9 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 				detail = fmt.Sprintf("%s names=%s", detail, strings.Join(names, ","))
 			}
 			return StepPass, detail
-		}))
+		})
+		rep.StreamsMS = int(streamsStep.Latency.Milliseconds())
+		rep.Steps = append(rep.Steps, streamsStep)
 	}
 
 	// 6c) Soft consumer create (+ optional fetch) probe — after streams; no ack.
@@ -901,6 +922,9 @@ func FormatReportJSON(r DogfoodReport) string {
 		WaitReadyMS         int        `json:"wait_ready_ms"`     // always emit (CI wait preflight budget)
 		HealthMS            int        `json:"health_ms"`         // always emit (0 when health step skipped/absent)
 		ReadyMS             int        `json:"ready_ms"`          // always emit (0 when ready step skipped/absent)
+		ContextMS           int        `json:"context_ms"`        // always emit (0 when context step skipped/absent)
+		StreamsMS           int        `json:"streams_ms"`        // always emit (0 when streams step skipped/absent)
+		CatalogMS           int        `json:"catalog_ms"`        // always emit (0 when catalog step skipped/absent)
 		PolicyMode          string     `json:"policy_mode"`       // always emit (off|advisory|enforce)
 		PolicySource        string     `json:"policy_source,omitempty"`
 		PolicyAllow         *bool      `json:"policy_allow,omitempty"` // set when policy evaluated
@@ -949,6 +973,9 @@ func FormatReportJSON(r DogfoodReport) string {
 		WaitReadyMS:         r.WaitReadyMS,
 		HealthMS:            r.HealthMS,
 		ReadyMS:             r.ReadyMS,
+		ContextMS:           r.ContextMS,
+		StreamsMS:           r.StreamsMS,
+		CatalogMS:           r.CatalogMS,
 		PolicyMode:          policyMode,
 		PolicySource:        r.PolicySource,
 		PolicyAllow:         r.PolicyAllow,
@@ -1035,6 +1062,9 @@ func FormatReport(r DogfoodReport) string {
 	fmt.Fprintf(&b, "  wait_ready_ms: %d\n", r.WaitReadyMS)
 	fmt.Fprintf(&b, "  health_ms: %d\n", r.HealthMS)
 	fmt.Fprintf(&b, "  ready_ms: %d\n", r.ReadyMS)
+	fmt.Fprintf(&b, "  context_ms: %d\n", r.ContextMS)
+	fmt.Fprintf(&b, "  streams_ms: %d\n", r.StreamsMS)
+	fmt.Fprintf(&b, "  catalog_ms: %d\n", r.CatalogMS)
 	policyMode := r.PolicyMode
 	if policyMode == "" {
 		policyMode = "off"
