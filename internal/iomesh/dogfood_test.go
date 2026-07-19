@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -166,6 +167,14 @@ func mockMeshServer(t *testing.T, opts struct {
 						"full":    "iomesh-tui dual-write dogfood",
 						"score":   0.9,
 					},
+				},
+			})
+		case r.URL.Path == "/v1/catalog/data-products" || r.URL.Path == "/v1/catalog/products":
+			// Default catalog products for dogfood catalog evidence (s292).
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"products": []map[string]string{
+					{"id": "ops-incidents", "layer": "operational", "subject": "dept.sre.incidents", "title": "Incidents"},
+					{"id": "crm-contacts", "layer": "knowledge", "subject": "dept.sales.contacts", "name": "CRM"},
 				},
 			})
 		default:
@@ -1047,6 +1056,112 @@ func TestDogfood_JSONDualWriteFalse(t *testing.T) {
 	text := FormatReport(rep)
 	if !strings.Contains(text, "dual_write: false") {
 		t.Fatalf("text report missing dual_write: %s", text)
+	}
+}
+
+func TestDogfood_CatalogEvidence(t *testing.T) {
+	srv := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+		failRecall bool
+		noRecall   bool
+	}{})
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		EmitDeptStreams: true,
+		CatalogPlane:    true,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{Strict: true})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if rep.CatalogSource != "mesh" && rep.CatalogSource != "portal" {
+		t.Fatalf("CatalogSource: %q want mesh|portal", rep.CatalogSource)
+	}
+	if rep.CatalogCount <= 0 {
+		t.Fatalf("CatalogCount: %d want > 0", rep.CatalogCount)
+	}
+	var catOK bool
+	for _, s := range rep.Steps {
+		if s.Name == "catalog" && s.Status == StepPass {
+			catOK = true
+		}
+	}
+	if !catOK {
+		t.Fatal(FormatReport(rep))
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if parsed["catalog_source"] != rep.CatalogSource {
+		t.Fatalf("json catalog_source: %v\n%s", parsed["catalog_source"], js)
+	}
+	// JSON numbers decode as float64.
+	if n, ok := parsed["catalog_count"].(float64); !ok || int(n) != rep.CatalogCount {
+		t.Fatalf("json catalog_count: %v want %d\n%s", parsed["catalog_count"], rep.CatalogCount, js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "catalog_source: "+rep.CatalogSource) {
+		t.Fatalf("text report missing catalog_source:\n%s", text)
+	}
+	if !strings.Contains(text, fmt.Sprintf("catalog_count: %d", rep.CatalogCount)) {
+		t.Fatalf("text report missing catalog_count:\n%s", text)
+	}
+}
+
+func TestDogfood_CatalogEvidenceOff(t *testing.T) {
+	srv := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+		failRecall bool
+		noRecall   bool
+	}{})
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		EmitDeptStreams: true,
+		CatalogPlane:    false,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if rep.CatalogSource != "off" {
+		t.Fatalf("CatalogSource: %q want off", rep.CatalogSource)
+	}
+	if rep.CatalogCount != 0 {
+		t.Fatalf("CatalogCount: %d want 0", rep.CatalogCount)
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if parsed["catalog_source"] != "off" {
+		t.Fatalf("json catalog_source: %v\n%s", parsed["catalog_source"], js)
+	}
+	if n, ok := parsed["catalog_count"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json catalog_count: %v want 0\n%s", parsed["catalog_count"], js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "catalog_source: off") {
+		t.Fatalf("text report missing catalog_source off:\n%s", text)
+	}
+	if !strings.Contains(text, "catalog_count: 0") {
+		t.Fatalf("text report missing catalog_count:\n%s", text)
 	}
 }
 

@@ -44,6 +44,12 @@ type DogfoodReport struct {
 	// Always emitted in JSON (false when unset) so CI sees dual-write mode without
 	// scraping step detail. Does not gate the memory_ingest probe.
 	DualWrite bool `json:"dual_write"`
+	// CatalogSource is last catalog probe source (mesh|portal|fail-open|off|"").
+	// Set when catalog step runs; empty when mesh disabled before catalog (s292).
+	CatalogSource string `json:"catalog_source,omitempty"`
+	// CatalogCount is number of products from last ListCatalog (0 when none/off).
+	// Always emitted in JSON so CI sees catalog evidence without scraping step detail.
+	CatalogCount int `json:"catalog_count"`
 	// MemoryEndpoint is optional memory sidecar base used for sync memory_retrieve.
 	// Omitted when empty (retrieve uses mesh Endpoint). Stage warm-plane evidence.
 	MemoryEndpoint string `json:"memory_endpoint,omitempty"`
@@ -286,10 +292,14 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 
 	// 6) Catalog plane
 	if !c.cfg.CatalogPlane {
+		rep.CatalogSource = "off"
+		rep.CatalogCount = 0
 		rep.Steps = append(rep.Steps, Step{Name: "catalog", Status: StepSkip, Detail: "catalog plane disabled"})
 	} else {
 		rep.Steps = append(rep.Steps, c.stepTimed("catalog", func() (StepStatus, string) {
 			res := c.ListCatalog(ctx, "")
+			rep.CatalogSource = res.Source
+			rep.CatalogCount = len(res.Products)
 			detail := fmt.Sprintf("source=%s n=%d %s", res.Source, len(res.Products), res.Detail)
 			switch res.Source {
 			case "mesh", "portal":
@@ -561,6 +571,8 @@ func FormatReportJSON(r DogfoodReport) string {
 		Org            string     `json:"org,omitempty"`
 		Workspace      string     `json:"workspace,omitempty"`
 		DualWrite      bool       `json:"dual_write"` // always emit (CI dual-write mode)
+		CatalogSource  string     `json:"catalog_source,omitempty"`
+		CatalogCount   int        `json:"catalog_count"` // always emit (CI catalog evidence, s292)
 		MemoryEndpoint string     `json:"memory_endpoint,omitempty"`
 		UserAgent      string     `json:"user_agent,omitempty"`
 		Strict         bool       `json:"strict"`
@@ -577,6 +589,8 @@ func FormatReportJSON(r DogfoodReport) string {
 		Org:            r.Org,
 		Workspace:      r.Workspace,
 		DualWrite:      r.DualWrite,
+		CatalogSource:  r.CatalogSource,
+		CatalogCount:   r.CatalogCount,
 		MemoryEndpoint: r.MemoryEndpoint,
 		UserAgent:      r.UserAgent,
 		Strict:         r.Strict,
@@ -624,6 +638,10 @@ func FormatReport(r DogfoodReport) string {
 		fmt.Fprintf(&b, "  memory_endpoint: %s\n", r.MemoryEndpoint)
 	}
 	fmt.Fprintf(&b, "  dual_write: %v\n", r.DualWrite)
+	if r.CatalogSource != "" {
+		fmt.Fprintf(&b, "  catalog_source: %s\n", r.CatalogSource)
+	}
+	fmt.Fprintf(&b, "  catalog_count: %d\n", r.CatalogCount)
 	if r.UserAgent != "" {
 		fmt.Fprintf(&b, "  user_agent: %s\n", r.UserAgent)
 	}
