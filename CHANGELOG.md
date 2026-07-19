@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **WaitReady + `iomesh mesh wait`** — poll mesh `Ready` (optional `Health`) until OK or deadline for operator preflight (s291)
+
 ## [0.10.0] — 2026-07-19
 
 Minor release: dogfood/StatusLine user_agent evidence.
