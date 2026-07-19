@@ -60,17 +60,25 @@ type DogfoodReport struct {
 	// Always emitted in JSON (s300).
 	StreamsCount int `json:"streams_count"`
 	// StreamsNames is a short sample of stream names from last ListStreams (max 8).
-	// Always emit JSON array (empty when skip/error). s302.
+	// Always emit JSON array (empty when skip/error).
 	StreamsNames []string `json:"streams_names"`
 	// WaitReadyMS is the configured WaitReady budget in milliseconds (0 = off / no preflight).
-	// Always emitted in JSON so CI sees soft preflight budget without scraping step detail (s297).
+	// Always emitted in JSON so CI sees soft preflight budget without scraping step detail.
 	// Outcome lives on the wait_ready step (PASS/SKIP/FAIL); not a second boolean.
 	WaitReadyMS int `json:"wait_ready_ms"`
+	// PolicyMode is the configured policy mode (off|advisory|enforce). Always emitted (default "off").
+	PolicyMode string `json:"policy_mode"`
+	// PolicySource is last policy probe source (mesh|fail-open|unavailable|off|"").
+	// Set when policy step runs; "off" when mode off; empty when mesh disabled before step.
+	PolicySource string `json:"policy_source,omitempty"`
+	// PolicyAllow is the evaluate decision when policy ran (mesh/fail-open/unavailable).
+	// Omitted when mode off / step skipped without evaluation.
+	PolicyAllow *bool `json:"policy_allow,omitempty"`
 	// MemoryEndpoint is optional memory sidecar base used for sync memory_retrieve.
 	// Omitted when empty (retrieve uses mesh Endpoint). Stage warm-plane evidence.
 	MemoryEndpoint string `json:"memory_endpoint,omitempty"`
 	// UserAgent is the package mesh HTTP User-Agent (iomesh-tui/<version>).
-	// Always set from UserAgent() for CI evidence (s290); not scraped from server.
+	// Always set from UserAgent() for CI evidence; not scraped from server.
 	UserAgent string    `json:"user_agent"`
 	Strict    bool      `json:"strict"`
 	Steps     []Step    `json:"steps"`
@@ -110,13 +118,14 @@ type DogfoodOptions struct {
 
 // Dogfood runs a stage-oriented mesh smoke:
 // health → [wait_ready] → ready → context → emit → llm_meter → policy → catalog → streams → memory_*.
-// Optional wait_ready soft-preflight when DogfoodOptions.WaitReady > 0 (s297).
-// Soft streams list probe after catalog when mesh enabled (s300).
+// Optional wait_ready soft-preflight when DogfoodOptions.WaitReady > 0.
+// Soft streams list probe after catalog when mesh enabled.
 // Disabled client returns a single SKIP step and OK=true (offline-first).
 func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport {
 	rep := DogfoodReport{
-		Started: time.Now().UTC(),
-		Strict:  opts.Strict,
+		Started:    time.Now().UTC(),
+		Strict:     opts.Strict,
+		PolicyMode: "off",
 	}
 	if opts.WaitReady > 0 {
 		rep.WaitReadyMS = int(opts.WaitReady / time.Millisecond)
@@ -130,6 +139,11 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		rep.Workspace = strings.TrimSpace(c.cfg.WorkspaceID)
 		rep.DualWrite = c.cfg.DualWrite
 		rep.MemoryEndpoint = strings.TrimSpace(c.cfg.MemoryEndpoint)
+		mode := strings.ToLower(strings.TrimSpace(string(c.cfg.PolicyMode)))
+		if mode == "" {
+			mode = "off"
+		}
+		rep.PolicyMode = mode
 	}
 	if opts.Query == "" {
 		opts.Query = "iomesh-tui stage mesh dogfood"
@@ -323,6 +337,9 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 
 	// 5) Policy evaluate (optional — skip when mode off)
 	if c.cfg.PolicyMode == PolicyOff || c.cfg.PolicyMode == "" {
+		rep.PolicyMode = "off"
+		rep.PolicySource = "off"
+		// PolicyAllow omitted when mode off (no evaluate).
 		rep.Steps = append(rep.Steps, Step{Name: "policy", Status: StepSkip, Detail: "policy mode off"})
 	} else {
 		rep.Steps = append(rep.Steps, c.stepTimed("policy", func() (StepStatus, string) {
@@ -333,6 +350,12 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 					"source": "iomesh-tui",
 				},
 			})
+			rep.PolicySource = dec.Source
+			if dec.Mode != "" {
+				rep.PolicyMode = string(dec.Mode)
+			}
+			allow := dec.Allow
+			rep.PolicyAllow = &allow
 			detail := dec.Summary()
 			if dec.Source == "unavailable" {
 				if opts.Strict {
@@ -678,12 +701,15 @@ func FormatReportJSON(r DogfoodReport) string {
 		Workspace           string     `json:"workspace,omitempty"`
 		DualWrite           bool       `json:"dual_write"` // always emit (CI dual-write mode)
 		CatalogSource       string     `json:"catalog_source,omitempty"`
-		CatalogCount        int        `json:"catalog_count"`         // always emit (CI catalog evidence, s292)
-		ContextChars        int        `json:"context_chars"`         // always emit (CI context evidence, s296)
-		ContextLineageCount int        `json:"context_lineage_count"` // always emit (s296)
-		StreamsCount        int        `json:"streams_count"`         // always emit (CI streams list evidence, s300)
-		StreamsNames        []string   `json:"streams_names"`         // always emit array (CI name sample, s302)
-		WaitReadyMS         int        `json:"wait_ready_ms"`         // always emit (CI wait preflight budget, s297)
+		CatalogCount        int        `json:"catalog_count"`         // always emit (CI catalog evidence)
+		ContextChars        int        `json:"context_chars"`         // always emit (CI context evidence)
+		ContextLineageCount int        `json:"context_lineage_count"` // always emit
+		StreamsCount        int        `json:"streams_count"`         // always emit (CI streams list evidence)
+		StreamsNames        []string   `json:"streams_names"`         // always emit array (CI name sample)
+		WaitReadyMS         int        `json:"wait_ready_ms"`         // always emit (CI wait preflight budget)
+		PolicyMode          string     `json:"policy_mode"`           // always emit (off|advisory|enforce)
+		PolicySource        string     `json:"policy_source,omitempty"`
+		PolicyAllow         *bool      `json:"policy_allow,omitempty"` // set when policy evaluated
 		MemoryEndpoint      string     `json:"memory_endpoint,omitempty"`
 		UserAgent           string     `json:"user_agent,omitempty"`
 		Strict              bool       `json:"strict"`
@@ -698,6 +724,10 @@ func FormatReportJSON(r DogfoodReport) string {
 	if names == nil {
 		names = []string{} // always emit JSON array, never null
 	}
+	policyMode := r.PolicyMode
+	if policyMode == "" {
+		policyMode = "off"
+	}
 	o := out{
 		Endpoint:            r.Endpoint,
 		Tenant:              r.Tenant,
@@ -711,6 +741,9 @@ func FormatReportJSON(r DogfoodReport) string {
 		StreamsCount:        r.StreamsCount,
 		StreamsNames:        names,
 		WaitReadyMS:         r.WaitReadyMS,
+		PolicyMode:          policyMode,
+		PolicySource:        r.PolicySource,
+		PolicyAllow:         r.PolicyAllow,
 		MemoryEndpoint:      r.MemoryEndpoint,
 		UserAgent:           r.UserAgent,
 		Strict:              r.Strict,
@@ -771,6 +804,17 @@ func FormatReport(r DogfoodReport) string {
 		fmt.Fprintf(&b, "  streams_names: (none)\n")
 	}
 	fmt.Fprintf(&b, "  wait_ready_ms: %d\n", r.WaitReadyMS)
+	policyMode := r.PolicyMode
+	if policyMode == "" {
+		policyMode = "off"
+	}
+	fmt.Fprintf(&b, "  policy_mode: %s\n", policyMode)
+	if r.PolicySource != "" {
+		fmt.Fprintf(&b, "  policy_source: %s\n", r.PolicySource)
+	}
+	if r.PolicyAllow != nil {
+		fmt.Fprintf(&b, "  policy_allow: %v\n", *r.PolicyAllow)
+	}
 	if r.UserAgent != "" {
 		fmt.Fprintf(&b, "  user_agent: %s\n", r.UserAgent)
 	}

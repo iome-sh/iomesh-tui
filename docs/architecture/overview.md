@@ -119,4 +119,6 @@ CLI / TUI / ACP
 38. ~~Dogfood streams list evidence~~ **done** — soft `streams` step + report `streams_count`; see [mesh-dogfood.md](mesh-dogfood.md)
 39. ~~Dogfood `streams_names` + gated streams delete~~ **done** — report name sample + `mesh streams --delete --name --yes`; see [mesh-dogfood.md](mesh-dogfood.md) / [mesh-deeper.md](mesh-deeper.md)
 40. ~~Lean stream message list + `mesh streams --messages`~~ **done** — `ListStreamMessages` + CLI message inspection; see [mesh-deeper.md](mesh-deeper.md)
-41. Optional: platform remote multi-tenant metering UI
+41. ~~Dogfood policy evidence~~ **done** — report `policy_mode` / `policy_source` / `policy_allow`; see [mesh-dogfood.md](mesh-dogfood.md)
+42. ~~Lean mesh KV read + `mesh kv` CLI~~ **done** — `KVGet` / `KVListKeys` + `iomesh mesh kv`; see [mesh-deeper.md](mesh-deeper.md)
+43. Optional: platform remote multi-tenant metering UI

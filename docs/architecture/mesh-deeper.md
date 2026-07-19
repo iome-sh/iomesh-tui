@@ -143,6 +143,25 @@ iomesh mesh streams --delete --name TEMP --yes
 
 Mesh disabled / empty endpoint → error `mesh disabled` (non-zero CLI exit). Dogfood probes list only (`streams` step + `streams_count` / `streams_names`); delete and message list are CLI-only. Message list does not enable broker replay flags and is not auto-probed by dogfood.
 
+## KV read (operator list/get)
+
+Lean read-focused KV surface (no SDK dependency; wire parity with SDK `KVEntry` / `Get` / `ListKeys`):
+
+| Method | HTTP | Notes |
+|--------|------|-------|
+| `KVListKeys(bucket, prefix)` | `GET /v1/kv/{bucket}?prefix=` | Path-escaped bucket; optional `prefix` query; accepts `{"keys":[...]}` or bare array; **explicit errors** |
+| `KVGet(bucket, key)` | `GET /v1/kv/{bucket}/{key}` | Path-escaped bucket/key; empty args / non-2xx → error; JSON `value` base64-decoded into `[]byte` |
+
+```bash
+iomesh mesh kv --bucket config --list
+iomesh mesh kv --bucket config --list --prefix app
+iomesh mesh kv --bucket config --get app.json
+iomesh mesh kv --bucket config --list --json
+iomesh mesh kv --bucket config --get app.json --json
+```
+
+`--bucket` required; `--list` or `--get` required (not both). Mesh disabled → error `mesh disabled` (non-zero CLI exit). Not auto-probed by dogfood (CLI discovery only).
+
 ## Packages
 
 - `internal/iomesh/client.go` — QueryContext, lineage format, meter hook
@@ -151,4 +170,5 @@ Mesh disabled / empty endpoint → error `mesh disabled` (non-zero CLI exit). Do
 - `internal/iomesh/catalog.go` — ListCatalog / FormatCatalog / CatalogSnippet
 - `internal/iomesh/streams.go` — ListStreams / GetStream / DeleteStream / FormatStreams
 - `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages
+- `internal/iomesh/kv.go` — KVGet / KVListKeys / FormatKVEntry / FormatKVKeys
 - `internal/agent` — policy before tool execute; mesh catalog tools; `EventMeshPolicy`

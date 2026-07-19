@@ -462,7 +462,7 @@ func cmdModels(args []string) int {
 
 func cmdMesh(args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: iomesh mesh dogfood|probe|usage|catalog|streams|wait|status [flags]")
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh dogfood|probe|usage|catalog|streams|kv|wait|status [flags]")
 		return 2
 	}
 	switch args[0] {
@@ -474,6 +474,8 @@ func cmdMesh(args []string) int {
 		return cmdMeshCatalog(args[1:])
 	case "streams":
 		return cmdMeshStreams(args[1:])
+	case "kv":
+		return cmdMeshKV(args[1:])
 	case "wait":
 		return cmdMeshWait(args[1:])
 	case "status":
@@ -486,6 +488,7 @@ func cmdMesh(args []string) int {
   iomesh mesh usage     local LLM metering rollup for this process (--json for scrapers)
   iomesh mesh catalog   list governed data products (broker + portal federation)
   iomesh mesh streams   list/get/delete/messages broker streams (GET|DELETE /v1/streams; explicit errors)
+  iomesh mesh kv        read-focused KV: list keys / get value (GET /v1/kv; explicit errors)
   iomesh mesh wait      poll Ready until OK or timeout (operator preflight)
   iomesh mesh status    operator snapshot (StatusLine + optional Health/Ready)
 
@@ -519,6 +522,17 @@ Flags (streams):
   --limit N         messages: max rows (default 20 for CLI comfort)
   --delete          delete stream named by --name (requires --name and --yes; DESTRUCTIVE)
   --yes             confirm destructive delete
+  --endpoint url    override mesh endpoint
+  --config path     config.toml
+  --tenant id       override tenant
+  -v                verbose
+
+Flags (kv):
+  --bucket NAME     KV bucket (required)
+  --list            list keys in bucket (optional --prefix)
+  --get KEY         get one key value
+  --prefix P        list: key prefix filter
+  --json            JSON output (keys array or entry object)
   --endpoint url    override mesh endpoint
   --config path     config.toml
   --tenant id       override tenant
@@ -901,6 +915,121 @@ func cmdMeshStreams(args []string) int {
 		return 0
 	}
 	fmt.Print(iomesh.FormatStreams(streams))
+	return 0
+}
+
+// cmdMeshKV lists keys or gets one value from broker KV (lean GET /v1/kv; explicit errors; no SDK dep).
+// Read-focused: --list and/or --get; --bucket required.
+func cmdMeshKV(args []string) int {
+	fs := flag.NewFlagSet("mesh kv", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	var (
+		configPath = fs.String("config", "", "config.toml path")
+		bucket     = fs.String("bucket", "", "KV bucket name (required)")
+		list       = fs.Bool("list", false, "list keys in bucket (optional --prefix)")
+		getKey     = fs.String("get", "", "get one key value")
+		prefix     = fs.String("prefix", "", "list: key prefix filter")
+		endpoint   = fs.String("endpoint", "", "override IOMESH_ENDPOINT")
+		tenant     = fs.String("tenant", "", "override tenant")
+		jsonOut    = fs.Bool("json", false, "print keys/entry as JSON")
+		verbose    = fs.Bool("v", false, "verbose logs")
+	)
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	bucketName := strings.TrimSpace(*bucket)
+	keyName := strings.TrimSpace(*getKey)
+	if bucketName == "" {
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh kv --bucket NAME --list [--prefix P] [--json]")
+		fmt.Fprintln(os.Stderr, "       iomesh mesh kv --bucket NAME --get KEY [--json]")
+		fmt.Fprintln(os.Stderr, "  --bucket required; --list or --get required")
+		return 2
+	}
+	if !*list && keyName == "" {
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh kv --bucket NAME --list [--prefix P] [--json]")
+		fmt.Fprintln(os.Stderr, "       iomesh mesh kv --bucket NAME --get KEY [--json]")
+		fmt.Fprintln(os.Stderr, "  --list or --get required")
+		return 2
+	}
+	if *list && keyName != "" {
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh kv --list|--get (not both)")
+		return 2
+	}
+	logger := newLogger(*verbose)
+	cfg, err := loadConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "config: %v\n", err)
+		return 1
+	}
+	if *endpoint != "" {
+		cfg.IOMesh.Endpoint = *endpoint
+		cfg.IOMesh.Enabled = true
+	}
+	if *tenant != "" {
+		cfg.IOMesh.Tenant = *tenant
+	}
+	mesh := iomesh.New(iomesh.Config{
+		Enabled:     cfg.IOMesh.Enabled,
+		Endpoint:    cfg.IOMesh.Endpoint,
+		Tenant:      cfg.IOMesh.Tenant,
+		APIKeyEnv:   cfg.IOMesh.APIKeyEnv,
+		OrgID:       cfg.IOMesh.Org,
+		WorkspaceID: cfg.IOMesh.Workspace,
+	}, logger)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	if keyName != "" {
+		entry, err := mesh.KVGet(ctx, bucketName, keyName)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "FAIL mesh kv get: %v\n", err)
+			return 1
+		}
+		if *jsonOut {
+			// Encode value as base64 string for JSON portability (mirrors wire).
+			type entryJSON struct {
+				Bucket    string    `json:"bucket"`
+				Key       string    `json:"key"`
+				Value     []byte    `json:"value"`
+				Revision  uint64    `json:"revision"`
+				CreatedAt time.Time `json:"created_at,omitempty"`
+			}
+			ej := entryJSON{
+				Bucket: entry.Bucket, Key: entry.Key, Value: entry.Value,
+				Revision: entry.Revision, CreatedAt: entry.CreatedAt,
+			}
+			b, err := json.MarshalIndent(ej, "", "  ")
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "json: %v\n", err)
+				return 1
+			}
+			fmt.Println(string(b))
+			return 0
+		}
+		fmt.Print(iomesh.FormatKVEntry(*entry))
+		return 0
+	}
+
+	keys, err := mesh.KVListKeys(ctx, bucketName, *prefix)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "FAIL mesh kv list: %v\n", err)
+		return 1
+	}
+	if *jsonOut {
+		if keys == nil {
+			keys = []string{}
+		}
+		b, err := json.MarshalIndent(keys, "", "  ")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "json: %v\n", err)
+			return 1
+		}
+		fmt.Println(string(b))
+		return 0
+	}
+	fmt.Print(iomesh.FormatKVKeys(bucketName, keys))
 	return 0
 }
 
