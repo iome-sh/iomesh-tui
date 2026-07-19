@@ -24,6 +24,16 @@ type KVEntry struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+// KVBucketInfo is broker KV bucket metadata from POST /v1/kv/{bucket} (create).
+// Wire shape matches iomesh-client-sdk-go bucketResponse / CreateBucketConfig fields.
+// Lean TUI surface — no SDK dependency.
+type KVBucketInfo struct {
+	Name       string `json:"name"`
+	MaxBytes   *int64 `json:"max_bytes,omitempty"`
+	History    int    `json:"history,omitempty"`
+	TTLSeconds *int64 `json:"ttl_seconds,omitempty"`
+}
+
 // KVGet returns the current value for key in bucket via GET /v1/kv/{bucket}/{key}.
 // Empty bucket/key returns an error. Non-2xx (including 404) returns an error.
 // When mesh is disabled / endpoint empty: returns (nil, error) with "mesh disabled".
@@ -161,6 +171,54 @@ func (c *Client) KVPut(ctx context.Context, bucket, key string, value []byte) (u
 	return out.Revision, nil
 }
 
+// KVCreateBucket registers a KV bucket via POST /v1/kv/{bucket}.
+// Optional empty body (no create config). 201 decodes KVBucketInfo; 409 Conflict is
+// treated as success (idempotent) returning &KVBucketInfo{Name: name}.
+// Empty name returns an error. Other non-2xx returns an error.
+// When mesh is disabled / endpoint empty: returns (nil, error) with "mesh disabled".
+// Mutating — CLI gates with --create-bucket --yes.
+func (c *Client) KVCreateBucket(ctx context.Context, name string) (*KVBucketInfo, error) {
+	if c == nil || !c.Enabled() {
+		return nil, fmt.Errorf("mesh disabled")
+	}
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return nil, fmt.Errorf("iomesh kv: bucket required")
+	}
+	u := strings.TrimRight(c.cfg.Endpoint, "/") + "/v1/kv/" + url.PathEscape(name)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, nil)
+	if err != nil {
+		return nil, err
+	}
+	c.auth(req)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return nil, err
+	}
+	// Idempotent: bucket already exists.
+	if resp.StatusCode == http.StatusConflict {
+		return &KVBucketInfo{Name: name}, nil
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("iomesh kv: http %d", resp.StatusCode)
+	}
+	var info KVBucketInfo
+	if len(bytes.TrimSpace(body)) > 0 {
+		if err := json.Unmarshal(body, &info); err != nil {
+			return nil, err
+		}
+	}
+	if info.Name == "" {
+		info.Name = name
+	}
+	return &info, nil
+}
+
 // KVDelete removes key from bucket via DELETE /v1/kv/{bucket}/{key}.
 // Empty bucket/key returns an error. 2xx (including 204 No Content) is success; non-2xx returns error.
 // When mesh is disabled / endpoint empty: returns error with "mesh disabled".
@@ -219,6 +277,21 @@ func decodeKVKeys(raw []byte) ([]string, error) {
 		env.Keys = []string{}
 	}
 	return env.Keys, nil
+}
+
+// FormatKVBucketInfo renders bucket metadata for CLI operator display.
+func FormatKVBucketInfo(info KVBucketInfo) string {
+	var b strings.Builder
+	b.WriteString("iomesh kv bucket\n")
+	fmt.Fprintf(&b, "name:       %s\n", info.Name)
+	fmt.Fprintf(&b, "history:    %d\n", info.History)
+	if info.MaxBytes != nil {
+		fmt.Fprintf(&b, "max_bytes:  %d\n", *info.MaxBytes)
+	}
+	if info.TTLSeconds != nil {
+		fmt.Fprintf(&b, "ttl_seconds: %d\n", *info.TTLSeconds)
+	}
+	return b.String()
 }
 
 // FormatKVEntry renders one KV entry for CLI operator display.

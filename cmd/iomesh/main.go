@@ -488,7 +488,7 @@ func cmdMesh(args []string) int {
   iomesh mesh usage     local LLM metering rollup for this process (--json for scrapers)
   iomesh mesh catalog   list governed data products (broker + portal federation)
   iomesh mesh streams   list/get/delete/messages broker streams (GET|DELETE /v1/streams; explicit errors)
-  iomesh mesh kv        KV list/get/put/delete (GET|PUT|DELETE /v1/kv; put/delete require --yes)
+  iomesh mesh kv        KV list/get/put/delete/create-bucket (GET|PUT|DELETE|POST /v1/kv; mutate ops require --yes)
   iomesh mesh wait      poll Ready until OK or timeout (operator preflight)
   iomesh mesh status    operator snapshot (StatusLine + optional Health/Ready)
 
@@ -919,26 +919,27 @@ func cmdMeshStreams(args []string) int {
 	return 0
 }
 
-// cmdMeshKV lists, gets, puts, or deletes broker KV entries (lean /v1/kv; explicit errors; no SDK dep).
-// Mutating ops (--put / --delete) require --yes. Ops are mutually exclusive.
+// cmdMeshKV lists, gets, puts, deletes, or creates broker KV entries/buckets (lean /v1/kv; explicit errors; no SDK dep).
+// Mutating ops (--put / --delete / --create-bucket) require --yes. Ops are mutually exclusive.
 func cmdMeshKV(args []string) int {
 	fs := flag.NewFlagSet("mesh kv", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	var (
-		configPath = fs.String("config", "", "config.toml path")
-		bucket     = fs.String("bucket", "", "KV bucket name (required)")
-		list       = fs.Bool("list", false, "list keys in bucket (optional --prefix)")
-		getKey     = fs.String("get", "", "get one key value")
-		putKey     = fs.String("put", "", "put key (requires --value or --value-file and --yes)")
-		valueStr   = fs.String("value", "", "put: raw string value")
-		valueFile  = fs.String("value-file", "", "put: read value bytes from file path")
-		deleteKey  = fs.String("delete", "", "delete key (requires --yes; DESTRUCTIVE)")
-		yes        = fs.Bool("yes", false, "confirm mutating put/delete")
-		prefix     = fs.String("prefix", "", "list: key prefix filter")
-		endpoint   = fs.String("endpoint", "", "override IOMESH_ENDPOINT")
-		tenant     = fs.String("tenant", "", "override tenant")
-		jsonOut    = fs.Bool("json", false, "print keys/entry as JSON")
-		verbose    = fs.Bool("v", false, "verbose logs")
+		configPath   = fs.String("config", "", "config.toml path")
+		bucket       = fs.String("bucket", "", "KV bucket name (required)")
+		list         = fs.Bool("list", false, "list keys in bucket (optional --prefix)")
+		getKey       = fs.String("get", "", "get one key value")
+		putKey       = fs.String("put", "", "put key (requires --value or --value-file and --yes)")
+		valueStr     = fs.String("value", "", "put: raw string value")
+		valueFile    = fs.String("value-file", "", "put: read value bytes from file path")
+		deleteKey    = fs.String("delete", "", "delete key (requires --yes; DESTRUCTIVE)")
+		createBucket = fs.Bool("create-bucket", false, "create --bucket (requires --yes; 409 = already exists)")
+		yes          = fs.Bool("yes", false, "confirm mutating put/delete/create-bucket")
+		prefix       = fs.String("prefix", "", "list: key prefix filter")
+		endpoint     = fs.String("endpoint", "", "override IOMESH_ENDPOINT")
+		tenant       = fs.String("tenant", "", "override tenant")
+		jsonOut      = fs.Bool("json", false, "print keys/entry/bucket as JSON")
+		verbose      = fs.Bool("v", false, "verbose logs")
 	)
 	if err := fs.Parse(args); err != nil {
 		return 2
@@ -953,7 +954,8 @@ func cmdMeshKV(args []string) int {
 		fmt.Fprintln(os.Stderr, "       iomesh mesh kv --bucket NAME --get KEY [--json]")
 		fmt.Fprintln(os.Stderr, "       iomesh mesh kv --bucket NAME --put KEY --value STR|--value-file PATH --yes")
 		fmt.Fprintln(os.Stderr, "       iomesh mesh kv --bucket NAME --delete KEY --yes")
-		fmt.Fprintln(os.Stderr, "  --bucket required; exactly one of --list|--get|--put|--delete")
+		fmt.Fprintln(os.Stderr, "       iomesh mesh kv --bucket NAME --create-bucket --yes [--json]")
+		fmt.Fprintln(os.Stderr, "  --bucket required; exactly one of --list|--get|--put|--delete|--create-bucket")
 	}
 
 	if bucketName == "" {
@@ -976,14 +978,17 @@ func cmdMeshKV(args []string) int {
 	if delName != "" {
 		nOps++
 	}
+	if *createBucket {
+		nOps++
+	}
 	if nOps == 0 {
 		printKVUsage()
-		fmt.Fprintln(os.Stderr, "  --list or --get or --put or --delete required")
+		fmt.Fprintln(os.Stderr, "  --list or --get or --put or --delete or --create-bucket required")
 		return 2
 	}
 	if nOps > 1 {
 		printKVUsage()
-		fmt.Fprintln(os.Stderr, "  --list|--get|--put|--delete (not both)")
+		fmt.Fprintln(os.Stderr, "  --list|--get|--put|--delete|--create-bucket (not both)")
 		return 2
 	}
 
@@ -1002,6 +1007,11 @@ func cmdMeshKV(args []string) int {
 	if delName != "" && !*yes {
 		fmt.Fprintln(os.Stderr, "usage: iomesh mesh kv --bucket NAME --delete KEY --yes")
 		fmt.Fprintln(os.Stderr, "  --delete is destructive; requires --yes")
+		return 2
+	}
+	if *createBucket && !*yes {
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh kv --bucket NAME --create-bucket --yes")
+		fmt.Fprintln(os.Stderr, "  --create-bucket requires --yes (idempotent; 409 = already exists)")
 		return 2
 	}
 
@@ -1030,6 +1040,25 @@ func cmdMeshKV(args []string) int {
 	defer stop()
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
+
+	if *createBucket {
+		info, err := mesh.KVCreateBucket(ctx, bucketName)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "FAIL mesh kv create-bucket: %v\n", err)
+			return 1
+		}
+		if *jsonOut {
+			b, err := json.MarshalIndent(info, "", "  ")
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "json: %v\n", err)
+				return 1
+			}
+			fmt.Println(string(b))
+			return 0
+		}
+		fmt.Print(iomesh.FormatKVBucketInfo(*info))
+		return 0
+	}
 
 	if putName != "" {
 		var val []byte

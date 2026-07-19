@@ -212,7 +212,7 @@ iomesh mesh dogfood --skip-context --skip-emit --skip-memory --skip-streams   # 
 iomesh mesh dogfood --kv-bucket config   # soft KV list-keys probe + kv_bucket / kv_key_count evidence
 iomesh mesh catalog              # broker then portal paths
 iomesh mesh streams [--name] [--json] [--delete --yes]  # lean list/get/delete (delete destructive); dogfood probes list + streams_names
-iomesh mesh kv --bucket NAME --list|--get|--put|--delete  # put/delete require --yes
+iomesh mesh kv --bucket NAME --list|--get|--put|--delete|--create-bucket  # put/delete/create-bucket require --yes
 iomesh mesh status [--json]      # operator snapshot (StatusLine + Health/Ready)
 ```
 
