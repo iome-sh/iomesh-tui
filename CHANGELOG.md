@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Dogfood / StatusLine `user_agent` evidence** — `DogfoodReport.user_agent` + text/JSON report fields and `StatusLine` `ua=` token surface package mesh HTTP User-Agent for operator/CI evidence after s289 UA ship (s290)
+
 ## [0.9.0] — 2026-07-19
 
 Minor release: mesh HTTP User-Agent + local release-snapshot skip-sign.

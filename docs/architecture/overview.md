@@ -110,4 +110,5 @@ CLI / TUI / ACP
 29. ~~GoReleaser SPDX SBOM on release assets~~ **done** — see [RELEASING.md](../../RELEASING.md) (s285)
 30. ~~Keyless cosign on release checksums~~ **done** — see [RELEASING.md](../../RELEASING.md) (s287)
 31. ~~Mesh User-Agent + local release-snapshot --skip=sign~~ **done** — SDK Health/Ready parity sibling (s288)
-32. Optional: platform remote multi-tenant metering UI
+32. ~~Dogfood / StatusLine User-Agent evidence~~ **done** — report `user_agent` + StatusLine `ua=` for CI/ops (s290); see [mesh-dogfood.md](mesh-dogfood.md)
+33. Optional: platform remote multi-tenant metering UI

@@ -418,6 +418,7 @@ func (c *Client) StatusLine() string {
 		fmt.Sprintf("catalog=%v", c.cfg.CatalogPlane),
 		fmt.Sprintf("policy=%s", c.cfg.PolicyMode),
 		fmt.Sprintf("emit=%v", c.cfg.EmitDeptStreams),
+		"ua="+UserAgent(),
 	)
 	return strings.Join(parts, " · ")
 }

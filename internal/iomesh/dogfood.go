@@ -46,13 +46,16 @@ type DogfoodReport struct {
 	DualWrite bool `json:"dual_write"`
 	// MemoryEndpoint is optional memory sidecar base used for sync memory_retrieve.
 	// Omitted when empty (retrieve uses mesh Endpoint). Stage warm-plane evidence.
-	MemoryEndpoint string    `json:"memory_endpoint,omitempty"`
-	Strict         bool      `json:"strict"`
-	Steps          []Step    `json:"steps"`
-	OK             bool      `json:"ok"`
-	Summary        string    `json:"summary"`
-	Started        time.Time `json:"started"`
-	Finished       time.Time `json:"finished"`
+	MemoryEndpoint string `json:"memory_endpoint,omitempty"`
+	// UserAgent is the package mesh HTTP User-Agent (iomesh-tui/<version>).
+	// Always set from UserAgent() for CI evidence (s290); not scraped from server.
+	UserAgent string    `json:"user_agent"`
+	Strict    bool      `json:"strict"`
+	Steps     []Step    `json:"steps"`
+	OK        bool      `json:"ok"`
+	Summary   string    `json:"summary"`
+	Started   time.Time `json:"started"`
+	Finished  time.Time `json:"finished"`
 }
 
 // DogfoodOptions tune the probe.
@@ -81,6 +84,8 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		Started: time.Now().UTC(),
 		Strict:  opts.Strict,
 	}
+	// Always emit package UA for CI/operator evidence (even when mesh disabled).
+	rep.UserAgent = UserAgent()
 	if c != nil {
 		rep.Endpoint = c.cfg.Endpoint
 		rep.Tenant = c.cfg.Tenant
@@ -557,6 +562,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		Workspace      string     `json:"workspace,omitempty"`
 		DualWrite      bool       `json:"dual_write"` // always emit (CI dual-write mode)
 		MemoryEndpoint string     `json:"memory_endpoint,omitempty"`
+		UserAgent      string     `json:"user_agent,omitempty"`
 		Strict         bool       `json:"strict"`
 		OK             bool       `json:"ok"`
 		Summary        string     `json:"summary"`
@@ -572,6 +578,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		Workspace:      r.Workspace,
 		DualWrite:      r.DualWrite,
 		MemoryEndpoint: r.MemoryEndpoint,
+		UserAgent:      r.UserAgent,
 		Strict:         r.Strict,
 		OK:             r.OK,
 		Summary:        r.Summary,
@@ -617,6 +624,9 @@ func FormatReport(r DogfoodReport) string {
 		fmt.Fprintf(&b, "  memory_endpoint: %s\n", r.MemoryEndpoint)
 	}
 	fmt.Fprintf(&b, "  dual_write: %v\n", r.DualWrite)
+	if r.UserAgent != "" {
+		fmt.Fprintf(&b, "  user_agent: %s\n", r.UserAgent)
+	}
 	fmt.Fprintf(&b, "  strict:   %v\n", r.Strict)
 	for _, s := range r.Steps {
 		lat := ""
