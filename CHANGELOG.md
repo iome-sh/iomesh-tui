@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Dogfood soft consumer probe** — optional `DogfoodOptions.ConsumerStream` + `ConsumerName` / CLI `--consumer-stream` + `--consumer-name` best-effort `CreateConsumer` (201 or idempotent 409); optional `--consumer-filter` and `--consumer-fetch` (batch=1, max_wait 500ms, empty OK, no ack); step SKIP when unset; top-level `consumer_probed` + `consumer_ok` + `consumer_fetch_ok` always emitted
+
 ## [0.24.0] — 2026-07-19
 
 Minor release: consumer ack and nack CLI.

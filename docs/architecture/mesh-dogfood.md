@@ -59,6 +59,7 @@ Builds the client like dogfood/wait. Prints `StatusLine` config summary plus opt
 | policy | `POST /v1/policy/evaluate` | SKIP if mode off / 404 / fail-open; top-level `policy_mode` / `policy_source` / `policy_allow` evidence | FAIL if mode on and evaluate soft-fails |
 | catalog | broker + portal list | SKIP if plane off / fail-open | FAIL if fail-open |
 | streams | `GET /v1/streams` (`ListStreams`) | SKIP on error (`--skip-streams` forces SKIP); empty list is PASS `n=0` | FAIL on error |
+| consumer | `POST .../consumers` create; optional fetch | SKIP if stream+name unset; soft SKIP on create/fetch error; 409 = success; no ack | FAIL on create/fetch error when stream+name set |
 | kv | `GET /v1/kv/{bucket}` (`KVListKeys`); optional `POST` create when `--kv-ensure` | SKIP if `--kv-bucket` unset (`kv probe unset`); soft SKIP on list error; ensure create is always soft fail-open | FAIL on list error when bucket set (ensure create never alone fails) |
 | memory_ingest | `POST /v1/streams/MEMORY_INGEST/publish` | SKIP on error (`--skip-memory` forces SKIP) | FAIL on error |
 | memory_recall | `POST /v1/streams/MEMORY_RPC/publish` | SKIP on error (`--skip-memory` forces SKIP) | FAIL on error |
@@ -86,9 +87,28 @@ Runs **after** `catalog` and **before** `kv` / `memory_*` whenever mesh is enabl
 - **PASS detail**: `n=N` plus truncated `names=…` (up to 8 names)
 - Top-level report field `streams_count` always emitted (CI evidence without scraping step detail)
 
+### consumer (soft create + optional fetch probe)
+
+Optional best-effort durable consumer create after `streams` and before `kv` / `memory_*`. Non-destructive relative to ack (never acks/nacks):
+
+| Flag / option | Maps to | Default |
+|---------------|---------|---------|
+| `--consumer-stream S` | `DogfoodOptions.ConsumerStream` | empty with name empty → step **SKIP** `consumer probe unset` |
+| `--consumer-name C` | `DogfoodOptions.ConsumerName` | both stream+name required together |
+| `--consumer-filter F` | `DogfoodOptions.ConsumerFilter` | empty (optional filter_subject) |
+| `--consumer-fetch` | `DogfoodOptions.ConsumerFetch` | false; when true, soft fetch after successful create |
+
+- Both stream and name empty → **SKIP** `consumer probe unset` (no network)
+- Only one of stream/name set → **SKIP** `consumer probe needs stream and name`
+- When both set: `CreateConsumer` (`POST /v1/streams/{stream}/consumers`); **201** or idempotent **409** = success (`consumer_ok=true`)
+- Soft mode: create transport/HTTP errors → **SKIP** (`consumer soft-fail: …`); `--strict` → **FAIL**
+- **`--consumer-fetch`**: after create success, `ConsumerFetch` batch=1 max_wait=500ms; empty message list is still **PASS**; fetch errors soft **SKIP** (or **FAIL** when strict); never ack
+- **PASS detail**: `stream=S name=C create=ok [filter=F] [fetch=n=N]`
+- Top-level `consumer_probed`, `consumer_ok`, `consumer_fetch_ok` always emitted (`consumer_probed` true only when both set and create attempt ran; `consumer_fetch_ok` true only when fetch requested and succeeded)
+
 ### kv (soft list-keys probe)
 
-Optional non-destructive `KVListKeys` after `streams` and before `memory_*`:
+Optional non-destructive `KVListKeys` after `streams` / `consumer` and before `memory_*`:
 
 | Flag / option | Maps to | Default |
 |---------------|---------|---------|
@@ -194,6 +214,9 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `kv_ensured` | bool | True only when `--kv-ensure` create was attempted and succeeded (**always emitted**, `false` when unset/skip/soft-fail) |
 | `pub_probed` | bool | True when `--pub-subject` was set and a Pub attempt ran (**always emitted**, `false` when unset) |
 | `pub_ok` | bool | True when soft pub probe succeeded (**always emitted**, `false` when unset/skip/fail) |
+| `consumer_probed` | bool | True when `--consumer-stream` + `--consumer-name` set and create attempt ran (**always emitted**, `false` when unset) |
+| `consumer_ok` | bool | True when soft consumer create succeeded (201 or 409) (**always emitted**, `false` when unset/skip/fail) |
+| `consumer_fetch_ok` | bool | True when optional soft fetch ran without error (**always emitted**, `false` when not requested/fail/unset) |
 | `wait_ready_ms` | int | Configured WaitReady budget in ms (**always emitted**, `0` = off / no preflight). Outcome on `wait_ready` step detail |
 | `policy_mode` | string | Configured policy mode (`off` \| `advisory` \| `enforce`; **always emitted**, default `off`) |
 | `policy_source` | string | Last policy probe source (`mesh` \| `fail-open` \| `unavailable` \| `off`); `off` when mode off; omitted when mesh disabled before policy step |
