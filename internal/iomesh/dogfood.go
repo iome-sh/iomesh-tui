@@ -50,6 +50,12 @@ type DogfoodReport struct {
 	// CatalogCount is number of products from last ListCatalog (0 when none/off).
 	// Always emitted in JSON so CI sees catalog evidence without scraping step detail.
 	CatalogCount int `json:"catalog_count"`
+	// ContextChars is len of FormatContextSnippet from last context probe (0 if skip/empty).
+	// Always emitted in JSON so CI sees context plane evidence without scraping step detail (s296).
+	ContextChars int `json:"context_chars"`
+	// ContextLineageCount is len(res.Lineage) from last QueryContext (0 if skip/empty).
+	// Always emitted in JSON (s296).
+	ContextLineageCount int `json:"context_lineage_count"`
 	// MemoryEndpoint is optional memory sidecar base used for sync memory_retrieve.
 	// Omitted when empty (retrieve uses mesh Endpoint). Stage warm-plane evidence.
 	MemoryEndpoint string `json:"memory_endpoint,omitempty"`
@@ -153,11 +159,14 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 
 	// 3) Context plane (optionally lineage-aware)
 	if opts.SkipContext || !c.cfg.ContextPlane {
+		// ContextChars / ContextLineageCount stay 0 (skip/off evidence, s296).
 		rep.Steps = append(rep.Steps, Step{Name: "context", Status: StepSkip, Detail: "context plane disabled or skipped"})
 	} else {
 		rep.Steps = append(rep.Steps, c.stepTimed("context", func() (StepStatus, string) {
 			res := c.QueryContext(ctx, opts.Workspace, opts.Query)
 			text := FormatContextSnippet(res)
+			rep.ContextChars = len(text)
+			rep.ContextLineageCount = len(res.Lineage)
 			if text == "" {
 				if opts.Strict {
 					return StepFail, "empty context (strict)"
@@ -566,38 +575,42 @@ func FormatReportJSON(r DogfoodReport) string {
 		Latency string `json:"latency,omitempty"`
 	}
 	type out struct {
-		Endpoint       string     `json:"endpoint"`
-		Tenant         string     `json:"tenant,omitempty"`
-		Org            string     `json:"org,omitempty"`
-		Workspace      string     `json:"workspace,omitempty"`
-		DualWrite      bool       `json:"dual_write"` // always emit (CI dual-write mode)
-		CatalogSource  string     `json:"catalog_source,omitempty"`
-		CatalogCount   int        `json:"catalog_count"` // always emit (CI catalog evidence, s292)
-		MemoryEndpoint string     `json:"memory_endpoint,omitempty"`
-		UserAgent      string     `json:"user_agent,omitempty"`
-		Strict         bool       `json:"strict"`
-		OK             bool       `json:"ok"`
-		Summary        string     `json:"summary"`
-		Started        time.Time  `json:"started"`
-		Finished       time.Time  `json:"finished"`
-		Steps          []stepJSON `json:"steps"`
-		Result         string     `json:"result"` // PASS|FAIL|SKIP mirror of Summary prefix
+		Endpoint            string     `json:"endpoint"`
+		Tenant              string     `json:"tenant,omitempty"`
+		Org                 string     `json:"org,omitempty"`
+		Workspace           string     `json:"workspace,omitempty"`
+		DualWrite           bool       `json:"dual_write"` // always emit (CI dual-write mode)
+		CatalogSource       string     `json:"catalog_source,omitempty"`
+		CatalogCount        int        `json:"catalog_count"`         // always emit (CI catalog evidence, s292)
+		ContextChars        int        `json:"context_chars"`         // always emit (CI context evidence, s296)
+		ContextLineageCount int        `json:"context_lineage_count"` // always emit (s296)
+		MemoryEndpoint      string     `json:"memory_endpoint,omitempty"`
+		UserAgent           string     `json:"user_agent,omitempty"`
+		Strict              bool       `json:"strict"`
+		OK                  bool       `json:"ok"`
+		Summary             string     `json:"summary"`
+		Started             time.Time  `json:"started"`
+		Finished            time.Time  `json:"finished"`
+		Steps               []stepJSON `json:"steps"`
+		Result              string     `json:"result"` // PASS|FAIL|SKIP mirror of Summary prefix
 	}
 	o := out{
-		Endpoint:       r.Endpoint,
-		Tenant:         r.Tenant,
-		Org:            r.Org,
-		Workspace:      r.Workspace,
-		DualWrite:      r.DualWrite,
-		CatalogSource:  r.CatalogSource,
-		CatalogCount:   r.CatalogCount,
-		MemoryEndpoint: r.MemoryEndpoint,
-		UserAgent:      r.UserAgent,
-		Strict:         r.Strict,
-		OK:             r.OK,
-		Summary:        r.Summary,
-		Started:        r.Started,
-		Finished:       r.Finished,
+		Endpoint:            r.Endpoint,
+		Tenant:              r.Tenant,
+		Org:                 r.Org,
+		Workspace:           r.Workspace,
+		DualWrite:           r.DualWrite,
+		CatalogSource:       r.CatalogSource,
+		CatalogCount:        r.CatalogCount,
+		ContextChars:        r.ContextChars,
+		ContextLineageCount: r.ContextLineageCount,
+		MemoryEndpoint:      r.MemoryEndpoint,
+		UserAgent:           r.UserAgent,
+		Strict:              r.Strict,
+		OK:                  r.OK,
+		Summary:             r.Summary,
+		Started:             r.Started,
+		Finished:            r.Finished,
 	}
 	if strings.HasPrefix(r.Summary, "PASS") {
 		o.Result = "PASS"
@@ -642,6 +655,8 @@ func FormatReport(r DogfoodReport) string {
 		fmt.Fprintf(&b, "  catalog_source: %s\n", r.CatalogSource)
 	}
 	fmt.Fprintf(&b, "  catalog_count: %d\n", r.CatalogCount)
+	fmt.Fprintf(&b, "  context_chars: %d\n", r.ContextChars)
+	fmt.Fprintf(&b, "  context_lineage_count: %d\n", r.ContextLineageCount)
 	if r.UserAgent != "" {
 		fmt.Fprintf(&b, "  user_agent: %s\n", r.UserAgent)
 	}
