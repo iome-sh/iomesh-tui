@@ -76,6 +76,14 @@ type DogfoodReport struct {
 	PubProbed bool `json:"pub_probed"`
 	// PubOK is true when the soft pub probe succeeded. Always emitted (false when unset/skip/fail).
 	PubOK bool `json:"pub_ok"`
+	// ConsumerProbed is true when both ConsumerStream and ConsumerName were set and a create attempt ran.
+	// Always emitted in JSON (false when unset / partial / mesh disabled before step).
+	ConsumerProbed bool `json:"consumer_probed"`
+	// ConsumerOK is true when CreateConsumer succeeded (201 or idempotent 409). Always emitted.
+	ConsumerOK bool `json:"consumer_ok"`
+	// ConsumerFetchOK is true when optional ConsumerFetch ran without error (empty msgs still ok).
+	// Always emitted (false when fetch not requested / create failed / fetch error / unset).
+	ConsumerFetchOK bool `json:"consumer_fetch_ok"`
 	// WaitReadyMS is the configured WaitReady budget in milliseconds (0 = off / no preflight).
 	// Always emitted in JSON so CI sees soft preflight budget without scraping step detail.
 	// Outcome lives on the wait_ready step (PASS/SKIP/FAIL); not a second boolean.
@@ -130,6 +138,16 @@ type DogfoodOptions struct {
 	// PubSubject, when non-empty, runs a soft non-destructive ephemeral Pub after emit/llm_meter
 	// with a small fixed JSON payload. Empty (default) → pub step SKIP "pub probe unset".
 	PubSubject string
+	// ConsumerStream + ConsumerName, when both non-empty, run a soft CreateConsumer probe
+	// (201 or idempotent 409 = success). Either empty alone → skip; both empty → "consumer probe unset".
+	// Only one set → "consumer probe needs stream and name". Non-destructive relative to ack (no ack).
+	ConsumerStream string
+	ConsumerName   string
+	// ConsumerFilter is optional filter_subject for CreateConsumer.
+	ConsumerFilter string
+	// ConsumerFetch, when true with stream+name set, after create success runs soft ConsumerFetch
+	// with batch=1 and maxWait=500ms (empty message list is PASS). No ack.
+	ConsumerFetch bool
 	// WaitReady, when >0, polls WaitReady with that max budget (effective deadline is
 	// min of this budget and any parent ctx deadline) before the single-shot ready step.
 	// Soft: timeout → SKIP wait_ready unless Strict (then FAIL). Zero (default) = no wait preflight.
@@ -141,10 +159,11 @@ type DogfoodOptions struct {
 }
 
 // Dogfood runs a stage-oriented mesh smoke:
-// health → [wait_ready] → ready → context → emit → llm_meter → [pub] → policy → catalog → streams → [kv] → memory_*.
+// health → [wait_ready] → ready → context → emit → llm_meter → [pub] → policy → catalog → streams → [consumer] → [kv] → memory_*.
 // Optional wait_ready soft-preflight when DogfoodOptions.WaitReady > 0.
 // Soft ephemeral Pub probe when DogfoodOptions.PubSubject is set (after emit path).
 // Soft streams list probe after catalog when mesh enabled.
+// Soft consumer create (+ optional fetch) when ConsumerStream+ConsumerName set (no ack).
 // Soft kv list-keys probe when DogfoodOptions.KVBucket is set (non-destructive).
 // Optional KVEnsure best-effort creates the bucket before list (soft fail-open).
 // Disabled client returns a single SKIP step and OK=true (offline-first).
@@ -494,7 +513,56 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		}))
 	}
 
-	// 6c) Soft KV list-keys probe (non-destructive — only when KVBucket set)
+	// 6c) Soft consumer create (+ optional fetch) probe — after streams; no ack.
+	// Both ConsumerStream and ConsumerName required; optional filter + fetch.
+	consumerStream := strings.TrimSpace(opts.ConsumerStream)
+	consumerName := strings.TrimSpace(opts.ConsumerName)
+	consumerFilter := strings.TrimSpace(opts.ConsumerFilter)
+	if consumerStream == "" && consumerName == "" {
+		rep.ConsumerProbed = false
+		rep.ConsumerOK = false
+		rep.ConsumerFetchOK = false
+		rep.Steps = append(rep.Steps, Step{Name: "consumer", Status: StepSkip, Detail: "consumer probe unset"})
+	} else if consumerStream == "" || consumerName == "" {
+		rep.ConsumerProbed = false
+		rep.ConsumerOK = false
+		rep.ConsumerFetchOK = false
+		rep.Steps = append(rep.Steps, Step{Name: "consumer", Status: StepSkip, Detail: "consumer probe needs stream and name"})
+	} else {
+		rep.Steps = append(rep.Steps, c.stepTimed("consumer", func() (StepStatus, string) {
+			rep.ConsumerProbed = true
+			_, err := c.CreateConsumer(ctx, consumerStream, consumerName, consumerFilter)
+			if err != nil {
+				rep.ConsumerOK = false
+				rep.ConsumerFetchOK = false
+				if opts.Strict {
+					return StepFail, err.Error()
+				}
+				return StepSkip, "consumer soft-fail: " + err.Error()
+			}
+			rep.ConsumerOK = true
+			detail := fmt.Sprintf("stream=%s name=%s create=ok", consumerStream, consumerName)
+			if consumerFilter != "" {
+				detail = fmt.Sprintf("%s filter=%s", detail, consumerFilter)
+			}
+			if !opts.ConsumerFetch {
+				rep.ConsumerFetchOK = false
+				return StepPass, detail
+			}
+			msgs, ferr := c.ConsumerFetch(ctx, consumerStream, consumerName, 1, 500*time.Millisecond)
+			if ferr != nil {
+				rep.ConsumerFetchOK = false
+				if opts.Strict {
+					return StepFail, fmt.Sprintf("%s fetch=%s", detail, ferr.Error())
+				}
+				return StepSkip, fmt.Sprintf("%s fetch soft-fail: %s", detail, ferr.Error())
+			}
+			rep.ConsumerFetchOK = true
+			return StepPass, fmt.Sprintf("%s fetch=n=%d", detail, len(msgs))
+		}))
+	}
+
+	// 6d) Soft KV list-keys probe (non-destructive — only when KVBucket set)
 	// Optional KVEnsure: best-effort KVCreateBucket before list (soft fail-open).
 	kvBucket := strings.TrimSpace(opts.KVBucket)
 	if kvBucket == "" {
@@ -795,6 +863,9 @@ func FormatReportJSON(r DogfoodReport) string {
 		KVEnsured           bool       `json:"kv_ensured"`            // always emit (true only if ensure create succeeded)
 		PubProbed           bool       `json:"pub_probed"`            // always emit (true if pub subject set + attempt)
 		PubOK               bool       `json:"pub_ok"`                // always emit (true only if soft pub succeeded)
+		ConsumerProbed      bool       `json:"consumer_probed"`       // always emit (true if stream+name set + create attempt)
+		ConsumerOK          bool       `json:"consumer_ok"`           // always emit (true if create 201/409)
+		ConsumerFetchOK     bool       `json:"consumer_fetch_ok"`     // always emit (true if optional fetch ok)
 		WaitReadyMS         int        `json:"wait_ready_ms"`         // always emit (CI wait preflight budget)
 		PolicyMode          string     `json:"policy_mode"`           // always emit (off|advisory|enforce)
 		PolicySource        string     `json:"policy_source,omitempty"`
@@ -834,6 +905,9 @@ func FormatReportJSON(r DogfoodReport) string {
 		KVEnsured:           r.KVEnsured,
 		PubProbed:           r.PubProbed,
 		PubOK:               r.PubOK,
+		ConsumerProbed:      r.ConsumerProbed,
+		ConsumerOK:          r.ConsumerOK,
+		ConsumerFetchOK:     r.ConsumerFetchOK,
 		WaitReadyMS:         r.WaitReadyMS,
 		PolicyMode:          policyMode,
 		PolicySource:        r.PolicySource,
@@ -904,6 +978,9 @@ func FormatReport(r DogfoodReport) string {
 	fmt.Fprintf(&b, "  kv_ensured: %v\n", r.KVEnsured)
 	fmt.Fprintf(&b, "  pub_probed: %v\n", r.PubProbed)
 	fmt.Fprintf(&b, "  pub_ok: %v\n", r.PubOK)
+	fmt.Fprintf(&b, "  consumer_probed: %v\n", r.ConsumerProbed)
+	fmt.Fprintf(&b, "  consumer_ok: %v\n", r.ConsumerOK)
+	fmt.Fprintf(&b, "  consumer_fetch_ok: %v\n", r.ConsumerFetchOK)
 	fmt.Fprintf(&b, "  wait_ready_ms: %d\n", r.WaitReadyMS)
 	policyMode := r.PolicyMode
 	if policyMode == "" {

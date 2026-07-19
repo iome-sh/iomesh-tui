@@ -2675,3 +2675,355 @@ func TestDogfood_Pub_StrictFail(t *testing.T) {
 		t.Fatalf("pub: ok=%v status=%s detail=%s", ok, pub.Status, pub.Detail)
 	}
 }
+
+func TestDogfood_Consumer_UnsetSkip(t *testing.T) {
+	// ConsumerStream+Name empty → consumer SKIP; booleans always false in JSON/text.
+	srv := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+		failRecall bool
+		noRecall   bool
+	}{})
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		EmitDeptStreams: false,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{SkipMemory: true, SkipStreams: true})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if rep.ConsumerProbed || rep.ConsumerOK || rep.ConsumerFetchOK {
+		t.Fatalf("ConsumerProbed=%v ConsumerOK=%v ConsumerFetchOK=%v want all false",
+			rep.ConsumerProbed, rep.ConsumerOK, rep.ConsumerFetchOK)
+	}
+	step, ok := dogfoodStep(rep, "consumer")
+	if !ok || step.Status != StepSkip {
+		t.Fatalf("consumer step: ok=%v status=%s detail=%s", ok, step.Status, step.Detail)
+	}
+	if !strings.Contains(step.Detail, "consumer probe unset") {
+		t.Fatalf("consumer detail: %s", step.Detail)
+	}
+	// Partial args → needs stream and name
+	rep2 := c.Dogfood(context.Background(), DogfoodOptions{
+		SkipMemory: true, SkipStreams: true,
+		ConsumerStream: "EVENTS",
+	})
+	step2, ok2 := dogfoodStep(rep2, "consumer")
+	if !ok2 || step2.Status != StepSkip {
+		t.Fatalf("partial: ok=%v status=%s detail=%s", ok2, step2.Status, step2.Detail)
+	}
+	if !strings.Contains(step2.Detail, "consumer probe needs stream and name") {
+		t.Fatalf("partial detail: %s", step2.Detail)
+	}
+	if rep2.ConsumerProbed || rep2.ConsumerOK {
+		t.Fatalf("partial probed=%v ok=%v", rep2.ConsumerProbed, rep2.ConsumerOK)
+	}
+
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	for _, key := range []string{"consumer_probed", "consumer_ok", "consumer_fetch_ok"} {
+		if v, ok := parsed[key].(bool); !ok || v {
+			t.Fatalf("json %s: %v want false\n%s", key, parsed[key], js)
+		}
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "consumer_probed: false") ||
+		!strings.Contains(text, "consumer_ok: false") ||
+		!strings.Contains(text, "consumer_fetch_ok: false") {
+		t.Fatalf("text report missing consumer fields:\n%s", text)
+	}
+}
+
+func TestDogfood_Consumer_Create201OK(t *testing.T) {
+	var createHits int
+	var gotName, gotFilter string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case r.URL.Path == "/ready" || r.URL.Path == "/readyz":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		case strings.HasSuffix(r.URL.Path, "/consumers") && r.Method == http.MethodPost:
+			createHits++
+			var body map[string]any
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			if n, ok := body["name"].(string); ok {
+				gotName = n
+			}
+			if f, ok := body["filter_subject"].(string); ok {
+				gotFilter = f
+			}
+			w.WriteHeader(201)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"stream": "EVENTS", "name": "worker-1",
+				"filter_subject": "dept.events.>", "ack_floor": 0, "pending_count": 0,
+			})
+		default:
+			if strings.Contains(r.URL.Path, "catalog") {
+				_ = json.NewEncoder(w).Encode(map[string]any{"products": []any{}})
+				return
+			}
+			if r.URL.Path == "/v1/streams" {
+				_ = json.NewEncoder(w).Encode([]any{})
+				return
+			}
+			if r.URL.Path == "/v1/context/query" {
+				_ = json.NewEncoder(w).Encode(map[string]string{"text": "ctx"})
+				return
+			}
+			if r.URL.Path == "/v1/streams/dept/publish" {
+				w.WriteHeader(204)
+				return
+			}
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, EmitDeptStreams: true}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{
+		SkipMemory:     true,
+		ConsumerStream: "EVENTS",
+		ConsumerName:   "worker-1",
+		ConsumerFilter: "dept.events.>",
+	})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if createHits != 1 {
+		t.Fatalf("create hits=%d", createHits)
+	}
+	if gotName != "worker-1" || gotFilter != "dept.events.>" {
+		t.Fatalf("name=%q filter=%q", gotName, gotFilter)
+	}
+	if !rep.ConsumerProbed || !rep.ConsumerOK || rep.ConsumerFetchOK {
+		t.Fatalf("probed=%v ok=%v fetch_ok=%v", rep.ConsumerProbed, rep.ConsumerOK, rep.ConsumerFetchOK)
+	}
+	step, ok := dogfoodStep(rep, "consumer")
+	if !ok || step.Status != StepPass {
+		t.Fatalf("consumer: ok=%v status=%s detail=%s", ok, step.Status, step.Detail)
+	}
+	if !strings.Contains(step.Detail, "stream=EVENTS") || !strings.Contains(step.Detail, "create=ok") {
+		t.Fatalf("detail: %s", step.Detail)
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if v, ok := parsed["consumer_probed"].(bool); !ok || !v {
+		t.Fatalf("json consumer_probed: %v\n%s", parsed["consumer_probed"], js)
+	}
+	if v, ok := parsed["consumer_ok"].(bool); !ok || !v {
+		t.Fatalf("json consumer_ok: %v\n%s", parsed["consumer_ok"], js)
+	}
+	if v, ok := parsed["consumer_fetch_ok"].(bool); !ok || v {
+		t.Fatalf("json consumer_fetch_ok: %v want false\n%s", parsed["consumer_fetch_ok"], js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "consumer_probed: true") || !strings.Contains(text, "consumer_ok: true") {
+		t.Fatalf("text:\n%s", text)
+	}
+}
+
+func TestDogfood_Consumer_Create409OK(t *testing.T) {
+	var createHits int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case r.URL.Path == "/ready" || r.URL.Path == "/readyz":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		case strings.HasSuffix(r.URL.Path, "/consumers") && r.Method == http.MethodPost:
+			createHits++
+			w.WriteHeader(409)
+			_, _ = w.Write([]byte(`{"error":"already exists"}`))
+		default:
+			if strings.Contains(r.URL.Path, "catalog") {
+				_ = json.NewEncoder(w).Encode(map[string]any{"products": []any{}})
+				return
+			}
+			if r.URL.Path == "/v1/streams" {
+				_ = json.NewEncoder(w).Encode([]any{})
+				return
+			}
+			if r.URL.Path == "/v1/context/query" {
+				_ = json.NewEncoder(w).Encode(map[string]string{"text": "ctx"})
+				return
+			}
+			if r.URL.Path == "/v1/streams/dept/publish" {
+				w.WriteHeader(204)
+				return
+			}
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, EmitDeptStreams: false}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{
+		SkipMemory: true, SkipStreams: true,
+		ConsumerStream: "EVENTS",
+		ConsumerName:   "worker-1",
+	})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if createHits != 1 {
+		t.Fatalf("create hits=%d", createHits)
+	}
+	if !rep.ConsumerProbed || !rep.ConsumerOK {
+		t.Fatalf("probed=%v ok=%v (409 should count as success)", rep.ConsumerProbed, rep.ConsumerOK)
+	}
+	step, ok := dogfoodStep(rep, "consumer")
+	if !ok || step.Status != StepPass {
+		t.Fatalf("consumer: ok=%v status=%s detail=%s", ok, step.Status, step.Detail)
+	}
+}
+
+func TestDogfood_Consumer_CreateSoftFail(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case r.URL.Path == "/ready" || r.URL.Path == "/readyz":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		case strings.HasSuffix(r.URL.Path, "/consumers") && r.Method == http.MethodPost:
+			w.WriteHeader(500)
+		default:
+			if strings.Contains(r.URL.Path, "catalog") {
+				_ = json.NewEncoder(w).Encode(map[string]any{"products": []any{}})
+				return
+			}
+			if r.URL.Path == "/v1/streams" {
+				_ = json.NewEncoder(w).Encode([]any{})
+				return
+			}
+			if r.URL.Path == "/v1/context/query" {
+				_ = json.NewEncoder(w).Encode(map[string]string{"text": "ctx"})
+				return
+			}
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, EmitDeptStreams: false}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{
+		SkipMemory: true, SkipStreams: true,
+		ConsumerStream: "EVENTS",
+		ConsumerName:   "worker-1",
+	})
+	if !rep.OK {
+		t.Fatalf("soft fail should still OK: %s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if !rep.ConsumerProbed || rep.ConsumerOK || rep.ConsumerFetchOK {
+		t.Fatalf("probed=%v ok=%v fetch_ok=%v", rep.ConsumerProbed, rep.ConsumerOK, rep.ConsumerFetchOK)
+	}
+	step, ok := dogfoodStep(rep, "consumer")
+	if !ok || step.Status != StepSkip {
+		t.Fatalf("consumer: ok=%v status=%s detail=%s", ok, step.Status, step.Detail)
+	}
+	if !strings.Contains(step.Detail, "consumer soft-fail") {
+		t.Fatalf("detail: %s", step.Detail)
+	}
+}
+
+func TestDogfood_Consumer_FetchEmptyOK(t *testing.T) {
+	var createHits, fetchHits int
+	var fetchMaxWait int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case r.URL.Path == "/ready" || r.URL.Path == "/readyz":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		case strings.HasSuffix(r.URL.Path, "/fetch") && r.Method == http.MethodPost:
+			fetchHits++
+			var body map[string]any
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			if n, ok := body["max_wait_ms"].(float64); ok {
+				fetchMaxWait = int(n)
+			}
+			w.WriteHeader(200)
+			_ = json.NewEncoder(w).Encode(map[string]any{"messages": []any{}})
+		case strings.HasSuffix(r.URL.Path, "/consumers") && r.Method == http.MethodPost:
+			createHits++
+			w.WriteHeader(201)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"stream": "EVENTS", "name": "worker-1",
+			})
+		default:
+			if strings.Contains(r.URL.Path, "catalog") {
+				_ = json.NewEncoder(w).Encode(map[string]any{"products": []any{}})
+				return
+			}
+			if r.URL.Path == "/v1/streams" {
+				_ = json.NewEncoder(w).Encode([]any{})
+				return
+			}
+			if r.URL.Path == "/v1/context/query" {
+				_ = json.NewEncoder(w).Encode(map[string]string{"text": "ctx"})
+				return
+			}
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, EmitDeptStreams: false}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{
+		SkipMemory: true, SkipStreams: true,
+		ConsumerStream: "EVENTS",
+		ConsumerName:   "worker-1",
+		ConsumerFetch:  true,
+	})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if createHits != 1 || fetchHits != 1 {
+		t.Fatalf("create=%d fetch=%d", createHits, fetchHits)
+	}
+	if fetchMaxWait != 500 {
+		t.Fatalf("max_wait_ms=%d want 500", fetchMaxWait)
+	}
+	if !rep.ConsumerProbed || !rep.ConsumerOK || !rep.ConsumerFetchOK {
+		t.Fatalf("probed=%v ok=%v fetch_ok=%v", rep.ConsumerProbed, rep.ConsumerOK, rep.ConsumerFetchOK)
+	}
+	step, ok := dogfoodStep(rep, "consumer")
+	if !ok || step.Status != StepPass {
+		t.Fatalf("consumer: ok=%v status=%s detail=%s", ok, step.Status, step.Detail)
+	}
+	if !strings.Contains(step.Detail, "fetch=n=0") {
+		t.Fatalf("detail: %s", step.Detail)
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if v, ok := parsed["consumer_fetch_ok"].(bool); !ok || !v {
+		t.Fatalf("json consumer_fetch_ok: %v\n%s", parsed["consumer_fetch_ok"], js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "consumer_fetch_ok: true") {
+		t.Fatalf("text:\n%s", text)
+	}
+}

@@ -488,7 +488,7 @@ func cmdMesh(args []string) int {
 	case "help", "-h", "--help":
 		fmt.Fprintln(os.Stderr, `iomesh mesh — I/O Mesh platform probes
 
-  iomesh mesh dogfood   stage smoke (health → ready → context → emit → [pub] → policy → catalog → streams → [kv] → memory_*)
+  iomesh mesh dogfood   stage smoke (health → ready → context → emit → [pub] → policy → catalog → streams → [consumer] → [kv] → memory_*)
   iomesh mesh probe     alias for dogfood
   iomesh mesh usage     local LLM metering rollup for this process (--json for scrapers)
   iomesh mesh catalog   list governed data products (broker + portal federation)
@@ -501,7 +501,7 @@ func cmdMesh(args []string) int {
 
 Flags (dogfood):
   --config path           config.toml
-  --strict                require context + emit + ready (+ policy/catalog/memory/streams/kv/pub when on)
+  --strict                require context + emit + ready (+ policy/catalog/memory/streams/kv/pub/consumer when on)
   --skip-context          skip context plane
   --skip-emit             skip dept stream emit
   --skip-memory           skip memory_ingest / memory_recall / memory_retrieve
@@ -509,6 +509,10 @@ Flags (dogfood):
   --kv-bucket NAME        soft KV list-keys probe on bucket (omit = skip kv step)
   --kv-ensure             with --kv-bucket: best-effort create bucket before list (soft fail-open)
   --pub-subject SUBJECT   soft ephemeral Pub probe (omit = skip pub step)
+  --consumer-stream S     soft consumer create probe stream (requires --consumer-name)
+  --consumer-name C       soft consumer create probe name (requires --consumer-stream)
+  --consumer-filter F     optional filter_subject for consumer create probe
+  --consumer-fetch        after create: soft fetch batch=1 max_wait=500ms (empty OK; no ack)
   --wait-ready dur        soft WaitReady preflight budget (0=off; timeout SKIP unless --strict)
   --wait-interval dur     WaitReady poll interval (default 500ms when --wait-ready set)
   --wait-require-health   WaitReady requires Health OK each attempt
@@ -1590,6 +1594,10 @@ func cmdMeshDogfood(args []string) int {
 		kvBucket          = fs.String("kv-bucket", "", "soft KV list-keys probe on bucket (omit = skip kv step)")
 		kvEnsure          = fs.Bool("kv-ensure", false, "with --kv-bucket: best-effort KVCreateBucket before list (soft fail-open)")
 		pubSubject        = fs.String("pub-subject", "", "soft ephemeral Pub probe subject (omit = skip pub step)")
+		consumerStream    = fs.String("consumer-stream", "", "soft consumer create probe stream (requires --consumer-name)")
+		consumerName      = fs.String("consumer-name", "", "soft consumer create probe name (requires --consumer-stream)")
+		consumerFilter    = fs.String("consumer-filter", "", "optional filter_subject for consumer create probe")
+		consumerFetch     = fs.Bool("consumer-fetch", false, "after create: soft fetch batch=1 max_wait=500ms (empty OK; no ack)")
 		waitReady         = fs.Duration("wait-ready", 0, "soft WaitReady preflight budget before ready (0=off)")
 		waitInterval      = fs.Duration("wait-interval", 0, "WaitReady poll interval (default 500ms when --wait-ready set)")
 		waitRequireHealth = fs.Bool("wait-require-health", false, "WaitReady requires Health OK each attempt")
@@ -1663,6 +1671,10 @@ func cmdMeshDogfood(args []string) int {
 		KVBucket:          strings.TrimSpace(*kvBucket),
 		KVEnsure:          *kvEnsure,
 		PubSubject:        strings.TrimSpace(*pubSubject),
+		ConsumerStream:    strings.TrimSpace(*consumerStream),
+		ConsumerName:      strings.TrimSpace(*consumerName),
+		ConsumerFilter:    strings.TrimSpace(*consumerFilter),
+		ConsumerFetch:     *consumerFetch,
 		WaitReady:         *waitReady,
 		WaitReadyInterval: *waitInterval,
 		WaitRequireHealth: *waitRequireHealth,
