@@ -195,7 +195,7 @@ func (c *Client) PublishMemoryRecall(ctx context.Context, tenantID, query string
 	return &ack, nil
 }
 
-// MemoryHit is one hit from sync HTTP retrieve (aion memory sidecar M2).
+// MemoryHit is one hit from sync HTTP retrieve (platform memory sidecar).
 type MemoryHit struct {
 	ID         string  `json:"id"`
 	Summary    string  `json:"summary"`
@@ -214,7 +214,7 @@ type MemoryRetrieveResult struct {
 }
 
 // RetrieveMemory performs request/response hybrid recall against the memory sidecar HTTP API.
-// Tries POST /v1/memory/retrieve then /v5/memory/retrieve (same handler on aion).
+// Tries POST /v1/memory/retrieve then /v5/memory/retrieve (same handler on the broker / platform).
 // Base URL: cfg.MemoryEndpoint when set (stage warm sidecar), else mesh Endpoint.
 // This is NOT MEMORY_RPC fire-and-forget — empty hits are a successful 200 with memories=[].
 func (c *Client) RetrieveMemory(ctx context.Context, tenantID, query string, limit int, sessionID string) (*MemoryRetrieveResult, error) {

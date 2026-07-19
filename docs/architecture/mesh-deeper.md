@@ -97,7 +97,7 @@ Env: `IOMESH_INCLUDE_LINEAGE`, `IOMESH_POLICY_MODE`, `IOMESH_ORG`, `IOMESH_WORKS
 
 ## Catalog composition + portal federation
 
-When `catalog_plane = true` (default), discovery tries **broker then portal** (aion control plane):
+When `catalog_plane = true` (default), discovery tries **broker then portal** (I/O Mesh control plane / portal edge):
 
 | Order | Path | Source label |
 |------|------|--------------|

@@ -7,10 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Public-surface hygiene** — no private ledger serials / monorepo paths in docs; CONTRIBUTING public repository policy; OPEN_SOURCE_AUDIT residual honesty
+
 ### Added
 
-- **Dogfood `streams_names` sample** — top-level JSON/text array of up to 8 stream names from last `ListStreams` (always emitted; empty on skip/error) for CI greps without step-detail scrape (s302)
-- **Gated `mesh streams --delete`** — lean `DeleteStream` (`DELETE /v1/streams/{name}`) + CLI requires `--name` and `--yes` (destructive; explicit errors) (s302)
+- **Dogfood `streams_names` sample** — top-level JSON/text array of up to 8 stream names from last `ListStreams` (always emitted; empty on skip/error) for CI greps without step-detail scrape
+- **Gated `mesh streams --delete`** — lean `DeleteStream` (`DELETE /v1/streams/{name}`) + CLI requires `--name` and `--yes` (destructive; explicit errors)
 
 ## [0.16.0] — 2026-07-19
 
@@ -18,7 +22,7 @@ Minor release: dogfood streams list evidence.
 
 ### Added
 
-- **Dogfood streams list evidence** — soft `streams` step (`ListStreams` / `GET /v1/streams`) after catalog; top-level `streams_count` always emitted in JSON/text; CLI `--skip-streams` (s300)
+- **Dogfood streams list evidence** — soft `streams` step (`ListStreams` / `GET /v1/streams`) after catalog; top-level `streams_count` always emitted in JSON/text; CLI `--skip-streams`
 
 ## [0.15.0] — 2026-07-19
 
@@ -26,7 +30,7 @@ Minor release: mesh streams list/get CLI.
 
 ### Added
 
-- **Mesh stream discovery** — lean `ListStreams` / `GetStream` (`GET /v1/streams`, `GET /v1/streams/{name}`) + CLI `iomesh mesh streams [--name] [--json]` (explicit errors; no SDK dep) (s298)
+- **Mesh stream discovery** — lean `ListStreams` / `GetStream` (`GET /v1/streams`, `GET /v1/streams/{name}`) + CLI `iomesh mesh streams [--name] [--json]` (explicit errors; no SDK dep)
 
 ## [0.14.0] — 2026-07-19
 
@@ -34,7 +38,7 @@ Minor release: dogfood WaitReady soft preflight.
 
 ### Added
 
-- **Dogfood WaitReady soft preflight** — optional `DogfoodOptions.WaitReady` / CLI `--wait-ready` polls Ready (optional Health) before the single-shot ready step; timeout SKIP unless `--strict`; report always emits `wait_ready_ms` (0=off) (s297)
+- **Dogfood WaitReady soft preflight** — optional `DogfoodOptions.WaitReady` / CLI `--wait-ready` polls Ready (optional Health) before the single-shot ready step; timeout SKIP unless `--strict`; report always emits `wait_ready_ms` (0=off)
 
 ## [0.13.0] — 2026-07-19
 
@@ -42,8 +46,8 @@ Minor release: dogfood context evidence + mesh status CLI.
 
 ### Added
 
-- **Dogfood context plane evidence** — `DogfoodReport.context_chars` / `context_lineage_count` top-level JSON + text fields for CI without scraping step detail (s296)
-- **`iomesh mesh status [--json]`** — operator snapshot of StatusLine fields + one-shot Health/Ready (fail-open display) (s296)
+- **Dogfood context plane evidence** — `DogfoodReport.context_chars` / `context_lineage_count` top-level JSON + text fields for CI without scraping step detail
+- **`iomesh mesh status [--json]`** — operator snapshot of StatusLine fields + one-shot Health/Ready (fail-open display)
 
 ## [0.12.0] — 2026-07-19
 
@@ -51,7 +55,7 @@ Minor release: dogfood catalog_source/count evidence.
 
 ### Added
 
-- **Dogfood catalog evidence** — `DogfoodReport.catalog_source` / `catalog_count` top-level JSON + text fields for CI without scraping step detail (s292)
+- **Dogfood catalog evidence** — `DogfoodReport.catalog_source` / `catalog_count` top-level JSON + text fields for CI without scraping step detail
 
 ## [0.11.0] — 2026-07-19
 
@@ -59,7 +63,7 @@ Minor release: WaitReady + mesh wait CLI.
 
 ### Added
 
-- **WaitReady + `iomesh mesh wait`** — poll mesh `Ready` (optional `Health`) until OK or deadline for operator preflight (s291)
+- **WaitReady + `iomesh mesh wait`** — poll mesh `Ready` (optional `Health`) until OK or deadline for operator preflight
 
 ## [0.10.0] — 2026-07-19
 
@@ -67,7 +71,7 @@ Minor release: dogfood/StatusLine user_agent evidence.
 
 ### Added
 
-- **Dogfood / StatusLine `user_agent` evidence** — `DogfoodReport.user_agent` + text/JSON report fields and `StatusLine` `ua=` token surface package mesh HTTP User-Agent for operator/CI evidence after s289 UA ship (s290)
+- **Dogfood / StatusLine `user_agent` evidence** — `DogfoodReport.user_agent` + text/JSON report fields and `StatusLine` `ua=` token surface package mesh HTTP User-Agent for operator/CI evidence
 
 ## [0.9.0] — 2026-07-19
 
@@ -75,11 +79,11 @@ Minor release: mesh HTTP User-Agent + local release-snapshot skip-sign.
 
 ### Added
 
-- **Mesh HTTP User-Agent** — `iomesh-tui/<version>` on outbound mesh requests (`iomesh.SetUserAgent`); Health/Ready use same auth path (s288)
+- **Mesh HTTP User-Agent** — `iomesh-tui/<version>` on outbound mesh requests (`iomesh.SetUserAgent`); Health/Ready use same auth path
 
 ### Fixed
 
-- **`make release-snapshot`** — passes `--skip=sign` so local dry-runs do not require cosign OIDC (s288)
+- **`make release-snapshot`** — passes `--skip=sign` so local dry-runs do not require cosign OIDC
 
 ## [0.8.0] — 2026-07-19
 
@@ -87,7 +91,7 @@ Minor release: keyless cosign signatures on release checksums (GitHub OIDC).
 
 ### Added
 
-- **Keyless cosign on release checksums** — `checksums.txt.sig` + `.pem` via GitHub OIDC (no long-lived keys); RELEASING verify snippet (s287)
+- **Keyless cosign on release checksums** — `checksums.txt.sig` + `.pem` via GitHub OIDC (no long-lived keys); RELEASING verify snippet
 
 ## [0.7.0] — 2026-07-19
 
@@ -95,15 +99,15 @@ Minor release: SPDX SBOM assets on GoReleaser multi-platform releases.
 
 ### Added
 
-- **GoReleaser SPDX SBOM** — per-archive `*.sbom.spdx.json` on `v*` releases (syft); RELEASING notes optional cosign (s285)
+- **GoReleaser SPDX SBOM** — per-archive `*.sbom.spdx.json` on `v*` releases (syft); RELEASING notes optional cosign
 
 ## [0.6.1] — 2026-07-19
 
-Patch release: dept stream emit wire fix for live metering on aion brokers.
+Patch release: dept stream emit wire fix for live metering on platform brokers.
 
 ### Fixed
 
-- **Dept emit wire** — `Emit` / `llm_meter` / `RecordLLMCall` use `POST /v1/streams/dept/publish` with base64 JSON payload (aion stream API + SDK parity); previous path lacked `/publish` (s284)
+- **Dept emit wire** — `Emit` / `llm_meter` / `RecordLLMCall` use `POST /v1/streams/dept/publish` with base64 JSON payload (broker stream API + SDK parity); previous path lacked `/publish`
 
 ### Changed
 
@@ -116,7 +120,7 @@ Minor release: remote multi-tenant metering emit path (org/workspace headers + d
 ### Added
 
 - **Remote metering emit path** — `dept.agent.llm_call` and all dept emit set `X-IOMesh-Org` / `X-IOMesh-Workspace` when configured; LLM payload includes `tenant`/`org`/`workspace` for multi-tenant platform dashboards ([docs/architecture/mesh-deeper.md](docs/architecture/mesh-deeper.md))
-- **Dogfood `llm_meter` step** — zero-token `dept.agent.llm_call` probe after `emit` (same soft/strict + `--skip-emit` gate); PASS detail `org=`/`workspace=`/`session_id=` (s272)
+- **Dogfood `llm_meter` step** — zero-token `dept.agent.llm_call` probe after `emit` (same soft/strict + `--skip-emit` gate); PASS detail `org=`/`workspace=`/`session_id=`
 
 ## [0.5.0] — 2026-07-18
 
@@ -140,10 +144,10 @@ Minor release: Memory Phase 3+ (sync HTTP retrieve, agent auto-recall prefer sid
 - **Dogfood JSON `dual_write` field** — `DogfoodReport` + `FormatReportJSON` always emit top-level `dual_write` bool from Client cfg (wired from `[memory].dual_write` / `IOMESH_MEMORY_DUAL_WRITE` in `mesh dogfood` CLI); default `false`; does not gate the `memory_ingest` probe ([docs/architecture/mesh-dogfood.md](docs/architecture/mesh-dogfood.md))
 - **Dogfood `memory_ingest` dual_write detail** — PASS detail always appends `dual_write=true|false` from Client cfg so human-readable reports show mode without relying only on top-level JSON
 - **Dogfood `memory_ingest` session correlation detail** — probe envelope sets stable `session_id` (`{tenant}.mesh-dogfood` or `mesh-dogfood`) + `session_seq=1`; PASS detail appends `session_seq=` and `session_id=` when set (temporal correlation evidence without scraping payload)
-- **Dogfood `memory_recall` step** — async `MEMORY_RPC` publish via `PublishMemoryRecall` (same `session_id` as ingest for temporal correlation); PASS detail includes `MEMORY_RPC`, `session_id=`, `dual_write=` (s247)
-- **Sync memory retrieve** — `RetrieveMemory` → `POST /v1/memory/retrieve` (fallback `/v5`); dogfood step `memory_retrieve` with `hits=N` + correlated `session_id=` (s251); empty hits still PASS
-- **Agent auto-recall prefer sync HTTP** — when mesh and/or memory sidecar is configured, auto-recall and `/memory recall` use `RetrieveMemory` first; MCP `memory_retrieve` on failure/unavailability; status shows `sync_http=` / `mcp=` (s252)
-- **Memory sidecar / stage warm plane** — optional `[memory].endpoint` (`IOMESH_MEMORY_ENDPOINT` / `MEMORY_SIDECAR_URL` / `--memory-endpoint`) used as base for `RetrieveMemory` + dogfood `memory_retrieve`; JSON `memory_endpoint` + PASS `memory_base=sidecar|mesh` (s269)
+- **Dogfood `memory_recall` step** — async `MEMORY_RPC` publish via `PublishMemoryRecall` (same `session_id` as ingest for temporal correlation); PASS detail includes `MEMORY_RPC`, `session_id=`, `dual_write=`
+- **Sync memory retrieve** — `RetrieveMemory` → `POST /v1/memory/retrieve` (fallback `/v5`); dogfood step `memory_retrieve` with `hits=N` + correlated `session_id=`; empty hits still PASS
+- **Agent auto-recall prefer sync HTTP** — when mesh and/or memory sidecar is configured, auto-recall and `/memory recall` use `RetrieveMemory` first; MCP `memory_retrieve` on failure/unavailability; status shows `sync_http=` / `mcp=`
+- **Memory sidecar / stage warm plane** — optional `[memory].endpoint` (`IOMESH_MEMORY_ENDPOINT` / `MEMORY_SIDECAR_URL` / `--memory-endpoint`) used as base for `RetrieveMemory` + dogfood `memory_retrieve`; JSON `memory_endpoint` + PASS `memory_base=sidecar|mesh`
 
 ### Config / env (new)
 

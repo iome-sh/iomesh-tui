@@ -121,7 +121,7 @@ func (c *Client) Enabled() bool {
 }
 
 // applyEntitlementHeaders sets X-IOMesh-Org / X-IOMesh-Workspace for PlanGate / multi-tenant metering.
-// Parity with aion metering.OrgHeader / WorkspaceHeader (memory dual-write + dept emit).
+// Parity with platform metering Org / Workspace headers (memory dual-write + dept emit).
 func (c *Client) applyEntitlementHeaders(req *http.Request) {
 	if c == nil || req == nil {
 		return

@@ -122,7 +122,7 @@ When the mesh broker does not terminate `/v1/memory/retrieve`, point dogfood (an
 ```bash
 export IOMESH_ENDPOINT=https://mesh.stage.example   # health, streams, catalog
 export IOMESH_MEMORY_ENDPOINT=http://127.0.0.1:8765 # or stage memory sidecar URL
-# aion-compatible alias: MEMORY_SIDECAR_URL=…
+# legacy / platform-compatible alias: MEMORY_SIDECAR_URL=…
 
 iomesh mesh dogfood --json
 # top-level memory_endpoint set; memory_retrieve detail ends with memory_base=sidecar
@@ -157,9 +157,9 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `started` / `finished` | RFC3339 | probe window |
 | `steps` | array | `{name,status,detail?,latency?}` |
 
-`org` / `workspace` are structured multi-tenant evidence for operators and aion gates (parseable without scraping step detail). s235 still embeds the same values in the `memory_ingest` PASS detail string when set.
+`org` / `workspace` are structured multi-tenant evidence for operators and multi-tenant CI: parse top-level JSON without scraping step detail. Detail strings on `memory_ingest` (and related memory steps) may also include `org=` / `workspace=` when set.
 
-`dual_write` is structured dual-write **mode** evidence for CI (s239): parse top-level JSON instead of grepping detail strings. The same mode is also always present on the `memory_ingest` PASS detail string as `dual_write=true|false` (s241) for human logs. The CLI wires `cfg.Memory.DualWrite` into `iomesh.Config.DualWrite` when running `mesh dogfood`.
+`dual_write` is structured dual-write **mode** evidence for CI: parse top-level JSON instead of grepping detail strings. The same mode is also always present on the `memory_ingest` PASS detail string as `dual_write=true|false` for human logs. The CLI wires `cfg.Memory.DualWrite` into `iomesh.Config.DualWrite` when running `mesh dogfood`.
 
 ## CLI
 

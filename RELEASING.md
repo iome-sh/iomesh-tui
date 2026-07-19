@@ -10,10 +10,10 @@ Pre-1.0: ship from `main` via PR; cut annotated tags for public consumers.
 |---------|------|----------|
 | New operator-facing capability, config/env, or dogfood surface | **minor** (`0.x → 0.(x+1).0`) | Memory Phase 3 sync retrieve + sidecar, new mesh plane |
 | Breaking CLI/API/config (pre-1.0 still document; prefer minor) | **minor** (0.x) or **major** (1.0+) | Rename flags, remove defaults users rely on |
-| Docs-only / serial renumber / fixups | usually **no** tag | SRED renumber docs, typo |
+| Docs-only renames / fixups | usually **no** tag | Typo, architecture doc polish |
 | Security fix on latest minor | **patch** if needed (`0.x.y`) | CVE follow-up |
 
-Dogfood waves that ship real code (agent, mesh client, CLI) count as minor features — **bump + tag** when the wave closes, not only at arbitrary milestones.
+Mesh smoke / dogfood surface waves that ship real code (agent, mesh client, CLI) count as minor features — **bump + tag** when the wave closes, not only at arbitrary milestones.
 
 Checklist items that must move with the tag:
 

@@ -74,10 +74,7 @@ Env: `MEMORY_MCP_HTTP_ADDR` / `AION_MEMORY_MCP_HTTP_ADDR`, path `MEMORY_MCP_HTTP
 
 ### Alternate: stdio
 
-```bash
-# from aion monorepo
-go build -o "$HOME/bin/aion-memory-mcp" ./cmd/aion-memory-mcp
-```
+The platform Memory MCP server binary is supplied by the I/O Mesh platform / operator install (not built from this repo). Place it on `PATH` or pass an absolute `command` path:
 
 ```toml
 [mcp]
@@ -85,7 +82,7 @@ enabled = true
 
 [[mcp.servers]]
 name = "memory"
-command = "aion-memory-mcp"
+command = "aion-memory-mcp"   # platform Memory MCP server binary name
 args = ["-palace-root", "/data/memory-palaces"]
 # env = { "MEMORY_TENANT" = "dept.research", "QDRANT_URL" = "…" }
 mutating = true   # ingest tools need approval unless --yolo
@@ -227,16 +224,14 @@ See [mesh-dogfood.md](mesh-dogfood.md) for soft vs strict matrix. Unit coverage:
 | `/memory recall [query]` | Sync HTTP retrieve when mesh enabled, else MCP (default query = last user text or `"*"`) |
 | `/memory ingest <text>` | Ingest a user turn (MCP and/or dual-write) |
 
-## Platform gaps (aion backlog)
-
-Tracked in aion `aion-foundation-pending-todos.md`:
+## Platform gaps
 
 | ID | Gap |
 |----|-----|
-| M1 | Streamable HTTP for `aion-memory-mcp` — **shipped** (TUI HTTP path ready) |
+| M1 | Streamable HTTP for platform Memory MCP — **shipped** (TUI HTTP path ready) |
 | M2 | Sync `POST /v5/memory/retrieve` (SDK) — optional non-MCP clients |
 | M3 | SDK temporal envelope fields — **shipped** (TUI dual-write mirrors subset) |
-| M4 | Stage warm `aion-memory` path (prod lean absent) |
+| M4 | Optional stage warm memory path (prod lean may be absent) |
 | M5 | Entitlements fail-closed on MCP |
 
 ## Package map
