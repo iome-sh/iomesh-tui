@@ -49,6 +49,14 @@ checksum:
   name_template: checksums.txt
   algorithm: sha256
 
+# SPDX SBOM per archive (syft via goreleaser; no signing keys required).
+# Cosign/signing remains optional when COSIGN_* secrets are configured.
+sboms:
+  - id: archive
+    artifacts: archive
+    documents:
+      - "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}.sbom.spdx.json"
+
 changelog:
   # Prefer curated CHANGELOG.md / gh release notes over auto-generated.
   disable: true
@@ -65,11 +73,10 @@ release:
     go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v{{.Version}}
 
     # Or download the archive for your OS/arch from the Assets list below.
+    # Each archive has a matching *.sbom.spdx.json supply-chain bill of materials.
     ```
 
     See [RELEASING.md](https://github.com/iome-sh/iomesh-tui/blob/main/RELEASING.md) and [CHANGELOG.md](https://github.com/iome-sh/iomesh-tui/blob/main/CHANGELOG.md).
 
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
-
-# SBOM optional later; keep release lean for free-plan CI minutes.
