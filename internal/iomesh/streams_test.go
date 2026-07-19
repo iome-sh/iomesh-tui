@@ -2,6 +2,7 @@ package iomesh
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -232,5 +233,127 @@ func TestDeleteStream_404(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "http 404") {
 		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestListStreamMessages_OKAndQuery(t *testing.T) {
+	prev := UserAgent()
+	SetUserAgent("iomesh-tui/test-messages")
+	t.Cleanup(func() { SetUserAgent(prev) })
+
+	payloadB64 := base64.StdEncoding.EncodeToString([]byte(`{"event":"hello"}`))
+	var gotPath, gotQuery, gotMethod, gotUA string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		gotQuery = r.URL.RawQuery
+		gotUA = r.Header.Get("User-Agent")
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/streams/EVENTS/messages" {
+			http.NotFound(w, r)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"messages": []map[string]any{
+				{
+					"stream":    "EVENTS",
+					"seq":       1,
+					"subject":   "dept.events.hello",
+					"payload":   payloadB64,
+					"timestamp": time.Date(2026, 7, 1, 12, 0, 0, 0, time.UTC),
+				},
+				{
+					"stream":  "EVENTS",
+					"seq":     2,
+					"subject": "dept.events.world",
+					"payload": base64.StdEncoding.EncodeToString([]byte("plain-text")),
+				},
+			},
+		})
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "acme"}, nil)
+	msgs, err := c.ListStreamMessages(context.Background(), "EVENTS", ListStreamMessagesOptions{
+		FromSeq: 1,
+		ToSeq:   10,
+		Limit:   20,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotMethod != http.MethodGet {
+		t.Fatalf("method=%q", gotMethod)
+	}
+	if gotPath != "/v1/streams/EVENTS/messages" {
+		t.Fatalf("path=%q", gotPath)
+	}
+	if !strings.Contains(gotQuery, "from_seq=1") || !strings.Contains(gotQuery, "to_seq=10") || !strings.Contains(gotQuery, "limit=20") {
+		t.Fatalf("query=%q", gotQuery)
+	}
+	if gotUA != "iomesh-tui/test-messages" {
+		t.Fatalf("User-Agent=%q", gotUA)
+	}
+	if len(msgs) != 2 || msgs[0].Seq != 1 || string(msgs[0].Payload) != `{"event":"hello"}` {
+		t.Fatalf("msgs=%+v", msgs)
+	}
+	if string(msgs[1].Payload) != "plain-text" {
+		t.Fatalf("payload[1]=%q", msgs[1].Payload)
+	}
+	out := FormatStreamMessages("EVENTS", msgs)
+	if !strings.Contains(out, "count=2") || !strings.Contains(out, "dept.events.hello") || !strings.Contains(out, "plain-text") {
+		t.Fatal(out)
+	}
+}
+
+func TestListStreamMessages_403(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`{"error":{"code":"replay_disabled","message":"stream replay requires tenant or flag"}}`))
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	msgs, err := c.ListStreamMessages(context.Background(), "EVENTS", ListStreamMessagesOptions{Limit: 5})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if msgs != nil {
+		t.Fatalf("msgs=%+v want nil on error", msgs)
+	}
+	if !strings.Contains(err.Error(), "http 403") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestListStreamMessages_EmptyName(t *testing.T) {
+	c := New(Config{Enabled: true, Endpoint: "http://127.0.0.1:9"}, nil)
+	_, err := c.ListStreamMessages(context.Background(), "  ", ListStreamMessagesOptions{})
+	if err == nil || !strings.Contains(err.Error(), "stream name required") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestListStreamMessages_DisabledClient(t *testing.T) {
+	c := New(Config{Enabled: false}, nil)
+	if _, err := c.ListStreamMessages(context.Background(), "EVENTS", ListStreamMessagesOptions{}); err == nil || !strings.Contains(err.Error(), "mesh disabled") {
+		t.Fatalf("ListStreamMessages err=%v", err)
+	}
+}
+
+func TestListStreamMessages_BareArray(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode([]map[string]any{
+			{"seq": 9, "subject": "x.y", "payload": base64.StdEncoding.EncodeToString([]byte("z"))},
+		})
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	msgs, err := c.ListStreamMessages(context.Background(), "S", ListStreamMessagesOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(msgs) != 1 || msgs[0].Seq != 9 || string(msgs[0].Payload) != "z" {
+		t.Fatalf("msgs=%+v", msgs)
 	}
 }

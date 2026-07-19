@@ -485,7 +485,7 @@ func cmdMesh(args []string) int {
   iomesh mesh probe     alias for dogfood
   iomesh mesh usage     local LLM metering rollup for this process (--json for scrapers)
   iomesh mesh catalog   list governed data products (broker + portal federation)
-  iomesh mesh streams   list/get/delete broker streams (GET|DELETE /v1/streams; explicit errors)
+  iomesh mesh streams   list/get/delete/messages broker streams (GET|DELETE /v1/streams; explicit errors)
   iomesh mesh wait      poll Ready until OK or timeout (operator preflight)
   iomesh mesh status    operator snapshot (StatusLine + optional Health/Ready)
 
@@ -511,8 +511,12 @@ Flags (catalog):
   --tenant id       override tenant
 
 Flags (streams):
-  --name NAME       get one stream (omit to list all); required with --delete
-  --json            JSON array (list) or object (get)
+  --name NAME       get one stream (omit to list all); required with --delete / --messages
+  --json            JSON array (list/messages) or object (get)
+  --messages        list messages for --name (requires --name; incompatible with --delete)
+  --from-seq N      messages: lower seq bound (query from_seq)
+  --to-seq N        messages: upper seq bound (query to_seq)
+  --limit N         messages: max rows (default 20 for CLI comfort)
   --delete          delete stream named by --name (requires --name and --yes; DESTRUCTIVE)
   --yes             confirm destructive delete
   --endpoint url    override mesh endpoint
@@ -756,17 +760,22 @@ func cmdMeshCatalog(args []string) int {
 	return 0
 }
 
-// cmdMeshStreams lists, gets, or deletes broker streams via lean /v1/streams (explicit errors; no SDK dep).
-// --delete is destructive and requires --name and --yes (s302).
+// cmdMeshStreams lists, gets, deletes, or inspects messages on broker streams via lean /v1/streams
+// (explicit errors; no SDK dep). --delete is destructive and requires --name and --yes.
+// --messages requires --name and is incompatible with --delete.
 func cmdMeshStreams(args []string) int {
 	fs := flag.NewFlagSet("mesh streams", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	var (
 		configPath = fs.String("config", "", "config.toml path")
-		name       = fs.String("name", "", "get/delete one stream by name (omit to list all)")
+		name       = fs.String("name", "", "get/delete/messages one stream by name (omit to list all)")
 		endpoint   = fs.String("endpoint", "", "override IOMESH_ENDPOINT")
 		tenant     = fs.String("tenant", "", "override tenant")
-		jsonOut    = fs.Bool("json", false, "print streams as JSON")
+		jsonOut    = fs.Bool("json", false, "print streams/messages as JSON")
+		doMessages = fs.Bool("messages", false, "list messages for --name (requires --name; GET /v1/streams/{name}/messages)")
+		fromSeq    = fs.Uint64("from-seq", 0, "messages: from_seq lower bound (0=omit; broker default)")
+		toSeq      = fs.Uint64("to-seq", 0, "messages: to_seq upper bound (0=omit; broker default)")
+		limit      = fs.Int("limit", 20, "messages: max rows (default 20 for CLI comfort)")
 		doDelete   = fs.Bool("delete", false, "delete stream named by --name (requires --name and --yes; DESTRUCTIVE)")
 		yes        = fs.Bool("yes", false, "confirm destructive delete")
 		verbose    = fs.Bool("v", false, "verbose logs")
@@ -775,10 +784,22 @@ func cmdMeshStreams(args []string) int {
 		return 2
 	}
 	streamName := strings.TrimSpace(*name)
+	if *doDelete && *doMessages {
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh streams --messages|--delete (not both)")
+		fmt.Fprintln(os.Stderr, "  --messages is incompatible with --delete")
+		return 2
+	}
 	if *doDelete {
 		if streamName == "" || !*yes {
 			fmt.Fprintln(os.Stderr, "usage: iomesh mesh streams --delete --name NAME --yes")
 			fmt.Fprintln(os.Stderr, "  --delete is destructive; requires --name and --yes")
+			return 2
+		}
+	}
+	if *doMessages {
+		if streamName == "" {
+			fmt.Fprintln(os.Stderr, "usage: iomesh mesh streams --messages --name NAME [--from-seq N] [--to-seq N] [--limit N] [--json]")
+			fmt.Fprintln(os.Stderr, "  --messages requires --name")
 			return 2
 		}
 	}
@@ -814,6 +835,32 @@ func cmdMeshStreams(args []string) int {
 			return 1
 		}
 		fmt.Printf("PASS mesh streams delete name=%s\n", streamName)
+		return 0
+	}
+
+	if *doMessages {
+		msgs, err := mesh.ListStreamMessages(ctx, streamName, iomesh.ListStreamMessagesOptions{
+			FromSeq: *fromSeq,
+			ToSeq:   *toSeq,
+			Limit:   *limit,
+		})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "FAIL mesh streams messages: %v\n", err)
+			return 1
+		}
+		if *jsonOut {
+			if msgs == nil {
+				msgs = []iomesh.StreamMessage{}
+			}
+			b, err := json.MarshalIndent(msgs, "", "  ")
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "json: %v\n", err)
+				return 1
+			}
+			fmt.Println(string(b))
+			return 0
+		}
+		fmt.Print(iomesh.FormatStreamMessages(streamName, msgs))
 		return 0
 	}
 

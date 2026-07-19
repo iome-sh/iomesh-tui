@@ -118,4 +118,5 @@ CLI / TUI / ACP
 37. ~~Lean mesh stream discovery + `mesh streams` CLI~~ **done** — `ListStreams` / `GetStream` + `iomesh mesh streams`; see [mesh-deeper.md](mesh-deeper.md)
 38. ~~Dogfood streams list evidence~~ **done** — soft `streams` step + report `streams_count`; see [mesh-dogfood.md](mesh-dogfood.md)
 39. ~~Dogfood `streams_names` + gated streams delete~~ **done** — report name sample + `mesh streams --delete --name --yes`; see [mesh-dogfood.md](mesh-dogfood.md) / [mesh-deeper.md](mesh-deeper.md)
-40. Optional: platform remote multi-tenant metering UI
+40. ~~Lean stream message list + `mesh streams --messages`~~ **done** — `ListStreamMessages` + CLI message inspection; see [mesh-deeper.md](mesh-deeper.md)
+41. Optional: platform remote multi-tenant metering UI

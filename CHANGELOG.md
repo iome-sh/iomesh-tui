@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Stream message list CLI** — lean `ListStreamMessages` (`GET /v1/streams/{name}/messages?from_seq=&to_seq=&limit=`) + `iomesh mesh streams --messages --name NAME` (default `--limit 20`; `--from-seq` / `--to-seq` / `--json`; incompatible with `--delete`; base64 payload decoded for table display)
+
 ## [0.17.0] — 2026-07-19
 
 Minor release: streams_names dogfood sample + gated streams delete; public-surface hygiene.
