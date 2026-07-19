@@ -95,6 +95,12 @@ type DogfoodReport struct {
 	// Always emitted in JSON so CI sees soft preflight budget without scraping step detail.
 	// Outcome lives on the wait_ready step (PASS/SKIP/FAIL); not a second boolean.
 	WaitReadyMS int `json:"wait_ready_ms"`
+	// HealthMS is health step latency in milliseconds (0 when step skipped/absent).
+	// Always emitted in JSON so CI sees probe latency without scraping step detail.
+	HealthMS int `json:"health_ms"`
+	// ReadyMS is ready step latency in milliseconds (0 when step skipped/absent).
+	// Always emitted in JSON.
+	ReadyMS int `json:"ready_ms"`
 	// PolicyMode is the configured policy mode (off|advisory|enforce). Always emitted (default "off").
 	PolicyMode string `json:"policy_mode"`
 	// PolicySource is last policy probe source (mesh|fail-open|unavailable|off|"").
@@ -106,6 +112,9 @@ type DogfoodReport struct {
 	// MemoryEndpoint is optional memory sidecar base used for sync memory_retrieve.
 	// Omitted when empty (retrieve uses mesh Endpoint). Stage warm-plane evidence.
 	MemoryEndpoint string `json:"memory_endpoint,omitempty"`
+	// Version is the CLI/binary version when provided via DogfoodOptions.Version.
+	// Always emitted in JSON (empty string when unset).
+	Version string `json:"version"`
 	// UserAgent is the package mesh HTTP User-Agent (iomesh-tui/<version>).
 	// Always set from UserAgent() for CI evidence; not scraped from server.
 	UserAgent string    `json:"user_agent"`
@@ -163,6 +172,9 @@ type DogfoodOptions struct {
 	WaitReadyInterval time.Duration
 	// WaitRequireHealth if true, WaitReady RequireHealth (Health OK each attempt before Ready).
 	WaitRequireHealth bool
+	// Version is optional CLI/binary version (e.g. main.version). Always copied to report
+	// (trimmed); empty when unset so JSON always emits "version":"".
+	Version string
 }
 
 // Dogfood runs a stage-oriented mesh smoke:
@@ -180,6 +192,8 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		Strict:     opts.Strict,
 		PolicyMode: "off",
 	}
+	// Always emit version (empty when unset) for CI/operator evidence.
+	rep.Version = strings.TrimSpace(opts.Version)
 	if opts.WaitReady > 0 {
 		rep.WaitReadyMS = int(opts.WaitReady / time.Millisecond)
 	}
@@ -223,12 +237,14 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 	rep.Steps = append(rep.Steps, Step{Name: "enabled", Status: StepPass, Detail: "endpoint=" + c.cfg.Endpoint})
 
 	// 1) Health
-	rep.Steps = append(rep.Steps, c.stepTimed("health", func() (StepStatus, string) {
+	healthStep := c.stepTimed("health", func() (StepStatus, string) {
 		if err := c.Health(ctx); err != nil {
 			return StepFail, err.Error()
 		}
 		return StepPass, "GET /health OK"
-	}))
+	})
+	rep.HealthMS = int(healthStep.Latency.Milliseconds())
+	rep.Steps = append(rep.Steps, healthStep)
 
 	// 1b) Optional WaitReady soft preflight (s297) — budget WaitReady, then single-shot ready still runs.
 	if opts.WaitReady > 0 {
@@ -260,7 +276,7 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 
 	// 2) Ready (optional path — fail-open unless strict).
 	// Always one-shot even after wait_ready PASS for latency evidence consistency.
-	rep.Steps = append(rep.Steps, c.stepTimed("ready", func() (StepStatus, string) {
+	readyStep := c.stepTimed("ready", func() (StepStatus, string) {
 		err := c.Ready(ctx)
 		if err == nil {
 			return StepPass, "GET /ready OK"
@@ -276,7 +292,9 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 			return StepFail, err.Error()
 		}
 		return StepSkip, "ready soft-fail: " + err.Error()
-	}))
+	})
+	rep.ReadyMS = int(readyStep.Latency.Milliseconds())
+	rep.Steps = append(rep.Steps, readyStep)
 
 	// 3) Context plane (optionally lineage-aware)
 	if opts.SkipContext || !c.cfg.ContextPlane {
@@ -881,10 +899,13 @@ func FormatReportJSON(r DogfoodReport) string {
 		ConsumerOK          bool       `json:"consumer_ok"`       // always emit (true if create 201/409)
 		ConsumerFetchOK     bool       `json:"consumer_fetch_ok"` // always emit (true if optional fetch ok)
 		WaitReadyMS         int        `json:"wait_ready_ms"`     // always emit (CI wait preflight budget)
+		HealthMS            int        `json:"health_ms"`         // always emit (0 when health step skipped/absent)
+		ReadyMS             int        `json:"ready_ms"`          // always emit (0 when ready step skipped/absent)
 		PolicyMode          string     `json:"policy_mode"`       // always emit (off|advisory|enforce)
 		PolicySource        string     `json:"policy_source,omitempty"`
 		PolicyAllow         *bool      `json:"policy_allow,omitempty"` // set when policy evaluated
 		MemoryEndpoint      string     `json:"memory_endpoint,omitempty"`
+		Version             string     `json:"version"` // always emit (empty when unset)
 		UserAgent           string     `json:"user_agent,omitempty"`
 		Strict              bool       `json:"strict"`
 		OK                  bool       `json:"ok"`
@@ -926,10 +947,13 @@ func FormatReportJSON(r DogfoodReport) string {
 		ConsumerOK:          r.ConsumerOK,
 		ConsumerFetchOK:     r.ConsumerFetchOK,
 		WaitReadyMS:         r.WaitReadyMS,
+		HealthMS:            r.HealthMS,
+		ReadyMS:             r.ReadyMS,
 		PolicyMode:          policyMode,
 		PolicySource:        r.PolicySource,
 		PolicyAllow:         r.PolicyAllow,
 		MemoryEndpoint:      r.MemoryEndpoint,
+		Version:             r.Version,
 		UserAgent:           r.UserAgent,
 		Strict:              r.Strict,
 		OK:                  r.OK,
@@ -962,6 +986,7 @@ func FormatReportJSON(r DogfoodReport) string {
 func FormatReport(r DogfoodReport) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "iomesh mesh dogfood\n")
+	fmt.Fprintf(&b, "  version:  %s\n", r.Version)
 	fmt.Fprintf(&b, "  endpoint: %s\n", r.Endpoint)
 	if r.Tenant != "" {
 		fmt.Fprintf(&b, "  tenant:   %s\n", r.Tenant)
@@ -1008,6 +1033,8 @@ func FormatReport(r DogfoodReport) string {
 	fmt.Fprintf(&b, "  consumer_ok: %v\n", r.ConsumerOK)
 	fmt.Fprintf(&b, "  consumer_fetch_ok: %v\n", r.ConsumerFetchOK)
 	fmt.Fprintf(&b, "  wait_ready_ms: %d\n", r.WaitReadyMS)
+	fmt.Fprintf(&b, "  health_ms: %d\n", r.HealthMS)
+	fmt.Fprintf(&b, "  ready_ms: %d\n", r.ReadyMS)
 	policyMode := r.PolicyMode
 	if policyMode == "" {
 		policyMode = "off"

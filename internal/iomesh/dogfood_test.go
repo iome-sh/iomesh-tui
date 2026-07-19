@@ -272,6 +272,29 @@ func TestDogfood_FullPass(t *testing.T) {
 	if !strings.Contains(js, `"result": "PASS"`) || !strings.Contains(js, `"ok": true`) {
 		t.Fatal(js)
 	}
+	// Top-level health_ms / ready_ms always present after health/ready steps (>= 0; often 0 on fast mock).
+	if rep.HealthMS < 0 {
+		t.Fatalf("HealthMS: %d want >= 0", rep.HealthMS)
+	}
+	if rep.ReadyMS < 0 {
+		t.Fatalf("ReadyMS: %d want >= 0", rep.ReadyMS)
+	}
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if _, ok := parsed["health_ms"].(float64); !ok {
+		t.Fatalf("json health_ms missing or wrong type: %v\n%s", parsed["health_ms"], js)
+	}
+	if _, ok := parsed["ready_ms"].(float64); !ok {
+		t.Fatalf("json ready_ms missing or wrong type: %v\n%s", parsed["ready_ms"], js)
+	}
+	if _, ok := parsed["version"]; !ok {
+		t.Fatalf("json version missing\n%s", js)
+	}
+	if !strings.Contains(out, "health_ms:") || !strings.Contains(out, "ready_ms:") {
+		t.Fatalf("text report missing health_ms/ready_ms:\n%s", out)
+	}
 }
 
 func TestDogfood_LLMMeterOrgHeaders(t *testing.T) {
@@ -540,6 +563,84 @@ func TestDogfood_Disabled(t *testing.T) {
 		if s.Name == "memory_ingest" {
 			t.Fatalf("unexpected memory_ingest step when disabled: %+v", s)
 		}
+	}
+	// health/ready steps absent → top-level latencies always 0.
+	if rep.HealthMS != 0 {
+		t.Fatalf("disabled HealthMS: %d want 0", rep.HealthMS)
+	}
+	if rep.ReadyMS != 0 {
+		t.Fatalf("disabled ReadyMS: %d want 0", rep.ReadyMS)
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if n, ok := parsed["health_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json health_ms: %v want 0\n%s", parsed["health_ms"], js)
+	}
+	if n, ok := parsed["ready_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json ready_ms: %v want 0\n%s", parsed["ready_ms"], js)
+	}
+	if _, ok := parsed["version"]; !ok {
+		t.Fatalf("json version missing when disabled\n%s", js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "health_ms: 0") || !strings.Contains(text, "ready_ms: 0") {
+		t.Fatalf("text report missing health_ms/ready_ms 0:\n%s", text)
+	}
+}
+
+func TestDogfood_VersionEvidence(t *testing.T) {
+	// opts.Version is always copied (trimmed) into report + JSON/text.
+	srv := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+		failRecall bool
+		noRecall   bool
+	}{})
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		EmitDeptStreams: false,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{
+		SkipMemory: true,
+		Version:    "  1.2.3-test  ",
+	})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if rep.Version != "1.2.3-test" {
+		t.Fatalf("Version: %q want 1.2.3-test", rep.Version)
+	}
+	js := FormatReportJSON(rep)
+	if !strings.Contains(js, `"version": "1.2.3-test"`) &&
+		!strings.Contains(js, `"version":"1.2.3-test"`) {
+		t.Fatalf("FormatReportJSON missing version:\n%s", js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "version:  1.2.3-test") && !strings.Contains(text, "version: 1.2.3-test") {
+		t.Fatalf("FormatReport missing version:\n%s", text)
+	}
+
+	// Empty opts.Version → always emit empty string (not omitted).
+	rep2 := c.Dogfood(context.Background(), DogfoodOptions{SkipMemory: true})
+	if rep2.Version != "" {
+		t.Fatalf("empty Version want \"\", got %q", rep2.Version)
+	}
+	js2 := FormatReportJSON(rep2)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js2), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js2)
+	}
+	if v, ok := parsed["version"].(string); !ok || v != "" {
+		t.Fatalf("json version when unset: %v want \"\"\n%s", parsed["version"], js2)
 	}
 }
 

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Dogfood version + probe latency** — top-level `version` (from `DogfoodOptions.Version` / CLI binary version; always emitted, empty when unset) and `health_ms` / `ready_ms` (step latency ms; always emitted, `0` when skipped/absent)
+
 ## [0.26.0] — 2026-07-19
 
 Minor release: dogfood consumer identity and richer mesh status.
