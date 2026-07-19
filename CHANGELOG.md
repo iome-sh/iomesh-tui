@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.26.0] — 2026-07-19
+
+Minor release: dogfood consumer identity and richer mesh status.
+
 ### Added
 
 - **Dogfood consumer identity** — top-level `consumer_stream` / `consumer_name` / `consumer_filter` when both stream+name are configured for the soft consumer probe (set even if create fails; omitted when unset)
@@ -303,7 +307,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.25.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.26.0...HEAD
+[0.26.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.26.0
 [0.25.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.25.0
 [0.24.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.24.0
 [0.23.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.23.0
