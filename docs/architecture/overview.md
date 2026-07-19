@@ -106,4 +106,5 @@ CLI / TUI / ACP
 25. ~~Release v0.5.0~~ **done** — GoReleaser packaging + usage JSON
 26. ~~Remote metering emit path (org/workspace + llm_meter dogfood)~~ **done** — see [mesh-deeper.md](mesh-deeper.md) / [mesh-dogfood.md](mesh-dogfood.md)
 27. ~~Release v0.6.0~~ **done** — multi-tenant metering emit packaging
-28. Optional: platform remote multi-tenant metering UI (consumes dept.agent.llm_call); richer release SBOM
+28. ~~Dept emit publish wire parity (SDK + TUI)~~ **done** — `/v1/streams/dept/publish` + SDK `EmitLLMCall` (s284)
+29. Optional: platform remote multi-tenant metering UI; richer release SBOM

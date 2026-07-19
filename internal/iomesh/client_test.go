@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -84,13 +83,19 @@ func TestFormatContextSnippet_TextOnly(t *testing.T) {
 }
 
 func TestEmitAndRecordLLMCall(t *testing.T) {
-	var gotBody string
+	var gotPath, gotSubject, gotDecoded string
 	var gotOrg, gotWS string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		b, _ := io.ReadAll(r.Body)
-		gotBody = string(b)
+		gotPath = r.URL.Path
 		gotOrg = r.Header.Get("X-IOMesh-Org")
 		gotWS = r.Header.Get("X-IOMesh-Workspace")
+		var body map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		gotSubject, _ = body["subject"].(string)
+		if s, ok := body["payload"].(string); ok {
+			raw, _ := base64.StdEncoding.DecodeString(s)
+			gotDecoded = string(raw)
+		}
 		w.WriteHeader(204)
 	}))
 	defer srv.Close()
@@ -104,16 +109,22 @@ func TestEmitAndRecordLLMCall(t *testing.T) {
 		Duration: time.Millisecond, EstimatedUSD: 0.001,
 	}, router.Usage{TotalTokens: 10}, nil)
 
-	if !strings.Contains(gotBody, "dept.agent.llm_call") {
-		t.Fatalf("body=%q", gotBody)
+	if gotPath != "/v1/streams/dept/publish" {
+		t.Fatalf("path=%q", gotPath)
 	}
-	if !strings.Contains(gotBody, `"org":"org_a"`) && !strings.Contains(gotBody, `"org": "org_a"`) {
-		t.Fatalf("expected org in payload: %q", gotBody)
+	if gotSubject != "dept.agent.llm_call" {
+		t.Fatalf("subject=%q", gotSubject)
+	}
+	if !strings.Contains(gotDecoded, "dept.agent.llm_call") {
+		t.Fatalf("decoded=%q", gotDecoded)
+	}
+	if !strings.Contains(gotDecoded, `"org":"org_a"`) && !strings.Contains(gotDecoded, `"org": "org_a"`) {
+		t.Fatalf("expected org in payload: %q", gotDecoded)
 	}
 	if gotOrg != "org_a" || gotWS != "ws_1" {
 		t.Fatalf("headers org=%q ws=%q", gotOrg, gotWS)
 	}
-	if strings.Contains(gotBody, "Bearer ") {
+	if strings.Contains(gotDecoded, "Bearer ") {
 		t.Fatal("must not log bearer in payload")
 	}
 }
