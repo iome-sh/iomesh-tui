@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.28.0] — 2026-07-19
+
+Minor release: dogfood step latencies and StatusLine version.
+
 ### Added
 
 - **Dogfood step latencies** — top-level `context_ms` / `streams_ms` / `catalog_ms` (step latency ms; always emitted, `0` when skipped/absent)
@@ -320,7 +324,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.27.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.28.0...HEAD
+[0.28.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.28.0
 [0.27.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.27.0
 [0.26.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.26.0
 [0.25.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.25.0

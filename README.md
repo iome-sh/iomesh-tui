@@ -8,7 +8,7 @@
 
 Official open-source tooling from [IOMesh](https://iome.sh) (**IOMesh Technology Ltd.**).
 
-> **Status:** public open-source **v0.27.x** (pre-1.0). Agent loop, subagents, full-screen TUI, permissions, ACP, skills, MCP, Memory Palace (HTTP MCP + dual-write `MEMORY_INGEST` + sync retrieve / sidecar auto-recall), stage mesh dogfood, deeper mesh (lineage · policy · catalog · metering), multi-model catalog (DeepSeek · Grok · Gemini · Vertex). Not a multi-tenant remote sandbox — see [SECURITY.md](SECURITY.md).
+> **Status:** public open-source **v0.28.x** (pre-1.0). Agent loop, subagents, full-screen TUI, permissions, ACP, skills, MCP, Memory Palace (HTTP MCP + dual-write `MEMORY_INGEST` + sync retrieve / sidecar auto-recall), stage mesh dogfood, deeper mesh (lineage · policy · catalog · metering), multi-model catalog (DeepSeek · Grok · Gemini · Vertex). Not a multi-tenant remote sandbox — see [SECURITY.md](SECURITY.md).
 
 ## Table of contents
 
@@ -60,7 +60,7 @@ cd iomesh-tui
 make build
 
 # Or install a released version (Go toolchain)
-go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v0.27.0
+go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v0.28.0
 # Multi-platform archives: GitHub Releases (GoReleaser on v* tags) — see RELEASING.md
 
 export DEEPSEEK_API_KEY=…          # required for default cascade
