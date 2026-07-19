@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Mesh consumer create/fetch** — lean `CreateConsumer` / `ConsumerFetch` / `FormatConsumerInfo` (`POST /v1/streams/{stream}/consumers`; 201 full info, 409 idempotent name-only; fetch default batch=1 max_wait 2s) + CLI `iomesh mesh consumer create|fetch --stream S --name C --yes`
+- **Dogfood soft pub probe** — optional `DogfoodOptions.PubSubject` / CLI `--pub-subject SUBJECT` ephemeral `Pub` with fixed dogfood payload after emit; step SKIP when unset; top-level `pub_probed` + `pub_ok` always emitted
+
 ## [0.22.0] — 2026-07-19
 
 Minor release: dogfood kv-ensure and ephemeral mesh pub.

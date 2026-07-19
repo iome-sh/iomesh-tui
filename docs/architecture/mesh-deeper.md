@@ -187,6 +187,27 @@ iomesh mesh pub --subject dept.agent.ping --payload hello --yes --json
 
 Requires `--subject` and `--payload` or `--payload-file` and **`--yes`**. Success prints `PASS mesh pub subject=… bytes=N` (or JSON `{subject,ok,bytes}`). Distinct from stream `POST /v1/streams/{name}/publish` (dept emit / memory ingest use that path).
 
+Dogfood soft-probes the same path when `--pub-subject` / `DogfoodOptions.PubSubject` is set (fixed payload `{"source":"iomesh-tui-dogfood"}`; soft SKIP on error unless `--strict`).
+
+## Durable pull consumers (`mesh consumer`)
+
+Lean consumer surface (no SDK dependency; wire parity with SDK `CreateConsumer` / fetch intent):
+
+| Method | HTTP | Notes |
+|--------|------|-------|
+| `CreateConsumer(stream, name, filter)` | `POST /v1/streams/{stream}/consumers` | Body `{name, filter_subject?}`; path-escaped stream; **201** decodes `ConsumerInfo`; **409 Conflict = success** (idempotent, returns `{Stream, Name}`); empty stream/name / other non-2xx → error |
+| `ConsumerFetch(stream, name, batch, maxWait)` | `POST /v1/streams/{stream}/consumers/{name}/fetch` | Body `{batch, max_wait_ms}`; default maxWait 2s; returns `[]StreamMessage` (base64 or raw payload); empty args / batch≤0 / non-2xx → error |
+| `FormatConsumerInfo` | — | multi-line operator view (omits empty `filter_subject`) |
+
+```bash
+iomesh mesh consumer create --stream EVENTS --name worker-1 --yes
+iomesh mesh consumer create --stream EVENTS --name worker-1 --filter 'dept.events.>' --yes --json
+iomesh mesh consumer fetch --stream EVENTS --name worker-1 --batch 1 --yes
+iomesh mesh consumer fetch --stream EVENTS --name worker-1 --batch 5 --yes --json
+```
+
+Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 already-exists → success). Fetch long-polls up to 2s. Mesh disabled → error `mesh disabled` (non-zero CLI exit). Not auto-probed by dogfood.
+
 ## Packages
 
 - `internal/iomesh/client.go` — QueryContext, lineage format, meter hook
@@ -195,6 +216,7 @@ Requires `--subject` and `--payload` or `--payload-file` and **`--yes`**. Succes
 - `internal/iomesh/catalog.go` — ListCatalog / FormatCatalog / CatalogSnippet
 - `internal/iomesh/streams.go` — ListStreams / GetStream / DeleteStream / FormatStreams
 - `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages
+- `internal/iomesh/consumers.go` — CreateConsumer / ConsumerFetch / FormatConsumerInfo
 - `internal/iomesh/kv.go` — KVGet / KVListKeys / KVPut / KVDelete / KVCreateBucket / FormatKVEntry / FormatKVKeys / FormatKVBucketInfo
 - `internal/iomesh/pub.go` — Pub (ephemeral `POST /v1/pub`)
 - `internal/agent` — policy before tool execute; mesh catalog tools; `EventMeshPolicy`

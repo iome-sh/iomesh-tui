@@ -71,6 +71,11 @@ type DogfoodReport struct {
 	// KVEnsured is true only when KVEnsure was requested, create was attempted, and succeeded
 	// (including idempotent 409). Always emitted in JSON (false when unset/skip/soft-fail).
 	KVEnsured bool `json:"kv_ensured"`
+	// PubProbed is true when DogfoodOptions.PubSubject was set and a Pub attempt ran.
+	// Always emitted in JSON (false when subject unset / mesh disabled before step).
+	PubProbed bool `json:"pub_probed"`
+	// PubOK is true when the soft pub probe succeeded. Always emitted (false when unset/skip/fail).
+	PubOK bool `json:"pub_ok"`
 	// WaitReadyMS is the configured WaitReady budget in milliseconds (0 = off / no preflight).
 	// Always emitted in JSON so CI sees soft preflight budget without scraping step detail.
 	// Outcome lives on the wait_ready step (PASS/SKIP/FAIL); not a second boolean.
@@ -122,6 +127,9 @@ type DogfoodOptions struct {
 	// (idempotent 409 = success). Soft fail-open: create errors never FAIL the step alone;
 	// list-keys still runs. Only meaningful with KVBucket.
 	KVEnsure bool
+	// PubSubject, when non-empty, runs a soft non-destructive ephemeral Pub after emit/llm_meter
+	// with a small fixed JSON payload. Empty (default) → pub step SKIP "pub probe unset".
+	PubSubject string
 	// WaitReady, when >0, polls WaitReady with that max budget (effective deadline is
 	// min of this budget and any parent ctx deadline) before the single-shot ready step.
 	// Soft: timeout → SKIP wait_ready unless Strict (then FAIL). Zero (default) = no wait preflight.
@@ -133,8 +141,9 @@ type DogfoodOptions struct {
 }
 
 // Dogfood runs a stage-oriented mesh smoke:
-// health → [wait_ready] → ready → context → emit → llm_meter → policy → catalog → streams → [kv] → memory_*.
+// health → [wait_ready] → ready → context → emit → llm_meter → [pub] → policy → catalog → streams → [kv] → memory_*.
 // Optional wait_ready soft-preflight when DogfoodOptions.WaitReady > 0.
+// Soft ephemeral Pub probe when DogfoodOptions.PubSubject is set (after emit path).
 // Soft streams list probe after catalog when mesh enabled.
 // Soft kv list-keys probe when DogfoodOptions.KVBucket is set (non-destructive).
 // Optional KVEnsure best-effort creates the bucket before list (soft fail-open).
@@ -350,6 +359,29 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 				detail = fmt.Sprintf("%s session_id=%s", detail, sessionID)
 			}
 			return StepPass, detail
+		}))
+	}
+
+	// 4c) Soft ephemeral Pub probe (non-destructive fire-and-forget when PubSubject set)
+	pubSubject := strings.TrimSpace(opts.PubSubject)
+	if pubSubject == "" {
+		rep.PubProbed = false
+		rep.PubOK = false
+		rep.Steps = append(rep.Steps, Step{Name: "pub", Status: StepSkip, Detail: "pub probe unset"})
+	} else {
+		rep.Steps = append(rep.Steps, c.stepTimed("pub", func() (StepStatus, string) {
+			rep.PubProbed = true
+			payload := []byte(`{"source":"iomesh-tui-dogfood"}`)
+			err := c.Pub(ctx, pubSubject, payload, nil)
+			if err != nil {
+				rep.PubOK = false
+				if opts.Strict {
+					return StepFail, err.Error()
+				}
+				return StepSkip, "pub soft-fail: " + err.Error()
+			}
+			rep.PubOK = true
+			return StepPass, fmt.Sprintf("POST /v1/pub subject=%s bytes=%d", pubSubject, len(payload))
 		}))
 	}
 
@@ -761,6 +793,8 @@ func FormatReportJSON(r DogfoodReport) string {
 		KVBucket            string     `json:"kv_bucket,omitempty"`   // set when soft kv probe configured
 		KVKeyCount          int        `json:"kv_key_count"`          // always emit (CI kv list evidence)
 		KVEnsured           bool       `json:"kv_ensured"`            // always emit (true only if ensure create succeeded)
+		PubProbed           bool       `json:"pub_probed"`            // always emit (true if pub subject set + attempt)
+		PubOK               bool       `json:"pub_ok"`                // always emit (true only if soft pub succeeded)
 		WaitReadyMS         int        `json:"wait_ready_ms"`         // always emit (CI wait preflight budget)
 		PolicyMode          string     `json:"policy_mode"`           // always emit (off|advisory|enforce)
 		PolicySource        string     `json:"policy_source,omitempty"`
@@ -798,6 +832,8 @@ func FormatReportJSON(r DogfoodReport) string {
 		KVBucket:            r.KVBucket,
 		KVKeyCount:          r.KVKeyCount,
 		KVEnsured:           r.KVEnsured,
+		PubProbed:           r.PubProbed,
+		PubOK:               r.PubOK,
 		WaitReadyMS:         r.WaitReadyMS,
 		PolicyMode:          policyMode,
 		PolicySource:        r.PolicySource,
@@ -866,6 +902,8 @@ func FormatReport(r DogfoodReport) string {
 	}
 	fmt.Fprintf(&b, "  kv_key_count: %d\n", r.KVKeyCount)
 	fmt.Fprintf(&b, "  kv_ensured: %v\n", r.KVEnsured)
+	fmt.Fprintf(&b, "  pub_probed: %v\n", r.PubProbed)
+	fmt.Fprintf(&b, "  pub_ok: %v\n", r.PubOK)
 	fmt.Fprintf(&b, "  wait_ready_ms: %d\n", r.WaitReadyMS)
 	policyMode := r.PolicyMode
 	if policyMode == "" {

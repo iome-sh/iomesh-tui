@@ -55,6 +55,7 @@ Builds the client like dogfood/wait. Prints `StatusLine` config summary plus opt
 | context | `POST /v1/context/query` | SKIP if empty (fail-open) | FAIL if empty |
 | emit | `POST /v1/streams/dept/publish` (`dept.agent.dogfood`) | SKIP on error | FAIL on error |
 | llm_meter | `POST /v1/streams/dept/publish` (`dept.agent.llm_call` probe) | SKIP on error (`--skip-emit` / streams off) | FAIL on error |
+| pub | `POST /v1/pub` (ephemeral; optional `--pub-subject`) | SKIP if unset (`pub probe unset`); soft SKIP on error | FAIL on error when subject set |
 | policy | `POST /v1/policy/evaluate` | SKIP if mode off / 404 / fail-open; top-level `policy_mode` / `policy_source` / `policy_allow` evidence | FAIL if mode on and evaluate soft-fails |
 | catalog | broker + portal list | SKIP if plane off / fail-open | FAIL if fail-open |
 | streams | `GET /v1/streams` (`ListStreams`) | SKIP on error (`--skip-streams` forces SKIP); empty list is PASS `n=0` | FAIL on error |
@@ -107,6 +108,20 @@ When `emit_dept_streams` is on (default) and not `--skip-emit`:
 
 1. **emit** — `dept.agent.dogfood` probe (generic stage event)
 2. **llm_meter** — `dept.agent.llm_call` zero-token probe (same wire as live `RecordLLMCall` for platform remote metering dashboards)
+
+### pub (soft ephemeral probe)
+
+Optional non-destructive `Pub` after emit/llm_meter (independent of dept emit flags):
+
+| Flag / option | Maps to | Default |
+|---------------|---------|---------|
+| `--pub-subject SUBJECT` | `DogfoodOptions.PubSubject` | empty → step **SKIP** `pub probe unset` (no network) |
+
+- When subject set: `POST /v1/pub` with fixed payload `{"source":"iomesh-tui-dogfood"}` (raw string wire, same as CLI `mesh pub`)
+- Soft mode: transport/HTTP errors → **SKIP** (`pub soft-fail: …`); `--strict` → **FAIL**
+- **PASS detail**: `POST /v1/pub subject=… bytes=N`
+- Top-level `pub_probed` and `pub_ok` always emitted (`pub_probed` true only when subject set and attempt ran; `pub_ok` true only on success)
+
 
 Both set `session_id={tenant}.mesh-dogfood` for correlation with memory_*. PASS detail appends `org=` / `workspace=` when Client OrgID/WorkspaceID are set (headers `X-IOMesh-Org` / `X-IOMesh-Workspace` on the POST). Soft: transport/HTTP errors → **SKIP**; `--strict` → **FAIL**.
 
@@ -177,6 +192,8 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `kv_bucket` | string | Soft kv probe bucket (`DogfoodOptions.KVBucket` / `--kv-bucket`); **omitted** when empty (probe unset) |
 | `kv_key_count` | int | `len(KVListKeys)` from last kv probe (**always emitted**, `0` on skip/error/unset) |
 | `kv_ensured` | bool | True only when `--kv-ensure` create was attempted and succeeded (**always emitted**, `false` when unset/skip/soft-fail) |
+| `pub_probed` | bool | True when `--pub-subject` was set and a Pub attempt ran (**always emitted**, `false` when unset) |
+| `pub_ok` | bool | True when soft pub probe succeeded (**always emitted**, `false` when unset/skip/fail) |
 | `wait_ready_ms` | int | Configured WaitReady budget in ms (**always emitted**, `0` = off / no preflight). Outcome on `wait_ready` step detail |
 | `policy_mode` | string | Configured policy mode (`off` \| `advisory` \| `enforce`; **always emitted**, default `off`) |
 | `policy_source` | string | Last policy probe source (`mesh` \| `fail-open` \| `unavailable` \| `off`); `off` when mode off; omitted when mesh disabled before policy step |
@@ -214,10 +231,13 @@ iomesh mesh dogfood --memory-endpoint "$IOMESH_MEMORY_ENDPOINT"
 iomesh mesh dogfood --skip-context --skip-emit --skip-memory --skip-streams   # health-only-ish
 iomesh mesh dogfood --kv-bucket config   # soft KV list-keys probe + kv_bucket / kv_key_count / kv_ensured evidence
 iomesh mesh dogfood --kv-bucket config --kv-ensure   # best-effort create bucket before list (soft fail-open)
+iomesh mesh dogfood --pub-subject dept.agent.ping   # soft ephemeral Pub + pub_probed / pub_ok evidence
 iomesh mesh catalog              # broker then portal paths
 iomesh mesh streams [--name] [--json] [--delete --yes]  # lean list/get/delete (delete destructive); dogfood probes list + streams_names
 iomesh mesh kv --bucket NAME --list|--get|--put|--delete|--create-bucket  # put/delete/create-bucket require --yes
 iomesh mesh pub --subject S --payload STR|--payload-file F --yes  # ephemeral POST /v1/pub
+iomesh mesh consumer create --stream S --name C [--filter F] --yes  # durable pull consumer (409 idempotent)
+iomesh mesh consumer fetch --stream S --name C [--batch N] --yes    # long-poll fetch (default batch 1, 2s)
 iomesh mesh status [--json]      # operator snapshot (StatusLine + Health/Ready)
 ```
 
