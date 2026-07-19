@@ -1170,7 +1170,7 @@ func TestDogfood_CatalogEvidenceOff(t *testing.T) {
 }
 
 func TestDogfood_StreamsEvidence(t *testing.T) {
-	// ListStreams returns 2 streams → step PASS, streams_count=2, JSON always emits (s300).
+	// ListStreams returns 2 streams → step PASS, streams_count=2, streams_names sample, JSON always emits (s300/s302).
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case r.URL.Path == "/health":
@@ -1224,6 +1224,9 @@ func TestDogfood_StreamsEvidence(t *testing.T) {
 	if rep.StreamsCount != 2 {
 		t.Fatalf("StreamsCount: %d want 2", rep.StreamsCount)
 	}
+	if len(rep.StreamsNames) != 2 || rep.StreamsNames[0] != "MEMORY_INGEST" || rep.StreamsNames[1] != "dept" {
+		t.Fatalf("StreamsNames: %v want [MEMORY_INGEST dept]", rep.StreamsNames)
+	}
 	var streamsOK bool
 	for _, s := range rep.Steps {
 		if s.Name == "streams" && s.Status == StepPass {
@@ -1247,14 +1250,24 @@ func TestDogfood_StreamsEvidence(t *testing.T) {
 	if n, ok := parsed["streams_count"].(float64); !ok || int(n) != 2 {
 		t.Fatalf("json streams_count: %v want 2\n%s", parsed["streams_count"], js)
 	}
+	namesRaw, ok := parsed["streams_names"].([]any)
+	if !ok {
+		t.Fatalf("json streams_names not array: %T %v\n%s", parsed["streams_names"], parsed["streams_names"], js)
+	}
+	if len(namesRaw) != 2 || namesRaw[0] != "MEMORY_INGEST" || namesRaw[1] != "dept" {
+		t.Fatalf("json streams_names: %v\n%s", namesRaw, js)
+	}
 	text := FormatReport(rep)
 	if !strings.Contains(text, "streams_count: 2") {
 		t.Fatalf("text report missing streams_count:\n%s", text)
 	}
+	if !strings.Contains(text, "streams_names: MEMORY_INGEST,dept") {
+		t.Fatalf("text report missing streams_names:\n%s", text)
+	}
 }
 
 func TestDogfood_StreamsSoftFail(t *testing.T) {
-	// ListStreams 500 → soft SKIP, streams_count=0.
+	// ListStreams 500 → soft SKIP, streams_count=0, streams_names=[].
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case r.URL.Path == "/health":
@@ -1294,6 +1307,9 @@ func TestDogfood_StreamsSoftFail(t *testing.T) {
 	if rep.StreamsCount != 0 {
 		t.Fatalf("StreamsCount: %d want 0", rep.StreamsCount)
 	}
+	if len(rep.StreamsNames) != 0 {
+		t.Fatalf("StreamsNames: %v want empty", rep.StreamsNames)
+	}
 	var found bool
 	for _, s := range rep.Steps {
 		if s.Name == "streams" {
@@ -1316,6 +1332,14 @@ func TestDogfood_StreamsSoftFail(t *testing.T) {
 	}
 	if n, ok := parsed["streams_count"].(float64); !ok || int(n) != 0 {
 		t.Fatalf("json streams_count: %v want 0\n%s", parsed["streams_count"], js)
+	}
+	namesRaw, ok := parsed["streams_names"].([]any)
+	if !ok || len(namesRaw) != 0 {
+		t.Fatalf("json streams_names want []: %T %v\n%s", parsed["streams_names"], parsed["streams_names"], js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "streams_names: (none)") {
+		t.Fatalf("text report missing streams_names (none):\n%s", text)
 	}
 }
 
@@ -1340,6 +1364,9 @@ func TestDogfood_SkipStreams(t *testing.T) {
 	if rep.StreamsCount != 0 {
 		t.Fatalf("StreamsCount: %d want 0", rep.StreamsCount)
 	}
+	if len(rep.StreamsNames) != 0 {
+		t.Fatalf("StreamsNames: %v want empty", rep.StreamsNames)
+	}
 	var found bool
 	for _, s := range rep.Steps {
 		if s.Name == "streams" && s.Status == StepSkip {
@@ -1359,6 +1386,10 @@ func TestDogfood_SkipStreams(t *testing.T) {
 	}
 	if n, ok := parsed["streams_count"].(float64); !ok || int(n) != 0 {
 		t.Fatalf("json streams_count: %v want 0\n%s", parsed["streams_count"], js)
+	}
+	namesRaw, ok := parsed["streams_names"].([]any)
+	if !ok || len(namesRaw) != 0 {
+		t.Fatalf("json streams_names want []: %T %v\n%s", parsed["streams_names"], parsed["streams_names"], js)
 	}
 }
 

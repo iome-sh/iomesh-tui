@@ -146,6 +146,7 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `context_chars` | int | `len(FormatContextSnippet)` from last context probe (**always emitted**, `0` when skip/off/empty) (s296) |
 | `context_lineage_count` | int | `len(res.Lineage)` from last `QueryContext` (**always emitted**, `0` when skip/off/empty) (s296) |
 | `streams_count` | int | `len(ListStreams)` from last streams probe (**always emitted**, `0` on skip/error/disabled) (s300) |
+| `streams_names` | string[] | Short sample of stream names from last `ListStreams` (max 8; **always emitted** as JSON array, `[]` on skip/error/disabled) (s302). Full count stays in `streams_count` |
 | `wait_ready_ms` | int | Configured WaitReady budget in ms (**always emitted**, `0` = off / no preflight) (s297). Outcome on `wait_ready` step detail |
 | `memory_endpoint` | string | Optional memory sidecar base (`[memory].endpoint` / `IOMESH_MEMORY_ENDPOINT`); omitted when empty (retrieve uses mesh `endpoint`) |
 | `user_agent` | string | Package mesh HTTP User-Agent (`iomesh-tui/<version>` via `iomesh.UserAgent()`); always set for CI evidence (s290) — not scraped from server |
@@ -179,7 +180,7 @@ iomesh mesh dogfood --endpoint "$IOMESH_ENDPOINT" --tenant acme
 iomesh mesh dogfood --memory-endpoint "$IOMESH_MEMORY_ENDPOINT"
 iomesh mesh dogfood --skip-context --skip-emit --skip-memory --skip-streams   # health-only-ish
 iomesh mesh catalog              # broker then portal paths
-iomesh mesh streams [--name] [--json]  # lean stream list/get (s298); dogfood also probes list (s300)
+iomesh mesh streams [--name] [--json] [--delete --yes]  # lean list/get/delete (s298/s302; delete destructive); dogfood probes list (s300) + streams_names (s302)
 iomesh mesh status [--json]      # operator snapshot (StatusLine + Health/Ready)
 ```
 

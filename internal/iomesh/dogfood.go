@@ -59,6 +59,9 @@ type DogfoodReport struct {
 	// StreamsCount is len of ListStreams from last streams probe (0 on skip/error/disabled).
 	// Always emitted in JSON (s300).
 	StreamsCount int `json:"streams_count"`
+	// StreamsNames is a short sample of stream names from last ListStreams (max 8).
+	// Always emit JSON array (empty when skip/error). s302.
+	StreamsNames []string `json:"streams_names"`
 	// WaitReadyMS is the configured WaitReady budget in milliseconds (0 = off / no preflight).
 	// Always emitted in JSON so CI sees soft preflight budget without scraping step detail (s297).
 	// Outcome lives on the wait_ready step (PASS/SKIP/FAIL); not a second boolean.
@@ -375,21 +378,32 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		}))
 	}
 
-	// 6b) Streams list probe (non-destructive ListStreams — s300)
+	// 6b) Streams list probe (non-destructive ListStreams — s300; streams_names sample s302)
 	if opts.SkipStreams {
 		rep.StreamsCount = 0
+		rep.StreamsNames = []string{}
 		rep.Steps = append(rep.Steps, Step{Name: "streams", Status: StepSkip, Detail: "skipped (--skip-streams)"})
 	} else {
 		rep.Steps = append(rep.Steps, c.stepTimed("streams", func() (StepStatus, string) {
 			streams, err := c.ListStreams(ctx)
 			if err != nil {
 				rep.StreamsCount = 0
+				rep.StreamsNames = []string{}
 				if opts.Strict {
 					return StepFail, err.Error()
 				}
 				return StepSkip, "streams soft-fail: " + err.Error()
 			}
 			rep.StreamsCount = len(streams)
+			// Top-level sample for CI (names only, max 8 — no "…(+N)" token; full count in streams_count).
+			sample := make([]string, 0, 8)
+			for i, s := range streams {
+				if i >= 8 {
+					break
+				}
+				sample = append(sample, s.Name)
+			}
+			rep.StreamsNames = sample
 			// Compact detail: n= + truncated names for operator logs.
 			names := make([]string, 0, len(streams))
 			for i, s := range streams {
@@ -668,6 +682,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		ContextChars        int        `json:"context_chars"`         // always emit (CI context evidence, s296)
 		ContextLineageCount int        `json:"context_lineage_count"` // always emit (s296)
 		StreamsCount        int        `json:"streams_count"`         // always emit (CI streams list evidence, s300)
+		StreamsNames        []string   `json:"streams_names"`         // always emit array (CI name sample, s302)
 		WaitReadyMS         int        `json:"wait_ready_ms"`         // always emit (CI wait preflight budget, s297)
 		MemoryEndpoint      string     `json:"memory_endpoint,omitempty"`
 		UserAgent           string     `json:"user_agent,omitempty"`
@@ -678,6 +693,10 @@ func FormatReportJSON(r DogfoodReport) string {
 		Finished            time.Time  `json:"finished"`
 		Steps               []stepJSON `json:"steps"`
 		Result              string     `json:"result"` // PASS|FAIL|SKIP mirror of Summary prefix
+	}
+	names := r.StreamsNames
+	if names == nil {
+		names = []string{} // always emit JSON array, never null
 	}
 	o := out{
 		Endpoint:            r.Endpoint,
@@ -690,6 +709,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		ContextChars:        r.ContextChars,
 		ContextLineageCount: r.ContextLineageCount,
 		StreamsCount:        r.StreamsCount,
+		StreamsNames:        names,
 		WaitReadyMS:         r.WaitReadyMS,
 		MemoryEndpoint:      r.MemoryEndpoint,
 		UserAgent:           r.UserAgent,
@@ -745,6 +765,11 @@ func FormatReport(r DogfoodReport) string {
 	fmt.Fprintf(&b, "  context_chars: %d\n", r.ContextChars)
 	fmt.Fprintf(&b, "  context_lineage_count: %d\n", r.ContextLineageCount)
 	fmt.Fprintf(&b, "  streams_count: %d\n", r.StreamsCount)
+	if len(r.StreamsNames) > 0 {
+		fmt.Fprintf(&b, "  streams_names: %s\n", strings.Join(r.StreamsNames, ","))
+	} else {
+		fmt.Fprintf(&b, "  streams_names: (none)\n")
+	}
 	fmt.Fprintf(&b, "  wait_ready_ms: %d\n", r.WaitReadyMS)
 	if r.UserAgent != "" {
 		fmt.Fprintf(&b, "  user_agent: %s\n", r.UserAgent)

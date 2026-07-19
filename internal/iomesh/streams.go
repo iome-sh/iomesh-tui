@@ -95,6 +95,36 @@ func (c *Client) GetStream(ctx context.Context, name string) (*StreamInfo, error
 	return &info, nil
 }
 
+// DeleteStream deletes a broker stream via DELETE /v1/streams/{name}.
+// Empty name returns an error. 2xx (including 204 No Content) is success; non-2xx returns error.
+// When mesh is disabled / endpoint empty: returns error with "mesh disabled".
+// Destructive — CLI gates with --delete --name --yes (s302).
+func (c *Client) DeleteStream(ctx context.Context, name string) error {
+	if c == nil || !c.Enabled() {
+		return fmt.Errorf("mesh disabled")
+	}
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return fmt.Errorf("iomesh streams: stream name required")
+	}
+	u := strings.TrimRight(c.cfg.Endpoint, "/") + "/v1/streams/" + url.PathEscape(name)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, u, nil)
+	if err != nil {
+		return err
+	}
+	c.auth(req)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 1<<20))
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("iomesh streams: http %d", resp.StatusCode)
+	}
+	return nil
+}
+
 func decodeStreamsList(raw []byte) ([]StreamInfo, error) {
 	raw = bytes.TrimSpace(raw)
 	if len(raw) == 0 {

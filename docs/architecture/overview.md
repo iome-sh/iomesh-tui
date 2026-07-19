@@ -117,4 +117,5 @@ CLI / TUI / ACP
 36. ~~Dogfood WaitReady soft preflight~~ **done** — optional `--wait-ready` inside mesh dogfood + report `wait_ready_ms` (s297); see [mesh-dogfood.md](mesh-dogfood.md)
 37. ~~Lean mesh stream discovery + `mesh streams` CLI~~ **done** — `ListStreams` / `GetStream` + `iomesh mesh streams` (s298); see [mesh-deeper.md](mesh-deeper.md)
 38. ~~Dogfood streams list evidence~~ **done** — soft `streams` step + report `streams_count` (s300); see [mesh-dogfood.md](mesh-dogfood.md)
-39. Optional: platform remote multi-tenant metering UI
+39. ~~Dogfood `streams_names` + gated streams delete~~ **done** — report name sample + `mesh streams --delete --name --yes` (s302); see [mesh-dogfood.md](mesh-dogfood.md) / [mesh-deeper.md](mesh-deeper.md)
+40. Optional: platform remote multi-tenant metering UI
