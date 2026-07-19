@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.1] — 2026-07-19
+
+Patch release: dept stream emit wire fix for live metering on aion brokers.
+
 ### Fixed
 
 - **Dept emit wire** — `Emit` / `llm_meter` / `RecordLLMCall` use `POST /v1/streams/dept/publish` with base64 JSON payload (aion stream API + SDK parity); previous path lacked `/publish` (s284)
@@ -128,7 +132,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.6.1
 [0.6.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.6.0
 [0.5.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.5.0
 [0.4.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.4.0
