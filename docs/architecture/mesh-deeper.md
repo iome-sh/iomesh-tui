@@ -117,10 +117,29 @@ Portal JSON fields (`mesh_layer`, `subject_pattern`, `sample_subjects`, `summary
 | Dogfood **catalog** step | PASS for mesh **or** portal; soft-skip on 404 |
 | Dogfood `--json` | Machine-readable report for stage CI |
 
+## Stream discovery (operator list/get)
+
+Lean client surface (no SDK dependency; wire parity with [iomesh-client-sdk-go](https://github.com/iome-sh/iomesh-client-sdk-go) `StreamInfo`):
+
+| Method | HTTP | Notes |
+|--------|------|-------|
+| `ListStreams` | `GET /v1/streams` | Accepts JSON array or `{"streams":[...]}`; **explicit errors** (not fail-open empty) |
+| `GetStream(name)` | `GET /v1/streams/{name}` | Path-escaped name; empty name / 404 → error |
+
+```bash
+iomesh mesh streams                  # table of all streams
+iomesh mesh streams --name EVENTS    # multi-line detail
+iomesh mesh streams --json           # JSON array
+iomesh mesh streams --name EVENTS --json
+```
+
+Mesh disabled / empty endpoint → error `mesh disabled` (non-zero CLI exit). Not wired into dogfood this wave (CLI-only discovery).
+
 ## Packages
 
 - `internal/iomesh/client.go` — QueryContext, lineage format, meter hook
 - `internal/iomesh/policy.go` — EvaluatePolicy
 - `internal/iomesh/meter.go` — UsageMeter / FormatUsage
 - `internal/iomesh/catalog.go` — ListCatalog / FormatCatalog / CatalogSnippet
+- `internal/iomesh/streams.go` — ListStreams / GetStream / FormatStreams (s298)
 - `internal/agent` — policy before tool execute; mesh catalog tools; `EventMeshPolicy`

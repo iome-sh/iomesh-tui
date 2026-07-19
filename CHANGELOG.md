@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Mesh stream discovery** — lean `ListStreams` / `GetStream` (`GET /v1/streams`, `GET /v1/streams/{name}`) + CLI `iomesh mesh streams [--name] [--json]` (explicit errors; no SDK dep) (s298)
+
 ## [0.14.0] — 2026-07-19
 
 Minor release: dogfood WaitReady soft preflight.
