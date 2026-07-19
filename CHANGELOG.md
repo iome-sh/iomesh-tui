@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.22.0] — 2026-07-19
+
+Minor release: dogfood kv-ensure and ephemeral mesh pub.
+
 ### Added
 
 - **Dogfood `--kv-ensure`** — with `--kv-bucket`, best-effort `KVCreateBucket` before list-keys (soft fail-open; step detail `ensure=ok|skip|soft-fail`; top-level `kv_ensured` always emitted)
@@ -269,7 +273,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.21.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.22.0...HEAD
+[0.22.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.22.0
 [0.21.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.21.0
 [0.20.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.20.0
 [0.19.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.19.0
