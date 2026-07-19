@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.18.0] — 2026-07-19
+
+Minor release: stream message list CLI.
+
 ### Added
 
 - **Stream message list CLI** — lean `ListStreamMessages` (`GET /v1/streams/{name}/messages?from_seq=&to_seq=&limit=`) + `iomesh mesh streams --messages --name NAME` (default `--limit 20`; `--from-seq` / `--to-seq` / `--json`; incompatible with `--delete`; base64 payload decoded for table display)
@@ -234,7 +238,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.17.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.18.0...HEAD
+[0.18.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.18.0
 [0.17.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.17.0
 [0.16.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.16.0
 [0.15.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.15.0
