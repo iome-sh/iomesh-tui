@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.23.0] — 2026-07-19
+
+Minor release: consumer create CLI and soft dogfood pub probe.
+
 ### Added
 
 - **Mesh consumer create/fetch** — lean `CreateConsumer` / `ConsumerFetch` / `FormatConsumerInfo` (`POST /v1/streams/{stream}/consumers`; 201 full info, 409 idempotent name-only; fetch default batch=1 max_wait 2s) + CLI `iomesh mesh consumer create|fetch --stream S --name C --yes`
@@ -278,7 +282,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.22.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.23.0...HEAD
+[0.23.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.23.0
 [0.22.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.22.0
 [0.21.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.21.0
 [0.20.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.20.0
