@@ -462,7 +462,7 @@ func cmdModels(args []string) int {
 
 func cmdMesh(args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: iomesh mesh dogfood|probe|usage|catalog|streams|kv|pub|wait|status [flags]")
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh dogfood|probe|usage|catalog|streams|kv|pub|consumer|wait|status [flags]")
 		return 2
 	}
 	switch args[0] {
@@ -478,6 +478,8 @@ func cmdMesh(args []string) int {
 		return cmdMeshKV(args[1:])
 	case "pub":
 		return cmdMeshPub(args[1:])
+	case "consumer":
+		return cmdMeshConsumer(args[1:])
 	case "wait":
 		return cmdMeshWait(args[1:])
 	case "status":
@@ -485,25 +487,27 @@ func cmdMesh(args []string) int {
 	case "help", "-h", "--help":
 		fmt.Fprintln(os.Stderr, `iomesh mesh — I/O Mesh platform probes
 
-  iomesh mesh dogfood   stage smoke (health → ready → context → emit → policy → catalog → streams → [kv] → memory_*)
+  iomesh mesh dogfood   stage smoke (health → ready → context → emit → [pub] → policy → catalog → streams → [kv] → memory_*)
   iomesh mesh probe     alias for dogfood
   iomesh mesh usage     local LLM metering rollup for this process (--json for scrapers)
   iomesh mesh catalog   list governed data products (broker + portal federation)
   iomesh mesh streams   list/get/delete/messages broker streams (GET|DELETE /v1/streams; explicit errors)
   iomesh mesh kv        KV list/get/put/delete/create-bucket (GET|PUT|DELETE|POST /v1/kv; mutate ops require --yes)
   iomesh mesh pub       ephemeral fire-and-forget publish (POST /v1/pub; requires --yes)
+  iomesh mesh consumer  durable pull consumer create/fetch (POST .../consumers; requires --yes)
   iomesh mesh wait      poll Ready until OK or timeout (operator preflight)
   iomesh mesh status    operator snapshot (StatusLine + optional Health/Ready)
 
 Flags (dogfood):
   --config path           config.toml
-  --strict                require context + emit + ready (+ policy/catalog/memory/streams/kv when on)
+  --strict                require context + emit + ready (+ policy/catalog/memory/streams/kv/pub when on)
   --skip-context          skip context plane
   --skip-emit             skip dept stream emit
   --skip-memory           skip memory_ingest / memory_recall / memory_retrieve
   --skip-streams          skip streams list probe (GET /v1/streams)
   --kv-bucket NAME        soft KV list-keys probe on bucket (omit = skip kv step)
   --kv-ensure             with --kv-bucket: best-effort create bucket before list (soft fail-open)
+  --pub-subject SUBJECT   soft ephemeral Pub probe (omit = skip pub step)
   --wait-ready dur        soft WaitReady preflight budget (0=off; timeout SKIP unless --strict)
   --wait-interval dur     WaitReady poll interval (default 500ms when --wait-ready set)
   --wait-require-health   WaitReady requires Health OK each attempt
@@ -519,6 +523,14 @@ Flags (pub):
   --payload-file PATH     read payload bytes from file
   --yes                   required gate (mutating)
   --json                  print {"subject","ok":true} on success
+  --endpoint / --tenant / --config / -v
+
+Flags (consumer):
+  create --stream S --name C [--filter F] --yes [--json]
+  fetch  --stream S --name C [--batch N] --yes [--json]
+  --stream / --name required; --yes required (mutating)
+  --filter F              create: optional filter_subject
+  --batch N               fetch: max messages (default 1)
   --endpoint / --tenant / --config / -v
 
 Flags (catalog):
@@ -931,6 +943,184 @@ func cmdMeshStreams(args []string) int {
 	return 0
 }
 
+// cmdMeshConsumer creates a durable pull consumer or fetches messages (lean /v1/streams/{s}/consumers; requires --yes).
+func cmdMeshConsumer(args []string) int {
+	if len(args) == 0 {
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh consumer create|fetch [flags]")
+		return 2
+	}
+	switch args[0] {
+	case "create":
+		return cmdMeshConsumerCreate(args[1:])
+	case "fetch":
+		return cmdMeshConsumerFetch(args[1:])
+	case "help", "-h", "--help":
+		fmt.Fprintln(os.Stderr, `iomesh mesh consumer — durable pull consumers
+
+  iomesh mesh consumer create --stream S --name C [--filter F] --yes [--json]
+  iomesh mesh consumer fetch  --stream S --name C [--batch N] --yes [--json]
+
+Create: POST /v1/streams/{stream}/consumers (201 full info; 409 idempotent name-only).
+Fetch:  POST /v1/streams/{stream}/consumers/{name}/fetch (default batch=1, max_wait 2s).
+Both require --yes (mutating).`)
+		return 0
+	default:
+		fmt.Fprintf(os.Stderr, "unknown mesh consumer subcommand %q\n", args[0])
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh consumer create|fetch [flags]")
+		return 2
+	}
+}
+
+func cmdMeshConsumerCreate(args []string) int {
+	fs := flag.NewFlagSet("mesh consumer create", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	var (
+		configPath = fs.String("config", "", "config.toml path")
+		stream     = fs.String("stream", "", "stream name (required)")
+		name       = fs.String("name", "", "consumer name (required)")
+		filter     = fs.String("filter", "", "optional filter_subject")
+		yes        = fs.Bool("yes", false, "confirm mutating create (required)")
+		jsonOut    = fs.Bool("json", false, "print ConsumerInfo as JSON")
+		verbose    = fs.Bool("v", false, "verbose logs")
+		endpoint   = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
+		tenant     = fs.String("tenant", "", "override tenant")
+	)
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	streamName := strings.TrimSpace(*stream)
+	consumerName := strings.TrimSpace(*name)
+	if streamName == "" || consumerName == "" || !*yes {
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh consumer create --stream S --name C [--filter F] --yes [--json]")
+		fmt.Fprintln(os.Stderr, "  --stream and --name required; --yes required (mutating)")
+		return 2
+	}
+
+	logger := newLogger(*verbose)
+	cfg, err := loadConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "config: %v\n", err)
+		return 1
+	}
+	if *endpoint != "" {
+		cfg.IOMesh.Endpoint = *endpoint
+		cfg.IOMesh.Enabled = true
+	}
+	if *tenant != "" {
+		cfg.IOMesh.Tenant = *tenant
+	}
+	mesh := iomesh.New(iomesh.Config{
+		Enabled:     cfg.IOMesh.Enabled,
+		Endpoint:    cfg.IOMesh.Endpoint,
+		Tenant:      cfg.IOMesh.Tenant,
+		APIKeyEnv:   cfg.IOMesh.APIKeyEnv,
+		OrgID:       cfg.IOMesh.Org,
+		WorkspaceID: cfg.IOMesh.Workspace,
+	}, logger)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	info, err := mesh.CreateConsumer(ctx, streamName, consumerName, strings.TrimSpace(*filter))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "FAIL mesh consumer create: %v\n", err)
+		return 1
+	}
+	if info == nil {
+		fmt.Fprintln(os.Stderr, "FAIL mesh consumer create: empty response")
+		return 1
+	}
+	if *jsonOut {
+		b, err := json.MarshalIndent(info, "", "  ")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "json: %v\n", err)
+			return 1
+		}
+		fmt.Println(string(b))
+		return 0
+	}
+	fmt.Print(iomesh.FormatConsumerInfo(*info))
+	return 0
+}
+
+func cmdMeshConsumerFetch(args []string) int {
+	fs := flag.NewFlagSet("mesh consumer fetch", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	var (
+		configPath = fs.String("config", "", "config.toml path")
+		stream     = fs.String("stream", "", "stream name (required)")
+		name       = fs.String("name", "", "consumer name (required)")
+		batch      = fs.Int("batch", 1, "max messages to fetch (default 1)")
+		yes        = fs.Bool("yes", false, "confirm mutating fetch (required)")
+		jsonOut    = fs.Bool("json", false, "print messages as JSON")
+		verbose    = fs.Bool("v", false, "verbose logs")
+		endpoint   = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
+		tenant     = fs.String("tenant", "", "override tenant")
+	)
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	streamName := strings.TrimSpace(*stream)
+	consumerName := strings.TrimSpace(*name)
+	if streamName == "" || consumerName == "" || !*yes {
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh consumer fetch --stream S --name C [--batch N] --yes [--json]")
+		fmt.Fprintln(os.Stderr, "  --stream and --name required; --yes required (long-poll mutate)")
+		return 2
+	}
+	if *batch <= 0 {
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh consumer fetch --batch N (N > 0)")
+		return 2
+	}
+
+	logger := newLogger(*verbose)
+	cfg, err := loadConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "config: %v\n", err)
+		return 1
+	}
+	if *endpoint != "" {
+		cfg.IOMesh.Endpoint = *endpoint
+		cfg.IOMesh.Enabled = true
+	}
+	if *tenant != "" {
+		cfg.IOMesh.Tenant = *tenant
+	}
+	mesh := iomesh.New(iomesh.Config{
+		Enabled:     cfg.IOMesh.Enabled,
+		Endpoint:    cfg.IOMesh.Endpoint,
+		Tenant:      cfg.IOMesh.Tenant,
+		APIKeyEnv:   cfg.IOMesh.APIKeyEnv,
+		OrgID:       cfg.IOMesh.Org,
+		WorkspaceID: cfg.IOMesh.Workspace,
+	}, logger)
+	// Allow slightly more than the 2s long-poll budget.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	msgs, err := mesh.ConsumerFetch(ctx, streamName, consumerName, *batch, 2*time.Second)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "FAIL mesh consumer fetch: %v\n", err)
+		return 1
+	}
+	if msgs == nil {
+		msgs = []iomesh.StreamMessage{}
+	}
+	if *jsonOut {
+		b, err := json.MarshalIndent(msgs, "", "  ")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "json: %v\n", err)
+			return 1
+		}
+		fmt.Println(string(b))
+		return 0
+	}
+	fmt.Print(iomesh.FormatStreamMessages(streamName+"/"+consumerName, msgs))
+	return 0
+}
+
 // cmdMeshPub publishes an ephemeral fire-and-forget message via lean POST /v1/pub (SDK wire; requires --yes).
 func cmdMeshPub(args []string) int {
 	fs := flag.NewFlagSet("mesh pub", flag.ContinueOnError)
@@ -1276,6 +1466,7 @@ func cmdMeshDogfood(args []string) int {
 		skipStreams       = fs.Bool("skip-streams", false, "skip streams list probe (GET /v1/streams)")
 		kvBucket          = fs.String("kv-bucket", "", "soft KV list-keys probe on bucket (omit = skip kv step)")
 		kvEnsure          = fs.Bool("kv-ensure", false, "with --kv-bucket: best-effort KVCreateBucket before list (soft fail-open)")
+		pubSubject        = fs.String("pub-subject", "", "soft ephemeral Pub probe subject (omit = skip pub step)")
 		waitReady         = fs.Duration("wait-ready", 0, "soft WaitReady preflight budget before ready (0=off)")
 		waitInterval      = fs.Duration("wait-interval", 0, "WaitReady poll interval (default 500ms when --wait-ready set)")
 		waitRequireHealth = fs.Bool("wait-require-health", false, "WaitReady requires Health OK each attempt")
@@ -1348,6 +1539,7 @@ func cmdMeshDogfood(args []string) int {
 		SkipStreams:       *skipStreams,
 		KVBucket:          strings.TrimSpace(*kvBucket),
 		KVEnsure:          *kvEnsure,
+		PubSubject:        strings.TrimSpace(*pubSubject),
 		WaitReady:         *waitReady,
 		WaitReadyInterval: *waitInterval,
 		WaitRequireHealth: *waitRequireHealth,
@@ -1476,8 +1668,9 @@ Usage:
   iomesh sessions                list sessions in workspace
   iomesh skills                  list SKILL.md catalogs
   iomesh mcp [--connect]         list configured MCP servers
-  iomesh mesh dogfood            stage I/O Mesh smoke (health/context/emit/memory)
+  iomesh mesh dogfood            stage I/O Mesh smoke (health/context/emit/pub/memory)
   iomesh mesh pub                ephemeral POST /v1/pub (--subject --payload|--payload-file --yes)
+  iomesh mesh consumer create    durable pull consumer create (--stream --name --yes)
   iomesh mesh wait               poll mesh Ready until OK (operator preflight)
   iomesh mesh status             operator snapshot (StatusLine + Health/Ready)
   iomesh models                  list configured models
