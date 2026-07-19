@@ -15,6 +15,25 @@ iomesh mesh wait [--timeout 30s] [--interval 500ms] [--require-health]
 
 `Client.WaitReady` retries `GET /ready` (or `/readyz`) until success or context deadline. With `--require-health`, each attempt requires `GET /health` OK first. Disabled/empty endpoint is offline-first (immediate success). Use before stage dogfood or agent attach when the broker is still warming.
 
+### Dogfood WaitReady soft preflight (s297)
+
+Optional **in-suite** soft preflight after health and before the single-shot ready step:
+
+```bash
+iomesh mesh dogfood --wait-ready 10s --wait-interval 500ms --wait-require-health
+# wait_ready PASS when Ready (and optional Health) succeed within budget
+# timeout → SKIP wait_ready (soft) unless --strict (then FAIL)
+# single-shot ready still runs after wait for latency evidence
+```
+
+| Flag | Maps to | Default |
+|------|---------|---------|
+| `--wait-ready dur` | `DogfoodOptions.WaitReady` | `0` (off — no `wait_ready` step) |
+| `--wait-interval dur` | `DogfoodOptions.WaitReadyInterval` | `500ms` when wait-ready > 0 and interval is 0 |
+| `--wait-require-health` | `DogfoodOptions.WaitRequireHealth` | false |
+
+Effective budget is `min(WaitReady, parent ctx remaining)` via `context.WithTimeout`. Report top-level `wait_ready_ms` is always emitted (configured budget in ms; `0` = off). Outcome is on the `wait_ready` step (`PASS` / `SKIP` / `FAIL`).
+
 ### Operator status (`mesh status`)
 
 One-shot operator snapshot (s296) without the full dogfood suite:
@@ -31,6 +50,7 @@ Builds the client like dogfood/wait. Prints `StatusLine` config summary plus opt
 |------|---------|----------------|---------------------|
 | enabled | config | SKIP if disabled | same |
 | health | `GET /health` | **FAIL** if down | **FAIL** |
+| wait_ready | poll Ready (optional Health) | only when `--wait-ready` > 0; timeout → **SKIP** | timeout → **FAIL** |
 | ready | `GET /ready` or `/readyz` | SKIP if 404 | FAIL if missing/error |
 | context | `POST /v1/context/query` | SKIP if empty (fail-open) | FAIL if empty |
 | emit | `POST /v1/streams/dept/publish` (`dept.agent.dogfood`) | SKIP on error | FAIL on error |
@@ -114,6 +134,7 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `catalog_count` | int | Product count from last `ListCatalog` (**always emitted**, `0` when none/off). Top-level CI evidence — no step-detail scrape (s292) |
 | `context_chars` | int | `len(FormatContextSnippet)` from last context probe (**always emitted**, `0` when skip/off/empty) (s296) |
 | `context_lineage_count` | int | `len(res.Lineage)` from last `QueryContext` (**always emitted**, `0` when skip/off/empty) (s296) |
+| `wait_ready_ms` | int | Configured WaitReady budget in ms (**always emitted**, `0` = off / no preflight) (s297). Outcome on `wait_ready` step detail |
 | `memory_endpoint` | string | Optional memory sidecar base (`[memory].endpoint` / `IOMESH_MEMORY_ENDPOINT`); omitted when empty (retrieve uses mesh `endpoint`) |
 | `user_agent` | string | Package mesh HTTP User-Agent (`iomesh-tui/<version>` via `iomesh.UserAgent()`); always set for CI evidence (s290) — not scraped from server |
 | `strict` | bool | `--strict` |
@@ -141,6 +162,7 @@ export IOMESH_TENANT=acme        # optional
 iomesh mesh dogfood
 iomesh mesh dogfood --strict
 iomesh mesh dogfood --json       # stage CI evidence
+iomesh mesh dogfood --wait-ready 10s --wait-interval 500ms   # soft ready preflight (s297)
 iomesh mesh dogfood --endpoint "$IOMESH_ENDPOINT" --tenant acme
 iomesh mesh dogfood --memory-endpoint "$IOMESH_MEMORY_ENDPOINT"
 iomesh mesh dogfood --skip-context --skip-emit --skip-memory   # health-only-ish

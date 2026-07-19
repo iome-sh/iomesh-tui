@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
 func mockMeshServer(t *testing.T, opts struct {
@@ -1343,5 +1344,200 @@ func TestReady_OK(t *testing.T) {
 	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
 	if err := c.Ready(context.Background()); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// stepByName returns the first step with name, or zero Step.
+func dogfoodStep(rep DogfoodReport, name string) (Step, bool) {
+	for _, s := range rep.Steps {
+		if s.Name == name {
+			return s, true
+		}
+	}
+	return Step{}, false
+}
+
+func TestDogfood_WaitReady_SucceedsAfterRetries(t *testing.T) {
+	// Ready fails twice then OK within budget → wait_ready PASS; single-shot ready still runs.
+	var readyHits atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case "/ready", "/readyz":
+			n := readyHits.Add(1)
+			if n < 3 {
+				w.WriteHeader(503)
+				return
+			}
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		default:
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "stage"}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{
+		SkipContext:       true,
+		SkipEmit:          true,
+		SkipMemory:        true,
+		WaitReady:         2 * time.Second,
+		WaitReadyInterval: 10 * time.Millisecond,
+	})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if rep.WaitReadyMS != 2000 {
+		t.Fatalf("WaitReadyMS: %d want 2000", rep.WaitReadyMS)
+	}
+	wr, ok := dogfoodStep(rep, "wait_ready")
+	if !ok || wr.Status != StepPass {
+		t.Fatalf("wait_ready: ok=%v status=%s detail=%s", ok, wr.Status, wr.Detail)
+	}
+	if !strings.Contains(wr.Detail, "WaitReady OK") {
+		t.Fatalf("wait_ready detail: %s", wr.Detail)
+	}
+	ready, ok := dogfoodStep(rep, "ready")
+	if !ok || ready.Status != StepPass {
+		t.Fatalf("ready after wait: ok=%v status=%s detail=%s", ok, ready.Status, ready.Detail)
+	}
+	if readyHits.Load() < 3 {
+		t.Fatalf("expected ≥3 ready hits (wait retries + one-shot), got %d", readyHits.Load())
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if n, ok := parsed["wait_ready_ms"].(float64); !ok || int(n) != 2000 {
+		t.Fatalf("json wait_ready_ms: %v want 2000\n%s", parsed["wait_ready_ms"], js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "wait_ready_ms: 2000") {
+		t.Fatalf("text report missing wait_ready_ms:\n%s", text)
+	}
+}
+
+func TestDogfood_WaitReady_TimeoutSoftSkip(t *testing.T) {
+	// Always-fail ready within short budget → soft SKIP (not Strict).
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case "/ready", "/readyz":
+			w.WriteHeader(503)
+		default:
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{
+		Strict:            false,
+		SkipContext:       true,
+		SkipEmit:          true,
+		SkipMemory:        true,
+		WaitReady:         80 * time.Millisecond,
+		WaitReadyInterval: 15 * time.Millisecond,
+	})
+	if !rep.OK {
+		t.Fatalf("soft wait timeout should not FAIL report: %s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if rep.WaitReadyMS != 80 {
+		t.Fatalf("WaitReadyMS: %d want 80", rep.WaitReadyMS)
+	}
+	wr, ok := dogfoodStep(rep, "wait_ready")
+	if !ok || wr.Status != StepSkip {
+		t.Fatalf("wait_ready soft: ok=%v status=%s detail=%s", ok, wr.Status, wr.Detail)
+	}
+	if !strings.Contains(wr.Detail, "wait_ready soft-fail") {
+		t.Fatalf("wait_ready detail: %s", wr.Detail)
+	}
+	// Single-shot ready also soft-fails (503).
+	ready, ok := dogfoodStep(rep, "ready")
+	if !ok || ready.Status != StepSkip {
+		t.Fatalf("ready soft: ok=%v status=%s", ok, ready.Status)
+	}
+}
+
+func TestDogfood_WaitReady_TimeoutStrictFail(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case "/ready", "/readyz":
+			w.WriteHeader(503)
+		default:
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{
+		Strict:            true,
+		SkipContext:       true,
+		SkipEmit:          true,
+		SkipMemory:        true,
+		WaitReady:         80 * time.Millisecond,
+		WaitReadyInterval: 15 * time.Millisecond,
+	})
+	if rep.OK {
+		t.Fatalf("strict wait timeout should FAIL: %s\n%s", rep.Summary, FormatReport(rep))
+	}
+	wr, ok := dogfoodStep(rep, "wait_ready")
+	if !ok || wr.Status != StepFail {
+		t.Fatalf("wait_ready strict: ok=%v status=%s detail=%s", ok, wr.Status, wr.Detail)
+	}
+	if !strings.Contains(wr.Detail, "wait_ready:") {
+		t.Fatalf("wait_ready detail: %s", wr.Detail)
+	}
+}
+
+func TestDogfood_WaitReady_DefaultOff(t *testing.T) {
+	// Zero WaitReady: no wait_ready step; wait_ready_ms always 0 in report.
+	srv := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+		failRecall bool
+		noRecall   bool
+	}{})
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		EmitDeptStreams: false,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{SkipMemory: true})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if rep.WaitReadyMS != 0 {
+		t.Fatalf("WaitReadyMS: %d want 0", rep.WaitReadyMS)
+	}
+	if _, ok := dogfoodStep(rep, "wait_ready"); ok {
+		t.Fatal("default dogfood must not include wait_ready step")
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if n, ok := parsed["wait_ready_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json wait_ready_ms: %v want 0\n%s", parsed["wait_ready_ms"], js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "wait_ready_ms: 0") {
+		t.Fatalf("text report missing wait_ready_ms 0:\n%s", text)
 	}
 }

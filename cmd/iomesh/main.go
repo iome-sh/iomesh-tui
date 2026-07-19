@@ -492,6 +492,9 @@ Flags (dogfood):
   --skip-context          skip context plane
   --skip-emit             skip dept stream emit
   --skip-memory           skip memory_ingest / memory_recall / memory_retrieve
+  --wait-ready dur        soft WaitReady preflight budget (0=off; timeout SKIP unless --strict)
+  --wait-interval dur     WaitReady poll interval (default 500ms when --wait-ready set)
+  --wait-require-health   WaitReady requires Health OK each attempt
   --endpoint url          override IOMESH_ENDPOINT
   --memory-endpoint url   memory sidecar base (sync retrieve / warm plane)
   --json                  JSON report for stage CI evidence
@@ -764,17 +767,20 @@ func cmdMeshDogfood(args []string) int {
 	fs := flag.NewFlagSet("mesh dogfood", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	var (
-		configPath     = fs.String("config", "", "config.toml path")
-		workspace      = fs.String("C", "", "workspace for context query")
-		strict         = fs.Bool("strict", false, "fail if context/emit/ready/memory soft-fail")
-		skipContext    = fs.Bool("skip-context", false, "skip context plane probe")
-		skipEmit       = fs.Bool("skip-emit", false, "skip dept emit probe")
-		skipMemory     = fs.Bool("skip-memory", false, "skip memory_ingest / memory_recall / memory_retrieve probes")
-		jsonOut        = fs.Bool("json", false, "print dogfood report as JSON (stage CI evidence)")
-		verbose        = fs.Bool("v", false, "verbose logs")
-		endpoint       = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
-		memoryEndpoint = fs.String("memory-endpoint", "", "memory sidecar base (IOMESH_MEMORY_ENDPOINT / MEMORY_SIDECAR_URL)")
-		tenant         = fs.String("tenant", "", "override tenant")
+		configPath        = fs.String("config", "", "config.toml path")
+		workspace         = fs.String("C", "", "workspace for context query")
+		strict            = fs.Bool("strict", false, "fail if context/emit/ready/memory soft-fail")
+		skipContext       = fs.Bool("skip-context", false, "skip context plane probe")
+		skipEmit          = fs.Bool("skip-emit", false, "skip dept emit probe")
+		skipMemory        = fs.Bool("skip-memory", false, "skip memory_ingest / memory_recall / memory_retrieve probes")
+		waitReady         = fs.Duration("wait-ready", 0, "soft WaitReady preflight budget before ready (0=off)")
+		waitInterval      = fs.Duration("wait-interval", 0, "WaitReady poll interval (default 500ms when --wait-ready set)")
+		waitRequireHealth = fs.Bool("wait-require-health", false, "WaitReady requires Health OK each attempt")
+		jsonOut           = fs.Bool("json", false, "print dogfood report as JSON (stage CI evidence)")
+		verbose           = fs.Bool("v", false, "verbose logs")
+		endpoint          = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
+		memoryEndpoint    = fs.String("memory-endpoint", "", "memory sidecar base (IOMESH_MEMORY_ENDPOINT / MEMORY_SIDECAR_URL)")
+		tenant            = fs.String("tenant", "", "override tenant")
 	)
 	if err := fs.Parse(args); err != nil {
 		return 2
@@ -831,11 +837,14 @@ func cmdMeshDogfood(args []string) int {
 	defer cancel()
 
 	rep := mesh.Dogfood(ctx, iomesh.DogfoodOptions{
-		Workspace:   ws,
-		Strict:      *strict,
-		SkipContext: *skipContext,
-		SkipEmit:    *skipEmit,
-		SkipMemory:  *skipMemory,
+		Workspace:         ws,
+		Strict:            *strict,
+		SkipContext:       *skipContext,
+		SkipEmit:          *skipEmit,
+		SkipMemory:        *skipMemory,
+		WaitReady:         *waitReady,
+		WaitReadyInterval: *waitInterval,
+		WaitRequireHealth: *waitRequireHealth,
 	})
 	if *jsonOut {
 		fmt.Print(iomesh.FormatReportJSON(rep))
