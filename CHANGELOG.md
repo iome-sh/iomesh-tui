@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.24.0] — 2026-07-19
+
+Minor release: consumer ack and nack CLI.
+
 ### Added
 
 - **Mesh consumer ack/nack** — lean `ConsumerAck` / `ConsumerNack` (`POST /v1/streams/{stream}/consumers/{name}/ack|nack`; body `{"seqs":[...]}`; optional `ack_floor` on response) + CLI `iomesh mesh consumer ack|nack --stream S --name C --seq N [--seq N...] --yes`
@@ -286,7 +290,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.23.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.24.0...HEAD
+[0.24.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.24.0
 [0.23.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.23.0
 [0.22.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.22.0
 [0.21.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.21.0
