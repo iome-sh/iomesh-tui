@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-07-19
+
+Minor release: keyless cosign signatures on release checksums (GitHub OIDC).
+
 ### Added
 
 - **Keyless cosign on release checksums** — `checksums.txt.sig` + `.pem` via GitHub OIDC (no long-lived keys); RELEASING verify snippet (s287)
@@ -144,7 +148,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.8.0
 [0.7.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.7.0
 [0.6.1]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.6.1
 [0.6.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.6.0
