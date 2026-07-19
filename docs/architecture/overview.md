@@ -109,4 +109,5 @@ CLI / TUI / ACP
 28. ~~Dept emit publish wire parity (SDK + TUI)~~ **done** — `/v1/streams/dept/publish` + SDK `EmitLLMCall` (s284)
 29. ~~GoReleaser SPDX SBOM on release assets~~ **done** — see [RELEASING.md](../../RELEASING.md) (s285)
 30. ~~Keyless cosign on release checksums~~ **done** — see [RELEASING.md](../../RELEASING.md) (s287)
-31. Optional: platform remote multi-tenant metering UI
+31. ~~Mesh User-Agent + local release-snapshot --skip=sign~~ **done** — SDK Health/Ready parity sibling (s288)
+32. Optional: platform remote multi-tenant metering UI
