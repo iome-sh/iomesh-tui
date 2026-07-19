@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.20.0] — 2026-07-19
+
+Minor release: gated KV put/delete and soft dogfood kv probe.
+
 ### Added
 
 - **Gated mesh KV put/delete** — lean `KVPut` / `KVDelete` (`PUT|DELETE /v1/kv/{bucket}/{key}`; body `{"value": base64}` on put) + CLI `--put KEY --value|--value-file --yes` / `--delete KEY --yes` (mutating ops require `--yes`; mutually exclusive with list/get)
@@ -252,7 +256,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.19.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.20.0...HEAD
+[0.20.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.20.0
 [0.19.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.19.0
 [0.18.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.18.0
 [0.17.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.17.0
