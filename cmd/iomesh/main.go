@@ -1700,6 +1700,7 @@ func cmdMeshDogfood(args []string) int {
 		WaitReady:         *waitReady,
 		WaitReadyInterval: *waitInterval,
 		WaitRequireHealth: *waitRequireHealth,
+		Version:           version,
 	})
 	if *jsonOut {
 		fmt.Print(iomesh.FormatReportJSON(rep))
