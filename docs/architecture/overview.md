@@ -106,16 +106,16 @@ CLI / TUI / ACP
 25. ~~Release v0.5.0~~ **done** — GoReleaser packaging + usage JSON
 26. ~~Remote metering emit path (org/workspace + llm_meter dogfood)~~ **done** — see [mesh-deeper.md](mesh-deeper.md) / [mesh-dogfood.md](mesh-dogfood.md)
 27. ~~Release v0.6.0~~ **done** — multi-tenant metering emit packaging
-28. ~~Dept emit publish wire parity (SDK + TUI)~~ **done** — `/v1/streams/dept/publish` + SDK `EmitLLMCall` (s284)
-29. ~~GoReleaser SPDX SBOM on release assets~~ **done** — see [RELEASING.md](../../RELEASING.md) (s285)
-30. ~~Keyless cosign on release checksums~~ **done** — see [RELEASING.md](../../RELEASING.md) (s287)
-31. ~~Mesh User-Agent + local release-snapshot --skip=sign~~ **done** — SDK Health/Ready parity sibling (s288)
-32. ~~Dogfood / StatusLine User-Agent evidence~~ **done** — report `user_agent` + StatusLine `ua=` for CI/ops (s290); see [mesh-dogfood.md](mesh-dogfood.md)
-33. ~~WaitReady + `iomesh mesh wait` preflight~~ **done** — poll Ready (optional Health) until OK or deadline (s291); see [mesh-dogfood.md](mesh-dogfood.md)
-34. ~~Dogfood catalog plane evidence~~ **done** — report `catalog_source` / `catalog_count` for CI (s292); see [mesh-dogfood.md](mesh-dogfood.md)
-35. ~~Dogfood context plane evidence + `mesh status`~~ **done** — report `context_chars` / `context_lineage_count` + operator status CLI (s296); see [mesh-dogfood.md](mesh-dogfood.md)
-36. ~~Dogfood WaitReady soft preflight~~ **done** — optional `--wait-ready` inside mesh dogfood + report `wait_ready_ms` (s297); see [mesh-dogfood.md](mesh-dogfood.md)
-37. ~~Lean mesh stream discovery + `mesh streams` CLI~~ **done** — `ListStreams` / `GetStream` + `iomesh mesh streams` (s298); see [mesh-deeper.md](mesh-deeper.md)
-38. ~~Dogfood streams list evidence~~ **done** — soft `streams` step + report `streams_count` (s300); see [mesh-dogfood.md](mesh-dogfood.md)
-39. ~~Dogfood `streams_names` + gated streams delete~~ **done** — report name sample + `mesh streams --delete --name --yes` (s302); see [mesh-dogfood.md](mesh-dogfood.md) / [mesh-deeper.md](mesh-deeper.md)
+28. ~~Dept emit publish wire parity (SDK + TUI)~~ **done** — `/v1/streams/dept/publish` + SDK `EmitLLMCall`
+29. ~~GoReleaser SPDX SBOM on release assets~~ **done** — see [RELEASING.md](../../RELEASING.md)
+30. ~~Keyless cosign on release checksums~~ **done** — see [RELEASING.md](../../RELEASING.md)
+31. ~~Mesh User-Agent + local release-snapshot --skip=sign~~ **done** — SDK Health/Ready parity sibling
+32. ~~Dogfood / StatusLine User-Agent evidence~~ **done** — report `user_agent` + StatusLine `ua=` for CI/ops; see [mesh-dogfood.md](mesh-dogfood.md)
+33. ~~WaitReady + `iomesh mesh wait` preflight~~ **done** — poll Ready (optional Health) until OK or deadline; see [mesh-dogfood.md](mesh-dogfood.md)
+34. ~~Dogfood catalog plane evidence~~ **done** — report `catalog_source` / `catalog_count` for CI; see [mesh-dogfood.md](mesh-dogfood.md)
+35. ~~Dogfood context plane evidence + `mesh status`~~ **done** — report `context_chars` / `context_lineage_count` + operator status CLI; see [mesh-dogfood.md](mesh-dogfood.md)
+36. ~~Dogfood WaitReady soft preflight~~ **done** — optional `--wait-ready` inside mesh dogfood + report `wait_ready_ms`; see [mesh-dogfood.md](mesh-dogfood.md)
+37. ~~Lean mesh stream discovery + `mesh streams` CLI~~ **done** — `ListStreams` / `GetStream` + `iomesh mesh streams`; see [mesh-deeper.md](mesh-deeper.md)
+38. ~~Dogfood streams list evidence~~ **done** — soft `streams` step + report `streams_count`; see [mesh-dogfood.md](mesh-dogfood.md)
+39. ~~Dogfood `streams_names` + gated streams delete~~ **done** — report name sample + `mesh streams --delete --name --yes`; see [mesh-dogfood.md](mesh-dogfood.md) / [mesh-deeper.md](mesh-deeper.md)
 40. Optional: platform remote multi-tenant metering UI

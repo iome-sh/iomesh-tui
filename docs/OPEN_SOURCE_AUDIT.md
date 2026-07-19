@@ -7,7 +7,7 @@ Checklist completed for making **iomesh-tui** a public repository. Re-run before
 | Check | Status |
 |-------|--------|
 | No committed API keys / private keys / `.env` secrets | Pass (tests use fake `api_key = "k"` / redaction fixtures only) |
-| No SR&ED / private aion ledger strings in tree | **Fail / residual** — historical CHANGELOG entries and some comments may still mention internal serials or platform codenames; public PRs must not add SRED serials or private monorepo paths. Re-audit after hygiene. |
+| No SR&ED / private aion ledger strings in tree | **Partial** — docs continuum serials stripped; private monorepo paths removed. Residual: git history of past PR titles/commits may still contain ledger serials (do not rewrite tags). Forward policy in CONTRIBUTING. |
 | Path jail + shell policy + secret scrub covered by tests | Pass |
 | Mutating tools fail-closed without approval/`--yolo` | Pass |
 | ACP default bind loopback; token warned off-loopback | Pass |

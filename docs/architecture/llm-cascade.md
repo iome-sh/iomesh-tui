@@ -66,7 +66,7 @@ iomesh -m vertex-gemini-2.5-flash -p "Reply with ok"
 ```
 
 - Base URL template: `https://us-central1-aiplatform.googleapis.com/v1/projects/${GOOGLE_CLOUD_PROJECT}/locations/us-central1/endpoints/openapi`
-- Auth: OAuth access token as Bearer (not a Gemini API key). **s221:** in-process cache (~50m) + auto `gcloud auth print-access-token` when env unset; **401 → invalidate + one retry**
+- Auth: OAuth access token as Bearer (not a Gemini API key). **** in-process cache (~50m) + auto `gcloud auth print-access-token` when env unset; **401 → invalidate + one retry**
 - Env: `VERTEX_API_KEY` / `GOOGLE_OAUTH_ACCESS_TOKEN` override; `VERTEX_ADC=0` disables gcloud helper
 - Model ids often use publisher prefix: `google/gemini-2.5-flash`
 

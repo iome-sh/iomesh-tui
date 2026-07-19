@@ -6,7 +6,7 @@ Operator smoke for **I/O Mesh** integration from the public `iomesh-tui` harness
 
 ### Preflight wait (`mesh wait`)
 
-Operator preflight (s291) polls readiness without running the full dogfood suite:
+Operator preflight polls readiness without running the full dogfood suite:
 
 ```bash
 iomesh mesh wait [--timeout 30s] [--interval 500ms] [--require-health]
@@ -15,7 +15,7 @@ iomesh mesh wait [--timeout 30s] [--interval 500ms] [--require-health]
 
 `Client.WaitReady` retries `GET /ready` (or `/readyz`) until success or context deadline. With `--require-health`, each attempt requires `GET /health` OK first. Disabled/empty endpoint is offline-first (immediate success). Use before stage dogfood or agent attach when the broker is still warming.
 
-### Dogfood WaitReady soft preflight (s297)
+### Dogfood WaitReady soft preflight
 
 Optional **in-suite** soft preflight after health and before the single-shot ready step:
 
@@ -36,7 +36,7 @@ Effective budget is `min(WaitReady, parent ctx remaining)` via `context.WithTime
 
 ### Operator status (`mesh status`)
 
-One-shot operator snapshot (s296) without the full dogfood suite:
+One-shot operator snapshot without the full dogfood suite:
 
 ```bash
 iomesh mesh status [--json] [--endpoint url] [--config path]
@@ -64,7 +64,7 @@ Builds the client like dogfood/wait. Prints `StatusLine` config summary plus opt
 
 Context requests set `include_lineage` when configured (lineage count shown on PASS detail).
 
-### streams (list probe — s300)
+### streams (list probe — )
 
 Runs **after** `catalog` and **before** `memory_*` whenever mesh is enabled (not gated on a plane flag). Non-destructive `ListStreams` (`GET /v1/streams`):
 
@@ -91,9 +91,9 @@ Included **by default** when mesh is enabled (not gated on agent `[memory].dual_
 - Envelope: `type=memory_ingest`, `role=tool`, `content=iomesh-tui dual-write dogfood`, `event_time=now`, `session_seq=1`, `session_id={tenant}.mesh-dogfood` (or `mesh-dogfood` when tenant unset)
 - Soft mode: publish/transport errors → **SKIP** (fail-open); `--strict` → **FAIL**
 - Offline / mesh disabled: whole report is SKIP (no memory step)
-- **PASS detail** includes stream, subject, and seq when available. When Client `[iomesh] org` / `workspace` (`OrgID` / `WorkspaceID`) are set, detail also appends `org=…` and/or `workspace=…` as operator-visible evidence that dual-write publish used those headers (`X-IOMesh-Org` / `X-IOMesh-Workspace`). Empty values are omitted (no `org=` token). Detail always includes temporal correlation from the envelope sent: `session_seq=N` and `session_id=…` when non-empty (s243). Detail **always** ends with `dual_write=true` or `dual_write=false` from Client `[memory].dual_write` / `IOMESH_MEMORY_DUAL_WRITE` (report evidence only — does not gate the probe), so human-readable reports and step logs show mode without relying only on top-level JSON.
+- **PASS detail** includes stream, subject, and seq when available. When Client `[iomesh] org` / `workspace` (`OrgID` / `WorkspaceID`) are set, detail also appends `org=…` and/or `workspace=…` as operator-visible evidence that dual-write publish used those headers (`X-IOMesh-Org` / `X-IOMesh-Workspace`). Empty values are omitted (no `org=` token). Detail always includes temporal correlation from the envelope sent: `session_seq=N` and `session_id=…` when non-empty. Detail **always** ends with `dual_write=true` or `dual_write=false` from Client `[memory].dual_write` / `IOMESH_MEMORY_DUAL_WRITE` (report evidence only — does not gate the probe), so human-readable reports and step logs show mode without relying only on top-level JSON.
 
-### memory_recall (async MEMORY_RPC probe — s247)
+### memory_recall (async MEMORY_RPC probe — )
 
 Runs **after** `memory_ingest` (same `--skip-memory` gate). Calls `PublishMemoryRecall` (SDK-parity fire-and-forget; **not** sync hits):
 
@@ -102,7 +102,7 @@ Runs **after** `memory_ingest` (same `--skip-memory` gate). Calls `PublishMemory
 - Soft: transport errors → **SKIP**; `--strict` → **FAIL**
 - **PASS detail**: stream, subject, seq, optional `org=`/`workspace=`, `session_id=…`, `dual_write=true|false`
 
-### memory_retrieve (sync HTTP — Phase 3 / s251 + sidecar s269)
+### memory_retrieve (sync HTTP — Phase 3 /  + sidecar )
 
 Runs **after** async `memory_recall`. Calls `RetrieveMemory` (request/response against **memory sidecar** HTTP, not `MEMORY_RPC`):
 
@@ -141,15 +141,15 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `org` | string | Client `[iomesh] org` / `IOMESH_ORG` (PlanGate); omitted when empty |
 | `workspace` | string | Client `[iomesh] workspace` / `IOMESH_WORKSPACE`; omitted when empty. **Not** the context-plane path (`DogfoodOptions.Workspace`) |
 | `dual_write` | bool | Agent `[memory].dual_write` / `IOMESH_MEMORY_DUAL_WRITE` from Client cfg (**always emitted**, default `false`). Report-only — does **not** gate the `memory_ingest` probe |
-| `catalog_source` | string | Last catalog probe source (`mesh` \| `portal` \| `fail-open` \| `off`); omitted when empty (mesh disabled before catalog step) (s292) |
-| `catalog_count` | int | Product count from last `ListCatalog` (**always emitted**, `0` when none/off). Top-level CI evidence — no step-detail scrape (s292) |
-| `context_chars` | int | `len(FormatContextSnippet)` from last context probe (**always emitted**, `0` when skip/off/empty) (s296) |
-| `context_lineage_count` | int | `len(res.Lineage)` from last `QueryContext` (**always emitted**, `0` when skip/off/empty) (s296) |
-| `streams_count` | int | `len(ListStreams)` from last streams probe (**always emitted**, `0` on skip/error/disabled) (s300) |
-| `streams_names` | string[] | Short sample of stream names from last `ListStreams` (max 8; **always emitted** as JSON array, `[]` on skip/error/disabled) (s302). Full count stays in `streams_count` |
-| `wait_ready_ms` | int | Configured WaitReady budget in ms (**always emitted**, `0` = off / no preflight) (s297). Outcome on `wait_ready` step detail |
+| `catalog_source` | string | Last catalog probe source (`mesh` \| `portal` \| `fail-open` \| `off`); omitted when empty (mesh disabled before catalog step) |
+| `catalog_count` | int | Product count from last `ListCatalog` (**always emitted**, `0` when none/off). Top-level CI evidence — no step-detail scrape |
+| `context_chars` | int | `len(FormatContextSnippet)` from last context probe (**always emitted**, `0` when skip/off/empty) |
+| `context_lineage_count` | int | `len(res.Lineage)` from last `QueryContext` (**always emitted**, `0` when skip/off/empty) |
+| `streams_count` | int | `len(ListStreams)` from last streams probe (**always emitted**, `0` on skip/error/disabled) |
+| `streams_names` | string[] | Short sample of stream names from last `ListStreams` (max 8; **always emitted** as JSON array, `[]` on skip/error/disabled). Full count stays in `streams_count` |
+| `wait_ready_ms` | int | Configured WaitReady budget in ms (**always emitted**, `0` = off / no preflight). Outcome on `wait_ready` step detail |
 | `memory_endpoint` | string | Optional memory sidecar base (`[memory].endpoint` / `IOMESH_MEMORY_ENDPOINT`); omitted when empty (retrieve uses mesh `endpoint`) |
-| `user_agent` | string | Package mesh HTTP User-Agent (`iomesh-tui/<version>` via `iomesh.UserAgent()`); always set for CI evidence (s290) — not scraped from server |
+| `user_agent` | string | Package mesh HTTP User-Agent (`iomesh-tui/<version>` via `iomesh.UserAgent`); always set for CI evidence — not scraped from server |
 | `strict` | bool | `--strict` |
 | `ok` | bool | no FAIL steps |
 | `summary` | string | e.g. `PASS (pass=N skip=M)` |
@@ -175,12 +175,12 @@ export IOMESH_TENANT=acme        # optional
 iomesh mesh dogfood
 iomesh mesh dogfood --strict
 iomesh mesh dogfood --json       # stage CI evidence
-iomesh mesh dogfood --wait-ready 10s --wait-interval 500ms   # soft ready preflight (s297)
+iomesh mesh dogfood --wait-ready 10s --wait-interval 500ms   # soft ready preflight
 iomesh mesh dogfood --endpoint "$IOMESH_ENDPOINT" --tenant acme
 iomesh mesh dogfood --memory-endpoint "$IOMESH_MEMORY_ENDPOINT"
 iomesh mesh dogfood --skip-context --skip-emit --skip-memory --skip-streams   # health-only-ish
 iomesh mesh catalog              # broker then portal paths
-iomesh mesh streams [--name] [--json] [--delete --yes]  # lean list/get/delete (s298/s302; delete destructive); dogfood probes list (s300) + streams_names (s302)
+iomesh mesh streams [--name] [--json] [--delete --yes]  # lean list/get/delete ( delete destructive); dogfood probes list + streams_names
 iomesh mesh status [--json]      # operator snapshot (StatusLine + Health/Ready)
 ```
 
