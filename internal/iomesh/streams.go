@@ -13,7 +13,7 @@ import (
 )
 
 // StreamInfo is broker stream metadata from GET /v1/streams and GET /v1/streams/{name}.
-// Wire shape matches aion / iomesh-client-sdk-go StreamInfo (name, subjects, stats, retention knobs).
+// Wire shape matches broker / iomesh-client-sdk-go StreamInfo (name, subjects, stats, retention knobs).
 // Lean TUI surface — no SDK dependency.
 type StreamInfo struct {
 	Name        string    `json:"name"`

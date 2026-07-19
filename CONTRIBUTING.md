@@ -61,6 +61,17 @@ Report vulnerabilities privately — see [SECURITY.md](SECURITY.md). **Do not op
 - Bugs / features: use [issue templates](https://github.com/iome-sh/iomesh-tui/issues/new/choose)  
 - Support channels: [SUPPORT.md](SUPPORT.md)  
 
+## Public repository policy
+
+This repo is **public**. Keep private program material out of the tree and PR surface:
+
+- Do **not** put private SR&ED / ledger serials (`s###`) in PR titles, commit subjects, or CHANGELOG  
+- Do **not** reference private monorepos, internal pending-todos paths, or unpublished stage URLs  
+- **dogfood** means the public mesh smoke CLI/tests only (`iomesh mesh dogfood`, `make dogfood`) — not internal org program status  
+- Prefer **I/O Mesh broker / platform** over private codenames in new docs  
+
+Binary or package names that operators actually run (e.g. platform Memory MCP) may appear when documenting install/wire-up; do not document “clone the private monorepo” build paths.
+
 ## Pull requests
 
 - Clear description of *what* and *why*  
@@ -68,6 +79,8 @@ Report vulnerabilities privately — see [SECURITY.md](SECURITY.md). **Do not op
 - Ensure CI is green  
 - Do not commit API keys, `.env`, or real workspace secrets  
 - Update [CHANGELOG.md](CHANGELOG.md) **Unreleased** for user-visible changes  
+- Follow **Public repository policy** above (no private ledger serials or monorepo paths)  
+
 
 ### CI on PR and merge
 
