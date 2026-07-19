@@ -114,4 +114,5 @@ CLI / TUI / ACP
 33. ~~WaitReady + `iomesh mesh wait` preflight~~ **done** — poll Ready (optional Health) until OK or deadline (s291); see [mesh-dogfood.md](mesh-dogfood.md)
 34. ~~Dogfood catalog plane evidence~~ **done** — report `catalog_source` / `catalog_count` for CI (s292); see [mesh-dogfood.md](mesh-dogfood.md)
 35. ~~Dogfood context plane evidence + `mesh status`~~ **done** — report `context_chars` / `context_lineage_count` + operator status CLI (s296); see [mesh-dogfood.md](mesh-dogfood.md)
-36. Optional: platform remote multi-tenant metering UI
+36. ~~Dogfood WaitReady soft preflight~~ **done** — optional `--wait-ready` inside mesh dogfood + report `wait_ready_ms` (s297); see [mesh-dogfood.md](mesh-dogfood.md)
+37. Optional: platform remote multi-tenant metering UI

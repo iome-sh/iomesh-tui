@@ -56,6 +56,10 @@ type DogfoodReport struct {
 	// ContextLineageCount is len(res.Lineage) from last QueryContext (0 if skip/empty).
 	// Always emitted in JSON (s296).
 	ContextLineageCount int `json:"context_lineage_count"`
+	// WaitReadyMS is the configured WaitReady budget in milliseconds (0 = off / no preflight).
+	// Always emitted in JSON so CI sees soft preflight budget without scraping step detail (s297).
+	// Outcome lives on the wait_ready step (PASS/SKIP/FAIL); not a second boolean.
+	WaitReadyMS int `json:"wait_ready_ms"`
 	// MemoryEndpoint is optional memory sidecar base used for sync memory_retrieve.
 	// Omitted when empty (retrieve uses mesh Endpoint). Stage warm-plane evidence.
 	MemoryEndpoint string `json:"memory_endpoint,omitempty"`
@@ -86,15 +90,27 @@ type DogfoodOptions struct {
 	// SkipMemory skips MEMORY_INGEST dual-write publish probe.
 	// When false (default), the step runs whenever mesh is enabled (fail-open unless Strict).
 	SkipMemory bool
+	// WaitReady, when >0, polls WaitReady with that max budget (effective deadline is
+	// min of this budget and any parent ctx deadline) before the single-shot ready step.
+	// Soft: timeout → SKIP wait_ready unless Strict (then FAIL). Zero (default) = no wait preflight.
+	WaitReady time.Duration
+	// WaitReadyInterval poll interval (default 500ms if WaitReady>0 and this is 0).
+	WaitReadyInterval time.Duration
+	// WaitRequireHealth if true, WaitReady RequireHealth (Health OK each attempt before Ready).
+	WaitRequireHealth bool
 }
 
 // Dogfood runs a stage-oriented mesh smoke:
-// health → ready → context → emit → llm_meter → policy → catalog → memory_*.
+// health → [wait_ready] → ready → context → emit → llm_meter → policy → catalog → memory_*.
+// Optional wait_ready soft-preflight when DogfoodOptions.WaitReady > 0 (s297).
 // Disabled client returns a single SKIP step and OK=true (offline-first).
 func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport {
 	rep := DogfoodReport{
 		Started: time.Now().UTC(),
 		Strict:  opts.Strict,
+	}
+	if opts.WaitReady > 0 {
+		rep.WaitReadyMS = int(opts.WaitReady / time.Millisecond)
 	}
 	// Always emit package UA for CI/operator evidence (even when mesh disabled).
 	rep.UserAgent = UserAgent()
@@ -138,7 +154,36 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		return StepPass, "GET /health OK"
 	}))
 
-	// 2) Ready (optional path — fail-open unless strict)
+	// 1b) Optional WaitReady soft preflight (s297) — budget WaitReady, then single-shot ready still runs.
+	if opts.WaitReady > 0 {
+		interval := opts.WaitReadyInterval
+		if interval <= 0 {
+			interval = 500 * time.Millisecond
+		}
+		rep.Steps = append(rep.Steps, c.stepTimed("wait_ready", func() (StepStatus, string) {
+			// Child budget: WithTimeout respects parent cancel/deadline (effective min).
+			wctx, cancel := context.WithTimeout(ctx, opts.WaitReady)
+			defer cancel()
+			err := c.WaitReady(wctx, WaitReadyOptions{
+				Interval:      interval,
+				RequireHealth: opts.WaitRequireHealth,
+			})
+			if err == nil {
+				detail := fmt.Sprintf("WaitReady OK budget=%s interval=%s", opts.WaitReady, interval)
+				if opts.WaitRequireHealth {
+					detail += " require_health=true"
+				}
+				return StepPass, detail
+			}
+			if opts.Strict {
+				return StepFail, "wait_ready: " + err.Error()
+			}
+			return StepSkip, "wait_ready soft-fail: " + err.Error()
+		}))
+	}
+
+	// 2) Ready (optional path — fail-open unless strict).
+	// Always one-shot even after wait_ready PASS for latency evidence consistency.
 	rep.Steps = append(rep.Steps, c.stepTimed("ready", func() (StepStatus, string) {
 		err := c.Ready(ctx)
 		if err == nil {
@@ -584,6 +629,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		CatalogCount        int        `json:"catalog_count"`         // always emit (CI catalog evidence, s292)
 		ContextChars        int        `json:"context_chars"`         // always emit (CI context evidence, s296)
 		ContextLineageCount int        `json:"context_lineage_count"` // always emit (s296)
+		WaitReadyMS         int        `json:"wait_ready_ms"`         // always emit (CI wait preflight budget, s297)
 		MemoryEndpoint      string     `json:"memory_endpoint,omitempty"`
 		UserAgent           string     `json:"user_agent,omitempty"`
 		Strict              bool       `json:"strict"`
@@ -604,6 +650,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		CatalogCount:        r.CatalogCount,
 		ContextChars:        r.ContextChars,
 		ContextLineageCount: r.ContextLineageCount,
+		WaitReadyMS:         r.WaitReadyMS,
 		MemoryEndpoint:      r.MemoryEndpoint,
 		UserAgent:           r.UserAgent,
 		Strict:              r.Strict,
@@ -657,6 +704,7 @@ func FormatReport(r DogfoodReport) string {
 	fmt.Fprintf(&b, "  catalog_count: %d\n", r.CatalogCount)
 	fmt.Fprintf(&b, "  context_chars: %d\n", r.ContextChars)
 	fmt.Fprintf(&b, "  context_lineage_count: %d\n", r.ContextLineageCount)
+	fmt.Fprintf(&b, "  wait_ready_ms: %d\n", r.WaitReadyMS)
 	if r.UserAgent != "" {
 		fmt.Fprintf(&b, "  user_agent: %s\n", r.UserAgent)
 	}
