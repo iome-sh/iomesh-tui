@@ -864,24 +864,24 @@ func FormatReportJSON(r DogfoodReport) string {
 		Workspace           string     `json:"workspace,omitempty"`
 		DualWrite           bool       `json:"dual_write"` // always emit (CI dual-write mode)
 		CatalogSource       string     `json:"catalog_source,omitempty"`
-		CatalogCount        int        `json:"catalog_count"`         // always emit (CI catalog evidence)
-		ContextChars        int        `json:"context_chars"`         // always emit (CI context evidence)
-		ContextLineageCount int        `json:"context_lineage_count"` // always emit
-		StreamsCount        int        `json:"streams_count"`         // always emit (CI streams list evidence)
-		StreamsNames        []string   `json:"streams_names"`         // always emit array (CI name sample)
-		KVBucket            string     `json:"kv_bucket,omitempty"`   // set when soft kv probe configured
-		KVKeyCount          int        `json:"kv_key_count"`          // always emit (CI kv list evidence)
-		KVEnsured           bool       `json:"kv_ensured"`            // always emit (true only if ensure create succeeded)
-		PubProbed           bool       `json:"pub_probed"`            // always emit (true if pub subject set + attempt)
-		PubOK               bool       `json:"pub_ok"`                // always emit (true only if soft pub succeeded)
+		CatalogCount        int        `json:"catalog_count"`             // always emit (CI catalog evidence)
+		ContextChars        int        `json:"context_chars"`             // always emit (CI context evidence)
+		ContextLineageCount int        `json:"context_lineage_count"`     // always emit
+		StreamsCount        int        `json:"streams_count"`             // always emit (CI streams list evidence)
+		StreamsNames        []string   `json:"streams_names"`             // always emit array (CI name sample)
+		KVBucket            string     `json:"kv_bucket,omitempty"`       // set when soft kv probe configured
+		KVKeyCount          int        `json:"kv_key_count"`              // always emit (CI kv list evidence)
+		KVEnsured           bool       `json:"kv_ensured"`                // always emit (true only if ensure create succeeded)
+		PubProbed           bool       `json:"pub_probed"`                // always emit (true if pub subject set + attempt)
+		PubOK               bool       `json:"pub_ok"`                    // always emit (true only if soft pub succeeded)
 		ConsumerStream      string     `json:"consumer_stream,omitempty"` // set when both stream+name provided
 		ConsumerName        string     `json:"consumer_name,omitempty"`
 		ConsumerFilter      string     `json:"consumer_filter,omitempty"`
 		ConsumerProbed      bool       `json:"consumer_probed"`   // always emit (true if stream+name set + create attempt)
 		ConsumerOK          bool       `json:"consumer_ok"`       // always emit (true if create 201/409)
 		ConsumerFetchOK     bool       `json:"consumer_fetch_ok"` // always emit (true if optional fetch ok)
-		WaitReadyMS         int        `json:"wait_ready_ms"`         // always emit (CI wait preflight budget)
-		PolicyMode          string     `json:"policy_mode"`           // always emit (off|advisory|enforce)
+		WaitReadyMS         int        `json:"wait_ready_ms"`     // always emit (CI wait preflight budget)
+		PolicyMode          string     `json:"policy_mode"`       // always emit (off|advisory|enforce)
 		PolicySource        string     `json:"policy_source,omitempty"`
 		PolicyAllow         *bool      `json:"policy_allow,omitempty"` // set when policy evaluated
 		MemoryEndpoint      string     `json:"memory_endpoint,omitempty"`
