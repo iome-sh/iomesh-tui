@@ -56,6 +56,9 @@ type DogfoodReport struct {
 	// ContextLineageCount is len(res.Lineage) from last QueryContext (0 if skip/empty).
 	// Always emitted in JSON (s296).
 	ContextLineageCount int `json:"context_lineage_count"`
+	// StreamsCount is len of ListStreams from last streams probe (0 on skip/error/disabled).
+	// Always emitted in JSON (s300).
+	StreamsCount int `json:"streams_count"`
 	// WaitReadyMS is the configured WaitReady budget in milliseconds (0 = off / no preflight).
 	// Always emitted in JSON so CI sees soft preflight budget without scraping step detail (s297).
 	// Outcome lives on the wait_ready step (PASS/SKIP/FAIL); not a second boolean.
@@ -90,6 +93,8 @@ type DogfoodOptions struct {
 	// SkipMemory skips MEMORY_INGEST dual-write publish probe.
 	// When false (default), the step runs whenever mesh is enabled (fail-open unless Strict).
 	SkipMemory bool
+	// SkipStreams skips the streams list probe (default false — run when mesh enabled).
+	SkipStreams bool
 	// WaitReady, when >0, polls WaitReady with that max budget (effective deadline is
 	// min of this budget and any parent ctx deadline) before the single-shot ready step.
 	// Soft: timeout → SKIP wait_ready unless Strict (then FAIL). Zero (default) = no wait preflight.
@@ -101,8 +106,9 @@ type DogfoodOptions struct {
 }
 
 // Dogfood runs a stage-oriented mesh smoke:
-// health → [wait_ready] → ready → context → emit → llm_meter → policy → catalog → memory_*.
+// health → [wait_ready] → ready → context → emit → llm_meter → policy → catalog → streams → memory_*.
 // Optional wait_ready soft-preflight when DogfoodOptions.WaitReady > 0 (s297).
+// Soft streams list probe after catalog when mesh enabled (s300).
 // Disabled client returns a single SKIP step and OK=true (offline-first).
 func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport {
 	rep := DogfoodReport{
@@ -369,6 +375,38 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		}))
 	}
 
+	// 6b) Streams list probe (non-destructive ListStreams — s300)
+	if opts.SkipStreams {
+		rep.StreamsCount = 0
+		rep.Steps = append(rep.Steps, Step{Name: "streams", Status: StepSkip, Detail: "skipped (--skip-streams)"})
+	} else {
+		rep.Steps = append(rep.Steps, c.stepTimed("streams", func() (StepStatus, string) {
+			streams, err := c.ListStreams(ctx)
+			if err != nil {
+				rep.StreamsCount = 0
+				if opts.Strict {
+					return StepFail, err.Error()
+				}
+				return StepSkip, "streams soft-fail: " + err.Error()
+			}
+			rep.StreamsCount = len(streams)
+			// Compact detail: n= + truncated names for operator logs.
+			names := make([]string, 0, len(streams))
+			for i, s := range streams {
+				if i >= 8 {
+					names = append(names, fmt.Sprintf("…(+%d)", len(streams)-8))
+					break
+				}
+				names = append(names, truncateRunes(s.Name, 32))
+			}
+			detail := fmt.Sprintf("n=%d", len(streams))
+			if len(names) > 0 {
+				detail = fmt.Sprintf("%s names=%s", detail, strings.Join(names, ","))
+			}
+			return StepPass, detail
+		}))
+	}
+
 	// 7) MEMORY_INGEST dual-write (Phase 2 path via PublishMemoryIngest)
 	// 8) MEMORY_RPC async recall request (same session_id for temporal correlation — s247)
 	// 9) Sync HTTP retrieve POST /v1/memory/retrieve (Phase 3 — request/response hits — s249)
@@ -629,6 +667,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		CatalogCount        int        `json:"catalog_count"`         // always emit (CI catalog evidence, s292)
 		ContextChars        int        `json:"context_chars"`         // always emit (CI context evidence, s296)
 		ContextLineageCount int        `json:"context_lineage_count"` // always emit (s296)
+		StreamsCount        int        `json:"streams_count"`         // always emit (CI streams list evidence, s300)
 		WaitReadyMS         int        `json:"wait_ready_ms"`         // always emit (CI wait preflight budget, s297)
 		MemoryEndpoint      string     `json:"memory_endpoint,omitempty"`
 		UserAgent           string     `json:"user_agent,omitempty"`
@@ -650,6 +689,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		CatalogCount:        r.CatalogCount,
 		ContextChars:        r.ContextChars,
 		ContextLineageCount: r.ContextLineageCount,
+		StreamsCount:        r.StreamsCount,
 		WaitReadyMS:         r.WaitReadyMS,
 		MemoryEndpoint:      r.MemoryEndpoint,
 		UserAgent:           r.UserAgent,
@@ -704,6 +744,7 @@ func FormatReport(r DogfoodReport) string {
 	fmt.Fprintf(&b, "  catalog_count: %d\n", r.CatalogCount)
 	fmt.Fprintf(&b, "  context_chars: %d\n", r.ContextChars)
 	fmt.Fprintf(&b, "  context_lineage_count: %d\n", r.ContextLineageCount)
+	fmt.Fprintf(&b, "  streams_count: %d\n", r.StreamsCount)
 	fmt.Fprintf(&b, "  wait_ready_ms: %d\n", r.WaitReadyMS)
 	if r.UserAgent != "" {
 		fmt.Fprintf(&b, "  user_agent: %s\n", r.UserAgent)

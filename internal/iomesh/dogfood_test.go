@@ -178,6 +178,9 @@ func mockMeshServer(t *testing.T, opts struct {
 					{"id": "crm-contacts", "layer": "knowledge", "subject": "dept.sales.contacts", "name": "CRM"},
 				},
 			})
+		case r.URL.Path == "/v1/streams" && r.Method == http.MethodGet:
+			// Default streams list for dogfood streams step (s300) — empty OK for full-pass.
+			_ = json.NewEncoder(w).Encode([]map[string]any{})
 		default:
 			http.NotFound(w, r)
 		}
@@ -1163,6 +1166,199 @@ func TestDogfood_CatalogEvidenceOff(t *testing.T) {
 	}
 	if !strings.Contains(text, "catalog_count: 0") {
 		t.Fatalf("text report missing catalog_count:\n%s", text)
+	}
+}
+
+func TestDogfood_StreamsEvidence(t *testing.T) {
+	// ListStreams returns 2 streams → step PASS, streams_count=2, JSON always emits (s300).
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case r.URL.Path == "/ready" || r.URL.Path == "/readyz":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		case r.URL.Path == "/v1/streams" && r.Method == http.MethodGet:
+			_ = json.NewEncoder(w).Encode([]map[string]any{
+				{"name": "MEMORY_INGEST", "subjects": []string{"*.memory.ingest.turn"}, "messages": 10},
+				{"name": "dept", "subjects": []string{"dept.>"}, "messages": 3},
+			})
+		default:
+			// Soft paths for other probes
+			if strings.Contains(r.URL.Path, "catalog") {
+				_ = json.NewEncoder(w).Encode(map[string]any{"products": []any{}})
+				return
+			}
+			if strings.Contains(r.URL.Path, "MEMORY") || strings.Contains(r.URL.Path, "memory") {
+				if strings.HasSuffix(r.URL.Path, "/publish") {
+					_ = json.NewEncoder(w).Encode(map[string]any{"stream": "MEMORY_INGEST", "seq": 1})
+					return
+				}
+				if strings.Contains(r.URL.Path, "retrieve") {
+					_ = json.NewEncoder(w).Encode(map[string]any{"memories": []any{}})
+					return
+				}
+			}
+			if r.URL.Path == "/v1/streams/dept/publish" {
+				w.WriteHeader(204)
+				return
+			}
+			if r.URL.Path == "/v1/context/query" {
+				_ = json.NewEncoder(w).Encode(map[string]string{"text": "ctx"})
+				return
+			}
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		EmitDeptStreams: true,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{SkipMemory: true})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if rep.StreamsCount != 2 {
+		t.Fatalf("StreamsCount: %d want 2", rep.StreamsCount)
+	}
+	var streamsOK bool
+	for _, s := range rep.Steps {
+		if s.Name == "streams" && s.Status == StepPass {
+			streamsOK = true
+			if !strings.Contains(s.Detail, "n=2") {
+				t.Fatalf("streams detail: %s", s.Detail)
+			}
+			if !strings.Contains(s.Detail, "MEMORY_INGEST") || !strings.Contains(s.Detail, "dept") {
+				t.Fatalf("streams names in detail: %s", s.Detail)
+			}
+		}
+	}
+	if !streamsOK {
+		t.Fatal(FormatReport(rep))
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if n, ok := parsed["streams_count"].(float64); !ok || int(n) != 2 {
+		t.Fatalf("json streams_count: %v want 2\n%s", parsed["streams_count"], js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "streams_count: 2") {
+		t.Fatalf("text report missing streams_count:\n%s", text)
+	}
+}
+
+func TestDogfood_StreamsSoftFail(t *testing.T) {
+	// ListStreams 500 → soft SKIP, streams_count=0.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case r.URL.Path == "/ready" || r.URL.Path == "/readyz":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		case r.URL.Path == "/v1/streams" && r.Method == http.MethodGet:
+			w.WriteHeader(500)
+		default:
+			if r.URL.Path == "/v1/context/query" {
+				_ = json.NewEncoder(w).Encode(map[string]string{"text": "ctx"})
+				return
+			}
+			if r.URL.Path == "/v1/streams/dept/publish" {
+				w.WriteHeader(204)
+				return
+			}
+			if strings.Contains(r.URL.Path, "catalog") {
+				_ = json.NewEncoder(w).Encode(map[string]any{"products": []any{}})
+				return
+			}
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		EmitDeptStreams: true,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{SkipMemory: true})
+	if !rep.OK {
+		t.Fatalf("soft streams fail should not fail report: %s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if rep.StreamsCount != 0 {
+		t.Fatalf("StreamsCount: %d want 0", rep.StreamsCount)
+	}
+	var found bool
+	for _, s := range rep.Steps {
+		if s.Name == "streams" {
+			found = true
+			if s.Status != StepSkip {
+				t.Fatalf("streams status=%s detail=%s", s.Status, s.Detail)
+			}
+			if !strings.Contains(s.Detail, "soft-fail") {
+				t.Fatalf("detail=%s", s.Detail)
+			}
+		}
+	}
+	if !found {
+		t.Fatal(FormatReport(rep))
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if n, ok := parsed["streams_count"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json streams_count: %v want 0\n%s", parsed["streams_count"], js)
+	}
+}
+
+func TestDogfood_SkipStreams(t *testing.T) {
+	srv := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+		failRecall bool
+		noRecall   bool
+	}{})
+	t.Cleanup(srv.Close)
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "stage", EmitDeptStreams: true}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{Strict: true, SkipStreams: true, SkipMemory: true})
+	if !rep.OK {
+		t.Fatalf("skip-streams should pass: %s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if rep.StreamsCount != 0 {
+		t.Fatalf("StreamsCount: %d want 0", rep.StreamsCount)
+	}
+	var found bool
+	for _, s := range rep.Steps {
+		if s.Name == "streams" && s.Status == StepSkip {
+			found = true
+			if !strings.Contains(s.Detail, "skip-streams") {
+				t.Fatalf("detail=%s", s.Detail)
+			}
+		}
+	}
+	if !found {
+		t.Fatal(FormatReport(rep))
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if n, ok := parsed["streams_count"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json streams_count: %v want 0\n%s", parsed["streams_count"], js)
 	}
 }
 
