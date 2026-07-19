@@ -1165,6 +1165,129 @@ func TestDogfood_CatalogEvidenceOff(t *testing.T) {
 	}
 }
 
+func TestDogfood_ContextEvidence(t *testing.T) {
+	// Minimal mesh mock: context plane returns text + lineage for top-level evidence (s296).
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case r.URL.Path == "/ready" || r.URL.Path == "/readyz":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		case r.URL.Path == "/v1/context/query" && r.Method == http.MethodPost:
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"text": "stage-context: ops green",
+				"lineage": []map[string]string{
+					{"id": "dp-1", "subject": "dept.eng.events", "source": "kafka"},
+					{"id": "dp-2", "product": "crm", "source": "portal"},
+				},
+			})
+		default:
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		ContextPlane: true, IncludeLineage: true,
+		EmitDeptStreams: false,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{SkipMemory: true})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	wantText := FormatContextSnippet(ContextResult{
+		Text: "stage-context: ops green",
+		Lineage: []LineageRef{
+			{ID: "dp-1", Subject: "dept.eng.events", Source: "kafka"},
+			{ID: "dp-2", Product: "crm", Source: "portal"},
+		},
+	})
+	if rep.ContextChars != len(wantText) || rep.ContextChars <= 0 {
+		t.Fatalf("ContextChars: %d want %d (>0)", rep.ContextChars, len(wantText))
+	}
+	if rep.ContextLineageCount != 2 {
+		t.Fatalf("ContextLineageCount: %d want 2", rep.ContextLineageCount)
+	}
+	var ctxOK bool
+	for _, s := range rep.Steps {
+		if s.Name == "context" && s.Status == StepPass {
+			ctxOK = true
+		}
+	}
+	if !ctxOK {
+		t.Fatal(FormatReport(rep))
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if n, ok := parsed["context_chars"].(float64); !ok || int(n) != rep.ContextChars {
+		t.Fatalf("json context_chars: %v want %d\n%s", parsed["context_chars"], rep.ContextChars, js)
+	}
+	if n, ok := parsed["context_lineage_count"].(float64); !ok || int(n) != 2 {
+		t.Fatalf("json context_lineage_count: %v want 2\n%s", parsed["context_lineage_count"], js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, fmt.Sprintf("context_chars: %d", rep.ContextChars)) {
+		t.Fatalf("text report missing context_chars:\n%s", text)
+	}
+	if !strings.Contains(text, "context_lineage_count: 2") {
+		t.Fatalf("text report missing context_lineage_count:\n%s", text)
+	}
+}
+
+func TestDogfood_ContextEvidenceSkipped(t *testing.T) {
+	srv := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+		failRecall bool
+		noRecall   bool
+	}{})
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		EmitDeptStreams: true,
+		ContextPlane:    false,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if rep.ContextChars != 0 {
+		t.Fatalf("ContextChars: %d want 0", rep.ContextChars)
+	}
+	if rep.ContextLineageCount != 0 {
+		t.Fatalf("ContextLineageCount: %d want 0", rep.ContextLineageCount)
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if n, ok := parsed["context_chars"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json context_chars: %v want 0\n%s", parsed["context_chars"], js)
+	}
+	if n, ok := parsed["context_lineage_count"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json context_lineage_count: %v want 0\n%s", parsed["context_lineage_count"], js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "context_chars: 0") {
+		t.Fatalf("text report missing context_chars 0:\n%s", text)
+	}
+	if !strings.Contains(text, "context_lineage_count: 0") {
+		t.Fatalf("text report missing context_lineage_count 0:\n%s", text)
+	}
+}
+
 func TestDogfood_UserAgentEvidence(t *testing.T) {
 	prev := UserAgent()
 	SetUserAgent("iomesh-tui/test-s290")

@@ -15,6 +15,18 @@ iomesh mesh wait [--timeout 30s] [--interval 500ms] [--require-health]
 
 `Client.WaitReady` retries `GET /ready` (or `/readyz`) until success or context deadline. With `--require-health`, each attempt requires `GET /health` OK first. Disabled/empty endpoint is offline-first (immediate success). Use before stage dogfood or agent attach when the broker is still warming.
 
+### Operator status (`mesh status`)
+
+One-shot operator snapshot (s296) without the full dogfood suite:
+
+```bash
+iomesh mesh status [--json] [--endpoint url] [--config path]
+# Human: StatusLine + endpoint/tenant/org/workspace/ua + health/ready (ok|err|skipped)
+# --json: structured object with the same fields (health/ready fail-open — exit 0 even on probe err)
+```
+
+Builds the client like dogfood/wait. Prints `StatusLine` config summary plus optional one-shot `Health` / `Ready` probes (errors shown as `err` + message; never fail the command).
+
 | Step | Request | Soft (default) | Strict (`--strict`) |
 |------|---------|----------------|---------------------|
 | enabled | config | SKIP if disabled | same |
@@ -100,6 +112,8 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `dual_write` | bool | Agent `[memory].dual_write` / `IOMESH_MEMORY_DUAL_WRITE` from Client cfg (**always emitted**, default `false`). Report-only — does **not** gate the `memory_ingest` probe |
 | `catalog_source` | string | Last catalog probe source (`mesh` \| `portal` \| `fail-open` \| `off`); omitted when empty (mesh disabled before catalog step) (s292) |
 | `catalog_count` | int | Product count from last `ListCatalog` (**always emitted**, `0` when none/off). Top-level CI evidence — no step-detail scrape (s292) |
+| `context_chars` | int | `len(FormatContextSnippet)` from last context probe (**always emitted**, `0` when skip/off/empty) (s296) |
+| `context_lineage_count` | int | `len(res.Lineage)` from last `QueryContext` (**always emitted**, `0` when skip/off/empty) (s296) |
 | `memory_endpoint` | string | Optional memory sidecar base (`[memory].endpoint` / `IOMESH_MEMORY_ENDPOINT`); omitted when empty (retrieve uses mesh `endpoint`) |
 | `user_agent` | string | Package mesh HTTP User-Agent (`iomesh-tui/<version>` via `iomesh.UserAgent()`); always set for CI evidence (s290) — not scraped from server |
 | `strict` | bool | `--strict` |
@@ -131,6 +145,7 @@ iomesh mesh dogfood --endpoint "$IOMESH_ENDPOINT" --tenant acme
 iomesh mesh dogfood --memory-endpoint "$IOMESH_MEMORY_ENDPOINT"
 iomesh mesh dogfood --skip-context --skip-emit --skip-memory   # health-only-ish
 iomesh mesh catalog              # broker then portal paths
+iomesh mesh status [--json]      # operator snapshot (StatusLine + Health/Ready)
 ```
 
 ## Script / Make
@@ -155,4 +170,4 @@ make dogfood-unit
 
 - `internal/iomesh/dogfood.go` — `Client.Dogfood`, `Ready`, `EmitErr`, `PublishMemoryIngest` step, `FormatReport`
 - `internal/iomesh/memory.go` — dual-write publish wire format
-- `cmd/iomesh` — `mesh dogfood|probe`
+- `cmd/iomesh` — `mesh dogfood|probe|status|wait|catalog|usage`

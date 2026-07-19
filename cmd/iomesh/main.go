@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -461,7 +462,7 @@ func cmdModels(args []string) int {
 
 func cmdMesh(args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: iomesh mesh dogfood|probe|usage|catalog|wait [flags]")
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh dogfood|probe|usage|catalog|wait|status [flags]")
 		return 2
 	}
 	switch args[0] {
@@ -473,6 +474,8 @@ func cmdMesh(args []string) int {
 		return cmdMeshCatalog(args[1:])
 	case "wait":
 		return cmdMeshWait(args[1:])
+	case "status":
+		return cmdMeshStatus(args[1:])
 	case "help", "-h", "--help":
 		fmt.Fprintln(os.Stderr, `iomesh mesh — I/O Mesh platform probes
 
@@ -481,6 +484,7 @@ func cmdMesh(args []string) int {
   iomesh mesh usage     local LLM metering rollup for this process (--json for scrapers)
   iomesh mesh catalog   list governed data products (broker + portal federation)
   iomesh mesh wait      poll Ready until OK or timeout (operator preflight)
+  iomesh mesh status    operator snapshot (StatusLine + optional Health/Ready)
 
 Flags (dogfood):
   --config path           config.toml
@@ -505,6 +509,12 @@ Flags (wait):
   --require-health    require Health OK each attempt before Ready
   --endpoint url      override IOMESH_ENDPOINT
   --config path       config.toml
+  -v                  verbose
+
+Flags (status):
+  --endpoint url      override IOMESH_ENDPOINT
+  --config path       config.toml
+  --json              structured status object
   -v                  verbose`)
 		return 0
 	default:
@@ -559,6 +569,125 @@ func cmdMeshWait(args []string) int {
 		return 1
 	}
 	fmt.Println("PASS mesh wait: ready")
+	return 0
+}
+
+// cmdMeshStatus prints an operator snapshot: StatusLine fields + one-shot Health/Ready (fail-open).
+func cmdMeshStatus(args []string) int {
+	fs := flag.NewFlagSet("mesh status", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	var (
+		configPath = fs.String("config", "", "config.toml path")
+		endpoint   = fs.String("endpoint", "", "override IOMESH_ENDPOINT")
+		jsonOut    = fs.Bool("json", false, "print status as JSON")
+		verbose    = fs.Bool("v", false, "verbose logs")
+	)
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	logger := newLogger(*verbose)
+	cfg, err := loadConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "config: %v\n", err)
+		return 1
+	}
+	if *endpoint != "" {
+		cfg.IOMesh.Endpoint = *endpoint
+		cfg.IOMesh.Enabled = true
+	}
+	mesh := iomesh.New(iomesh.Config{
+		Enabled:         cfg.IOMesh.Enabled,
+		Endpoint:        cfg.IOMesh.Endpoint,
+		Tenant:          cfg.IOMesh.Tenant,
+		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
+		OrgID:           cfg.IOMesh.Org,
+		WorkspaceID:     cfg.IOMesh.Workspace,
+		EmitDeptStreams: cfg.IOMesh.EmitDeptStreams,
+		ContextPlane:    cfg.IOMesh.ContextPlane,
+		IncludeLineage:  cfg.IOMesh.IncludeLineage,
+		PolicyMode:      iomesh.PolicyMode(cfg.IOMesh.PolicyMode),
+		CatalogPlane:    cfg.IOMesh.CatalogPlane,
+	}, logger)
+
+	type statusOut struct {
+		Enabled    bool   `json:"enabled"`
+		Endpoint   string `json:"endpoint,omitempty"`
+		Tenant     string `json:"tenant,omitempty"`
+		Org        string `json:"org,omitempty"`
+		Workspace  string `json:"workspace,omitempty"`
+		UserAgent  string `json:"user_agent"`
+		StatusLine string `json:"status_line"`
+		Health     string `json:"health"` // ok|err|skipped
+		HealthErr  string `json:"health_err,omitempty"`
+		Ready      string `json:"ready"` // ok|err|skipped
+		ReadyErr   string `json:"ready_err,omitempty"`
+	}
+	out := statusOut{
+		Enabled:    mesh.Enabled(),
+		Endpoint:   cfg.IOMesh.Endpoint,
+		Tenant:     cfg.IOMesh.Tenant,
+		Org:        strings.TrimSpace(cfg.IOMesh.Org),
+		Workspace:  strings.TrimSpace(cfg.IOMesh.Workspace),
+		UserAgent:  iomesh.UserAgent(),
+		StatusLine: mesh.StatusLine(),
+		Health:     "skipped",
+		Ready:      "skipped",
+	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	// One-shot Health/Ready — fail-open display (never exit non-zero for probe errs).
+	if mesh.Enabled() {
+		if err := mesh.Health(ctx); err != nil {
+			out.Health = "err"
+			out.HealthErr = err.Error()
+		} else {
+			out.Health = "ok"
+		}
+		if err := mesh.Ready(ctx); err != nil {
+			out.Ready = "err"
+			out.ReadyErr = err.Error()
+		} else {
+			out.Ready = "ok"
+		}
+	}
+
+	if *jsonOut {
+		b, err := json.MarshalIndent(out, "", "  ")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "json: %v\n", err)
+			return 1
+		}
+		fmt.Println(string(b))
+		return 0
+	}
+
+	fmt.Println("iomesh mesh status")
+	fmt.Printf("  status_line: %s\n", out.StatusLine)
+	fmt.Printf("  endpoint:    %s\n", out.Endpoint)
+	if out.Tenant != "" {
+		fmt.Printf("  tenant:      %s\n", out.Tenant)
+	}
+	if out.Org != "" {
+		fmt.Printf("  org:         %s\n", out.Org)
+	}
+	if out.Workspace != "" {
+		fmt.Printf("  workspace:   %s\n", out.Workspace)
+	}
+	fmt.Printf("  user_agent:  %s\n", out.UserAgent)
+	if out.HealthErr != "" {
+		fmt.Printf("  health:      %s (%s)\n", out.Health, out.HealthErr)
+	} else {
+		fmt.Printf("  health:      %s\n", out.Health)
+	}
+	if out.ReadyErr != "" {
+		fmt.Printf("  ready:       %s (%s)\n", out.Ready, out.ReadyErr)
+	} else {
+		fmt.Printf("  ready:       %s\n", out.Ready)
+	}
 	return 0
 }
 
@@ -834,6 +963,7 @@ Usage:
   iomesh mcp [--connect]         list configured MCP servers
   iomesh mesh dogfood            stage I/O Mesh smoke (health/context/emit/memory)
   iomesh mesh wait               poll mesh Ready until OK (operator preflight)
+  iomesh mesh status             operator snapshot (StatusLine + Health/Ready)
   iomesh models                  list configured models
   iomesh agent stdio             ACP JSON-RPC over stdio (IDE integration)
   iomesh agent serve             ACP JSON-RPC over WebSocket (default 127.0.0.1:7400/acp)

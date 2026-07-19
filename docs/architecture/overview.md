@@ -113,4 +113,5 @@ CLI / TUI / ACP
 32. ~~Dogfood / StatusLine User-Agent evidence~~ **done** — report `user_agent` + StatusLine `ua=` for CI/ops (s290); see [mesh-dogfood.md](mesh-dogfood.md)
 33. ~~WaitReady + `iomesh mesh wait` preflight~~ **done** — poll Ready (optional Health) until OK or deadline (s291); see [mesh-dogfood.md](mesh-dogfood.md)
 34. ~~Dogfood catalog plane evidence~~ **done** — report `catalog_source` / `catalog_count` for CI (s292); see [mesh-dogfood.md](mesh-dogfood.md)
-35. Optional: platform remote multi-tenant metering UI
+35. ~~Dogfood context plane evidence + `mesh status`~~ **done** — report `context_chars` / `context_lineage_count` + operator status CLI (s296); see [mesh-dogfood.md](mesh-dogfood.md)
+36. Optional: platform remote multi-tenant metering UI
