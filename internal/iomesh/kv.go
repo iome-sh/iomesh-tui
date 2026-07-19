@@ -3,6 +3,7 @@ package iomesh
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -103,6 +104,95 @@ func (c *Client) KVListKeys(ctx context.Context, bucket, prefix string) ([]strin
 		return nil, fmt.Errorf("iomesh kv: http %d", resp.StatusCode)
 	}
 	return decodeKVKeys(body)
+}
+
+// KVPut writes value for key in bucket via PUT /v1/kv/{bucket}/{key}.
+// Body is {"value": base64} (SDK wire parity). Returns the broker revision on success.
+// Empty bucket/key returns an error. Non-2xx returns an error.
+// When mesh is disabled / endpoint empty: returns (0, error) with "mesh disabled".
+func (c *Client) KVPut(ctx context.Context, bucket, key string, value []byte) (uint64, error) {
+	if c == nil || !c.Enabled() {
+		return 0, fmt.Errorf("mesh disabled")
+	}
+	bucket = strings.TrimSpace(bucket)
+	key = strings.TrimSpace(key)
+	if bucket == "" {
+		return 0, fmt.Errorf("iomesh kv: bucket required")
+	}
+	if key == "" {
+		return 0, fmt.Errorf("iomesh kv: key required")
+	}
+	if value == nil {
+		value = []byte{}
+	}
+	body, err := json.Marshal(map[string]string{
+		"value": base64.StdEncoding.EncodeToString(value),
+	})
+	if err != nil {
+		return 0, err
+	}
+	u := strings.TrimRight(c.cfg.Endpoint, "/") + "/v1/kv/" + url.PathEscape(bucket) + "/" + url.PathEscape(key)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, u, bytes.NewReader(body))
+	if err != nil {
+		return 0, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	c.auth(req)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return 0, err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return 0, fmt.Errorf("iomesh kv: http %d", resp.StatusCode)
+	}
+	var out struct {
+		Bucket   string `json:"bucket"`
+		Key      string `json:"key"`
+		Revision uint64 `json:"revision"`
+	}
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return 0, err
+	}
+	return out.Revision, nil
+}
+
+// KVDelete removes key from bucket via DELETE /v1/kv/{bucket}/{key}.
+// Empty bucket/key returns an error. 2xx (including 204 No Content) is success; non-2xx returns error.
+// When mesh is disabled / endpoint empty: returns error with "mesh disabled".
+// Destructive — CLI gates with --delete KEY --yes.
+func (c *Client) KVDelete(ctx context.Context, bucket, key string) error {
+	if c == nil || !c.Enabled() {
+		return fmt.Errorf("mesh disabled")
+	}
+	bucket = strings.TrimSpace(bucket)
+	key = strings.TrimSpace(key)
+	if bucket == "" {
+		return fmt.Errorf("iomesh kv: bucket required")
+	}
+	if key == "" {
+		return fmt.Errorf("iomesh kv: key required")
+	}
+	u := strings.TrimRight(c.cfg.Endpoint, "/") + "/v1/kv/" + url.PathEscape(bucket) + "/" + url.PathEscape(key)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, u, nil)
+	if err != nil {
+		return err
+	}
+	c.auth(req)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 1<<20))
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("iomesh kv: http %d", resp.StatusCode)
+	}
+	return nil
 }
 
 func decodeKVKeys(raw []byte) ([]string, error) {

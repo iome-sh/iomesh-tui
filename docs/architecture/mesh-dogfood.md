@@ -58,6 +58,7 @@ Builds the client like dogfood/wait. Prints `StatusLine` config summary plus opt
 | policy | `POST /v1/policy/evaluate` | SKIP if mode off / 404 / fail-open; top-level `policy_mode` / `policy_source` / `policy_allow` evidence | FAIL if mode on and evaluate soft-fails |
 | catalog | broker + portal list | SKIP if plane off / fail-open | FAIL if fail-open |
 | streams | `GET /v1/streams` (`ListStreams`) | SKIP on error (`--skip-streams` forces SKIP); empty list is PASS `n=0` | FAIL on error |
+| kv | `GET /v1/kv/{bucket}` (`KVListKeys`) | SKIP if `--kv-bucket` unset (`kv probe unset`); soft SKIP on error | FAIL on error when bucket set |
 | memory_ingest | `POST /v1/streams/MEMORY_INGEST/publish` | SKIP on error (`--skip-memory` forces SKIP) | FAIL on error |
 | memory_recall | `POST /v1/streams/MEMORY_RPC/publish` | SKIP on error (`--skip-memory` forces SKIP) | FAIL on error |
 | memory_retrieve | `POST /v1/memory/retrieve` (fallback `/v5`) | SKIP on error (`--skip-memory` forces SKIP) | FAIL on error |
@@ -76,13 +77,27 @@ Runs when mesh is enabled. Mode from Client `[iomesh] policy_mode` / `IOMESH_POL
 
 ### streams (list probe)
 
-Runs **after** `catalog` and **before** `memory_*` whenever mesh is enabled (not gated on a plane flag). Non-destructive `ListStreams` (`GET /v1/streams`):
+Runs **after** `catalog` and **before** `kv` / `memory_*` whenever mesh is enabled (not gated on a plane flag). Non-destructive `ListStreams` (`GET /v1/streams`):
 
 - Soft mode: transport/HTTP errors → **SKIP** (fail-open); `--strict` → **FAIL**
 - Empty list is still **PASS** with `n=0` (valid discovery)
 - `--skip-streams` forces **SKIP** with detail `skipped (--skip-streams)`; `streams_count=0`
 - **PASS detail**: `n=N` plus truncated `names=…` (up to 8 names)
 - Top-level report field `streams_count` always emitted (CI evidence without scraping step detail)
+
+### kv (soft list-keys probe)
+
+Optional non-destructive `KVListKeys` after `streams` and before `memory_*`:
+
+| Flag / option | Maps to | Default |
+|---------------|---------|---------|
+| `--kv-bucket NAME` | `DogfoodOptions.KVBucket` | empty → step **SKIP** `kv probe unset` (no network) |
+
+- When bucket set: `GET /v1/kv/{bucket}` list-keys only (never put/delete)
+- Soft mode: transport/HTTP errors → **SKIP** (`kv soft-fail: …`); `--strict` → **FAIL**
+- Empty key list is still **PASS** with `n=0`
+- **PASS detail**: `bucket=NAME n=N`
+- Top-level `kv_bucket` omitted when unset; `kv_key_count` always emitted (`0` on skip/error)
 
 ### emit + llm_meter (dept streams / remote metering)
 
@@ -157,6 +172,8 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `context_lineage_count` | int | `len(res.Lineage)` from last `QueryContext` (**always emitted**, `0` when skip/off/empty) |
 | `streams_count` | int | `len(ListStreams)` from last streams probe (**always emitted**, `0` on skip/error/disabled) |
 | `streams_names` | string[] | Short sample of stream names from last `ListStreams` (max 8; **always emitted** as JSON array, `[]` on skip/error/disabled). Full count stays in `streams_count` |
+| `kv_bucket` | string | Soft kv probe bucket (`DogfoodOptions.KVBucket` / `--kv-bucket`); **omitted** when empty (probe unset) |
+| `kv_key_count` | int | `len(KVListKeys)` from last kv probe (**always emitted**, `0` on skip/error/unset) |
 | `wait_ready_ms` | int | Configured WaitReady budget in ms (**always emitted**, `0` = off / no preflight). Outcome on `wait_ready` step detail |
 | `policy_mode` | string | Configured policy mode (`off` \| `advisory` \| `enforce`; **always emitted**, default `off`) |
 | `policy_source` | string | Last policy probe source (`mesh` \| `fail-open` \| `unavailable` \| `off`); `off` when mode off; omitted when mesh disabled before policy step |
@@ -192,8 +209,10 @@ iomesh mesh dogfood --wait-ready 10s --wait-interval 500ms   # soft ready prefli
 iomesh mesh dogfood --endpoint "$IOMESH_ENDPOINT" --tenant acme
 iomesh mesh dogfood --memory-endpoint "$IOMESH_MEMORY_ENDPOINT"
 iomesh mesh dogfood --skip-context --skip-emit --skip-memory --skip-streams   # health-only-ish
+iomesh mesh dogfood --kv-bucket config   # soft KV list-keys probe + kv_bucket / kv_key_count evidence
 iomesh mesh catalog              # broker then portal paths
-iomesh mesh streams [--name] [--json] [--delete --yes]  # lean list/get/delete ( delete destructive); dogfood probes list + streams_names
+iomesh mesh streams [--name] [--json] [--delete --yes]  # lean list/get/delete (delete destructive); dogfood probes list + streams_names
+iomesh mesh kv --bucket NAME --list|--get|--put|--delete  # put/delete require --yes
 iomesh mesh status [--json]      # operator snapshot (StatusLine + Health/Ready)
 ```
 

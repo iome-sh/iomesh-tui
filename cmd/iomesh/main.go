@@ -483,22 +483,23 @@ func cmdMesh(args []string) int {
 	case "help", "-h", "--help":
 		fmt.Fprintln(os.Stderr, `iomesh mesh — I/O Mesh platform probes
 
-  iomesh mesh dogfood   stage smoke (health → ready → context → emit → policy → catalog → streams → memory_*)
+  iomesh mesh dogfood   stage smoke (health → ready → context → emit → policy → catalog → streams → [kv] → memory_*)
   iomesh mesh probe     alias for dogfood
   iomesh mesh usage     local LLM metering rollup for this process (--json for scrapers)
   iomesh mesh catalog   list governed data products (broker + portal federation)
   iomesh mesh streams   list/get/delete/messages broker streams (GET|DELETE /v1/streams; explicit errors)
-  iomesh mesh kv        read-focused KV: list keys / get value (GET /v1/kv; explicit errors)
+  iomesh mesh kv        KV list/get/put/delete (GET|PUT|DELETE /v1/kv; put/delete require --yes)
   iomesh mesh wait      poll Ready until OK or timeout (operator preflight)
   iomesh mesh status    operator snapshot (StatusLine + optional Health/Ready)
 
 Flags (dogfood):
   --config path           config.toml
-  --strict                require context + emit + ready (+ policy/catalog/memory/streams when on)
+  --strict                require context + emit + ready (+ policy/catalog/memory/streams/kv when on)
   --skip-context          skip context plane
   --skip-emit             skip dept stream emit
   --skip-memory           skip memory_ingest / memory_recall / memory_retrieve
   --skip-streams          skip streams list probe (GET /v1/streams)
+  --kv-bucket NAME        soft KV list-keys probe on bucket (omit = skip kv step)
   --wait-ready dur        soft WaitReady preflight budget (0=off; timeout SKIP unless --strict)
   --wait-interval dur     WaitReady poll interval (default 500ms when --wait-ready set)
   --wait-require-health   WaitReady requires Health OK each attempt
@@ -918,8 +919,8 @@ func cmdMeshStreams(args []string) int {
 	return 0
 }
 
-// cmdMeshKV lists keys or gets one value from broker KV (lean GET /v1/kv; explicit errors; no SDK dep).
-// Read-focused: --list and/or --get; --bucket required.
+// cmdMeshKV lists, gets, puts, or deletes broker KV entries (lean /v1/kv; explicit errors; no SDK dep).
+// Mutating ops (--put / --delete) require --yes. Ops are mutually exclusive.
 func cmdMeshKV(args []string) int {
 	fs := flag.NewFlagSet("mesh kv", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
@@ -928,6 +929,11 @@ func cmdMeshKV(args []string) int {
 		bucket     = fs.String("bucket", "", "KV bucket name (required)")
 		list       = fs.Bool("list", false, "list keys in bucket (optional --prefix)")
 		getKey     = fs.String("get", "", "get one key value")
+		putKey     = fs.String("put", "", "put key (requires --value or --value-file and --yes)")
+		valueStr   = fs.String("value", "", "put: raw string value")
+		valueFile  = fs.String("value-file", "", "put: read value bytes from file path")
+		deleteKey  = fs.String("delete", "", "delete key (requires --yes; DESTRUCTIVE)")
+		yes        = fs.Bool("yes", false, "confirm mutating put/delete")
 		prefix     = fs.String("prefix", "", "list: key prefix filter")
 		endpoint   = fs.String("endpoint", "", "override IOMESH_ENDPOINT")
 		tenant     = fs.String("tenant", "", "override tenant")
@@ -938,23 +944,67 @@ func cmdMeshKV(args []string) int {
 		return 2
 	}
 	bucketName := strings.TrimSpace(*bucket)
-	keyName := strings.TrimSpace(*getKey)
+	getName := strings.TrimSpace(*getKey)
+	putName := strings.TrimSpace(*putKey)
+	delName := strings.TrimSpace(*deleteKey)
+
+	printKVUsage := func() {
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh kv --bucket NAME --list [--prefix P] [--json]")
+		fmt.Fprintln(os.Stderr, "       iomesh mesh kv --bucket NAME --get KEY [--json]")
+		fmt.Fprintln(os.Stderr, "       iomesh mesh kv --bucket NAME --put KEY --value STR|--value-file PATH --yes")
+		fmt.Fprintln(os.Stderr, "       iomesh mesh kv --bucket NAME --delete KEY --yes")
+		fmt.Fprintln(os.Stderr, "  --bucket required; exactly one of --list|--get|--put|--delete")
+	}
+
 	if bucketName == "" {
-		fmt.Fprintln(os.Stderr, "usage: iomesh mesh kv --bucket NAME --list [--prefix P] [--json]")
-		fmt.Fprintln(os.Stderr, "       iomesh mesh kv --bucket NAME --get KEY [--json]")
-		fmt.Fprintln(os.Stderr, "  --bucket required; --list or --get required")
+		printKVUsage()
+		fmt.Fprintln(os.Stderr, "  --bucket required")
 		return 2
 	}
-	if !*list && keyName == "" {
-		fmt.Fprintln(os.Stderr, "usage: iomesh mesh kv --bucket NAME --list [--prefix P] [--json]")
-		fmt.Fprintln(os.Stderr, "       iomesh mesh kv --bucket NAME --get KEY [--json]")
-		fmt.Fprintln(os.Stderr, "  --list or --get required")
+
+	// Count mutually exclusive ops.
+	nOps := 0
+	if *list {
+		nOps++
+	}
+	if getName != "" {
+		nOps++
+	}
+	if putName != "" {
+		nOps++
+	}
+	if delName != "" {
+		nOps++
+	}
+	if nOps == 0 {
+		printKVUsage()
+		fmt.Fprintln(os.Stderr, "  --list or --get or --put or --delete required")
 		return 2
 	}
-	if *list && keyName != "" {
-		fmt.Fprintln(os.Stderr, "usage: iomesh mesh kv --list|--get (not both)")
+	if nOps > 1 {
+		printKVUsage()
+		fmt.Fprintln(os.Stderr, "  --list|--get|--put|--delete (not both)")
 		return 2
 	}
+
+	if putName != "" {
+		hasVal := strings.TrimSpace(*valueStr) != "" || strings.TrimSpace(*valueFile) != ""
+		if !hasVal || !*yes {
+			fmt.Fprintln(os.Stderr, "usage: iomesh mesh kv --bucket NAME --put KEY --value STR|--value-file PATH --yes")
+			fmt.Fprintln(os.Stderr, "  --put requires --value or --value-file and --yes")
+			return 2
+		}
+		if strings.TrimSpace(*valueStr) != "" && strings.TrimSpace(*valueFile) != "" {
+			fmt.Fprintln(os.Stderr, "usage: iomesh mesh kv --put --value|--value-file (not both)")
+			return 2
+		}
+	}
+	if delName != "" && !*yes {
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh kv --bucket NAME --delete KEY --yes")
+		fmt.Fprintln(os.Stderr, "  --delete is destructive; requires --yes")
+		return 2
+	}
+
 	logger := newLogger(*verbose)
 	cfg, err := loadConfig(*configPath)
 	if err != nil {
@@ -981,8 +1031,38 @@ func cmdMeshKV(args []string) int {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	if keyName != "" {
-		entry, err := mesh.KVGet(ctx, bucketName, keyName)
+	if putName != "" {
+		var val []byte
+		if vf := strings.TrimSpace(*valueFile); vf != "" {
+			raw, err := os.ReadFile(vf)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "FAIL mesh kv put: read value-file: %v\n", err)
+				return 1
+			}
+			val = raw
+		} else {
+			val = []byte(*valueStr)
+		}
+		rev, err := mesh.KVPut(ctx, bucketName, putName, val)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "FAIL mesh kv put: %v\n", err)
+			return 1
+		}
+		fmt.Printf("PASS mesh kv put bucket=%s key=%s revision=%d\n", bucketName, putName, rev)
+		return 0
+	}
+
+	if delName != "" {
+		if err := mesh.KVDelete(ctx, bucketName, delName); err != nil {
+			fmt.Fprintf(os.Stderr, "FAIL mesh kv delete: %v\n", err)
+			return 1
+		}
+		fmt.Printf("PASS mesh kv delete bucket=%s key=%s\n", bucketName, delName)
+		return 0
+	}
+
+	if getName != "" {
+		entry, err := mesh.KVGet(ctx, bucketName, getName)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "FAIL mesh kv get: %v\n", err)
 			return 1
@@ -1065,6 +1145,7 @@ func cmdMeshDogfood(args []string) int {
 		skipEmit          = fs.Bool("skip-emit", false, "skip dept emit probe")
 		skipMemory        = fs.Bool("skip-memory", false, "skip memory_ingest / memory_recall / memory_retrieve probes")
 		skipStreams       = fs.Bool("skip-streams", false, "skip streams list probe (GET /v1/streams)")
+		kvBucket          = fs.String("kv-bucket", "", "soft KV list-keys probe on bucket (omit = skip kv step)")
 		waitReady         = fs.Duration("wait-ready", 0, "soft WaitReady preflight budget before ready (0=off)")
 		waitInterval      = fs.Duration("wait-interval", 0, "WaitReady poll interval (default 500ms when --wait-ready set)")
 		waitRequireHealth = fs.Bool("wait-require-health", false, "WaitReady requires Health OK each attempt")
@@ -1135,6 +1216,7 @@ func cmdMeshDogfood(args []string) int {
 		SkipEmit:          *skipEmit,
 		SkipMemory:        *skipMemory,
 		SkipStreams:       *skipStreams,
+		KVBucket:          strings.TrimSpace(*kvBucket),
 		WaitReady:         *waitReady,
 		WaitReadyInterval: *waitInterval,
 		WaitRequireHealth: *waitRequireHealth,

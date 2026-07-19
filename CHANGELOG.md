@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Gated mesh KV put/delete** — lean `KVPut` / `KVDelete` (`PUT|DELETE /v1/kv/{bucket}/{key}`; body `{"value": base64}` on put) + CLI `--put KEY --value|--value-file --yes` / `--delete KEY --yes` (mutating ops require `--yes`; mutually exclusive with list/get)
+- **Dogfood soft kv probe** — optional `DogfoodOptions.KVBucket` / CLI `--kv-bucket NAME` list-keys only (non-destructive); step SKIP when unset; top-level `kv_bucket` (omitempty) + `kv_key_count` (always)
+
 ## [0.19.0] — 2026-07-19
 
 Minor release: dogfood policy evidence + mesh kv CLI.
