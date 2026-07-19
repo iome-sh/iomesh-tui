@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -494,7 +495,7 @@ func cmdMesh(args []string) int {
   iomesh mesh streams   list/get/delete/messages broker streams (GET|DELETE /v1/streams; explicit errors)
   iomesh mesh kv        KV list/get/put/delete/create-bucket (GET|PUT|DELETE|POST /v1/kv; mutate ops require --yes)
   iomesh mesh pub       ephemeral fire-and-forget publish (POST /v1/pub; requires --yes)
-  iomesh mesh consumer  durable pull consumer create/fetch (POST .../consumers; requires --yes)
+  iomesh mesh consumer  durable pull consumer create/fetch/ack/nack (POST .../consumers; requires --yes)
   iomesh mesh wait      poll Ready until OK or timeout (operator preflight)
   iomesh mesh status    operator snapshot (StatusLine + optional Health/Ready)
 
@@ -528,9 +529,12 @@ Flags (pub):
 Flags (consumer):
   create --stream S --name C [--filter F] --yes [--json]
   fetch  --stream S --name C [--batch N] --yes [--json]
+  ack    --stream S --name C --seq N [--seq N...] --yes
+  nack   --stream S --name C --seq N [--seq N...] --yes
   --stream / --name required; --yes required (mutating)
   --filter F              create: optional filter_subject
   --batch N               fetch: max messages (default 1)
+  --seq N                 ack/nack: message sequence (repeatable)
   --endpoint / --tenant / --config / -v
 
 Flags (catalog):
@@ -943,10 +947,10 @@ func cmdMeshStreams(args []string) int {
 	return 0
 }
 
-// cmdMeshConsumer creates a durable pull consumer or fetches messages (lean /v1/streams/{s}/consumers; requires --yes).
+// cmdMeshConsumer creates a durable pull consumer, fetches, acks, or nacks (lean /v1/streams/{s}/consumers; requires --yes).
 func cmdMeshConsumer(args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: iomesh mesh consumer create|fetch [flags]")
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh consumer create|fetch|ack|nack [flags]")
 		return 2
 	}
 	switch args[0] {
@@ -954,21 +958,140 @@ func cmdMeshConsumer(args []string) int {
 		return cmdMeshConsumerCreate(args[1:])
 	case "fetch":
 		return cmdMeshConsumerFetch(args[1:])
+	case "ack":
+		return cmdMeshConsumerAckNack(args[1:], false)
+	case "nack":
+		return cmdMeshConsumerAckNack(args[1:], true)
 	case "help", "-h", "--help":
 		fmt.Fprintln(os.Stderr, `iomesh mesh consumer — durable pull consumers
 
   iomesh mesh consumer create --stream S --name C [--filter F] --yes [--json]
   iomesh mesh consumer fetch  --stream S --name C [--batch N] --yes [--json]
+  iomesh mesh consumer ack    --stream S --name C --seq N [--seq N...] --yes
+  iomesh mesh consumer nack   --stream S --name C --seq N [--seq N...] --yes
 
 Create: POST /v1/streams/{stream}/consumers (201 full info; 409 idempotent name-only).
 Fetch:  POST /v1/streams/{stream}/consumers/{name}/fetch (default batch=1, max_wait 2s).
-Both require --yes (mutating).`)
+Ack:    POST .../consumers/{name}/ack body {"seqs":[...]} (prints optional ack_floor).
+Nack:   POST .../consumers/{name}/nack body {"seqs":[...]} (prints optional ack_floor).
+All require --yes (mutating).`)
 		return 0
 	default:
 		fmt.Fprintf(os.Stderr, "unknown mesh consumer subcommand %q\n", args[0])
-		fmt.Fprintln(os.Stderr, "usage: iomesh mesh consumer create|fetch [flags]")
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh consumer create|fetch|ack|nack [flags]")
 		return 2
 	}
+}
+
+// uint64List is a flag.Value for repeatable --seq N flags.
+type uint64List []uint64
+
+func (u *uint64List) String() string {
+	if u == nil || len(*u) == 0 {
+		return ""
+	}
+	parts := make([]string, len(*u))
+	for i, v := range *u {
+		parts[i] = strconv.FormatUint(v, 10)
+	}
+	return strings.Join(parts, ",")
+}
+
+func (u *uint64List) Set(s string) error {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return fmt.Errorf("empty seq")
+	}
+	// Allow a single value or CSV fragment so --seq 1,2 works too.
+	for _, part := range strings.Split(s, ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		v, err := strconv.ParseUint(part, 10, 64)
+		if err != nil {
+			return fmt.Errorf("invalid seq %q: %w", part, err)
+		}
+		*u = append(*u, v)
+	}
+	if len(*u) == 0 {
+		return fmt.Errorf("empty seq")
+	}
+	return nil
+}
+
+func cmdMeshConsumerAckNack(args []string, nack bool) int {
+	op := "ack"
+	if nack {
+		op = "nack"
+	}
+	fs := flag.NewFlagSet("mesh consumer "+op, flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	var seqs uint64List
+	var (
+		configPath = fs.String("config", "", "config.toml path")
+		stream     = fs.String("stream", "", "stream name (required)")
+		name       = fs.String("name", "", "consumer name (required)")
+		yes        = fs.Bool("yes", false, "confirm mutating "+op+" (required)")
+		verbose    = fs.Bool("v", false, "verbose logs")
+		endpoint   = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
+		tenant     = fs.String("tenant", "", "override tenant")
+	)
+	fs.Var(&seqs, "seq", "message sequence to "+op+" (repeatable; CSV ok)")
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	streamName := strings.TrimSpace(*stream)
+	consumerName := strings.TrimSpace(*name)
+	if streamName == "" || consumerName == "" || len(seqs) == 0 || !*yes {
+		fmt.Fprintf(os.Stderr, "usage: iomesh mesh consumer %s --stream S --name C --seq N [--seq N...] --yes\n", op)
+		fmt.Fprintln(os.Stderr, "  --stream, --name, and at least one --seq required; --yes required (mutating)")
+		return 2
+	}
+
+	logger := newLogger(*verbose)
+	cfg, err := loadConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "config: %v\n", err)
+		return 1
+	}
+	if *endpoint != "" {
+		cfg.IOMesh.Endpoint = *endpoint
+		cfg.IOMesh.Enabled = true
+	}
+	if *tenant != "" {
+		cfg.IOMesh.Tenant = *tenant
+	}
+	mesh := iomesh.New(iomesh.Config{
+		Enabled:     cfg.IOMesh.Enabled,
+		Endpoint:    cfg.IOMesh.Endpoint,
+		Tenant:      cfg.IOMesh.Tenant,
+		APIKeyEnv:   cfg.IOMesh.APIKeyEnv,
+		OrgID:       cfg.IOMesh.Org,
+		WorkspaceID: cfg.IOMesh.Workspace,
+	}, logger)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	var floor uint64
+	if nack {
+		floor, err = mesh.ConsumerNack(ctx, streamName, consumerName, seqs...)
+	} else {
+		floor, err = mesh.ConsumerAck(ctx, streamName, consumerName, seqs...)
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "FAIL mesh consumer %s: %v\n", op, err)
+		return 1
+	}
+	seqParts := make([]string, len(seqs))
+	for i, s := range seqs {
+		seqParts[i] = strconv.FormatUint(s, 10)
+	}
+	fmt.Printf("PASS mesh consumer %s stream=%s name=%s seqs=%s ack_floor=%d\n",
+		op, streamName, consumerName, strings.Join(seqParts, ","), floor)
+	return 0
 }
 
 func cmdMeshConsumerCreate(args []string) int {
@@ -1671,6 +1794,7 @@ Usage:
   iomesh mesh dogfood            stage I/O Mesh smoke (health/context/emit/pub/memory)
   iomesh mesh pub                ephemeral POST /v1/pub (--subject --payload|--payload-file --yes)
   iomesh mesh consumer create    durable pull consumer create (--stream --name --yes)
+  iomesh mesh consumer ack|nack  ack/nack sequences (--stream --name --seq --yes)
   iomesh mesh wait               poll mesh Ready until OK (operator preflight)
   iomesh mesh status             operator snapshot (StatusLine + Health/Ready)
   iomesh models                  list configured models

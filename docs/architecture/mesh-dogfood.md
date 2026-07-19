@@ -238,6 +238,8 @@ iomesh mesh kv --bucket NAME --list|--get|--put|--delete|--create-bucket  # put/
 iomesh mesh pub --subject S --payload STR|--payload-file F --yes  # ephemeral POST /v1/pub
 iomesh mesh consumer create --stream S --name C [--filter F] --yes  # durable pull consumer (409 idempotent)
 iomesh mesh consumer fetch --stream S --name C [--batch N] --yes    # long-poll fetch (default batch 1, 2s)
+iomesh mesh consumer ack  --stream S --name C --seq N [--seq N...] --yes  # ack sequences
+iomesh mesh consumer nack --stream S --name C --seq N [--seq N...] --yes  # nack sequences
 iomesh mesh status [--json]      # operator snapshot (StatusLine + Health/Ready)
 ```
 
