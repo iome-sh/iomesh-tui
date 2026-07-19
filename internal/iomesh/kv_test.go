@@ -176,6 +176,98 @@ func TestKV_DisabledClient(t *testing.T) {
 	if err := c.KVDelete(context.Background(), "b", "k"); err == nil || !strings.Contains(err.Error(), "mesh disabled") {
 		t.Fatalf("KVDelete err=%v", err)
 	}
+	if _, err := c.KVCreateBucket(context.Background(), "b"); err == nil || !strings.Contains(err.Error(), "mesh disabled") {
+		t.Fatalf("KVCreateBucket err=%v", err)
+	}
+}
+
+func TestKVCreateBucket_201Body(t *testing.T) {
+	prev := UserAgent()
+	SetUserAgent("iomesh-tui/test-kv-create")
+	t.Cleanup(func() { SetUserAgent(prev) })
+
+	var maxBytes int64 = 1024
+	var ttl int64 = 3600
+	var gotMethod, gotPath, gotUA string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		gotUA = r.Header.Get("User-Agent")
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/kv/config" {
+			http.NotFound(w, r)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"name":        "config",
+			"max_bytes":   maxBytes,
+			"history":     5,
+			"ttl_seconds": ttl,
+		})
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "acme"}, nil)
+	info, err := c.KVCreateBucket(context.Background(), "config")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotMethod != http.MethodPost {
+		t.Fatalf("method=%q", gotMethod)
+	}
+	if gotPath != "/v1/kv/config" {
+		t.Fatalf("path=%q", gotPath)
+	}
+	if gotUA != "iomesh-tui/test-kv-create" {
+		t.Fatalf("User-Agent=%q", gotUA)
+	}
+	if info == nil || info.Name != "config" {
+		t.Fatalf("info=%+v", info)
+	}
+	if info.History != 5 {
+		t.Fatalf("history=%d", info.History)
+	}
+	if info.MaxBytes == nil || *info.MaxBytes != maxBytes {
+		t.Fatalf("max_bytes=%v", info.MaxBytes)
+	}
+	if info.TTLSeconds == nil || *info.TTLSeconds != ttl {
+		t.Fatalf("ttl_seconds=%v", info.TTLSeconds)
+	}
+	out := FormatKVBucketInfo(*info)
+	if !strings.Contains(out, "config") || !strings.Contains(out, "history") || !strings.Contains(out, "1024") {
+		t.Fatal(out)
+	}
+}
+
+func TestKVCreateBucket_409Success(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method", 405)
+			return
+		}
+		w.WriteHeader(http.StatusConflict)
+		_, _ = w.Write([]byte(`{"error":"bucket exists"}`))
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	info, err := c.KVCreateBucket(context.Background(), "existing")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info == nil || info.Name != "existing" {
+		t.Fatalf("info=%+v want Name=existing", info)
+	}
+}
+
+func TestKVCreateBucket_EmptyName(t *testing.T) {
+	c := New(Config{Enabled: true, Endpoint: "http://127.0.0.1:9"}, nil)
+	if _, err := c.KVCreateBucket(context.Background(), ""); err == nil || !strings.Contains(err.Error(), "bucket required") {
+		t.Fatalf("empty err=%v", err)
+	}
+	if _, err := c.KVCreateBucket(context.Background(), "  "); err == nil || !strings.Contains(err.Error(), "bucket required") {
+		t.Fatalf("blank err=%v", err)
+	}
 }
 
 func TestKVPut_OKAndUserAgent(t *testing.T) {

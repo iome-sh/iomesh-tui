@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Mesh KV create-bucket** — lean `KVCreateBucket` (`POST /v1/kv/{bucket}`; empty body; 201 decodes `KVBucketInfo`; 409 Conflict treated as success) + CLI `--create-bucket --yes` (mutually exclusive with list/get/put/delete)
+
 ## [0.20.0] — 2026-07-19
 
 Minor release: gated KV put/delete and soft dogfood kv probe.
