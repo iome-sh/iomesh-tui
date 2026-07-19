@@ -1050,6 +1050,46 @@ func TestDogfood_JSONDualWriteFalse(t *testing.T) {
 	}
 }
 
+func TestDogfood_UserAgentEvidence(t *testing.T) {
+	prev := UserAgent()
+	SetUserAgent("iomesh-tui/test-s290")
+	t.Cleanup(func() { SetUserAgent(prev) })
+
+	srv := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+		failRecall bool
+		noRecall   bool
+	}{})
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		EmitDeptStreams: true,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{})
+	if rep.UserAgent != "iomesh-tui/test-s290" {
+		t.Fatalf("report UserAgent: %q", rep.UserAgent)
+	}
+	js := FormatReportJSON(rep)
+	if !strings.Contains(js, `"user_agent": "iomesh-tui/test-s290"`) &&
+		!strings.Contains(js, `"user_agent":"iomesh-tui/test-s290"`) {
+		t.Fatalf("FormatReportJSON missing user_agent:\n%s", js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "user_agent: iomesh-tui/test-s290") {
+		t.Fatalf("FormatReport missing user_agent:\n%s", text)
+	}
+	sl := c.StatusLine()
+	if !strings.Contains(sl, "ua=iomesh-tui/test-s290") {
+		t.Fatalf("StatusLine missing ua=: %s", sl)
+	}
+}
+
 func TestReady_OK(t *testing.T) {
 	srv := mockMeshServer(t, struct {
 		failHealth bool
