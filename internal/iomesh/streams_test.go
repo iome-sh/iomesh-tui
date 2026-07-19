@@ -164,12 +164,73 @@ func TestStreams_DisabledClient(t *testing.T) {
 	if _, err := c.GetStream(context.Background(), "EVENTS"); err == nil || !strings.Contains(err.Error(), "mesh disabled") {
 		t.Fatalf("GetStream err=%v", err)
 	}
+	if err := c.DeleteStream(context.Background(), "EVENTS"); err == nil || !strings.Contains(err.Error(), "mesh disabled") {
+		t.Fatalf("DeleteStream err=%v", err)
+	}
 }
 
 func TestGetStream_EmptyName(t *testing.T) {
 	c := New(Config{Enabled: true, Endpoint: "http://127.0.0.1:9"}, nil)
 	_, err := c.GetStream(context.Background(), "  ")
 	if err == nil || !strings.Contains(err.Error(), "stream name required") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestDeleteStream_204(t *testing.T) {
+	var gotMethod, gotPath, gotUA string
+	prev := UserAgent()
+	SetUserAgent("iomesh-tui/test-s302")
+	t.Cleanup(func() { SetUserAgent(prev) })
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		gotUA = r.Header.Get("User-Agent")
+		if r.Method != http.MethodDelete || r.URL.Path != "/v1/streams/TEMP" {
+			http.NotFound(w, r)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	if err := c.DeleteStream(context.Background(), "TEMP"); err != nil {
+		t.Fatal(err)
+	}
+	if gotMethod != http.MethodDelete {
+		t.Fatalf("method=%q", gotMethod)
+	}
+	if gotPath != "/v1/streams/TEMP" {
+		t.Fatalf("path=%q", gotPath)
+	}
+	if gotUA != "iomesh-tui/test-s302" {
+		t.Fatalf("User-Agent=%q", gotUA)
+	}
+}
+
+func TestDeleteStream_EmptyName(t *testing.T) {
+	c := New(Config{Enabled: true, Endpoint: "http://127.0.0.1:9"}, nil)
+	err := c.DeleteStream(context.Background(), "  ")
+	if err == nil || !strings.Contains(err.Error(), "stream name required") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestDeleteStream_404(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(`{"error":"stream not found"}`))
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	err := c.DeleteStream(context.Background(), "missing")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "http 404") {
 		t.Fatalf("err=%v", err)
 	}
 }
