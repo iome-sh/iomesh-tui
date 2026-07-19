@@ -4,6 +4,17 @@ Operator smoke for **I/O Mesh** integration from the public `iomesh-tui` harness
 
 ## Checks
 
+### Preflight wait (`mesh wait`)
+
+Operator preflight (s291) polls readiness without running the full dogfood suite:
+
+```bash
+iomesh mesh wait [--timeout 30s] [--interval 500ms] [--require-health]
+# Exit 0 + "PASS mesh wait: ready" when Ready succeeds; non-zero + FAIL on deadline.
+```
+
+`Client.WaitReady` retries `GET /ready` (or `/readyz`) until success or context deadline. With `--require-health`, each attempt requires `GET /health` OK first. Disabled/empty endpoint is offline-first (immediate success). Use before stage dogfood or agent attach when the broker is still warming.
+
 | Step | Request | Soft (default) | Strict (`--strict`) |
 |------|---------|----------------|---------------------|
 | enabled | config | SKIP if disabled | same |
