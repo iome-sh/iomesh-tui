@@ -123,4 +123,5 @@ CLI / TUI / ACP
 42. ~~Lean mesh KV read + `mesh kv` CLI~~ **done** — `KVGet` / `KVListKeys` + `iomesh mesh kv`; see [mesh-deeper.md](mesh-deeper.md)
 43. ~~Gated mesh KV put/delete + soft dogfood kv probe~~ **done** — `KVPut` / `KVDelete` + `--yes` CLI gates + `--kv-bucket` list-keys evidence; see [mesh-deeper.md](mesh-deeper.md) / [mesh-dogfood.md](mesh-dogfood.md)
 44. ~~Lean mesh KV create-bucket~~ **done** — `KVCreateBucket` + `iomesh mesh kv --create-bucket --yes` (idempotent 409); see [mesh-deeper.md](mesh-deeper.md)
-45. Optional: platform remote multi-tenant metering UI
+45. ~~Dogfood kv-ensure + ephemeral mesh pub~~ **done** — `--kv-ensure` / `kv_ensured` + `Pub` / `iomesh mesh pub --yes`; see [mesh-dogfood.md](mesh-dogfood.md) / [mesh-deeper.md](mesh-deeper.md)
+46. Optional: platform remote multi-tenant metering UI

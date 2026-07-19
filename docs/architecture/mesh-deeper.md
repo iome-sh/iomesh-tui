@@ -169,7 +169,23 @@ iomesh mesh kv --bucket config --create-bucket --yes
 iomesh mesh kv --bucket config --create-bucket --yes --json
 ```
 
-`--bucket` required; exactly one of `--list` / `--get` / `--put` / `--delete` / `--create-bucket`. `--put` requires `--value` or `--value-file` and `--yes`. `--delete` and `--create-bucket` require `--yes`. Create-bucket is idempotent (409 already-exists → success). Mesh disabled → error `mesh disabled` (non-zero CLI exit). Dogfood soft-probes list-keys only when `--kv-bucket` / `DogfoodOptions.KVBucket` is set (put/delete/create-bucket are CLI-only).
+`--bucket` required; exactly one of `--list` / `--get` / `--put` / `--delete` / `--create-bucket`. `--put` requires `--value` or `--value-file` and `--yes`. `--delete` and `--create-bucket` require `--yes`. Create-bucket is idempotent (409 already-exists → success). Mesh disabled → error `mesh disabled` (non-zero CLI exit). Dogfood soft-probes list-keys when `--kv-bucket` / `DogfoodOptions.KVBucket` is set; optional `--kv-ensure` best-effort creates the bucket first (soft fail-open). Put/delete/create-bucket remain CLI-only.
+
+## Ephemeral pub (`mesh pub`)
+
+Lean fire-and-forget publish (no stream name; not durable stream append). Wire parity with SDK `Pub` / `POST /v1/pub`:
+
+| Method | HTTP | Notes |
+|--------|------|-------|
+| `Pub(subject, payload, headers)` | `POST /v1/pub` | Body `{"subject","payload" as **raw string** (not base64), `headers?`}; empty subject / non-2xx → error; mesh disabled → `mesh disabled` |
+
+```bash
+iomesh mesh pub --subject dept.agent.ping --payload '{"ok":true}' --yes
+iomesh mesh pub --subject dept.agent.ping --payload-file ./evt.json --yes
+iomesh mesh pub --subject dept.agent.ping --payload hello --yes --json
+```
+
+Requires `--subject` and `--payload` or `--payload-file` and **`--yes`**. Success prints `PASS mesh pub subject=… bytes=N` (or JSON `{subject,ok,bytes}`). Distinct from stream `POST /v1/streams/{name}/publish` (dept emit / memory ingest use that path).
 
 ## Packages
 
@@ -180,4 +196,5 @@ iomesh mesh kv --bucket config --create-bucket --yes --json
 - `internal/iomesh/streams.go` — ListStreams / GetStream / DeleteStream / FormatStreams
 - `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages
 - `internal/iomesh/kv.go` — KVGet / KVListKeys / KVPut / KVDelete / KVCreateBucket / FormatKVEntry / FormatKVKeys / FormatKVBucketInfo
+- `internal/iomesh/pub.go` — Pub (ephemeral `POST /v1/pub`)
 - `internal/agent` — policy before tool execute; mesh catalog tools; `EventMeshPolicy`

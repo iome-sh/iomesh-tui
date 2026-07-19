@@ -1,0 +1,60 @@
+package iomesh
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
+)
+
+// Pub publishes an ephemeral fire-and-forget message via POST /v1/pub.
+// Wire matches iomesh-client-sdk-go Pub: body {"subject","payload" as raw string,"headers"?}
+// (payload is NOT base64 — unlike stream Publish). Empty subject returns an error.
+// Non-2xx returns an error. When mesh is disabled / endpoint empty: "mesh disabled".
+// Mutating — CLI gates with --yes.
+func (c *Client) Pub(ctx context.Context, subject string, payload []byte, headers map[string]string) error {
+	if c == nil || !c.Enabled() {
+		return fmt.Errorf("mesh disabled")
+	}
+	subject = strings.TrimSpace(subject)
+	if subject == "" {
+		return fmt.Errorf("iomesh pub: subject required")
+	}
+	if payload == nil {
+		payload = []byte{}
+	}
+	reqBody := struct {
+		Subject string            `json:"subject"`
+		Payload string            `json:"payload"`
+		Headers map[string]string `json:"headers,omitempty"`
+	}{
+		Subject: subject,
+		Payload: string(payload),
+		Headers: headers,
+	}
+	body, err := json.Marshal(reqBody)
+	if err != nil {
+		return err
+	}
+	u := strings.TrimRight(c.cfg.Endpoint, "/") + "/v1/pub"
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	c.auth(req)
+	c.applyEntitlementHeaders(req)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 1<<20))
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("iomesh pub: http %d", resp.StatusCode)
+	}
+	return nil
+}

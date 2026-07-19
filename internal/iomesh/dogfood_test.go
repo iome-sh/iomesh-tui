@@ -2014,9 +2014,18 @@ func TestDogfood_KV_UnsetSkip(t *testing.T) {
 	if n, ok := parsed["kv_key_count"].(float64); !ok || int(n) != 0 {
 		t.Fatalf("json kv_key_count: %v want 0\n%s", parsed["kv_key_count"], js)
 	}
+	if ensured, ok := parsed["kv_ensured"].(bool); !ok || ensured {
+		t.Fatalf("json kv_ensured: %v want false\n%s", parsed["kv_ensured"], js)
+	}
+	if rep.KVEnsured {
+		t.Fatal("KVEnsured want false when unset")
+	}
 	text := FormatReport(rep)
 	if !strings.Contains(text, "kv_key_count: 0") {
 		t.Fatalf("text report missing kv_key_count:\n%s", text)
+	}
+	if !strings.Contains(text, "kv_ensured: false") {
+		t.Fatalf("text report missing kv_ensured:\n%s", text)
 	}
 	if strings.Contains(text, "kv_bucket:") {
 		t.Fatalf("text report must omit kv_bucket when unset:\n%s", text)
@@ -2094,9 +2103,21 @@ func TestDogfood_KV_ListKeysPass(t *testing.T) {
 	if n, ok := parsed["kv_key_count"].(float64); !ok || int(n) != 3 {
 		t.Fatalf("json kv_key_count: %v want 3\n%s", parsed["kv_key_count"], js)
 	}
+	if ensured, ok := parsed["kv_ensured"].(bool); !ok || ensured {
+		t.Fatalf("json kv_ensured: %v want false (ensure not requested)\n%s", parsed["kv_ensured"], js)
+	}
+	if rep.KVEnsured {
+		t.Fatal("KVEnsured want false without KVEnsure")
+	}
+	if !strings.Contains(kv.Detail, "ensure=skip") {
+		t.Fatalf("kv detail want ensure=skip: %s", kv.Detail)
+	}
 	text := FormatReport(rep)
 	if !strings.Contains(text, "kv_bucket: config") || !strings.Contains(text, "kv_key_count: 3") {
 		t.Fatalf("text report missing kv evidence:\n%s", text)
+	}
+	if !strings.Contains(text, "kv_ensured: false") {
+		t.Fatalf("text report missing kv_ensured:\n%s", text)
 	}
 }
 
@@ -2213,5 +2234,203 @@ func TestDogfood_KV_StrictFail(t *testing.T) {
 	}
 	if rep.KVKeyCount != 0 {
 		t.Fatalf("KVKeyCount: %d want 0", rep.KVKeyCount)
+	}
+}
+
+func TestDogfood_KV_EnsureOk(t *testing.T) {
+	// KVEnsure + KVBucket → POST create then GET list; kv_ensured=true; detail ensure=ok.
+	var sawCreate, sawList bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case r.URL.Path == "/ready" || r.URL.Path == "/readyz":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		case r.URL.Path == "/v1/kv/config" && r.Method == http.MethodPost:
+			sawCreate = true
+			w.WriteHeader(http.StatusCreated)
+			_ = json.NewEncoder(w).Encode(map[string]any{"name": "config"})
+		case r.URL.Path == "/v1/kv/config" && r.Method == http.MethodGet:
+			sawList = true
+			_ = json.NewEncoder(w).Encode(map[string]any{"keys": []string{"a"}})
+		default:
+			if strings.Contains(r.URL.Path, "catalog") {
+				_ = json.NewEncoder(w).Encode(map[string]any{"products": []any{}})
+				return
+			}
+			if r.URL.Path == "/v1/streams" {
+				_ = json.NewEncoder(w).Encode([]any{})
+				return
+			}
+			if r.URL.Path == "/v1/context/query" {
+				_ = json.NewEncoder(w).Encode(map[string]string{"text": "ctx"})
+				return
+			}
+			if r.URL.Path == "/v1/streams/dept/publish" {
+				w.WriteHeader(204)
+				return
+			}
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		EmitDeptStreams: true,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{
+		SkipMemory: true,
+		KVBucket:   "config",
+		KVEnsure:   true,
+	})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if !sawCreate || !sawList {
+		t.Fatalf("sawCreate=%v sawList=%v", sawCreate, sawList)
+	}
+	if !rep.KVEnsured {
+		t.Fatal("KVEnsured want true")
+	}
+	if rep.KVKeyCount != 1 {
+		t.Fatalf("KVKeyCount=%d", rep.KVKeyCount)
+	}
+	kv, ok := dogfoodStep(rep, "kv")
+	if !ok || kv.Status != StepPass {
+		t.Fatalf("kv step: ok=%v status=%s detail=%s", ok, kv.Status, kv.Detail)
+	}
+	if !strings.Contains(kv.Detail, "ensure=ok") {
+		t.Fatalf("kv detail: %s", kv.Detail)
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if ensured, ok := parsed["kv_ensured"].(bool); !ok || !ensured {
+		t.Fatalf("json kv_ensured: %v\n%s", parsed["kv_ensured"], js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "kv_ensured: true") {
+		t.Fatalf("text missing kv_ensured true:\n%s", text)
+	}
+}
+
+func TestDogfood_KV_Ensure409Idempotent(t *testing.T) {
+	// Create 409 Conflict is success → kv_ensured=true.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case r.URL.Path == "/ready" || r.URL.Path == "/readyz":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		case r.URL.Path == "/v1/kv/config" && r.Method == http.MethodPost:
+			w.WriteHeader(http.StatusConflict)
+		case r.URL.Path == "/v1/kv/config" && r.Method == http.MethodGet:
+			_ = json.NewEncoder(w).Encode(map[string]any{"keys": []string{}})
+		default:
+			if strings.Contains(r.URL.Path, "catalog") {
+				_ = json.NewEncoder(w).Encode(map[string]any{"products": []any{}})
+				return
+			}
+			if r.URL.Path == "/v1/streams" {
+				_ = json.NewEncoder(w).Encode([]any{})
+				return
+			}
+			if r.URL.Path == "/v1/context/query" {
+				_ = json.NewEncoder(w).Encode(map[string]string{"text": "ctx"})
+				return
+			}
+			if r.URL.Path == "/v1/streams/dept/publish" {
+				w.WriteHeader(204)
+				return
+			}
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, EmitDeptStreams: true}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{
+		SkipMemory: true, KVBucket: "config", KVEnsure: true,
+	})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if !rep.KVEnsured {
+		t.Fatal("409 create should set KVEnsured")
+	}
+	kv, _ := dogfoodStep(rep, "kv")
+	if kv.Status != StepPass || !strings.Contains(kv.Detail, "ensure=ok") {
+		t.Fatalf("detail=%s status=%s", kv.Detail, kv.Status)
+	}
+}
+
+func TestDogfood_KV_EnsureSoftFailStillLists(t *testing.T) {
+	// Create 500 → ensure=soft-fail, kv_ensured=false, but list still runs and can PASS.
+	var sawList bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case r.URL.Path == "/ready" || r.URL.Path == "/readyz":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		case r.URL.Path == "/v1/kv/config" && r.Method == http.MethodPost:
+			w.WriteHeader(500)
+		case r.URL.Path == "/v1/kv/config" && r.Method == http.MethodGet:
+			sawList = true
+			_ = json.NewEncoder(w).Encode(map[string]any{"keys": []string{"k1", "k2"}})
+		default:
+			if strings.Contains(r.URL.Path, "catalog") {
+				_ = json.NewEncoder(w).Encode(map[string]any{"products": []any{}})
+				return
+			}
+			if r.URL.Path == "/v1/streams" {
+				_ = json.NewEncoder(w).Encode([]any{})
+				return
+			}
+			if r.URL.Path == "/v1/context/query" {
+				_ = json.NewEncoder(w).Encode(map[string]string{"text": "ctx"})
+				return
+			}
+			if r.URL.Path == "/v1/streams/dept/publish" {
+				w.WriteHeader(204)
+				return
+			}
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, EmitDeptStreams: true}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{
+		SkipMemory: true, KVBucket: "config", KVEnsure: true, Strict: true,
+	})
+	if !rep.OK {
+		// list succeeded; ensure soft-fail must not fail report even under strict
+		t.Fatalf("ensure soft-fail should not fail report: %s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if !sawList {
+		t.Fatal("list should still run after ensure soft-fail")
+	}
+	if rep.KVEnsured {
+		t.Fatal("KVEnsured want false on create error")
+	}
+	if rep.KVKeyCount != 2 {
+		t.Fatalf("KVKeyCount=%d", rep.KVKeyCount)
+	}
+	kv, ok := dogfoodStep(rep, "kv")
+	if !ok || kv.Status != StepPass {
+		t.Fatalf("kv: ok=%v status=%s detail=%s", ok, kv.Status, kv.Detail)
+	}
+	if !strings.Contains(kv.Detail, "ensure=soft-fail") {
+		t.Fatalf("detail: %s", kv.Detail)
 	}
 }
