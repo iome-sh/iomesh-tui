@@ -272,8 +272,8 @@ func TestDogfood_FullPass(t *testing.T) {
 	if !strings.Contains(js, `"result": "PASS"`) || !strings.Contains(js, `"ok": true`) {
 		t.Fatal(js)
 	}
-	// Top-level health_ms / ready_ms / context_ms / streams_ms / catalog_ms always present
-	// after those steps (>= 0; often 0 on fast mock).
+	// Top-level health_ms / ready_ms / context_ms / streams_ms / catalog_ms /
+	// emit_ms / policy_ms / duration_ms always present (>= 0; often 0 on fast mock).
 	if rep.HealthMS < 0 {
 		t.Fatalf("HealthMS: %d want >= 0", rep.HealthMS)
 	}
@@ -288,6 +288,15 @@ func TestDogfood_FullPass(t *testing.T) {
 	}
 	if rep.CatalogMS < 0 {
 		t.Fatalf("CatalogMS: %d want >= 0", rep.CatalogMS)
+	}
+	if rep.EmitMS < 0 {
+		t.Fatalf("EmitMS: %d want >= 0", rep.EmitMS)
+	}
+	if rep.PolicyMS < 0 {
+		t.Fatalf("PolicyMS: %d want >= 0", rep.PolicyMS)
+	}
+	if rep.DurationMS < 0 {
+		t.Fatalf("DurationMS: %d want >= 0", rep.DurationMS)
 	}
 	var parsed map[string]any
 	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
@@ -308,6 +317,15 @@ func TestDogfood_FullPass(t *testing.T) {
 	if _, ok := parsed["catalog_ms"].(float64); !ok {
 		t.Fatalf("json catalog_ms missing or wrong type: %v\n%s", parsed["catalog_ms"], js)
 	}
+	if _, ok := parsed["emit_ms"].(float64); !ok {
+		t.Fatalf("json emit_ms missing or wrong type: %v\n%s", parsed["emit_ms"], js)
+	}
+	if _, ok := parsed["policy_ms"].(float64); !ok {
+		t.Fatalf("json policy_ms missing or wrong type: %v\n%s", parsed["policy_ms"], js)
+	}
+	if _, ok := parsed["duration_ms"].(float64); !ok {
+		t.Fatalf("json duration_ms missing or wrong type: %v\n%s", parsed["duration_ms"], js)
+	}
 	if _, ok := parsed["version"]; !ok {
 		t.Fatalf("json version missing\n%s", js)
 	}
@@ -316,6 +334,9 @@ func TestDogfood_FullPass(t *testing.T) {
 	}
 	if !strings.Contains(out, "context_ms:") || !strings.Contains(out, "streams_ms:") || !strings.Contains(out, "catalog_ms:") {
 		t.Fatalf("text report missing context_ms/streams_ms/catalog_ms:\n%s", out)
+	}
+	if !strings.Contains(out, "emit_ms:") || !strings.Contains(out, "policy_ms:") || !strings.Contains(out, "duration_ms:") {
+		t.Fatalf("text report missing emit_ms/policy_ms/duration_ms:\n%s", out)
 	}
 }
 
@@ -586,7 +607,8 @@ func TestDogfood_Disabled(t *testing.T) {
 			t.Fatalf("unexpected memory_ingest step when disabled: %+v", s)
 		}
 	}
-	// health/ready/context/streams/catalog steps absent → top-level latencies always 0.
+	// health/ready/context/streams/catalog/emit/policy steps absent → top-level latencies always 0.
+	// duration_ms still present and >= 0 (wall clock of disabled early return).
 	if rep.HealthMS != 0 {
 		t.Fatalf("disabled HealthMS: %d want 0", rep.HealthMS)
 	}
@@ -601,6 +623,15 @@ func TestDogfood_Disabled(t *testing.T) {
 	}
 	if rep.CatalogMS != 0 {
 		t.Fatalf("disabled CatalogMS: %d want 0", rep.CatalogMS)
+	}
+	if rep.EmitMS != 0 {
+		t.Fatalf("disabled EmitMS: %d want 0", rep.EmitMS)
+	}
+	if rep.PolicyMS != 0 {
+		t.Fatalf("disabled PolicyMS: %d want 0", rep.PolicyMS)
+	}
+	if rep.DurationMS < 0 {
+		t.Fatalf("disabled DurationMS: %d want >= 0", rep.DurationMS)
 	}
 	js := FormatReportJSON(rep)
 	var parsed map[string]any
@@ -622,6 +653,15 @@ func TestDogfood_Disabled(t *testing.T) {
 	if n, ok := parsed["catalog_ms"].(float64); !ok || int(n) != 0 {
 		t.Fatalf("json catalog_ms: %v want 0\n%s", parsed["catalog_ms"], js)
 	}
+	if n, ok := parsed["emit_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json emit_ms: %v want 0\n%s", parsed["emit_ms"], js)
+	}
+	if n, ok := parsed["policy_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json policy_ms: %v want 0\n%s", parsed["policy_ms"], js)
+	}
+	if n, ok := parsed["duration_ms"].(float64); !ok || int(n) < 0 {
+		t.Fatalf("json duration_ms: %v want >= 0\n%s", parsed["duration_ms"], js)
+	}
 	if _, ok := parsed["version"]; !ok {
 		t.Fatalf("json version missing when disabled\n%s", js)
 	}
@@ -631,6 +671,12 @@ func TestDogfood_Disabled(t *testing.T) {
 	}
 	if !strings.Contains(text, "context_ms: 0") || !strings.Contains(text, "streams_ms: 0") || !strings.Contains(text, "catalog_ms: 0") {
 		t.Fatalf("text report missing context_ms/streams_ms/catalog_ms 0:\n%s", text)
+	}
+	if !strings.Contains(text, "emit_ms: 0") || !strings.Contains(text, "policy_ms: 0") {
+		t.Fatalf("text report missing emit_ms/policy_ms 0:\n%s", text)
+	}
+	if !strings.Contains(text, "duration_ms:") {
+		t.Fatalf("text report missing duration_ms:\n%s", text)
 	}
 }
 
@@ -1938,6 +1984,16 @@ func TestStatusLine_ProductVersion(t *testing.T) {
 	}
 	if !strings.Contains(sl, "ua=") {
 		t.Fatalf("StatusLine missing ua=: %s", sl)
+	}
+
+	// Disabled mesh still surfaces product version for slash /mesh.
+	off := New(Config{Enabled: false}, nil)
+	slOff := off.StatusLine()
+	if !strings.Contains(slOff, "mesh: disabled (offline-first)") {
+		t.Fatalf("disabled StatusLine base: %s", slOff)
+	}
+	if !strings.Contains(slOff, "version=1.2.3-status") {
+		t.Fatalf("disabled StatusLine missing version=: %s", slOff)
 	}
 }
 

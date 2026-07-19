@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Dogfood emit/policy/duration latencies** — top-level `emit_ms` / `policy_ms` (step latency ms; always emitted, `0` when skipped/absent) and `duration_ms` (wall-clock Finished−Started ms; always emitted, `>= 0`)
+- **StatusLine version when mesh disabled** — `/mesh` / `StatusLine` appends `version=` when `ProductVersion` is set, including offline-first disabled clients
+
 ## [0.28.0] — 2026-07-19
 
 Minor release: dogfood step latencies and StatusLine version.
