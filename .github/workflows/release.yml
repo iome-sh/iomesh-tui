@@ -40,6 +40,10 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      # Syft generates SPDX SBOMs declared in .goreleaser.yaml (sboms:).
+      - name: Install Syft
+        uses: anchore/sbom-action/download-syft@v0
+
       - name: GoReleaser (snapshot)
         if: github.event_name == 'workflow_dispatch' && inputs.snapshot
         uses: goreleaser/goreleaser-action@v6

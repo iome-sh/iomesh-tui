@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **GoReleaser SPDX SBOM** — per-archive `*.sbom.spdx.json` on `v*` releases (syft); RELEASING notes optional cosign (s285)
+
 ## [0.6.1] — 2026-07-19
 
 Patch release: dept stream emit wire fix for live metering on aion brokers.

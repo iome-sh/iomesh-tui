@@ -58,9 +58,11 @@ GoReleaser ldflags set `main.version` to the tag version on published assets.
 |-------|------|
 | Config | [`.goreleaser.yaml`](.goreleaser.yaml) |
 | Workflow | [`.github/workflows/release.yml`](.github/workflows/release.yml) (on `v*` tags) |
-| Local dry-run | `make release-snapshot` (needs `goreleaser` on PATH) |
+| Local dry-run | `make release-snapshot` (needs `goreleaser` + `syft` on PATH for SBOM) |
 
-Cross-builds: linux/darwin/windows × amd64/arm64 (windows/arm64 ignored). Archives include LICENSE + README + CHANGELOG; `checksums.txt` attached to the GitHub Release.
+Cross-builds: linux/darwin/windows × amd64/arm64 (windows/arm64 ignored). Archives include LICENSE + README + CHANGELOG; `checksums.txt` + per-archive **SPDX SBOM** (`*.sbom.spdx.json`) attach to the GitHub Release.
+
+**Signing (optional):** Cosign / keyless signing is not enabled by default (no required secrets on free-plan CI). When operators need signed artifacts, add `cosign` steps + `COSIGN_*` / OIDC permissions in a follow-up.
 
 ## Versioning policy
 
