@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-07-19
+
+Minor release: SPDX SBOM assets on GoReleaser multi-platform releases.
+
 ### Added
 
 - **GoReleaser SPDX SBOM** — per-archive `*.sbom.spdx.json` on `v*` releases (syft); RELEASING notes optional cosign (s285)
@@ -136,7 +140,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.7.0
 [0.6.1]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.6.1
 [0.6.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.6.0
 [0.5.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.5.0
