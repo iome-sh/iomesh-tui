@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.29.0] — 2026-07-19
+
+Minor release: dogfood emit/policy/duration latencies and disabled StatusLine version.
+
 ### Added
 
 - **Dogfood emit/policy/duration latencies** — top-level `emit_ms` / `policy_ms` (step latency ms; always emitted, `0` when skipped/absent) and `duration_ms` (wall-clock Finished−Started ms; always emitted, `>= 0`)
