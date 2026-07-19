@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.10.0] — 2026-07-19
+
+Minor release: dogfood/StatusLine user_agent evidence.
+
 ### Added
 
 - **Dogfood / StatusLine `user_agent` evidence** — `DogfoodReport.user_agent` + text/JSON report fields and `StatusLine` `ua=` token surface package mesh HTTP User-Agent for operator/CI evidence after s289 UA ship (s290)
@@ -164,7 +168,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.10.0
 [0.9.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.9.0
 [0.8.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.8.0
 [0.7.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.7.0
