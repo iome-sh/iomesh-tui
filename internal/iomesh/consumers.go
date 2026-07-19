@@ -183,6 +183,79 @@ func decodeConsumerFetch(raw []byte, defaultStream string) ([]StreamMessage, err
 	return out, nil
 }
 
+// ConsumerAck acknowledges message sequences via
+// POST /v1/streams/{stream}/consumers/{name}/ack body {"seqs":[...]}.
+// Stream and name path segments are url.PathEscape'd.
+// Empty stream/name/seqs → error. Non-2xx → explicit error.
+// On 2xx, optionally decodes ack_floor from the response body (0 if absent/empty).
+// Mesh disabled → "mesh disabled". Mutating — CLI gates with ack --yes.
+func (c *Client) ConsumerAck(ctx context.Context, stream, name string, seqs ...uint64) (ackFloor uint64, err error) {
+	return c.consumerAckNack(ctx, stream, name, "ack", seqs)
+}
+
+// ConsumerNack negatively-acknowledges message sequences via
+// POST /v1/streams/{stream}/consumers/{name}/nack body {"seqs":[...]}.
+// Stream and name path segments are url.PathEscape'd.
+// Empty stream/name/seqs → error. Non-2xx → explicit error.
+// On 2xx, optionally decodes ack_floor from the response body (0 if absent/empty).
+// Mesh disabled → "mesh disabled". Mutating — CLI gates with nack --yes.
+func (c *Client) ConsumerNack(ctx context.Context, stream, name string, seqs ...uint64) (ackFloor uint64, err error) {
+	return c.consumerAckNack(ctx, stream, name, "nack", seqs)
+}
+
+func (c *Client) consumerAckNack(ctx context.Context, stream, name, op string, seqs []uint64) (uint64, error) {
+	if c == nil || !c.Enabled() {
+		return 0, fmt.Errorf("mesh disabled")
+	}
+	stream = strings.TrimSpace(stream)
+	name = strings.TrimSpace(name)
+	if stream == "" || name == "" {
+		return 0, fmt.Errorf("iomesh consumer: stream and name required")
+	}
+	if len(seqs) == 0 {
+		return 0, fmt.Errorf("iomesh consumer: seqs required")
+	}
+	reqBody := struct {
+		Seqs []uint64 `json:"seqs"`
+	}{Seqs: seqs}
+	body, err := json.Marshal(reqBody)
+	if err != nil {
+		return 0, err
+	}
+	u := strings.TrimRight(c.cfg.Endpoint, "/") + "/v1/streams/" + url.PathEscape(stream) +
+		"/consumers/" + url.PathEscape(name) + "/" + op
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, bytes.NewReader(body))
+	if err != nil {
+		return 0, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	c.auth(req)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return 0, err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return 0, fmt.Errorf("iomesh consumer: http %d", resp.StatusCode)
+	}
+	raw = bytes.TrimSpace(raw)
+	if len(raw) == 0 {
+		return 0, nil
+	}
+	var out struct {
+		AckFloor uint64 `json:"ack_floor"`
+	}
+	if err := json.Unmarshal(raw, &out); err != nil {
+		// 2xx with non-JSON body: treat as success with floor 0.
+		return 0, nil
+	}
+	return out.AckFloor, nil
+}
+
 // FormatConsumerInfo is a multi-line view for one durable consumer (CLI).
 // Pure helper with no network I/O. filter_subject is omitted when empty.
 func FormatConsumerInfo(info ConsumerInfo) string {

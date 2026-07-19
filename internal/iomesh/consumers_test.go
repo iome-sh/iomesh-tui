@@ -212,3 +212,112 @@ func TestConsumerFetch_Validation(t *testing.T) {
 		t.Fatalf("disabled err=%v", err)
 	}
 }
+
+func TestConsumerAck_OKBodyPath(t *testing.T) {
+	var gotMethod, gotPath string
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/streams/EVENTS/consumers/worker-1/ack" {
+			http.NotFound(w, r)
+			return
+		}
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &gotBody)
+		_ = json.NewEncoder(w).Encode(map[string]any{"ack_floor": 9})
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	floor, err := c.ConsumerAck(context.Background(), "EVENTS", "worker-1", 1, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotMethod != http.MethodPost {
+		t.Fatalf("method=%q", gotMethod)
+	}
+	if gotPath != "/v1/streams/EVENTS/consumers/worker-1/ack" {
+		t.Fatalf("path=%q", gotPath)
+	}
+	seqs, ok := gotBody["seqs"].([]any)
+	if !ok || len(seqs) != 2 || seqs[0] != float64(1) || seqs[1] != float64(2) {
+		t.Fatalf("body seqs=%v", gotBody["seqs"])
+	}
+	if floor != 9 {
+		t.Fatalf("ack_floor=%d want 9", floor)
+	}
+}
+
+func TestConsumerNack_Path(t *testing.T) {
+	var gotPath string
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &gotBody)
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	floor, err := c.ConsumerNack(context.Background(), "EVENTS", "worker-1", 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotPath != "/v1/streams/EVENTS/consumers/worker-1/nack" {
+		t.Fatalf("path=%q", gotPath)
+	}
+	seqs, ok := gotBody["seqs"].([]any)
+	if !ok || len(seqs) != 1 || seqs[0] != float64(3) {
+		t.Fatalf("body seqs=%v", gotBody["seqs"])
+	}
+	if floor != 0 {
+		t.Fatalf("empty body floor=%d want 0", floor)
+	}
+}
+
+func TestConsumerAckNack_EmptySeqsAndDisabled(t *testing.T) {
+	c := New(Config{Enabled: true, Endpoint: "http://127.0.0.1:9"}, nil)
+	if _, err := c.ConsumerAck(context.Background(), "S", "c"); err == nil || !strings.Contains(err.Error(), "seqs required") {
+		t.Fatalf("empty seqs ack err=%v", err)
+	}
+	if _, err := c.ConsumerNack(context.Background(), "S", "c"); err == nil || !strings.Contains(err.Error(), "seqs required") {
+		t.Fatalf("empty seqs nack err=%v", err)
+	}
+	if _, err := c.ConsumerAck(context.Background(), "", "c", 1); err == nil || !strings.Contains(err.Error(), "stream and name required") {
+		t.Fatalf("empty stream err=%v", err)
+	}
+	off := New(Config{Enabled: false}, nil)
+	if _, err := off.ConsumerAck(context.Background(), "S", "c", 1); err == nil || !strings.Contains(err.Error(), "mesh disabled") {
+		t.Fatalf("disabled ack err=%v", err)
+	}
+	if _, err := off.ConsumerNack(context.Background(), "S", "c", 1); err == nil || !strings.Contains(err.Error(), "mesh disabled") {
+		t.Fatalf("disabled nack err=%v", err)
+	}
+}
+
+func TestConsumerAck_HTTPErrorAndPathEscape(t *testing.T) {
+	srvErr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(500)
+	}))
+	defer srvErr.Close()
+	cErr := New(Config{Enabled: true, Endpoint: srvErr.URL}, nil)
+	if _, err := cErr.ConsumerAck(context.Background(), "S", "c", 1); err == nil || !strings.Contains(err.Error(), "http 500") {
+		t.Fatalf("http err=%v", err)
+	}
+
+	var gotPath string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.EscapedPath()
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	if _, err := c.ConsumerAck(context.Background(), "a/b", "c/d", 1); err != nil {
+		t.Fatal(err)
+	}
+	if gotPath != "/v1/streams/a%2Fb/consumers/c%2Fd/ack" {
+		t.Fatalf("path=%q want escaped stream+name", gotPath)
+	}
+}

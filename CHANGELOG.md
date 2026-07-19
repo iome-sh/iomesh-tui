@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Mesh consumer ack/nack** — lean `ConsumerAck` / `ConsumerNack` (`POST /v1/streams/{stream}/consumers/{name}/ack|nack`; body `{"seqs":[...]}`; optional `ack_floor` on response) + CLI `iomesh mesh consumer ack|nack --stream S --name C --seq N [--seq N...] --yes`
+
 ## [0.23.0] — 2026-07-19
 
 Minor release: consumer create CLI and soft dogfood pub probe.
