@@ -575,10 +575,10 @@ func FormatReportJSON(r DogfoodReport) string {
 		Latency string `json:"latency,omitempty"`
 	}
 	type out struct {
-		Endpoint       string     `json:"endpoint"`
-		Tenant         string     `json:"tenant,omitempty"`
-		Org            string     `json:"org,omitempty"`
-		Workspace      string     `json:"workspace,omitempty"`
+		Endpoint            string     `json:"endpoint"`
+		Tenant              string     `json:"tenant,omitempty"`
+		Org                 string     `json:"org,omitempty"`
+		Workspace           string     `json:"workspace,omitempty"`
 		DualWrite           bool       `json:"dual_write"` // always emit (CI dual-write mode)
 		CatalogSource       string     `json:"catalog_source,omitempty"`
 		CatalogCount        int        `json:"catalog_count"`         // always emit (CI catalog evidence, s292)
