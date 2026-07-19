@@ -481,7 +481,7 @@ func cmdMesh(args []string) int {
 	case "help", "-h", "--help":
 		fmt.Fprintln(os.Stderr, `iomesh mesh — I/O Mesh platform probes
 
-  iomesh mesh dogfood   stage smoke (health → ready → context → emit → policy → catalog → memory_*)
+  iomesh mesh dogfood   stage smoke (health → ready → context → emit → policy → catalog → streams → memory_*)
   iomesh mesh probe     alias for dogfood
   iomesh mesh usage     local LLM metering rollup for this process (--json for scrapers)
   iomesh mesh catalog   list governed data products (broker + portal federation)
@@ -491,10 +491,11 @@ func cmdMesh(args []string) int {
 
 Flags (dogfood):
   --config path           config.toml
-  --strict                require context + emit + ready (+ policy/catalog/memory when on)
+  --strict                require context + emit + ready (+ policy/catalog/memory/streams when on)
   --skip-context          skip context plane
   --skip-emit             skip dept stream emit
   --skip-memory           skip memory_ingest / memory_recall / memory_retrieve
+  --skip-streams          skip streams list probe (GET /v1/streams)
   --wait-ready dur        soft WaitReady preflight budget (0=off; timeout SKIP unless --strict)
   --wait-interval dur     WaitReady poll interval (default 500ms when --wait-ready set)
   --wait-require-health   WaitReady requires Health OK each attempt
@@ -865,6 +866,7 @@ func cmdMeshDogfood(args []string) int {
 		skipContext       = fs.Bool("skip-context", false, "skip context plane probe")
 		skipEmit          = fs.Bool("skip-emit", false, "skip dept emit probe")
 		skipMemory        = fs.Bool("skip-memory", false, "skip memory_ingest / memory_recall / memory_retrieve probes")
+		skipStreams       = fs.Bool("skip-streams", false, "skip streams list probe (GET /v1/streams)")
 		waitReady         = fs.Duration("wait-ready", 0, "soft WaitReady preflight budget before ready (0=off)")
 		waitInterval      = fs.Duration("wait-interval", 0, "WaitReady poll interval (default 500ms when --wait-ready set)")
 		waitRequireHealth = fs.Bool("wait-require-health", false, "WaitReady requires Health OK each attempt")
@@ -934,6 +936,7 @@ func cmdMeshDogfood(args []string) int {
 		SkipContext:       *skipContext,
 		SkipEmit:          *skipEmit,
 		SkipMemory:        *skipMemory,
+		SkipStreams:       *skipStreams,
 		WaitReady:         *waitReady,
 		WaitReadyInterval: *waitInterval,
 		WaitRequireHealth: *waitRequireHealth,
