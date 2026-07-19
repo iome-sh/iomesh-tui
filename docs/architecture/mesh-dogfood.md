@@ -98,6 +98,8 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `org` | string | Client `[iomesh] org` / `IOMESH_ORG` (PlanGate); omitted when empty |
 | `workspace` | string | Client `[iomesh] workspace` / `IOMESH_WORKSPACE`; omitted when empty. **Not** the context-plane path (`DogfoodOptions.Workspace`) |
 | `dual_write` | bool | Agent `[memory].dual_write` / `IOMESH_MEMORY_DUAL_WRITE` from Client cfg (**always emitted**, default `false`). Report-only — does **not** gate the `memory_ingest` probe |
+| `catalog_source` | string | Last catalog probe source (`mesh` \| `portal` \| `fail-open` \| `off`); omitted when empty (mesh disabled before catalog step) (s292) |
+| `catalog_count` | int | Product count from last `ListCatalog` (**always emitted**, `0` when none/off). Top-level CI evidence — no step-detail scrape (s292) |
 | `memory_endpoint` | string | Optional memory sidecar base (`[memory].endpoint` / `IOMESH_MEMORY_ENDPOINT`); omitted when empty (retrieve uses mesh `endpoint`) |
 | `user_agent` | string | Package mesh HTTP User-Agent (`iomesh-tui/<version>` via `iomesh.UserAgent()`); always set for CI evidence (s290) — not scraped from server |
 | `strict` | bool | `--strict` |
