@@ -62,7 +62,18 @@ GoReleaser ldflags set `main.version` to the tag version on published assets.
 
 Cross-builds: linux/darwin/windows × amd64/arm64 (windows/arm64 ignored). Archives include LICENSE + README + CHANGELOG; `checksums.txt` + per-archive **SPDX SBOM** (`*.sbom.spdx.json`) attach to the GitHub Release.
 
-**Signing (optional):** Cosign / keyless signing is not enabled by default (no required secrets on free-plan CI). When operators need signed artifacts, add `cosign` steps + `COSIGN_*` / OIDC permissions in a follow-up.
+**Signing (keyless cosign):** tag releases sign `checksums.txt` with **cosign sign-blob** via GitHub OIDC / Fulcio (`id-token: write`). No long-lived `COSIGN_*` secrets. Snapshot/workflow_dispatch runs use `--skip=sign`.
+
+Verify:
+
+```bash
+cosign verify-blob \
+  --certificate checksums.txt.pem \
+  --signature checksums.txt.sig \
+  --certificate-identity-regexp 'https://github.com/iome-sh/iomesh-tui/.*' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  checksums.txt
+```
 
 ## Versioning policy
 

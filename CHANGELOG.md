@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Keyless cosign on release checksums** — `checksums.txt.sig` + `.pem` via GitHub OIDC (no long-lived keys); RELEASING verify snippet (s287)
+
 ## [0.7.0] — 2026-07-19
 
 Minor release: SPDX SBOM assets on GoReleaser multi-platform releases.
