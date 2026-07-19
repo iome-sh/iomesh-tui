@@ -19,6 +19,8 @@ concurrency:
 
 permissions:
   contents: write
+  # Keyless cosign (Fulcio) via GitHub OIDC — no long-lived COSIGN_* secrets.
+  id-token: write
 
 env:
   GOTOOLCHAIN: auto
@@ -44,13 +46,18 @@ jobs:
       - name: Install Syft
         uses: anchore/sbom-action/download-syft@v0
 
+      # Cosign keyless sign-blob for checksums (signs: in .goreleaser.yaml).
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
       - name: GoReleaser (snapshot)
         if: github.event_name == 'workflow_dispatch' && inputs.snapshot
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: "~> v2"
-          args: release --snapshot --clean
+          # Snapshot skips signing (no OIDC identity for ad-hoc runs is fine).
+          args: release --snapshot --clean --skip=sign
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

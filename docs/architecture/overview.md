@@ -108,4 +108,5 @@ CLI / TUI / ACP
 27. ~~Release v0.6.0~~ **done** — multi-tenant metering emit packaging
 28. ~~Dept emit publish wire parity (SDK + TUI)~~ **done** — `/v1/streams/dept/publish` + SDK `EmitLLMCall` (s284)
 29. ~~GoReleaser SPDX SBOM on release assets~~ **done** — see [RELEASING.md](../../RELEASING.md) (s285)
-30. Optional: platform remote multi-tenant metering UI; cosign/keyless signing
+30. ~~Keyless cosign on release checksums~~ **done** — see [RELEASING.md](../../RELEASING.md) (s287)
+31. Optional: platform remote multi-tenant metering UI

@@ -49,13 +49,25 @@ checksum:
   name_template: checksums.txt
   algorithm: sha256
 
-# SPDX SBOM per archive (syft via goreleaser; no signing keys required).
-# Cosign/signing remains optional when COSIGN_* secrets are configured.
+# SPDX SBOM per archive (syft via goreleaser).
 sboms:
   - id: archive
     artifacts: archive
     documents:
       - "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}.sbom.spdx.json"
+
+# Keyless cosign signatures on checksums.txt (GitHub OIDC / Fulcio — no long-lived keys).
+# Requires workflow permissions: id-token: write
+signs:
+  - cmd: cosign
+    certificate: "${artifact}.pem"
+    args:
+      - sign-blob
+      - "--yes"
+      - "--output-certificate=${certificate}"
+      - "--output-signature=${signature}"
+      - "${artifact}"
+    artifacts: checksum
 
 changelog:
   # Prefer curated CHANGELOG.md / gh release notes over auto-generated.
@@ -74,6 +86,11 @@ release:
 
     # Or download the archive for your OS/arch from the Assets list below.
     # Each archive has a matching *.sbom.spdx.json supply-chain bill of materials.
+    # checksums.txt is keyless-signed (cosign); verify with:
+    #   cosign verify-blob --certificate checksums.txt.pem --signature checksums.txt.sig \
+    #     --certificate-identity-regexp 'https://github.com/iome-sh/iomesh-tui/.*' \
+    #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+    #     checksums.txt
     ```
 
     See [RELEASING.md](https://github.com/iome-sh/iomesh-tui/blob/main/RELEASING.md) and [CHANGELOG.md](https://github.com/iome-sh/iomesh-tui/blob/main/CHANGELOG.md).
