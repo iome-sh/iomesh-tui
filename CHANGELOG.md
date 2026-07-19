@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.19.0] — 2026-07-19
+
+Minor release: dogfood policy evidence + mesh kv CLI.
+
 ### Added
 
 - **Dogfood policy evidence** — top-level `policy_mode` (always), `policy_source`, and `policy_allow` (when evaluated) on dogfood JSON/text reports for CI without scraping step detail
@@ -243,7 +247,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.18.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.19.0...HEAD
+[0.19.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.19.0
 [0.18.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.18.0
 [0.17.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.17.0
 [0.16.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.16.0
