@@ -1967,3 +1967,251 @@ func TestDogfood_WaitReady_DefaultOff(t *testing.T) {
 		t.Fatalf("text report missing wait_ready_ms 0:\n%s", text)
 	}
 }
+
+func TestDogfood_KV_UnsetSkip(t *testing.T) {
+	// Empty KVBucket → kv SKIP "kv probe unset"; kv_key_count=0; kv_bucket omitted.
+	srv := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+		failRecall bool
+		noRecall   bool
+	}{})
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		EmitDeptStreams: false,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{SkipMemory: true, SkipStreams: true})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if rep.KVBucket != "" {
+		t.Fatalf("KVBucket=%q want empty", rep.KVBucket)
+	}
+	if rep.KVKeyCount != 0 {
+		t.Fatalf("KVKeyCount: %d want 0", rep.KVKeyCount)
+	}
+	kv, ok := dogfoodStep(rep, "kv")
+	if !ok || kv.Status != StepSkip {
+		t.Fatalf("kv step: ok=%v status=%s detail=%s", ok, kv.Status, kv.Detail)
+	}
+	if !strings.Contains(kv.Detail, "kv probe unset") {
+		t.Fatalf("kv detail: %s", kv.Detail)
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if _, has := parsed["kv_bucket"]; has {
+		t.Fatalf("json must omit kv_bucket when unset:\n%s", js)
+	}
+	if n, ok := parsed["kv_key_count"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json kv_key_count: %v want 0\n%s", parsed["kv_key_count"], js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "kv_key_count: 0") {
+		t.Fatalf("text report missing kv_key_count:\n%s", text)
+	}
+	if strings.Contains(text, "kv_bucket:") {
+		t.Fatalf("text report must omit kv_bucket when unset:\n%s", text)
+	}
+}
+
+func TestDogfood_KV_ListKeysPass(t *testing.T) {
+	// KVBucket set → soft list-keys PASS; top-level kv_bucket + kv_key_count.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case r.URL.Path == "/ready" || r.URL.Path == "/readyz":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		case r.URL.Path == "/v1/kv/config" && r.Method == http.MethodGet:
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"keys": []string{"app.json", "app.toml", "flags"},
+			})
+		default:
+			if strings.Contains(r.URL.Path, "catalog") {
+				_ = json.NewEncoder(w).Encode(map[string]any{"products": []any{}})
+				return
+			}
+			if r.URL.Path == "/v1/streams" {
+				_ = json.NewEncoder(w).Encode([]any{})
+				return
+			}
+			if r.URL.Path == "/v1/context/query" {
+				_ = json.NewEncoder(w).Encode(map[string]string{"text": "ctx"})
+				return
+			}
+			if r.URL.Path == "/v1/streams/dept/publish" {
+				w.WriteHeader(204)
+				return
+			}
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		EmitDeptStreams: true,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{
+		SkipMemory: true,
+		KVBucket:   "config",
+	})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if rep.KVBucket != "config" {
+		t.Fatalf("KVBucket=%q want config", rep.KVBucket)
+	}
+	if rep.KVKeyCount != 3 {
+		t.Fatalf("KVKeyCount: %d want 3", rep.KVKeyCount)
+	}
+	kv, ok := dogfoodStep(rep, "kv")
+	if !ok || kv.Status != StepPass {
+		t.Fatalf("kv step: ok=%v status=%s detail=%s", ok, kv.Status, kv.Detail)
+	}
+	if !strings.Contains(kv.Detail, "bucket=config") || !strings.Contains(kv.Detail, "n=3") {
+		t.Fatalf("kv detail: %s", kv.Detail)
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if parsed["kv_bucket"] != "config" {
+		t.Fatalf("json kv_bucket: %v\n%s", parsed["kv_bucket"], js)
+	}
+	if n, ok := parsed["kv_key_count"].(float64); !ok || int(n) != 3 {
+		t.Fatalf("json kv_key_count: %v want 3\n%s", parsed["kv_key_count"], js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "kv_bucket: config") || !strings.Contains(text, "kv_key_count: 3") {
+		t.Fatalf("text report missing kv evidence:\n%s", text)
+	}
+}
+
+func TestDogfood_KV_SoftFail(t *testing.T) {
+	// ListKeys 500 → soft SKIP, kv_key_count=0, kv_bucket still set.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case r.URL.Path == "/ready" || r.URL.Path == "/readyz":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		case strings.HasPrefix(r.URL.Path, "/v1/kv/") && r.Method == http.MethodGet:
+			w.WriteHeader(500)
+		default:
+			if r.URL.Path == "/v1/context/query" {
+				_ = json.NewEncoder(w).Encode(map[string]string{"text": "ctx"})
+				return
+			}
+			if r.URL.Path == "/v1/streams/dept/publish" {
+				w.WriteHeader(204)
+				return
+			}
+			if strings.Contains(r.URL.Path, "catalog") {
+				_ = json.NewEncoder(w).Encode(map[string]any{"products": []any{}})
+				return
+			}
+			if r.URL.Path == "/v1/streams" {
+				_ = json.NewEncoder(w).Encode([]any{})
+				return
+			}
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		EmitDeptStreams: true,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{
+		SkipMemory: true,
+		KVBucket:   "config",
+		Strict:     false,
+	})
+	if !rep.OK {
+		t.Fatalf("soft fail should not fail report: %s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if rep.KVBucket != "config" {
+		t.Fatalf("KVBucket=%q", rep.KVBucket)
+	}
+	if rep.KVKeyCount != 0 {
+		t.Fatalf("KVKeyCount: %d want 0", rep.KVKeyCount)
+	}
+	kv, ok := dogfoodStep(rep, "kv")
+	if !ok || kv.Status != StepSkip {
+		t.Fatalf("kv soft-fail: ok=%v status=%s detail=%s", ok, kv.Status, kv.Detail)
+	}
+	if !strings.Contains(kv.Detail, "kv soft-fail") {
+		t.Fatalf("kv detail: %s", kv.Detail)
+	}
+}
+
+func TestDogfood_KV_StrictFail(t *testing.T) {
+	// ListKeys 500 + Strict → FAIL report.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case r.URL.Path == "/ready" || r.URL.Path == "/readyz":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		case strings.HasPrefix(r.URL.Path, "/v1/kv/") && r.Method == http.MethodGet:
+			w.WriteHeader(500)
+		default:
+			if r.URL.Path == "/v1/context/query" {
+				_ = json.NewEncoder(w).Encode(map[string]string{"text": "ctx"})
+				return
+			}
+			if r.URL.Path == "/v1/streams/dept/publish" {
+				w.WriteHeader(204)
+				return
+			}
+			if strings.Contains(r.URL.Path, "catalog") {
+				_ = json.NewEncoder(w).Encode(map[string]any{"products": []any{}})
+				return
+			}
+			if r.URL.Path == "/v1/streams" {
+				_ = json.NewEncoder(w).Encode([]any{})
+				return
+			}
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "stage",
+		EmitDeptStreams: true,
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{
+		SkipMemory: true,
+		KVBucket:   "config",
+		Strict:     true,
+	})
+	if rep.OK {
+		t.Fatal("expected FAIL report under --strict")
+	}
+	kv, ok := dogfoodStep(rep, "kv")
+	if !ok || kv.Status != StepFail {
+		t.Fatalf("kv strict: ok=%v status=%s detail=%s", ok, kv.Status, kv.Detail)
+	}
+	if rep.KVKeyCount != 0 {
+		t.Fatalf("KVKeyCount: %d want 0", rep.KVKeyCount)
+	}
+}

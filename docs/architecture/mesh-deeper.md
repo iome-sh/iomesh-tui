@@ -143,14 +143,16 @@ iomesh mesh streams --delete --name TEMP --yes
 
 Mesh disabled / empty endpoint → error `mesh disabled` (non-zero CLI exit). Dogfood probes list only (`streams` step + `streams_count` / `streams_names`); delete and message list are CLI-only. Message list does not enable broker replay flags and is not auto-probed by dogfood.
 
-## KV read (operator list/get)
+## KV (operator list/get/put/delete)
 
-Lean read-focused KV surface (no SDK dependency; wire parity with SDK `KVEntry` / `Get` / `ListKeys`):
+Lean KV surface (no SDK dependency; wire parity with SDK `KVEntry` / `Get` / `ListKeys` / `Put` / `Delete`):
 
 | Method | HTTP | Notes |
 |--------|------|-------|
 | `KVListKeys(bucket, prefix)` | `GET /v1/kv/{bucket}?prefix=` | Path-escaped bucket; optional `prefix` query; accepts `{"keys":[...]}` or bare array; **explicit errors** |
 | `KVGet(bucket, key)` | `GET /v1/kv/{bucket}/{key}` | Path-escaped bucket/key; empty args / non-2xx → error; JSON `value` base64-decoded into `[]byte` |
+| `KVPut(bucket, key, value)` | `PUT /v1/kv/{bucket}/{key}` | Body `{"value": base64}`; returns revision `uint64`; empty args / non-2xx → error |
+| `KVDelete(bucket, key)` | `DELETE /v1/kv/{bucket}/{key}` | 2xx/204 success; empty args / non-2xx → error |
 
 ```bash
 iomesh mesh kv --bucket config --list
@@ -158,9 +160,13 @@ iomesh mesh kv --bucket config --list --prefix app
 iomesh mesh kv --bucket config --get app.json
 iomesh mesh kv --bucket config --list --json
 iomesh mesh kv --bucket config --get app.json --json
+# Mutating — requires --yes:
+iomesh mesh kv --bucket config --put app.json --value '{"ok":true}' --yes
+iomesh mesh kv --bucket config --put app.json --value-file ./app.json --yes
+iomesh mesh kv --bucket config --delete tmp.key --yes
 ```
 
-`--bucket` required; `--list` or `--get` required (not both). Mesh disabled → error `mesh disabled` (non-zero CLI exit). Not auto-probed by dogfood (CLI discovery only).
+`--bucket` required; exactly one of `--list` / `--get` / `--put` / `--delete`. `--put` requires `--value` or `--value-file` and `--yes`. `--delete` requires `--yes`. Mesh disabled → error `mesh disabled` (non-zero CLI exit). Dogfood soft-probes list-keys only when `--kv-bucket` / `DogfoodOptions.KVBucket` is set (put/delete are CLI-only).
 
 ## Packages
 
@@ -170,5 +176,5 @@ iomesh mesh kv --bucket config --get app.json --json
 - `internal/iomesh/catalog.go` — ListCatalog / FormatCatalog / CatalogSnippet
 - `internal/iomesh/streams.go` — ListStreams / GetStream / DeleteStream / FormatStreams
 - `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages
-- `internal/iomesh/kv.go` — KVGet / KVListKeys / FormatKVEntry / FormatKVKeys
+- `internal/iomesh/kv.go` — KVGet / KVListKeys / KVPut / KVDelete / FormatKVEntry / FormatKVKeys
 - `internal/agent` — policy before tool execute; mesh catalog tools; `EventMeshPolicy`

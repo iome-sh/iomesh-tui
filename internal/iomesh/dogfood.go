@@ -62,6 +62,12 @@ type DogfoodReport struct {
 	// StreamsNames is a short sample of stream names from last ListStreams (max 8).
 	// Always emit JSON array (empty when skip/error).
 	StreamsNames []string `json:"streams_names"`
+	// KVBucket is the bucket used for the soft kv list-keys probe (DogfoodOptions.KVBucket).
+	// Omitted from JSON when empty (probe unset / step skipped without a bucket).
+	KVBucket string `json:"kv_bucket,omitempty"`
+	// KVKeyCount is len of KVListKeys from last kv probe (0 on skip/error/unset).
+	// Always emitted in JSON so CI sees kv evidence without scraping step detail.
+	KVKeyCount int `json:"kv_key_count"`
 	// WaitReadyMS is the configured WaitReady budget in milliseconds (0 = off / no preflight).
 	// Always emitted in JSON so CI sees soft preflight budget without scraping step detail.
 	// Outcome lives on the wait_ready step (PASS/SKIP/FAIL); not a second boolean.
@@ -106,6 +112,9 @@ type DogfoodOptions struct {
 	SkipMemory bool
 	// SkipStreams skips the streams list probe (default false — run when mesh enabled).
 	SkipStreams bool
+	// KVBucket, when non-empty, runs a soft non-destructive KVListKeys probe on that bucket.
+	// Empty (default) → kv step SKIP "kv probe unset" (no network). Put/Delete are CLI-only.
+	KVBucket string
 	// WaitReady, when >0, polls WaitReady with that max budget (effective deadline is
 	// min of this budget and any parent ctx deadline) before the single-shot ready step.
 	// Soft: timeout → SKIP wait_ready unless Strict (then FAIL). Zero (default) = no wait preflight.
@@ -117,9 +126,10 @@ type DogfoodOptions struct {
 }
 
 // Dogfood runs a stage-oriented mesh smoke:
-// health → [wait_ready] → ready → context → emit → llm_meter → policy → catalog → streams → memory_*.
+// health → [wait_ready] → ready → context → emit → llm_meter → policy → catalog → streams → [kv] → memory_*.
 // Optional wait_ready soft-preflight when DogfoodOptions.WaitReady > 0.
 // Soft streams list probe after catalog when mesh enabled.
+// Soft kv list-keys probe when DogfoodOptions.KVBucket is set (non-destructive).
 // Disabled client returns a single SKIP step and OK=true (offline-first).
 func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport {
 	rep := DogfoodReport{
@@ -444,6 +454,27 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		}))
 	}
 
+	// 6c) Soft KV list-keys probe (non-destructive — only when KVBucket set)
+	kvBucket := strings.TrimSpace(opts.KVBucket)
+	if kvBucket == "" {
+		rep.KVKeyCount = 0
+		rep.Steps = append(rep.Steps, Step{Name: "kv", Status: StepSkip, Detail: "kv probe unset"})
+	} else {
+		rep.KVBucket = kvBucket
+		rep.Steps = append(rep.Steps, c.stepTimed("kv", func() (StepStatus, string) {
+			keys, err := c.KVListKeys(ctx, kvBucket, "")
+			if err != nil {
+				rep.KVKeyCount = 0
+				if opts.Strict {
+					return StepFail, err.Error()
+				}
+				return StepSkip, "kv soft-fail: " + err.Error()
+			}
+			rep.KVKeyCount = len(keys)
+			return StepPass, fmt.Sprintf("bucket=%s n=%d", kvBucket, len(keys))
+		}))
+	}
+
 	// 7) MEMORY_INGEST dual-write (Phase 2 path via PublishMemoryIngest)
 	// 8) MEMORY_RPC async recall request (same session_id for temporal correlation — s247)
 	// 9) Sync HTTP retrieve POST /v1/memory/retrieve (Phase 3 — request/response hits — s249)
@@ -706,6 +737,8 @@ func FormatReportJSON(r DogfoodReport) string {
 		ContextLineageCount int        `json:"context_lineage_count"` // always emit
 		StreamsCount        int        `json:"streams_count"`         // always emit (CI streams list evidence)
 		StreamsNames        []string   `json:"streams_names"`         // always emit array (CI name sample)
+		KVBucket            string     `json:"kv_bucket,omitempty"`   // set when soft kv probe configured
+		KVKeyCount          int        `json:"kv_key_count"`          // always emit (CI kv list evidence)
 		WaitReadyMS         int        `json:"wait_ready_ms"`         // always emit (CI wait preflight budget)
 		PolicyMode          string     `json:"policy_mode"`           // always emit (off|advisory|enforce)
 		PolicySource        string     `json:"policy_source,omitempty"`
@@ -740,6 +773,8 @@ func FormatReportJSON(r DogfoodReport) string {
 		ContextLineageCount: r.ContextLineageCount,
 		StreamsCount:        r.StreamsCount,
 		StreamsNames:        names,
+		KVBucket:            r.KVBucket,
+		KVKeyCount:          r.KVKeyCount,
 		WaitReadyMS:         r.WaitReadyMS,
 		PolicyMode:          policyMode,
 		PolicySource:        r.PolicySource,
@@ -803,6 +838,10 @@ func FormatReport(r DogfoodReport) string {
 	} else {
 		fmt.Fprintf(&b, "  streams_names: (none)\n")
 	}
+	if r.KVBucket != "" {
+		fmt.Fprintf(&b, "  kv_bucket: %s\n", r.KVBucket)
+	}
+	fmt.Fprintf(&b, "  kv_key_count: %d\n", r.KVKeyCount)
 	fmt.Fprintf(&b, "  wait_ready_ms: %d\n", r.WaitReadyMS)
 	policyMode := r.PolicyMode
 	if policyMode == "" {

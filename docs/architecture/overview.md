@@ -121,4 +121,5 @@ CLI / TUI / ACP
 40. ~~Lean stream message list + `mesh streams --messages`~~ **done** — `ListStreamMessages` + CLI message inspection; see [mesh-deeper.md](mesh-deeper.md)
 41. ~~Dogfood policy evidence~~ **done** — report `policy_mode` / `policy_source` / `policy_allow`; see [mesh-dogfood.md](mesh-dogfood.md)
 42. ~~Lean mesh KV read + `mesh kv` CLI~~ **done** — `KVGet` / `KVListKeys` + `iomesh mesh kv`; see [mesh-deeper.md](mesh-deeper.md)
-43. Optional: platform remote multi-tenant metering UI
+43. ~~Gated mesh KV put/delete + soft dogfood kv probe~~ **done** — `KVPut` / `KVDelete` + `--yes` CLI gates + `--kv-bucket` list-keys evidence; see [mesh-deeper.md](mesh-deeper.md) / [mesh-dogfood.md](mesh-dogfood.md)
+44. Optional: platform remote multi-tenant metering UI

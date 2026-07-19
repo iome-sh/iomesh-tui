@@ -170,6 +170,188 @@ func TestKV_DisabledClient(t *testing.T) {
 	if _, err := c.KVListKeys(context.Background(), "b", ""); err == nil || !strings.Contains(err.Error(), "mesh disabled") {
 		t.Fatalf("KVListKeys err=%v", err)
 	}
+	if _, err := c.KVPut(context.Background(), "b", "k", []byte("v")); err == nil || !strings.Contains(err.Error(), "mesh disabled") {
+		t.Fatalf("KVPut err=%v", err)
+	}
+	if err := c.KVDelete(context.Background(), "b", "k"); err == nil || !strings.Contains(err.Error(), "mesh disabled") {
+		t.Fatalf("KVDelete err=%v", err)
+	}
+}
+
+func TestKVPut_OKAndUserAgent(t *testing.T) {
+	prev := UserAgent()
+	SetUserAgent("iomesh-tui/test-kv-put")
+	t.Cleanup(func() { SetUserAgent(prev) })
+
+	payload := []byte(`{"hello":"put"}`)
+	var gotMethod, gotPath, gotUA, gotCT string
+	var gotBody map[string]string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		gotUA = r.Header.Get("User-Agent")
+		gotCT = r.Header.Get("Content-Type")
+		if r.Method != http.MethodPut || r.URL.Path != "/v1/kv/config/app.json" {
+			http.NotFound(w, r)
+			return
+		}
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"bucket": "config", "key": "app.json", "revision": 42,
+		})
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "acme"}, nil)
+	rev, err := c.KVPut(context.Background(), "config", "app.json", payload)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rev != 42 {
+		t.Fatalf("revision=%d want 42", rev)
+	}
+	if gotMethod != http.MethodPut {
+		t.Fatalf("method=%q", gotMethod)
+	}
+	if gotPath != "/v1/kv/config/app.json" {
+		t.Fatalf("path=%q", gotPath)
+	}
+	if gotUA != "iomesh-tui/test-kv-put" {
+		t.Fatalf("User-Agent=%q", gotUA)
+	}
+	if !strings.Contains(gotCT, "application/json") {
+		t.Fatalf("Content-Type=%q", gotCT)
+	}
+	wantB64 := base64.StdEncoding.EncodeToString(payload)
+	if gotBody["value"] != wantB64 {
+		t.Fatalf("body value=%q want %q", gotBody["value"], wantB64)
+	}
+}
+
+func TestKVPut_EmptyArgs(t *testing.T) {
+	c := New(Config{Enabled: true, Endpoint: "http://127.0.0.1:9"}, nil)
+	if _, err := c.KVPut(context.Background(), "", "k", []byte("v")); err == nil || !strings.Contains(err.Error(), "bucket required") {
+		t.Fatalf("bucket err=%v", err)
+	}
+	if _, err := c.KVPut(context.Background(), "b", "  ", []byte("v")); err == nil || !strings.Contains(err.Error(), "key required") {
+		t.Fatalf("key err=%v", err)
+	}
+}
+
+func TestKVPut_HTTPError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	rev, err := c.KVPut(context.Background(), "b", "k", []byte("v"))
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if rev != 0 {
+		t.Fatalf("rev=%d want 0 on error", rev)
+	}
+	if !strings.Contains(err.Error(), "http 403") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestKVPut_PathEscape(t *testing.T) {
+	var gotEscaped string
+	var gotBody map[string]string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotEscaped = r.URL.EscapedPath()
+		if gotEscaped == "" {
+			gotEscaped = r.URL.Path
+		}
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_ = json.NewEncoder(w).Encode(map[string]any{"revision": 3})
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	rev, err := c.KVPut(context.Background(), "my bucket", "a/b", []byte("x"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rev != 3 {
+		t.Fatalf("revision=%d", rev)
+	}
+	if gotEscaped != "/v1/kv/my%20bucket/a%2Fb" {
+		t.Fatalf("escaped path=%q want /v1/kv/my%%20bucket/a%%2Fb", gotEscaped)
+	}
+}
+
+func TestKVDelete_204(t *testing.T) {
+	var gotMethod, gotPath string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		if r.Method != http.MethodDelete || r.URL.Path != "/v1/kv/config/tmp" {
+			http.NotFound(w, r)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	if err := c.KVDelete(context.Background(), "config", "tmp"); err != nil {
+		t.Fatal(err)
+	}
+	if gotMethod != http.MethodDelete {
+		t.Fatalf("method=%q", gotMethod)
+	}
+	if gotPath != "/v1/kv/config/tmp" {
+		t.Fatalf("path=%q", gotPath)
+	}
+}
+
+func TestKVDelete_EmptyArgs(t *testing.T) {
+	c := New(Config{Enabled: true, Endpoint: "http://127.0.0.1:9"}, nil)
+	if err := c.KVDelete(context.Background(), "", "k"); err == nil || !strings.Contains(err.Error(), "bucket required") {
+		t.Fatalf("bucket err=%v", err)
+	}
+	if err := c.KVDelete(context.Background(), "b", "  "); err == nil || !strings.Contains(err.Error(), "key required") {
+		t.Fatalf("key err=%v", err)
+	}
+}
+
+func TestKVDelete_404(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	err := c.KVDelete(context.Background(), "b", "missing")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "http 404") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestKVDelete_PathEscape(t *testing.T) {
+	var gotEscaped string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotEscaped = r.URL.EscapedPath()
+		if gotEscaped == "" {
+			gotEscaped = r.URL.Path
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	if err := c.KVDelete(context.Background(), "my bucket", "a/b"); err != nil {
+		t.Fatal(err)
+	}
+	if gotEscaped != "/v1/kv/my%20bucket/a%2Fb" {
+		t.Fatalf("escaped path=%q want /v1/kv/my%%20bucket/a%%2Fb", gotEscaped)
+	}
 }
 
 func TestKVListKeys_EmptyBucket(t *testing.T) {
