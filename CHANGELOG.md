@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.16.0] — 2026-07-19
+
+Minor release: dogfood streams list evidence.
+
 ### Added
 
 - **Dogfood streams list evidence** — soft `streams` step (`ListStreams` / `GET /v1/streams`) after catalog; top-level `streams_count` always emitted in JSON/text; CLI `--skip-streams` (s300)
@@ -213,7 +217,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.15.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.16.0...HEAD
+[0.16.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.16.0
 [0.15.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.15.0
 [0.14.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.14.0
 [0.13.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.13.0
