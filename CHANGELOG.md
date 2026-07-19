@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-07-19
+
+Minor release: mesh HTTP User-Agent + local release-snapshot skip-sign.
+
 ### Added
 
 - **Mesh HTTP User-Agent** — `iomesh-tui/<version>` on outbound mesh requests (`iomesh.SetUserAgent`); Health/Ready use same auth path (s288)
@@ -156,7 +160,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.9.0
 [0.8.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.8.0
 [0.7.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.7.0
 [0.6.1]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.6.1
