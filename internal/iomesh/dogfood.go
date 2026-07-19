@@ -76,6 +76,13 @@ type DogfoodReport struct {
 	PubProbed bool `json:"pub_probed"`
 	// PubOK is true when the soft pub probe succeeded. Always emitted (false when unset/skip/fail).
 	PubOK bool `json:"pub_ok"`
+	// ConsumerStream is the configured probe stream when both stream+name were provided
+	// (set even if create fails). Omitted from JSON when empty (probe unset / partial).
+	ConsumerStream string `json:"consumer_stream,omitempty"`
+	// ConsumerName is the configured probe consumer name when both stream+name were provided.
+	ConsumerName string `json:"consumer_name,omitempty"`
+	// ConsumerFilter is the optional filter_subject when set with stream+name.
+	ConsumerFilter string `json:"consumer_filter,omitempty"`
 	// ConsumerProbed is true when both ConsumerStream and ConsumerName were set and a create attempt ran.
 	// Always emitted in JSON (false when unset / partial / mesh disabled before step).
 	ConsumerProbed bool `json:"consumer_probed"`
@@ -529,6 +536,10 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		rep.ConsumerFetchOK = false
 		rep.Steps = append(rep.Steps, Step{Name: "consumer", Status: StepSkip, Detail: "consumer probe needs stream and name"})
 	} else {
+		// Identity evidence when both stream+name provided (even if create later fails).
+		rep.ConsumerStream = consumerStream
+		rep.ConsumerName = consumerName
+		rep.ConsumerFilter = consumerFilter
 		rep.Steps = append(rep.Steps, c.stepTimed("consumer", func() (StepStatus, string) {
 			rep.ConsumerProbed = true
 			_, err := c.CreateConsumer(ctx, consumerStream, consumerName, consumerFilter)
@@ -853,21 +864,24 @@ func FormatReportJSON(r DogfoodReport) string {
 		Workspace           string     `json:"workspace,omitempty"`
 		DualWrite           bool       `json:"dual_write"` // always emit (CI dual-write mode)
 		CatalogSource       string     `json:"catalog_source,omitempty"`
-		CatalogCount        int        `json:"catalog_count"`         // always emit (CI catalog evidence)
-		ContextChars        int        `json:"context_chars"`         // always emit (CI context evidence)
-		ContextLineageCount int        `json:"context_lineage_count"` // always emit
-		StreamsCount        int        `json:"streams_count"`         // always emit (CI streams list evidence)
-		StreamsNames        []string   `json:"streams_names"`         // always emit array (CI name sample)
-		KVBucket            string     `json:"kv_bucket,omitempty"`   // set when soft kv probe configured
-		KVKeyCount          int        `json:"kv_key_count"`          // always emit (CI kv list evidence)
-		KVEnsured           bool       `json:"kv_ensured"`            // always emit (true only if ensure create succeeded)
-		PubProbed           bool       `json:"pub_probed"`            // always emit (true if pub subject set + attempt)
-		PubOK               bool       `json:"pub_ok"`                // always emit (true only if soft pub succeeded)
-		ConsumerProbed      bool       `json:"consumer_probed"`       // always emit (true if stream+name set + create attempt)
-		ConsumerOK          bool       `json:"consumer_ok"`           // always emit (true if create 201/409)
-		ConsumerFetchOK     bool       `json:"consumer_fetch_ok"`     // always emit (true if optional fetch ok)
-		WaitReadyMS         int        `json:"wait_ready_ms"`         // always emit (CI wait preflight budget)
-		PolicyMode          string     `json:"policy_mode"`           // always emit (off|advisory|enforce)
+		CatalogCount        int        `json:"catalog_count"`             // always emit (CI catalog evidence)
+		ContextChars        int        `json:"context_chars"`             // always emit (CI context evidence)
+		ContextLineageCount int        `json:"context_lineage_count"`     // always emit
+		StreamsCount        int        `json:"streams_count"`             // always emit (CI streams list evidence)
+		StreamsNames        []string   `json:"streams_names"`             // always emit array (CI name sample)
+		KVBucket            string     `json:"kv_bucket,omitempty"`       // set when soft kv probe configured
+		KVKeyCount          int        `json:"kv_key_count"`              // always emit (CI kv list evidence)
+		KVEnsured           bool       `json:"kv_ensured"`                // always emit (true only if ensure create succeeded)
+		PubProbed           bool       `json:"pub_probed"`                // always emit (true if pub subject set + attempt)
+		PubOK               bool       `json:"pub_ok"`                    // always emit (true only if soft pub succeeded)
+		ConsumerStream      string     `json:"consumer_stream,omitempty"` // set when both stream+name provided
+		ConsumerName        string     `json:"consumer_name,omitempty"`
+		ConsumerFilter      string     `json:"consumer_filter,omitempty"`
+		ConsumerProbed      bool       `json:"consumer_probed"`   // always emit (true if stream+name set + create attempt)
+		ConsumerOK          bool       `json:"consumer_ok"`       // always emit (true if create 201/409)
+		ConsumerFetchOK     bool       `json:"consumer_fetch_ok"` // always emit (true if optional fetch ok)
+		WaitReadyMS         int        `json:"wait_ready_ms"`     // always emit (CI wait preflight budget)
+		PolicyMode          string     `json:"policy_mode"`       // always emit (off|advisory|enforce)
 		PolicySource        string     `json:"policy_source,omitempty"`
 		PolicyAllow         *bool      `json:"policy_allow,omitempty"` // set when policy evaluated
 		MemoryEndpoint      string     `json:"memory_endpoint,omitempty"`
@@ -905,6 +919,9 @@ func FormatReportJSON(r DogfoodReport) string {
 		KVEnsured:           r.KVEnsured,
 		PubProbed:           r.PubProbed,
 		PubOK:               r.PubOK,
+		ConsumerStream:      r.ConsumerStream,
+		ConsumerName:        r.ConsumerName,
+		ConsumerFilter:      r.ConsumerFilter,
 		ConsumerProbed:      r.ConsumerProbed,
 		ConsumerOK:          r.ConsumerOK,
 		ConsumerFetchOK:     r.ConsumerFetchOK,
@@ -978,6 +995,15 @@ func FormatReport(r DogfoodReport) string {
 	fmt.Fprintf(&b, "  kv_ensured: %v\n", r.KVEnsured)
 	fmt.Fprintf(&b, "  pub_probed: %v\n", r.PubProbed)
 	fmt.Fprintf(&b, "  pub_ok: %v\n", r.PubOK)
+	if r.ConsumerStream != "" {
+		fmt.Fprintf(&b, "  consumer_stream: %s\n", r.ConsumerStream)
+	}
+	if r.ConsumerName != "" {
+		fmt.Fprintf(&b, "  consumer_name: %s\n", r.ConsumerName)
+	}
+	if r.ConsumerFilter != "" {
+		fmt.Fprintf(&b, "  consumer_filter: %s\n", r.ConsumerFilter)
+	}
 	fmt.Fprintf(&b, "  consumer_probed: %v\n", r.ConsumerProbed)
 	fmt.Fprintf(&b, "  consumer_ok: %v\n", r.ConsumerOK)
 	fmt.Fprintf(&b, "  consumer_fetch_ok: %v\n", r.ConsumerFetchOK)

@@ -2702,6 +2702,10 @@ func TestDogfood_Consumer_UnsetSkip(t *testing.T) {
 		t.Fatalf("ConsumerProbed=%v ConsumerOK=%v ConsumerFetchOK=%v want all false",
 			rep.ConsumerProbed, rep.ConsumerOK, rep.ConsumerFetchOK)
 	}
+	if rep.ConsumerStream != "" || rep.ConsumerName != "" || rep.ConsumerFilter != "" {
+		t.Fatalf("identity unset: stream=%q name=%q filter=%q",
+			rep.ConsumerStream, rep.ConsumerName, rep.ConsumerFilter)
+	}
 	step, ok := dogfoodStep(rep, "consumer")
 	if !ok || step.Status != StepSkip {
 		t.Fatalf("consumer step: ok=%v status=%s detail=%s", ok, step.Status, step.Detail)
@@ -2709,7 +2713,7 @@ func TestDogfood_Consumer_UnsetSkip(t *testing.T) {
 	if !strings.Contains(step.Detail, "consumer probe unset") {
 		t.Fatalf("consumer detail: %s", step.Detail)
 	}
-	// Partial args → needs stream and name
+	// Partial args → needs stream and name; no identity fields
 	rep2 := c.Dogfood(context.Background(), DogfoodOptions{
 		SkipMemory: true, SkipStreams: true,
 		ConsumerStream: "EVENTS",
@@ -2724,6 +2728,9 @@ func TestDogfood_Consumer_UnsetSkip(t *testing.T) {
 	if rep2.ConsumerProbed || rep2.ConsumerOK {
 		t.Fatalf("partial probed=%v ok=%v", rep2.ConsumerProbed, rep2.ConsumerOK)
 	}
+	if rep2.ConsumerStream != "" || rep2.ConsumerName != "" {
+		t.Fatalf("partial should not set identity: stream=%q name=%q", rep2.ConsumerStream, rep2.ConsumerName)
+	}
 
 	js := FormatReportJSON(rep)
 	var parsed map[string]any
@@ -2735,11 +2742,19 @@ func TestDogfood_Consumer_UnsetSkip(t *testing.T) {
 			t.Fatalf("json %s: %v want false\n%s", key, parsed[key], js)
 		}
 	}
+	for _, key := range []string{"consumer_stream", "consumer_name", "consumer_filter"} {
+		if _, ok := parsed[key]; ok {
+			t.Fatalf("json %s should be omitted when unset\n%s", key, js)
+		}
+	}
 	text := FormatReport(rep)
 	if !strings.Contains(text, "consumer_probed: false") ||
 		!strings.Contains(text, "consumer_ok: false") ||
 		!strings.Contains(text, "consumer_fetch_ok: false") {
 		t.Fatalf("text report missing consumer fields:\n%s", text)
+	}
+	if strings.Contains(text, "consumer_stream:") || strings.Contains(text, "consumer_name:") {
+		t.Fatalf("text should omit identity when unset:\n%s", text)
 	}
 }
 
@@ -2810,6 +2825,9 @@ func TestDogfood_Consumer_Create201OK(t *testing.T) {
 	if !rep.ConsumerProbed || !rep.ConsumerOK || rep.ConsumerFetchOK {
 		t.Fatalf("probed=%v ok=%v fetch_ok=%v", rep.ConsumerProbed, rep.ConsumerOK, rep.ConsumerFetchOK)
 	}
+	if rep.ConsumerStream != "EVENTS" || rep.ConsumerName != "worker-1" || rep.ConsumerFilter != "dept.events.>" {
+		t.Fatalf("identity stream=%q name=%q filter=%q", rep.ConsumerStream, rep.ConsumerName, rep.ConsumerFilter)
+	}
 	step, ok := dogfoodStep(rep, "consumer")
 	if !ok || step.Status != StepPass {
 		t.Fatalf("consumer: ok=%v status=%s detail=%s", ok, step.Status, step.Detail)
@@ -2831,9 +2849,19 @@ func TestDogfood_Consumer_Create201OK(t *testing.T) {
 	if v, ok := parsed["consumer_fetch_ok"].(bool); !ok || v {
 		t.Fatalf("json consumer_fetch_ok: %v want false\n%s", parsed["consumer_fetch_ok"], js)
 	}
+	if parsed["consumer_stream"] != "EVENTS" || parsed["consumer_name"] != "worker-1" ||
+		parsed["consumer_filter"] != "dept.events.>" {
+		t.Fatalf("json identity: stream=%v name=%v filter=%v\n%s",
+			parsed["consumer_stream"], parsed["consumer_name"], parsed["consumer_filter"], js)
+	}
 	text := FormatReport(rep)
 	if !strings.Contains(text, "consumer_probed: true") || !strings.Contains(text, "consumer_ok: true") {
 		t.Fatalf("text:\n%s", text)
+	}
+	if !strings.Contains(text, "consumer_stream: EVENTS") ||
+		!strings.Contains(text, "consumer_name: worker-1") ||
+		!strings.Contains(text, "consumer_filter: dept.events.>") {
+		t.Fatalf("text missing identity:\n%s", text)
 	}
 }
 
@@ -2935,12 +2963,27 @@ func TestDogfood_Consumer_CreateSoftFail(t *testing.T) {
 	if !rep.ConsumerProbed || rep.ConsumerOK || rep.ConsumerFetchOK {
 		t.Fatalf("probed=%v ok=%v fetch_ok=%v", rep.ConsumerProbed, rep.ConsumerOK, rep.ConsumerFetchOK)
 	}
+	// Identity set when stream+name provided even if create fails.
+	if rep.ConsumerStream != "EVENTS" || rep.ConsumerName != "worker-1" {
+		t.Fatalf("identity on soft-fail: stream=%q name=%q", rep.ConsumerStream, rep.ConsumerName)
+	}
 	step, ok := dogfoodStep(rep, "consumer")
 	if !ok || step.Status != StepSkip {
 		t.Fatalf("consumer: ok=%v status=%s detail=%s", ok, step.Status, step.Detail)
 	}
 	if !strings.Contains(step.Detail, "consumer soft-fail") {
 		t.Fatalf("detail: %s", step.Detail)
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if parsed["consumer_stream"] != "EVENTS" || parsed["consumer_name"] != "worker-1" {
+		t.Fatalf("json identity on soft-fail: %v %v\n%s", parsed["consumer_stream"], parsed["consumer_name"], js)
+	}
+	if _, ok := parsed["consumer_filter"]; ok {
+		t.Fatalf("json consumer_filter should be omitted when empty\n%s", js)
 	}
 }
 

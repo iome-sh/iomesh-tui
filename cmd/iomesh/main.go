@@ -677,29 +677,45 @@ func cmdMeshStatus(args []string) int {
 		CatalogPlane:    cfg.IOMesh.CatalogPlane,
 	}, logger)
 
+	policyMode := strings.ToLower(strings.TrimSpace(cfg.IOMesh.PolicyMode))
+	if policyMode == "" {
+		policyMode = "off"
+	}
 	type statusOut struct {
-		Enabled    bool   `json:"enabled"`
-		Endpoint   string `json:"endpoint,omitempty"`
-		Tenant     string `json:"tenant,omitempty"`
-		Org        string `json:"org,omitempty"`
-		Workspace  string `json:"workspace,omitempty"`
-		UserAgent  string `json:"user_agent"`
-		StatusLine string `json:"status_line"`
-		Health     string `json:"health"` // ok|err|skipped
-		HealthErr  string `json:"health_err,omitempty"`
-		Ready      string `json:"ready"` // ok|err|skipped
-		ReadyErr   string `json:"ready_err,omitempty"`
+		Enabled        bool   `json:"enabled"`
+		Endpoint       string `json:"endpoint,omitempty"`
+		Tenant         string `json:"tenant,omitempty"`
+		Org            string `json:"org,omitempty"`
+		Workspace      string `json:"workspace,omitempty"`
+		Version        string `json:"version"` // binary version (main.version)
+		PolicyMode     string `json:"policy_mode"`
+		ContextPlane   bool   `json:"context_plane"`
+		CatalogPlane   bool   `json:"catalog_plane"`
+		IncludeLineage bool   `json:"include_lineage"`
+		EmitDept       bool   `json:"emit_dept"`
+		UserAgent      string `json:"user_agent"`
+		StatusLine     string `json:"status_line"`
+		Health         string `json:"health"` // ok|err|skipped
+		HealthErr      string `json:"health_err,omitempty"`
+		Ready          string `json:"ready"` // ok|err|skipped
+		ReadyErr       string `json:"ready_err,omitempty"`
 	}
 	out := statusOut{
-		Enabled:    mesh.Enabled(),
-		Endpoint:   cfg.IOMesh.Endpoint,
-		Tenant:     cfg.IOMesh.Tenant,
-		Org:        strings.TrimSpace(cfg.IOMesh.Org),
-		Workspace:  strings.TrimSpace(cfg.IOMesh.Workspace),
-		UserAgent:  iomesh.UserAgent(),
-		StatusLine: mesh.StatusLine(),
-		Health:     "skipped",
-		Ready:      "skipped",
+		Enabled:        mesh.Enabled(),
+		Endpoint:       cfg.IOMesh.Endpoint,
+		Tenant:         cfg.IOMesh.Tenant,
+		Org:            strings.TrimSpace(cfg.IOMesh.Org),
+		Workspace:      strings.TrimSpace(cfg.IOMesh.Workspace),
+		Version:        version,
+		PolicyMode:     policyMode,
+		ContextPlane:   cfg.IOMesh.ContextPlane,
+		CatalogPlane:   cfg.IOMesh.CatalogPlane,
+		IncludeLineage: cfg.IOMesh.IncludeLineage,
+		EmitDept:       cfg.IOMesh.EmitDeptStreams,
+		UserAgent:      iomesh.UserAgent(),
+		StatusLine:     mesh.StatusLine(),
+		Health:         "skipped",
+		Ready:          "skipped",
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -735,6 +751,7 @@ func cmdMeshStatus(args []string) int {
 
 	fmt.Println("iomesh mesh status")
 	fmt.Printf("  status_line: %s\n", out.StatusLine)
+	fmt.Printf("  version:     %s\n", out.Version)
 	fmt.Printf("  endpoint:    %s\n", out.Endpoint)
 	if out.Tenant != "" {
 		fmt.Printf("  tenant:      %s\n", out.Tenant)
@@ -745,6 +762,11 @@ func cmdMeshStatus(args []string) int {
 	if out.Workspace != "" {
 		fmt.Printf("  workspace:   %s\n", out.Workspace)
 	}
+	fmt.Printf("  policy_mode: %s\n", out.PolicyMode)
+	fmt.Printf("  context_plane: %v\n", out.ContextPlane)
+	fmt.Printf("  catalog_plane: %v\n", out.CatalogPlane)
+	fmt.Printf("  include_lineage: %v\n", out.IncludeLineage)
+	fmt.Printf("  emit_dept:   %v\n", out.EmitDept)
 	fmt.Printf("  user_agent:  %s\n", out.UserAgent)
 	if out.HealthErr != "" {
 		fmt.Printf("  health:      %s (%s)\n", out.Health, out.HealthErr)
