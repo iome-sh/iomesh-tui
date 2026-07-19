@@ -117,26 +117,31 @@ Portal JSON fields (`mesh_layer`, `subject_pattern`, `sample_subjects`, `summary
 | Dogfood **catalog** step | PASS for mesh **or** portal; soft-skip on 404 |
 | Dogfood `--json` | Machine-readable report for stage CI |
 
-## Stream discovery (operator list/get/delete)
+## Stream discovery (operator list/get/delete/messages)
 
-Lean client surface (no SDK dependency; wire parity with [iomesh-client-sdk-go](https://github.com/iome-sh/iomesh-client-sdk-go) `StreamInfo`):
+Lean client surface (no SDK dependency; wire parity with [iomesh-client-sdk-go](https://github.com/iome-sh/iomesh-client-sdk-go) `StreamInfo` / message list intent):
 
 | Method | HTTP | Notes |
 |--------|------|-------|
 | `ListStreams` | `GET /v1/streams` | Accepts JSON array or `{"streams":[...]}`; **explicit errors** (not fail-open empty) |
 | `GetStream(name)` | `GET /v1/streams/{name}` | Path-escaped name; empty name / 404 → error |
 | `DeleteStream(name)` | `DELETE /v1/streams/{name}` | Path-escaped name; 2xx/204 success; empty name / non-2xx → error |
+| `ListStreamMessages(name, opts)` | `GET /v1/streams/{name}/messages` | Query `from_seq` / `to_seq` / `limit`; path-escaped name; empty name / non-2xx (incl. 403 replay gate) → error; base64 payload decoded |
 
 ```bash
 iomesh mesh streams                  # table of all streams
 iomesh mesh streams --name EVENTS    # multi-line detail
 iomesh mesh streams --json           # JSON array
 iomesh mesh streams --name EVENTS --json
-# DESTRUCTIVE — requires both --name and --yes:
+# Message inspection (requires --name; default --limit 20; not dogfood):
+iomesh mesh streams --messages --name EVENTS
+iomesh mesh streams --messages --name EVENTS --from-seq 1 --to-seq 100 --limit 50
+iomesh mesh streams --messages --name EVENTS --json
+# DESTRUCTIVE — requires both --name and --yes (incompatible with --messages):
 iomesh mesh streams --delete --name TEMP --yes
 ```
 
-Mesh disabled / empty endpoint → error `mesh disabled` (non-zero CLI exit). Dogfood probes list only (`streams` step + `streams_count` / `streams_names`); delete is CLI-only and gated.
+Mesh disabled / empty endpoint → error `mesh disabled` (non-zero CLI exit). Dogfood probes list only (`streams` step + `streams_count` / `streams_names`); delete and message list are CLI-only. Message list does not enable broker replay flags and is not auto-probed by dogfood.
 
 ## Packages
 
@@ -145,4 +150,5 @@ Mesh disabled / empty endpoint → error `mesh disabled` (non-zero CLI exit). Do
 - `internal/iomesh/meter.go` — UsageMeter / FormatUsage
 - `internal/iomesh/catalog.go` — ListCatalog / FormatCatalog / CatalogSnippet
 - `internal/iomesh/streams.go` — ListStreams / GetStream / DeleteStream / FormatStreams
+- `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages
 - `internal/agent` — policy before tool execute; mesh catalog tools; `EventMeshPolicy`
