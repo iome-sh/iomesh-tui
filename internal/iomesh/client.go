@@ -406,7 +406,11 @@ func (c *Client) Tenant() string {
 // StatusLine is a one-line operator summary for TUI /mesh.
 func (c *Client) StatusLine() string {
 	if c == nil || !c.Enabled() {
-		return "mesh: disabled (offline-first)"
+		line := "mesh: disabled (offline-first)"
+		if v := ProductVersion(); v != "" {
+			line += " · version=" + v
+		}
+		return line
 	}
 	parts := []string{"mesh: enabled", "endpoint=" + c.cfg.Endpoint}
 	if c.cfg.Tenant != "" {

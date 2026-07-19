@@ -110,6 +110,15 @@ type DogfoodReport struct {
 	// CatalogMS is catalog step latency in milliseconds (0 when step skipped/absent).
 	// Always emitted in JSON.
 	CatalogMS int `json:"catalog_ms"`
+	// EmitMS is emit step latency in milliseconds (0 when step skipped/absent).
+	// Always emitted in JSON.
+	EmitMS int `json:"emit_ms"`
+	// PolicyMS is policy step latency in milliseconds (0 when step skipped/absent).
+	// Always emitted in JSON.
+	PolicyMS int `json:"policy_ms"`
+	// DurationMS is total wall-clock duration of the dogfood run (Finished−Started) in ms.
+	// Always emitted in JSON (>= 0).
+	DurationMS int `json:"duration_ms"`
 	// PolicyMode is the configured policy mode (off|advisory|enforce). Always emitted (default "off").
 	PolicyMode string `json:"policy_mode"`
 	// PolicySource is last policy probe source (mesh|fail-open|unavailable|off|"").
@@ -240,6 +249,7 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		rep.OK = true
 		rep.Summary = "SKIP (mesh disabled)"
 		rep.Finished = time.Now().UTC()
+		rep.DurationMS = durationMS(rep.Started, rep.Finished)
 		return rep
 	}
 
@@ -342,10 +352,11 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 
 	// 4) Dept emit (generic dogfood event)
 	if opts.SkipEmit || !c.cfg.EmitDeptStreams {
+		// EmitMS stays 0 when skipped.
 		rep.Steps = append(rep.Steps, Step{Name: "emit", Status: StepSkip, Detail: "dept streams disabled or skipped"})
 		rep.Steps = append(rep.Steps, Step{Name: "llm_meter", Status: StepSkip, Detail: "dept streams disabled or skipped"})
 	} else {
-		rep.Steps = append(rep.Steps, c.stepTimed("emit", func() (StepStatus, string) {
+		emitStep := c.stepTimed("emit", func() (StepStatus, string) {
 			err := c.EmitErr(ctx, DeptEvent{
 				Type:      "dept.agent.dogfood",
 				SessionID: sessionID,
@@ -372,7 +383,9 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 				detail = fmt.Sprintf("%s session_id=%s", detail, sessionID)
 			}
 			return StepPass, detail
-		}))
+		})
+		rep.EmitMS = int(emitStep.Latency.Milliseconds())
+		rep.Steps = append(rep.Steps, emitStep)
 
 		// 4b) Remote metering path: dept.agent.llm_call (same shape as RecordLLMCall → platform dashboards)
 		rep.Steps = append(rep.Steps, c.stepTimed("llm_meter", func() (StepStatus, string) {
@@ -448,10 +461,10 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 	if c.cfg.PolicyMode == PolicyOff || c.cfg.PolicyMode == "" {
 		rep.PolicyMode = "off"
 		rep.PolicySource = "off"
-		// PolicyAllow omitted when mode off (no evaluate).
+		// PolicyAllow omitted when mode off (no evaluate). PolicyMS stays 0.
 		rep.Steps = append(rep.Steps, Step{Name: "policy", Status: StepSkip, Detail: "policy mode off"})
 	} else {
-		rep.Steps = append(rep.Steps, c.stepTimed("policy", func() (StepStatus, string) {
+		policyStep := c.stepTimed("policy", func() (StepStatus, string) {
 			dec := c.EvaluatePolicy(ctx, PolicyInput{
 				Action: "dogfood.probe",
 				Tool:   "mesh_dogfood",
@@ -482,7 +495,9 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 				return StepPass, detail
 			}
 			return StepSkip, detail
-		}))
+		})
+		rep.PolicyMS = int(policyStep.Latency.Milliseconds())
+		rep.Steps = append(rep.Steps, policyStep)
 	}
 
 	// 6) Catalog plane
@@ -797,7 +812,17 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		rep.Summary = fmt.Sprintf("FAIL (pass=%d fail=%d skip=%d)", passes, fails, skips)
 	}
 	rep.Finished = time.Now().UTC()
+	rep.DurationMS = durationMS(rep.Started, rep.Finished)
 	return rep
+}
+
+// durationMS returns Finished−Started in milliseconds, clamped to >= 0.
+func durationMS(started, finished time.Time) int {
+	ms := int(finished.Sub(started).Milliseconds())
+	if ms < 0 {
+		return 0
+	}
+	return ms
 }
 
 func (c *Client) stepTimed(name string, fn func() (StepStatus, string)) Step {
@@ -925,6 +950,9 @@ func FormatReportJSON(r DogfoodReport) string {
 		ContextMS           int        `json:"context_ms"`        // always emit (0 when context step skipped/absent)
 		StreamsMS           int        `json:"streams_ms"`        // always emit (0 when streams step skipped/absent)
 		CatalogMS           int        `json:"catalog_ms"`        // always emit (0 when catalog step skipped/absent)
+		EmitMS              int        `json:"emit_ms"`           // always emit (0 when emit step skipped/absent)
+		PolicyMS            int        `json:"policy_ms"`         // always emit (0 when policy step skipped/absent)
+		DurationMS          int        `json:"duration_ms"`       // always emit (wall-clock Finished−Started ms)
 		PolicyMode          string     `json:"policy_mode"`       // always emit (off|advisory|enforce)
 		PolicySource        string     `json:"policy_source,omitempty"`
 		PolicyAllow         *bool      `json:"policy_allow,omitempty"` // set when policy evaluated
@@ -976,6 +1004,9 @@ func FormatReportJSON(r DogfoodReport) string {
 		ContextMS:           r.ContextMS,
 		StreamsMS:           r.StreamsMS,
 		CatalogMS:           r.CatalogMS,
+		EmitMS:              r.EmitMS,
+		PolicyMS:            r.PolicyMS,
+		DurationMS:          r.DurationMS,
 		PolicyMode:          policyMode,
 		PolicySource:        r.PolicySource,
 		PolicyAllow:         r.PolicyAllow,
@@ -1065,6 +1096,9 @@ func FormatReport(r DogfoodReport) string {
 	fmt.Fprintf(&b, "  context_ms: %d\n", r.ContextMS)
 	fmt.Fprintf(&b, "  streams_ms: %d\n", r.StreamsMS)
 	fmt.Fprintf(&b, "  catalog_ms: %d\n", r.CatalogMS)
+	fmt.Fprintf(&b, "  emit_ms: %d\n", r.EmitMS)
+	fmt.Fprintf(&b, "  policy_ms: %d\n", r.PolicyMS)
+	fmt.Fprintf(&b, "  duration_ms: %d\n", r.DurationMS)
 	policyMode := r.PolicyMode
 	if policyMode == "" {
 		policyMode = "off"
