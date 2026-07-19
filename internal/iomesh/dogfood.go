@@ -3,6 +3,7 @@ package iomesh
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -186,7 +187,7 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 				}
 				return StepSkip, "emit soft-fail: " + err.Error()
 			}
-			detail := "POST /v1/streams/dept type=dept.agent.dogfood"
+			detail := "POST /v1/streams/dept/publish type=dept.agent.dogfood"
 			if org := strings.TrimSpace(c.cfg.OrgID); org != "" {
 				detail = fmt.Sprintf("%s org=%s", detail, org)
 			}
@@ -232,7 +233,7 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 				}
 				return StepSkip, "llm_meter soft-fail: " + err.Error()
 			}
-			detail := "POST /v1/streams/dept type=dept.agent.llm_call"
+			detail := "POST /v1/streams/dept/publish type=dept.agent.llm_call"
 			if org := strings.TrimSpace(c.cfg.OrgID); org != "" {
 				detail = fmt.Sprintf("%s org=%s", detail, org)
 			}
@@ -488,8 +489,13 @@ func (c *Client) Ready(ctx context.Context) error {
 	return fmt.Errorf("iomesh ready: http 404")
 }
 
+// streamDept is the broker stream name for operational dept.* events
+// (POST /v1/streams/dept/publish — same wire as iomesh-client-sdk-go Publish).
+const streamDept = "dept"
+
 // EmitErr is like Emit but returns transport/HTTP errors (for dogfood).
 // Sets X-IOMesh-Org / X-IOMesh-Workspace when configured (remote multi-tenant metering).
+// Wire: POST /v1/streams/dept/publish with base64 JSON DeptEvent payload (aion stream API).
 func (c *Client) EmitErr(ctx context.Context, ev DeptEvent) error {
 	if !c.Enabled() || !c.cfg.EmitDeptStreams {
 		return nil
@@ -500,11 +506,23 @@ func (c *Client) EmitErr(ctx context.Context, ev DeptEvent) error {
 	if ev.Tenant == "" {
 		ev.Tenant = c.cfg.Tenant
 	}
-	url := strings.TrimRight(c.cfg.Endpoint, "/") + "/v1/streams/dept"
-	body, err := json.Marshal(ev)
+	if strings.TrimSpace(ev.Type) == "" {
+		return fmt.Errorf("iomesh emit: type required")
+	}
+	raw, err := json.Marshal(ev)
 	if err != nil {
 		return err
 	}
+	subject := strings.TrimSpace(ev.Type)
+	pubBody := map[string]any{
+		"subject": subject,
+		"payload": base64.StdEncoding.EncodeToString(raw),
+	}
+	body, err := json.Marshal(pubBody)
+	if err != nil {
+		return err
+	}
+	url := strings.TrimRight(c.cfg.Endpoint, "/") + "/v1/streams/" + streamDept + "/publish"
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return err

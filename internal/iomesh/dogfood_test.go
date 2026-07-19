@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -46,16 +45,25 @@ func mockMeshServer(t *testing.T, opts struct {
 				return
 			}
 			_ = json.NewEncoder(w).Encode(map[string]string{"text": "stage-context: ops green"})
-		case r.URL.Path == "/v1/streams/dept" && r.Method == http.MethodPost:
+		case r.URL.Path == "/v1/streams/dept/publish" && r.Method == http.MethodPost:
 			emits.Add(1)
 			if opts.failEmit {
 				w.WriteHeader(500)
 				return
 			}
-			b, _ := io.ReadAll(r.Body)
+			var body map[string]any
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			subject, _ := body["subject"].(string)
+			payloadB64, _ := body["payload"].(string)
+			raw, err := base64.StdEncoding.DecodeString(payloadB64)
+			if err != nil || subject == "" {
+				w.WriteHeader(400)
+				return
+			}
 			// Accept generic dogfood emit and llm_meter probe (dept.agent.llm_call).
-			if !strings.Contains(string(b), "dept.agent.dogfood") &&
-				!strings.Contains(string(b), "dept.agent.llm_call") {
+			if !strings.Contains(string(raw), "dept.agent.dogfood") &&
+				!strings.Contains(string(raw), "dept.agent.llm_call") &&
+				!strings.Contains(subject, "dept.agent.") {
 				w.WriteHeader(400)
 				return
 			}
@@ -262,11 +270,15 @@ func TestDogfood_LLMMeterOrgHeaders(t *testing.T) {
 			w.WriteHeader(200)
 		case r.URL.Path == "/v1/context/query":
 			_ = json.NewEncoder(w).Encode(map[string]string{"text": "ctx"})
-		case r.URL.Path == "/v1/streams/dept" && r.Method == http.MethodPost:
+		case r.URL.Path == "/v1/streams/dept/publish" && r.Method == http.MethodPost:
 			gotOrg = r.Header.Get("X-IOMesh-Org")
 			gotWS = r.Header.Get("X-IOMesh-Workspace")
-			b, _ := io.ReadAll(r.Body)
-			llmBodies = append(llmBodies, string(b))
+			var body map[string]any
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			if s, ok := body["payload"].(string); ok {
+				raw, _ := base64.StdEncoding.DecodeString(s)
+				llmBodies = append(llmBodies, string(raw))
+			}
 			w.WriteHeader(204)
 		case strings.Contains(r.URL.Path, "MEMORY") || strings.Contains(r.URL.Path, "memory"):
 			// soft skip memory paths if hit

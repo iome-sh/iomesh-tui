@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Dept emit wire** — `Emit` / `llm_meter` / `RecordLLMCall` use `POST /v1/streams/dept/publish` with base64 JSON payload (aion stream API + SDK parity); previous path lacked `/publish` (s284)
+
 ### Changed
 
 - Docs: Public Go SDK cross-link — operators pointed to [iomesh-client-sdk-go](https://github.com/iome-sh/iomesh-client-sdk-go) (M2 sync retrieve, M3 temporal envelope, `WithWorkspace`); TUI remains lean / no-SDK-dep ([docs/architecture/memory-mcp.md](docs/architecture/memory-mcp.md), [docs/architecture/overview.md](docs/architecture/overview.md))
