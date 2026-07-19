@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.13.0] — 2026-07-19
+
+Minor release: dogfood context evidence + mesh status CLI.
+
 ### Added
 
 - **Dogfood context plane evidence** — `DogfoodReport.context_chars` / `context_lineage_count` top-level JSON + text fields for CI without scraping step detail (s296)
@@ -189,7 +193,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.13.0
 [0.12.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.12.0
 [0.11.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.11.0
 [0.10.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.10.0
