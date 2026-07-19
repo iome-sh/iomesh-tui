@@ -27,6 +27,18 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 
 **Non-goals:** private monorepo imports in public TUI; embedding Qdrant/Palace in-process; dependency on `iomesh-client-sdk-go`.
 
+## Public Go SDK
+
+Operators who need the **full** client surface (beyond this TUI’s lean HTTP/MCP path) should use the public module **[iomesh-client-sdk-go](https://github.com/iome-sh/iomesh-client-sdk-go)**:
+
+| Capability | In the SDK | In iomesh-tui |
+|------------|------------|---------------|
+| **M2** sync retrieve | `RetrieveMemory` / memory helpers | Lean `POST /v1/memory/retrieve` (+ `/v5`) in `internal/iomesh` |
+| **M3** temporal envelope | Full temporal fields on publish | Dual-write mirrors a subset (`event_time`, `session_seq`, …) |
+| Multi-tenant workspace | `WithWorkspace` (and related options) | Optional org/workspace headers when configured |
+
+**iomesh-tui stays lean:** no `github.com/iome-sh/iomesh-client-sdk-go` module dependency. Memory dual-write and sync retrieve mirror SDK wire shapes over plain HTTP so the agent harness remains a thin, zero-SDK client. Prefer the public SDK for custom Go services, stage gate jobs, or anything that should track the full client API.
+
 ## Phase 0–1 — MCP hooks (stdio or HTTP)
 
 ### Preferred: streamable HTTP (platform M1)

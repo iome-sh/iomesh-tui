@@ -21,7 +21,7 @@ Go rewrite of [xAI Grok Build](https://github.com/xai-org/grok-build) with a **m
 | `xai-grok-tools` | `internal/agent` tools | read/list/grep/shell/write |
 | `xai-grok-workspace` | `internal/workspace` | Rooted FS + path jail |
 | config / custom models | `internal/config` + `internal/router` | TOML + cascade |
-| — | `internal/iomesh` | Platform client |
+| — | `internal/iomesh` | Lean platform client (no SDK dep; full client → [iomesh-client-sdk-go](https://github.com/iome-sh/iomesh-client-sdk-go)) |
 | subagents | `internal/subagent` + agent tools | explore/plan/gp + parallel + worktree |
 | MCP / skills | `internal/mcp` + `internal/skills` | stdio MCP + SKILL.md loader |
 
