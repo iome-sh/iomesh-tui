@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.25.0] — 2026-07-19
+
+Minor release: soft dogfood consumer create and fetch probe.
+
 ### Added
 
 - **Dogfood soft consumer probe** — optional `DogfoodOptions.ConsumerStream` + `ConsumerName` / CLI `--consumer-stream` + `--consumer-name` best-effort `CreateConsumer` (201 or idempotent 409); optional `--consumer-filter` and `--consumer-fetch` (batch=1, max_wait 500ms, empty OK, no ack); step SKIP when unset; top-level `consumer_probed` + `consumer_ok` + `consumer_fetch_ok` always emitted
@@ -294,7 +298,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.24.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v0.25.0...HEAD
+[0.25.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.25.0
 [0.24.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.24.0
 [0.23.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.23.0
 [0.22.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.22.0
