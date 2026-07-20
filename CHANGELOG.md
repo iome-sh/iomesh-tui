@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Dogfood kv ensure latency** — top-level `kv_ensure_ms` (`KVCreateBucket` ensure-path latency ms; always emitted, `0` when ensure off / kv probe unset / not attempted). Distinct from `kv_ms` (full step latency).
+
 ## [0.36.0] — 2026-07-20
 
 Minor release: mesh status health/ready probe latencies.
