@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Dogfood kv list latency** — top-level `kv_list_ms` (`KVListKeys` latency ms only; always emitted, `0` when kv probe unset / list not run). Distinct from `kv_ms` (full step) and `kv_ensure_ms` (ensure-create only).
+
 ## [0.37.0] — 2026-07-20
 
 Minor release: dogfood kv ensure-path latency.
