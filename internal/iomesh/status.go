@@ -10,6 +10,7 @@ import (
 // MeshStatusSnapshot is the operator one-shot mesh status payload for
 // `iomesh mesh status` (JSON and text). Probe fields are fail-open: health/ready
 // are "ok", "err", or "skipped"; latencies are always emitted (0 when skipped).
+// Result is always emitted (ok|err|skipped|partial) as the aggregate of health+ready.
 type MeshStatusSnapshot struct {
 	Enabled        bool   `json:"enabled"`
 	Endpoint       string `json:"endpoint,omitempty"`
@@ -35,6 +36,28 @@ type MeshStatusSnapshot struct {
 	// DurationMS is wall-clock for the Health+Ready probe path in milliseconds
 	// (always emitted; >=0; ~0 when mesh disabled / probes skipped).
 	DurationMS int `json:"duration_ms"`
+	// Result aggregates health+ready: ok|err|skipped|partial (always emitted).
+	Result string `json:"result"`
+}
+
+// AggregateProbeResult returns the aggregate mesh status result from health and
+// ready probe statuses (each ok|err|skipped):
+//   - both skipped → skipped
+//   - both ok → ok
+//   - either err → err
+//   - one ok and one skipped → partial
+func AggregateProbeResult(health, ready string) string {
+	if health == "err" || ready == "err" {
+		return "err"
+	}
+	if health == "skipped" && ready == "skipped" {
+		return "skipped"
+	}
+	if health == "ok" && ready == "ok" {
+		return "ok"
+	}
+	// one ok + one skipped (or other non-err mix) → partial
+	return "partial"
 }
 
 // ProbeStatus returns "ok" or "err" and an optional error message for fail-open display.
@@ -55,7 +78,11 @@ func ElapsedMS(d time.Duration) int {
 }
 
 // FormatMeshStatusJSON returns indented JSON for stage CI / operator scrapers.
+// Result is filled from health/ready when empty so scrapers always see result.
 func FormatMeshStatusJSON(s MeshStatusSnapshot) string {
+	if s.Result == "" {
+		s.Result = AggregateProbeResult(s.Health, s.Ready)
+	}
 	b, err := json.MarshalIndent(s, "", "  ")
 	if err != nil {
 		return `{"error":"mesh status json marshal failed"}` + "\n"
@@ -64,7 +91,11 @@ func FormatMeshStatusJSON(s MeshStatusSnapshot) string {
 }
 
 // FormatMeshStatus renders a human-readable operator snapshot.
+// Result is filled from health/ready when empty so operators always see result.
 func FormatMeshStatus(s MeshStatusSnapshot) string {
+	if s.Result == "" {
+		s.Result = AggregateProbeResult(s.Health, s.Ready)
+	}
 	var b strings.Builder
 	b.WriteString("iomesh mesh status\n")
 	fmt.Fprintf(&b, "  status_line: %s\n", s.StatusLine)
@@ -98,5 +129,6 @@ func FormatMeshStatus(s MeshStatusSnapshot) string {
 	}
 	fmt.Fprintf(&b, "  ready_ms:    %d\n", s.ReadyMS)
 	fmt.Fprintf(&b, "  duration_ms: %d\n", s.DurationMS)
+	fmt.Fprintf(&b, "  result:      %s\n", s.Result)
 	return b.String()
 }

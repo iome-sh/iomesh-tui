@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`mesh status` aggregate result** — JSON/text always emit `result` (`ok` \| `err` \| `skipped` \| `partial`) from health+ready probes for operator/CI gating without scraping both fields
+
 ## [0.39.0] — 2026-07-20
 
 Minor release: mesh status wall-clock duration.

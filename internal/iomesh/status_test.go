@@ -31,8 +31,31 @@ func TestElapsedMS(t *testing.T) {
 	}
 }
 
+func TestAggregateProbeResult(t *testing.T) {
+	cases := []struct {
+		health, ready, want string
+	}{
+		{"skipped", "skipped", "skipped"},
+		{"ok", "ok", "ok"},
+		{"err", "err", "err"},
+		{"ok", "err", "err"},
+		{"err", "ok", "err"},
+		{"err", "skipped", "err"},
+		{"skipped", "err", "err"},
+		{"ok", "skipped", "partial"},
+		{"skipped", "ok", "partial"},
+	}
+	for _, tc := range cases {
+		got := AggregateProbeResult(tc.health, tc.ready)
+		if got != tc.want {
+			t.Fatalf("AggregateProbeResult(%q, %q)=%q want %q", tc.health, tc.ready, got, tc.want)
+		}
+	}
+}
+
 func TestFormatMeshStatus_JSONAlwaysEmitsLatencies(t *testing.T) {
-	// Disabled / skipped: health_ms, ready_ms, duration_ms must be present as 0.
+	// Disabled / skipped: health_ms, ready_ms, duration_ms must be present as 0;
+	// result always present as skipped.
 	s := MeshStatusSnapshot{
 		Enabled:    false,
 		Version:    "test",
@@ -44,6 +67,7 @@ func TestFormatMeshStatus_JSONAlwaysEmitsLatencies(t *testing.T) {
 		HealthMS:   0,
 		ReadyMS:    0,
 		DurationMS: 0,
+		// Result intentionally empty — FormatMeshStatusJSON fills from health/ready.
 	}
 	js := FormatMeshStatusJSON(s)
 	var parsed map[string]any
@@ -65,6 +89,9 @@ func TestFormatMeshStatus_JSONAlwaysEmitsLatencies(t *testing.T) {
 	if parsed["health"] != "skipped" || parsed["ready"] != "skipped" {
 		t.Fatalf("health/ready: %v / %v\n%s", parsed["health"], parsed["ready"], js)
 	}
+	if parsed["result"] != "skipped" {
+		t.Fatalf("result: %v want skipped\n%s", parsed["result"], js)
+	}
 }
 
 func TestFormatMeshStatus_JSONProbeLatencies(t *testing.T) {
@@ -81,6 +108,7 @@ func TestFormatMeshStatus_JSONProbeLatencies(t *testing.T) {
 		ReadyErr:   "iomesh ready: http 503",
 		ReadyMS:    34,
 		DurationMS: 50,
+		Result:     "err",
 	}
 	js := FormatMeshStatusJSON(s)
 	var parsed map[string]any
@@ -112,6 +140,48 @@ func TestFormatMeshStatus_JSONProbeLatencies(t *testing.T) {
 	if _, ok := parsed["health_err"]; ok {
 		t.Fatalf("health_err should be omitted when empty: %v", parsed["health_err"])
 	}
+	if parsed["result"] != "err" {
+		t.Fatalf("result: %v want err\n%s", parsed["result"], js)
+	}
+}
+
+func TestFormatMeshStatus_JSONAlwaysEmitsResult(t *testing.T) {
+	// Every health/ready pair must yield a non-empty result in JSON.
+	cases := []struct {
+		health, ready, want string
+	}{
+		{"skipped", "skipped", "skipped"},
+		{"ok", "ok", "ok"},
+		{"err", "ok", "err"},
+		{"ok", "err", "err"},
+		{"ok", "skipped", "partial"},
+		{"skipped", "ok", "partial"},
+		{"err", "skipped", "err"},
+		{"skipped", "err", "err"},
+	}
+	for _, tc := range cases {
+		s := MeshStatusSnapshot{
+			Enabled:    true,
+			Version:    "t",
+			PolicyMode: "off",
+			UserAgent:  "ua",
+			StatusLine: "mesh: enabled",
+			Health:     tc.health,
+			Ready:      tc.ready,
+		}
+		js := FormatMeshStatusJSON(s)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json health=%s ready=%s: %v\n%s", tc.health, tc.ready, err, js)
+		}
+		got, ok := parsed["result"].(string)
+		if !ok || got == "" {
+			t.Fatalf("result missing or empty for health=%s ready=%s: %v\n%s", tc.health, tc.ready, parsed["result"], js)
+		}
+		if got != tc.want {
+			t.Fatalf("result for health=%s ready=%s: %q want %q\n%s", tc.health, tc.ready, got, tc.want, js)
+		}
+	}
 }
 
 func TestFormatMeshStatus_Text(t *testing.T) {
@@ -135,6 +205,7 @@ func TestFormatMeshStatus_Text(t *testing.T) {
 		ReadyErr:       "timeout",
 		ReadyMS:        9,
 		DurationMS:     16,
+		Result:         "err",
 	}
 	out := FormatMeshStatus(s)
 	for _, want := range []string{
@@ -156,6 +227,7 @@ func TestFormatMeshStatus_Text(t *testing.T) {
 		"ready:       err (timeout)",
 		"ready_ms:    9",
 		"duration_ms: 16",
+		"result:      err",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("text missing %q:\n%s", want, out)
@@ -188,5 +260,27 @@ func TestFormatMeshStatus_TextDisabledZeros(t *testing.T) {
 	}
 	if !strings.Contains(out, "duration_ms: 0") {
 		t.Fatalf("missing zero duration_ms:\n%s", out)
+	}
+	if !strings.Contains(out, "result:      skipped") {
+		t.Fatalf("missing result skipped:\n%s", out)
+	}
+}
+
+func TestFormatMeshStatus_TextPartialAndOK(t *testing.T) {
+	okSnap := MeshStatusSnapshot{
+		Enabled: true, Version: "v", PolicyMode: "off", UserAgent: "ua",
+		StatusLine: "mesh: enabled", Health: "ok", Ready: "ok",
+	}
+	out := FormatMeshStatus(okSnap)
+	if !strings.Contains(out, "result:      ok") {
+		t.Fatalf("want result ok:\n%s", out)
+	}
+	partial := MeshStatusSnapshot{
+		Enabled: true, Version: "v", PolicyMode: "off", UserAgent: "ua",
+		StatusLine: "mesh: enabled", Health: "ok", Ready: "skipped",
+	}
+	out = FormatMeshStatus(partial)
+	if !strings.Contains(out, "result:      partial") {
+		t.Fatalf("want result partial:\n%s", out)
 	}
 }

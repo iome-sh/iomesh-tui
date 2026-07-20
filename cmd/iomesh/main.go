@@ -721,6 +721,7 @@ func cmdMeshStatus(args []string) int {
 		out.ReadyMS = iomesh.ElapsedMS(time.Since(t1))
 	}
 	out.DurationMS = iomesh.ElapsedMS(time.Since(probeStart))
+	out.Result = iomesh.AggregateProbeResult(out.Health, out.Ready)
 
 	if *jsonOut {
 		fmt.Print(iomesh.FormatMeshStatusJSON(out))
