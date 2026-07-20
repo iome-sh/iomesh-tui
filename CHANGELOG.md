@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.36.0] — 2026-07-20
+
+Minor release: mesh status health/ready probe latencies.
+
 ### Added
 
 - **`mesh status` Health/Ready latencies** — JSON/text always emit `health_ms` / `ready_ms` (probe wall time ms; `0` when mesh disabled or probes skipped) for operator/CI evidence
+
 
 ## [0.35.0] — 2026-07-20
 
