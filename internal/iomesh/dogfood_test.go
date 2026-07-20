@@ -273,8 +273,8 @@ func TestDogfood_FullPass(t *testing.T) {
 		t.Fatal(js)
 	}
 	// Top-level health_ms / ready_ms / context_ms / streams_ms / catalog_ms /
-	// emit_ms / llm_meter_ms / pub_ms / policy_ms / memory_*_ms / duration_ms
-	// always present (>= 0; often 0 on fast mock).
+	// emit_ms / llm_meter_ms / pub_ms / policy_ms / consumer_ms / kv_ms /
+	// memory_*_ms / duration_ms always present (>= 0; often 0 on fast mock).
 	if rep.HealthMS < 0 {
 		t.Fatalf("HealthMS: %d want >= 0", rep.HealthMS)
 	}
@@ -301,6 +301,12 @@ func TestDogfood_FullPass(t *testing.T) {
 	}
 	if rep.PolicyMS < 0 {
 		t.Fatalf("PolicyMS: %d want >= 0", rep.PolicyMS)
+	}
+	if rep.ConsumerMS < 0 {
+		t.Fatalf("ConsumerMS: %d want >= 0", rep.ConsumerMS)
+	}
+	if rep.KVMS < 0 {
+		t.Fatalf("KVMS: %d want >= 0", rep.KVMS)
 	}
 	if rep.MemoryIngestMS < 0 {
 		t.Fatalf("MemoryIngestMS: %d want >= 0", rep.MemoryIngestMS)
@@ -345,6 +351,12 @@ func TestDogfood_FullPass(t *testing.T) {
 	if _, ok := parsed["policy_ms"].(float64); !ok {
 		t.Fatalf("json policy_ms missing or wrong type: %v\n%s", parsed["policy_ms"], js)
 	}
+	if _, ok := parsed["consumer_ms"].(float64); !ok {
+		t.Fatalf("json consumer_ms missing or wrong type: %v\n%s", parsed["consumer_ms"], js)
+	}
+	if _, ok := parsed["kv_ms"].(float64); !ok {
+		t.Fatalf("json kv_ms missing or wrong type: %v\n%s", parsed["kv_ms"], js)
+	}
 	if _, ok := parsed["memory_ingest_ms"].(float64); !ok {
 		t.Fatalf("json memory_ingest_ms missing or wrong type: %v\n%s", parsed["memory_ingest_ms"], js)
 	}
@@ -371,6 +383,9 @@ func TestDogfood_FullPass(t *testing.T) {
 	}
 	if !strings.Contains(out, "llm_meter_ms:") || !strings.Contains(out, "pub_ms:") {
 		t.Fatalf("text report missing llm_meter_ms/pub_ms:\n%s", out)
+	}
+	if !strings.Contains(out, "consumer_ms:") || !strings.Contains(out, "kv_ms:") {
+		t.Fatalf("text report missing consumer_ms/kv_ms:\n%s", out)
 	}
 	if !strings.Contains(out, "memory_ingest_ms:") || !strings.Contains(out, "memory_recall_ms:") || !strings.Contains(out, "memory_retrieve_ms:") {
 		t.Fatalf("text report missing memory_ingest_ms/memory_recall_ms/memory_retrieve_ms:\n%s", out)
@@ -674,6 +689,12 @@ func TestDogfood_Disabled(t *testing.T) {
 	if rep.PolicyMS != 0 {
 		t.Fatalf("disabled PolicyMS: %d want 0", rep.PolicyMS)
 	}
+	if rep.ConsumerMS != 0 {
+		t.Fatalf("disabled ConsumerMS: %d want 0", rep.ConsumerMS)
+	}
+	if rep.KVMS != 0 {
+		t.Fatalf("disabled KVMS: %d want 0", rep.KVMS)
+	}
 	if rep.MemoryIngestMS != 0 {
 		t.Fatalf("disabled MemoryIngestMS: %d want 0", rep.MemoryIngestMS)
 	}
@@ -718,6 +739,12 @@ func TestDogfood_Disabled(t *testing.T) {
 	if n, ok := parsed["policy_ms"].(float64); !ok || int(n) != 0 {
 		t.Fatalf("json policy_ms: %v want 0\n%s", parsed["policy_ms"], js)
 	}
+	if n, ok := parsed["consumer_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json consumer_ms: %v want 0\n%s", parsed["consumer_ms"], js)
+	}
+	if n, ok := parsed["kv_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json kv_ms: %v want 0\n%s", parsed["kv_ms"], js)
+	}
 	if n, ok := parsed["memory_ingest_ms"].(float64); !ok || int(n) != 0 {
 		t.Fatalf("json memory_ingest_ms: %v want 0\n%s", parsed["memory_ingest_ms"], js)
 	}
@@ -745,6 +772,9 @@ func TestDogfood_Disabled(t *testing.T) {
 	}
 	if !strings.Contains(text, "llm_meter_ms: 0") || !strings.Contains(text, "pub_ms: 0") {
 		t.Fatalf("text report missing llm_meter_ms/pub_ms 0:\n%s", text)
+	}
+	if !strings.Contains(text, "consumer_ms: 0") || !strings.Contains(text, "kv_ms: 0") {
+		t.Fatalf("text report missing consumer_ms/kv_ms 0:\n%s", text)
 	}
 	if !strings.Contains(text, "memory_ingest_ms: 0") || !strings.Contains(text, "memory_recall_ms: 0") || !strings.Contains(text, "memory_retrieve_ms: 0") {
 		t.Fatalf("text report missing memory_*_ms 0:\n%s", text)

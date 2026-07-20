@@ -122,6 +122,12 @@ type DogfoodReport struct {
 	// PolicyMS is policy step latency in milliseconds (0 when step skipped/absent).
 	// Always emitted in JSON.
 	PolicyMS int `json:"policy_ms"`
+	// ConsumerMS is consumer step latency in milliseconds (0 when step skipped/absent).
+	// Always emitted in JSON.
+	ConsumerMS int `json:"consumer_ms"`
+	// KVMS is kv step latency in milliseconds (0 when step skipped/absent).
+	// Always emitted in JSON.
+	KVMS int `json:"kv_ms"`
 	// MemoryIngestMS is memory_ingest step latency in milliseconds (0 when step skipped/absent).
 	// Always emitted in JSON.
 	MemoryIngestMS int `json:"memory_ingest_ms"`
@@ -597,6 +603,7 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 
 	// 6c) Soft consumer create (+ optional fetch) probe — after streams; no ack.
 	// Both ConsumerStream and ConsumerName required; optional filter + fetch.
+	// ConsumerMS stays 0 when probe unset/skipped.
 	consumerStream := strings.TrimSpace(opts.ConsumerStream)
 	consumerName := strings.TrimSpace(opts.ConsumerName)
 	consumerFilter := strings.TrimSpace(opts.ConsumerFilter)
@@ -615,7 +622,7 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		rep.ConsumerStream = consumerStream
 		rep.ConsumerName = consumerName
 		rep.ConsumerFilter = consumerFilter
-		rep.Steps = append(rep.Steps, c.stepTimed("consumer", func() (StepStatus, string) {
+		consumerStep := c.stepTimed("consumer", func() (StepStatus, string) {
 			rep.ConsumerProbed = true
 			_, err := c.CreateConsumer(ctx, consumerStream, consumerName, consumerFilter)
 			if err != nil {
@@ -645,11 +652,14 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 			}
 			rep.ConsumerFetchOK = true
 			return StepPass, fmt.Sprintf("%s fetch=n=%d", detail, len(msgs))
-		}))
+		})
+		rep.ConsumerMS = int(consumerStep.Latency.Milliseconds())
+		rep.Steps = append(rep.Steps, consumerStep)
 	}
 
 	// 6d) Soft KV list-keys probe (non-destructive — only when KVBucket set)
 	// Optional KVEnsure: best-effort KVCreateBucket before list (soft fail-open).
+	// KVMS stays 0 when probe unset/skipped.
 	kvBucket := strings.TrimSpace(opts.KVBucket)
 	if kvBucket == "" {
 		rep.KVKeyCount = 0
@@ -657,7 +667,7 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		rep.Steps = append(rep.Steps, Step{Name: "kv", Status: StepSkip, Detail: "kv probe unset"})
 	} else {
 		rep.KVBucket = kvBucket
-		rep.Steps = append(rep.Steps, c.stepTimed("kv", func() (StepStatus, string) {
+		kvStep := c.stepTimed("kv", func() (StepStatus, string) {
 			ensureNote := "ensure=skip"
 			if opts.KVEnsure {
 				if _, err := c.KVCreateBucket(ctx, kvBucket); err != nil {
@@ -679,7 +689,9 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 			}
 			rep.KVKeyCount = len(keys)
 			return StepPass, fmt.Sprintf("bucket=%s n=%d %s", kvBucket, len(keys), ensureNote)
-		}))
+		})
+		rep.KVMS = int(kvStep.Latency.Milliseconds())
+		rep.Steps = append(rep.Steps, kvStep)
 	}
 
 	// 7) MEMORY_INGEST dual-write (Phase 2 path via PublishMemoryIngest)
@@ -982,6 +994,8 @@ func FormatReportJSON(r DogfoodReport) string {
 		LLMMeterMS          int        `json:"llm_meter_ms"`       // always emit (0 when llm_meter step skipped/absent)
 		PubMS               int        `json:"pub_ms"`             // always emit (0 when pub step skipped/absent)
 		PolicyMS            int        `json:"policy_ms"`          // always emit (0 when policy step skipped/absent)
+		ConsumerMS          int        `json:"consumer_ms"`        // always emit (0 when consumer step skipped/absent)
+		KVMS                int        `json:"kv_ms"`              // always emit (0 when kv step skipped/absent)
 		MemoryIngestMS      int        `json:"memory_ingest_ms"`   // always emit (0 when memory_ingest skipped/absent)
 		MemoryRecallMS      int        `json:"memory_recall_ms"`   // always emit (0 when memory_recall skipped/absent)
 		MemoryRetrieveMS    int        `json:"memory_retrieve_ms"` // always emit (0 when memory_retrieve skipped/absent)
@@ -1041,6 +1055,8 @@ func FormatReportJSON(r DogfoodReport) string {
 		LLMMeterMS:          r.LLMMeterMS,
 		PubMS:               r.PubMS,
 		PolicyMS:            r.PolicyMS,
+		ConsumerMS:          r.ConsumerMS,
+		KVMS:                r.KVMS,
 		MemoryIngestMS:      r.MemoryIngestMS,
 		MemoryRecallMS:      r.MemoryRecallMS,
 		MemoryRetrieveMS:    r.MemoryRetrieveMS,
@@ -1138,6 +1154,8 @@ func FormatReport(r DogfoodReport) string {
 	fmt.Fprintf(&b, "  llm_meter_ms: %d\n", r.LLMMeterMS)
 	fmt.Fprintf(&b, "  pub_ms: %d\n", r.PubMS)
 	fmt.Fprintf(&b, "  policy_ms: %d\n", r.PolicyMS)
+	fmt.Fprintf(&b, "  consumer_ms: %d\n", r.ConsumerMS)
+	fmt.Fprintf(&b, "  kv_ms: %d\n", r.KVMS)
 	fmt.Fprintf(&b, "  memory_ingest_ms: %d\n", r.MemoryIngestMS)
 	fmt.Fprintf(&b, "  memory_recall_ms: %d\n", r.MemoryRecallMS)
 	fmt.Fprintf(&b, "  memory_retrieve_ms: %d\n", r.MemoryRetrieveMS)
