@@ -40,6 +40,42 @@ func TestWaitReady_SucceedsAfterNFailures(t *testing.T) {
 	}
 }
 
+func TestWaitReadyAttempts_SucceedsAttemptsGte1(t *testing.T) {
+	var readyHits atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/ready", "/readyz":
+			n := readyHits.Add(1)
+			if n < 3 {
+				w.WriteHeader(503)
+				return
+			}
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		default:
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	attempts, err := c.WaitReadyAttempts(ctx, WaitReadyOptions{Interval: 10 * time.Millisecond})
+	if err != nil {
+		t.Fatalf("WaitReadyAttempts: %v", err)
+	}
+	if attempts < 1 {
+		t.Fatalf("success attempts: %d want >= 1", attempts)
+	}
+	if int(readyHits.Load()) != attempts {
+		t.Fatalf("attempts %d != ready hits %d", attempts, readyHits.Load())
+	}
+	if attempts < 3 {
+		t.Fatalf("expected >=3 attempts after 2 failures, got %d", attempts)
+	}
+}
+
 func TestWaitReady_TimeoutOnAlwaysFail(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(503)
@@ -78,6 +114,26 @@ func TestWaitReady_DisabledNil(t *testing.T) {
 	c := New(Config{Enabled: false, Endpoint: ""}, nil)
 	if err := c.WaitReady(ctx, WaitReadyOptions{}); err != nil {
 		t.Fatalf("disabled: %v", err)
+	}
+}
+
+func TestWaitReadyAttempts_DisabledNil(t *testing.T) {
+	ctx := context.Background()
+	var nilClient *Client
+	attempts, err := nilClient.WaitReadyAttempts(ctx, WaitReadyOptions{})
+	if err != nil {
+		t.Fatalf("nil client: %v", err)
+	}
+	if attempts != 0 {
+		t.Fatalf("nil client attempts: %d want 0", attempts)
+	}
+	c := New(Config{Enabled: false, Endpoint: ""}, nil)
+	attempts, err = c.WaitReadyAttempts(ctx, WaitReadyOptions{})
+	if err != nil {
+		t.Fatalf("disabled: %v", err)
+	}
+	if attempts != 0 {
+		t.Fatalf("disabled attempts: %d want 0", attempts)
 	}
 }
 
@@ -122,7 +178,7 @@ func TestWaitReady_RequireHealth(t *testing.T) {
 
 func TestFormatMeshWaitResult_Text(t *testing.T) {
 	pass := FormatMeshWaitResult(MeshWaitEvidence{
-		OK: true, ElapsedMS: 42, RequireHealth: false, TimeoutMS: 30000, IntervalMS: 500,
+		OK: true, ElapsedMS: 42, RequireHealth: false, TimeoutMS: 30000, IntervalMS: 500, Attempts: 3,
 	})
 	if !strings.Contains(pass, "PASS mesh wait: ready") {
 		t.Fatalf("pass missing PASS line:\n%s", pass)
@@ -139,13 +195,16 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 	if !strings.Contains(pass, "interval_ms: 500") {
 		t.Fatalf("pass missing interval_ms:\n%s", pass)
 	}
+	if !strings.Contains(pass, "attempts: 3") {
+		t.Fatalf("pass missing attempts:\n%s", pass)
+	}
 	if strings.Contains(pass, "FAIL") {
 		t.Fatalf("pass should not contain FAIL:\n%s", pass)
 	}
 
 	fail := FormatMeshWaitResult(MeshWaitEvidence{
 		OK: false, ElapsedMS: 1500, RequireHealth: true,
-		TimeoutMS: 1500, IntervalMS: 250,
+		TimeoutMS: 1500, IntervalMS: 250, Attempts: 7,
 		Error: "wait ready: context deadline exceeded",
 	})
 	if !strings.Contains(fail, "FAIL mesh wait: wait ready: context deadline exceeded") {
@@ -163,10 +222,13 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 	if !strings.Contains(fail, "interval_ms: 250") {
 		t.Fatalf("fail missing interval_ms:\n%s", fail)
 	}
+	if !strings.Contains(fail, "attempts: 7") {
+		t.Fatalf("fail missing attempts:\n%s", fail)
+	}
 
-	// Negative elapsed/timeout/interval clamp to 0; empty Error gets a default.
+	// Negative elapsed/timeout/interval/attempts clamp to 0; empty Error gets a default.
 	clamped := FormatMeshWaitResult(MeshWaitEvidence{
-		OK: false, ElapsedMS: -1, TimeoutMS: -5, IntervalMS: -10,
+		OK: false, ElapsedMS: -1, TimeoutMS: -5, IntervalMS: -10, Attempts: -3,
 	})
 	if !strings.Contains(clamped, "elapsed_ms: 0") {
 		t.Fatalf("negative elapsed should clamp to 0:\n%s", clamped)
@@ -176,6 +238,9 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 	}
 	if !strings.Contains(clamped, "interval_ms: 0") {
 		t.Fatalf("negative interval should clamp to 0:\n%s", clamped)
+	}
+	if !strings.Contains(clamped, "attempts: 0") {
+		t.Fatalf("negative attempts should clamp to 0:\n%s", clamped)
 	}
 	if !strings.Contains(clamped, "unknown error") {
 		t.Fatalf("empty Error should default:\n%s", clamped)
@@ -188,7 +253,7 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 func TestFormatMeshWaitResultJSON(t *testing.T) {
 	js := FormatMeshWaitResultJSON(MeshWaitEvidence{
 		OK: true, ElapsedMS: 123, RequireHealth: true,
-		TimeoutMS: 30000, IntervalMS: 500,
+		TimeoutMS: 30000, IntervalMS: 500, Attempts: 2,
 		Error: "ignored on success",
 	})
 	var okObj map[string]any
@@ -210,13 +275,16 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 	if n, _ := okObj["interval_ms"].(float64); int(n) != 500 {
 		t.Fatalf("interval_ms: %v want 500\n%s", okObj["interval_ms"], js)
 	}
+	if n, _ := okObj["attempts"].(float64); int(n) != 2 {
+		t.Fatalf("attempts: %v want 2\n%s", okObj["attempts"], js)
+	}
 	if _, has := okObj["error"]; has {
 		t.Fatalf("success JSON should omit error:\n%s", js)
 	}
 
 	jsFail := FormatMeshWaitResultJSON(MeshWaitEvidence{
 		OK: false, ElapsedMS: 456, RequireHealth: false,
-		TimeoutMS: 500, IntervalMS: 100,
+		TimeoutMS: 500, IntervalMS: 100, Attempts: 5,
 		Error: "wait ready: deadline exceeded",
 	})
 	var failObj map[string]any
@@ -238,20 +306,43 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 	if n, _ := failObj["interval_ms"].(float64); int(n) != 100 {
 		t.Fatalf("interval_ms: %v want 100\n%s", failObj["interval_ms"], jsFail)
 	}
+	if n, _ := failObj["attempts"].(float64); int(n) != 5 {
+		t.Fatalf("attempts: %v want 5\n%s", failObj["attempts"], jsFail)
+	}
 	if failObj["error"] != "wait ready: deadline exceeded" {
 		t.Fatalf("error: %v\n%s", failObj["error"], jsFail)
 	}
 
-	// Always-emit shape: ok + elapsed_ms + require_health + timeout_ms + interval_ms on both paths.
+	// Always-emit shape: ok + elapsed_ms + require_health + timeout_ms + interval_ms + attempts on both paths.
 	for _, s := range []string{js, jsFail} {
 		var m map[string]any
 		if err := json.Unmarshal([]byte(s), &m); err != nil {
 			t.Fatalf("unmarshal: %v\n%s", err, s)
 		}
-		for _, key := range []string{"ok", "elapsed_ms", "require_health", "timeout_ms", "interval_ms"} {
+		for _, key := range []string{"ok", "elapsed_ms", "require_health", "timeout_ms", "interval_ms", "attempts"} {
 			if _, ok := m[key]; !ok {
 				t.Fatalf("missing %s:\n%s", key, s)
 			}
 		}
+	}
+
+	// Zero attempts always emit (disabled path).
+	jsZero := FormatMeshWaitResultJSON(MeshWaitEvidence{OK: true, Attempts: 0})
+	var zeroObj map[string]any
+	if err := json.Unmarshal([]byte(jsZero), &zeroObj); err != nil {
+		t.Fatalf("json zero: %v\n%s", err, jsZero)
+	}
+	if n, _ := zeroObj["attempts"].(float64); int(n) != 0 {
+		t.Fatalf("zero attempts: %v want 0\n%s", zeroObj["attempts"], jsZero)
+	}
+
+	// Negative attempts clamp to 0 in JSON.
+	jsNeg := FormatMeshWaitResultJSON(MeshWaitEvidence{OK: true, Attempts: -9})
+	var negObj map[string]any
+	if err := json.Unmarshal([]byte(jsNeg), &negObj); err != nil {
+		t.Fatalf("json neg: %v\n%s", err, jsNeg)
+	}
+	if n, _ := negObj["attempts"].(float64); int(n) != 0 {
+		t.Fatalf("negative attempts clamp: %v want 0\n%s", negObj["attempts"], jsNeg)
 	}
 }
