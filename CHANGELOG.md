@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.47.0] — 2026-07-20
+
+Minor release: mesh wait attempts evidence.
+
 ### Added
 
 - **`mesh wait` attempts evidence** — always emit `attempts` (WaitReady probe attempt cycles) in text and `--json` output so CI scrapers record how many Health/Ready loops ran without re-parsing logs
