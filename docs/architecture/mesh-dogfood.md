@@ -300,6 +300,7 @@ iomesh mesh consumer create --stream S --name C [--filter F] --yes  # durable pu
 iomesh mesh consumer fetch --stream S --name C [--batch N] --yes    # long-poll fetch (default batch 1, 2s)
 iomesh mesh consumer ack  --stream S --name C --seq N [--seq N...] --yes  # ack sequences
 iomesh mesh consumer nack --stream S --name C --seq N [--seq N...] --yes  # nack sequences
+iomesh mesh consumer delete --stream S --name C --yes               # DELETE durable consumer (204/2xx)
 iomesh mesh status [--json]      # operator snapshot (StatusLine + Health/Ready)
 ```
 

@@ -497,7 +497,7 @@ func cmdMesh(args []string) int {
   iomesh mesh streams   list/get/delete/messages broker streams (GET|DELETE /v1/streams; explicit errors)
   iomesh mesh kv        KV list/get/put/delete/create-bucket (GET|PUT|DELETE|POST /v1/kv; mutate ops require --yes)
   iomesh mesh pub       ephemeral fire-and-forget publish (POST /v1/pub; requires --yes)
-  iomesh mesh consumer  durable pull consumer create/fetch/ack/nack (POST .../consumers; requires --yes)
+  iomesh mesh consumer  durable pull consumer create/fetch/ack/nack/delete (.../consumers; requires --yes)
   iomesh mesh wait      poll Ready until OK or timeout (operator preflight)
   iomesh mesh status    operator snapshot (StatusLine + optional Health/Ready)
 
@@ -975,10 +975,11 @@ func cmdMeshStreams(args []string) int {
 	return 0
 }
 
-// cmdMeshConsumer creates a durable pull consumer, fetches, acks, or nacks (lean /v1/streams/{s}/consumers; requires --yes).
+// cmdMeshConsumer creates, fetches, acks, nacks, or deletes a durable pull consumer
+// (lean /v1/streams/{s}/consumers; requires --yes).
 func cmdMeshConsumer(args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: iomesh mesh consumer create|fetch|ack|nack [flags]")
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh consumer create|fetch|ack|nack|delete [flags]")
 		return 2
 	}
 	switch args[0] {
@@ -990,6 +991,8 @@ func cmdMeshConsumer(args []string) int {
 		return cmdMeshConsumerAckNack(args[1:], false)
 	case "nack":
 		return cmdMeshConsumerAckNack(args[1:], true)
+	case "delete":
+		return cmdMeshConsumerDelete(args[1:])
 	case "help", "-h", "--help":
 		fmt.Fprintln(os.Stderr, `iomesh mesh consumer — durable pull consumers
 
@@ -997,16 +1000,18 @@ func cmdMeshConsumer(args []string) int {
   iomesh mesh consumer fetch  --stream S --name C [--batch N] --yes [--json]
   iomesh mesh consumer ack    --stream S --name C --seq N [--seq N...] --yes
   iomesh mesh consumer nack   --stream S --name C --seq N [--seq N...] --yes
+  iomesh mesh consumer delete --stream S --name C --yes [--json]
 
 Create: POST /v1/streams/{stream}/consumers (201 full info; 409 idempotent name-only).
 Fetch:  POST /v1/streams/{stream}/consumers/{name}/fetch (default batch=1, max_wait 2s).
 Ack:    POST .../consumers/{name}/ack body {"seqs":[...]} (prints optional ack_floor).
 Nack:   POST .../consumers/{name}/nack body {"seqs":[...]} (prints optional ack_floor).
+Delete: DELETE .../consumers/{name} (204/2xx success).
 All require --yes (mutating).`)
 		return 0
 	default:
 		fmt.Fprintf(os.Stderr, "unknown mesh consumer subcommand %q\n", args[0])
-		fmt.Fprintln(os.Stderr, "usage: iomesh mesh consumer create|fetch|ack|nack [flags]")
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh consumer create|fetch|ack|nack|delete [flags]")
 		return 2
 	}
 }
@@ -1119,6 +1124,77 @@ func cmdMeshConsumerAckNack(args []string, nack bool) int {
 	}
 	fmt.Printf("PASS mesh consumer %s stream=%s name=%s seqs=%s ack_floor=%d\n",
 		op, streamName, consumerName, strings.Join(seqParts, ","), floor)
+	return 0
+}
+
+func cmdMeshConsumerDelete(args []string) int {
+	fs := flag.NewFlagSet("mesh consumer delete", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	var (
+		configPath = fs.String("config", "", "config.toml path")
+		stream     = fs.String("stream", "", "stream name (required)")
+		name       = fs.String("name", "", "consumer name (required)")
+		yes        = fs.Bool("yes", false, "confirm mutating delete (required)")
+		jsonOut    = fs.Bool("json", false, "print {ok,stream,name} as JSON")
+		verbose    = fs.Bool("v", false, "verbose logs")
+		endpoint   = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
+		tenant     = fs.String("tenant", "", "override tenant")
+	)
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	streamName := strings.TrimSpace(*stream)
+	consumerName := strings.TrimSpace(*name)
+	if streamName == "" || consumerName == "" || !*yes {
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh consumer delete --stream S --name C --yes [--json]")
+		fmt.Fprintln(os.Stderr, "  --stream and --name required; --yes required (mutating)")
+		return 2
+	}
+
+	logger := newLogger(*verbose)
+	cfg, err := loadConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "config: %v\n", err)
+		return 1
+	}
+	if *endpoint != "" {
+		cfg.IOMesh.Endpoint = *endpoint
+		cfg.IOMesh.Enabled = true
+	}
+	if *tenant != "" {
+		cfg.IOMesh.Tenant = *tenant
+	}
+	mesh := iomesh.New(iomesh.Config{
+		Enabled:     cfg.IOMesh.Enabled,
+		Endpoint:    cfg.IOMesh.Endpoint,
+		Tenant:      cfg.IOMesh.Tenant,
+		APIKeyEnv:   cfg.IOMesh.APIKeyEnv,
+		OrgID:       cfg.IOMesh.Org,
+		WorkspaceID: cfg.IOMesh.Workspace,
+	}, logger)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	if err := mesh.DeleteConsumer(ctx, streamName, consumerName); err != nil {
+		fmt.Fprintf(os.Stderr, "FAIL mesh consumer delete: %v\n", err)
+		return 1
+	}
+	if *jsonOut {
+		b, err := json.MarshalIndent(map[string]any{
+			"ok":     true,
+			"stream": streamName,
+			"name":   consumerName,
+		}, "", "  ")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "json: %v\n", err)
+			return 1
+		}
+		fmt.Println(string(b))
+		return 0
+	}
+	fmt.Printf("PASS mesh consumer delete stream=%s name=%s\n", streamName, consumerName)
 	return 0
 }
 
@@ -1831,6 +1907,7 @@ Usage:
   iomesh mesh dogfood            stage I/O Mesh smoke (health/context/emit/pub/memory)
   iomesh mesh pub                ephemeral POST /v1/pub (--subject --payload|--payload-file --yes)
   iomesh mesh consumer create    durable pull consumer create (--stream --name --yes)
+  iomesh mesh consumer delete    durable pull consumer delete (--stream --name --yes)
   iomesh mesh consumer ack|nack  ack/nack sequences (--stream --name --seq --yes)
   iomesh mesh wait               poll mesh Ready until OK (operator preflight)
   iomesh mesh status             operator snapshot (StatusLine + Health/Ready)
