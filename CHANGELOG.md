@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`mesh wait` elapsed evidence** — always emit `elapsed_ms` (WaitReady wall time) on PASS/FAIL; optional `--json` `{"ok":true|false,"elapsed_ms":N[, "error":"..."]}` for CI scrapers
+
 ## [0.41.0] — 2026-07-20
 
 Minor release: mesh status --strict exit mode.

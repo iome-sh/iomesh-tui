@@ -9,11 +9,12 @@ Operator smoke for **I/O Mesh** integration from the public `iomesh-tui` harness
 Operator preflight polls readiness without running the full dogfood suite:
 
 ```bash
-iomesh mesh wait [--timeout 30s] [--interval 500ms] [--require-health]
-# Exit 0 + "PASS mesh wait: ready" when Ready succeeds; non-zero + FAIL on deadline.
+iomesh mesh wait [--timeout 30s] [--interval 500ms] [--require-health] [--json]
+# Exit 0 + "PASS mesh wait: ready" + elapsed_ms when Ready succeeds; non-zero + FAIL + elapsed_ms on deadline.
+# --json: {"ok":true,"elapsed_ms":N} or {"ok":false,"elapsed_ms":N,"error":"..."}
 ```
 
-`Client.WaitReady` retries `GET /ready` (or `/readyz`) until success or context deadline. With `--require-health`, each attempt requires `GET /health` OK first. Disabled/empty endpoint is offline-first (immediate success). Use before stage dogfood or agent attach when the broker is still warming.
+`Client.WaitReady` retries `GET /ready` (or `/readyz`) until success or context deadline. With `--require-health`, each attempt requires `GET /health` OK first. Disabled/empty endpoint is offline-first (immediate success). Wall-clock wait duration is always emitted as `elapsed_ms` (text line or JSON field) on both PASS and FAIL for CI evidence. Use before stage dogfood or agent attach when the broker is still warming.
 
 ### Dogfood WaitReady soft preflight
 
@@ -312,6 +313,7 @@ iomesh mesh consumer fetch --stream S --name C [--batch N] --yes    # long-poll 
 iomesh mesh consumer ack  --stream S --name C --seq N [--seq N...] --yes  # ack sequences
 iomesh mesh consumer nack --stream S --name C --seq N [--seq N...] --yes  # nack sequences
 iomesh mesh consumer delete --stream S --name C --yes               # DELETE durable consumer (204/2xx)
+iomesh mesh wait [--timeout 30s] [--json]  # preflight Ready poll; always emits elapsed_ms
 iomesh mesh status [--json] [--strict]  # operator snapshot; --strict exits 1 on result=err
 ```
 

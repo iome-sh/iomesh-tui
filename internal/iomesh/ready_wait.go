@@ -2,6 +2,7 @@ package iomesh
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -67,4 +68,44 @@ func wrapWaitReadyErr(lastErr, ctxErr error) error {
 		return fmt.Errorf("wait ready: %w", ctxErr)
 	}
 	return fmt.Errorf("wait ready: deadline exceeded")
+}
+
+// FormatMeshWaitResult renders operator preflight wait outcome as text.
+// Always includes elapsed_ms for CI evidence (success and failure).
+func FormatMeshWaitResult(ok bool, elapsedMS int, errMsg string) string {
+	if elapsedMS < 0 {
+		elapsedMS = 0
+	}
+	if ok {
+		return fmt.Sprintf("PASS mesh wait: ready\nelapsed_ms: %d\n", elapsedMS)
+	}
+	if errMsg == "" {
+		errMsg = "unknown error"
+	}
+	return fmt.Sprintf("FAIL mesh wait: %s\nelapsed_ms: %d\n", errMsg, elapsedMS)
+}
+
+// FormatMeshWaitResultJSON renders wait outcome as compact JSON for scrapers.
+// Always emits ok and elapsed_ms; error only when ok is false.
+func FormatMeshWaitResultJSON(ok bool, elapsedMS int, errMsg string) string {
+	if elapsedMS < 0 {
+		elapsedMS = 0
+	}
+	type out struct {
+		OK        bool   `json:"ok"`
+		ElapsedMS int    `json:"elapsed_ms"`
+		Error     string `json:"error,omitempty"`
+	}
+	o := out{OK: ok, ElapsedMS: elapsedMS}
+	if !ok {
+		if errMsg == "" {
+			errMsg = "unknown error"
+		}
+		o.Error = errMsg
+	}
+	b, err := json.Marshal(o)
+	if err != nil {
+		return `{"ok":false,"elapsed_ms":0,"error":"mesh wait json marshal failed"}` + "\n"
+	}
+	return string(b) + "\n"
 }

@@ -2,6 +2,7 @@ package iomesh
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -116,5 +117,81 @@ func TestWaitReady_RequireHealth(t *testing.T) {
 	}
 	if readyHits.Load() < 1 {
 		t.Fatal("expected ready after health ok")
+	}
+}
+
+func TestFormatMeshWaitResult_Text(t *testing.T) {
+	pass := FormatMeshWaitResult(true, 42, "")
+	if !strings.Contains(pass, "PASS mesh wait: ready") {
+		t.Fatalf("pass missing PASS line:\n%s", pass)
+	}
+	if !strings.Contains(pass, "elapsed_ms: 42") {
+		t.Fatalf("pass missing elapsed_ms:\n%s", pass)
+	}
+	if strings.Contains(pass, "FAIL") {
+		t.Fatalf("pass should not contain FAIL:\n%s", pass)
+	}
+
+	fail := FormatMeshWaitResult(false, 1500, "wait ready: context deadline exceeded")
+	if !strings.Contains(fail, "FAIL mesh wait: wait ready: context deadline exceeded") {
+		t.Fatalf("fail missing FAIL line:\n%s", fail)
+	}
+	if !strings.Contains(fail, "elapsed_ms: 1500") {
+		t.Fatalf("fail missing elapsed_ms:\n%s", fail)
+	}
+
+	// Negative elapsed clamps to 0; empty errMsg gets a default.
+	clamped := FormatMeshWaitResult(false, -1, "")
+	if !strings.Contains(clamped, "elapsed_ms: 0") {
+		t.Fatalf("negative elapsed should clamp to 0:\n%s", clamped)
+	}
+	if !strings.Contains(clamped, "unknown error") {
+		t.Fatalf("empty errMsg should default:\n%s", clamped)
+	}
+}
+
+func TestFormatMeshWaitResultJSON(t *testing.T) {
+	js := FormatMeshWaitResultJSON(true, 123, "ignored on success")
+	var okObj map[string]any
+	if err := json.Unmarshal([]byte(js), &okObj); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if okObj["ok"] != true {
+		t.Fatalf("ok: %v want true\n%s", okObj["ok"], js)
+	}
+	if n, _ := okObj["elapsed_ms"].(float64); int(n) != 123 {
+		t.Fatalf("elapsed_ms: %v want 123\n%s", okObj["elapsed_ms"], js)
+	}
+	if _, has := okObj["error"]; has {
+		t.Fatalf("success JSON should omit error:\n%s", js)
+	}
+
+	jsFail := FormatMeshWaitResultJSON(false, 456, "wait ready: deadline exceeded")
+	var failObj map[string]any
+	if err := json.Unmarshal([]byte(jsFail), &failObj); err != nil {
+		t.Fatalf("json fail: %v\n%s", err, jsFail)
+	}
+	if failObj["ok"] != false {
+		t.Fatalf("ok: %v want false\n%s", failObj["ok"], jsFail)
+	}
+	if n, _ := failObj["elapsed_ms"].(float64); int(n) != 456 {
+		t.Fatalf("elapsed_ms: %v want 456\n%s", failObj["elapsed_ms"], jsFail)
+	}
+	if failObj["error"] != "wait ready: deadline exceeded" {
+		t.Fatalf("error: %v\n%s", failObj["error"], jsFail)
+	}
+
+	// Always-emit shape: ok + elapsed_ms present on both paths.
+	for _, s := range []string{js, jsFail} {
+		var m map[string]any
+		if err := json.Unmarshal([]byte(s), &m); err != nil {
+			t.Fatalf("unmarshal: %v\n%s", err, s)
+		}
+		if _, ok := m["ok"]; !ok {
+			t.Fatalf("missing ok:\n%s", s)
+		}
+		if _, ok := m["elapsed_ms"]; !ok {
+			t.Fatalf("missing elapsed_ms:\n%s", s)
+		}
 	}
 }
