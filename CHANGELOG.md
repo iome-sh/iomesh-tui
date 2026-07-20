@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.39.0] — 2026-07-20
+
+Minor release: mesh status wall-clock duration.
+
 ### Added
 
 - **`mesh status` duration** — JSON/text always emit `duration_ms` (wall-clock for the Health+Ready probe path in ms; `0` when mesh disabled or probes skipped) for operator/CI evidence
+
 
 ## [0.38.0] — 2026-07-20
 
