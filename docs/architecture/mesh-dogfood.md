@@ -10,13 +10,13 @@ Operator preflight polls readiness without running the full dogfood suite:
 
 ```bash
 iomesh mesh wait [--timeout 30s] [--interval 500ms] [--require-health] [--json]
-# Exit 0 + "PASS mesh wait: ready" + elapsed_ms + require_health when Ready succeeds;
-# non-zero + FAIL + elapsed_ms + require_health on deadline.
-# --json: {"ok":true,"elapsed_ms":N,"require_health":false|true}
-#      or {"ok":false,"elapsed_ms":N,"require_health":false|true,"error":"..."}
+# Exit 0 + "PASS mesh wait: ready" + elapsed_ms + require_health + timeout_ms + interval_ms when Ready succeeds;
+# non-zero + FAIL + same budget fields on deadline.
+# --json: {"ok":true,"elapsed_ms":N,"require_health":false|true,"timeout_ms":N,"interval_ms":N}
+#      or {"ok":false,"elapsed_ms":N,"require_health":false|true,"timeout_ms":N,"interval_ms":N,"error":"..."}
 ```
 
-`Client.WaitReady` retries `GET /ready` (or `/readyz`) until success or context deadline. With `--require-health`, each attempt requires `GET /health` OK first. Disabled/empty endpoint is offline-first (immediate success). Wall-clock wait duration is always emitted as `elapsed_ms` (text line or JSON field) on both PASS and FAIL for CI evidence. `require_health` is always emitted (boolean matching the flag) so scrapers record the gate without re-parsing argv. Use before stage dogfood or agent attach when the broker is still warming.
+`Client.WaitReady` retries `GET /ready` (or `/readyz`) until success or context deadline. With `--require-health`, each attempt requires `GET /health` OK first. Disabled/empty endpoint is offline-first (immediate success). Wall-clock wait duration is always emitted as `elapsed_ms` (text line or JSON field) on both PASS and FAIL for CI evidence. `require_health` is always emitted (boolean matching the flag). Configured preflight budget knobs are always emitted as `timeout_ms` and `interval_ms` so scrapers record the WaitReady budget and poll interval without re-parsing argv. Use before stage dogfood or agent attach when the broker is still warming.
 
 ### Dogfood WaitReady soft preflight
 

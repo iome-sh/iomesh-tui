@@ -611,7 +611,7 @@ func cmdMeshWait(args []string) int {
 		timeout       = fs.Duration("timeout", 30*time.Second, "max wait duration")
 		interval      = fs.Duration("interval", 500*time.Millisecond, "poll interval")
 		requireHealth = fs.Bool("require-health", false, "require Health OK each attempt before Ready")
-		jsonOut       = fs.Bool("json", false, "print {ok,elapsed_ms,require_health[,error]} as JSON")
+		jsonOut       = fs.Bool("json", false, "print {ok,elapsed_ms,require_health,timeout_ms,interval_ms[,error]} as JSON")
 		verbose       = fs.Bool("v", false, "verbose logs")
 	)
 	if err := fs.Parse(args); err != nil {
@@ -642,22 +642,28 @@ func cmdMeshWait(args []string) int {
 	defer cancel()
 
 	// Wall-clock WaitReady for operator/CI evidence (always emitted as elapsed_ms).
+	// timeout_ms / interval_ms are configured preflight budget evidence (always emit).
 	start := time.Now()
 	waitErr := mesh.WaitReady(ctx, iomesh.WaitReadyOptions{
 		Interval:      *interval,
 		RequireHealth: *requireHealth,
 	})
 	elapsedMS := iomesh.ElapsedMS(time.Since(start))
-	ok := waitErr == nil
-	errMsg := ""
+	ev := iomesh.MeshWaitEvidence{
+		OK:            waitErr == nil,
+		ElapsedMS:     elapsedMS,
+		RequireHealth: *requireHealth,
+		TimeoutMS:     int(timeout.Milliseconds()),
+		IntervalMS:    int(interval.Milliseconds()),
+	}
 	if waitErr != nil {
-		errMsg = waitErr.Error()
+		ev.Error = waitErr.Error()
 	}
 	var out string
 	if *jsonOut {
-		out = iomesh.FormatMeshWaitResultJSON(ok, elapsedMS, errMsg, *requireHealth)
+		out = iomesh.FormatMeshWaitResultJSON(ev)
 	} else {
-		out = iomesh.FormatMeshWaitResult(ok, elapsedMS, errMsg, *requireHealth)
+		out = iomesh.FormatMeshWaitResult(ev)
 	}
 	if ok {
 		fmt.Print(out)
