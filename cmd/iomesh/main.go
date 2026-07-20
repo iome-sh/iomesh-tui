@@ -611,7 +611,7 @@ func cmdMeshWait(args []string) int {
 		timeout       = fs.Duration("timeout", 30*time.Second, "max wait duration")
 		interval      = fs.Duration("interval", 500*time.Millisecond, "poll interval")
 		requireHealth = fs.Bool("require-health", false, "require Health OK each attempt before Ready")
-		jsonOut       = fs.Bool("json", false, "print {ok,elapsed_ms,require_health,timeout_ms,interval_ms[,error]} as JSON")
+		jsonOut       = fs.Bool("json", false, "print {ok,elapsed_ms,require_health,timeout_ms,interval_ms,attempts[,error]} as JSON")
 		verbose       = fs.Bool("v", false, "verbose logs")
 	)
 	if err := fs.Parse(args); err != nil {
@@ -643,8 +643,9 @@ func cmdMeshWait(args []string) int {
 
 	// Wall-clock WaitReady for operator/CI evidence (always emitted as elapsed_ms).
 	// timeout_ms / interval_ms are configured preflight budget evidence (always emit).
+	// attempts is the number of WaitReady probe cycles (always emit).
 	start := time.Now()
-	waitErr := mesh.WaitReady(ctx, iomesh.WaitReadyOptions{
+	attempts, waitErr := mesh.WaitReadyAttempts(ctx, iomesh.WaitReadyOptions{
 		Interval:      *interval,
 		RequireHealth: *requireHealth,
 	})
@@ -655,6 +656,7 @@ func cmdMeshWait(args []string) int {
 		RequireHealth: *requireHealth,
 		TimeoutMS:     int(timeout.Milliseconds()),
 		IntervalMS:    int(interval.Milliseconds()),
+		Attempts:      attempts,
 	}
 	if waitErr != nil {
 		ev.Error = waitErr.Error()

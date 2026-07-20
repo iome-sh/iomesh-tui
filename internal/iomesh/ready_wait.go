@@ -19,8 +19,18 @@ type WaitReadyOptions struct {
 // Respects ctx deadline/cancel. Returns last error if deadline exceeded.
 // Disabled/nil client returns nil (offline-first).
 func (c *Client) WaitReady(ctx context.Context, opts WaitReadyOptions) error {
+	_, err := c.WaitReadyAttempts(ctx, opts)
+	return err
+}
+
+// WaitReadyAttempts is WaitReady plus the number of probe attempt cycles.
+// Each loop iteration that tries Health-if-required + Ready counts as one attempt
+// (incremented at the start of the cycle, before probes).
+// On success attempts is >= 1. On timeout attempts is the count so far (>= 0).
+// Nil/disabled client returns (0, nil).
+func (c *Client) WaitReadyAttempts(ctx context.Context, opts WaitReadyOptions) (attempts int, err error) {
 	if c == nil || !c.Enabled() {
-		return nil
+		return 0, nil
 	}
 	interval := opts.Interval
 	if interval <= 0 {
@@ -29,11 +39,12 @@ func (c *Client) WaitReady(ctx context.Context, opts WaitReadyOptions) error {
 
 	var lastErr error
 	for {
+		attempts++
 		if opts.RequireHealth {
 			if err := c.Health(ctx); err != nil {
 				lastErr = err
 				if err := sleepWait(ctx, interval); err != nil {
-					return wrapWaitReadyErr(lastErr, err)
+					return attempts, wrapWaitReadyErr(lastErr, err)
 				}
 				continue
 			}
@@ -41,11 +52,11 @@ func (c *Client) WaitReady(ctx context.Context, opts WaitReadyOptions) error {
 		if err := c.Ready(ctx); err != nil {
 			lastErr = err
 			if err := sleepWait(ctx, interval); err != nil {
-				return wrapWaitReadyErr(lastErr, err)
+				return attempts, wrapWaitReadyErr(lastErr, err)
 			}
 			continue
 		}
-		return nil
+		return attempts, nil
 	}
 }
 
@@ -72,16 +83,18 @@ func wrapWaitReadyErr(lastErr, ctxErr error) error {
 
 // MeshWaitEvidence is the always-emit operator preflight wait result shape.
 // TimeoutMS and IntervalMS are the configured WaitReady budget and poll interval.
+// Attempts is the number of WaitReady probe attempt cycles.
 type MeshWaitEvidence struct {
 	OK            bool
 	ElapsedMS     int
 	RequireHealth bool
 	TimeoutMS     int
 	IntervalMS    int
+	Attempts      int
 	Error         string // empty on success
 }
 
-// normalize clamps negative elapsed/timeout/interval to 0 and defaults empty Error on failure.
+// normalize clamps negative elapsed/timeout/interval/attempts to 0 and defaults empty Error on failure.
 func (e MeshWaitEvidence) normalize() MeshWaitEvidence {
 	if e.ElapsedMS < 0 {
 		e.ElapsedMS = 0
@@ -92,6 +105,9 @@ func (e MeshWaitEvidence) normalize() MeshWaitEvidence {
 	if e.IntervalMS < 0 {
 		e.IntervalMS = 0
 	}
+	if e.Attempts < 0 {
+		e.Attempts = 0
+	}
 	if !e.OK && e.Error == "" {
 		e.Error = "unknown error"
 	}
@@ -99,23 +115,23 @@ func (e MeshWaitEvidence) normalize() MeshWaitEvidence {
 }
 
 // FormatMeshWaitResult renders operator preflight wait outcome as text.
-// Always includes elapsed_ms, require_health, timeout_ms, and interval_ms for CI evidence.
+// Always includes elapsed_ms, require_health, timeout_ms, interval_ms, and attempts for CI evidence.
 func FormatMeshWaitResult(e MeshWaitEvidence) string {
 	e = e.normalize()
 	if e.OK {
 		return fmt.Sprintf(
-			"PASS mesh wait: ready\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\n",
-			e.ElapsedMS, e.RequireHealth, e.TimeoutMS, e.IntervalMS,
+			"PASS mesh wait: ready\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\nattempts: %d\n",
+			e.ElapsedMS, e.RequireHealth, e.TimeoutMS, e.IntervalMS, e.Attempts,
 		)
 	}
 	return fmt.Sprintf(
-		"FAIL mesh wait: %s\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\n",
-		e.Error, e.ElapsedMS, e.RequireHealth, e.TimeoutMS, e.IntervalMS,
+		"FAIL mesh wait: %s\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\nattempts: %d\n",
+		e.Error, e.ElapsedMS, e.RequireHealth, e.TimeoutMS, e.IntervalMS, e.Attempts,
 	)
 }
 
 // FormatMeshWaitResultJSON renders wait outcome as compact JSON for scrapers.
-// Always emits ok, elapsed_ms, require_health, timeout_ms, interval_ms; error only when ok is false.
+// Always emits ok, elapsed_ms, require_health, timeout_ms, interval_ms, attempts; error only when ok is false.
 func FormatMeshWaitResultJSON(e MeshWaitEvidence) string {
 	e = e.normalize()
 	type out struct {
@@ -124,6 +140,7 @@ func FormatMeshWaitResultJSON(e MeshWaitEvidence) string {
 		RequireHealth bool   `json:"require_health"`
 		TimeoutMS     int    `json:"timeout_ms"`
 		IntervalMS    int    `json:"interval_ms"`
+		Attempts      int    `json:"attempts"`
 		Error         string `json:"error,omitempty"`
 	}
 	o := out{
@@ -132,13 +149,14 @@ func FormatMeshWaitResultJSON(e MeshWaitEvidence) string {
 		RequireHealth: e.RequireHealth,
 		TimeoutMS:     e.TimeoutMS,
 		IntervalMS:    e.IntervalMS,
+		Attempts:      e.Attempts,
 	}
 	if !e.OK {
 		o.Error = e.Error
 	}
 	b, err := json.Marshal(o)
 	if err != nil {
-		return `{"ok":false,"elapsed_ms":0,"require_health":false,"timeout_ms":0,"interval_ms":0,"error":"mesh wait json marshal failed"}` + "\n"
+		return `{"ok":false,"elapsed_ms":0,"require_health":false,"timeout_ms":0,"interval_ms":0,"attempts":0,"error":"mesh wait json marshal failed"}` + "\n"
 	}
 	return string(b) + "\n"
 }
