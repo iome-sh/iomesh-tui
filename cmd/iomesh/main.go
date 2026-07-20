@@ -700,7 +700,7 @@ func cmdMeshStatus(args []string) int {
 		StatusLine:     mesh.StatusLine(),
 		Health:         "skipped",
 		Ready:          "skipped",
-		// health_ms / ready_ms always 0 when mesh disabled / probes skipped
+		// health_ms / ready_ms / duration_ms always 0 when mesh disabled / probes skipped
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -709,6 +709,8 @@ func cmdMeshStatus(args []string) int {
 	defer cancel()
 
 	// One-shot Health/Ready with latencies — fail-open display (never exit non-zero for probe errs).
+	// duration_ms is wall-clock for the whole probe path (always emitted; ~0 when skipped).
+	probeStart := time.Now()
 	if mesh.Enabled() {
 		t0 := time.Now()
 		out.Health, out.HealthErr = iomesh.ProbeStatus(mesh.Health(ctx))
@@ -718,6 +720,7 @@ func cmdMeshStatus(args []string) int {
 		out.Ready, out.ReadyErr = iomesh.ProbeStatus(mesh.Ready(ctx))
 		out.ReadyMS = iomesh.ElapsedMS(time.Since(t1))
 	}
+	out.DurationMS = iomesh.ElapsedMS(time.Since(probeStart))
 
 	if *jsonOut {
 		fmt.Print(iomesh.FormatMeshStatusJSON(out))

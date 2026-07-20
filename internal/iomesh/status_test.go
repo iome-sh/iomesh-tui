@@ -32,7 +32,7 @@ func TestElapsedMS(t *testing.T) {
 }
 
 func TestFormatMeshStatus_JSONAlwaysEmitsLatencies(t *testing.T) {
-	// Disabled / skipped: health_ms and ready_ms must be present as 0.
+	// Disabled / skipped: health_ms, ready_ms, duration_ms must be present as 0.
 	s := MeshStatusSnapshot{
 		Enabled:    false,
 		Version:    "test",
@@ -43,6 +43,7 @@ func TestFormatMeshStatus_JSONAlwaysEmitsLatencies(t *testing.T) {
 		Ready:      "skipped",
 		HealthMS:   0,
 		ReadyMS:    0,
+		DurationMS: 0,
 	}
 	js := FormatMeshStatusJSON(s)
 	var parsed map[string]any
@@ -54,6 +55,12 @@ func TestFormatMeshStatus_JSONAlwaysEmitsLatencies(t *testing.T) {
 	}
 	if n, ok := parsed["ready_ms"].(float64); !ok || int(n) != 0 {
 		t.Fatalf("ready_ms: %v want 0\n%s", parsed["ready_ms"], js)
+	}
+	if n, ok := parsed["duration_ms"].(float64); !ok || int(n) < 0 {
+		t.Fatalf("duration_ms: %v want always present and >= 0\n%s", parsed["duration_ms"], js)
+	}
+	if int(parsed["duration_ms"].(float64)) != 0 {
+		t.Fatalf("duration_ms: %v want 0 when skipped\n%s", parsed["duration_ms"], js)
 	}
 	if parsed["health"] != "skipped" || parsed["ready"] != "skipped" {
 		t.Fatalf("health/ready: %v / %v\n%s", parsed["health"], parsed["ready"], js)
@@ -73,6 +80,7 @@ func TestFormatMeshStatus_JSONProbeLatencies(t *testing.T) {
 		Ready:      "err",
 		ReadyErr:   "iomesh ready: http 503",
 		ReadyMS:    34,
+		DurationMS: 50,
 	}
 	js := FormatMeshStatusJSON(s)
 	var parsed map[string]any
@@ -84,6 +92,12 @@ func TestFormatMeshStatus_JSONProbeLatencies(t *testing.T) {
 	}
 	if n, ok := parsed["ready_ms"].(float64); !ok || int(n) != 34 {
 		t.Fatalf("ready_ms: %v want 34\n%s", parsed["ready_ms"], js)
+	}
+	if n, ok := parsed["duration_ms"].(float64); !ok || int(n) != 50 {
+		t.Fatalf("duration_ms: %v want 50\n%s", parsed["duration_ms"], js)
+	}
+	if n, ok := parsed["duration_ms"].(float64); !ok || int(n) < 0 {
+		t.Fatalf("duration_ms: %v want >= 0\n%s", parsed["duration_ms"], js)
 	}
 	if parsed["health"] != "ok" {
 		t.Fatalf("health: %v", parsed["health"])
@@ -120,6 +134,7 @@ func TestFormatMeshStatus_Text(t *testing.T) {
 		Ready:          "err",
 		ReadyErr:       "timeout",
 		ReadyMS:        9,
+		DurationMS:     16,
 	}
 	out := FormatMeshStatus(s)
 	for _, want := range []string{
@@ -140,6 +155,7 @@ func TestFormatMeshStatus_Text(t *testing.T) {
 		"health_ms:   7",
 		"ready:       err (timeout)",
 		"ready_ms:    9",
+		"duration_ms: 16",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("text missing %q:\n%s", want, out)
@@ -158,6 +174,7 @@ func TestFormatMeshStatus_TextDisabledZeros(t *testing.T) {
 		Ready:      "skipped",
 		HealthMS:   0,
 		ReadyMS:    0,
+		DurationMS: 0,
 	}
 	out := FormatMeshStatus(s)
 	if !strings.Contains(out, "mesh: disabled (offline-first)") {
@@ -168,5 +185,8 @@ func TestFormatMeshStatus_TextDisabledZeros(t *testing.T) {
 	}
 	if !strings.Contains(out, "health_ms:   0") || !strings.Contains(out, "ready_ms:    0") {
 		t.Fatalf("missing zero latencies:\n%s", out)
+	}
+	if !strings.Contains(out, "duration_ms: 0") {
+		t.Fatalf("missing zero duration_ms:\n%s", out)
 	}
 }
