@@ -94,7 +94,12 @@ type DogfoodReport struct {
 	// WaitReadyMS is the configured WaitReady budget in milliseconds (0 = off / no preflight).
 	// Always emitted in JSON so CI sees soft preflight budget without scraping step detail.
 	// Outcome lives on the wait_ready step (PASS/SKIP/FAIL); not a second boolean.
+	// Distinct from WaitReadyElapsedMS (actual step latency).
 	WaitReadyMS int `json:"wait_ready_ms"`
+	// WaitReadyElapsedMS is wait_ready step latency in milliseconds (0 when step skipped/absent).
+	// Always emitted in JSON so CI sees preflight wall time without scraping step detail.
+	// Distinct from WaitReadyMS (configured budget).
+	WaitReadyElapsedMS int `json:"wait_ready_elapsed_ms"`
 	// HealthMS is health step latency in milliseconds (0 when step skipped/absent).
 	// Always emitted in JSON so CI sees probe latency without scraping step detail.
 	HealthMS int `json:"health_ms"`
@@ -290,13 +295,13 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 	rep.HealthMS = int(healthStep.Latency.Milliseconds())
 	rep.Steps = append(rep.Steps, healthStep)
 
-	// 1b) Optional WaitReady soft preflight (s297) — budget WaitReady, then single-shot ready still runs.
+	// 1b) Optional WaitReady soft preflight — budget WaitReady, then single-shot ready still runs.
 	if opts.WaitReady > 0 {
 		interval := opts.WaitReadyInterval
 		if interval <= 0 {
 			interval = 500 * time.Millisecond
 		}
-		rep.Steps = append(rep.Steps, c.stepTimed("wait_ready", func() (StepStatus, string) {
+		waitReadyStep := c.stepTimed("wait_ready", func() (StepStatus, string) {
 			// Child budget: WithTimeout respects parent cancel/deadline (effective min).
 			wctx, cancel := context.WithTimeout(ctx, opts.WaitReady)
 			defer cancel()
@@ -315,7 +320,9 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 				return StepFail, "wait_ready: " + err.Error()
 			}
 			return StepSkip, "wait_ready soft-fail: " + err.Error()
-		}))
+		})
+		rep.WaitReadyElapsedMS = int(waitReadyStep.Latency.Milliseconds())
+		rep.Steps = append(rep.Steps, waitReadyStep)
 	}
 
 	// 2) Ready (optional path — fail-open unless strict).
@@ -981,26 +988,27 @@ func FormatReportJSON(r DogfoodReport) string {
 		ConsumerStream      string     `json:"consumer_stream,omitempty"` // set when both stream+name provided
 		ConsumerName        string     `json:"consumer_name,omitempty"`
 		ConsumerFilter      string     `json:"consumer_filter,omitempty"`
-		ConsumerProbed      bool       `json:"consumer_probed"`    // always emit (true if stream+name set + create attempt)
-		ConsumerOK          bool       `json:"consumer_ok"`        // always emit (true if create 201/409)
-		ConsumerFetchOK     bool       `json:"consumer_fetch_ok"`  // always emit (true if optional fetch ok)
-		WaitReadyMS         int        `json:"wait_ready_ms"`      // always emit (CI wait preflight budget)
-		HealthMS            int        `json:"health_ms"`          // always emit (0 when health step skipped/absent)
-		ReadyMS             int        `json:"ready_ms"`           // always emit (0 when ready step skipped/absent)
-		ContextMS           int        `json:"context_ms"`         // always emit (0 when context step skipped/absent)
-		StreamsMS           int        `json:"streams_ms"`         // always emit (0 when streams step skipped/absent)
-		CatalogMS           int        `json:"catalog_ms"`         // always emit (0 when catalog step skipped/absent)
-		EmitMS              int        `json:"emit_ms"`            // always emit (0 when emit step skipped/absent)
-		LLMMeterMS          int        `json:"llm_meter_ms"`       // always emit (0 when llm_meter step skipped/absent)
-		PubMS               int        `json:"pub_ms"`             // always emit (0 when pub step skipped/absent)
-		PolicyMS            int        `json:"policy_ms"`          // always emit (0 when policy step skipped/absent)
-		ConsumerMS          int        `json:"consumer_ms"`        // always emit (0 when consumer step skipped/absent)
-		KVMS                int        `json:"kv_ms"`              // always emit (0 when kv step skipped/absent)
-		MemoryIngestMS      int        `json:"memory_ingest_ms"`   // always emit (0 when memory_ingest skipped/absent)
-		MemoryRecallMS      int        `json:"memory_recall_ms"`   // always emit (0 when memory_recall skipped/absent)
-		MemoryRetrieveMS    int        `json:"memory_retrieve_ms"` // always emit (0 when memory_retrieve skipped/absent)
-		DurationMS          int        `json:"duration_ms"`        // always emit (wall-clock Finished−Started ms)
-		PolicyMode          string     `json:"policy_mode"`        // always emit (off|advisory|enforce)
+		ConsumerProbed      bool       `json:"consumer_probed"`       // always emit (true if stream+name set + create attempt)
+		ConsumerOK          bool       `json:"consumer_ok"`           // always emit (true if create 201/409)
+		ConsumerFetchOK     bool       `json:"consumer_fetch_ok"`     // always emit (true if optional fetch ok)
+		WaitReadyMS         int        `json:"wait_ready_ms"`         // always emit (CI wait preflight budget)
+		WaitReadyElapsedMS  int        `json:"wait_ready_elapsed_ms"` // always emit (0 when wait_ready step skipped/absent)
+		HealthMS            int        `json:"health_ms"`             // always emit (0 when health step skipped/absent)
+		ReadyMS             int        `json:"ready_ms"`              // always emit (0 when ready step skipped/absent)
+		ContextMS           int        `json:"context_ms"`            // always emit (0 when context step skipped/absent)
+		StreamsMS           int        `json:"streams_ms"`            // always emit (0 when streams step skipped/absent)
+		CatalogMS           int        `json:"catalog_ms"`            // always emit (0 when catalog step skipped/absent)
+		EmitMS              int        `json:"emit_ms"`               // always emit (0 when emit step skipped/absent)
+		LLMMeterMS          int        `json:"llm_meter_ms"`          // always emit (0 when llm_meter step skipped/absent)
+		PubMS               int        `json:"pub_ms"`                // always emit (0 when pub step skipped/absent)
+		PolicyMS            int        `json:"policy_ms"`             // always emit (0 when policy step skipped/absent)
+		ConsumerMS          int        `json:"consumer_ms"`           // always emit (0 when consumer step skipped/absent)
+		KVMS                int        `json:"kv_ms"`                 // always emit (0 when kv step skipped/absent)
+		MemoryIngestMS      int        `json:"memory_ingest_ms"`      // always emit (0 when memory_ingest skipped/absent)
+		MemoryRecallMS      int        `json:"memory_recall_ms"`      // always emit (0 when memory_recall skipped/absent)
+		MemoryRetrieveMS    int        `json:"memory_retrieve_ms"`    // always emit (0 when memory_retrieve skipped/absent)
+		DurationMS          int        `json:"duration_ms"`           // always emit (wall-clock Finished−Started ms)
+		PolicyMode          string     `json:"policy_mode"`           // always emit (off|advisory|enforce)
 		PolicySource        string     `json:"policy_source,omitempty"`
 		PolicyAllow         *bool      `json:"policy_allow,omitempty"` // set when policy evaluated
 		MemoryEndpoint      string     `json:"memory_endpoint,omitempty"`
@@ -1046,6 +1054,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		ConsumerOK:          r.ConsumerOK,
 		ConsumerFetchOK:     r.ConsumerFetchOK,
 		WaitReadyMS:         r.WaitReadyMS,
+		WaitReadyElapsedMS:  r.WaitReadyElapsedMS,
 		HealthMS:            r.HealthMS,
 		ReadyMS:             r.ReadyMS,
 		ContextMS:           r.ContextMS,
@@ -1145,6 +1154,7 @@ func FormatReport(r DogfoodReport) string {
 	fmt.Fprintf(&b, "  consumer_ok: %v\n", r.ConsumerOK)
 	fmt.Fprintf(&b, "  consumer_fetch_ok: %v\n", r.ConsumerFetchOK)
 	fmt.Fprintf(&b, "  wait_ready_ms: %d\n", r.WaitReadyMS)
+	fmt.Fprintf(&b, "  wait_ready_elapsed_ms: %d\n", r.WaitReadyElapsedMS)
 	fmt.Fprintf(&b, "  health_ms: %d\n", r.HealthMS)
 	fmt.Fprintf(&b, "  ready_ms: %d\n", r.ReadyMS)
 	fmt.Fprintf(&b, "  context_ms: %d\n", r.ContextMS)
