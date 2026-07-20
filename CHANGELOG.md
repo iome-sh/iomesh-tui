@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Dogfood soft consumer delete cleanup** — optional `DogfoodOptions.ConsumerDelete` / CLI `--consumer-delete` best-effort `DeleteConsumer` after successful create (and optional fetch) in the consumer step; soft fail-open unless `--strict`; top-level `consumer_delete_probed` + `consumer_delete_ok` always emitted
+
 ## [0.34.0] — 2026-07-20
 
 Minor release: mesh consumer delete.

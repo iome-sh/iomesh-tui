@@ -91,6 +91,12 @@ type DogfoodReport struct {
 	// ConsumerFetchOK is true when optional ConsumerFetch ran without error (empty msgs still ok).
 	// Always emitted (false when fetch not requested / create failed / fetch error / unset).
 	ConsumerFetchOK bool `json:"consumer_fetch_ok"`
+	// ConsumerDeleteProbed is true when ConsumerDelete was set, create succeeded, and DeleteConsumer ran.
+	// Always emitted in JSON (false when flag off / create failed / probe unset).
+	ConsumerDeleteProbed bool `json:"consumer_delete_probed"`
+	// ConsumerDeleteOK is true when DeleteConsumer returned nil. Always emitted
+	// (false when not requested / not attempted / delete error).
+	ConsumerDeleteOK bool `json:"consumer_delete_ok"`
 	// WaitReadyMS is the configured WaitReady budget in milliseconds (0 = off / no preflight).
 	// Always emitted in JSON so CI sees soft preflight budget without scraping step detail.
 	// Outcome lives on the wait_ready step (PASS/SKIP/FAIL); not a second boolean.
@@ -216,6 +222,9 @@ type DogfoodOptions struct {
 	// ConsumerFetch, when true with stream+name set, after create success runs soft ConsumerFetch
 	// with batch=1 and maxWait=500ms (empty message list is PASS). No ack.
 	ConsumerFetch bool
+	// ConsumerDelete, when true with stream+name set, after successful CreateConsumer (and optional
+	// fetch) best-effort DeleteConsumer cleanup. Soft fail-open unless Strict.
+	ConsumerDelete bool
 	// WaitReady, when >0, polls WaitReady with that max budget (effective deadline is
 	// min of this budget and any parent ctx deadline) before the single-shot ready step.
 	// Soft: timeout → SKIP wait_ready unless Strict (then FAIL). Zero (default) = no wait preflight.
@@ -234,7 +243,7 @@ type DogfoodOptions struct {
 // Optional wait_ready soft-preflight when DogfoodOptions.WaitReady > 0.
 // Soft ephemeral Pub probe when DogfoodOptions.PubSubject is set (after emit path).
 // Soft streams list probe after catalog when mesh enabled.
-// Soft consumer create (+ optional fetch) when ConsumerStream+ConsumerName set (no ack).
+// Soft consumer create (+ optional fetch/delete) when ConsumerStream+ConsumerName set (no ack).
 // Soft kv list-keys probe when DogfoodOptions.KVBucket is set (non-destructive).
 // Optional KVEnsure best-effort creates the bucket before list (soft fail-open).
 // Disabled client returns a single SKIP step and OK=true (offline-first).
@@ -619,8 +628,8 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		rep.Steps = append(rep.Steps, streamsStep)
 	}
 
-	// 6c) Soft consumer create (+ optional fetch) probe — after streams; no ack.
-	// Both ConsumerStream and ConsumerName required; optional filter + fetch.
+	// 6c) Soft consumer create (+ optional fetch + optional delete cleanup) probe — after streams; no ack.
+	// Both ConsumerStream and ConsumerName required; optional filter + fetch + delete.
 	// ConsumerMS stays 0 when probe unset/skipped.
 	consumerStream := strings.TrimSpace(opts.ConsumerStream)
 	consumerName := strings.TrimSpace(opts.ConsumerName)
@@ -629,11 +638,15 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		rep.ConsumerProbed = false
 		rep.ConsumerOK = false
 		rep.ConsumerFetchOK = false
+		rep.ConsumerDeleteProbed = false
+		rep.ConsumerDeleteOK = false
 		rep.Steps = append(rep.Steps, Step{Name: "consumer", Status: StepSkip, Detail: "consumer probe unset"})
 	} else if consumerStream == "" || consumerName == "" {
 		rep.ConsumerProbed = false
 		rep.ConsumerOK = false
 		rep.ConsumerFetchOK = false
+		rep.ConsumerDeleteProbed = false
+		rep.ConsumerDeleteOK = false
 		rep.Steps = append(rep.Steps, Step{Name: "consumer", Status: StepSkip, Detail: "consumer probe needs stream and name"})
 	} else {
 		// Identity evidence when both stream+name provided (even if create later fails).
@@ -646,6 +659,8 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 			if err != nil {
 				rep.ConsumerOK = false
 				rep.ConsumerFetchOK = false
+				rep.ConsumerDeleteProbed = false
+				rep.ConsumerDeleteOK = false
 				if opts.Strict {
 					return StepFail, err.Error()
 				}
@@ -656,20 +671,45 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 			if consumerFilter != "" {
 				detail = fmt.Sprintf("%s filter=%s", detail, consumerFilter)
 			}
-			if !opts.ConsumerFetch {
-				rep.ConsumerFetchOK = false
-				return StepPass, detail
-			}
-			msgs, ferr := c.ConsumerFetch(ctx, consumerStream, consumerName, 1, 500*time.Millisecond)
-			if ferr != nil {
-				rep.ConsumerFetchOK = false
-				if opts.Strict {
-					return StepFail, fmt.Sprintf("%s fetch=%s", detail, ferr.Error())
+			// Optional soft fetch (no ack). Soft-fail still proceeds to optional delete cleanup.
+			fetchFailed := false
+			if opts.ConsumerFetch {
+				msgs, ferr := c.ConsumerFetch(ctx, consumerStream, consumerName, 1, 500*time.Millisecond)
+				if ferr != nil {
+					rep.ConsumerFetchOK = false
+					fetchFailed = true
+					if opts.Strict {
+						detail = fmt.Sprintf("%s fetch=%s", detail, ferr.Error())
+					} else {
+						detail = fmt.Sprintf("%s fetch soft-fail: %s", detail, ferr.Error())
+					}
+				} else {
+					rep.ConsumerFetchOK = true
+					detail = fmt.Sprintf("%s fetch=n=%d", detail, len(msgs))
 				}
-				return StepSkip, fmt.Sprintf("%s fetch soft-fail: %s", detail, ferr.Error())
+			} else {
+				rep.ConsumerFetchOK = false
 			}
-			rep.ConsumerFetchOK = true
-			return StepPass, fmt.Sprintf("%s fetch=n=%d", detail, len(msgs))
+			// Optional best-effort DeleteConsumer cleanup after successful create.
+			if opts.ConsumerDelete {
+				rep.ConsumerDeleteProbed = true
+				if derr := c.DeleteConsumer(ctx, consumerStream, consumerName); derr != nil {
+					rep.ConsumerDeleteOK = false
+					if opts.Strict {
+						return StepFail, fmt.Sprintf("%s delete=%s", detail, derr.Error())
+					}
+					return StepSkip, fmt.Sprintf("%s delete soft-fail: %s", detail, derr.Error())
+				}
+				rep.ConsumerDeleteOK = true
+				detail = detail + " delete=ok"
+			}
+			if fetchFailed {
+				if opts.Strict {
+					return StepFail, detail
+				}
+				return StepSkip, detail
+			}
+			return StepPass, detail
 		})
 		rep.ConsumerMS = int(consumerStep.Latency.Milliseconds())
 		rep.Steps = append(rep.Steps, consumerStep)
@@ -984,61 +1024,63 @@ func FormatReportJSON(r DogfoodReport) string {
 		Latency string `json:"latency,omitempty"`
 	}
 	type out struct {
-		Endpoint            string     `json:"endpoint"`
-		Tenant              string     `json:"tenant,omitempty"`
-		Org                 string     `json:"org,omitempty"`
-		Workspace           string     `json:"workspace,omitempty"`
-		DualWrite           bool       `json:"dual_write"` // always emit (CI dual-write mode)
-		CatalogSource       string     `json:"catalog_source,omitempty"`
-		CatalogCount        int        `json:"catalog_count"`             // always emit (CI catalog evidence)
-		ContextChars        int        `json:"context_chars"`             // always emit (CI context evidence)
-		ContextLineageCount int        `json:"context_lineage_count"`     // always emit
-		StreamsCount        int        `json:"streams_count"`             // always emit (CI streams list evidence)
-		StreamsNames        []string   `json:"streams_names"`             // always emit array (CI name sample)
-		KVBucket            string     `json:"kv_bucket,omitempty"`       // set when soft kv probe configured
-		KVKeyCount          int        `json:"kv_key_count"`              // always emit (CI kv list evidence)
-		KVEnsured           bool       `json:"kv_ensured"`                // always emit (true only if ensure create succeeded)
-		PubProbed           bool       `json:"pub_probed"`                // always emit (true if pub subject set + attempt)
-		PubOK               bool       `json:"pub_ok"`                    // always emit (true only if soft pub succeeded)
-		ConsumerStream      string     `json:"consumer_stream,omitempty"` // set when both stream+name provided
-		ConsumerName        string     `json:"consumer_name,omitempty"`
-		ConsumerFilter      string     `json:"consumer_filter,omitempty"`
-		ConsumerProbed      bool       `json:"consumer_probed"`       // always emit (true if stream+name set + create attempt)
-		ConsumerOK          bool       `json:"consumer_ok"`           // always emit (true if create 201/409)
-		ConsumerFetchOK     bool       `json:"consumer_fetch_ok"`     // always emit (true if optional fetch ok)
-		WaitReadyMS         int        `json:"wait_ready_ms"`         // always emit (CI wait preflight budget)
-		WaitReadyElapsedMS  int        `json:"wait_ready_elapsed_ms"` // always emit (0 when wait_ready step skipped/absent)
-		HealthMS            int        `json:"health_ms"`             // always emit (0 when health step skipped/absent)
-		ReadyMS             int        `json:"ready_ms"`              // always emit (0 when ready step skipped/absent)
-		ContextMS           int        `json:"context_ms"`            // always emit (0 when context step skipped/absent)
-		StreamsMS           int        `json:"streams_ms"`            // always emit (0 when streams step skipped/absent)
-		CatalogMS           int        `json:"catalog_ms"`            // always emit (0 when catalog step skipped/absent)
-		EmitMS              int        `json:"emit_ms"`               // always emit (0 when emit step skipped/absent)
-		LLMMeterMS          int        `json:"llm_meter_ms"`          // always emit (0 when llm_meter step skipped/absent)
-		PubMS               int        `json:"pub_ms"`                // always emit (0 when pub step skipped/absent)
-		PolicyMS            int        `json:"policy_ms"`             // always emit (0 when policy step skipped/absent)
-		ConsumerMS          int        `json:"consumer_ms"`           // always emit (0 when consumer step skipped/absent)
-		KVMS                int        `json:"kv_ms"`                 // always emit (0 when kv step skipped/absent)
-		MemoryIngestMS      int        `json:"memory_ingest_ms"`      // always emit (0 when memory_ingest skipped/absent)
-		MemoryRecallMS      int        `json:"memory_recall_ms"`      // always emit (0 when memory_recall skipped/absent)
-		MemoryRetrieveMS    int        `json:"memory_retrieve_ms"`    // always emit (0 when memory_retrieve skipped/absent)
-		DurationMS          int        `json:"duration_ms"`           // always emit (wall-clock Finished−Started ms)
-		StepsPass           int        `json:"steps_pass"`            // always emit (PASS step count)
-		StepsFail           int        `json:"steps_fail"`            // always emit (FAIL step count)
-		StepsSkip           int        `json:"steps_skip"`            // always emit (SKIP step count)
-		PolicyMode          string     `json:"policy_mode"`           // always emit (off|advisory|enforce)
-		PolicySource        string     `json:"policy_source,omitempty"`
-		PolicyAllow         *bool      `json:"policy_allow,omitempty"` // set when policy evaluated
-		MemoryEndpoint      string     `json:"memory_endpoint,omitempty"`
-		Version             string     `json:"version"` // always emit (empty when unset)
-		UserAgent           string     `json:"user_agent,omitempty"`
-		Strict              bool       `json:"strict"`
-		OK                  bool       `json:"ok"`
-		Summary             string     `json:"summary"`
-		Started             time.Time  `json:"started"`
-		Finished            time.Time  `json:"finished"`
-		Steps               []stepJSON `json:"steps"`
-		Result              string     `json:"result"` // PASS|FAIL|SKIP mirror of Summary prefix
+		Endpoint             string     `json:"endpoint"`
+		Tenant               string     `json:"tenant,omitempty"`
+		Org                  string     `json:"org,omitempty"`
+		Workspace            string     `json:"workspace,omitempty"`
+		DualWrite            bool       `json:"dual_write"` // always emit (CI dual-write mode)
+		CatalogSource        string     `json:"catalog_source,omitempty"`
+		CatalogCount         int        `json:"catalog_count"`             // always emit (CI catalog evidence)
+		ContextChars         int        `json:"context_chars"`             // always emit (CI context evidence)
+		ContextLineageCount  int        `json:"context_lineage_count"`     // always emit
+		StreamsCount         int        `json:"streams_count"`             // always emit (CI streams list evidence)
+		StreamsNames         []string   `json:"streams_names"`             // always emit array (CI name sample)
+		KVBucket             string     `json:"kv_bucket,omitempty"`       // set when soft kv probe configured
+		KVKeyCount           int        `json:"kv_key_count"`              // always emit (CI kv list evidence)
+		KVEnsured            bool       `json:"kv_ensured"`                // always emit (true only if ensure create succeeded)
+		PubProbed            bool       `json:"pub_probed"`                // always emit (true if pub subject set + attempt)
+		PubOK                bool       `json:"pub_ok"`                    // always emit (true only if soft pub succeeded)
+		ConsumerStream       string     `json:"consumer_stream,omitempty"` // set when both stream+name provided
+		ConsumerName         string     `json:"consumer_name,omitempty"`
+		ConsumerFilter       string     `json:"consumer_filter,omitempty"`
+		ConsumerProbed       bool       `json:"consumer_probed"`        // always emit (true if stream+name set + create attempt)
+		ConsumerOK           bool       `json:"consumer_ok"`            // always emit (true if create 201/409)
+		ConsumerFetchOK      bool       `json:"consumer_fetch_ok"`      // always emit (true if optional fetch ok)
+		ConsumerDeleteProbed bool       `json:"consumer_delete_probed"` // always emit (true if delete attempt ran)
+		ConsumerDeleteOK     bool       `json:"consumer_delete_ok"`     // always emit (true if DeleteConsumer nil)
+		WaitReadyMS          int        `json:"wait_ready_ms"`          // always emit (CI wait preflight budget)
+		WaitReadyElapsedMS   int        `json:"wait_ready_elapsed_ms"`  // always emit (0 when wait_ready step skipped/absent)
+		HealthMS             int        `json:"health_ms"`              // always emit (0 when health step skipped/absent)
+		ReadyMS              int        `json:"ready_ms"`               // always emit (0 when ready step skipped/absent)
+		ContextMS            int        `json:"context_ms"`             // always emit (0 when context step skipped/absent)
+		StreamsMS            int        `json:"streams_ms"`             // always emit (0 when streams step skipped/absent)
+		CatalogMS            int        `json:"catalog_ms"`             // always emit (0 when catalog step skipped/absent)
+		EmitMS               int        `json:"emit_ms"`                // always emit (0 when emit step skipped/absent)
+		LLMMeterMS           int        `json:"llm_meter_ms"`           // always emit (0 when llm_meter step skipped/absent)
+		PubMS                int        `json:"pub_ms"`                 // always emit (0 when pub step skipped/absent)
+		PolicyMS             int        `json:"policy_ms"`              // always emit (0 when policy step skipped/absent)
+		ConsumerMS           int        `json:"consumer_ms"`            // always emit (0 when consumer step skipped/absent)
+		KVMS                 int        `json:"kv_ms"`                  // always emit (0 when kv step skipped/absent)
+		MemoryIngestMS       int        `json:"memory_ingest_ms"`       // always emit (0 when memory_ingest skipped/absent)
+		MemoryRecallMS       int        `json:"memory_recall_ms"`       // always emit (0 when memory_recall skipped/absent)
+		MemoryRetrieveMS     int        `json:"memory_retrieve_ms"`     // always emit (0 when memory_retrieve skipped/absent)
+		DurationMS           int        `json:"duration_ms"`            // always emit (wall-clock Finished−Started ms)
+		StepsPass            int        `json:"steps_pass"`             // always emit (PASS step count)
+		StepsFail            int        `json:"steps_fail"`             // always emit (FAIL step count)
+		StepsSkip            int        `json:"steps_skip"`             // always emit (SKIP step count)
+		PolicyMode           string     `json:"policy_mode"`            // always emit (off|advisory|enforce)
+		PolicySource         string     `json:"policy_source,omitempty"`
+		PolicyAllow          *bool      `json:"policy_allow,omitempty"` // set when policy evaluated
+		MemoryEndpoint       string     `json:"memory_endpoint,omitempty"`
+		Version              string     `json:"version"` // always emit (empty when unset)
+		UserAgent            string     `json:"user_agent,omitempty"`
+		Strict               bool       `json:"strict"`
+		OK                   bool       `json:"ok"`
+		Summary              string     `json:"summary"`
+		Started              time.Time  `json:"started"`
+		Finished             time.Time  `json:"finished"`
+		Steps                []stepJSON `json:"steps"`
+		Result               string     `json:"result"` // PASS|FAIL|SKIP mirror of Summary prefix
 	}
 	names := r.StreamsNames
 	if names == nil {
@@ -1049,59 +1091,61 @@ func FormatReportJSON(r DogfoodReport) string {
 		policyMode = "off"
 	}
 	o := out{
-		Endpoint:            r.Endpoint,
-		Tenant:              r.Tenant,
-		Org:                 r.Org,
-		Workspace:           r.Workspace,
-		DualWrite:           r.DualWrite,
-		CatalogSource:       r.CatalogSource,
-		CatalogCount:        r.CatalogCount,
-		ContextChars:        r.ContextChars,
-		ContextLineageCount: r.ContextLineageCount,
-		StreamsCount:        r.StreamsCount,
-		StreamsNames:        names,
-		KVBucket:            r.KVBucket,
-		KVKeyCount:          r.KVKeyCount,
-		KVEnsured:           r.KVEnsured,
-		PubProbed:           r.PubProbed,
-		PubOK:               r.PubOK,
-		ConsumerStream:      r.ConsumerStream,
-		ConsumerName:        r.ConsumerName,
-		ConsumerFilter:      r.ConsumerFilter,
-		ConsumerProbed:      r.ConsumerProbed,
-		ConsumerOK:          r.ConsumerOK,
-		ConsumerFetchOK:     r.ConsumerFetchOK,
-		WaitReadyMS:         r.WaitReadyMS,
-		WaitReadyElapsedMS:  r.WaitReadyElapsedMS,
-		HealthMS:            r.HealthMS,
-		ReadyMS:             r.ReadyMS,
-		ContextMS:           r.ContextMS,
-		StreamsMS:           r.StreamsMS,
-		CatalogMS:           r.CatalogMS,
-		EmitMS:              r.EmitMS,
-		LLMMeterMS:          r.LLMMeterMS,
-		PubMS:               r.PubMS,
-		PolicyMS:            r.PolicyMS,
-		ConsumerMS:          r.ConsumerMS,
-		KVMS:                r.KVMS,
-		MemoryIngestMS:      r.MemoryIngestMS,
-		MemoryRecallMS:      r.MemoryRecallMS,
-		MemoryRetrieveMS:    r.MemoryRetrieveMS,
-		DurationMS:          r.DurationMS,
-		StepsPass:           r.StepsPass,
-		StepsFail:           r.StepsFail,
-		StepsSkip:           r.StepsSkip,
-		PolicyMode:          policyMode,
-		PolicySource:        r.PolicySource,
-		PolicyAllow:         r.PolicyAllow,
-		MemoryEndpoint:      r.MemoryEndpoint,
-		Version:             r.Version,
-		UserAgent:           r.UserAgent,
-		Strict:              r.Strict,
-		OK:                  r.OK,
-		Summary:             r.Summary,
-		Started:             r.Started,
-		Finished:            r.Finished,
+		Endpoint:             r.Endpoint,
+		Tenant:               r.Tenant,
+		Org:                  r.Org,
+		Workspace:            r.Workspace,
+		DualWrite:            r.DualWrite,
+		CatalogSource:        r.CatalogSource,
+		CatalogCount:         r.CatalogCount,
+		ContextChars:         r.ContextChars,
+		ContextLineageCount:  r.ContextLineageCount,
+		StreamsCount:         r.StreamsCount,
+		StreamsNames:         names,
+		KVBucket:             r.KVBucket,
+		KVKeyCount:           r.KVKeyCount,
+		KVEnsured:            r.KVEnsured,
+		PubProbed:            r.PubProbed,
+		PubOK:                r.PubOK,
+		ConsumerStream:       r.ConsumerStream,
+		ConsumerName:         r.ConsumerName,
+		ConsumerFilter:       r.ConsumerFilter,
+		ConsumerProbed:       r.ConsumerProbed,
+		ConsumerOK:           r.ConsumerOK,
+		ConsumerFetchOK:      r.ConsumerFetchOK,
+		ConsumerDeleteProbed: r.ConsumerDeleteProbed,
+		ConsumerDeleteOK:     r.ConsumerDeleteOK,
+		WaitReadyMS:          r.WaitReadyMS,
+		WaitReadyElapsedMS:   r.WaitReadyElapsedMS,
+		HealthMS:             r.HealthMS,
+		ReadyMS:              r.ReadyMS,
+		ContextMS:            r.ContextMS,
+		StreamsMS:            r.StreamsMS,
+		CatalogMS:            r.CatalogMS,
+		EmitMS:               r.EmitMS,
+		LLMMeterMS:           r.LLMMeterMS,
+		PubMS:                r.PubMS,
+		PolicyMS:             r.PolicyMS,
+		ConsumerMS:           r.ConsumerMS,
+		KVMS:                 r.KVMS,
+		MemoryIngestMS:       r.MemoryIngestMS,
+		MemoryRecallMS:       r.MemoryRecallMS,
+		MemoryRetrieveMS:     r.MemoryRetrieveMS,
+		DurationMS:           r.DurationMS,
+		StepsPass:            r.StepsPass,
+		StepsFail:            r.StepsFail,
+		StepsSkip:            r.StepsSkip,
+		PolicyMode:           policyMode,
+		PolicySource:         r.PolicySource,
+		PolicyAllow:          r.PolicyAllow,
+		MemoryEndpoint:       r.MemoryEndpoint,
+		Version:              r.Version,
+		UserAgent:            r.UserAgent,
+		Strict:               r.Strict,
+		OK:                   r.OK,
+		Summary:              r.Summary,
+		Started:              r.Started,
+		Finished:             r.Finished,
 	}
 	if strings.HasPrefix(r.Summary, "PASS") {
 		o.Result = "PASS"
@@ -1174,6 +1218,8 @@ func FormatReport(r DogfoodReport) string {
 	fmt.Fprintf(&b, "  consumer_probed: %v\n", r.ConsumerProbed)
 	fmt.Fprintf(&b, "  consumer_ok: %v\n", r.ConsumerOK)
 	fmt.Fprintf(&b, "  consumer_fetch_ok: %v\n", r.ConsumerFetchOK)
+	fmt.Fprintf(&b, "  consumer_delete_probed: %v\n", r.ConsumerDeleteProbed)
+	fmt.Fprintf(&b, "  consumer_delete_ok: %v\n", r.ConsumerDeleteOK)
 	fmt.Fprintf(&b, "  wait_ready_ms: %d\n", r.WaitReadyMS)
 	fmt.Fprintf(&b, "  wait_ready_elapsed_ms: %d\n", r.WaitReadyElapsedMS)
 	fmt.Fprintf(&b, "  health_ms: %d\n", r.HealthMS)
