@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.44.0] — 2026-07-20
+
+Minor release: mesh wait timeout_ms and interval_ms evidence.
+
 ### Added
 
 - **`mesh wait` timeout/interval budget evidence** — always emit `timeout_ms` and `interval_ms` (configured WaitReady budget and poll interval) in text and `--json` output so CI scrapers record preflight knobs without re-parsing flags
+
 
 ## [0.43.0] — 2026-07-20
 
