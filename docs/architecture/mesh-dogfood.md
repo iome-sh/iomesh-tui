@@ -40,11 +40,11 @@ One-shot operator snapshot without the full dogfood suite:
 
 ```bash
 iomesh mesh status [--json] [--endpoint url] [--config path]
-# Human: StatusLine + version + endpoint/tenant/org/workspace + plane flags + ua + health/ready
+# Human: StatusLine + version + endpoint/tenant/org/workspace + plane flags + ua + health/ready + latencies
 # --json: structured object with the same fields (health/ready fail-open — exit 0 even on probe err)
 ```
 
-Builds the client like dogfood/wait. Prints `StatusLine` config summary (includes `version=` when `iomesh.SetProductVersion` is set from main) plus optional one-shot `Health` / `Ready` probes (errors shown as `err` + message; never fail the command).
+Builds the client like dogfood/wait. Prints `StatusLine` config summary (includes `version=` when `iomesh.SetProductVersion` is set from main) plus optional one-shot `Health` / `Ready` probes (errors shown as `err` + message; never fail the command). Probe wall times are always emitted as `health_ms` / `ready_ms` (`0` when mesh disabled / probes skipped).
 
 JSON/text fields beyond StatusLine identity:
 
@@ -58,6 +58,7 @@ JSON/text fields beyond StatusLine identity:
 | `emit_dept` | `[iomesh] emit_dept_streams` |
 | `user_agent` | package mesh HTTP User-Agent |
 | `health` / `ready` | one-shot probe (`ok` \| `err` \| `skipped`) |
+| `health_ms` / `ready_ms` | probe latency ms (**always emitted**, `0` when skipped/disabled) |
 
 | Step | Request | Soft (default) | Strict (`--strict`) |
 |------|---------|----------------|---------------------|

@@ -1,0 +1,98 @@
+package iomesh
+
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+	"time"
+)
+
+// MeshStatusSnapshot is the operator one-shot mesh status payload for
+// `iomesh mesh status` (JSON and text). Probe fields are fail-open: health/ready
+// are "ok", "err", or "skipped"; latencies are always emitted (0 when skipped).
+type MeshStatusSnapshot struct {
+	Enabled        bool   `json:"enabled"`
+	Endpoint       string `json:"endpoint,omitempty"`
+	Tenant         string `json:"tenant,omitempty"`
+	Org            string `json:"org,omitempty"`
+	Workspace      string `json:"workspace,omitempty"`
+	Version        string `json:"version"` // binary version (main.version)
+	PolicyMode     string `json:"policy_mode"`
+	ContextPlane   bool   `json:"context_plane"`
+	CatalogPlane   bool   `json:"catalog_plane"`
+	IncludeLineage bool   `json:"include_lineage"`
+	EmitDept       bool   `json:"emit_dept"`
+	UserAgent      string `json:"user_agent"`
+	StatusLine     string `json:"status_line"`
+	Health         string `json:"health"` // ok|err|skipped
+	HealthErr      string `json:"health_err,omitempty"`
+	// HealthMS is Health probe latency in milliseconds (always emitted; 0 when skipped/disabled).
+	HealthMS int    `json:"health_ms"`
+	Ready    string `json:"ready"` // ok|err|skipped
+	ReadyErr string `json:"ready_err,omitempty"`
+	// ReadyMS is Ready probe latency in milliseconds (always emitted; 0 when skipped/disabled).
+	ReadyMS int `json:"ready_ms"`
+}
+
+// ProbeStatus returns "ok" or "err" and an optional error message for fail-open display.
+func ProbeStatus(err error) (status, errMsg string) {
+	if err != nil {
+		return "err", err.Error()
+	}
+	return "ok", ""
+}
+
+// ElapsedMS converts a duration to non-negative milliseconds for status/dogfood evidence.
+func ElapsedMS(d time.Duration) int {
+	ms := int(d.Milliseconds())
+	if ms < 0 {
+		return 0
+	}
+	return ms
+}
+
+// FormatMeshStatusJSON returns indented JSON for stage CI / operator scrapers.
+func FormatMeshStatusJSON(s MeshStatusSnapshot) string {
+	b, err := json.MarshalIndent(s, "", "  ")
+	if err != nil {
+		return `{"error":"mesh status json marshal failed"}` + "\n"
+	}
+	return string(b) + "\n"
+}
+
+// FormatMeshStatus renders a human-readable operator snapshot.
+func FormatMeshStatus(s MeshStatusSnapshot) string {
+	var b strings.Builder
+	b.WriteString("iomesh mesh status\n")
+	fmt.Fprintf(&b, "  status_line: %s\n", s.StatusLine)
+	fmt.Fprintf(&b, "  version:     %s\n", s.Version)
+	fmt.Fprintf(&b, "  endpoint:    %s\n", s.Endpoint)
+	if s.Tenant != "" {
+		fmt.Fprintf(&b, "  tenant:      %s\n", s.Tenant)
+	}
+	if s.Org != "" {
+		fmt.Fprintf(&b, "  org:         %s\n", s.Org)
+	}
+	if s.Workspace != "" {
+		fmt.Fprintf(&b, "  workspace:   %s\n", s.Workspace)
+	}
+	fmt.Fprintf(&b, "  policy_mode: %s\n", s.PolicyMode)
+	fmt.Fprintf(&b, "  context_plane: %v\n", s.ContextPlane)
+	fmt.Fprintf(&b, "  catalog_plane: %v\n", s.CatalogPlane)
+	fmt.Fprintf(&b, "  include_lineage: %v\n", s.IncludeLineage)
+	fmt.Fprintf(&b, "  emit_dept:   %v\n", s.EmitDept)
+	fmt.Fprintf(&b, "  user_agent:  %s\n", s.UserAgent)
+	if s.HealthErr != "" {
+		fmt.Fprintf(&b, "  health:      %s (%s)\n", s.Health, s.HealthErr)
+	} else {
+		fmt.Fprintf(&b, "  health:      %s\n", s.Health)
+	}
+	fmt.Fprintf(&b, "  health_ms:   %d\n", s.HealthMS)
+	if s.ReadyErr != "" {
+		fmt.Fprintf(&b, "  ready:       %s (%s)\n", s.Ready, s.ReadyErr)
+	} else {
+		fmt.Fprintf(&b, "  ready:       %s\n", s.Ready)
+	}
+	fmt.Fprintf(&b, "  ready_ms:    %d\n", s.ReadyMS)
+	return b.String()
+}

@@ -684,26 +684,7 @@ func cmdMeshStatus(args []string) int {
 	if policyMode == "" {
 		policyMode = "off"
 	}
-	type statusOut struct {
-		Enabled        bool   `json:"enabled"`
-		Endpoint       string `json:"endpoint,omitempty"`
-		Tenant         string `json:"tenant,omitempty"`
-		Org            string `json:"org,omitempty"`
-		Workspace      string `json:"workspace,omitempty"`
-		Version        string `json:"version"` // binary version (main.version)
-		PolicyMode     string `json:"policy_mode"`
-		ContextPlane   bool   `json:"context_plane"`
-		CatalogPlane   bool   `json:"catalog_plane"`
-		IncludeLineage bool   `json:"include_lineage"`
-		EmitDept       bool   `json:"emit_dept"`
-		UserAgent      string `json:"user_agent"`
-		StatusLine     string `json:"status_line"`
-		Health         string `json:"health"` // ok|err|skipped
-		HealthErr      string `json:"health_err,omitempty"`
-		Ready          string `json:"ready"` // ok|err|skipped
-		ReadyErr       string `json:"ready_err,omitempty"`
-	}
-	out := statusOut{
+	out := iomesh.MeshStatusSnapshot{
 		Enabled:        mesh.Enabled(),
 		Endpoint:       cfg.IOMesh.Endpoint,
 		Tenant:         cfg.IOMesh.Tenant,
@@ -719,6 +700,7 @@ func cmdMeshStatus(args []string) int {
 		StatusLine:     mesh.StatusLine(),
 		Health:         "skipped",
 		Ready:          "skipped",
+		// health_ms / ready_ms always 0 when mesh disabled / probes skipped
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -726,61 +708,22 @@ func cmdMeshStatus(args []string) int {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	// One-shot Health/Ready — fail-open display (never exit non-zero for probe errs).
+	// One-shot Health/Ready with latencies — fail-open display (never exit non-zero for probe errs).
 	if mesh.Enabled() {
-		if err := mesh.Health(ctx); err != nil {
-			out.Health = "err"
-			out.HealthErr = err.Error()
-		} else {
-			out.Health = "ok"
-		}
-		if err := mesh.Ready(ctx); err != nil {
-			out.Ready = "err"
-			out.ReadyErr = err.Error()
-		} else {
-			out.Ready = "ok"
-		}
+		t0 := time.Now()
+		out.Health, out.HealthErr = iomesh.ProbeStatus(mesh.Health(ctx))
+		out.HealthMS = iomesh.ElapsedMS(time.Since(t0))
+
+		t1 := time.Now()
+		out.Ready, out.ReadyErr = iomesh.ProbeStatus(mesh.Ready(ctx))
+		out.ReadyMS = iomesh.ElapsedMS(time.Since(t1))
 	}
 
 	if *jsonOut {
-		b, err := json.MarshalIndent(out, "", "  ")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "json: %v\n", err)
-			return 1
-		}
-		fmt.Println(string(b))
+		fmt.Print(iomesh.FormatMeshStatusJSON(out))
 		return 0
 	}
-
-	fmt.Println("iomesh mesh status")
-	fmt.Printf("  status_line: %s\n", out.StatusLine)
-	fmt.Printf("  version:     %s\n", out.Version)
-	fmt.Printf("  endpoint:    %s\n", out.Endpoint)
-	if out.Tenant != "" {
-		fmt.Printf("  tenant:      %s\n", out.Tenant)
-	}
-	if out.Org != "" {
-		fmt.Printf("  org:         %s\n", out.Org)
-	}
-	if out.Workspace != "" {
-		fmt.Printf("  workspace:   %s\n", out.Workspace)
-	}
-	fmt.Printf("  policy_mode: %s\n", out.PolicyMode)
-	fmt.Printf("  context_plane: %v\n", out.ContextPlane)
-	fmt.Printf("  catalog_plane: %v\n", out.CatalogPlane)
-	fmt.Printf("  include_lineage: %v\n", out.IncludeLineage)
-	fmt.Printf("  emit_dept:   %v\n", out.EmitDept)
-	fmt.Printf("  user_agent:  %s\n", out.UserAgent)
-	if out.HealthErr != "" {
-		fmt.Printf("  health:      %s (%s)\n", out.Health, out.HealthErr)
-	} else {
-		fmt.Printf("  health:      %s\n", out.Health)
-	}
-	if out.ReadyErr != "" {
-		fmt.Printf("  ready:       %s (%s)\n", out.Ready, out.ReadyErr)
-	} else {
-		fmt.Printf("  ready:       %s\n", out.Ready)
-	}
+	fmt.Print(iomesh.FormatMeshStatus(out))
 	return 0
 }
 
