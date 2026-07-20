@@ -137,8 +137,12 @@ type DogfoodReport struct {
 	// Always emitted in JSON.
 	ConsumerMS int `json:"consumer_ms"`
 	// KVMS is kv step latency in milliseconds (0 when step skipped/absent).
-	// Always emitted in JSON.
+	// Always emitted in JSON. Includes ensure + list when both run.
 	KVMS int `json:"kv_ms"`
+	// KVEnsureMS is KVCreateBucket ensure-path latency in milliseconds only
+	// (0 when KVEnsure off, kv probe unset, or ensure not attempted).
+	// Always emitted in JSON. Distinct from KVMS (full step latency).
+	KVEnsureMS int `json:"kv_ensure_ms"`
 	// MemoryIngestMS is memory_ingest step latency in milliseconds (0 when step skipped/absent).
 	// Always emitted in JSON.
 	MemoryIngestMS int `json:"memory_ingest_ms"`
@@ -717,17 +721,20 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 
 	// 6d) Soft KV list-keys probe (non-destructive — only when KVBucket set)
 	// Optional KVEnsure: best-effort KVCreateBucket before list (soft fail-open).
-	// KVMS stays 0 when probe unset/skipped.
+	// KVMS stays 0 when probe unset/skipped; KVEnsureMS is ensure-create only
+	// (0 when ensure off / probe unset / not attempted).
 	kvBucket := strings.TrimSpace(opts.KVBucket)
 	if kvBucket == "" {
 		rep.KVKeyCount = 0
 		rep.KVEnsured = false
+		rep.KVEnsureMS = 0
 		rep.Steps = append(rep.Steps, Step{Name: "kv", Status: StepSkip, Detail: "kv probe unset"})
 	} else {
 		rep.KVBucket = kvBucket
 		kvStep := c.stepTimed("kv", func() (StepStatus, string) {
 			ensureNote := "ensure=skip"
 			if opts.KVEnsure {
+				ensureStart := time.Now()
 				if _, err := c.KVCreateBucket(ctx, kvBucket); err != nil {
 					// Soft fail-open: create error never fails the step alone; list still runs.
 					ensureNote = "ensure=soft-fail"
@@ -736,6 +743,7 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 					ensureNote = "ensure=ok"
 					rep.KVEnsured = true
 				}
+				rep.KVEnsureMS = int(time.Since(ensureStart).Milliseconds())
 			}
 			keys, err := c.KVListKeys(ctx, kvBucket, "")
 			if err != nil {
@@ -1061,6 +1069,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		PolicyMS             int        `json:"policy_ms"`              // always emit (0 when policy step skipped/absent)
 		ConsumerMS           int        `json:"consumer_ms"`            // always emit (0 when consumer step skipped/absent)
 		KVMS                 int        `json:"kv_ms"`                  // always emit (0 when kv step skipped/absent)
+		KVEnsureMS           int        `json:"kv_ensure_ms"`           // always emit (0 when ensure off/unset/not attempted)
 		MemoryIngestMS       int        `json:"memory_ingest_ms"`       // always emit (0 when memory_ingest skipped/absent)
 		MemoryRecallMS       int        `json:"memory_recall_ms"`       // always emit (0 when memory_recall skipped/absent)
 		MemoryRetrieveMS     int        `json:"memory_retrieve_ms"`     // always emit (0 when memory_retrieve skipped/absent)
@@ -1128,6 +1137,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		PolicyMS:             r.PolicyMS,
 		ConsumerMS:           r.ConsumerMS,
 		KVMS:                 r.KVMS,
+		KVEnsureMS:           r.KVEnsureMS,
 		MemoryIngestMS:       r.MemoryIngestMS,
 		MemoryRecallMS:       r.MemoryRecallMS,
 		MemoryRetrieveMS:     r.MemoryRetrieveMS,
@@ -1233,6 +1243,7 @@ func FormatReport(r DogfoodReport) string {
 	fmt.Fprintf(&b, "  policy_ms: %d\n", r.PolicyMS)
 	fmt.Fprintf(&b, "  consumer_ms: %d\n", r.ConsumerMS)
 	fmt.Fprintf(&b, "  kv_ms: %d\n", r.KVMS)
+	fmt.Fprintf(&b, "  kv_ensure_ms: %d\n", r.KVEnsureMS)
 	fmt.Fprintf(&b, "  memory_ingest_ms: %d\n", r.MemoryIngestMS)
 	fmt.Fprintf(&b, "  memory_recall_ms: %d\n", r.MemoryRecallMS)
 	fmt.Fprintf(&b, "  memory_retrieve_ms: %d\n", r.MemoryRetrieveMS)

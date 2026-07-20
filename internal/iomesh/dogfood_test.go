@@ -274,8 +274,9 @@ func TestDogfood_FullPass(t *testing.T) {
 	}
 	// Top-level wait_ready_elapsed_ms / health_ms / ready_ms / context_ms /
 	// streams_ms / catalog_ms / emit_ms / llm_meter_ms / pub_ms / policy_ms /
-	// consumer_ms / kv_ms / memory_*_ms / duration_ms always present (>= 0;
-	// often 0 on fast mock; wait_ready_elapsed_ms 0 when preflight off).
+	// consumer_ms / kv_ms / kv_ensure_ms / memory_*_ms / duration_ms always
+	// present (>= 0; often 0 on fast mock; wait_ready_elapsed_ms 0 when
+	// preflight off; kv_ensure_ms 0 when ensure off).
 	if rep.WaitReadyElapsedMS < 0 {
 		t.Fatalf("WaitReadyElapsedMS: %d want >= 0", rep.WaitReadyElapsedMS)
 	}
@@ -311,6 +312,13 @@ func TestDogfood_FullPass(t *testing.T) {
 	}
 	if rep.KVMS < 0 {
 		t.Fatalf("KVMS: %d want >= 0", rep.KVMS)
+	}
+	if rep.KVEnsureMS < 0 {
+		t.Fatalf("KVEnsureMS: %d want >= 0", rep.KVEnsureMS)
+	}
+	if rep.KVEnsureMS != 0 {
+		// Default full-pass has no --kv-ensure / bucket → ensure not attempted.
+		t.Fatalf("KVEnsureMS: %d want 0 when ensure off", rep.KVEnsureMS)
 	}
 	if rep.MemoryIngestMS < 0 {
 		t.Fatalf("MemoryIngestMS: %d want >= 0", rep.MemoryIngestMS)
@@ -401,6 +409,9 @@ func TestDogfood_FullPass(t *testing.T) {
 	if _, ok := parsed["kv_ms"].(float64); !ok {
 		t.Fatalf("json kv_ms missing or wrong type: %v\n%s", parsed["kv_ms"], js)
 	}
+	if n, ok := parsed["kv_ensure_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json kv_ensure_ms: %v want 0 when ensure off\n%s", parsed["kv_ensure_ms"], js)
+	}
 	if _, ok := parsed["memory_ingest_ms"].(float64); !ok {
 		t.Fatalf("json memory_ingest_ms missing or wrong type: %v\n%s", parsed["memory_ingest_ms"], js)
 	}
@@ -433,6 +444,9 @@ func TestDogfood_FullPass(t *testing.T) {
 	}
 	if !strings.Contains(out, "consumer_ms:") || !strings.Contains(out, "kv_ms:") {
 		t.Fatalf("text report missing consumer_ms/kv_ms:\n%s", out)
+	}
+	if !strings.Contains(out, "kv_ensure_ms: 0") {
+		t.Fatalf("text report missing kv_ensure_ms: 0:\n%s", out)
 	}
 	if !strings.Contains(out, "memory_ingest_ms:") || !strings.Contains(out, "memory_recall_ms:") || !strings.Contains(out, "memory_retrieve_ms:") {
 		t.Fatalf("text report missing memory_ingest_ms/memory_recall_ms/memory_retrieve_ms:\n%s", out)
@@ -754,6 +768,9 @@ func TestDogfood_Disabled(t *testing.T) {
 	if rep.KVMS != 0 {
 		t.Fatalf("disabled KVMS: %d want 0", rep.KVMS)
 	}
+	if rep.KVEnsureMS != 0 {
+		t.Fatalf("disabled KVEnsureMS: %d want 0", rep.KVEnsureMS)
+	}
 	if rep.MemoryIngestMS != 0 {
 		t.Fatalf("disabled MemoryIngestMS: %d want 0", rep.MemoryIngestMS)
 	}
@@ -826,6 +843,9 @@ func TestDogfood_Disabled(t *testing.T) {
 	if n, ok := parsed["kv_ms"].(float64); !ok || int(n) != 0 {
 		t.Fatalf("json kv_ms: %v want 0\n%s", parsed["kv_ms"], js)
 	}
+	if n, ok := parsed["kv_ensure_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json kv_ensure_ms: %v want 0\n%s", parsed["kv_ensure_ms"], js)
+	}
 	if n, ok := parsed["memory_ingest_ms"].(float64); !ok || int(n) != 0 {
 		t.Fatalf("json memory_ingest_ms: %v want 0\n%s", parsed["memory_ingest_ms"], js)
 	}
@@ -859,6 +879,9 @@ func TestDogfood_Disabled(t *testing.T) {
 	}
 	if !strings.Contains(text, "consumer_ms: 0") || !strings.Contains(text, "kv_ms: 0") {
 		t.Fatalf("text report missing consumer_ms/kv_ms 0:\n%s", text)
+	}
+	if !strings.Contains(text, "kv_ensure_ms: 0") {
+		t.Fatalf("text report missing kv_ensure_ms 0:\n%s", text)
 	}
 	if !strings.Contains(text, "memory_ingest_ms: 0") || !strings.Contains(text, "memory_recall_ms: 0") || !strings.Contains(text, "memory_retrieve_ms: 0") {
 		t.Fatalf("text report missing memory_*_ms 0:\n%s", text)
@@ -2477,12 +2500,21 @@ func TestDogfood_KV_UnsetSkip(t *testing.T) {
 	if rep.KVEnsured {
 		t.Fatal("KVEnsured want false when unset")
 	}
+	if rep.KVEnsureMS != 0 {
+		t.Fatalf("KVEnsureMS: %d want 0 when probe unset", rep.KVEnsureMS)
+	}
+	if n, ok := parsed["kv_ensure_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json kv_ensure_ms: %v want 0\n%s", parsed["kv_ensure_ms"], js)
+	}
 	text := FormatReport(rep)
 	if !strings.Contains(text, "kv_key_count: 0") {
 		t.Fatalf("text report missing kv_key_count:\n%s", text)
 	}
 	if !strings.Contains(text, "kv_ensured: false") {
 		t.Fatalf("text report missing kv_ensured:\n%s", text)
+	}
+	if !strings.Contains(text, "kv_ensure_ms: 0") {
+		t.Fatalf("text report missing kv_ensure_ms: 0:\n%s", text)
 	}
 	if strings.Contains(text, "kv_bucket:") {
 		t.Fatalf("text report must omit kv_bucket when unset:\n%s", text)
@@ -2566,6 +2598,12 @@ func TestDogfood_KV_ListKeysPass(t *testing.T) {
 	if rep.KVEnsured {
 		t.Fatal("KVEnsured want false without KVEnsure")
 	}
+	if rep.KVEnsureMS != 0 {
+		t.Fatalf("KVEnsureMS: %d want 0 when ensure off", rep.KVEnsureMS)
+	}
+	if n, ok := parsed["kv_ensure_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json kv_ensure_ms: %v want 0 when ensure off\n%s", parsed["kv_ensure_ms"], js)
+	}
 	if !strings.Contains(kv.Detail, "ensure=skip") {
 		t.Fatalf("kv detail want ensure=skip: %s", kv.Detail)
 	}
@@ -2575,6 +2613,9 @@ func TestDogfood_KV_ListKeysPass(t *testing.T) {
 	}
 	if !strings.Contains(text, "kv_ensured: false") {
 		t.Fatalf("text report missing kv_ensured:\n%s", text)
+	}
+	if !strings.Contains(text, "kv_ensure_ms: 0") {
+		t.Fatalf("text report missing kv_ensure_ms: 0:\n%s", text)
 	}
 }
 
@@ -2755,6 +2796,12 @@ func TestDogfood_KV_EnsureOk(t *testing.T) {
 	if rep.KVKeyCount != 1 {
 		t.Fatalf("KVKeyCount=%d", rep.KVKeyCount)
 	}
+	if rep.KVEnsureMS < 0 {
+		t.Fatalf("KVEnsureMS: %d want >= 0 when ensure on", rep.KVEnsureMS)
+	}
+	if rep.KVMS < 0 {
+		t.Fatalf("KVMS: %d want >= 0", rep.KVMS)
+	}
 	kv, ok := dogfoodStep(rep, "kv")
 	if !ok || kv.Status != StepPass {
 		t.Fatalf("kv step: ok=%v status=%s detail=%s", ok, kv.Status, kv.Detail)
@@ -2770,9 +2817,15 @@ func TestDogfood_KV_EnsureOk(t *testing.T) {
 	if ensured, ok := parsed["kv_ensured"].(bool); !ok || !ensured {
 		t.Fatalf("json kv_ensured: %v\n%s", parsed["kv_ensured"], js)
 	}
+	if n, ok := parsed["kv_ensure_ms"].(float64); !ok || int(n) < 0 {
+		t.Fatalf("json kv_ensure_ms: %v want >= 0\n%s", parsed["kv_ensure_ms"], js)
+	}
 	text := FormatReport(rep)
 	if !strings.Contains(text, "kv_ensured: true") {
 		t.Fatalf("text missing kv_ensured true:\n%s", text)
+	}
+	if !strings.Contains(text, "kv_ensure_ms:") {
+		t.Fatalf("text missing kv_ensure_ms:\n%s", text)
 	}
 }
 
@@ -2882,6 +2935,10 @@ func TestDogfood_KV_EnsureSoftFailStillLists(t *testing.T) {
 	}
 	if rep.KVKeyCount != 2 {
 		t.Fatalf("KVKeyCount=%d", rep.KVKeyCount)
+	}
+	// Ensure was attempted (even on soft-fail) → latency always >= 0.
+	if rep.KVEnsureMS < 0 {
+		t.Fatalf("KVEnsureMS: %d want >= 0 on ensure soft-fail", rep.KVEnsureMS)
 	}
 	kv, ok := dogfoodStep(rep, "kv")
 	if !ok || kv.Status != StepPass {

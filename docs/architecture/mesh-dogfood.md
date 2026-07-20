@@ -137,7 +137,7 @@ Optional non-destructive `KVListKeys` after `streams` / `consumer` and before `m
 - Soft mode (list): transport/HTTP errors → **SKIP** (`kv soft-fail: …`); `--strict` → **FAIL**
 - Empty key list is still **PASS** with `n=0`
 - **PASS detail**: `bucket=NAME n=N ensure=…`
-- Top-level `kv_bucket` omitted when unset; `kv_key_count` and `kv_ensured` always emitted (`kv_ensured` true only if ensure create attempted and succeeded)
+- Top-level `kv_bucket` omitted when unset; `kv_key_count`, `kv_ensured`, and `kv_ensure_ms` always emitted (`kv_ensured` true only if ensure create attempted and succeeded; `kv_ensure_ms` is ensure-create latency only, `0` when ensure off/unset)
 
 ### emit + llm_meter (dept streams / remote metering)
 
@@ -251,7 +251,8 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `pub_ms` | int | Soft pub step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
 | `policy_ms` | int | Policy step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
 | `consumer_ms` | int | Consumer step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
-| `kv_ms` | int | KV step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
+| `kv_ms` | int | KV step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled). Includes ensure + list when both run |
+| `kv_ensure_ms` | int | `KVCreateBucket` ensure-path latency in ms only (**always emitted**, `0` when `--kv-ensure` off, kv probe unset, or ensure not attempted). Distinct from `kv_ms` |
 | `memory_ingest_ms` | int | Memory ingest step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
 | `memory_recall_ms` | int | Memory recall step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
 | `memory_retrieve_ms` | int | Memory retrieve step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
