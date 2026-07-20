@@ -611,7 +611,7 @@ func cmdMeshWait(args []string) int {
 		timeout       = fs.Duration("timeout", 30*time.Second, "max wait duration")
 		interval      = fs.Duration("interval", 500*time.Millisecond, "poll interval")
 		requireHealth = fs.Bool("require-health", false, "require Health OK each attempt before Ready")
-		jsonOut       = fs.Bool("json", false, "print {ok,elapsed_ms[,error]} as JSON")
+		jsonOut       = fs.Bool("json", false, "print {ok,elapsed_ms,require_health[,error]} as JSON")
 		verbose       = fs.Bool("v", false, "verbose logs")
 	)
 	if err := fs.Parse(args); err != nil {
@@ -655,9 +655,9 @@ func cmdMeshWait(args []string) int {
 	}
 	var out string
 	if *jsonOut {
-		out = iomesh.FormatMeshWaitResultJSON(ok, elapsedMS, errMsg)
+		out = iomesh.FormatMeshWaitResultJSON(ok, elapsedMS, errMsg, *requireHealth)
 	} else {
-		out = iomesh.FormatMeshWaitResult(ok, elapsedMS, errMsg)
+		out = iomesh.FormatMeshWaitResult(ok, elapsedMS, errMsg, *requireHealth)
 	}
 	if ok {
 		fmt.Print(out)

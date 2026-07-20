@@ -71,32 +71,33 @@ func wrapWaitReadyErr(lastErr, ctxErr error) error {
 }
 
 // FormatMeshWaitResult renders operator preflight wait outcome as text.
-// Always includes elapsed_ms for CI evidence (success and failure).
-func FormatMeshWaitResult(ok bool, elapsedMS int, errMsg string) string {
+// Always includes elapsed_ms and require_health for CI evidence (success and failure).
+func FormatMeshWaitResult(ok bool, elapsedMS int, errMsg string, requireHealth bool) string {
 	if elapsedMS < 0 {
 		elapsedMS = 0
 	}
 	if ok {
-		return fmt.Sprintf("PASS mesh wait: ready\nelapsed_ms: %d\n", elapsedMS)
+		return fmt.Sprintf("PASS mesh wait: ready\nelapsed_ms: %d\nrequire_health: %t\n", elapsedMS, requireHealth)
 	}
 	if errMsg == "" {
 		errMsg = "unknown error"
 	}
-	return fmt.Sprintf("FAIL mesh wait: %s\nelapsed_ms: %d\n", errMsg, elapsedMS)
+	return fmt.Sprintf("FAIL mesh wait: %s\nelapsed_ms: %d\nrequire_health: %t\n", errMsg, elapsedMS, requireHealth)
 }
 
 // FormatMeshWaitResultJSON renders wait outcome as compact JSON for scrapers.
-// Always emits ok and elapsed_ms; error only when ok is false.
-func FormatMeshWaitResultJSON(ok bool, elapsedMS int, errMsg string) string {
+// Always emits ok, elapsed_ms, and require_health; error only when ok is false.
+func FormatMeshWaitResultJSON(ok bool, elapsedMS int, errMsg string, requireHealth bool) string {
 	if elapsedMS < 0 {
 		elapsedMS = 0
 	}
 	type out struct {
-		OK        bool   `json:"ok"`
-		ElapsedMS int    `json:"elapsed_ms"`
-		Error     string `json:"error,omitempty"`
+		OK            bool   `json:"ok"`
+		ElapsedMS     int    `json:"elapsed_ms"`
+		RequireHealth bool   `json:"require_health"`
+		Error         string `json:"error,omitempty"`
 	}
-	o := out{OK: ok, ElapsedMS: elapsedMS}
+	o := out{OK: ok, ElapsedMS: elapsedMS, RequireHealth: requireHealth}
 	if !ok {
 		if errMsg == "" {
 			errMsg = "unknown error"
@@ -105,7 +106,7 @@ func FormatMeshWaitResultJSON(ok bool, elapsedMS int, errMsg string) string {
 	}
 	b, err := json.Marshal(o)
 	if err != nil {
-		return `{"ok":false,"elapsed_ms":0,"error":"mesh wait json marshal failed"}` + "\n"
+		return `{"ok":false,"elapsed_ms":0,"require_health":false,"error":"mesh wait json marshal failed"}` + "\n"
 	}
 	return string(b) + "\n"
 }
