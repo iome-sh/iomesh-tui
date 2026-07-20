@@ -241,7 +241,12 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `streams_ms` | int | Streams step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
 | `catalog_ms` | int | Catalog step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
 | `emit_ms` | int | Emit step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
+| `llm_meter_ms` | int | LLM meter step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
+| `pub_ms` | int | Soft pub step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
 | `policy_ms` | int | Policy step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
+| `memory_ingest_ms` | int | Memory ingest step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
+| `memory_recall_ms` | int | Memory recall step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
+| `memory_retrieve_ms` | int | Memory retrieve step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
 | `duration_ms` | int | Total wall-clock duration of the dogfood run (`Finished−Started`) in ms (**always emitted**, `>= 0`) |
 | `policy_mode` | string | Configured policy mode (`off` \| `advisory` \| `enforce`; **always emitted**, default `off`) |
 | `policy_source` | string | Last policy probe source (`mesh` \| `fail-open` \| `unavailable` \| `off`); `off` when mode off; omitted when mesh disabled before policy step |

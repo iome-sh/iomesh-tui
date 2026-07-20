@@ -273,7 +273,8 @@ func TestDogfood_FullPass(t *testing.T) {
 		t.Fatal(js)
 	}
 	// Top-level health_ms / ready_ms / context_ms / streams_ms / catalog_ms /
-	// emit_ms / policy_ms / duration_ms always present (>= 0; often 0 on fast mock).
+	// emit_ms / llm_meter_ms / pub_ms / policy_ms / memory_*_ms / duration_ms
+	// always present (>= 0; often 0 on fast mock).
 	if rep.HealthMS < 0 {
 		t.Fatalf("HealthMS: %d want >= 0", rep.HealthMS)
 	}
@@ -292,8 +293,23 @@ func TestDogfood_FullPass(t *testing.T) {
 	if rep.EmitMS < 0 {
 		t.Fatalf("EmitMS: %d want >= 0", rep.EmitMS)
 	}
+	if rep.LLMMeterMS < 0 {
+		t.Fatalf("LLMMeterMS: %d want >= 0", rep.LLMMeterMS)
+	}
+	if rep.PubMS < 0 {
+		t.Fatalf("PubMS: %d want >= 0", rep.PubMS)
+	}
 	if rep.PolicyMS < 0 {
 		t.Fatalf("PolicyMS: %d want >= 0", rep.PolicyMS)
+	}
+	if rep.MemoryIngestMS < 0 {
+		t.Fatalf("MemoryIngestMS: %d want >= 0", rep.MemoryIngestMS)
+	}
+	if rep.MemoryRecallMS < 0 {
+		t.Fatalf("MemoryRecallMS: %d want >= 0", rep.MemoryRecallMS)
+	}
+	if rep.MemoryRetrieveMS < 0 {
+		t.Fatalf("MemoryRetrieveMS: %d want >= 0", rep.MemoryRetrieveMS)
 	}
 	if rep.DurationMS < 0 {
 		t.Fatalf("DurationMS: %d want >= 0", rep.DurationMS)
@@ -320,8 +336,23 @@ func TestDogfood_FullPass(t *testing.T) {
 	if _, ok := parsed["emit_ms"].(float64); !ok {
 		t.Fatalf("json emit_ms missing or wrong type: %v\n%s", parsed["emit_ms"], js)
 	}
+	if _, ok := parsed["llm_meter_ms"].(float64); !ok {
+		t.Fatalf("json llm_meter_ms missing or wrong type: %v\n%s", parsed["llm_meter_ms"], js)
+	}
+	if _, ok := parsed["pub_ms"].(float64); !ok {
+		t.Fatalf("json pub_ms missing or wrong type: %v\n%s", parsed["pub_ms"], js)
+	}
 	if _, ok := parsed["policy_ms"].(float64); !ok {
 		t.Fatalf("json policy_ms missing or wrong type: %v\n%s", parsed["policy_ms"], js)
+	}
+	if _, ok := parsed["memory_ingest_ms"].(float64); !ok {
+		t.Fatalf("json memory_ingest_ms missing or wrong type: %v\n%s", parsed["memory_ingest_ms"], js)
+	}
+	if _, ok := parsed["memory_recall_ms"].(float64); !ok {
+		t.Fatalf("json memory_recall_ms missing or wrong type: %v\n%s", parsed["memory_recall_ms"], js)
+	}
+	if _, ok := parsed["memory_retrieve_ms"].(float64); !ok {
+		t.Fatalf("json memory_retrieve_ms missing or wrong type: %v\n%s", parsed["memory_retrieve_ms"], js)
 	}
 	if _, ok := parsed["duration_ms"].(float64); !ok {
 		t.Fatalf("json duration_ms missing or wrong type: %v\n%s", parsed["duration_ms"], js)
@@ -337,6 +368,12 @@ func TestDogfood_FullPass(t *testing.T) {
 	}
 	if !strings.Contains(out, "emit_ms:") || !strings.Contains(out, "policy_ms:") || !strings.Contains(out, "duration_ms:") {
 		t.Fatalf("text report missing emit_ms/policy_ms/duration_ms:\n%s", out)
+	}
+	if !strings.Contains(out, "llm_meter_ms:") || !strings.Contains(out, "pub_ms:") {
+		t.Fatalf("text report missing llm_meter_ms/pub_ms:\n%s", out)
+	}
+	if !strings.Contains(out, "memory_ingest_ms:") || !strings.Contains(out, "memory_recall_ms:") || !strings.Contains(out, "memory_retrieve_ms:") {
+		t.Fatalf("text report missing memory_ingest_ms/memory_recall_ms/memory_retrieve_ms:\n%s", out)
 	}
 }
 
@@ -607,7 +644,8 @@ func TestDogfood_Disabled(t *testing.T) {
 			t.Fatalf("unexpected memory_ingest step when disabled: %+v", s)
 		}
 	}
-	// health/ready/context/streams/catalog/emit/policy steps absent → top-level latencies always 0.
+	// health/ready/context/streams/catalog/emit/llm_meter/pub/policy/memory steps
+	// absent → top-level latencies always 0.
 	// duration_ms still present and >= 0 (wall clock of disabled early return).
 	if rep.HealthMS != 0 {
 		t.Fatalf("disabled HealthMS: %d want 0", rep.HealthMS)
@@ -627,8 +665,23 @@ func TestDogfood_Disabled(t *testing.T) {
 	if rep.EmitMS != 0 {
 		t.Fatalf("disabled EmitMS: %d want 0", rep.EmitMS)
 	}
+	if rep.LLMMeterMS != 0 {
+		t.Fatalf("disabled LLMMeterMS: %d want 0", rep.LLMMeterMS)
+	}
+	if rep.PubMS != 0 {
+		t.Fatalf("disabled PubMS: %d want 0", rep.PubMS)
+	}
 	if rep.PolicyMS != 0 {
 		t.Fatalf("disabled PolicyMS: %d want 0", rep.PolicyMS)
+	}
+	if rep.MemoryIngestMS != 0 {
+		t.Fatalf("disabled MemoryIngestMS: %d want 0", rep.MemoryIngestMS)
+	}
+	if rep.MemoryRecallMS != 0 {
+		t.Fatalf("disabled MemoryRecallMS: %d want 0", rep.MemoryRecallMS)
+	}
+	if rep.MemoryRetrieveMS != 0 {
+		t.Fatalf("disabled MemoryRetrieveMS: %d want 0", rep.MemoryRetrieveMS)
 	}
 	if rep.DurationMS < 0 {
 		t.Fatalf("disabled DurationMS: %d want >= 0", rep.DurationMS)
@@ -656,8 +709,23 @@ func TestDogfood_Disabled(t *testing.T) {
 	if n, ok := parsed["emit_ms"].(float64); !ok || int(n) != 0 {
 		t.Fatalf("json emit_ms: %v want 0\n%s", parsed["emit_ms"], js)
 	}
+	if n, ok := parsed["llm_meter_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json llm_meter_ms: %v want 0\n%s", parsed["llm_meter_ms"], js)
+	}
+	if n, ok := parsed["pub_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json pub_ms: %v want 0\n%s", parsed["pub_ms"], js)
+	}
 	if n, ok := parsed["policy_ms"].(float64); !ok || int(n) != 0 {
 		t.Fatalf("json policy_ms: %v want 0\n%s", parsed["policy_ms"], js)
+	}
+	if n, ok := parsed["memory_ingest_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json memory_ingest_ms: %v want 0\n%s", parsed["memory_ingest_ms"], js)
+	}
+	if n, ok := parsed["memory_recall_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json memory_recall_ms: %v want 0\n%s", parsed["memory_recall_ms"], js)
+	}
+	if n, ok := parsed["memory_retrieve_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json memory_retrieve_ms: %v want 0\n%s", parsed["memory_retrieve_ms"], js)
 	}
 	if n, ok := parsed["duration_ms"].(float64); !ok || int(n) < 0 {
 		t.Fatalf("json duration_ms: %v want >= 0\n%s", parsed["duration_ms"], js)
@@ -674,6 +742,12 @@ func TestDogfood_Disabled(t *testing.T) {
 	}
 	if !strings.Contains(text, "emit_ms: 0") || !strings.Contains(text, "policy_ms: 0") {
 		t.Fatalf("text report missing emit_ms/policy_ms 0:\n%s", text)
+	}
+	if !strings.Contains(text, "llm_meter_ms: 0") || !strings.Contains(text, "pub_ms: 0") {
+		t.Fatalf("text report missing llm_meter_ms/pub_ms 0:\n%s", text)
+	}
+	if !strings.Contains(text, "memory_ingest_ms: 0") || !strings.Contains(text, "memory_recall_ms: 0") || !strings.Contains(text, "memory_retrieve_ms: 0") {
+		t.Fatalf("text report missing memory_*_ms 0:\n%s", text)
 	}
 	if !strings.Contains(text, "duration_ms:") {
 		t.Fatalf("text report missing duration_ms:\n%s", text)
