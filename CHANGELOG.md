@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.33.0] — 2026-07-20
+
+Minor release: dogfood step pass/fail/skip counts.
+
 ### Added
 
 - **Dogfood step counts** — top-level `steps_pass` / `steps_fail` / `steps_skip` (PASS/FAIL/SKIP step tallies; always emitted). Mesh-disabled early return sets `steps_skip=1`. CI can gate without scraping `summary` or the `steps` array
+
 
 ## [0.32.0] — 2026-07-20
 
