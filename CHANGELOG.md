@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.43.0] — 2026-07-20
+
+Minor release: mesh wait require_health in result evidence.
+
 ### Added
 
 - **`mesh wait` require_health evidence** — always emit `require_health` (boolean) in text and `--json` output so CI scrapers can record whether Health was required without re-parsing flags
+
 
 ## [0.42.0] — 2026-07-20
 
