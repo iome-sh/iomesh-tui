@@ -585,6 +585,7 @@ Flags (wait):
   --timeout dur       max wait (default 30s)
   --interval dur      poll interval (default 500ms)
   --require-health    require Health OK each attempt before Ready
+  --json              print {ok,elapsed_ms[,error]} as JSON
   --endpoint url      override IOMESH_ENDPOINT
   --config path       config.toml
   -v                  verbose
@@ -610,6 +611,7 @@ func cmdMeshWait(args []string) int {
 		timeout       = fs.Duration("timeout", 30*time.Second, "max wait duration")
 		interval      = fs.Duration("interval", 500*time.Millisecond, "poll interval")
 		requireHealth = fs.Bool("require-health", false, "require Health OK each attempt before Ready")
+		jsonOut       = fs.Bool("json", false, "print {ok,elapsed_ms[,error]} as JSON")
 		verbose       = fs.Bool("v", false, "verbose logs")
 	)
 	if err := fs.Parse(args); err != nil {
@@ -639,15 +641,35 @@ func cmdMeshWait(args []string) int {
 	ctx, cancel := context.WithTimeout(parent, *timeout)
 	defer cancel()
 
-	if err := mesh.WaitReady(ctx, iomesh.WaitReadyOptions{
+	// Wall-clock WaitReady for operator/CI evidence (always emitted as elapsed_ms).
+	start := time.Now()
+	waitErr := mesh.WaitReady(ctx, iomesh.WaitReadyOptions{
 		Interval:      *interval,
 		RequireHealth: *requireHealth,
-	}); err != nil {
-		fmt.Fprintf(os.Stderr, "FAIL mesh wait: %v\n", err)
-		return 1
+	})
+	elapsedMS := iomesh.ElapsedMS(time.Since(start))
+	ok := waitErr == nil
+	errMsg := ""
+	if waitErr != nil {
+		errMsg = waitErr.Error()
 	}
-	fmt.Println("PASS mesh wait: ready")
-	return 0
+	var out string
+	if *jsonOut {
+		out = iomesh.FormatMeshWaitResultJSON(ok, elapsedMS, errMsg)
+	} else {
+		out = iomesh.FormatMeshWaitResult(ok, elapsedMS, errMsg)
+	}
+	if ok {
+		fmt.Print(out)
+		return 0
+	}
+	// FAIL + elapsed_ms on stderr (text) or stdout (json) for CI greps.
+	if *jsonOut {
+		fmt.Print(out)
+	} else {
+		fmt.Fprint(os.Stderr, out)
+	}
+	return 1
 }
 
 // cmdMeshStatus prints an operator snapshot: StatusLine fields + one-shot Health/Ready.
