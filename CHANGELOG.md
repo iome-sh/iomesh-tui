@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Dogfood wait preflight knobs evidence** — always emit `wait_ready_interval_ms` (effective poll interval; `0` when wait off, default `500` when wait on and interval unset) and `wait_require_health` (configured bool) in text and JSON dogfood reports so CI scrapers record WaitReady knobs without re-parsing flags
+
 ## [0.44.0] — 2026-07-20
 
 Minor release: mesh wait timeout_ms and interval_ms evidence.
