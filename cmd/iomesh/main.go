@@ -501,6 +501,13 @@ func cmdMesh(args []string) int {
   iomesh mesh wait      poll Ready until OK or timeout (operator preflight)
   iomesh mesh status    operator snapshot (StatusLine + optional Health/Ready)
 
+Flags (status):
+  --config path           config.toml
+  --endpoint url          override IOMESH_ENDPOINT
+  --json                  print status as JSON
+  --strict                exit 1 when aggregate result is err (skipped/partial still 0)
+  -v                      verbose
+
 Flags (dogfood):
   --config path           config.toml
   --strict                require context + emit + ready (+ policy/catalog/memory/streams/kv/pub/consumer when on)
@@ -643,7 +650,8 @@ func cmdMeshWait(args []string) int {
 	return 0
 }
 
-// cmdMeshStatus prints an operator snapshot: StatusLine fields + one-shot Health/Ready (fail-open).
+// cmdMeshStatus prints an operator snapshot: StatusLine fields + one-shot Health/Ready.
+// Default exit is fail-open (0 on probe err). With --strict, aggregate result "err" exits 1.
 func cmdMeshStatus(args []string) int {
 	fs := flag.NewFlagSet("mesh status", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
@@ -651,6 +659,7 @@ func cmdMeshStatus(args []string) int {
 		configPath = fs.String("config", "", "config.toml path")
 		endpoint   = fs.String("endpoint", "", "override IOMESH_ENDPOINT")
 		jsonOut    = fs.Bool("json", false, "print status as JSON")
+		strict     = fs.Bool("strict", false, "exit 1 when aggregate result is err (probe failure); skipped/partial still 0")
 		verbose    = fs.Bool("v", false, "verbose logs")
 	)
 	if err := fs.Parse(args); err != nil {
@@ -708,7 +717,8 @@ func cmdMeshStatus(args []string) int {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	// One-shot Health/Ready with latencies — fail-open display (never exit non-zero for probe errs).
+	// One-shot Health/Ready with latencies — fail-open display by default.
+	// With --strict, exit 1 only when aggregate result is "err" (see MeshStatusExitCode).
 	// duration_ms is wall-clock for the whole probe path (always emitted; ~0 when skipped).
 	probeStart := time.Now()
 	if mesh.Enabled() {
@@ -725,10 +735,10 @@ func cmdMeshStatus(args []string) int {
 
 	if *jsonOut {
 		fmt.Print(iomesh.FormatMeshStatusJSON(out))
-		return 0
+	} else {
+		fmt.Print(iomesh.FormatMeshStatus(out))
 	}
-	fmt.Print(iomesh.FormatMeshStatus(out))
-	return 0
+	return iomesh.MeshStatusExitCode(*strict, out.Result)
 }
 
 func cmdMeshCatalog(args []string) int {
@@ -1860,7 +1870,7 @@ Usage:
   iomesh mesh consumer delete    durable pull consumer delete (--stream --name --yes)
   iomesh mesh consumer ack|nack  ack/nack sequences (--stream --name --seq --yes)
   iomesh mesh wait               poll mesh Ready until OK (operator preflight)
-  iomesh mesh status             operator snapshot (StatusLine + Health/Ready)
+  iomesh mesh status             operator snapshot (StatusLine + Health/Ready; --strict gates result=err)
   iomesh models                  list configured models
   iomesh agent stdio             ACP JSON-RPC over stdio (IDE integration)
   iomesh agent serve             ACP JSON-RPC over WebSocket (default 127.0.0.1:7400/acp)

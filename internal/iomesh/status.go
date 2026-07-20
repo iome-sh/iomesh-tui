@@ -60,6 +60,20 @@ func AggregateProbeResult(health, ready string) string {
 	return "partial"
 }
 
+// MeshStatusExitCode returns the process exit code for `iomesh mesh status`.
+// Default (strict=false) is fail-open: always 0 after a successful print.
+// With --strict, only aggregate result "err" exits 1; ok / skipped / partial stay 0
+// (mesh disabled → skipped is not an error).
+func MeshStatusExitCode(strict bool, result string) int {
+	if !strict {
+		return 0
+	}
+	if result == "err" {
+		return 1
+	}
+	return 0
+}
+
 // ProbeStatus returns "ok" or "err" and an optional error message for fail-open display.
 func ProbeStatus(err error) (status, errMsg string) {
 	if err != nil {

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`mesh status --strict`** — optional exit gate after printing JSON/text: exit `1` only when aggregate `result` is `err`; default remains fail-open (exit `0` on probe failures). Mesh disabled (`skipped`) and `partial` stay exit `0` under `--strict`
+
 ## [0.40.0] — 2026-07-20
 
 Minor release: mesh status aggregate result.

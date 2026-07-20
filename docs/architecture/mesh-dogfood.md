@@ -39,12 +39,14 @@ Effective budget is `min(WaitReady, parent ctx remaining)` via `context.WithTime
 One-shot operator snapshot without the full dogfood suite:
 
 ```bash
-iomesh mesh status [--json] [--endpoint url] [--config path]
+iomesh mesh status [--json] [--strict] [--endpoint url] [--config path]
 # Human: StatusLine + version + endpoint/tenant/org/workspace + plane flags + ua + health/ready + latencies + result
-# --json: structured object with the same fields (health/ready fail-open — exit 0 even on probe err)
+# --json: structured object with the same fields
+# default: fail-open — exit 0 even when probes err (result still reports err/partial/skipped)
+# --strict: exit 1 only when aggregate result is err; skipped (mesh disabled) and partial stay exit 0
 ```
 
-Builds the client like dogfood/wait. Prints `StatusLine` config summary (includes `version=` when `iomesh.SetProductVersion` is set from main) plus optional one-shot `Health` / `Ready` probes (errors shown as `err` + message; never fail the command). Probe wall times are always emitted as `health_ms` / `ready_ms` (`0` when mesh disabled / probes skipped). Whole probe-path wall time is always emitted as `duration_ms` (`0` when mesh disabled / probes skipped). Aggregate `result` is always emitted (`ok` \| `err` \| `skipped` \| `partial`) from health+ready.
+Builds the client like dogfood/wait. Prints `StatusLine` config summary (includes `version=` when `iomesh.SetProductVersion` is set from main) plus optional one-shot `Health` / `Ready` probes (errors shown as `err` + message). Default exit is fail-open (`0` even on probe err); with `--strict`, exit `1` only when aggregate `result` is `err` (mesh disabled → `skipped` is not an error; `partial` stays `0`). Probe wall times are always emitted as `health_ms` / `ready_ms` (`0` when mesh disabled / probes skipped). Whole probe-path wall time is always emitted as `duration_ms` (`0` when mesh disabled / probes skipped). Aggregate `result` is always emitted (`ok` \| `err` \| `skipped` \| `partial`) from health+ready.
 
 JSON/text fields beyond StatusLine identity:
 
@@ -310,7 +312,7 @@ iomesh mesh consumer fetch --stream S --name C [--batch N] --yes    # long-poll 
 iomesh mesh consumer ack  --stream S --name C --seq N [--seq N...] --yes  # ack sequences
 iomesh mesh consumer nack --stream S --name C --seq N [--seq N...] --yes  # nack sequences
 iomesh mesh consumer delete --stream S --name C --yes               # DELETE durable consumer (204/2xx)
-iomesh mesh status [--json]      # operator snapshot (StatusLine + Health/Ready)
+iomesh mesh status [--json] [--strict]  # operator snapshot; --strict exits 1 on result=err
 ```
 
 ## Script / Make
