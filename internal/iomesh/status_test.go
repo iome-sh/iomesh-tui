@@ -53,6 +53,33 @@ func TestAggregateProbeResult(t *testing.T) {
 	}
 }
 
+func TestMeshStatusExitCode(t *testing.T) {
+	cases := []struct {
+		strict bool
+		result string
+		want   int
+	}{
+		// fail-open default: always 0
+		{false, "ok", 0},
+		{false, "err", 0},
+		{false, "skipped", 0},
+		{false, "partial", 0},
+		{false, "", 0},
+		// strict: only hard err exits 1
+		{true, "ok", 0},
+		{true, "err", 1},
+		{true, "skipped", 0}, // mesh disabled / probes skipped — not an error
+		{true, "partial", 0}, // prefer 0: only hard err
+		{true, "", 0},
+	}
+	for _, tc := range cases {
+		got := MeshStatusExitCode(tc.strict, tc.result)
+		if got != tc.want {
+			t.Fatalf("MeshStatusExitCode(strict=%v, result=%q)=%d want %d", tc.strict, tc.result, got, tc.want)
+		}
+	}
+}
+
 func TestFormatMeshStatus_JSONAlwaysEmitsLatencies(t *testing.T) {
 	// Disabled / skipped: health_ms, ready_ms, duration_ms must be present as 0;
 	// result always present as skipped.
