@@ -145,6 +145,14 @@ type DogfoodReport struct {
 	// DurationMS is total wall-clock duration of the dogfood run (Finished−Started) in ms.
 	// Always emitted in JSON (>= 0).
 	DurationMS int `json:"duration_ms"`
+	// StepsPass is the count of PASS steps. Always emitted (0 when none).
+	// Top-level CI evidence without scraping Summary or the steps array.
+	StepsPass int `json:"steps_pass"`
+	// StepsFail is the count of FAIL steps. Always emitted (0 when none).
+	StepsFail int `json:"steps_fail"`
+	// StepsSkip is the count of SKIP steps. Always emitted (0 when none).
+	// Mesh-disabled early return sets steps_skip=1 for the single enabled SKIP step.
+	StepsSkip int `json:"steps_skip"`
 	// PolicyMode is the configured policy mode (off|advisory|enforce). Always emitted (default "off").
 	PolicyMode string `json:"policy_mode"`
 	// PolicySource is last policy probe source (mesh|fail-open|unavailable|off|"").
@@ -273,6 +281,9 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 			Detail: "mesh client disabled or endpoint empty (offline-first OK)",
 		})
 		rep.OK = true
+		rep.StepsPass = 0
+		rep.StepsFail = 0
+		rep.StepsSkip = 1
 		rep.Summary = "SKIP (mesh disabled)"
 		rep.Finished = time.Now().UTC()
 		rep.DurationMS = durationMS(rep.Started, rep.Finished)
@@ -840,6 +851,7 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 	}
 
 	// Aggregate: any FAIL ⇒ not OK; SKIP/PASS ok.
+	// Top-level steps_pass / steps_fail / steps_skip always set for CI greps.
 	rep.OK = true
 	var fails, passes, skips int
 	for _, s := range rep.Steps {
@@ -853,6 +865,9 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 			skips++
 		}
 	}
+	rep.StepsPass = passes
+	rep.StepsFail = fails
+	rep.StepsSkip = skips
 	if rep.OK {
 		rep.Summary = fmt.Sprintf("PASS (pass=%d skip=%d)", passes, skips)
 	} else {
@@ -1008,6 +1023,9 @@ func FormatReportJSON(r DogfoodReport) string {
 		MemoryRecallMS      int        `json:"memory_recall_ms"`      // always emit (0 when memory_recall skipped/absent)
 		MemoryRetrieveMS    int        `json:"memory_retrieve_ms"`    // always emit (0 when memory_retrieve skipped/absent)
 		DurationMS          int        `json:"duration_ms"`           // always emit (wall-clock Finished−Started ms)
+		StepsPass           int        `json:"steps_pass"`            // always emit (PASS step count)
+		StepsFail           int        `json:"steps_fail"`            // always emit (FAIL step count)
+		StepsSkip           int        `json:"steps_skip"`            // always emit (SKIP step count)
 		PolicyMode          string     `json:"policy_mode"`           // always emit (off|advisory|enforce)
 		PolicySource        string     `json:"policy_source,omitempty"`
 		PolicyAllow         *bool      `json:"policy_allow,omitempty"` // set when policy evaluated
@@ -1070,6 +1088,9 @@ func FormatReportJSON(r DogfoodReport) string {
 		MemoryRecallMS:      r.MemoryRecallMS,
 		MemoryRetrieveMS:    r.MemoryRetrieveMS,
 		DurationMS:          r.DurationMS,
+		StepsPass:           r.StepsPass,
+		StepsFail:           r.StepsFail,
+		StepsSkip:           r.StepsSkip,
 		PolicyMode:          policyMode,
 		PolicySource:        r.PolicySource,
 		PolicyAllow:         r.PolicyAllow,
@@ -1170,6 +1191,9 @@ func FormatReport(r DogfoodReport) string {
 	fmt.Fprintf(&b, "  memory_recall_ms: %d\n", r.MemoryRecallMS)
 	fmt.Fprintf(&b, "  memory_retrieve_ms: %d\n", r.MemoryRetrieveMS)
 	fmt.Fprintf(&b, "  duration_ms: %d\n", r.DurationMS)
+	fmt.Fprintf(&b, "  steps_pass: %d\n", r.StepsPass)
+	fmt.Fprintf(&b, "  steps_fail: %d\n", r.StepsFail)
+	fmt.Fprintf(&b, "  steps_skip: %d\n", r.StepsSkip)
 	policyMode := r.PolicyMode
 	if policyMode == "" {
 		policyMode = "off"

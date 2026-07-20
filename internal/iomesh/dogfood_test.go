@@ -324,9 +324,46 @@ func TestDogfood_FullPass(t *testing.T) {
 	if rep.DurationMS < 0 {
 		t.Fatalf("DurationMS: %d want >= 0", rep.DurationMS)
 	}
+	// Top-level steps_pass / steps_fail / steps_skip always present for CI.
+	// Full-pass mock: at least one PASS, zero FAIL; skip count may be > 0
+	// (e.g. wait_ready off, pub/kv/consumer unset, policy mode off).
+	if rep.StepsPass <= 0 {
+		t.Fatalf("StepsPass: %d want > 0\n%s", rep.StepsPass, FormatReport(rep))
+	}
+	if rep.StepsFail != 0 {
+		t.Fatalf("StepsFail: %d want 0\n%s", rep.StepsFail, FormatReport(rep))
+	}
+	if rep.StepsSkip < 0 {
+		t.Fatalf("StepsSkip: %d want >= 0", rep.StepsSkip)
+	}
+	// Counts must match step statuses.
+	var wantPass, wantFail, wantSkip int
+	for _, s := range rep.Steps {
+		switch s.Status {
+		case StepPass:
+			wantPass++
+		case StepFail:
+			wantFail++
+		case StepSkip:
+			wantSkip++
+		}
+	}
+	if rep.StepsPass != wantPass || rep.StepsFail != wantFail || rep.StepsSkip != wantSkip {
+		t.Fatalf("step counts mismatch: report pass=%d fail=%d skip=%d counted pass=%d fail=%d skip=%d",
+			rep.StepsPass, rep.StepsFail, rep.StepsSkip, wantPass, wantFail, wantSkip)
+	}
 	var parsed map[string]any
 	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
 		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if n, ok := parsed["steps_pass"].(float64); !ok || int(n) != rep.StepsPass {
+		t.Fatalf("json steps_pass: %v want %d\n%s", parsed["steps_pass"], rep.StepsPass, js)
+	}
+	if n, ok := parsed["steps_fail"].(float64); !ok || int(n) != rep.StepsFail {
+		t.Fatalf("json steps_fail: %v want %d\n%s", parsed["steps_fail"], rep.StepsFail, js)
+	}
+	if n, ok := parsed["steps_skip"].(float64); !ok || int(n) != rep.StepsSkip {
+		t.Fatalf("json steps_skip: %v want %d\n%s", parsed["steps_skip"], rep.StepsSkip, js)
 	}
 	if _, ok := parsed["wait_ready_elapsed_ms"].(float64); !ok {
 		t.Fatalf("json wait_ready_elapsed_ms missing or wrong type: %v\n%s", parsed["wait_ready_elapsed_ms"], js)
@@ -399,6 +436,15 @@ func TestDogfood_FullPass(t *testing.T) {
 	}
 	if !strings.Contains(out, "memory_ingest_ms:") || !strings.Contains(out, "memory_recall_ms:") || !strings.Contains(out, "memory_retrieve_ms:") {
 		t.Fatalf("text report missing memory_ingest_ms/memory_recall_ms/memory_retrieve_ms:\n%s", out)
+	}
+	if !strings.Contains(out, fmt.Sprintf("steps_pass: %d", rep.StepsPass)) {
+		t.Fatalf("text report missing steps_pass:\n%s", out)
+	}
+	if !strings.Contains(out, "steps_fail: 0") {
+		t.Fatalf("text report missing steps_fail: 0:\n%s", out)
+	}
+	if !strings.Contains(out, fmt.Sprintf("steps_skip: %d", rep.StepsSkip)) {
+		t.Fatalf("text report missing steps_skip:\n%s", out)
 	}
 }
 
@@ -720,10 +766,29 @@ func TestDogfood_Disabled(t *testing.T) {
 	if rep.DurationMS < 0 {
 		t.Fatalf("disabled DurationMS: %d want >= 0", rep.DurationMS)
 	}
+	// Mesh disabled: single SKIP enabled step → steps_skip >= 1, fail=0, pass=0.
+	if rep.StepsPass != 0 {
+		t.Fatalf("disabled StepsPass: %d want 0", rep.StepsPass)
+	}
+	if rep.StepsFail != 0 {
+		t.Fatalf("disabled StepsFail: %d want 0", rep.StepsFail)
+	}
+	if rep.StepsSkip < 1 {
+		t.Fatalf("disabled StepsSkip: %d want >= 1", rep.StepsSkip)
+	}
 	js := FormatReportJSON(rep)
 	var parsed map[string]any
 	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
 		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if n, ok := parsed["steps_pass"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json steps_pass: %v want 0\n%s", parsed["steps_pass"], js)
+	}
+	if n, ok := parsed["steps_fail"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json steps_fail: %v want 0\n%s", parsed["steps_fail"], js)
+	}
+	if n, ok := parsed["steps_skip"].(float64); !ok || int(n) < 1 {
+		t.Fatalf("json steps_skip: %v want >= 1\n%s", parsed["steps_skip"], js)
 	}
 	if n, ok := parsed["wait_ready_elapsed_ms"].(float64); !ok || int(n) != 0 {
 		t.Fatalf("json wait_ready_elapsed_ms: %v want 0\n%s", parsed["wait_ready_elapsed_ms"], js)
@@ -800,6 +865,12 @@ func TestDogfood_Disabled(t *testing.T) {
 	}
 	if !strings.Contains(text, "duration_ms:") {
 		t.Fatalf("text report missing duration_ms:\n%s", text)
+	}
+	if !strings.Contains(text, "steps_pass: 0") || !strings.Contains(text, "steps_fail: 0") {
+		t.Fatalf("text report missing steps_pass/fail 0:\n%s", text)
+	}
+	if !strings.Contains(text, "steps_skip: 1") {
+		t.Fatalf("text report missing steps_skip: 1:\n%s", text)
 	}
 }
 
