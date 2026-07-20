@@ -191,7 +191,7 @@ Dogfood soft-probes the same path when `--pub-subject` / `DogfoodOptions.PubSubj
 
 ## Durable pull consumers (`mesh consumer`)
 
-Lean consumer surface (no SDK dependency; wire parity with SDK `CreateConsumer` / fetch / ack intent):
+Lean consumer surface (no SDK dependency; wire parity with SDK `CreateConsumer` / fetch / ack / `DeleteConsumer` intent):
 
 | Method | HTTP | Notes |
 |--------|------|-------|
@@ -199,6 +199,7 @@ Lean consumer surface (no SDK dependency; wire parity with SDK `CreateConsumer` 
 | `ConsumerFetch(stream, name, batch, maxWait)` | `POST /v1/streams/{stream}/consumers/{name}/fetch` | Body `{batch, max_wait_ms}`; default maxWait 2s; returns `[]StreamMessage` (base64 or raw payload); empty args / batch≤0 / non-2xx → error |
 | `ConsumerAck(stream, name, seqs...)` | `POST .../consumers/{name}/ack` | Body `{"seqs":[...]}`; path-escaped stream+name; returns optional `ack_floor` (0 if empty body); empty stream/name/seqs / non-2xx → error |
 | `ConsumerNack(stream, name, seqs...)` | `POST .../consumers/{name}/nack` | Same shape as ack |
+| `DeleteConsumer(stream, name)` | `DELETE .../consumers/{name}` | Path-escaped stream+name; **204/2xx** success; empty stream/name / non-2xx → error |
 | `FormatConsumerInfo` | — | multi-line operator view (omits empty `filter_subject`) |
 
 ```bash
@@ -208,9 +209,11 @@ iomesh mesh consumer fetch --stream EVENTS --name worker-1 --batch 1 --yes
 iomesh mesh consumer fetch --stream EVENTS --name worker-1 --batch 5 --yes --json
 iomesh mesh consumer ack  --stream EVENTS --name worker-1 --seq 1 --seq 2 --yes
 iomesh mesh consumer nack --stream EVENTS --name worker-1 --seq 3 --yes
+iomesh mesh consumer delete --stream EVENTS --name worker-1 --yes
+iomesh mesh consumer delete --stream EVENTS --name worker-1 --yes --json
 ```
 
-Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 already-exists → success). Fetch long-polls up to 2s. Ack/nack require at least one `--seq` (repeatable; CSV ok). Prints `PASS ... ack_floor=N` on success. Mesh disabled → error `mesh disabled` (non-zero CLI exit). Not auto-probed by dogfood.
+Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 already-exists → success). Fetch long-polls up to 2s. Ack/nack require at least one `--seq` (repeatable; CSV ok). Delete prints `PASS ...` (or `{"ok":true,"stream":"...","name":"..."}` with `--json`). Mesh disabled → error `mesh disabled` (non-zero CLI exit). Not auto-probed by dogfood.
 
 ## Packages
 
@@ -220,7 +223,7 @@ Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 alread
 - `internal/iomesh/catalog.go` — ListCatalog / FormatCatalog / CatalogSnippet
 - `internal/iomesh/streams.go` — ListStreams / GetStream / DeleteStream / FormatStreams
 - `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages
-- `internal/iomesh/consumers.go` — CreateConsumer / ConsumerFetch / ConsumerAck / ConsumerNack / FormatConsumerInfo
+- `internal/iomesh/consumers.go` — CreateConsumer / ConsumerFetch / ConsumerAck / ConsumerNack / DeleteConsumer / FormatConsumerInfo
 - `internal/iomesh/kv.go` — KVGet / KVListKeys / KVPut / KVDelete / KVCreateBucket / FormatKVEntry / FormatKVKeys / FormatKVBucketInfo
 - `internal/iomesh/pub.go` — Pub (ephemeral `POST /v1/pub`)
 - `internal/agent` — policy before tool execute; mesh catalog tools; `EventMeshPolicy`

@@ -256,6 +256,39 @@ func (c *Client) consumerAckNack(ctx context.Context, stream, name, op string, s
 	return out.AckFloor, nil
 }
 
+// DeleteConsumer removes a durable pull consumer via
+// DELETE /v1/streams/{stream}/consumers/{name}.
+// Stream and name path segments are url.PathEscape'd.
+// Empty stream/name → error. 2xx (including 204 No Content) is success; non-2xx → error.
+// Mesh disabled → "mesh disabled". Mutating — CLI gates with delete --yes.
+func (c *Client) DeleteConsumer(ctx context.Context, stream, name string) error {
+	if c == nil || !c.Enabled() {
+		return fmt.Errorf("mesh disabled")
+	}
+	stream = strings.TrimSpace(stream)
+	name = strings.TrimSpace(name)
+	if stream == "" || name == "" {
+		return fmt.Errorf("iomesh consumer: stream and name required")
+	}
+	u := strings.TrimRight(c.cfg.Endpoint, "/") + "/v1/streams/" + url.PathEscape(stream) +
+		"/consumers/" + url.PathEscape(name)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, u, nil)
+	if err != nil {
+		return err
+	}
+	c.auth(req)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 1<<20))
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("iomesh consumer: http %d", resp.StatusCode)
+	}
+	return nil
+}
+
 // FormatConsumerInfo is a multi-line view for one durable consumer (CLI).
 // Pure helper with no network I/O. filter_subject is omitted when empty.
 func FormatConsumerInfo(info ConsumerInfo) string {

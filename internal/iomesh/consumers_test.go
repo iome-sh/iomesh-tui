@@ -321,3 +321,80 @@ func TestConsumerAck_HTTPErrorAndPathEscape(t *testing.T) {
 		t.Fatalf("path=%q want escaped stream+name", gotPath)
 	}
 }
+
+func TestDeleteConsumer_204(t *testing.T) {
+	prev := UserAgent()
+	SetUserAgent("iomesh-tui/test-consumer-delete")
+	t.Cleanup(func() { SetUserAgent(prev) })
+
+	var gotMethod, gotPath, gotUA string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		gotUA = r.Header.Get("User-Agent")
+		if r.Method != http.MethodDelete || r.URL.Path != "/v1/streams/EVENTS/consumers/worker-1" {
+			http.NotFound(w, r)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "acme"}, nil)
+	if err := c.DeleteConsumer(context.Background(), "EVENTS", "worker-1"); err != nil {
+		t.Fatal(err)
+	}
+	if gotMethod != http.MethodDelete {
+		t.Fatalf("method=%q", gotMethod)
+	}
+	if gotPath != "/v1/streams/EVENTS/consumers/worker-1" {
+		t.Fatalf("path=%q", gotPath)
+	}
+	if gotUA != "iomesh-tui/test-consumer-delete" {
+		t.Fatalf("User-Agent=%q", gotUA)
+	}
+}
+
+func TestDeleteConsumer_EmptyArgsAndDisabled(t *testing.T) {
+	c := New(Config{Enabled: true, Endpoint: "http://127.0.0.1:9"}, nil)
+	if err := c.DeleteConsumer(context.Background(), "", "c"); err == nil || !strings.Contains(err.Error(), "stream and name required") {
+		t.Fatalf("empty stream err=%v", err)
+	}
+	if err := c.DeleteConsumer(context.Background(), "S", "  "); err == nil || !strings.Contains(err.Error(), "stream and name required") {
+		t.Fatalf("blank name err=%v", err)
+	}
+	off := New(Config{Enabled: false}, nil)
+	if err := off.DeleteConsumer(context.Background(), "S", "c"); err == nil || !strings.Contains(err.Error(), "mesh disabled") {
+		t.Fatalf("disabled err=%v", err)
+	}
+}
+
+func TestDeleteConsumer_HTTPError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(500)
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	err := c.DeleteConsumer(context.Background(), "S", "c")
+	if err == nil || !strings.Contains(err.Error(), "http 500") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestDeleteConsumer_PathEscape(t *testing.T) {
+	var gotPath string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.EscapedPath()
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	if err := c.DeleteConsumer(context.Background(), "a/b", "c/d"); err != nil {
+		t.Fatal(err)
+	}
+	if gotPath != "/v1/streams/a%2Fb/consumers/c%2Fd" {
+		t.Fatalf("path=%q want escaped stream+name", gotPath)
+	}
+}

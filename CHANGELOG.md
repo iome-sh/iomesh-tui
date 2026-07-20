@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Mesh consumer delete** — lean `DeleteConsumer` (`DELETE /v1/streams/{stream}/consumers/{name}`; 204/2xx success; path-escaped stream+name) + CLI `iomesh mesh consumer delete --stream S --name C --yes [--json]`
+
 ## [0.33.0] — 2026-07-20
 
 Minor release: dogfood step pass/fail/skip counts.
