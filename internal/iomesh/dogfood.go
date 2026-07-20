@@ -106,6 +106,12 @@ type DogfoodReport struct {
 	// Always emitted in JSON so CI sees preflight wall time without scraping step detail.
 	// Distinct from WaitReadyMS (configured budget).
 	WaitReadyElapsedMS int `json:"wait_ready_elapsed_ms"`
+	// WaitReadyIntervalMS is the effective WaitReady poll interval in ms (0 when wait preflight off).
+	// Always emitted. When WaitReady>0 and WaitReadyInterval<=0, effective default is 500.
+	WaitReadyIntervalMS int `json:"wait_ready_interval_ms"`
+	// WaitRequireHealth is the configured WaitRequireHealth knob (false when unset / wait off).
+	// Always emitted.
+	WaitRequireHealth bool `json:"wait_require_health"`
 	// HealthMS is health step latency in milliseconds (0 when step skipped/absent).
 	// Always emitted in JSON so CI sees probe latency without scraping step detail.
 	HealthMS int `json:"health_ms"`
@@ -267,8 +273,15 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 	if rep.Version == "" {
 		rep.Version = ProductVersion()
 	}
+	// Always emit configured WaitRequireHealth (even when wait preflight off).
+	rep.WaitRequireHealth = opts.WaitRequireHealth
 	if opts.WaitReady > 0 {
 		rep.WaitReadyMS = int(opts.WaitReady / time.Millisecond)
+		interval := opts.WaitReadyInterval
+		if interval <= 0 {
+			interval = 500 * time.Millisecond
+		}
+		rep.WaitReadyIntervalMS = int(interval / time.Millisecond)
 	}
 	// Always emit package UA for CI/operator evidence (even when mesh disabled).
 	rep.UserAgent = UserAgent()
@@ -1066,6 +1079,8 @@ func FormatReportJSON(r DogfoodReport) string {
 		ConsumerDeleteOK     bool       `json:"consumer_delete_ok"`     // always emit (true if DeleteConsumer nil)
 		WaitReadyMS          int        `json:"wait_ready_ms"`          // always emit (CI wait preflight budget)
 		WaitReadyElapsedMS   int        `json:"wait_ready_elapsed_ms"`  // always emit (0 when wait_ready step skipped/absent)
+		WaitReadyIntervalMS  int        `json:"wait_ready_interval_ms"` // always emit (0 when wait preflight off; effective default 500)
+		WaitRequireHealth    bool       `json:"wait_require_health"`    // always emit (configured knob)
 		HealthMS             int        `json:"health_ms"`              // always emit (0 when health step skipped/absent)
 		ReadyMS              int        `json:"ready_ms"`               // always emit (0 when ready step skipped/absent)
 		ContextMS            int        `json:"context_ms"`             // always emit (0 when context step skipped/absent)
@@ -1135,6 +1150,8 @@ func FormatReportJSON(r DogfoodReport) string {
 		ConsumerDeleteOK:     r.ConsumerDeleteOK,
 		WaitReadyMS:          r.WaitReadyMS,
 		WaitReadyElapsedMS:   r.WaitReadyElapsedMS,
+		WaitReadyIntervalMS:  r.WaitReadyIntervalMS,
+		WaitRequireHealth:    r.WaitRequireHealth,
 		HealthMS:             r.HealthMS,
 		ReadyMS:              r.ReadyMS,
 		ContextMS:            r.ContextMS,
@@ -1242,6 +1259,8 @@ func FormatReport(r DogfoodReport) string {
 	fmt.Fprintf(&b, "  consumer_delete_ok: %v\n", r.ConsumerDeleteOK)
 	fmt.Fprintf(&b, "  wait_ready_ms: %d\n", r.WaitReadyMS)
 	fmt.Fprintf(&b, "  wait_ready_elapsed_ms: %d\n", r.WaitReadyElapsedMS)
+	fmt.Fprintf(&b, "  wait_ready_interval_ms: %d\n", r.WaitReadyIntervalMS)
+	fmt.Fprintf(&b, "  wait_require_health: %t\n", r.WaitRequireHealth)
 	fmt.Fprintf(&b, "  health_ms: %d\n", r.HealthMS)
 	fmt.Fprintf(&b, "  ready_ms: %d\n", r.ReadyMS)
 	fmt.Fprintf(&b, "  context_ms: %d\n", r.ContextMS)

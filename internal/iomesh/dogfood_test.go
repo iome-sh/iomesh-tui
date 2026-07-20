@@ -383,6 +383,12 @@ func TestDogfood_FullPass(t *testing.T) {
 	if _, ok := parsed["wait_ready_elapsed_ms"].(float64); !ok {
 		t.Fatalf("json wait_ready_elapsed_ms missing or wrong type: %v\n%s", parsed["wait_ready_elapsed_ms"], js)
 	}
+	if n, ok := parsed["wait_ready_interval_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json wait_ready_interval_ms: %v want 0 when wait off\n%s", parsed["wait_ready_interval_ms"], js)
+	}
+	if v, ok := parsed["wait_require_health"].(bool); !ok || v {
+		t.Fatalf("json wait_require_health: %v want false when unset\n%s", parsed["wait_require_health"], js)
+	}
 	if _, ok := parsed["health_ms"].(float64); !ok {
 		t.Fatalf("json health_ms missing or wrong type: %v\n%s", parsed["health_ms"], js)
 	}
@@ -439,6 +445,12 @@ func TestDogfood_FullPass(t *testing.T) {
 	}
 	if !strings.Contains(out, "wait_ready_elapsed_ms:") {
 		t.Fatalf("text report missing wait_ready_elapsed_ms:\n%s", out)
+	}
+	if !strings.Contains(out, "wait_ready_interval_ms: 0") {
+		t.Fatalf("text report missing wait_ready_interval_ms 0:\n%s", out)
+	}
+	if !strings.Contains(out, "wait_require_health: false") {
+		t.Fatalf("text report missing wait_require_health false:\n%s", out)
 	}
 	if !strings.Contains(out, "health_ms:") || !strings.Contains(out, "ready_ms:") {
 		t.Fatalf("text report missing health_ms/ready_ms:\n%s", out)
@@ -748,6 +760,12 @@ func TestDogfood_Disabled(t *testing.T) {
 	if rep.WaitReadyElapsedMS != 0 {
 		t.Fatalf("disabled WaitReadyElapsedMS: %d want 0", rep.WaitReadyElapsedMS)
 	}
+	if rep.WaitReadyIntervalMS != 0 {
+		t.Fatalf("disabled WaitReadyIntervalMS: %d want 0", rep.WaitReadyIntervalMS)
+	}
+	if rep.WaitRequireHealth {
+		t.Fatalf("disabled WaitRequireHealth: true want false")
+	}
 	if rep.HealthMS != 0 {
 		t.Fatalf("disabled HealthMS: %d want 0", rep.HealthMS)
 	}
@@ -826,6 +844,12 @@ func TestDogfood_Disabled(t *testing.T) {
 	if n, ok := parsed["wait_ready_elapsed_ms"].(float64); !ok || int(n) != 0 {
 		t.Fatalf("json wait_ready_elapsed_ms: %v want 0\n%s", parsed["wait_ready_elapsed_ms"], js)
 	}
+	if n, ok := parsed["wait_ready_interval_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json wait_ready_interval_ms: %v want 0\n%s", parsed["wait_ready_interval_ms"], js)
+	}
+	if v, ok := parsed["wait_require_health"].(bool); !ok || v {
+		t.Fatalf("json wait_require_health: %v want false\n%s", parsed["wait_require_health"], js)
+	}
 	if n, ok := parsed["health_ms"].(float64); !ok || int(n) != 0 {
 		t.Fatalf("json health_ms: %v want 0\n%s", parsed["health_ms"], js)
 	}
@@ -883,6 +907,12 @@ func TestDogfood_Disabled(t *testing.T) {
 	text := FormatReport(rep)
 	if !strings.Contains(text, "wait_ready_elapsed_ms: 0") {
 		t.Fatalf("text report missing wait_ready_elapsed_ms 0:\n%s", text)
+	}
+	if !strings.Contains(text, "wait_ready_interval_ms: 0") {
+		t.Fatalf("text report missing wait_ready_interval_ms 0:\n%s", text)
+	}
+	if !strings.Contains(text, "wait_require_health: false") {
+		t.Fatalf("text report missing wait_require_health false:\n%s", text)
 	}
 	if !strings.Contains(text, "health_ms: 0") || !strings.Contains(text, "ready_ms: 0") {
 		t.Fatalf("text report missing health_ms/ready_ms 0:\n%s", text)
@@ -2303,6 +2333,12 @@ func TestDogfood_WaitReady_SucceedsAfterRetries(t *testing.T) {
 	if rep.WaitReadyElapsedMS <= 0 {
 		t.Fatalf("WaitReadyElapsedMS: %d want > 0 when wait_ready ran", rep.WaitReadyElapsedMS)
 	}
+	if rep.WaitReadyIntervalMS != 10 {
+		t.Fatalf("WaitReadyIntervalMS: %d want 10", rep.WaitReadyIntervalMS)
+	}
+	if rep.WaitRequireHealth {
+		t.Fatalf("WaitRequireHealth: true want false")
+	}
 	wr, ok := dogfoodStep(rep, "wait_ready")
 	if !ok || wr.Status != StepPass {
 		t.Fatalf("wait_ready: ok=%v status=%s detail=%s", ok, wr.Status, wr.Detail)
@@ -2328,12 +2364,24 @@ func TestDogfood_WaitReady_SucceedsAfterRetries(t *testing.T) {
 	if n, ok := parsed["wait_ready_elapsed_ms"].(float64); !ok || int(n) <= 0 {
 		t.Fatalf("json wait_ready_elapsed_ms: %v want > 0\n%s", parsed["wait_ready_elapsed_ms"], js)
 	}
+	if n, ok := parsed["wait_ready_interval_ms"].(float64); !ok || int(n) != 10 {
+		t.Fatalf("json wait_ready_interval_ms: %v want 10\n%s", parsed["wait_ready_interval_ms"], js)
+	}
+	if v, ok := parsed["wait_require_health"].(bool); !ok || v {
+		t.Fatalf("json wait_require_health: %v want false\n%s", parsed["wait_require_health"], js)
+	}
 	text := FormatReport(rep)
 	if !strings.Contains(text, "wait_ready_ms: 2000") {
 		t.Fatalf("text report missing wait_ready_ms:\n%s", text)
 	}
 	if !strings.Contains(text, "wait_ready_elapsed_ms:") {
 		t.Fatalf("text report missing wait_ready_elapsed_ms:\n%s", text)
+	}
+	if !strings.Contains(text, "wait_ready_interval_ms: 10") {
+		t.Fatalf("text report missing wait_ready_interval_ms 10:\n%s", text)
+	}
+	if !strings.Contains(text, "wait_require_health: false") {
+		t.Fatalf("text report missing wait_require_health false:\n%s", text)
 	}
 }
 
@@ -2420,7 +2468,7 @@ func TestDogfood_WaitReady_TimeoutStrictFail(t *testing.T) {
 }
 
 func TestDogfood_WaitReady_DefaultOff(t *testing.T) {
-	// Zero WaitReady: no wait_ready step; wait_ready_ms and wait_ready_elapsed_ms always 0.
+	// Zero WaitReady: no wait_ready step; wait knobs always emitted (interval 0, require_health false).
 	srv := mockMeshServer(t, struct {
 		failHealth bool
 		noReady    bool
@@ -2447,6 +2495,12 @@ func TestDogfood_WaitReady_DefaultOff(t *testing.T) {
 	if rep.WaitReadyElapsedMS != 0 {
 		t.Fatalf("WaitReadyElapsedMS: %d want 0 when wait_ready off", rep.WaitReadyElapsedMS)
 	}
+	if rep.WaitReadyIntervalMS != 0 {
+		t.Fatalf("WaitReadyIntervalMS: %d want 0 when wait_ready off", rep.WaitReadyIntervalMS)
+	}
+	if rep.WaitRequireHealth {
+		t.Fatalf("WaitRequireHealth: true want false when unset")
+	}
 	if _, ok := dogfoodStep(rep, "wait_ready"); ok {
 		t.Fatal("default dogfood must not include wait_ready step")
 	}
@@ -2461,12 +2515,106 @@ func TestDogfood_WaitReady_DefaultOff(t *testing.T) {
 	if n, ok := parsed["wait_ready_elapsed_ms"].(float64); !ok || int(n) != 0 {
 		t.Fatalf("json wait_ready_elapsed_ms: %v want 0\n%s", parsed["wait_ready_elapsed_ms"], js)
 	}
+	if n, ok := parsed["wait_ready_interval_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json wait_ready_interval_ms: %v want 0\n%s", parsed["wait_ready_interval_ms"], js)
+	}
+	if v, ok := parsed["wait_require_health"].(bool); !ok || v {
+		t.Fatalf("json wait_require_health: %v want false\n%s", parsed["wait_require_health"], js)
+	}
 	text := FormatReport(rep)
 	if !strings.Contains(text, "wait_ready_ms: 0") {
 		t.Fatalf("text report missing wait_ready_ms 0:\n%s", text)
 	}
 	if !strings.Contains(text, "wait_ready_elapsed_ms: 0") {
 		t.Fatalf("text report missing wait_ready_elapsed_ms 0:\n%s", text)
+	}
+	if !strings.Contains(text, "wait_ready_interval_ms: 0") {
+		t.Fatalf("text report missing wait_ready_interval_ms 0:\n%s", text)
+	}
+	if !strings.Contains(text, "wait_require_health: false") {
+		t.Fatalf("text report missing wait_require_health false:\n%s", text)
+	}
+}
+
+func TestDogfood_WaitReady_DefaultIntervalAndRequireHealth(t *testing.T) {
+	// WaitReady>0 with Interval=0 → effective interval_ms=500; WaitRequireHealth always emitted as configured.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case "/ready", "/readyz":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		default:
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "stage"}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{
+		SkipContext:       true,
+		SkipEmit:          true,
+		SkipMemory:        true,
+		WaitReady:         500 * time.Millisecond,
+		WaitReadyInterval: 0, // effective default 500ms
+		WaitRequireHealth: true,
+	})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if rep.WaitReadyMS != 500 {
+		t.Fatalf("WaitReadyMS: %d want 500", rep.WaitReadyMS)
+	}
+	if rep.WaitReadyIntervalMS != 500 {
+		t.Fatalf("WaitReadyIntervalMS: %d want 500 (effective default)", rep.WaitReadyIntervalMS)
+	}
+	if !rep.WaitRequireHealth {
+		t.Fatalf("WaitRequireHealth: false want true")
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if n, ok := parsed["wait_ready_interval_ms"].(float64); !ok || int(n) != 500 {
+		t.Fatalf("json wait_ready_interval_ms: %v want 500\n%s", parsed["wait_ready_interval_ms"], js)
+	}
+	if v, ok := parsed["wait_require_health"].(bool); !ok || !v {
+		t.Fatalf("json wait_require_health: %v want true\n%s", parsed["wait_require_health"], js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "wait_ready_interval_ms: 500") {
+		t.Fatalf("text report missing wait_ready_interval_ms 500:\n%s", text)
+	}
+	if !strings.Contains(text, "wait_require_health: true") {
+		t.Fatalf("text report missing wait_require_health true:\n%s", text)
+	}
+
+	// WaitRequireHealth configured true even when WaitReady off (configured knobs always emit).
+	repOff := c.Dogfood(context.Background(), DogfoodOptions{
+		SkipContext:       true,
+		SkipEmit:          true,
+		SkipMemory:        true,
+		WaitRequireHealth: true,
+	})
+	if repOff.WaitReadyMS != 0 || repOff.WaitReadyIntervalMS != 0 {
+		t.Fatalf("wait off knobs: ms=%d interval=%d want 0/0", repOff.WaitReadyMS, repOff.WaitReadyIntervalMS)
+	}
+	if !repOff.WaitRequireHealth {
+		t.Fatalf("WaitRequireHealth configured true must emit even when wait off")
+	}
+	jsOff := FormatReportJSON(repOff)
+	var parsedOff map[string]any
+	if err := json.Unmarshal([]byte(jsOff), &parsedOff); err != nil {
+		t.Fatalf("json off: %v\n%s", err, jsOff)
+	}
+	if v, ok := parsedOff["wait_require_health"].(bool); !ok || !v {
+		t.Fatalf("json wait_require_health when wait off: %v want true\n%s", parsedOff["wait_require_health"], jsOff)
+	}
+	if n, ok := parsedOff["wait_ready_interval_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json wait_ready_interval_ms when wait off: %v want 0\n%s", parsedOff["wait_ready_interval_ms"], jsOff)
 	}
 }
 
