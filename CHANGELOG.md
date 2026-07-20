@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.46.0] — 2026-07-20
+
+Minor release: dogfood wait_ready_result evidence.
+
 ### Added
 
 - **Dogfood wait_ready_result evidence** — always emit `wait_ready_result` (`off`|`ok`|`err`|`skip`) in text and JSON dogfood reports so CI scrapers record wait_ready step outcome without scraping the steps array (`off` when wait budget 0 / step not run)
