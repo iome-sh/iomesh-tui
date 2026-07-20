@@ -515,6 +515,7 @@ Flags (dogfood):
   --consumer-name C       soft consumer create probe name (requires --consumer-stream)
   --consumer-filter F     optional filter_subject for consumer create probe
   --consumer-fetch        after create: soft fetch batch=1 max_wait=500ms (empty OK; no ack)
+  --consumer-delete       after create: best-effort DeleteConsumer cleanup (soft fail-open)
   --wait-ready dur        soft WaitReady preflight budget (0=off; timeout SKIP unless --strict)
   --wait-interval dur     WaitReady poll interval (default 500ms when --wait-ready set)
   --wait-require-health   WaitReady requires Health OK each attempt
@@ -1698,6 +1699,7 @@ func cmdMeshDogfood(args []string) int {
 		consumerName      = fs.String("consumer-name", "", "soft consumer create probe name (requires --consumer-stream)")
 		consumerFilter    = fs.String("consumer-filter", "", "optional filter_subject for consumer create probe")
 		consumerFetch     = fs.Bool("consumer-fetch", false, "after create: soft fetch batch=1 max_wait=500ms (empty OK; no ack)")
+		consumerDelete    = fs.Bool("consumer-delete", false, "after create: best-effort DeleteConsumer cleanup (soft fail-open)")
 		waitReady         = fs.Duration("wait-ready", 0, "soft WaitReady preflight budget before ready (0=off)")
 		waitInterval      = fs.Duration("wait-interval", 0, "WaitReady poll interval (default 500ms when --wait-ready set)")
 		waitRequireHealth = fs.Bool("wait-require-health", false, "WaitReady requires Health OK each attempt")
@@ -1775,6 +1777,7 @@ func cmdMeshDogfood(args []string) int {
 		ConsumerName:      strings.TrimSpace(*consumerName),
 		ConsumerFilter:    strings.TrimSpace(*consumerFilter),
 		ConsumerFetch:     *consumerFetch,
+		ConsumerDelete:    *consumerDelete,
 		WaitReady:         *waitReady,
 		WaitReadyInterval: *waitInterval,
 		WaitRequireHealth: *waitRequireHealth,

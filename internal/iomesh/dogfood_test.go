@@ -3155,9 +3155,11 @@ func TestDogfood_Consumer_UnsetSkip(t *testing.T) {
 	if !rep.OK {
 		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
 	}
-	if rep.ConsumerProbed || rep.ConsumerOK || rep.ConsumerFetchOK {
-		t.Fatalf("ConsumerProbed=%v ConsumerOK=%v ConsumerFetchOK=%v want all false",
-			rep.ConsumerProbed, rep.ConsumerOK, rep.ConsumerFetchOK)
+	if rep.ConsumerProbed || rep.ConsumerOK || rep.ConsumerFetchOK ||
+		rep.ConsumerDeleteProbed || rep.ConsumerDeleteOK {
+		t.Fatalf("ConsumerProbed=%v ConsumerOK=%v ConsumerFetchOK=%v delete_probed=%v delete_ok=%v want all false",
+			rep.ConsumerProbed, rep.ConsumerOK, rep.ConsumerFetchOK,
+			rep.ConsumerDeleteProbed, rep.ConsumerDeleteOK)
 	}
 	if rep.ConsumerStream != "" || rep.ConsumerName != "" || rep.ConsumerFilter != "" {
 		t.Fatalf("identity unset: stream=%q name=%q filter=%q",
@@ -3182,8 +3184,9 @@ func TestDogfood_Consumer_UnsetSkip(t *testing.T) {
 	if !strings.Contains(step2.Detail, "consumer probe needs stream and name") {
 		t.Fatalf("partial detail: %s", step2.Detail)
 	}
-	if rep2.ConsumerProbed || rep2.ConsumerOK {
-		t.Fatalf("partial probed=%v ok=%v", rep2.ConsumerProbed, rep2.ConsumerOK)
+	if rep2.ConsumerProbed || rep2.ConsumerOK || rep2.ConsumerDeleteProbed || rep2.ConsumerDeleteOK {
+		t.Fatalf("partial probed=%v ok=%v delete_probed=%v delete_ok=%v",
+			rep2.ConsumerProbed, rep2.ConsumerOK, rep2.ConsumerDeleteProbed, rep2.ConsumerDeleteOK)
 	}
 	if rep2.ConsumerStream != "" || rep2.ConsumerName != "" {
 		t.Fatalf("partial should not set identity: stream=%q name=%q", rep2.ConsumerStream, rep2.ConsumerName)
@@ -3194,7 +3197,10 @@ func TestDogfood_Consumer_UnsetSkip(t *testing.T) {
 	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
 		t.Fatalf("json: %v\n%s", err, js)
 	}
-	for _, key := range []string{"consumer_probed", "consumer_ok", "consumer_fetch_ok"} {
+	for _, key := range []string{
+		"consumer_probed", "consumer_ok", "consumer_fetch_ok",
+		"consumer_delete_probed", "consumer_delete_ok",
+	} {
 		if v, ok := parsed[key].(bool); !ok || v {
 			t.Fatalf("json %s: %v want false\n%s", key, parsed[key], js)
 		}
@@ -3207,7 +3213,9 @@ func TestDogfood_Consumer_UnsetSkip(t *testing.T) {
 	text := FormatReport(rep)
 	if !strings.Contains(text, "consumer_probed: false") ||
 		!strings.Contains(text, "consumer_ok: false") ||
-		!strings.Contains(text, "consumer_fetch_ok: false") {
+		!strings.Contains(text, "consumer_fetch_ok: false") ||
+		!strings.Contains(text, "consumer_delete_probed: false") ||
+		!strings.Contains(text, "consumer_delete_ok: false") {
 		t.Fatalf("text report missing consumer fields:\n%s", text)
 	}
 	if strings.Contains(text, "consumer_stream:") || strings.Contains(text, "consumer_name:") {
@@ -3525,5 +3533,293 @@ func TestDogfood_Consumer_FetchEmptyOK(t *testing.T) {
 	text := FormatReport(rep)
 	if !strings.Contains(text, "consumer_fetch_ok: true") {
 		t.Fatalf("text:\n%s", text)
+	}
+}
+
+func TestDogfood_Consumer_DeleteAfterCreate(t *testing.T) {
+	var createHits, deleteHits int
+	var deletePath string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case r.URL.Path == "/ready" || r.URL.Path == "/readyz":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		case strings.HasSuffix(r.URL.Path, "/consumers") && r.Method == http.MethodPost:
+			createHits++
+			w.WriteHeader(201)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"stream": "EVENTS", "name": "worker-1",
+			})
+		case strings.Contains(r.URL.Path, "/consumers/") && r.Method == http.MethodDelete:
+			deleteHits++
+			deletePath = r.URL.Path
+			w.WriteHeader(204)
+		default:
+			if strings.Contains(r.URL.Path, "catalog") {
+				_ = json.NewEncoder(w).Encode(map[string]any{"products": []any{}})
+				return
+			}
+			if r.URL.Path == "/v1/streams" {
+				_ = json.NewEncoder(w).Encode([]any{})
+				return
+			}
+			if r.URL.Path == "/v1/context/query" {
+				_ = json.NewEncoder(w).Encode(map[string]string{"text": "ctx"})
+				return
+			}
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, EmitDeptStreams: false}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{
+		SkipMemory: true, SkipStreams: true,
+		ConsumerStream: "EVENTS",
+		ConsumerName:   "worker-1",
+		ConsumerDelete: true,
+	})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if createHits != 1 || deleteHits != 1 {
+		t.Fatalf("create=%d delete=%d", createHits, deleteHits)
+	}
+	if !strings.Contains(deletePath, "/v1/streams/EVENTS/consumers/worker-1") {
+		t.Fatalf("delete path: %s", deletePath)
+	}
+	if !rep.ConsumerProbed || !rep.ConsumerOK {
+		t.Fatalf("probed=%v ok=%v", rep.ConsumerProbed, rep.ConsumerOK)
+	}
+	if !rep.ConsumerDeleteProbed || !rep.ConsumerDeleteOK {
+		t.Fatalf("delete_probed=%v delete_ok=%v", rep.ConsumerDeleteProbed, rep.ConsumerDeleteOK)
+	}
+	if rep.ConsumerFetchOK {
+		t.Fatalf("fetch_ok should be false when fetch not requested")
+	}
+	step, ok := dogfoodStep(rep, "consumer")
+	if !ok || step.Status != StepPass {
+		t.Fatalf("consumer: ok=%v status=%s detail=%s", ok, step.Status, step.Detail)
+	}
+	if !strings.Contains(step.Detail, "create=ok") || !strings.Contains(step.Detail, "delete=ok") {
+		t.Fatalf("detail: %s", step.Detail)
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if v, ok := parsed["consumer_delete_probed"].(bool); !ok || !v {
+		t.Fatalf("json consumer_delete_probed: %v\n%s", parsed["consumer_delete_probed"], js)
+	}
+	if v, ok := parsed["consumer_delete_ok"].(bool); !ok || !v {
+		t.Fatalf("json consumer_delete_ok: %v\n%s", parsed["consumer_delete_ok"], js)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "consumer_delete_probed: true") ||
+		!strings.Contains(text, "consumer_delete_ok: true") {
+		t.Fatalf("text:\n%s", text)
+	}
+}
+
+func TestDogfood_Consumer_DeleteFlagOff(t *testing.T) {
+	var createHits, deleteHits int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case r.URL.Path == "/ready" || r.URL.Path == "/readyz":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		case strings.HasSuffix(r.URL.Path, "/consumers") && r.Method == http.MethodPost:
+			createHits++
+			w.WriteHeader(201)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"stream": "EVENTS", "name": "worker-1",
+			})
+		case strings.Contains(r.URL.Path, "/consumers/") && r.Method == http.MethodDelete:
+			deleteHits++
+			w.WriteHeader(204)
+		default:
+			if strings.Contains(r.URL.Path, "catalog") {
+				_ = json.NewEncoder(w).Encode(map[string]any{"products": []any{}})
+				return
+			}
+			if r.URL.Path == "/v1/streams" {
+				_ = json.NewEncoder(w).Encode([]any{})
+				return
+			}
+			if r.URL.Path == "/v1/context/query" {
+				_ = json.NewEncoder(w).Encode(map[string]string{"text": "ctx"})
+				return
+			}
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, EmitDeptStreams: false}, nil)
+	// Create path without ConsumerDelete → delete flags stay false, no DELETE call.
+	rep := c.Dogfood(context.Background(), DogfoodOptions{
+		SkipMemory: true, SkipStreams: true,
+		ConsumerStream: "EVENTS",
+		ConsumerName:   "worker-1",
+	})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if createHits != 1 || deleteHits != 0 {
+		t.Fatalf("create=%d delete=%d want create=1 delete=0", createHits, deleteHits)
+	}
+	if rep.ConsumerDeleteProbed || rep.ConsumerDeleteOK {
+		t.Fatalf("delete_probed=%v delete_ok=%v want false", rep.ConsumerDeleteProbed, rep.ConsumerDeleteOK)
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if v, ok := parsed["consumer_delete_probed"].(bool); !ok || v {
+		t.Fatalf("json consumer_delete_probed: %v want false\n%s", parsed["consumer_delete_probed"], js)
+	}
+	if v, ok := parsed["consumer_delete_ok"].(bool); !ok || v {
+		t.Fatalf("json consumer_delete_ok: %v want false\n%s", parsed["consumer_delete_ok"], js)
+	}
+}
+
+func TestDogfood_Consumer_DeleteSoftFail(t *testing.T) {
+	var createHits, deleteHits int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case r.URL.Path == "/ready" || r.URL.Path == "/readyz":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		case strings.HasSuffix(r.URL.Path, "/consumers") && r.Method == http.MethodPost:
+			createHits++
+			w.WriteHeader(201)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"stream": "EVENTS", "name": "worker-1",
+			})
+		case strings.Contains(r.URL.Path, "/consumers/") && r.Method == http.MethodDelete:
+			deleteHits++
+			w.WriteHeader(500)
+		default:
+			if strings.Contains(r.URL.Path, "catalog") {
+				_ = json.NewEncoder(w).Encode(map[string]any{"products": []any{}})
+				return
+			}
+			if r.URL.Path == "/v1/streams" {
+				_ = json.NewEncoder(w).Encode([]any{})
+				return
+			}
+			if r.URL.Path == "/v1/context/query" {
+				_ = json.NewEncoder(w).Encode(map[string]string{"text": "ctx"})
+				return
+			}
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, EmitDeptStreams: false}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{
+		SkipMemory: true, SkipStreams: true,
+		ConsumerStream: "EVENTS",
+		ConsumerName:   "worker-1",
+		ConsumerDelete: true,
+	})
+	if !rep.OK {
+		t.Fatalf("soft delete fail should still OK: %s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if createHits != 1 || deleteHits != 1 {
+		t.Fatalf("create=%d delete=%d", createHits, deleteHits)
+	}
+	if !rep.ConsumerOK || !rep.ConsumerDeleteProbed || rep.ConsumerDeleteOK {
+		t.Fatalf("ok=%v delete_probed=%v delete_ok=%v",
+			rep.ConsumerOK, rep.ConsumerDeleteProbed, rep.ConsumerDeleteOK)
+	}
+	step, ok := dogfoodStep(rep, "consumer")
+	if !ok || step.Status != StepSkip {
+		t.Fatalf("consumer: ok=%v status=%s detail=%s", ok, step.Status, step.Detail)
+	}
+	if !strings.Contains(step.Detail, "delete soft-fail") {
+		t.Fatalf("detail: %s", step.Detail)
+	}
+
+	// Strict → FAIL on delete error
+	rep2 := c.Dogfood(context.Background(), DogfoodOptions{
+		Strict: true, SkipMemory: true, SkipStreams: true,
+		ConsumerStream: "EVENTS",
+		ConsumerName:   "worker-1",
+		ConsumerDelete: true,
+	})
+	if rep2.OK {
+		t.Fatalf("strict delete fail should not OK:\n%s", FormatReport(rep2))
+	}
+	if !rep2.ConsumerDeleteProbed || rep2.ConsumerDeleteOK {
+		t.Fatalf("strict delete_probed=%v delete_ok=%v", rep2.ConsumerDeleteProbed, rep2.ConsumerDeleteOK)
+	}
+	step2, ok2 := dogfoodStep(rep2, "consumer")
+	if !ok2 || step2.Status != StepFail {
+		t.Fatalf("strict consumer: ok=%v status=%s detail=%s", ok2, step2.Status, step2.Detail)
+	}
+}
+
+func TestDogfood_Consumer_DeleteNotOnCreateFail(t *testing.T) {
+	var deleteHits int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case r.URL.Path == "/ready" || r.URL.Path == "/readyz":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		case strings.HasSuffix(r.URL.Path, "/consumers") && r.Method == http.MethodPost:
+			w.WriteHeader(500)
+		case strings.Contains(r.URL.Path, "/consumers/") && r.Method == http.MethodDelete:
+			deleteHits++
+			w.WriteHeader(204)
+		default:
+			if strings.Contains(r.URL.Path, "catalog") {
+				_ = json.NewEncoder(w).Encode(map[string]any{"products": []any{}})
+				return
+			}
+			if r.URL.Path == "/v1/streams" {
+				_ = json.NewEncoder(w).Encode([]any{})
+				return
+			}
+			if r.URL.Path == "/v1/context/query" {
+				_ = json.NewEncoder(w).Encode(map[string]string{"text": "ctx"})
+				return
+			}
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, EmitDeptStreams: false}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{
+		SkipMemory: true, SkipStreams: true,
+		ConsumerStream: "EVENTS",
+		ConsumerName:   "worker-1",
+		ConsumerDelete: true,
+	})
+	if !rep.OK {
+		t.Fatalf("create soft-fail should still OK: %s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if deleteHits != 0 {
+		t.Fatalf("delete should not run when create fails: hits=%d", deleteHits)
+	}
+	if rep.ConsumerDeleteProbed || rep.ConsumerDeleteOK {
+		t.Fatalf("delete_probed=%v delete_ok=%v want false when create fails",
+			rep.ConsumerDeleteProbed, rep.ConsumerDeleteOK)
 	}
 }
