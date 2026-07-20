@@ -32,6 +32,9 @@ type MeshStatusSnapshot struct {
 	ReadyErr string `json:"ready_err,omitempty"`
 	// ReadyMS is Ready probe latency in milliseconds (always emitted; 0 when skipped/disabled).
 	ReadyMS int `json:"ready_ms"`
+	// DurationMS is wall-clock for the Health+Ready probe path in milliseconds
+	// (always emitted; >=0; ~0 when mesh disabled / probes skipped).
+	DurationMS int `json:"duration_ms"`
 }
 
 // ProbeStatus returns "ok" or "err" and an optional error message for fail-open display.
@@ -94,5 +97,6 @@ func FormatMeshStatus(s MeshStatusSnapshot) string {
 		fmt.Fprintf(&b, "  ready:       %s\n", s.Ready)
 	}
 	fmt.Fprintf(&b, "  ready_ms:    %d\n", s.ReadyMS)
+	fmt.Fprintf(&b, "  duration_ms: %d\n", s.DurationMS)
 	return b.String()
 }
