@@ -244,6 +244,8 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `llm_meter_ms` | int | LLM meter step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
 | `pub_ms` | int | Soft pub step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
 | `policy_ms` | int | Policy step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
+| `consumer_ms` | int | Consumer step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
+| `kv_ms` | int | KV step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
 | `memory_ingest_ms` | int | Memory ingest step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
 | `memory_recall_ms` | int | Memory recall step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
 | `memory_retrieve_ms` | int | Memory retrieve step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |

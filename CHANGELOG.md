@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Dogfood consumer/kv latencies** — top-level `consumer_ms` / `kv_ms` (step latency ms; always emitted, `0` when skipped/absent)
+
 ## [0.30.0] — 2026-07-20
 
 Minor release: dogfood llm_meter/pub/memory step latencies.
