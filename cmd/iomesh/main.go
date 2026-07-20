@@ -665,7 +665,7 @@ func cmdMeshWait(args []string) int {
 	} else {
 		out = iomesh.FormatMeshWaitResult(ev)
 	}
-	if ok {
+	if ev.OK {
 		fmt.Print(out)
 		return 0
 	}
