@@ -40,11 +40,11 @@ One-shot operator snapshot without the full dogfood suite:
 
 ```bash
 iomesh mesh status [--json] [--endpoint url] [--config path]
-# Human: StatusLine + version + endpoint/tenant/org/workspace + plane flags + ua + health/ready + latencies
+# Human: StatusLine + version + endpoint/tenant/org/workspace + plane flags + ua + health/ready + latencies + result
 # --json: structured object with the same fields (health/ready fail-open — exit 0 even on probe err)
 ```
 
-Builds the client like dogfood/wait. Prints `StatusLine` config summary (includes `version=` when `iomesh.SetProductVersion` is set from main) plus optional one-shot `Health` / `Ready` probes (errors shown as `err` + message; never fail the command). Probe wall times are always emitted as `health_ms` / `ready_ms` (`0` when mesh disabled / probes skipped). Whole probe-path wall time is always emitted as `duration_ms` (`0` when mesh disabled / probes skipped).
+Builds the client like dogfood/wait. Prints `StatusLine` config summary (includes `version=` when `iomesh.SetProductVersion` is set from main) plus optional one-shot `Health` / `Ready` probes (errors shown as `err` + message; never fail the command). Probe wall times are always emitted as `health_ms` / `ready_ms` (`0` when mesh disabled / probes skipped). Whole probe-path wall time is always emitted as `duration_ms` (`0` when mesh disabled / probes skipped). Aggregate `result` is always emitted (`ok` \| `err` \| `skipped` \| `partial`) from health+ready.
 
 JSON/text fields beyond StatusLine identity:
 
@@ -60,6 +60,7 @@ JSON/text fields beyond StatusLine identity:
 | `health` / `ready` | one-shot probe (`ok` \| `err` \| `skipped`) |
 | `health_ms` / `ready_ms` | probe latency ms (**always emitted**, `0` when skipped/disabled) |
 | `duration_ms` | wall-clock for Health+Ready probe path ms (**always emitted**, `>=0`; `0` when skipped/disabled) |
+| `result` | aggregate of health+ready (**always emitted**: both ok → `ok`; either err → `err`; both skipped → `skipped`; one ok + one skipped → `partial`) |
 
 | Step | Request | Soft (default) | Strict (`--strict`) |
 |------|---------|----------------|---------------------|
