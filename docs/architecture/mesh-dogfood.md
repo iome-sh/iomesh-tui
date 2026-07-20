@@ -251,6 +251,9 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `memory_recall_ms` | int | Memory recall step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
 | `memory_retrieve_ms` | int | Memory retrieve step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
 | `duration_ms` | int | Total wall-clock duration of the dogfood run (`Finished−Started`) in ms (**always emitted**, `>= 0`) |
+| `steps_pass` | int | Count of PASS steps (**always emitted**, `0` when none). Top-level CI evidence without scraping `summary` or `steps` |
+| `steps_fail` | int | Count of FAIL steps (**always emitted**, `0` when none) |
+| `steps_skip` | int | Count of SKIP steps (**always emitted**, `0` when none; mesh-disabled early return emits `1` for the single `enabled` SKIP) |
 | `policy_mode` | string | Configured policy mode (`off` \| `advisory` \| `enforce`; **always emitted**, default `off`) |
 | `policy_source` | string | Last policy probe source (`mesh` \| `fail-open` \| `unavailable` \| `off`); `off` when mode off; omitted when mesh disabled before policy step |
 | `policy_allow` | bool | Evaluate decision when policy ran; **omitted** when mode off / skipped without evaluate |
