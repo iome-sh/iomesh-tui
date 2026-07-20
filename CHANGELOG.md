@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.32.0] — 2026-07-20
+
+Minor release: dogfood wait_ready elapsed latency.
+
 ### Added
 
 - **Dogfood wait_ready elapsed latency** — top-level `wait_ready_elapsed_ms` (wait_ready step latency ms; always emitted, `0` when skipped/absent). Distinct from `wait_ready_ms` configured budget.
+
 
 ## [0.31.0] — 2026-07-20
 
