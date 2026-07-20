@@ -272,9 +272,13 @@ func TestDogfood_FullPass(t *testing.T) {
 	if !strings.Contains(js, `"result": "PASS"`) || !strings.Contains(js, `"ok": true`) {
 		t.Fatal(js)
 	}
-	// Top-level health_ms / ready_ms / context_ms / streams_ms / catalog_ms /
-	// emit_ms / llm_meter_ms / pub_ms / policy_ms / consumer_ms / kv_ms /
-	// memory_*_ms / duration_ms always present (>= 0; often 0 on fast mock).
+	// Top-level wait_ready_elapsed_ms / health_ms / ready_ms / context_ms /
+	// streams_ms / catalog_ms / emit_ms / llm_meter_ms / pub_ms / policy_ms /
+	// consumer_ms / kv_ms / memory_*_ms / duration_ms always present (>= 0;
+	// often 0 on fast mock; wait_ready_elapsed_ms 0 when preflight off).
+	if rep.WaitReadyElapsedMS < 0 {
+		t.Fatalf("WaitReadyElapsedMS: %d want >= 0", rep.WaitReadyElapsedMS)
+	}
 	if rep.HealthMS < 0 {
 		t.Fatalf("HealthMS: %d want >= 0", rep.HealthMS)
 	}
@@ -324,6 +328,9 @@ func TestDogfood_FullPass(t *testing.T) {
 	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
 		t.Fatalf("json: %v\n%s", err, js)
 	}
+	if _, ok := parsed["wait_ready_elapsed_ms"].(float64); !ok {
+		t.Fatalf("json wait_ready_elapsed_ms missing or wrong type: %v\n%s", parsed["wait_ready_elapsed_ms"], js)
+	}
 	if _, ok := parsed["health_ms"].(float64); !ok {
 		t.Fatalf("json health_ms missing or wrong type: %v\n%s", parsed["health_ms"], js)
 	}
@@ -371,6 +378,9 @@ func TestDogfood_FullPass(t *testing.T) {
 	}
 	if _, ok := parsed["version"]; !ok {
 		t.Fatalf("json version missing\n%s", js)
+	}
+	if !strings.Contains(out, "wait_ready_elapsed_ms:") {
+		t.Fatalf("text report missing wait_ready_elapsed_ms:\n%s", out)
 	}
 	if !strings.Contains(out, "health_ms:") || !strings.Contains(out, "ready_ms:") {
 		t.Fatalf("text report missing health_ms/ready_ms:\n%s", out)
@@ -659,9 +669,12 @@ func TestDogfood_Disabled(t *testing.T) {
 			t.Fatalf("unexpected memory_ingest step when disabled: %+v", s)
 		}
 	}
-	// health/ready/context/streams/catalog/emit/llm_meter/pub/policy/memory steps
+	// wait_ready/health/ready/context/streams/catalog/emit/llm_meter/pub/policy/memory steps
 	// absent → top-level latencies always 0.
 	// duration_ms still present and >= 0 (wall clock of disabled early return).
+	if rep.WaitReadyElapsedMS != 0 {
+		t.Fatalf("disabled WaitReadyElapsedMS: %d want 0", rep.WaitReadyElapsedMS)
+	}
 	if rep.HealthMS != 0 {
 		t.Fatalf("disabled HealthMS: %d want 0", rep.HealthMS)
 	}
@@ -712,6 +725,9 @@ func TestDogfood_Disabled(t *testing.T) {
 	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
 		t.Fatalf("json: %v\n%s", err, js)
 	}
+	if n, ok := parsed["wait_ready_elapsed_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json wait_ready_elapsed_ms: %v want 0\n%s", parsed["wait_ready_elapsed_ms"], js)
+	}
 	if n, ok := parsed["health_ms"].(float64); !ok || int(n) != 0 {
 		t.Fatalf("json health_ms: %v want 0\n%s", parsed["health_ms"], js)
 	}
@@ -761,6 +777,9 @@ func TestDogfood_Disabled(t *testing.T) {
 		t.Fatalf("json version missing when disabled\n%s", js)
 	}
 	text := FormatReport(rep)
+	if !strings.Contains(text, "wait_ready_elapsed_ms: 0") {
+		t.Fatalf("text report missing wait_ready_elapsed_ms 0:\n%s", text)
+	}
 	if !strings.Contains(text, "health_ms: 0") || !strings.Contains(text, "ready_ms: 0") {
 		t.Fatalf("text report missing health_ms/ready_ms 0:\n%s", text)
 	}
@@ -2165,6 +2184,9 @@ func TestDogfood_WaitReady_SucceedsAfterRetries(t *testing.T) {
 	if rep.WaitReadyMS != 2000 {
 		t.Fatalf("WaitReadyMS: %d want 2000", rep.WaitReadyMS)
 	}
+	if rep.WaitReadyElapsedMS <= 0 {
+		t.Fatalf("WaitReadyElapsedMS: %d want > 0 when wait_ready ran", rep.WaitReadyElapsedMS)
+	}
 	wr, ok := dogfoodStep(rep, "wait_ready")
 	if !ok || wr.Status != StepPass {
 		t.Fatalf("wait_ready: ok=%v status=%s detail=%s", ok, wr.Status, wr.Detail)
@@ -2187,9 +2209,15 @@ func TestDogfood_WaitReady_SucceedsAfterRetries(t *testing.T) {
 	if n, ok := parsed["wait_ready_ms"].(float64); !ok || int(n) != 2000 {
 		t.Fatalf("json wait_ready_ms: %v want 2000\n%s", parsed["wait_ready_ms"], js)
 	}
+	if n, ok := parsed["wait_ready_elapsed_ms"].(float64); !ok || int(n) <= 0 {
+		t.Fatalf("json wait_ready_elapsed_ms: %v want > 0\n%s", parsed["wait_ready_elapsed_ms"], js)
+	}
 	text := FormatReport(rep)
 	if !strings.Contains(text, "wait_ready_ms: 2000") {
 		t.Fatalf("text report missing wait_ready_ms:\n%s", text)
+	}
+	if !strings.Contains(text, "wait_ready_elapsed_ms:") {
+		t.Fatalf("text report missing wait_ready_elapsed_ms:\n%s", text)
 	}
 }
 
@@ -2222,6 +2250,9 @@ func TestDogfood_WaitReady_TimeoutSoftSkip(t *testing.T) {
 	}
 	if rep.WaitReadyMS != 80 {
 		t.Fatalf("WaitReadyMS: %d want 80", rep.WaitReadyMS)
+	}
+	if rep.WaitReadyElapsedMS <= 0 {
+		t.Fatalf("WaitReadyElapsedMS: %d want > 0 when wait_ready ran (soft timeout)", rep.WaitReadyElapsedMS)
 	}
 	wr, ok := dogfoodStep(rep, "wait_ready")
 	if !ok || wr.Status != StepSkip {
@@ -2273,7 +2304,7 @@ func TestDogfood_WaitReady_TimeoutStrictFail(t *testing.T) {
 }
 
 func TestDogfood_WaitReady_DefaultOff(t *testing.T) {
-	// Zero WaitReady: no wait_ready step; wait_ready_ms always 0 in report.
+	// Zero WaitReady: no wait_ready step; wait_ready_ms and wait_ready_elapsed_ms always 0.
 	srv := mockMeshServer(t, struct {
 		failHealth bool
 		noReady    bool
@@ -2297,6 +2328,9 @@ func TestDogfood_WaitReady_DefaultOff(t *testing.T) {
 	if rep.WaitReadyMS != 0 {
 		t.Fatalf("WaitReadyMS: %d want 0", rep.WaitReadyMS)
 	}
+	if rep.WaitReadyElapsedMS != 0 {
+		t.Fatalf("WaitReadyElapsedMS: %d want 0 when wait_ready off", rep.WaitReadyElapsedMS)
+	}
 	if _, ok := dogfoodStep(rep, "wait_ready"); ok {
 		t.Fatal("default dogfood must not include wait_ready step")
 	}
@@ -2308,9 +2342,15 @@ func TestDogfood_WaitReady_DefaultOff(t *testing.T) {
 	if n, ok := parsed["wait_ready_ms"].(float64); !ok || int(n) != 0 {
 		t.Fatalf("json wait_ready_ms: %v want 0\n%s", parsed["wait_ready_ms"], js)
 	}
+	if n, ok := parsed["wait_ready_elapsed_ms"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json wait_ready_elapsed_ms: %v want 0\n%s", parsed["wait_ready_elapsed_ms"], js)
+	}
 	text := FormatReport(rep)
 	if !strings.Contains(text, "wait_ready_ms: 0") {
 		t.Fatalf("text report missing wait_ready_ms 0:\n%s", text)
+	}
+	if !strings.Contains(text, "wait_ready_elapsed_ms: 0") {
+		t.Fatalf("text report missing wait_ready_elapsed_ms 0:\n%s", text)
 	}
 }
 
