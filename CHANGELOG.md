@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Dogfood llm_meter/pub/memory latencies** — top-level `llm_meter_ms` / `pub_ms` / `memory_ingest_ms` / `memory_recall_ms` / `memory_retrieve_ms` (step latency ms; always emitted, `0` when skipped/absent)
+
 ## [0.29.0] — 2026-07-19
 
 Minor release: dogfood emit/policy/duration latencies and disabled StatusLine version.

@@ -113,9 +113,24 @@ type DogfoodReport struct {
 	// EmitMS is emit step latency in milliseconds (0 when step skipped/absent).
 	// Always emitted in JSON.
 	EmitMS int `json:"emit_ms"`
+	// LLMMeterMS is llm_meter step latency in milliseconds (0 when step skipped/absent).
+	// Always emitted in JSON.
+	LLMMeterMS int `json:"llm_meter_ms"`
+	// PubMS is soft pub step latency in milliseconds (0 when step skipped/absent).
+	// Always emitted in JSON.
+	PubMS int `json:"pub_ms"`
 	// PolicyMS is policy step latency in milliseconds (0 when step skipped/absent).
 	// Always emitted in JSON.
 	PolicyMS int `json:"policy_ms"`
+	// MemoryIngestMS is memory_ingest step latency in milliseconds (0 when step skipped/absent).
+	// Always emitted in JSON.
+	MemoryIngestMS int `json:"memory_ingest_ms"`
+	// MemoryRecallMS is memory_recall step latency in milliseconds (0 when step skipped/absent).
+	// Always emitted in JSON.
+	MemoryRecallMS int `json:"memory_recall_ms"`
+	// MemoryRetrieveMS is memory_retrieve step latency in milliseconds (0 when step skipped/absent).
+	// Always emitted in JSON.
+	MemoryRetrieveMS int `json:"memory_retrieve_ms"`
 	// DurationMS is total wall-clock duration of the dogfood run (Finished−Started) in ms.
 	// Always emitted in JSON (>= 0).
 	DurationMS int `json:"duration_ms"`
@@ -388,7 +403,8 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		rep.Steps = append(rep.Steps, emitStep)
 
 		// 4b) Remote metering path: dept.agent.llm_call (same shape as RecordLLMCall → platform dashboards)
-		rep.Steps = append(rep.Steps, c.stepTimed("llm_meter", func() (StepStatus, string) {
+		// LLMMeterMS stays 0 when skipped (dept streams disabled path above).
+		llmMeterStep := c.stepTimed("llm_meter", func() (StepStatus, string) {
 			payload := map[string]any{
 				"source":   "iomesh-tui",
 				"probe":    "stage-mesh-dogfood-llm-meter",
@@ -431,17 +447,20 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 				detail = fmt.Sprintf("%s session_id=%s", detail, sessionID)
 			}
 			return StepPass, detail
-		}))
+		})
+		rep.LLMMeterMS = int(llmMeterStep.Latency.Milliseconds())
+		rep.Steps = append(rep.Steps, llmMeterStep)
 	}
 
 	// 4c) Soft ephemeral Pub probe (non-destructive fire-and-forget when PubSubject set)
+	// PubMS stays 0 when probe unset/skipped.
 	pubSubject := strings.TrimSpace(opts.PubSubject)
 	if pubSubject == "" {
 		rep.PubProbed = false
 		rep.PubOK = false
 		rep.Steps = append(rep.Steps, Step{Name: "pub", Status: StepSkip, Detail: "pub probe unset"})
 	} else {
-		rep.Steps = append(rep.Steps, c.stepTimed("pub", func() (StepStatus, string) {
+		pubStep := c.stepTimed("pub", func() (StepStatus, string) {
 			rep.PubProbed = true
 			payload := []byte(`{"source":"iomesh-tui-dogfood"}`)
 			err := c.Pub(ctx, pubSubject, payload, nil)
@@ -454,7 +473,9 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 			}
 			rep.PubOK = true
 			return StepPass, fmt.Sprintf("POST /v1/pub subject=%s bytes=%d", pubSubject, len(payload))
-		}))
+		})
+		rep.PubMS = int(pubStep.Latency.Milliseconds())
+		rep.Steps = append(rep.Steps, pubStep)
 	}
 
 	// 5) Policy evaluate (optional — skip when mode off)
@@ -662,15 +683,16 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 	}
 
 	// 7) MEMORY_INGEST dual-write (Phase 2 path via PublishMemoryIngest)
-	// 8) MEMORY_RPC async recall request (same session_id for temporal correlation — s247)
-	// 9) Sync HTTP retrieve POST /v1/memory/retrieve (Phase 3 — request/response hits — s249)
+	// 8) MEMORY_RPC async recall request (same session_id for temporal correlation)
+	// 9) Sync HTTP retrieve POST /v1/memory/retrieve (Phase 3 — request/response hits)
+	// Memory*MS stay 0 when --skip-memory / mesh disabled.
 	sessionSeq := 1
 	if opts.SkipMemory {
 		rep.Steps = append(rep.Steps, Step{Name: "memory_ingest", Status: StepSkip, Detail: "skipped (--skip-memory)"})
 		rep.Steps = append(rep.Steps, Step{Name: "memory_recall", Status: StepSkip, Detail: "skipped (--skip-memory)"})
 		rep.Steps = append(rep.Steps, Step{Name: "memory_retrieve", Status: StepSkip, Detail: "skipped (--skip-memory)"})
 	} else {
-		rep.Steps = append(rep.Steps, c.stepTimed("memory_ingest", func() (StepStatus, string) {
+		ingestStep := c.stepTimed("memory_ingest", func() (StepStatus, string) {
 			ack, err := c.PublishMemoryIngest(ctx, tenant, MemoryEnvelope{
 				Type:       memoryEnvelopeIngest,
 				Role:       "tool",
@@ -699,25 +721,27 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 			if ack != nil && ack.Seq > 0 {
 				detail = fmt.Sprintf("%s seq=%d", detail, ack.Seq)
 			}
-			// Operator-visible evidence that dual-write publish used org/workspace headers (s231).
+			// Operator-visible evidence that dual-write publish used org/workspace headers.
 			if org := strings.TrimSpace(c.cfg.OrgID); org != "" {
 				detail = fmt.Sprintf("%s org=%s", detail, org)
 			}
 			if ws := strings.TrimSpace(c.cfg.WorkspaceID); ws != "" {
 				detail = fmt.Sprintf("%s workspace=%s", detail, ws)
 			}
-			// Temporal correlation from the envelope sent (s243): always session_seq; session_id when set.
+			// Temporal correlation from the envelope sent: always session_seq; session_id when set.
 			detail = fmt.Sprintf("%s session_seq=%d", detail, sessionSeq)
 			if sessionID != "" {
 				detail = fmt.Sprintf("%s session_id=%s", detail, sessionID)
 			}
-			// Always emit dual_write mode on PASS detail (s241) so human logs show mode without JSON.
+			// Always emit dual_write mode on PASS detail so human logs show mode without JSON.
 			detail = fmt.Sprintf("%s dual_write=%v", detail, c.cfg.DualWrite)
 			return StepPass, detail
-		}))
+		})
+		rep.MemoryIngestMS = int(ingestStep.Latency.Milliseconds())
+		rep.Steps = append(rep.Steps, ingestStep)
 
-		rep.Steps = append(rep.Steps, c.stepTimed("memory_recall", func() (StepStatus, string) {
-			// Fire-and-forget MEMORY_RPC request; same session_id as ingest for correlation (s247).
+		recallStep := c.stepTimed("memory_recall", func() (StepStatus, string) {
+			// Fire-and-forget MEMORY_RPC request; same session_id as ingest for correlation.
 			ack, err := c.PublishMemoryRecall(ctx, tenant, "iomesh-tui dual-write dogfood", 8, sessionID)
 			if err != nil {
 				if opts.Strict {
@@ -750,9 +774,11 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 			}
 			detail = fmt.Sprintf("%s dual_write=%v", detail, c.cfg.DualWrite)
 			return StepPass, detail
-		}))
+		})
+		rep.MemoryRecallMS = int(recallStep.Latency.Milliseconds())
+		rep.Steps = append(rep.Steps, recallStep)
 
-		rep.Steps = append(rep.Steps, c.stepTimed("memory_retrieve", func() (StepStatus, string) {
+		retrieveStep := c.stepTimed("memory_retrieve", func() (StepStatus, string) {
 			// Sync request/response against memory sidecar HTTP (not MEMORY_RPC).
 			// Uses MemoryEndpoint when set (stage warm plane); else mesh Endpoint (broker-only often 404).
 			// Empty hits still PASS (HTTP 200 + memories=[]); transport/404 soft-SKIP unless strict.
@@ -789,7 +815,9 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 			}
 			detail = fmt.Sprintf("%s dual_write=%v", detail, c.cfg.DualWrite)
 			return StepPass, detail
-		}))
+		})
+		rep.MemoryRetrieveMS = int(retrieveStep.Latency.Milliseconds())
+		rep.Steps = append(rep.Steps, retrieveStep)
 	}
 
 	// Aggregate: any FAIL ⇒ not OK; SKIP/PASS ok.
@@ -941,19 +969,24 @@ func FormatReportJSON(r DogfoodReport) string {
 		ConsumerStream      string     `json:"consumer_stream,omitempty"` // set when both stream+name provided
 		ConsumerName        string     `json:"consumer_name,omitempty"`
 		ConsumerFilter      string     `json:"consumer_filter,omitempty"`
-		ConsumerProbed      bool       `json:"consumer_probed"`   // always emit (true if stream+name set + create attempt)
-		ConsumerOK          bool       `json:"consumer_ok"`       // always emit (true if create 201/409)
-		ConsumerFetchOK     bool       `json:"consumer_fetch_ok"` // always emit (true if optional fetch ok)
-		WaitReadyMS         int        `json:"wait_ready_ms"`     // always emit (CI wait preflight budget)
-		HealthMS            int        `json:"health_ms"`         // always emit (0 when health step skipped/absent)
-		ReadyMS             int        `json:"ready_ms"`          // always emit (0 when ready step skipped/absent)
-		ContextMS           int        `json:"context_ms"`        // always emit (0 when context step skipped/absent)
-		StreamsMS           int        `json:"streams_ms"`        // always emit (0 when streams step skipped/absent)
-		CatalogMS           int        `json:"catalog_ms"`        // always emit (0 when catalog step skipped/absent)
-		EmitMS              int        `json:"emit_ms"`           // always emit (0 when emit step skipped/absent)
-		PolicyMS            int        `json:"policy_ms"`         // always emit (0 when policy step skipped/absent)
-		DurationMS          int        `json:"duration_ms"`       // always emit (wall-clock Finished−Started ms)
-		PolicyMode          string     `json:"policy_mode"`       // always emit (off|advisory|enforce)
+		ConsumerProbed      bool       `json:"consumer_probed"`    // always emit (true if stream+name set + create attempt)
+		ConsumerOK          bool       `json:"consumer_ok"`        // always emit (true if create 201/409)
+		ConsumerFetchOK     bool       `json:"consumer_fetch_ok"`  // always emit (true if optional fetch ok)
+		WaitReadyMS         int        `json:"wait_ready_ms"`      // always emit (CI wait preflight budget)
+		HealthMS            int        `json:"health_ms"`          // always emit (0 when health step skipped/absent)
+		ReadyMS             int        `json:"ready_ms"`           // always emit (0 when ready step skipped/absent)
+		ContextMS           int        `json:"context_ms"`         // always emit (0 when context step skipped/absent)
+		StreamsMS           int        `json:"streams_ms"`         // always emit (0 when streams step skipped/absent)
+		CatalogMS           int        `json:"catalog_ms"`         // always emit (0 when catalog step skipped/absent)
+		EmitMS              int        `json:"emit_ms"`            // always emit (0 when emit step skipped/absent)
+		LLMMeterMS          int        `json:"llm_meter_ms"`       // always emit (0 when llm_meter step skipped/absent)
+		PubMS               int        `json:"pub_ms"`             // always emit (0 when pub step skipped/absent)
+		PolicyMS            int        `json:"policy_ms"`          // always emit (0 when policy step skipped/absent)
+		MemoryIngestMS      int        `json:"memory_ingest_ms"`   // always emit (0 when memory_ingest skipped/absent)
+		MemoryRecallMS      int        `json:"memory_recall_ms"`   // always emit (0 when memory_recall skipped/absent)
+		MemoryRetrieveMS    int        `json:"memory_retrieve_ms"` // always emit (0 when memory_retrieve skipped/absent)
+		DurationMS          int        `json:"duration_ms"`        // always emit (wall-clock Finished−Started ms)
+		PolicyMode          string     `json:"policy_mode"`        // always emit (off|advisory|enforce)
 		PolicySource        string     `json:"policy_source,omitempty"`
 		PolicyAllow         *bool      `json:"policy_allow,omitempty"` // set when policy evaluated
 		MemoryEndpoint      string     `json:"memory_endpoint,omitempty"`
@@ -1005,7 +1038,12 @@ func FormatReportJSON(r DogfoodReport) string {
 		StreamsMS:           r.StreamsMS,
 		CatalogMS:           r.CatalogMS,
 		EmitMS:              r.EmitMS,
+		LLMMeterMS:          r.LLMMeterMS,
+		PubMS:               r.PubMS,
 		PolicyMS:            r.PolicyMS,
+		MemoryIngestMS:      r.MemoryIngestMS,
+		MemoryRecallMS:      r.MemoryRecallMS,
+		MemoryRetrieveMS:    r.MemoryRetrieveMS,
 		DurationMS:          r.DurationMS,
 		PolicyMode:          policyMode,
 		PolicySource:        r.PolicySource,
@@ -1097,7 +1135,12 @@ func FormatReport(r DogfoodReport) string {
 	fmt.Fprintf(&b, "  streams_ms: %d\n", r.StreamsMS)
 	fmt.Fprintf(&b, "  catalog_ms: %d\n", r.CatalogMS)
 	fmt.Fprintf(&b, "  emit_ms: %d\n", r.EmitMS)
+	fmt.Fprintf(&b, "  llm_meter_ms: %d\n", r.LLMMeterMS)
+	fmt.Fprintf(&b, "  pub_ms: %d\n", r.PubMS)
 	fmt.Fprintf(&b, "  policy_ms: %d\n", r.PolicyMS)
+	fmt.Fprintf(&b, "  memory_ingest_ms: %d\n", r.MemoryIngestMS)
+	fmt.Fprintf(&b, "  memory_recall_ms: %d\n", r.MemoryRecallMS)
+	fmt.Fprintf(&b, "  memory_retrieve_ms: %d\n", r.MemoryRetrieveMS)
 	fmt.Fprintf(&b, "  duration_ms: %d\n", r.DurationMS)
 	policyMode := r.PolicyMode
 	if policyMode == "" {
