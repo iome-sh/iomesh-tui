@@ -2413,7 +2413,7 @@ func TestDogfood_CatalogEvidenceOff(t *testing.T) {
 }
 
 func TestDogfood_PolicyEvidenceOff(t *testing.T) {
-	// Default policy mode off → policy_mode=off, policy_source=off, policy_allow omitted.
+	// Default policy mode off → policy_mode=off, policy_source=off, policy_allow="" (always-emit).
 	srv := mockMeshServer(t, struct {
 		failHealth bool
 		noReady    bool
@@ -2441,8 +2441,8 @@ func TestDogfood_PolicyEvidenceOff(t *testing.T) {
 	if rep.PolicySource != "off" {
 		t.Fatalf("PolicySource: %q want off", rep.PolicySource)
 	}
-	if rep.PolicyAllow != nil {
-		t.Fatalf("PolicyAllow: %v want nil when mode off", *rep.PolicyAllow)
+	if rep.PolicyAllow != "" {
+		t.Fatalf("PolicyAllow: %q want empty when mode off", rep.PolicyAllow)
 	}
 	pol, ok := dogfoodStep(rep, "policy")
 	if !ok || pol.Status != StepSkip {
@@ -2459,8 +2459,11 @@ func TestDogfood_PolicyEvidenceOff(t *testing.T) {
 	if parsed["policy_source"] != "off" {
 		t.Fatalf("json policy_source: %v\n%s", parsed["policy_source"], js)
 	}
-	if _, has := parsed["policy_allow"]; has {
-		t.Fatalf("json policy_allow must be omitted when mode off:\n%s", js)
+	if _, has := parsed["policy_allow"]; !has {
+		t.Fatalf("json policy_allow must always be present when mode off:\n%s", js)
+	}
+	if got, _ := parsed["policy_allow"].(string); got != "" {
+		t.Fatalf("json policy_allow: %v want empty string when mode off\n%s", parsed["policy_allow"], js)
 	}
 	text := FormatReport(rep)
 	if !strings.Contains(text, "policy_mode: off") {
@@ -2469,8 +2472,8 @@ func TestDogfood_PolicyEvidenceOff(t *testing.T) {
 	if !strings.Contains(text, "policy_source: off") {
 		t.Fatalf("text report missing policy_source:\n%s", text)
 	}
-	if strings.Contains(text, "policy_allow:") {
-		t.Fatalf("text report must omit policy_allow when mode off:\n%s", text)
+	if !strings.Contains(text, "policy_allow: ") {
+		t.Fatalf("text report must always print policy_allow when mode off:\n%s", text)
 	}
 }
 
@@ -2515,8 +2518,8 @@ func TestDogfood_PolicyEvidenceMeshAllow(t *testing.T) {
 	if rep.PolicySource != "mesh" {
 		t.Fatalf("PolicySource: %q want mesh", rep.PolicySource)
 	}
-	if rep.PolicyAllow == nil || !*rep.PolicyAllow {
-		t.Fatalf("PolicyAllow: %v want true", rep.PolicyAllow)
+	if rep.PolicyAllow != "true" {
+		t.Fatalf("PolicyAllow: %q want true", rep.PolicyAllow)
 	}
 	pol, ok := dogfoodStep(rep, "policy")
 	if !ok || pol.Status != StepPass {
@@ -2533,8 +2536,8 @@ func TestDogfood_PolicyEvidenceMeshAllow(t *testing.T) {
 	if parsed["policy_source"] != "mesh" {
 		t.Fatalf("json policy_source: %v\n%s", parsed["policy_source"], js)
 	}
-	if parsed["policy_allow"] != true {
-		t.Fatalf("json policy_allow: %v want true\n%s", parsed["policy_allow"], js)
+	if parsed["policy_allow"] != "true" {
+		t.Fatalf("json policy_allow: %v want \"true\"\n%s", parsed["policy_allow"], js)
 	}
 	text := FormatReport(rep)
 	if !strings.Contains(text, "policy_mode: advisory") || !strings.Contains(text, "policy_source: mesh") ||
@@ -2583,8 +2586,8 @@ func TestDogfood_PolicyEvidenceMeshDeny(t *testing.T) {
 	if rep.PolicySource != "mesh" {
 		t.Fatalf("PolicySource: %q want mesh", rep.PolicySource)
 	}
-	if rep.PolicyAllow == nil || *rep.PolicyAllow {
-		t.Fatalf("PolicyAllow: %v want false", rep.PolicyAllow)
+	if rep.PolicyAllow != "false" {
+		t.Fatalf("PolicyAllow: %q want false", rep.PolicyAllow)
 	}
 	pol, ok := dogfoodStep(rep, "policy")
 	if !ok || pol.Status != StepPass {
@@ -2601,8 +2604,8 @@ func TestDogfood_PolicyEvidenceMeshDeny(t *testing.T) {
 	if parsed["policy_source"] != "mesh" {
 		t.Fatalf("json policy_source: %v\n%s", parsed["policy_source"], js)
 	}
-	if parsed["policy_allow"] != false {
-		t.Fatalf("json policy_allow: %v want false\n%s", parsed["policy_allow"], js)
+	if parsed["policy_allow"] != "false" {
+		t.Fatalf("json policy_allow: %v want \"false\"\n%s", parsed["policy_allow"], js)
 	}
 	text := FormatReport(rep)
 	if !strings.Contains(text, "policy_mode: enforce") || !strings.Contains(text, "policy_source: mesh") ||
