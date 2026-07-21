@@ -237,9 +237,13 @@ func TestFormatMeshStatus_JSONProbeLatencies(t *testing.T) {
 	if parsed["ready_err"] != "iomesh ready: http 503" {
 		t.Fatalf("ready_err: %v", parsed["ready_err"])
 	}
-	// health_err omitted when empty
-	if _, ok := parsed["health_err"]; ok {
-		t.Fatalf("health_err should be omitted when empty: %v", parsed["health_err"])
+	// health_err always present; empty string when Health OK
+	he, ok := parsed["health_err"].(string)
+	if !ok {
+		t.Fatalf("health_err missing or non-string: %v\n%s", parsed["health_err"], js)
+	}
+	if he != "" {
+		t.Fatalf("health_err: %q want empty when health ok\n%s", he, js)
 	}
 	if parsed["result"] != "err" {
 		t.Fatalf("result: %v want err\n%s", parsed["result"], js)
@@ -412,8 +416,10 @@ func TestFormatMeshStatus_Text(t *testing.T) {
 		"emit_dept:   true",
 		"user_agent:  iomesh-tui/dev",
 		"health:      ok",
+		"health_err:  ",
 		"health_ms:   7",
-		"ready:       err (timeout)",
+		"ready:       err",
+		"ready_err:   timeout",
 		"ready_ms:    9",
 		"duration_ms: 16",
 		"result:      err",
@@ -423,6 +429,10 @@ func TestFormatMeshStatus_Text(t *testing.T) {
 		if !strings.Contains(out, want) {
 			t.Fatalf("text missing %q:\n%s", want, out)
 		}
+	}
+	// Error detail lives only on ready_err:; not inlined on ready: line.
+	if strings.Contains(out, "ready:       err (timeout)") {
+		t.Fatalf("ready line must not inline err text:\n%s", out)
 	}
 }
 
@@ -590,5 +600,128 @@ func TestFormatMeshStatus_TextPartialAndOK(t *testing.T) {
 	out = FormatMeshStatus(partial)
 	if !strings.Contains(out, "result:      partial") {
 		t.Fatalf("want result partial:\n%s", out)
+	}
+}
+
+func TestFormatMeshStatus_JSONAlwaysEmitsProbeErrs(t *testing.T) {
+	// health_err / ready_err always present as strings, including empty on OK path.
+	t.Run("ok_empty", func(t *testing.T) {
+		s := MeshStatusSnapshot{
+			Enabled: true, Version: "t", PolicyMode: "off", UserAgent: "ua",
+			StatusLine: "mesh: enabled", Health: "ok", Ready: "ok", Result: "ok",
+		}
+		js := FormatMeshStatusJSON(s)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		for _, key := range []string{"health_err", "ready_err"} {
+			v, ok := parsed[key]
+			if !ok {
+				t.Fatalf("%s missing from JSON:\n%s", key, js)
+			}
+			str, ok := v.(string)
+			if !ok {
+				t.Fatalf("%s: %v want string\n%s", key, v, js)
+			}
+			if str != "" {
+				t.Fatalf("%s: %q want empty string when probes OK\n%s", key, str, js)
+			}
+		}
+	})
+	t.Run("fail_populated", func(t *testing.T) {
+		s := MeshStatusSnapshot{
+			Enabled: true, Version: "t", PolicyMode: "off", UserAgent: "ua",
+			StatusLine: "mesh: enabled",
+			Health:     "err", HealthErr: "connection refused",
+			Ready: "err", ReadyErr: "not ready",
+			Result: "err",
+		}
+		js := FormatMeshStatusJSON(s)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		if got, _ := parsed["health_err"].(string); got != "connection refused" {
+			t.Fatalf("health_err: %v want connection refused\n%s", parsed["health_err"], js)
+		}
+		if got, _ := parsed["ready_err"].(string); got != "not ready" {
+			t.Fatalf("ready_err: %v want not ready\n%s", parsed["ready_err"], js)
+		}
+	})
+	t.Run("skipped_empty", func(t *testing.T) {
+		s := MeshStatusSnapshot{
+			Enabled: false, Version: "t", PolicyMode: "off", UserAgent: "ua",
+			StatusLine: "mesh: disabled (offline-first)", Health: "skipped", Ready: "skipped",
+		}
+		js := FormatMeshStatusJSON(s)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		for _, key := range []string{"health_err", "ready_err"} {
+			str, ok := parsed[key].(string)
+			if !ok {
+				t.Fatalf("%s missing or non-string: %v\n%s", key, parsed[key], js)
+			}
+			if str != "" {
+				t.Fatalf("%s: %q want empty when skipped\n%s", key, str, js)
+			}
+		}
+	})
+}
+
+func TestFormatMeshStatus_TextAlwaysEmitsProbeErrs(t *testing.T) {
+	// Dedicated health_err: / ready_err: lines always print (empty when OK).
+	okSnap := MeshStatusSnapshot{
+		Enabled: true, Version: "v", PolicyMode: "off", UserAgent: "ua",
+		StatusLine: "mesh: enabled", Health: "ok", Ready: "ok",
+	}
+	out := FormatMeshStatus(okSnap)
+	for _, want := range []string{
+		"health:      ok",
+		"health_err:  ",
+		"ready:       ok",
+		"ready_err:   ",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("want probe-err line %q when OK:\n%s", want, out)
+		}
+	}
+	// Order: health → health_err → health_ms → ready → ready_err → ready_ms
+	hIdx := strings.Index(out, "health:")
+	heIdx := strings.Index(out, "health_err:")
+	hmIdx := strings.Index(out, "health_ms:")
+	rIdx := strings.Index(out, "ready:")
+	reIdx := strings.Index(out, "ready_err:")
+	rmIdx := strings.Index(out, "ready_ms:")
+	if hIdx < 0 || heIdx < 0 || hmIdx < 0 || rIdx < 0 || reIdx < 0 || rmIdx < 0 {
+		t.Fatalf("missing probe keys:\n%s", out)
+	}
+	if !(hIdx < heIdx && heIdx < hmIdx && hmIdx < rIdx && rIdx < reIdx && reIdx < rmIdx) {
+		t.Fatalf("probe order want health < health_err < health_ms < ready < ready_err < ready_ms:\n%s", out)
+	}
+
+	failSnap := MeshStatusSnapshot{
+		Enabled: true, Version: "v", PolicyMode: "off", UserAgent: "ua",
+		StatusLine: "mesh: enabled",
+		Health:     "err", HealthErr: "connection refused",
+		Ready: "err", ReadyErr: "not ready",
+		Result: "err",
+	}
+	out = FormatMeshStatus(failSnap)
+	for _, want := range []string{
+		"health:      err",
+		"health_err:  connection refused",
+		"ready:       err",
+		"ready_err:   not ready",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("want %q:\n%s", want, out)
+		}
+	}
+	// No parenthetical inlining of err on health:/ready: lines.
+	if strings.Contains(out, "health:      err (") || strings.Contains(out, "ready:       err (") {
+		t.Fatalf("probe status lines must not inline err text:\n%s", out)
 	}
 }

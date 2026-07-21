@@ -13,6 +13,9 @@ import (
 // Result is always emitted (ok|err|skipped|partial) as the aggregate of health+ready.
 // Identity fields (endpoint, tenant, org, workspace) are always emitted as strings
 // (empty when unset) so CI scrapers can key on stable JSON keys / text lines.
+// Probe error strings (HealthErr, ReadyErr) are always emitted (empty string when OK /
+// skipped) so scrapers can key on stable health_err / ready_err without omitempty gaps.
+// Peers SDK ConnectionStatus always-emit probe-err continuum.
 type MeshStatusSnapshot struct {
 	Enabled        bool   `json:"enabled"`
 	Endpoint       string `json:"endpoint"`  // always emitted; empty when unset
@@ -28,11 +31,13 @@ type MeshStatusSnapshot struct {
 	UserAgent      string `json:"user_agent"`
 	StatusLine     string `json:"status_line"`
 	Health         string `json:"health"` // ok|err|skipped
-	HealthErr      string `json:"health_err,omitempty"`
+	// HealthErr is the Health probe error (always emitted; empty string when OK/skipped).
+	HealthErr string `json:"health_err"`
 	// HealthMS is Health probe latency in milliseconds (always emitted; 0 when skipped/disabled).
 	HealthMS int    `json:"health_ms"`
 	Ready    string `json:"ready"` // ok|err|skipped
-	ReadyErr string `json:"ready_err,omitempty"`
+	// ReadyErr is the Ready probe error (always emitted; empty string when OK/skipped).
+	ReadyErr string `json:"ready_err"`
 	// ReadyMS is Ready probe latency in milliseconds (always emitted; 0 when skipped/disabled).
 	ReadyMS int `json:"ready_ms"`
 	// DurationMS is wall-clock for the Health+Ready probe path in milliseconds
@@ -116,6 +121,8 @@ func FormatMeshStatusJSON(s MeshStatusSnapshot) string {
 // FormatMeshStatus renders a human-readable operator snapshot.
 // Result is filled from health/ready when empty so operators always see result.
 // ExitCode is derived from Strict+Result so operators always see the intended process exit.
+// Probe error detail is always on dedicated health_err: / ready_err: lines (empty when OK);
+// health: / ready: lines carry status only (ok|err|skipped), not inline err text.
 func FormatMeshStatus(s MeshStatusSnapshot) string {
 	if s.Result == "" {
 		s.Result = AggregateProbeResult(s.Health, s.Ready)
@@ -135,17 +142,11 @@ func FormatMeshStatus(s MeshStatusSnapshot) string {
 	fmt.Fprintf(&b, "  include_lineage: %v\n", s.IncludeLineage)
 	fmt.Fprintf(&b, "  emit_dept:   %v\n", s.EmitDept)
 	fmt.Fprintf(&b, "  user_agent:  %s\n", s.UserAgent)
-	if s.HealthErr != "" {
-		fmt.Fprintf(&b, "  health:      %s (%s)\n", s.Health, s.HealthErr)
-	} else {
-		fmt.Fprintf(&b, "  health:      %s\n", s.Health)
-	}
+	fmt.Fprintf(&b, "  health:      %s\n", s.Health)
+	fmt.Fprintf(&b, "  health_err:  %s\n", s.HealthErr)
 	fmt.Fprintf(&b, "  health_ms:   %d\n", s.HealthMS)
-	if s.ReadyErr != "" {
-		fmt.Fprintf(&b, "  ready:       %s (%s)\n", s.Ready, s.ReadyErr)
-	} else {
-		fmt.Fprintf(&b, "  ready:       %s\n", s.Ready)
-	}
+	fmt.Fprintf(&b, "  ready:       %s\n", s.Ready)
+	fmt.Fprintf(&b, "  ready_err:   %s\n", s.ReadyErr)
 	fmt.Fprintf(&b, "  ready_ms:    %d\n", s.ReadyMS)
 	fmt.Fprintf(&b, "  duration_ms: %d\n", s.DurationMS)
 	fmt.Fprintf(&b, "  result:      %s\n", s.Result)
