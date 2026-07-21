@@ -84,6 +84,7 @@ func wrapWaitReadyErr(lastErr, ctxErr error) error {
 // MeshWaitEvidence is the always-emit operator preflight wait result shape.
 // TimeoutMS and IntervalMS are the configured WaitReady budget and poll interval.
 // Attempts is the number of WaitReady probe attempt cycles.
+// ExitCode is the process exit code for this wait (0 when OK, 1 when not OK).
 type MeshWaitEvidence struct {
 	OK            bool
 	ElapsedMS     int
@@ -91,10 +92,21 @@ type MeshWaitEvidence struct {
 	TimeoutMS     int
 	IntervalMS    int
 	Attempts      int
+	ExitCode      int
 	Error         string // empty on success
 }
 
-// normalize clamps negative elapsed/timeout/interval/attempts to 0 and defaults empty Error on failure.
+// MeshWaitExitCode returns the process exit code for mesh wait evidence:
+// 0 when OK, 1 when not OK. Matches cmdMeshWait process exit.
+func MeshWaitExitCode(e MeshWaitEvidence) int {
+	if e.OK {
+		return 0
+	}
+	return 1
+}
+
+// normalize clamps negative elapsed/timeout/interval/attempts to 0, defaults empty
+// Error on failure, and always re-derives ExitCode from OK so scrapers trust the pair.
 func (e MeshWaitEvidence) normalize() MeshWaitEvidence {
 	if e.ElapsedMS < 0 {
 		e.ElapsedMS = 0
@@ -111,27 +123,33 @@ func (e MeshWaitEvidence) normalize() MeshWaitEvidence {
 	if !e.OK && e.Error == "" {
 		e.Error = "unknown error"
 	}
+	// Always re-derive from OK so scrapers trust exit_code with the ok flag.
+	if e.OK {
+		e.ExitCode = 0
+	} else {
+		e.ExitCode = 1
+	}
 	return e
 }
 
 // FormatMeshWaitResult renders operator preflight wait outcome as text.
-// Always includes elapsed_ms, require_health, timeout_ms, interval_ms, and attempts for CI evidence.
+// Always includes elapsed_ms, require_health, timeout_ms, interval_ms, attempts, and exit_code for CI evidence.
 func FormatMeshWaitResult(e MeshWaitEvidence) string {
 	e = e.normalize()
 	if e.OK {
 		return fmt.Sprintf(
-			"PASS mesh wait: ready\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\nattempts: %d\n",
-			e.ElapsedMS, e.RequireHealth, e.TimeoutMS, e.IntervalMS, e.Attempts,
+			"PASS mesh wait: ready\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\nattempts: %d\nexit_code: %d\n",
+			e.ElapsedMS, e.RequireHealth, e.TimeoutMS, e.IntervalMS, e.Attempts, e.ExitCode,
 		)
 	}
 	return fmt.Sprintf(
-		"FAIL mesh wait: %s\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\nattempts: %d\n",
-		e.Error, e.ElapsedMS, e.RequireHealth, e.TimeoutMS, e.IntervalMS, e.Attempts,
+		"FAIL mesh wait: %s\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\nattempts: %d\nexit_code: %d\n",
+		e.Error, e.ElapsedMS, e.RequireHealth, e.TimeoutMS, e.IntervalMS, e.Attempts, e.ExitCode,
 	)
 }
 
 // FormatMeshWaitResultJSON renders wait outcome as compact JSON for scrapers.
-// Always emits ok, elapsed_ms, require_health, timeout_ms, interval_ms, attempts; error only when ok is false.
+// Always emits ok, elapsed_ms, require_health, timeout_ms, interval_ms, attempts, exit_code; error only when ok is false.
 func FormatMeshWaitResultJSON(e MeshWaitEvidence) string {
 	e = e.normalize()
 	type out struct {
@@ -141,6 +159,7 @@ func FormatMeshWaitResultJSON(e MeshWaitEvidence) string {
 		TimeoutMS     int    `json:"timeout_ms"`
 		IntervalMS    int    `json:"interval_ms"`
 		Attempts      int    `json:"attempts"`
+		ExitCode      int    `json:"exit_code"`
 		Error         string `json:"error,omitempty"`
 	}
 	o := out{
@@ -150,13 +169,14 @@ func FormatMeshWaitResultJSON(e MeshWaitEvidence) string {
 		TimeoutMS:     e.TimeoutMS,
 		IntervalMS:    e.IntervalMS,
 		Attempts:      e.Attempts,
+		ExitCode:      e.ExitCode,
 	}
 	if !e.OK {
 		o.Error = e.Error
 	}
 	b, err := json.Marshal(o)
 	if err != nil {
-		return `{"ok":false,"elapsed_ms":0,"require_health":false,"timeout_ms":0,"interval_ms":0,"attempts":0,"error":"mesh wait json marshal failed"}` + "\n"
+		return `{"ok":false,"elapsed_ms":0,"require_health":false,"timeout_ms":0,"interval_ms":0,"attempts":0,"exit_code":1,"error":"mesh wait json marshal failed"}` + "\n"
 	}
 	return string(b) + "\n"
 }

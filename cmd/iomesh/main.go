@@ -611,7 +611,7 @@ func cmdMeshWait(args []string) int {
 		timeout       = fs.Duration("timeout", 30*time.Second, "max wait duration")
 		interval      = fs.Duration("interval", 500*time.Millisecond, "poll interval")
 		requireHealth = fs.Bool("require-health", false, "require Health OK each attempt before Ready")
-		jsonOut       = fs.Bool("json", false, "print {ok,elapsed_ms,require_health,timeout_ms,interval_ms,attempts[,error]} as JSON")
+		jsonOut       = fs.Bool("json", false, "print {ok,elapsed_ms,require_health,timeout_ms,interval_ms,attempts,exit_code[,error]} as JSON")
 		verbose       = fs.Bool("v", false, "verbose logs")
 	)
 	if err := fs.Parse(args); err != nil {
@@ -644,6 +644,7 @@ func cmdMeshWait(args []string) int {
 	// Wall-clock WaitReady for operator/CI evidence (always emitted as elapsed_ms).
 	// timeout_ms / interval_ms are configured preflight budget evidence (always emit).
 	// attempts is the number of WaitReady probe cycles (always emit).
+	// exit_code is the process exit (0 when OK, 1 when not) always emit for scrapers.
 	start := time.Now()
 	attempts, waitErr := mesh.WaitReadyAttempts(ctx, iomesh.WaitReadyOptions{
 		Interval:      *interval,
@@ -661,6 +662,8 @@ func cmdMeshWait(args []string) int {
 	if waitErr != nil {
 		ev.Error = waitErr.Error()
 	}
+	// ExitCode is re-derived from OK in normalize; set here for process-exit parity.
+	ev.ExitCode = iomesh.MeshWaitExitCode(ev)
 	var out string
 	if *jsonOut {
 		out = iomesh.FormatMeshWaitResultJSON(ev)
@@ -669,7 +672,7 @@ func cmdMeshWait(args []string) int {
 	}
 	if ev.OK {
 		fmt.Print(out)
-		return 0
+		return iomesh.MeshWaitExitCode(ev)
 	}
 	// FAIL + elapsed_ms on stderr (text) or stdout (json) for CI greps.
 	if *jsonOut {
@@ -677,7 +680,7 @@ func cmdMeshWait(args []string) int {
 	} else {
 		fmt.Fprint(os.Stderr, out)
 	}
-	return 1
+	return iomesh.MeshWaitExitCode(ev)
 }
 
 // cmdMeshStatus prints an operator snapshot: StatusLine fields + one-shot Health/Ready.

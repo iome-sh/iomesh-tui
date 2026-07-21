@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`mesh wait` exit_code evidence** — always emit `exit_code` (int process exit matching `cmdMeshWait`: `0` when `ok=true`, `1` when `ok=false`) in text and `--json` output so CI scrapers record the intended exit without shell `$?`
+
 ## [0.51.0] — 2026-07-20
 
 Minor release: dogfood exit_code evidence.
