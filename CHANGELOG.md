@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **`mesh wait` identity always-emit** — always emit `endpoint`, `tenant`, `org`, and `workspace` (empty string when unset) in text and JSON so CI scrapers can key on stable identity fields without omitempty gaps; peers mesh status identity continuum; does not invent readiness from identity
 - **Dogfood identity always-emit** — always emit `tenant`, `org`, and `workspace` (empty string when unset) in dogfood text and JSON reports so CI scrapers can key on stable identity fields without omitempty gaps; peers mesh status identity always-emit continuum
 
 ## [0.57.0] — 2026-07-21
