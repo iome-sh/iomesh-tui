@@ -84,6 +84,8 @@ func wrapWaitReadyErr(lastErr, ctxErr error) error {
 // MeshWaitEvidence is the always-emit operator preflight wait result shape.
 // TimeoutMS and IntervalMS are the configured WaitReady budget and poll interval.
 // Attempts is the number of WaitReady probe attempt cycles.
+// Result is always-emitted ok|err derived from OK (peer to mesh status result continuum;
+// wait only uses ok|err — does not invent readiness schema beyond OK/waitErr).
 // ExitCode is the process exit code for this wait (0 when OK, 1 when not OK).
 // Version is the package product/binary version via ProductVersion() (empty when unset).
 // UserAgent is the package mesh HTTP User-Agent via UserAgent() (default "iomesh-tui").
@@ -94,10 +96,20 @@ type MeshWaitEvidence struct {
 	TimeoutMS     int
 	IntervalMS    int
 	Attempts      int
+	Result        string // always emit: "ok" | "err" derived from OK
 	ExitCode      int
 	Version       string // always emit; empty when ProductVersion unset
 	UserAgent     string // always emit; package mesh HTTP UA (default "iomesh-tui")
 	Error         string // empty on success
+}
+
+// MeshWaitResult returns the always-emitted mesh wait result token:
+// "ok" when OK, "err" when not OK. Derived from OK / waitErr only (no invent readiness).
+func MeshWaitResult(e MeshWaitEvidence) string {
+	if e.OK {
+		return "ok"
+	}
+	return "err"
 }
 
 // MeshWaitExitCode returns the process exit code for mesh wait evidence:
@@ -110,7 +122,7 @@ func MeshWaitExitCode(e MeshWaitEvidence) int {
 }
 
 // normalize clamps negative elapsed/timeout/interval/attempts to 0, defaults empty
-// Error on failure, and always re-derives ExitCode from OK so scrapers trust the pair.
+// Error on failure, and always re-derives Result + ExitCode from OK so scrapers trust the pair.
 func (e MeshWaitEvidence) normalize() MeshWaitEvidence {
 	if e.ElapsedMS < 0 {
 		e.ElapsedMS = 0
@@ -127,7 +139,8 @@ func (e MeshWaitEvidence) normalize() MeshWaitEvidence {
 	if !e.OK && e.Error == "" {
 		e.Error = "unknown error"
 	}
-	// Always re-derive from OK so scrapers trust exit_code with the ok flag.
+	// Always re-derive from OK so scrapers trust result + exit_code with the ok flag.
+	e.Result = MeshWaitResult(e)
 	if e.OK {
 		e.ExitCode = 0
 	} else {
@@ -137,23 +150,23 @@ func (e MeshWaitEvidence) normalize() MeshWaitEvidence {
 }
 
 // FormatMeshWaitResult renders operator preflight wait outcome as text.
-// Always includes elapsed_ms, require_health, timeout_ms, interval_ms, attempts, exit_code, version, and user_agent for CI evidence.
+// Always includes elapsed_ms, require_health, timeout_ms, interval_ms, attempts, result, exit_code, version, and user_agent for CI evidence.
 func FormatMeshWaitResult(e MeshWaitEvidence) string {
 	e = e.normalize()
 	if e.OK {
 		return fmt.Sprintf(
-			"PASS mesh wait: ready\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\nattempts: %d\nexit_code: %d\nversion: %s\nuser_agent: %s\n",
-			e.ElapsedMS, e.RequireHealth, e.TimeoutMS, e.IntervalMS, e.Attempts, e.ExitCode, e.Version, e.UserAgent,
+			"PASS mesh wait: ready\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\nattempts: %d\nresult: %s\nexit_code: %d\nversion: %s\nuser_agent: %s\n",
+			e.ElapsedMS, e.RequireHealth, e.TimeoutMS, e.IntervalMS, e.Attempts, e.Result, e.ExitCode, e.Version, e.UserAgent,
 		)
 	}
 	return fmt.Sprintf(
-		"FAIL mesh wait: %s\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\nattempts: %d\nexit_code: %d\nversion: %s\nuser_agent: %s\n",
-		e.Error, e.ElapsedMS, e.RequireHealth, e.TimeoutMS, e.IntervalMS, e.Attempts, e.ExitCode, e.Version, e.UserAgent,
+		"FAIL mesh wait: %s\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\nattempts: %d\nresult: %s\nexit_code: %d\nversion: %s\nuser_agent: %s\n",
+		e.Error, e.ElapsedMS, e.RequireHealth, e.TimeoutMS, e.IntervalMS, e.Attempts, e.Result, e.ExitCode, e.Version, e.UserAgent,
 	)
 }
 
 // FormatMeshWaitResultJSON renders wait outcome as compact JSON for scrapers.
-// Always emits ok, elapsed_ms, require_health, timeout_ms, interval_ms, attempts, exit_code, version, user_agent; error only when ok is false.
+// Always emits ok, elapsed_ms, require_health, timeout_ms, interval_ms, attempts, result, exit_code, version, user_agent; error only when ok is false.
 func FormatMeshWaitResultJSON(e MeshWaitEvidence) string {
 	e = e.normalize()
 	type out struct {
@@ -163,6 +176,7 @@ func FormatMeshWaitResultJSON(e MeshWaitEvidence) string {
 		TimeoutMS     int    `json:"timeout_ms"`
 		IntervalMS    int    `json:"interval_ms"`
 		Attempts      int    `json:"attempts"`
+		Result        string `json:"result"`
 		ExitCode      int    `json:"exit_code"`
 		Version       string `json:"version"`
 		UserAgent     string `json:"user_agent"`
@@ -175,6 +189,7 @@ func FormatMeshWaitResultJSON(e MeshWaitEvidence) string {
 		TimeoutMS:     e.TimeoutMS,
 		IntervalMS:    e.IntervalMS,
 		Attempts:      e.Attempts,
+		Result:        e.Result,
 		ExitCode:      e.ExitCode,
 		Version:       e.Version,
 		UserAgent:     e.UserAgent,
@@ -184,7 +199,7 @@ func FormatMeshWaitResultJSON(e MeshWaitEvidence) string {
 	}
 	b, err := json.Marshal(o)
 	if err != nil {
-		return `{"ok":false,"elapsed_ms":0,"require_health":false,"timeout_ms":0,"interval_ms":0,"attempts":0,"exit_code":1,"version":"","user_agent":"","error":"mesh wait json marshal failed"}` + "\n"
+		return `{"ok":false,"elapsed_ms":0,"require_health":false,"timeout_ms":0,"interval_ms":0,"attempts":0,"result":"err","exit_code":1,"version":"","user_agent":"","error":"mesh wait json marshal failed"}` + "\n"
 	}
 	return string(b) + "\n"
 }

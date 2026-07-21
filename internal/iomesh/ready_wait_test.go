@@ -198,6 +198,9 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 	if !strings.Contains(pass, "attempts: 3") {
 		t.Fatalf("pass missing attempts:\n%s", pass)
 	}
+	if !strings.Contains(pass, "result: ok") {
+		t.Fatalf("pass missing result ok:\n%s", pass)
+	}
 	if !strings.Contains(pass, "exit_code: 0") {
 		t.Fatalf("pass missing exit_code 0:\n%s", pass)
 	}
@@ -236,6 +239,9 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 	if !strings.Contains(fail, "attempts: 7") {
 		t.Fatalf("fail missing attempts:\n%s", fail)
 	}
+	if !strings.Contains(fail, "result: err") {
+		t.Fatalf("fail missing result err:\n%s", fail)
+	}
 	if !strings.Contains(fail, "exit_code: 1") {
 		t.Fatalf("fail missing exit_code 1:\n%s", fail)
 	}
@@ -268,6 +274,9 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 	if !strings.Contains(clamped, "require_health: false") {
 		t.Fatalf("clamped missing require_health:\n%s", clamped)
 	}
+	if !strings.Contains(clamped, "result: err") {
+		t.Fatalf("clamped fail missing result err:\n%s", clamped)
+	}
 	if !strings.Contains(clamped, "exit_code: 1") {
 		t.Fatalf("clamped fail missing exit_code 1:\n%s", clamped)
 	}
@@ -278,10 +287,13 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 		t.Fatalf("clamped missing user_agent key:\n%s", clamped)
 	}
 
-	// Stale ExitCode is re-derived from OK in normalize.
-	stale := FormatMeshWaitResult(MeshWaitEvidence{OK: true, ExitCode: 99, Attempts: 1})
+	// Stale ExitCode / Result are re-derived from OK in normalize.
+	stale := FormatMeshWaitResult(MeshWaitEvidence{OK: true, ExitCode: 99, Result: "err", Attempts: 1})
 	if !strings.Contains(stale, "exit_code: 0") {
 		t.Fatalf("stale ExitCode must re-derive to 0:\n%s", stale)
+	}
+	if !strings.Contains(stale, "result: ok") {
+		t.Fatalf("stale Result must re-derive to ok:\n%s", stale)
 	}
 
 	// Explicit Version is rendered; ProductVersion is wired at CLI layer.
@@ -328,6 +340,9 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 	}
 	if n, _ := okObj["attempts"].(float64); int(n) != 2 {
 		t.Fatalf("attempts: %v want 2\n%s", okObj["attempts"], js)
+	}
+	if okObj["result"] != "ok" {
+		t.Fatalf("result: %v want ok (OK)\n%s", okObj["result"], js)
 	}
 	if n, _ := okObj["exit_code"].(float64); int(n) != 0 {
 		t.Fatalf("exit_code: %v want 0 (OK)\n%s", okObj["exit_code"], js)
@@ -379,6 +394,9 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 	if n, _ := failObj["attempts"].(float64); int(n) != 5 {
 		t.Fatalf("attempts: %v want 5\n%s", failObj["attempts"], jsFail)
 	}
+	if failObj["result"] != "err" {
+		t.Fatalf("result: %v want err (FAIL)\n%s", failObj["result"], jsFail)
+	}
 	if n, _ := failObj["exit_code"].(float64); int(n) != 1 {
 		t.Fatalf("exit_code: %v want 1 (FAIL)\n%s", failObj["exit_code"], jsFail)
 	}
@@ -392,20 +410,20 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 		t.Fatalf("fail JSON missing user_agent:\n%s", jsFail)
 	}
 
-	// Always-emit shape: ok + elapsed_ms + require_health + timeout_ms + interval_ms + attempts + exit_code + version + user_agent on both paths.
+	// Always-emit shape: ok + elapsed_ms + require_health + timeout_ms + interval_ms + attempts + result + exit_code + version + user_agent on both paths.
 	for _, s := range []string{js, jsFail} {
 		var m map[string]any
 		if err := json.Unmarshal([]byte(s), &m); err != nil {
 			t.Fatalf("unmarshal: %v\n%s", err, s)
 		}
-		for _, key := range []string{"ok", "elapsed_ms", "require_health", "timeout_ms", "interval_ms", "attempts", "exit_code", "version", "user_agent"} {
+		for _, key := range []string{"ok", "elapsed_ms", "require_health", "timeout_ms", "interval_ms", "attempts", "result", "exit_code", "version", "user_agent"} {
 			if _, ok := m[key]; !ok {
 				t.Fatalf("missing %s:\n%s", key, s)
 			}
 		}
 	}
 
-	// Zero attempts always emit (disabled path); exit_code 0 when OK.
+	// Zero attempts always emit (disabled path); result=ok + exit_code 0 when OK.
 	jsZero := FormatMeshWaitResultJSON(MeshWaitEvidence{OK: true, Attempts: 0})
 	var zeroObj map[string]any
 	if err := json.Unmarshal([]byte(jsZero), &zeroObj); err != nil {
@@ -413,6 +431,9 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 	}
 	if n, _ := zeroObj["attempts"].(float64); int(n) != 0 {
 		t.Fatalf("zero attempts: %v want 0\n%s", zeroObj["attempts"], jsZero)
+	}
+	if zeroObj["result"] != "ok" {
+		t.Fatalf("zero path result: %v want ok\n%s", zeroObj["result"], jsZero)
 	}
 	if n, _ := zeroObj["exit_code"].(float64); int(n) != 0 {
 		t.Fatalf("zero path exit_code: %v want 0\n%s", zeroObj["exit_code"], jsZero)
@@ -434,14 +455,17 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 		t.Fatalf("negative attempts clamp: %v want 0\n%s", negObj["attempts"], jsNeg)
 	}
 
-	// Stale ExitCode re-derived from OK.
-	jsStale := FormatMeshWaitResultJSON(MeshWaitEvidence{OK: false, ExitCode: 0, Error: "x"})
+	// Stale ExitCode / Result re-derived from OK.
+	jsStale := FormatMeshWaitResultJSON(MeshWaitEvidence{OK: false, ExitCode: 0, Result: "ok", Error: "x"})
 	var staleObj map[string]any
 	if err := json.Unmarshal([]byte(jsStale), &staleObj); err != nil {
 		t.Fatalf("json stale: %v\n%s", err, jsStale)
 	}
 	if n, _ := staleObj["exit_code"].(float64); int(n) != 1 {
 		t.Fatalf("stale ExitCode must re-derive to 1: %v\n%s", staleObj["exit_code"], jsStale)
+	}
+	if staleObj["result"] != "err" {
+		t.Fatalf("stale Result must re-derive to err: %v\n%s", staleObj["result"], jsStale)
 	}
 
 	// Explicit Version field value always emitted (CLI sets from ProductVersion).
@@ -541,5 +565,51 @@ func TestMeshWaitExitCode(t *testing.T) {
 	}
 	if got := MeshWaitExitCode(MeshWaitEvidence{OK: false, ExitCode: 0}); got != 1 {
 		t.Fatalf("FAIL ignores ExitCode field: %d want 1", got)
+	}
+}
+
+func TestMeshWaitResult(t *testing.T) {
+	if got := MeshWaitResult(MeshWaitEvidence{OK: true}); got != "ok" {
+		t.Fatalf("OK: MeshWaitResult=%q want ok", got)
+	}
+	if got := MeshWaitResult(MeshWaitEvidence{OK: false}); got != "err" {
+		t.Fatalf("FAIL: MeshWaitResult=%q want err", got)
+	}
+	// Field Result is ignored; derived from OK only.
+	if got := MeshWaitResult(MeshWaitEvidence{OK: true, Result: "err"}); got != "ok" {
+		t.Fatalf("OK ignores Result field: %q want ok", got)
+	}
+	if got := MeshWaitResult(MeshWaitEvidence{OK: false, Result: "ok"}); got != "err" {
+		t.Fatalf("FAIL ignores Result field: %q want err", got)
+	}
+}
+
+func TestFormatMeshWaitResult_AlwaysEmitsResult(t *testing.T) {
+	// Text + JSON always emit result=ok|err derived from OK (ok path + err path).
+	okText := FormatMeshWaitResult(MeshWaitEvidence{OK: true, Attempts: 1})
+	if !strings.Contains(okText, "result: ok") {
+		t.Fatalf("ok text missing result ok:\n%s", okText)
+	}
+	errText := FormatMeshWaitResult(MeshWaitEvidence{OK: false, Error: "timeout", Attempts: 2})
+	if !strings.Contains(errText, "result: err") {
+		t.Fatalf("err text missing result err:\n%s", errText)
+	}
+
+	okJS := FormatMeshWaitResultJSON(MeshWaitEvidence{OK: true, Attempts: 1})
+	var okObj map[string]any
+	if err := json.Unmarshal([]byte(okJS), &okObj); err != nil {
+		t.Fatalf("ok json: %v\n%s", err, okJS)
+	}
+	if okObj["result"] != "ok" {
+		t.Fatalf("ok json result: %v want ok\n%s", okObj["result"], okJS)
+	}
+
+	errJS := FormatMeshWaitResultJSON(MeshWaitEvidence{OK: false, Error: "timeout", Attempts: 2})
+	var errObj map[string]any
+	if err := json.Unmarshal([]byte(errJS), &errObj); err != nil {
+		t.Fatalf("err json: %v\n%s", err, errJS)
+	}
+	if errObj["result"] != "err" {
+		t.Fatalf("err json result: %v want err\n%s", errObj["result"], errJS)
 	}
 }
