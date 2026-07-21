@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Dogfood user_agent always-emit** — always emit `user_agent` (package mesh HTTP User-Agent via `iomesh.UserAgent()`, default `iomesh-tui`; empty string when unset) in dogfood text and JSON reports so CI scrapers record the outbound mesh UA without re-parsing flags; peers mesh wait/status always-emit continuum
+
 ## [0.55.0] — 2026-07-20
 
 Minor release: mesh wait result evidence.

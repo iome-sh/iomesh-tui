@@ -195,7 +195,8 @@ type DogfoodReport struct {
 	// Always emitted in JSON (empty string when unset).
 	Version string `json:"version"`
 	// UserAgent is the package mesh HTTP User-Agent (iomesh-tui/<version>).
-	// Always set from UserAgent() for CI evidence; not scraped from server.
+	// Always set from UserAgent() for CI evidence; always emitted in JSON/text
+	// (empty string when unset). Not scraped from server.
 	UserAgent string `json:"user_agent"`
 	Strict    bool   `json:"strict"`
 	Steps     []Step `json:"steps"`
@@ -1145,8 +1146,8 @@ func FormatReportJSON(r DogfoodReport) string {
 		PolicySource         string     `json:"policy_source,omitempty"`
 		PolicyAllow          *bool      `json:"policy_allow,omitempty"` // set when policy evaluated
 		MemoryEndpoint       string     `json:"memory_endpoint,omitempty"`
-		Version              string     `json:"version"` // always emit (empty when unset)
-		UserAgent            string     `json:"user_agent,omitempty"`
+		Version              string     `json:"version"`    // always emit (empty when unset)
+		UserAgent            string     `json:"user_agent"` // always emit (empty when unset)
 		Strict               bool       `json:"strict"`
 		OK                   bool       `json:"ok"`
 		ExitCode             int        `json:"exit_code"` // always emit (0 when OK, 1 when not)
@@ -1338,9 +1339,8 @@ func FormatReport(r DogfoodReport) string {
 	if r.PolicyAllow != nil {
 		fmt.Fprintf(&b, "  policy_allow: %v\n", *r.PolicyAllow)
 	}
-	if r.UserAgent != "" {
-		fmt.Fprintf(&b, "  user_agent: %s\n", r.UserAgent)
-	}
+	// Always emit user_agent (empty when unset) for CI/operator evidence.
+	fmt.Fprintf(&b, "  user_agent: %s\n", r.UserAgent)
 	fmt.Fprintf(&b, "  strict:   %v\n", r.Strict)
 	fmt.Fprintf(&b, "  exit_code: %d\n", r.ExitCode)
 	for _, s := range r.Steps {
