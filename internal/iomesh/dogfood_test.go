@@ -392,6 +392,9 @@ func TestDogfood_FullPass(t *testing.T) {
 	if s, ok := parsed["wait_ready_result"].(string); !ok || s != "off" {
 		t.Fatalf("json wait_ready_result: %v want off when wait off\n%s", parsed["wait_ready_result"], js)
 	}
+	if n, ok := parsed["wait_ready_attempts"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json wait_ready_attempts: %v want 0 when wait off\n%s", parsed["wait_ready_attempts"], js)
+	}
 	if _, ok := parsed["health_ms"].(float64); !ok {
 		t.Fatalf("json health_ms missing or wrong type: %v\n%s", parsed["health_ms"], js)
 	}
@@ -457,6 +460,9 @@ func TestDogfood_FullPass(t *testing.T) {
 	}
 	if !strings.Contains(out, "wait_ready_result: off") {
 		t.Fatalf("text report missing wait_ready_result off:\n%s", out)
+	}
+	if !strings.Contains(out, "wait_ready_attempts: 0") {
+		t.Fatalf("text report missing wait_ready_attempts 0:\n%s", out)
 	}
 	if !strings.Contains(out, "health_ms:") || !strings.Contains(out, "ready_ms:") {
 		t.Fatalf("text report missing health_ms/ready_ms:\n%s", out)
@@ -775,6 +781,9 @@ func TestDogfood_Disabled(t *testing.T) {
 	if rep.WaitReadyResult != "off" {
 		t.Fatalf("disabled WaitReadyResult: %q want off", rep.WaitReadyResult)
 	}
+	if rep.WaitReadyAttempts != 0 {
+		t.Fatalf("disabled WaitReadyAttempts: %d want 0", rep.WaitReadyAttempts)
+	}
 	if rep.HealthMS != 0 {
 		t.Fatalf("disabled HealthMS: %d want 0", rep.HealthMS)
 	}
@@ -862,6 +871,9 @@ func TestDogfood_Disabled(t *testing.T) {
 	if s, ok := parsed["wait_ready_result"].(string); !ok || s != "off" {
 		t.Fatalf("json wait_ready_result: %v want off\n%s", parsed["wait_ready_result"], js)
 	}
+	if n, ok := parsed["wait_ready_attempts"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json wait_ready_attempts: %v want 0\n%s", parsed["wait_ready_attempts"], js)
+	}
 	if n, ok := parsed["health_ms"].(float64); !ok || int(n) != 0 {
 		t.Fatalf("json health_ms: %v want 0\n%s", parsed["health_ms"], js)
 	}
@@ -928,6 +940,9 @@ func TestDogfood_Disabled(t *testing.T) {
 	}
 	if !strings.Contains(text, "wait_ready_result: off") {
 		t.Fatalf("text report missing wait_ready_result off:\n%s", text)
+	}
+	if !strings.Contains(text, "wait_ready_attempts: 0") {
+		t.Fatalf("text report missing wait_ready_attempts 0:\n%s", text)
 	}
 	if !strings.Contains(text, "health_ms: 0") || !strings.Contains(text, "ready_ms: 0") {
 		t.Fatalf("text report missing health_ms/ready_ms 0:\n%s", text)
@@ -2357,12 +2372,18 @@ func TestDogfood_WaitReady_SucceedsAfterRetries(t *testing.T) {
 	if rep.WaitReadyResult != "ok" {
 		t.Fatalf("WaitReadyResult: %q want ok", rep.WaitReadyResult)
 	}
+	if rep.WaitReadyAttempts < 1 {
+		t.Fatalf("WaitReadyAttempts: %d want >= 1 on success", rep.WaitReadyAttempts)
+	}
 	wr, ok := dogfoodStep(rep, "wait_ready")
 	if !ok || wr.Status != StepPass {
 		t.Fatalf("wait_ready: ok=%v status=%s detail=%s", ok, wr.Status, wr.Detail)
 	}
 	if !strings.Contains(wr.Detail, "WaitReady OK") {
 		t.Fatalf("wait_ready detail: %s", wr.Detail)
+	}
+	if !strings.Contains(wr.Detail, "attempts=") {
+		t.Fatalf("wait_ready detail missing attempts=: %s", wr.Detail)
 	}
 	ready, ok := dogfoodStep(rep, "ready")
 	if !ok || ready.Status != StepPass {
@@ -2391,6 +2412,9 @@ func TestDogfood_WaitReady_SucceedsAfterRetries(t *testing.T) {
 	if s, ok := parsed["wait_ready_result"].(string); !ok || s != "ok" {
 		t.Fatalf("json wait_ready_result: %v want ok\n%s", parsed["wait_ready_result"], js)
 	}
+	if n, ok := parsed["wait_ready_attempts"].(float64); !ok || int(n) < 1 {
+		t.Fatalf("json wait_ready_attempts: %v want >= 1\n%s", parsed["wait_ready_attempts"], js)
+	}
 	text := FormatReport(rep)
 	if !strings.Contains(text, "wait_ready_ms: 2000") {
 		t.Fatalf("text report missing wait_ready_ms:\n%s", text)
@@ -2406,6 +2430,9 @@ func TestDogfood_WaitReady_SucceedsAfterRetries(t *testing.T) {
 	}
 	if !strings.Contains(text, "wait_ready_result: ok") {
 		t.Fatalf("text report missing wait_ready_result ok:\n%s", text)
+	}
+	if !strings.Contains(text, "wait_ready_attempts:") {
+		t.Fatalf("text report missing wait_ready_attempts:\n%s", text)
 	}
 }
 
@@ -2445,6 +2472,9 @@ func TestDogfood_WaitReady_TimeoutSoftSkip(t *testing.T) {
 	if rep.WaitReadyResult != "skip" {
 		t.Fatalf("WaitReadyResult: %q want skip", rep.WaitReadyResult)
 	}
+	if rep.WaitReadyAttempts < 1 {
+		t.Fatalf("WaitReadyAttempts: %d want >= 1 on soft timeout", rep.WaitReadyAttempts)
+	}
 	wr, ok := dogfoodStep(rep, "wait_ready")
 	if !ok || wr.Status != StepSkip {
 		t.Fatalf("wait_ready soft: ok=%v status=%s detail=%s", ok, wr.Status, wr.Detail)
@@ -2465,9 +2495,15 @@ func TestDogfood_WaitReady_TimeoutSoftSkip(t *testing.T) {
 	if s, ok := parsed["wait_ready_result"].(string); !ok || s != "skip" {
 		t.Fatalf("json wait_ready_result: %v want skip\n%s", parsed["wait_ready_result"], js)
 	}
+	if n, ok := parsed["wait_ready_attempts"].(float64); !ok || int(n) < 1 {
+		t.Fatalf("json wait_ready_attempts: %v want >= 1 on soft timeout\n%s", parsed["wait_ready_attempts"], js)
+	}
 	text := FormatReport(rep)
 	if !strings.Contains(text, "wait_ready_result: skip") {
 		t.Fatalf("text report missing wait_ready_result skip:\n%s", text)
+	}
+	if !strings.Contains(text, "wait_ready_attempts:") {
+		t.Fatalf("text report missing wait_ready_attempts:\n%s", text)
 	}
 }
 
@@ -2558,6 +2594,9 @@ func TestDogfood_WaitReady_DefaultOff(t *testing.T) {
 	if rep.WaitReadyResult != "off" {
 		t.Fatalf("WaitReadyResult: %q want off", rep.WaitReadyResult)
 	}
+	if rep.WaitReadyAttempts != 0 {
+		t.Fatalf("WaitReadyAttempts: %d want 0 when wait off", rep.WaitReadyAttempts)
+	}
 	if _, ok := dogfoodStep(rep, "wait_ready"); ok {
 		t.Fatal("default dogfood must not include wait_ready step")
 	}
@@ -2581,6 +2620,9 @@ func TestDogfood_WaitReady_DefaultOff(t *testing.T) {
 	if s, ok := parsed["wait_ready_result"].(string); !ok || s != "off" {
 		t.Fatalf("json wait_ready_result: %v want off\n%s", parsed["wait_ready_result"], js)
 	}
+	if n, ok := parsed["wait_ready_attempts"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json wait_ready_attempts: %v want 0 when wait off\n%s", parsed["wait_ready_attempts"], js)
+	}
 	text := FormatReport(rep)
 	if !strings.Contains(text, "wait_ready_ms: 0") {
 		t.Fatalf("text report missing wait_ready_ms 0:\n%s", text)
@@ -2596,6 +2638,9 @@ func TestDogfood_WaitReady_DefaultOff(t *testing.T) {
 	}
 	if !strings.Contains(text, "wait_ready_result: off") {
 		t.Fatalf("text report missing wait_ready_result off:\n%s", text)
+	}
+	if !strings.Contains(text, "wait_ready_attempts: 0") {
+		t.Fatalf("text report missing wait_ready_attempts 0:\n%s", text)
 	}
 }
 

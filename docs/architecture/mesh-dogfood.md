@@ -35,7 +35,7 @@ iomesh mesh dogfood --wait-ready 10s --wait-interval 500ms --wait-require-health
 | `--wait-interval dur` | `DogfoodOptions.WaitReadyInterval` | `500ms` when wait-ready > 0 and interval is 0 |
 | `--wait-require-health` | `DogfoodOptions.WaitRequireHealth` | false |
 
-Effective budget is `min(WaitReady, parent ctx remaining)` via `context.WithTimeout`. Report top-level `wait_ready_ms` is always emitted (configured budget in ms; `0` = off). Actual wait wall time is `wait_ready_elapsed_ms` (always emitted; `0` when step skipped/absent). Effective poll interval is `wait_ready_interval_ms` (always emitted; `0` when wait off; default `500` when wait on and interval unset). Configured `wait_require_health` is always emitted (boolean). Outcome is on the `wait_ready` step (`PASS` / `SKIP` / `FAIL`) and mirrored as top-level `wait_ready_result` (`off`|`ok`|`err`|`skip`; always emitted; `off` when wait budget 0 / step not run).
+Effective budget is `min(WaitReady, parent ctx remaining)` via `context.WithTimeout`. Report top-level `wait_ready_ms` is always emitted (configured budget in ms; `0` = off). Actual wait wall time is `wait_ready_elapsed_ms` (always emitted; `0` when step skipped/absent). Effective poll interval is `wait_ready_interval_ms` (always emitted; `0` when wait off; default `500` when wait on and interval unset). Configured `wait_require_health` is always emitted (boolean). Outcome is on the `wait_ready` step (`PASS` / `SKIP` / `FAIL`) and mirrored as top-level `wait_ready_result` (`off`|`ok`|`err`|`skip`; always emitted; `off` when wait budget 0 / step not run). Probe cycle count is `wait_ready_attempts` (always emitted; `0` when wait off / step not run; actual attempts on success or soft/strict fail).
 
 ### Operator status (`mesh status`)
 
@@ -251,6 +251,7 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `wait_ready_interval_ms` | int | Effective WaitReady poll interval in ms (**always emitted**, `0` when wait off; default `500` when wait on and interval unset) |
 | `wait_require_health` | bool | Configured WaitRequireHealth knob (**always emitted**, `false` when unset) |
 | `wait_ready_result` | string | Wait_ready step outcome for CI (**always emitted**): `off` (budget 0 / step not run), `ok` (PASS), `skip` (soft SKIP), `err` (strict FAIL) |
+| `wait_ready_attempts` | int | WaitReady probe cycle count from `WaitReadyAttempts` (**always emitted**, `0` when wait budget off / step not run; actual count on success or soft/strict fail) |
 | `health_ms` | int | Health step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
 | `ready_ms` | int | Ready step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |
 | `context_ms` | int | Context step latency in ms (**always emitted**, `0` when step skipped/absent / mesh disabled) |

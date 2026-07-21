@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Dogfood wait_ready_attempts evidence** — always emit `wait_ready_attempts` (WaitReady probe cycle count; `0` when wait budget off / step not run) in text and JSON dogfood reports so CI scrapers record how many Health/Ready loops ran without scraping step detail
+
 ## [0.47.0] — 2026-07-20
 
 Minor release: mesh wait attempts evidence.
