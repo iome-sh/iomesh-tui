@@ -1883,6 +1883,117 @@ func TestFormatReport_AlwaysEmitsIdentity(t *testing.T) {
 	})
 }
 
+func TestFormatReport_AlwaysEmitsCatalogPolicySource(t *testing.T) {
+	// catalog_source / policy_source always present as strings in JSON and text, including empty.
+	// Peers identity / memory_endpoint / health_err always-emit continuum.
+	t.Run("empty", func(t *testing.T) {
+		empty := DogfoodReport{Summary: "PASS", OK: true}
+		if empty.CatalogSource != "" || empty.PolicySource != "" {
+			t.Fatalf("zero-value CatalogSource/PolicySource: %q/%q want empty", empty.CatalogSource, empty.PolicySource)
+		}
+		js := FormatReportJSON(empty)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		for _, key := range []string{"catalog_source", "policy_source"} {
+			v, ok := parsed[key]
+			if !ok {
+				t.Fatalf("always-emit %s key missing:\n%s", key, js)
+			}
+			str, ok := v.(string)
+			if !ok {
+				t.Fatalf("%s: %v want string\n%s", key, v, js)
+			}
+			if str != "" {
+				t.Fatalf("%s: %q want empty string\n%s", key, str, js)
+			}
+			if !strings.Contains(js, `"`+key+`"`) {
+				t.Fatalf("json missing %s key:\n%s", key, js)
+			}
+		}
+		text := FormatReport(empty)
+		for _, want := range []string{
+			"catalog_source: ",
+			"policy_source: ",
+		} {
+			if !strings.Contains(text, want) {
+				t.Fatalf("text always-emit source line missing %q:\n%s", want, text)
+			}
+		}
+		// Order: dual_write → catalog_source → catalog_count; policy_mode → policy_source
+		dwIdx := strings.Index(text, "dual_write:")
+		csIdx := strings.Index(text, "catalog_source:")
+		ccIdx := strings.Index(text, "catalog_count:")
+		pmIdx := strings.Index(text, "policy_mode:")
+		psIdx := strings.Index(text, "policy_source:")
+		if dwIdx < 0 || csIdx < 0 || ccIdx < 0 || pmIdx < 0 || psIdx < 0 {
+			t.Fatalf("missing source order keys:\n%s", text)
+		}
+		if !(dwIdx < csIdx && csIdx < ccIdx) {
+			t.Fatalf("order want dual_write < catalog_source < catalog_count:\n%s", text)
+		}
+		if !(pmIdx < psIdx) {
+			t.Fatalf("order want policy_mode < policy_source:\n%s", text)
+		}
+	})
+	t.Run("populated", func(t *testing.T) {
+		rep := DogfoodReport{
+			CatalogSource: "mesh",
+			PolicySource:  "mesh",
+			Summary:       "PASS",
+			OK:            true,
+		}
+		js := FormatReportJSON(rep)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		if got, _ := parsed["catalog_source"].(string); got != "mesh" {
+			t.Fatalf("catalog_source: %v want mesh\n%s", parsed["catalog_source"], js)
+		}
+		if got, _ := parsed["policy_source"].(string); got != "mesh" {
+			t.Fatalf("policy_source: %v want mesh\n%s", parsed["policy_source"], js)
+		}
+		text := FormatReport(rep)
+		for _, line := range []string{
+			"catalog_source: mesh",
+			"policy_source: mesh",
+		} {
+			if !strings.Contains(text, line) {
+				t.Fatalf("text missing %q:\n%s", line, text)
+			}
+		}
+	})
+	t.Run("mesh_disabled_empty", func(t *testing.T) {
+		// Mesh-disabled early return: both empty string (always emit keys).
+		c := New(Config{Enabled: false}, nil)
+		rep := c.Dogfood(context.Background(), DogfoodOptions{})
+		if rep.CatalogSource != "" || rep.PolicySource != "" {
+			t.Fatalf("disabled CatalogSource/PolicySource: %q/%q want empty", rep.CatalogSource, rep.PolicySource)
+		}
+		js := FormatReportJSON(rep)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		for _, key := range []string{"catalog_source", "policy_source"} {
+			v, ok := parsed[key]
+			if !ok {
+				t.Fatalf("disabled always-emit %s key missing:\n%s", key, js)
+			}
+			str, ok := v.(string)
+			if !ok || str != "" {
+				t.Fatalf("disabled %s: %v want empty string\n%s", key, v, js)
+			}
+		}
+		text := FormatReport(rep)
+		if !strings.Contains(text, "catalog_source: ") || !strings.Contains(text, "policy_source: ") {
+			t.Fatalf("disabled text missing catalog_source/policy_source lines:\n%s", text)
+		}
+	})
+}
+
 func TestFormatReport_AlwaysEmitsMemoryEndpoint(t *testing.T) {
 	// memory_endpoint always present as string in JSON and text, including empty.
 	// Peers identity always-emit mold (endpoint/tenant); empty-honest when unset —

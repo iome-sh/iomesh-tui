@@ -227,7 +227,7 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `org` | string | Client `[iomesh] org` / `IOMESH_ORG` (PlanGate); **always emitted**, empty when unset |
 | `workspace` | string | Client `[iomesh] workspace` / `IOMESH_WORKSPACE`; **always emitted**, empty when unset. **Not** the context-plane path (`DogfoodOptions.Workspace`) |
 | `dual_write` | bool | Agent `[memory].dual_write` / `IOMESH_MEMORY_DUAL_WRITE` from Client cfg (**always emitted**, default `false`). Report-only — does **not** gate the `memory_ingest` probe |
-| `catalog_source` | string | Last catalog probe source (`mesh` \| `portal` \| `fail-open` \| `off`); omitted when empty (mesh disabled before catalog step) |
+| `catalog_source` | string | Last catalog probe source (`mesh` \| `portal` \| `fail-open` \| `off`); **always emitted**, empty string when mesh disabled before catalog step / unset |
 | `catalog_count` | int | Product count from last `ListCatalog` (**always emitted**, `0` when none/off). Top-level CI evidence — no step-detail scrape |
 | `context_chars` | int | `len(FormatContextSnippet)` from last context probe (**always emitted**, `0` when skip/off/empty) |
 | `context_lineage_count` | int | `len(res.Lineage)` from last `QueryContext` (**always emitted**, `0` when skip/off/empty) |
@@ -273,7 +273,7 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `steps_fail` | int | Count of FAIL steps (**always emitted**, `0` when none) |
 | `steps_skip` | int | Count of SKIP steps (**always emitted**, `0` when none; mesh-disabled early return emits `1` for the single `enabled` SKIP) |
 | `policy_mode` | string | Configured policy mode (`off` \| `advisory` \| `enforce`; **always emitted**, default `off`) |
-| `policy_source` | string | Last policy probe source (`mesh` \| `fail-open` \| `unavailable` \| `off`); `off` when mode off; omitted when mesh disabled before policy step |
+| `policy_source` | string | Last policy probe source (`mesh` \| `fail-open` \| `unavailable` \| `off`); `off` when mode off; **always emitted**, empty string when mesh disabled before policy step / unset |
 | `policy_allow` | bool | Evaluate decision when policy ran; **omitted** when mode off / skipped without evaluate |
 | `memory_endpoint` | string | Optional memory sidecar base (`[memory].endpoint` / `IOMESH_MEMORY_ENDPOINT`; **always emitted**, `""` when unset — retrieve uses mesh `endpoint`) |
 | `version` | string | CLI/binary version from `DogfoodOptions.Version`, else package `ProductVersion()` (**always emitted**, `""` when unset). CLI wires package `version` |
