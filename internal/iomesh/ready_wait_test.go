@@ -201,6 +201,10 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 	if !strings.Contains(pass, "exit_code: 0") {
 		t.Fatalf("pass missing exit_code 0:\n%s", pass)
 	}
+	// version always emitted (empty when unset).
+	if !strings.Contains(pass, "version: ") {
+		t.Fatalf("pass missing version key:\n%s", pass)
+	}
 	if strings.Contains(pass, "FAIL") {
 		t.Fatalf("pass should not contain FAIL:\n%s", pass)
 	}
@@ -231,6 +235,9 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 	if !strings.Contains(fail, "exit_code: 1") {
 		t.Fatalf("fail missing exit_code 1:\n%s", fail)
 	}
+	if !strings.Contains(fail, "version: ") {
+		t.Fatalf("fail missing version key:\n%s", fail)
+	}
 
 	// Negative elapsed/timeout/interval/attempts clamp to 0; empty Error gets a default.
 	clamped := FormatMeshWaitResult(MeshWaitEvidence{
@@ -257,11 +264,22 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 	if !strings.Contains(clamped, "exit_code: 1") {
 		t.Fatalf("clamped fail missing exit_code 1:\n%s", clamped)
 	}
+	if !strings.Contains(clamped, "version: ") {
+		t.Fatalf("clamped missing version key:\n%s", clamped)
+	}
 
 	// Stale ExitCode is re-derived from OK in normalize.
 	stale := FormatMeshWaitResult(MeshWaitEvidence{OK: true, ExitCode: 99, Attempts: 1})
 	if !strings.Contains(stale, "exit_code: 0") {
 		t.Fatalf("stale ExitCode must re-derive to 0:\n%s", stale)
+	}
+
+	// Explicit Version is rendered; ProductVersion is wired at CLI layer.
+	withVer := FormatMeshWaitResult(MeshWaitEvidence{
+		OK: true, Attempts: 1, Version: "1.2.3-wait",
+	})
+	if !strings.Contains(withVer, "version: 1.2.3-wait") {
+		t.Fatalf("text version should match field:\n%s", withVer)
 	}
 }
 
@@ -295,6 +313,14 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 	}
 	if n, _ := okObj["exit_code"].(float64); int(n) != 0 {
 		t.Fatalf("exit_code: %v want 0 (OK)\n%s", okObj["exit_code"], js)
+	}
+	// version always present; empty string when unset on evidence.
+	v, hasVer := okObj["version"]
+	if !hasVer {
+		t.Fatalf("success JSON missing version:\n%s", js)
+	}
+	if v != "" {
+		t.Fatalf("unset Version should emit empty string, got %q\n%s", v, js)
 	}
 	if _, has := okObj["error"]; has {
 		t.Fatalf("success JSON should omit error:\n%s", js)
@@ -333,14 +359,17 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 	if failObj["error"] != "wait ready: deadline exceeded" {
 		t.Fatalf("error: %v\n%s", failObj["error"], jsFail)
 	}
+	if _, has := failObj["version"]; !has {
+		t.Fatalf("fail JSON missing version:\n%s", jsFail)
+	}
 
-	// Always-emit shape: ok + elapsed_ms + require_health + timeout_ms + interval_ms + attempts + exit_code on both paths.
+	// Always-emit shape: ok + elapsed_ms + require_health + timeout_ms + interval_ms + attempts + exit_code + version on both paths.
 	for _, s := range []string{js, jsFail} {
 		var m map[string]any
 		if err := json.Unmarshal([]byte(s), &m); err != nil {
 			t.Fatalf("unmarshal: %v\n%s", err, s)
 		}
-		for _, key := range []string{"ok", "elapsed_ms", "require_health", "timeout_ms", "interval_ms", "attempts", "exit_code"} {
+		for _, key := range []string{"ok", "elapsed_ms", "require_health", "timeout_ms", "interval_ms", "attempts", "exit_code", "version"} {
 			if _, ok := m[key]; !ok {
 				t.Fatalf("missing %s:\n%s", key, s)
 			}
@@ -358,6 +387,9 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 	}
 	if n, _ := zeroObj["exit_code"].(float64); int(n) != 0 {
 		t.Fatalf("zero path exit_code: %v want 0\n%s", zeroObj["exit_code"], jsZero)
+	}
+	if _, has := zeroObj["version"]; !has {
+		t.Fatalf("zero path missing version:\n%s", jsZero)
 	}
 
 	// Negative attempts clamp to 0 in JSON.
@@ -378,6 +410,43 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 	}
 	if n, _ := staleObj["exit_code"].(float64); int(n) != 1 {
 		t.Fatalf("stale ExitCode must re-derive to 1: %v\n%s", staleObj["exit_code"], jsStale)
+	}
+
+	// Explicit Version field value always emitted (CLI sets from ProductVersion).
+	jsVer := FormatMeshWaitResultJSON(MeshWaitEvidence{
+		OK: true, Attempts: 1, Version: "9.9.9-wait",
+	})
+	var verObj map[string]any
+	if err := json.Unmarshal([]byte(jsVer), &verObj); err != nil {
+		t.Fatalf("json ver: %v\n%s", err, jsVer)
+	}
+	if verObj["version"] != "9.9.9-wait" {
+		t.Fatalf("version: %v want 9.9.9-wait\n%s", verObj["version"], jsVer)
+	}
+}
+
+func TestFormatMeshWaitResult_ProductVersion(t *testing.T) {
+	// CLI wires ProductVersion into evidence; formatters pass Version through.
+	// Simulate cmdMeshWait: Version: ProductVersion() after SetProductVersion.
+	prev := ProductVersion()
+	t.Cleanup(func() { productVersion = prev })
+	SetProductVersion("0.52.0-product")
+
+	v := ProductVersion()
+	if v != "0.52.0-product" {
+		t.Fatalf("ProductVersion: %q", v)
+	}
+	text := FormatMeshWaitResult(MeshWaitEvidence{OK: true, Attempts: 1, Version: v})
+	if !strings.Contains(text, "version: 0.52.0-product") {
+		t.Fatalf("text ProductVersion:\n%s", text)
+	}
+	js := FormatMeshWaitResultJSON(MeshWaitEvidence{OK: false, Error: "x", Version: v})
+	var m map[string]any
+	if err := json.Unmarshal([]byte(js), &m); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if m["version"] != "0.52.0-product" {
+		t.Fatalf("json ProductVersion: %v\n%s", m["version"], js)
 	}
 }
 

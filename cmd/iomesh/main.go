@@ -611,7 +611,7 @@ func cmdMeshWait(args []string) int {
 		timeout       = fs.Duration("timeout", 30*time.Second, "max wait duration")
 		interval      = fs.Duration("interval", 500*time.Millisecond, "poll interval")
 		requireHealth = fs.Bool("require-health", false, "require Health OK each attempt before Ready")
-		jsonOut       = fs.Bool("json", false, "print {ok,elapsed_ms,require_health,timeout_ms,interval_ms,attempts,exit_code[,error]} as JSON")
+		jsonOut       = fs.Bool("json", false, "print {ok,elapsed_ms,require_health,timeout_ms,interval_ms,attempts,exit_code,version[,error]} as JSON")
 		verbose       = fs.Bool("v", false, "verbose logs")
 	)
 	if err := fs.Parse(args); err != nil {
@@ -645,6 +645,7 @@ func cmdMeshWait(args []string) int {
 	// timeout_ms / interval_ms are configured preflight budget evidence (always emit).
 	// attempts is the number of WaitReady probe cycles (always emit).
 	// exit_code is the process exit (0 when OK, 1 when not) always emit for scrapers.
+	// version is package ProductVersion (set from main; empty when unset) always emit.
 	start := time.Now()
 	attempts, waitErr := mesh.WaitReadyAttempts(ctx, iomesh.WaitReadyOptions{
 		Interval:      *interval,
@@ -658,6 +659,7 @@ func cmdMeshWait(args []string) int {
 		TimeoutMS:     int(timeout.Milliseconds()),
 		IntervalMS:    int(interval.Milliseconds()),
 		Attempts:      attempts,
+		Version:       iomesh.ProductVersion(),
 	}
 	if waitErr != nil {
 		ev.Error = waitErr.Error()

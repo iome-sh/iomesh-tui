@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`mesh wait` version evidence** — always emit `version` (package product/binary version via `ProductVersion()`, empty string when unset) in text and `--json` output so CI scrapers record the CLI build without shell probes; peers mesh status/dogfood
+
 ## [0.52.0] — 2026-07-20
 
 Minor release: mesh wait exit_code evidence.
