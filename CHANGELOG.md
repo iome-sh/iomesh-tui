@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Dogfood memory_endpoint always-emit** — always emit top-level `memory_endpoint` (empty string when `[memory].endpoint` / `IOMESH_MEMORY_ENDPOINT` unset) in dogfood text and JSON reports so CI scrapers can key on a stable field without omitempty gaps; text always prints `memory_endpoint:` after identity; empty-honest when unset (does not invent memory plane readiness); peers identity always-emit mold and SDK SUMMARY+RESULT `base_url` continuum
+
 ## [0.60.0] — 2026-07-21
 
 Minor release: dogfood probe-err always-emit evidence.
