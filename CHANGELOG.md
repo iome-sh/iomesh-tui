@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.60.0] — 2026-07-21
+
+Minor release: dogfood probe-err always-emit evidence.
+
 ### Added
 
 - **Dogfood probe-err always-emit** — always emit top-level `health_err` and `ready_err` (empty string when health/ready PASS, clean skip without err detail, or mesh disabled) in dogfood text and JSON reports so CI scrapers can key on stable probe-error fields without omitempty gaps; text uses dedicated `health_err:` / `ready_err:` lines after `health_ms` / `ready_ms`; peers mesh status probe-err and SDK ConnectionStatus always-emit continuum
