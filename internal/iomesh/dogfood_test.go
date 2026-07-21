@@ -2373,9 +2373,12 @@ func TestDogfood_UserAgentEvidence(t *testing.T) {
 		t.Fatalf("report UserAgent: %q", rep.UserAgent)
 	}
 	js := FormatReportJSON(rep)
-	if !strings.Contains(js, `"user_agent": "iomesh-tui/test-s290"`) &&
-		!strings.Contains(js, `"user_agent":"iomesh-tui/test-s290"`) {
-		t.Fatalf("FormatReportJSON missing user_agent:\n%s", js)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if ua, ok := parsed["user_agent"].(string); !ok || ua != "iomesh-tui/test-s290" {
+		t.Fatalf("json user_agent: %v want iomesh-tui/test-s290\n%s", parsed["user_agent"], js)
 	}
 	text := FormatReport(rep)
 	if !strings.Contains(text, "user_agent: iomesh-tui/test-s290") {
@@ -2384,6 +2387,42 @@ func TestDogfood_UserAgentEvidence(t *testing.T) {
 	sl := c.StatusLine()
 	if !strings.Contains(sl, "ua=iomesh-tui/test-s290") {
 		t.Fatalf("StatusLine missing ua=: %s", sl)
+	}
+
+	// Mesh-disabled path still sets UserAgent early via UserAgent().
+	repOff := (*Client)(nil).Dogfood(context.Background(), DogfoodOptions{})
+	if repOff.UserAgent != "iomesh-tui/test-s290" {
+		t.Fatalf("mesh-disabled UserAgent: %q", repOff.UserAgent)
+	}
+	jsOff := FormatReportJSON(repOff)
+	var parsedOff map[string]any
+	if err := json.Unmarshal([]byte(jsOff), &parsedOff); err != nil {
+		t.Fatalf("json disabled: %v\n%s", err, jsOff)
+	}
+	if ua, ok := parsedOff["user_agent"].(string); !ok || ua != "iomesh-tui/test-s290" {
+		t.Fatalf("disabled json user_agent: %v\n%s", parsedOff["user_agent"], jsOff)
+	}
+	if !strings.Contains(FormatReport(repOff), "user_agent: iomesh-tui/test-s290") {
+		t.Fatalf("disabled text missing user_agent:\n%s", FormatReport(repOff))
+	}
+
+	// Always-emit: empty UserAgent still present in JSON (key not omitted) and text line.
+	empty := DogfoodReport{UserAgent: "", Summary: "PASS", OK: true}
+	jsEmpty := FormatReportJSON(empty)
+	var parsedEmpty map[string]any
+	if err := json.Unmarshal([]byte(jsEmpty), &parsedEmpty); err != nil {
+		t.Fatalf("json empty: %v\n%s", err, jsEmpty)
+	}
+	uaEmpty, hasUA := parsedEmpty["user_agent"]
+	if !hasUA {
+		t.Fatalf("always-emit user_agent key missing:\n%s", jsEmpty)
+	}
+	if s, ok := uaEmpty.(string); !ok || s != "" {
+		t.Fatalf("unset UserAgent should emit empty string, got %v\n%s", uaEmpty, jsEmpty)
+	}
+	textEmpty := FormatReport(empty)
+	if !strings.Contains(textEmpty, "user_agent: ") {
+		t.Fatalf("text always-emit user_agent line missing:\n%s", textEmpty)
 	}
 }
 
