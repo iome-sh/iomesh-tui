@@ -29,7 +29,7 @@ import (
 
 // Overridden at link time by make build: -X main.version=$(VERSION)
 // (must be a var, not const, for -ldflags -X).
-var version = "0.52.0"
+var version = "0.53.0"
 
 func main() {
 	// Identify mesh HTTP traffic for operator support (parity with iomesh-client-sdk-go User-Agent).
