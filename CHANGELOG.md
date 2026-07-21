@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.63.0] — 2026-07-21
+
+Minor release: dogfood kv/consumer identity always-emit.
+
 ### Added
 
 - **Dogfood kv/consumer soft-probe identity always-emit** — always emit top-level `kv_bucket`, `consumer_stream`, `consumer_name`, and `consumer_filter` (empty string when unset / partial / probe not configured) in dogfood text and JSON reports so CI scrapers can key on stable identity fields without omitempty gaps; text always prints all four lines; empty identity does not invent probe success (pair with `kv_key_count` / `kv_ensured` / `consumer_probed` / `consumer_ok`); peers identity / memory_endpoint / catalog_source always-emit continuum
