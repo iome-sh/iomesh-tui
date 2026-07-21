@@ -47,8 +47,10 @@ type DogfoodReport struct {
 	// scraping step detail. Does not gate the memory_ingest probe.
 	DualWrite bool `json:"dual_write"`
 	// CatalogSource is last catalog probe source (mesh|portal|fail-open|off|"").
-	// Set when catalog step runs; empty when mesh disabled before catalog (s292).
-	CatalogSource string `json:"catalog_source,omitempty"`
+	// Set when catalog step runs; always emitted (empty string when mesh disabled
+	// before catalog / unset) so CI scrapers can key on a stable field without omitempty gaps.
+	// Peers identity / memory_endpoint / health_err always-emit continuum.
+	CatalogSource string `json:"catalog_source"`
 	// CatalogCount is number of products from last ListCatalog (0 when none/off).
 	// Always emitted in JSON so CI sees catalog evidence without scraping step detail.
 	CatalogCount int `json:"catalog_count"`
@@ -194,8 +196,10 @@ type DogfoodReport struct {
 	// PolicyMode is the configured policy mode (off|advisory|enforce). Always emitted (default "off").
 	PolicyMode string `json:"policy_mode"`
 	// PolicySource is last policy probe source (mesh|fail-open|unavailable|off|"").
-	// Set when policy step runs; "off" when mode off; empty when mesh disabled before step.
-	PolicySource string `json:"policy_source,omitempty"`
+	// Set when policy step runs; "off" when mode off; always emitted (empty string when
+	// mesh disabled before step / unset) so CI scrapers can key on a stable field without
+	// omitempty gaps. Peers identity / memory_endpoint / health_err always-emit continuum.
+	PolicySource string `json:"policy_source"`
 	// PolicyAllow is the evaluate decision when policy ran (mesh/fail-open/unavailable).
 	// Omitted when mode off / step skipped without evaluation.
 	PolicyAllow *bool `json:"policy_allow,omitempty"`
@@ -1116,7 +1120,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		Workspace string `json:"workspace"`  // always emit (empty when unset; peers mesh status)
 		DualWrite bool   `json:"dual_write"` // always emit (CI dual-write mode)
 
-		CatalogSource        string     `json:"catalog_source,omitempty"`
+		CatalogSource        string     `json:"catalog_source"`            // always emit (empty when unset; CI catalog source)
 		CatalogCount         int        `json:"catalog_count"`             // always emit (CI catalog evidence)
 		ContextChars         int        `json:"context_chars"`             // always emit (CI context evidence)
 		ContextLineageCount  int        `json:"context_lineage_count"`     // always emit
@@ -1164,7 +1168,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		StepsFail            int        `json:"steps_fail"`             // always emit (FAIL step count)
 		StepsSkip            int        `json:"steps_skip"`             // always emit (SKIP step count)
 		PolicyMode           string     `json:"policy_mode"`            // always emit (off|advisory|enforce)
-		PolicySource         string     `json:"policy_source,omitempty"`
+		PolicySource         string     `json:"policy_source"`          // always emit (empty when unset; CI policy source)
 		PolicyAllow          *bool      `json:"policy_allow,omitempty"` // set when policy evaluated
 		MemoryEndpoint       string     `json:"memory_endpoint"`        // always emit (empty when unset; retrieve uses mesh endpoint)
 		Version              string     `json:"version"`                // always emit (empty when unset)
@@ -1286,9 +1290,8 @@ func FormatReport(r DogfoodReport) string {
 	// memory_endpoint always-emit (empty when unset); peers identity mold.
 	fmt.Fprintf(&b, "  memory_endpoint: %s\n", r.MemoryEndpoint)
 	fmt.Fprintf(&b, "  dual_write: %v\n", r.DualWrite)
-	if r.CatalogSource != "" {
-		fmt.Fprintf(&b, "  catalog_source: %s\n", r.CatalogSource)
-	}
+	// catalog_source always-emit (empty when unset); peers identity / memory_endpoint continuum.
+	fmt.Fprintf(&b, "  catalog_source: %s\n", r.CatalogSource)
 	fmt.Fprintf(&b, "  catalog_count: %d\n", r.CatalogCount)
 	fmt.Fprintf(&b, "  context_chars: %d\n", r.ContextChars)
 	fmt.Fprintf(&b, "  context_lineage_count: %d\n", r.ContextLineageCount)
@@ -1352,9 +1355,8 @@ func FormatReport(r DogfoodReport) string {
 		policyMode = "off"
 	}
 	fmt.Fprintf(&b, "  policy_mode: %s\n", policyMode)
-	if r.PolicySource != "" {
-		fmt.Fprintf(&b, "  policy_source: %s\n", r.PolicySource)
-	}
+	// policy_source always-emit (empty when unset); peers identity / memory_endpoint continuum.
+	fmt.Fprintf(&b, "  policy_source: %s\n", r.PolicySource)
 	if r.PolicyAllow != nil {
 		fmt.Fprintf(&b, "  policy_allow: %v\n", *r.PolicyAllow)
 	}

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Dogfood catalog_source / policy_source always-emit** — always emit top-level `catalog_source` and `policy_source` (empty string when unset / mesh disabled before step) in dogfood text and JSON reports so CI scrapers can key on stable source fields without omitempty gaps; text always prints `catalog_source:` and `policy_source:` lines; peers identity / memory_endpoint / health_err always-emit continuum
+
 ## [0.61.0] — 2026-07-21
 
 Minor release: dogfood memory_endpoint always-emit evidence.
