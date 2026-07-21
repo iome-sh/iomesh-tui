@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.49.0] — 2026-07-20
+
+Minor release: mesh status strict evidence.
+
 ### Added
 
 - **`mesh status` strict evidence** — always emit `strict` (configured `--strict` exit-gate bool; `false` when unset) in text and JSON so CI scrapers record whether `result=err` would exit `1` without re-parsing flags
