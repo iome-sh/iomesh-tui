@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`mesh status` exit_code evidence** — always emit `exit_code` (int process exit that `MeshStatusExitCode(strict, result)` would return: `0` fail-open / non-err, `1` only when `--strict` and aggregate `result=err`) in text and JSON so CI scrapers record the intended exit without shell `$?`
+
 ## [0.49.0] — 2026-07-20
 
 Minor release: mesh status strict evidence.

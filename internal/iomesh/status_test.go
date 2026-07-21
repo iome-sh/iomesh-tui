@@ -123,6 +123,9 @@ func TestFormatMeshStatus_JSONAlwaysEmitsLatencies(t *testing.T) {
 	if v, ok := parsed["strict"].(bool); !ok || v {
 		t.Fatalf("strict: %v want false always-emitted\n%s", parsed["strict"], js)
 	}
+	if n, ok := parsed["exit_code"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("exit_code: %v want 0 always-emitted (strict=false)\n%s", parsed["exit_code"], js)
+	}
 }
 
 func TestFormatMeshStatus_JSONProbeLatencies(t *testing.T) {
@@ -177,6 +180,9 @@ func TestFormatMeshStatus_JSONProbeLatencies(t *testing.T) {
 	}
 	if v, ok := parsed["strict"].(bool); !ok || !v {
 		t.Fatalf("strict: %v want true\n%s", parsed["strict"], js)
+	}
+	if n, ok := parsed["exit_code"].(float64); !ok || int(n) != 1 {
+		t.Fatalf("exit_code: %v want 1 (strict=true result=err)\n%s", parsed["exit_code"], js)
 	}
 }
 
@@ -248,6 +254,59 @@ func TestFormatMeshStatus_JSONAlwaysEmitsResult(t *testing.T) {
 	}
 }
 
+func TestFormatMeshStatus_JSONAlwaysEmitsExitCode(t *testing.T) {
+	// exit_code always present: 0 when strict=false; 1 only when strict && result=err.
+	cases := []struct {
+		name     string
+		strict   bool
+		result   string
+		health   string
+		ready    string
+		wantExit int
+	}{
+		{"strict_false_ok", false, "ok", "ok", "ok", 0},
+		{"strict_false_err", false, "err", "err", "err", 0},
+		{"strict_false_skipped", false, "skipped", "skipped", "skipped", 0},
+		{"strict_true_ok", true, "ok", "ok", "ok", 0},
+		{"strict_true_err", true, "err", "err", "err", 1},
+		{"strict_true_skipped", true, "skipped", "skipped", "skipped", 0},
+		{"strict_true_partial", true, "partial", "ok", "skipped", 0},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			s := MeshStatusSnapshot{
+				Enabled:    true,
+				Version:    "t",
+				PolicyMode: "off",
+				UserAgent:  "ua",
+				StatusLine: "mesh: enabled",
+				Health:     tc.health,
+				Ready:      tc.ready,
+				Result:     tc.result,
+				Strict:     tc.strict,
+			}
+			js := FormatMeshStatusJSON(s)
+			var parsed map[string]any
+			if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+				t.Fatalf("json: %v\n%s", err, js)
+			}
+			n, ok := parsed["exit_code"].(float64)
+			if !ok {
+				t.Fatalf("exit_code missing or non-number: %v\n%s", parsed["exit_code"], js)
+			}
+			if int(n) != tc.wantExit {
+				t.Fatalf("exit_code: %v want %d (strict=%v result=%q)\n%s", parsed["exit_code"], tc.wantExit, tc.strict, tc.result, js)
+			}
+			if v, ok := parsed["strict"].(bool); !ok || v != tc.strict {
+				t.Fatalf("strict: %v want %v\n%s", parsed["strict"], tc.strict, js)
+			}
+			if got, _ := parsed["result"].(string); got != tc.result {
+				t.Fatalf("result: %v want %q\n%s", parsed["result"], tc.result, js)
+			}
+		})
+	}
+}
+
 func TestFormatMeshStatus_Text(t *testing.T) {
 	s := MeshStatusSnapshot{
 		Enabled:        true,
@@ -293,6 +352,7 @@ func TestFormatMeshStatus_Text(t *testing.T) {
 		"duration_ms: 16",
 		"result:      err",
 		"strict:      false",
+		"exit_code:   0",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("text missing %q:\n%s", want, out)
@@ -332,6 +392,9 @@ func TestFormatMeshStatus_TextDisabledZeros(t *testing.T) {
 	if !strings.Contains(out, "strict:      false") {
 		t.Fatalf("missing strict false:\n%s", out)
 	}
+	if !strings.Contains(out, "exit_code:   0") {
+		t.Fatalf("missing exit_code 0:\n%s", out)
+	}
 }
 
 func TestFormatMeshStatus_TextAlwaysEmitsStrict(t *testing.T) {
@@ -344,6 +407,9 @@ func TestFormatMeshStatus_TextAlwaysEmitsStrict(t *testing.T) {
 	if !strings.Contains(out, "strict:      false") {
 		t.Fatalf("want strict false:\n%s", out)
 	}
+	if !strings.Contains(out, "exit_code:   0") {
+		t.Fatalf("want exit_code 0 with strict false:\n%s", out)
+	}
 	trueSnap := MeshStatusSnapshot{
 		Enabled: true, Version: "v", PolicyMode: "off", UserAgent: "ua",
 		StatusLine: "mesh: enabled", Health: "err", Ready: "err", Result: "err", Strict: true,
@@ -354,6 +420,44 @@ func TestFormatMeshStatus_TextAlwaysEmitsStrict(t *testing.T) {
 	}
 	if !strings.Contains(out, "result:      err") {
 		t.Fatalf("want result err with strict true:\n%s", out)
+	}
+	if !strings.Contains(out, "exit_code:   1") {
+		t.Fatalf("want exit_code 1 with strict true result err:\n%s", out)
+	}
+}
+
+func TestFormatMeshStatus_TextAlwaysEmitsExitCode(t *testing.T) {
+	// exit_code always appears: strict=false → 0; strict=true result=err → 1; strict=true result=ok → 0.
+	cases := []struct {
+		name     string
+		strict   bool
+		result   string
+		health   string
+		ready    string
+		wantLine string
+	}{
+		{"strict_false", false, "err", "err", "err", "exit_code:   0"},
+		{"strict_true_err", true, "err", "err", "err", "exit_code:   1"},
+		{"strict_true_ok", true, "ok", "ok", "ok", "exit_code:   0"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			s := MeshStatusSnapshot{
+				Enabled: true, Version: "v", PolicyMode: "off", UserAgent: "ua",
+				StatusLine: "mesh: enabled", Health: tc.health, Ready: tc.ready,
+				Result: tc.result, Strict: tc.strict,
+			}
+			out := FormatMeshStatus(s)
+			if !strings.Contains(out, tc.wantLine) {
+				t.Fatalf("want %q:\n%s", tc.wantLine, out)
+			}
+			// exit_code always follows the strict line
+			strictIdx := strings.Index(out, "strict:")
+			exitIdx := strings.Index(out, "exit_code:")
+			if strictIdx < 0 || exitIdx < 0 || exitIdx < strictIdx {
+				t.Fatalf("exit_code must appear after strict:\n%s", out)
+			}
+		})
 	}
 }
 
