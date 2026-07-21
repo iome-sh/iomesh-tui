@@ -1572,18 +1572,108 @@ func TestDogfood_MemoryIngestOmitsEmptyOrgWorkspace(t *testing.T) {
 	if !found {
 		t.Fatal(FormatReport(rep))
 	}
-	// omitempty: top-level org/workspace keys absent when unset.
+	// Always-emit: top-level org/workspace keys present as empty strings when unset
+	// (step detail still omits org=/workspace= tokens above).
 	js := FormatReportJSON(rep)
 	var parsed map[string]any
 	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
 		t.Fatalf("json: %v\n%s", err, js)
 	}
-	if _, ok := parsed["org"]; ok {
-		t.Fatalf("unset org must be omitted from JSON: %s", js)
+	for _, key := range []string{"org", "workspace"} {
+		v, ok := parsed[key]
+		if !ok {
+			t.Fatalf("always-emit %s key missing:\n%s", key, js)
+		}
+		if s, ok := v.(string); !ok || s != "" {
+			t.Fatalf("unset %s should emit empty string, got %v\n%s", key, v, js)
+		}
 	}
-	if _, ok := parsed["workspace"]; ok {
-		t.Fatalf("unset workspace must be omitted from JSON: %s", js)
-	}
+}
+
+func TestFormatReport_AlwaysEmitsIdentity(t *testing.T) {
+	// tenant/org/workspace always present as strings in JSON and text, including empty.
+	// endpoint already always printed. Peers mesh status identity always-emit.
+	t.Run("empty", func(t *testing.T) {
+		empty := DogfoodReport{Summary: "PASS", OK: true}
+		js := FormatReportJSON(empty)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		for _, key := range []string{"endpoint", "tenant", "org", "workspace"} {
+			v, ok := parsed[key]
+			if !ok {
+				t.Fatalf("always-emit %s key missing:\n%s", key, js)
+			}
+			str, ok := v.(string)
+			if !ok {
+				t.Fatalf("%s: %v want string\n%s", key, v, js)
+			}
+			if str != "" {
+				t.Fatalf("%s: %q want empty string\n%s", key, str, js)
+			}
+		}
+		text := FormatReport(empty)
+		for _, want := range []string{
+			"endpoint: ",
+			"tenant:   ",
+			"org:      ",
+			"workspace: ",
+		} {
+			if !strings.Contains(text, want) {
+				t.Fatalf("text always-emit identity line missing %q:\n%s", want, text)
+			}
+		}
+		// Order: endpoint → tenant → org → workspace
+		epIdx := strings.Index(text, "endpoint:")
+		tnIdx := strings.Index(text, "tenant:")
+		orgIdx := strings.Index(text, "org:")
+		wsIdx := strings.Index(text, "workspace:")
+		if epIdx < 0 || tnIdx < 0 || orgIdx < 0 || wsIdx < 0 {
+			t.Fatalf("missing identity keys:\n%s", text)
+		}
+		if !(epIdx < tnIdx && tnIdx < orgIdx && orgIdx < wsIdx) {
+			t.Fatalf("identity order want endpoint < tenant < org < workspace:\n%s", text)
+		}
+	})
+	t.Run("populated", func(t *testing.T) {
+		rep := DogfoodReport{
+			Endpoint:  "http://mesh.example",
+			Tenant:    "t1",
+			Org:       "o1",
+			Workspace: "w1",
+			Summary:   "PASS",
+			OK:        true,
+		}
+		js := FormatReportJSON(rep)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		want := map[string]string{
+			"endpoint":  "http://mesh.example",
+			"tenant":    "t1",
+			"org":       "o1",
+			"workspace": "w1",
+		}
+		for key, w := range want {
+			got, ok := parsed[key].(string)
+			if !ok || got != w {
+				t.Fatalf("%s: %v want %q\n%s", key, parsed[key], w, js)
+			}
+		}
+		text := FormatReport(rep)
+		for _, line := range []string{
+			"endpoint: http://mesh.example",
+			"tenant:   t1",
+			"org:      o1",
+			"workspace: w1",
+		} {
+			if !strings.Contains(text, line) {
+				t.Fatalf("text missing %q:\n%s", line, text)
+			}
+		}
+	})
 }
 
 func TestDogfood_JSONDualWriteTrue(t *testing.T) {
@@ -1676,7 +1766,7 @@ func TestDogfood_JSONDualWriteFalse(t *testing.T) {
 	if !memOK {
 		t.Fatal(FormatReport(rep))
 	}
-	// Always emit dual_write key (unlike omitempty org/workspace).
+	// Always emit dual_write key (identity tenant/org/workspace always-emit peers).
 	js := FormatReportJSON(rep)
 	var parsed map[string]any
 	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
