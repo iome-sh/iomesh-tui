@@ -200,8 +200,10 @@ type DogfoodReport struct {
 	// Omitted when mode off / step skipped without evaluation.
 	PolicyAllow *bool `json:"policy_allow,omitempty"`
 	// MemoryEndpoint is optional memory sidecar base used for sync memory_retrieve.
-	// Omitted when empty (retrieve uses mesh Endpoint). Stage warm-plane evidence.
-	MemoryEndpoint string `json:"memory_endpoint,omitempty"`
+	// Always emitted (empty string when unset — retrieve uses mesh Endpoint).
+	// Stage warm-plane evidence; does not invent memory plane readiness.
+	// Peers identity always-emit mold (endpoint/tenant) and SDK base_url continuum.
+	MemoryEndpoint string `json:"memory_endpoint"`
 	// Version is the CLI/binary version from DogfoodOptions.Version, else ProductVersion().
 	// Always emitted in JSON (empty string when unset).
 	Version string `json:"version"`
@@ -1164,9 +1166,9 @@ func FormatReportJSON(r DogfoodReport) string {
 		PolicyMode           string     `json:"policy_mode"`            // always emit (off|advisory|enforce)
 		PolicySource         string     `json:"policy_source,omitempty"`
 		PolicyAllow          *bool      `json:"policy_allow,omitempty"` // set when policy evaluated
-		MemoryEndpoint       string     `json:"memory_endpoint,omitempty"`
-		Version              string     `json:"version"`    // always emit (empty when unset)
-		UserAgent            string     `json:"user_agent"` // always emit (empty when unset)
+		MemoryEndpoint       string     `json:"memory_endpoint"`        // always emit (empty when unset; retrieve uses mesh endpoint)
+		Version              string     `json:"version"`                // always emit (empty when unset)
+		UserAgent            string     `json:"user_agent"`             // always emit (empty when unset)
 		Strict               bool       `json:"strict"`
 		OK                   bool       `json:"ok"`
 		ExitCode             int        `json:"exit_code"` // always emit (0 when OK, 1 when not)
@@ -1281,9 +1283,8 @@ func FormatReport(r DogfoodReport) string {
 	fmt.Fprintf(&b, "  tenant:   %s\n", r.Tenant)
 	fmt.Fprintf(&b, "  org:      %s\n", r.Org)
 	fmt.Fprintf(&b, "  workspace: %s\n", r.Workspace)
-	if r.MemoryEndpoint != "" {
-		fmt.Fprintf(&b, "  memory_endpoint: %s\n", r.MemoryEndpoint)
-	}
+	// memory_endpoint always-emit (empty when unset); peers identity mold.
+	fmt.Fprintf(&b, "  memory_endpoint: %s\n", r.MemoryEndpoint)
 	fmt.Fprintf(&b, "  dual_write: %v\n", r.DualWrite)
 	if r.CatalogSource != "" {
 		fmt.Fprintf(&b, "  catalog_source: %s\n", r.CatalogSource)

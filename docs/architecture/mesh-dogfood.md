@@ -275,7 +275,7 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `policy_mode` | string | Configured policy mode (`off` \| `advisory` \| `enforce`; **always emitted**, default `off`) |
 | `policy_source` | string | Last policy probe source (`mesh` \| `fail-open` \| `unavailable` \| `off`); `off` when mode off; omitted when mesh disabled before policy step |
 | `policy_allow` | bool | Evaluate decision when policy ran; **omitted** when mode off / skipped without evaluate |
-| `memory_endpoint` | string | Optional memory sidecar base (`[memory].endpoint` / `IOMESH_MEMORY_ENDPOINT`); omitted when empty (retrieve uses mesh `endpoint`) |
+| `memory_endpoint` | string | Optional memory sidecar base (`[memory].endpoint` / `IOMESH_MEMORY_ENDPOINT`; **always emitted**, `""` when unset — retrieve uses mesh `endpoint`) |
 | `version` | string | CLI/binary version from `DogfoodOptions.Version`, else package `ProductVersion()` (**always emitted**, `""` when unset). CLI wires package `version` |
 | `user_agent` | string | Package mesh HTTP User-Agent (`iomesh-tui/<version>` via `iomesh.UserAgent`; **always emitted**, `""` when unset). Always set from package UA for CI evidence — not scraped from server |
 | `strict` | bool | `--strict` |

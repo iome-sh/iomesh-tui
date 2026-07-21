@@ -629,12 +629,16 @@ func TestDogfood_MemorySidecarEndpoint(t *testing.T) {
 		t.Fatalf("detail=%q", retrieveDetail)
 	}
 	js := FormatReportJSON(rep)
-	if !strings.Contains(js, `"memory_endpoint"`) {
-		t.Fatal(js)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if got, ok := parsed["memory_endpoint"].(string); !ok || got != wantBase {
+		t.Fatalf("json memory_endpoint: %v want %q\n%s", parsed["memory_endpoint"], wantBase, js)
 	}
 	text := FormatReport(rep)
-	if !strings.Contains(text, "memory_endpoint:") {
-		t.Fatal(text)
+	if !strings.Contains(text, "memory_endpoint: "+wantBase) {
+		t.Fatalf("text missing memory_endpoint value:\n%s", text)
 	}
 }
 
@@ -1875,6 +1879,102 @@ func TestFormatReport_AlwaysEmitsIdentity(t *testing.T) {
 			if !strings.Contains(text, line) {
 				t.Fatalf("text missing %q:\n%s", line, text)
 			}
+		}
+	})
+}
+
+func TestFormatReport_AlwaysEmitsMemoryEndpoint(t *testing.T) {
+	// memory_endpoint always present as string in JSON and text, including empty.
+	// Peers identity always-emit mold (endpoint/tenant); empty-honest when unset —
+	// does not invent memory plane readiness.
+	t.Run("empty", func(t *testing.T) {
+		empty := DogfoodReport{Summary: "PASS", OK: true}
+		if empty.MemoryEndpoint != "" {
+			t.Fatalf("zero-value MemoryEndpoint: %q want empty", empty.MemoryEndpoint)
+		}
+		js := FormatReportJSON(empty)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		v, ok := parsed["memory_endpoint"]
+		if !ok {
+			t.Fatalf("always-emit memory_endpoint key missing:\n%s", js)
+		}
+		str, ok := v.(string)
+		if !ok {
+			t.Fatalf("memory_endpoint: %v want string\n%s", v, js)
+		}
+		if str != "" {
+			t.Fatalf("memory_endpoint: %q want empty string\n%s", str, js)
+		}
+		// Ensure key is present even when empty (no omitempty gap).
+		if !strings.Contains(js, `"memory_endpoint"`) {
+			t.Fatalf("json missing memory_endpoint key:\n%s", js)
+		}
+		text := FormatReport(empty)
+		// Format: "  memory_endpoint: %s\n" → empty value still prints the line.
+		if !strings.Contains(text, "memory_endpoint:") {
+			t.Fatalf("text always-emit memory_endpoint line missing:\n%s", text)
+		}
+		if !strings.Contains(text, "memory_endpoint: ") {
+			t.Fatalf("text memory_endpoint line not empty-honest:\n%s", text)
+		}
+		// Order: workspace → memory_endpoint → dual_write
+		wsIdx := strings.Index(text, "workspace:")
+		meIdx := strings.Index(text, "memory_endpoint:")
+		dwIdx := strings.Index(text, "dual_write:")
+		if wsIdx < 0 || meIdx < 0 || dwIdx < 0 {
+			t.Fatalf("missing order keys:\n%s", text)
+		}
+		if !(wsIdx < meIdx && meIdx < dwIdx) {
+			t.Fatalf("order want workspace < memory_endpoint < dual_write:\n%s", text)
+		}
+	})
+	t.Run("populated", func(t *testing.T) {
+		want := "http://memory.sidecar:8080"
+		rep := DogfoodReport{
+			Endpoint:       "http://mesh.example",
+			MemoryEndpoint: want,
+			Summary:        "PASS",
+			OK:             true,
+		}
+		js := FormatReportJSON(rep)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		got, ok := parsed["memory_endpoint"].(string)
+		if !ok || got != want {
+			t.Fatalf("memory_endpoint: %v want %q\n%s", parsed["memory_endpoint"], want, js)
+		}
+		text := FormatReport(rep)
+		if !strings.Contains(text, "memory_endpoint: "+want) {
+			t.Fatalf("text missing memory_endpoint value:\n%s", text)
+		}
+	})
+	t.Run("mesh_disabled_empty", func(t *testing.T) {
+		// Mesh-disabled early return: memory_endpoint still always emitted as "".
+		c := New(Config{Enabled: false}, nil)
+		rep := c.Dogfood(context.Background(), DogfoodOptions{})
+		if rep.MemoryEndpoint != "" {
+			t.Fatalf("disabled MemoryEndpoint: %q want empty", rep.MemoryEndpoint)
+		}
+		js := FormatReportJSON(rep)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		got, ok := parsed["memory_endpoint"].(string)
+		if !ok {
+			t.Fatalf("disabled memory_endpoint: %v want empty string\n%s", parsed["memory_endpoint"], js)
+		}
+		if got != "" {
+			t.Fatalf("disabled memory_endpoint: %q want empty\n%s", got, js)
+		}
+		text := FormatReport(rep)
+		if !strings.Contains(text, "memory_endpoint:") {
+			t.Fatalf("disabled text missing memory_endpoint line:\n%s", text)
 		}
 	})
 }
