@@ -205,6 +205,10 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 	if !strings.Contains(pass, "version: ") {
 		t.Fatalf("pass missing version key:\n%s", pass)
 	}
+	// user_agent always emitted (empty when unset on evidence).
+	if !strings.Contains(pass, "user_agent: ") {
+		t.Fatalf("pass missing user_agent key:\n%s", pass)
+	}
 	if strings.Contains(pass, "FAIL") {
 		t.Fatalf("pass should not contain FAIL:\n%s", pass)
 	}
@@ -238,6 +242,9 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 	if !strings.Contains(fail, "version: ") {
 		t.Fatalf("fail missing version key:\n%s", fail)
 	}
+	if !strings.Contains(fail, "user_agent: ") {
+		t.Fatalf("fail missing user_agent key:\n%s", fail)
+	}
 
 	// Negative elapsed/timeout/interval/attempts clamp to 0; empty Error gets a default.
 	clamped := FormatMeshWaitResult(MeshWaitEvidence{
@@ -267,6 +274,9 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 	if !strings.Contains(clamped, "version: ") {
 		t.Fatalf("clamped missing version key:\n%s", clamped)
 	}
+	if !strings.Contains(clamped, "user_agent: ") {
+		t.Fatalf("clamped missing user_agent key:\n%s", clamped)
+	}
 
 	// Stale ExitCode is re-derived from OK in normalize.
 	stale := FormatMeshWaitResult(MeshWaitEvidence{OK: true, ExitCode: 99, Attempts: 1})
@@ -280,6 +290,14 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 	})
 	if !strings.Contains(withVer, "version: 1.2.3-wait") {
 		t.Fatalf("text version should match field:\n%s", withVer)
+	}
+
+	// Explicit UserAgent is rendered; UserAgent() is wired at CLI layer.
+	withUA := FormatMeshWaitResult(MeshWaitEvidence{
+		OK: true, Attempts: 1, UserAgent: "iomesh-tui/test-wait-ua",
+	})
+	if !strings.Contains(withUA, "user_agent: iomesh-tui/test-wait-ua") {
+		t.Fatalf("text user_agent should match field:\n%s", withUA)
 	}
 }
 
@@ -322,6 +340,14 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 	if v != "" {
 		t.Fatalf("unset Version should emit empty string, got %q\n%s", v, js)
 	}
+	// user_agent always present; empty string when unset on evidence.
+	ua, hasUA := okObj["user_agent"]
+	if !hasUA {
+		t.Fatalf("success JSON missing user_agent:\n%s", js)
+	}
+	if ua != "" {
+		t.Fatalf("unset UserAgent should emit empty string, got %q\n%s", ua, js)
+	}
 	if _, has := okObj["error"]; has {
 		t.Fatalf("success JSON should omit error:\n%s", js)
 	}
@@ -362,14 +388,17 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 	if _, has := failObj["version"]; !has {
 		t.Fatalf("fail JSON missing version:\n%s", jsFail)
 	}
+	if _, has := failObj["user_agent"]; !has {
+		t.Fatalf("fail JSON missing user_agent:\n%s", jsFail)
+	}
 
-	// Always-emit shape: ok + elapsed_ms + require_health + timeout_ms + interval_ms + attempts + exit_code + version on both paths.
+	// Always-emit shape: ok + elapsed_ms + require_health + timeout_ms + interval_ms + attempts + exit_code + version + user_agent on both paths.
 	for _, s := range []string{js, jsFail} {
 		var m map[string]any
 		if err := json.Unmarshal([]byte(s), &m); err != nil {
 			t.Fatalf("unmarshal: %v\n%s", err, s)
 		}
-		for _, key := range []string{"ok", "elapsed_ms", "require_health", "timeout_ms", "interval_ms", "attempts", "exit_code", "version"} {
+		for _, key := range []string{"ok", "elapsed_ms", "require_health", "timeout_ms", "interval_ms", "attempts", "exit_code", "version", "user_agent"} {
 			if _, ok := m[key]; !ok {
 				t.Fatalf("missing %s:\n%s", key, s)
 			}
@@ -390,6 +419,9 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 	}
 	if _, has := zeroObj["version"]; !has {
 		t.Fatalf("zero path missing version:\n%s", jsZero)
+	}
+	if _, has := zeroObj["user_agent"]; !has {
+		t.Fatalf("zero path missing user_agent:\n%s", jsZero)
 	}
 
 	// Negative attempts clamp to 0 in JSON.
@@ -423,6 +455,18 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 	if verObj["version"] != "9.9.9-wait" {
 		t.Fatalf("version: %v want 9.9.9-wait\n%s", verObj["version"], jsVer)
 	}
+
+	// Explicit UserAgent field value always emitted (CLI sets from UserAgent()).
+	jsUA := FormatMeshWaitResultJSON(MeshWaitEvidence{
+		OK: true, Attempts: 1, UserAgent: "iomesh-tui/json-wait-ua",
+	})
+	var uaObj map[string]any
+	if err := json.Unmarshal([]byte(jsUA), &uaObj); err != nil {
+		t.Fatalf("json ua: %v\n%s", err, jsUA)
+	}
+	if uaObj["user_agent"] != "iomesh-tui/json-wait-ua" {
+		t.Fatalf("user_agent: %v want iomesh-tui/json-wait-ua\n%s", uaObj["user_agent"], jsUA)
+	}
 }
 
 func TestFormatMeshWaitResult_ProductVersion(t *testing.T) {
@@ -447,6 +491,40 @@ func TestFormatMeshWaitResult_ProductVersion(t *testing.T) {
 	}
 	if m["version"] != "0.52.0-product" {
 		t.Fatalf("json ProductVersion: %v\n%s", m["version"], js)
+	}
+}
+
+func TestFormatMeshWaitResult_UserAgent(t *testing.T) {
+	// CLI wires UserAgent() into evidence; formatters pass UserAgent through.
+	// Simulate cmdMeshWait: UserAgent: iomesh.UserAgent() after SetUserAgent.
+	prev := UserAgent()
+	t.Cleanup(func() { SetUserAgent(prev) })
+	SetUserAgent("iomesh-tui/test-mesh-wait-ua")
+
+	ua := UserAgent()
+	if ua != "iomesh-tui/test-mesh-wait-ua" {
+		t.Fatalf("UserAgent: %q", ua)
+	}
+	text := FormatMeshWaitResult(MeshWaitEvidence{OK: true, Attempts: 1, UserAgent: ua})
+	if !strings.Contains(text, "user_agent: iomesh-tui/test-mesh-wait-ua") {
+		t.Fatalf("text UserAgent:\n%s", text)
+	}
+	js := FormatMeshWaitResultJSON(MeshWaitEvidence{OK: false, Error: "x", UserAgent: ua})
+	var m map[string]any
+	if err := json.Unmarshal([]byte(js), &m); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if m["user_agent"] != "iomesh-tui/test-mesh-wait-ua" {
+		t.Fatalf("json UserAgent: %v\n%s", m["user_agent"], js)
+	}
+	// Always-emit: key present even when field empty.
+	empty := FormatMeshWaitResultJSON(MeshWaitEvidence{OK: true, Attempts: 0})
+	var emptyObj map[string]any
+	if err := json.Unmarshal([]byte(empty), &emptyObj); err != nil {
+		t.Fatalf("json empty: %v\n%s", err, empty)
+	}
+	if _, has := emptyObj["user_agent"]; !has {
+		t.Fatalf("always-emit user_agent missing:\n%s", empty)
 	}
 }
 
