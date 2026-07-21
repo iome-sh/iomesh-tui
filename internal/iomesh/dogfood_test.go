@@ -702,6 +702,26 @@ func TestDogfood_HealthFail(t *testing.T) {
 	if !strings.Contains(rep.Summary, "FAIL") {
 		t.Fatal(rep.Summary)
 	}
+	// Fail path: health_err always non-empty (underlying probe error).
+	if rep.HealthErr == "" {
+		t.Fatalf("HealthErr empty on health FAIL; want non-empty detail")
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	he, ok := parsed["health_err"].(string)
+	if !ok || he == "" {
+		t.Fatalf("json health_err: %v want non-empty string\n%s", parsed["health_err"], js)
+	}
+	if he != rep.HealthErr {
+		t.Fatalf("json health_err %q != report %q", he, rep.HealthErr)
+	}
+	text := FormatReport(rep)
+	if !strings.Contains(text, "health_err: "+rep.HealthErr) {
+		t.Fatalf("text missing health_err detail:\n%s", text)
+	}
 }
 
 // TestDogfood_ExitCodeEvidence: exit_code always emitted; 0 when OK, 1 when not.
@@ -1588,6 +1608,189 @@ func TestDogfood_MemoryIngestOmitsEmptyOrgWorkspace(t *testing.T) {
 			t.Fatalf("unset %s should emit empty string, got %v\n%s", key, v, js)
 		}
 	}
+}
+
+func TestFormatReport_AlwaysEmitsProbeErrs(t *testing.T) {
+	// health_err / ready_err always present as strings in JSON and text, including empty.
+	// Peers mesh status probe-err always-emit continuum.
+	t.Run("empty", func(t *testing.T) {
+		empty := DogfoodReport{Summary: "PASS", OK: true}
+		js := FormatReportJSON(empty)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		for _, key := range []string{"health_err", "ready_err"} {
+			v, ok := parsed[key]
+			if !ok {
+				t.Fatalf("always-emit %s key missing:\n%s", key, js)
+			}
+			str, ok := v.(string)
+			if !ok {
+				t.Fatalf("%s: %v want string\n%s", key, v, js)
+			}
+			if str != "" {
+				t.Fatalf("%s: %q want empty string\n%s", key, str, js)
+			}
+		}
+		text := FormatReport(empty)
+		for _, want := range []string{
+			"health_err: ",
+			"ready_err: ",
+		} {
+			if !strings.Contains(text, want) {
+				t.Fatalf("text always-emit probe-err line missing %q:\n%s", want, text)
+			}
+		}
+		// Order: health_ms → health_err → ready_ms → ready_err
+		// Prefix with newline+indent so "ready_ms" is not confused with "wait_ready_ms".
+		hmsIdx := strings.Index(text, "\n  health_ms:")
+		heIdx := strings.Index(text, "\n  health_err:")
+		rmsIdx := strings.Index(text, "\n  ready_ms:")
+		reIdx := strings.Index(text, "\n  ready_err:")
+		if hmsIdx < 0 || heIdx < 0 || rmsIdx < 0 || reIdx < 0 {
+			t.Fatalf("missing probe latency/err keys:\n%s", text)
+		}
+		if !(hmsIdx < heIdx && heIdx < rmsIdx && rmsIdx < reIdx) {
+			t.Fatalf("probe order want health_ms < health_err < ready_ms < ready_err:\n%s", text)
+		}
+	})
+	t.Run("populated", func(t *testing.T) {
+		rep := DogfoodReport{
+			HealthErr: "connection refused",
+			ReadyErr:  "iomesh ready: http 503",
+			Summary:   "FAIL",
+			OK:        false,
+		}
+		js := FormatReportJSON(rep)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		if got, _ := parsed["health_err"].(string); got != "connection refused" {
+			t.Fatalf("health_err: %v want connection refused\n%s", parsed["health_err"], js)
+		}
+		if got, _ := parsed["ready_err"].(string); got != "iomesh ready: http 503" {
+			t.Fatalf("ready_err: %v want iomesh ready: http 503\n%s", parsed["ready_err"], js)
+		}
+		text := FormatReport(rep)
+		for _, line := range []string{
+			"health_err: connection refused",
+			"ready_err: iomesh ready: http 503",
+		} {
+			if !strings.Contains(text, line) {
+				t.Fatalf("text missing %q:\n%s", line, text)
+			}
+		}
+	})
+	t.Run("mesh_disabled_empty", func(t *testing.T) {
+		// Mesh-disabled early return: both empty string (always emit keys).
+		rep := (*Client)(nil).Dogfood(context.Background(), DogfoodOptions{})
+		if rep.HealthErr != "" || rep.ReadyErr != "" {
+			t.Fatalf("disabled HealthErr/ReadyErr: %q/%q want empty", rep.HealthErr, rep.ReadyErr)
+		}
+		js := FormatReportJSON(rep)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		for _, key := range []string{"health_err", "ready_err"} {
+			v, ok := parsed[key]
+			if !ok {
+				t.Fatalf("disabled always-emit %s key missing:\n%s", key, js)
+			}
+			str, ok := v.(string)
+			if !ok || str != "" {
+				t.Fatalf("disabled %s: %v want empty string\n%s", key, v, js)
+			}
+		}
+		text := FormatReport(rep)
+		if !strings.Contains(text, "health_err: ") || !strings.Contains(text, "ready_err: ") {
+			t.Fatalf("disabled text missing health_err/ready_err lines:\n%s", text)
+		}
+	})
+	t.Run("pass_empty_ok", func(t *testing.T) {
+		// Full health/ready PASS → empty err strings (honest: no invented failure).
+		srv := mockMeshServer(t, struct {
+			failHealth bool
+			noReady    bool
+			emptyCtx   bool
+			failEmit   bool
+			failMemory bool
+			noMemory   bool
+			failRecall bool
+			noRecall   bool
+		}{})
+		t.Cleanup(srv.Close)
+		c := New(Config{Enabled: true, Endpoint: srv.URL, EmitDeptStreams: true}, nil)
+		rep := c.Dogfood(context.Background(), DogfoodOptions{SkipContext: true, SkipMemory: true, SkipStreams: true})
+		if rep.HealthErr != "" {
+			t.Fatalf("pass HealthErr: %q want empty", rep.HealthErr)
+		}
+		if rep.ReadyErr != "" {
+			t.Fatalf("pass ReadyErr: %q want empty", rep.ReadyErr)
+		}
+		js := FormatReportJSON(rep)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		for _, key := range []string{"health_err", "ready_err"} {
+			str, ok := parsed[key].(string)
+			if !ok {
+				t.Fatalf("%s missing or non-string: %v\n%s", key, parsed[key], js)
+			}
+			if str != "" {
+				t.Fatalf("%s: %q want empty on PASS\n%s", key, str, js)
+			}
+		}
+	})
+	t.Run("ready_soft_skip_embeds_err", func(t *testing.T) {
+		// Optional 404 ready → soft SKIP with underlying err captured in ready_err.
+		srv := mockMeshServer(t, struct {
+			failHealth bool
+			noReady    bool
+			emptyCtx   bool
+			failEmit   bool
+			failMemory bool
+			noMemory   bool
+			failRecall bool
+			noRecall   bool
+		}{noReady: true})
+		t.Cleanup(srv.Close)
+		c := New(Config{Enabled: true, Endpoint: srv.URL, EmitDeptStreams: true}, nil)
+		rep := c.Dogfood(context.Background(), DogfoodOptions{SkipContext: true, SkipMemory: true, SkipStreams: true})
+		if rep.HealthErr != "" {
+			t.Fatalf("HealthErr on ready-only soft skip: %q want empty", rep.HealthErr)
+		}
+		if rep.ReadyErr == "" {
+			t.Fatalf("ReadyErr empty on ready soft SKIP with embedded err; want non-empty")
+		}
+		// Underlying Ready() error typically mentions http 404.
+		if !strings.Contains(rep.ReadyErr, "404") && !strings.Contains(strings.ToLower(rep.ReadyErr), "ready") {
+			t.Fatalf("ReadyErr unexpected: %q", rep.ReadyErr)
+		}
+		js := FormatReportJSON(rep)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		re, ok := parsed["ready_err"].(string)
+		if !ok || re == "" {
+			t.Fatalf("json ready_err: %v want non-empty\n%s", parsed["ready_err"], js)
+		}
+		if re != rep.ReadyErr {
+			t.Fatalf("json ready_err %q != report %q", re, rep.ReadyErr)
+		}
+		he, ok := parsed["health_err"].(string)
+		if !ok || he != "" {
+			t.Fatalf("json health_err: %v want empty string\n%s", parsed["health_err"], js)
+		}
+		text := FormatReport(rep)
+		if !strings.Contains(text, "ready_err: "+rep.ReadyErr) {
+			t.Fatalf("text missing ready_err detail:\n%s", text)
+		}
+	})
 }
 
 func TestFormatReport_AlwaysEmitsIdentity(t *testing.T) {

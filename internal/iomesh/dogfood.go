@@ -124,9 +124,18 @@ type DogfoodReport struct {
 	// HealthMS is health step latency in milliseconds (0 when step skipped/absent).
 	// Always emitted in JSON so CI sees probe latency without scraping step detail.
 	HealthMS int `json:"health_ms"`
+	// HealthErr is the health step error detail (always emitted; empty string when
+	// health PASS / mesh disabled before health / no error detail). Peers mesh status
+	// health_err and SDK ConnectionStatus always-emit continuum.
+	HealthErr string `json:"health_err"`
 	// ReadyMS is ready step latency in milliseconds (0 when step skipped/absent).
 	// Always emitted in JSON.
 	ReadyMS int `json:"ready_ms"`
+	// ReadyErr is the ready step error detail (always emitted; empty string when
+	// ready PASS / clean skip without err / mesh disabled). Set on FAIL and on soft
+	// SKIP that embeds an underlying probe error (e.g. soft-fail, optional 404).
+	// Peers mesh status ready_err always-emit continuum.
+	ReadyErr string `json:"ready_err"`
 	// ContextMS is context step latency in milliseconds (0 when step skipped/absent).
 	// Always emitted in JSON so CI sees plane latency without scraping step detail.
 	ContextMS int `json:"context_ms"`
@@ -346,6 +355,8 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 	// 1) Health
 	healthStep := c.stepTimed("health", func() (StepStatus, string) {
 		if err := c.Health(ctx); err != nil {
+			// Always-emit health_err: capture underlying error on FAIL (empty when PASS).
+			rep.HealthErr = err.Error()
 			return StepFail, err.Error()
 		}
 		return StepPass, "GET /health OK"
@@ -404,6 +415,9 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		if err == nil {
 			return StepPass, "GET /ready OK"
 		}
+		// Always-emit ready_err: capture underlying error on FAIL and soft SKIP
+		// that embeds err detail (empty only when PASS / clean skip without err).
+		rep.ReadyErr = err.Error()
 		// If /ready missing (404), soft-skip unless strict.
 		if strings.Contains(err.Error(), "http 404") {
 			if opts.Strict {
@@ -1126,7 +1140,9 @@ func FormatReportJSON(r DogfoodReport) string {
 		WaitReadyResult      string     `json:"wait_ready_result"`      // always emit (off|ok|err|skip)
 		WaitReadyAttempts    int        `json:"wait_ready_attempts"`    // always emit (0 when wait off / step not run)
 		HealthMS             int        `json:"health_ms"`              // always emit (0 when health step skipped/absent)
+		HealthErr            string     `json:"health_err"`             // always emit (empty when health PASS / mesh disabled)
 		ReadyMS              int        `json:"ready_ms"`               // always emit (0 when ready step skipped/absent)
+		ReadyErr             string     `json:"ready_err"`              // always emit (empty when ready PASS / clean skip / mesh disabled)
 		ContextMS            int        `json:"context_ms"`             // always emit (0 when context step skipped/absent)
 		StreamsMS            int        `json:"streams_ms"`             // always emit (0 when streams step skipped/absent)
 		CatalogMS            int        `json:"catalog_ms"`             // always emit (0 when catalog step skipped/absent)
@@ -1200,7 +1216,9 @@ func FormatReportJSON(r DogfoodReport) string {
 		WaitReadyResult:      r.WaitReadyResult,
 		WaitReadyAttempts:    r.WaitReadyAttempts,
 		HealthMS:             r.HealthMS,
+		HealthErr:            r.HealthErr,
 		ReadyMS:              r.ReadyMS,
+		ReadyErr:             r.ReadyErr,
 		ContextMS:            r.ContextMS,
 		StreamsMS:            r.StreamsMS,
 		CatalogMS:            r.CatalogMS,
@@ -1307,7 +1325,9 @@ func FormatReport(r DogfoodReport) string {
 	fmt.Fprintf(&b, "  wait_ready_result: %s\n", r.WaitReadyResult)
 	fmt.Fprintf(&b, "  wait_ready_attempts: %d\n", r.WaitReadyAttempts)
 	fmt.Fprintf(&b, "  health_ms: %d\n", r.HealthMS)
+	fmt.Fprintf(&b, "  health_err: %s\n", r.HealthErr)
 	fmt.Fprintf(&b, "  ready_ms: %d\n", r.ReadyMS)
+	fmt.Fprintf(&b, "  ready_err: %s\n", r.ReadyErr)
 	fmt.Fprintf(&b, "  context_ms: %d\n", r.ContextMS)
 	fmt.Fprintf(&b, "  streams_ms: %d\n", r.StreamsMS)
 	fmt.Fprintf(&b, "  catalog_ms: %d\n", r.CatalogMS)
