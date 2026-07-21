@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.64.0] — 2026-07-21
+
+Minor release: dogfood policy_allow always-emit.
+
 ### Added
 
 - **Dogfood policy_allow always-emit** — always emit top-level `policy_allow` as string `"true"` | `"false"` | `""` (empty when policy mode off / not evaluated / mesh disabled before step) in dogfood text and JSON reports so CI scrapers can key on a stable field without omitempty gaps; text always prints `policy_allow:` after `policy_source:`; empty-honest when unevaluated (does not invent a decision); peers health_err / ready_err / policy_source / memory_endpoint always-emit continuum
