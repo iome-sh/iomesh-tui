@@ -38,6 +38,8 @@ type MeshStatusSnapshot struct {
 	DurationMS int `json:"duration_ms"`
 	// Result aggregates health+ready: ok|err|skipped|partial (always emitted).
 	Result string `json:"result"`
+	// Strict is the --strict exit-gate flag (always emitted; false when unset).
+	Strict bool `json:"strict"`
 }
 
 // AggregateProbeResult returns the aggregate mesh status result from health and
@@ -144,5 +146,6 @@ func FormatMeshStatus(s MeshStatusSnapshot) string {
 	fmt.Fprintf(&b, "  ready_ms:    %d\n", s.ReadyMS)
 	fmt.Fprintf(&b, "  duration_ms: %d\n", s.DurationMS)
 	fmt.Fprintf(&b, "  result:      %s\n", s.Result)
+	fmt.Fprintf(&b, "  strict:      %t\n", s.Strict)
 	return b.String()
 }
