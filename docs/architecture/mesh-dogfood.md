@@ -128,7 +128,7 @@ Optional best-effort durable consumer create after `streams` and before `kv` / `
 - **`--consumer-delete`**: after successful create (and optional fetch), best-effort `DeleteConsumer` (`DELETE /v1/streams/{stream}/consumers/{name}`); delete only runs when create succeeded. Soft mode: delete errors → **SKIP** (`delete soft-fail: …`) with `consumer_delete_ok=false`; `--strict` → **FAIL**. `consumer_delete_probed=true` only when the delete attempt ran
 - **PASS detail**: `stream=S name=C create=ok [filter=F] [fetch=n=N] [delete=ok]`
 - Top-level `consumer_probed`, `consumer_ok`, `consumer_fetch_ok`, `consumer_delete_probed`, `consumer_delete_ok` always emitted (`consumer_probed` true only when both set and create attempt ran; `consumer_fetch_ok` true only when fetch requested and succeeded; delete flags false when flag off / create failed / probe unset)
-- Top-level `consumer_stream` / `consumer_name` / `consumer_filter` set when both stream+name provided for the probe (**even if create fails**); omitted when unset/partial
+- Top-level `consumer_stream` / `consumer_name` / `consumer_filter` **always emitted** (empty string when unset/partial); set to configured values when both stream+name provided for the probe (**even if create fails**). Empty identity does not invent probe success — pair with `consumer_probed` / `consumer_ok`
 
 ### kv (soft list-keys probe)
 
@@ -144,7 +144,7 @@ Optional non-destructive `KVListKeys` after `streams` / `consumer` and before `m
 - Soft mode (list): transport/HTTP errors → **SKIP** (`kv soft-fail: …`); `--strict` → **FAIL**
 - Empty key list is still **PASS** with `n=0`
 - **PASS detail**: `bucket=NAME n=N ensure=…`
-- Top-level `kv_bucket` omitted when unset; `kv_key_count`, `kv_ensured`, `kv_ensure_ms`, and `kv_list_ms` always emitted (`kv_ensured` true only if ensure create attempted and succeeded; `kv_ensure_ms` is ensure-create latency only, `0` when ensure off/unset; `kv_list_ms` is `KVListKeys` latency only, `0` when probe unset / list not run)
+- Top-level `kv_bucket` **always emitted** (empty string when unset); `kv_key_count`, `kv_ensured`, `kv_ensure_ms`, and `kv_list_ms` always emitted (`kv_ensured` true only if ensure create attempted and succeeded; `kv_ensure_ms` is ensure-create latency only, `0` when ensure off/unset; `kv_list_ms` is `KVListKeys` latency only, `0` when probe unset / list not run). Empty `kv_bucket` does not invent probe success — pair with counts/flags
 
 ### emit + llm_meter (dept streams / remote metering)
 
@@ -233,14 +233,14 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `context_lineage_count` | int | `len(res.Lineage)` from last `QueryContext` (**always emitted**, `0` when skip/off/empty) |
 | `streams_count` | int | `len(ListStreams)` from last streams probe (**always emitted**, `0` on skip/error/disabled) |
 | `streams_names` | string[] | Short sample of stream names from last `ListStreams` (max 8; **always emitted** as JSON array, `[]` on skip/error/disabled). Full count stays in `streams_count` |
-| `kv_bucket` | string | Soft kv probe bucket (`DogfoodOptions.KVBucket` / `--kv-bucket`); **omitted** when empty (probe unset) |
+| `kv_bucket` | string | Soft kv probe bucket (`DogfoodOptions.KVBucket` / `--kv-bucket`); **always emitted**, empty string when probe unset. Empty does not invent success |
 | `kv_key_count` | int | `len(KVListKeys)` from last kv probe (**always emitted**, `0` on skip/error/unset) |
 | `kv_ensured` | bool | True only when `--kv-ensure` create was attempted and succeeded (**always emitted**, `false` when unset/skip/soft-fail) |
 | `pub_probed` | bool | True when `--pub-subject` was set and a Pub attempt ran (**always emitted**, `false` when unset) |
 | `pub_ok` | bool | True when soft pub probe succeeded (**always emitted**, `false` when unset/skip/fail) |
-| `consumer_stream` | string | Probe stream when both stream+name configured (**omitted** when unset/partial; set even if create fails) |
-| `consumer_name` | string | Probe consumer name when both stream+name configured (**omitted** when unset/partial) |
-| `consumer_filter` | string | Optional filter_subject when set with stream+name (**omitted** when empty) |
+| `consumer_stream` | string | Probe stream when both stream+name configured (**always emitted**, empty when unset/partial; set even if create fails) |
+| `consumer_name` | string | Probe consumer name when both stream+name configured (**always emitted**, empty when unset/partial) |
+| `consumer_filter` | string | Optional filter_subject when set with stream+name (**always emitted**, empty when unset) |
 | `consumer_probed` | bool | True when `--consumer-stream` + `--consumer-name` set and create attempt ran (**always emitted**, `false` when unset) |
 | `consumer_ok` | bool | True when soft consumer create succeeded (201 or 409) (**always emitted**, `false` when unset/skip/fail) |
 | `consumer_fetch_ok` | bool | True when optional soft fetch ran without error (**always emitted**, `false` when not requested/fail/unset) |
