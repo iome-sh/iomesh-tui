@@ -67,8 +67,9 @@ type DogfoodReport struct {
 	// Always emit JSON array (empty when skip/error).
 	StreamsNames []string `json:"streams_names"`
 	// KVBucket is the bucket used for the soft kv list-keys probe (DogfoodOptions.KVBucket).
-	// Omitted from JSON when empty (probe unset / step skipped without a bucket).
-	KVBucket string `json:"kv_bucket,omitempty"`
+	// Always emitted (empty string when probe unset / step skipped without a bucket).
+	// Empty identity does not invent probe success — pair with kv_key_count / kv_ensured.
+	KVBucket string `json:"kv_bucket"`
 	// KVKeyCount is len of KVListKeys from last kv probe (0 on skip/error/unset).
 	// Always emitted in JSON so CI sees kv evidence without scraping step detail.
 	KVKeyCount int `json:"kv_key_count"`
@@ -81,12 +82,15 @@ type DogfoodReport struct {
 	// PubOK is true when the soft pub probe succeeded. Always emitted (false when unset/skip/fail).
 	PubOK bool `json:"pub_ok"`
 	// ConsumerStream is the configured probe stream when both stream+name were provided
-	// (set even if create fails). Omitted from JSON when empty (probe unset / partial).
-	ConsumerStream string `json:"consumer_stream,omitempty"`
+	// (set even if create fails). Always emitted (empty when probe unset / partial).
+	// Empty identity does not invent probe success — pair with consumer_probed / consumer_ok.
+	ConsumerStream string `json:"consumer_stream"`
 	// ConsumerName is the configured probe consumer name when both stream+name were provided.
-	ConsumerName string `json:"consumer_name,omitempty"`
+	// Always emitted (empty when probe unset / partial).
+	ConsumerName string `json:"consumer_name"`
 	// ConsumerFilter is the optional filter_subject when set with stream+name.
-	ConsumerFilter string `json:"consumer_filter,omitempty"`
+	// Always emitted (empty when unset / not configured with stream+name).
+	ConsumerFilter string `json:"consumer_filter"`
 	// ConsumerProbed is true when both ConsumerStream and ConsumerName were set and a create attempt ran.
 	// Always emitted in JSON (false when unset / partial / mesh disabled before step).
 	ConsumerProbed bool `json:"consumer_probed"`
@@ -1120,20 +1124,20 @@ func FormatReportJSON(r DogfoodReport) string {
 		Workspace string `json:"workspace"`  // always emit (empty when unset; peers mesh status)
 		DualWrite bool   `json:"dual_write"` // always emit (CI dual-write mode)
 
-		CatalogSource        string     `json:"catalog_source"`            // always emit (empty when unset; CI catalog source)
-		CatalogCount         int        `json:"catalog_count"`             // always emit (CI catalog evidence)
-		ContextChars         int        `json:"context_chars"`             // always emit (CI context evidence)
-		ContextLineageCount  int        `json:"context_lineage_count"`     // always emit
-		StreamsCount         int        `json:"streams_count"`             // always emit (CI streams list evidence)
-		StreamsNames         []string   `json:"streams_names"`             // always emit array (CI name sample)
-		KVBucket             string     `json:"kv_bucket,omitempty"`       // set when soft kv probe configured
-		KVKeyCount           int        `json:"kv_key_count"`              // always emit (CI kv list evidence)
-		KVEnsured            bool       `json:"kv_ensured"`                // always emit (true only if ensure create succeeded)
-		PubProbed            bool       `json:"pub_probed"`                // always emit (true if pub subject set + attempt)
-		PubOK                bool       `json:"pub_ok"`                    // always emit (true only if soft pub succeeded)
-		ConsumerStream       string     `json:"consumer_stream,omitempty"` // set when both stream+name provided
-		ConsumerName         string     `json:"consumer_name,omitempty"`
-		ConsumerFilter       string     `json:"consumer_filter,omitempty"`
+		CatalogSource        string     `json:"catalog_source"`         // always emit (empty when unset; CI catalog source)
+		CatalogCount         int        `json:"catalog_count"`          // always emit (CI catalog evidence)
+		ContextChars         int        `json:"context_chars"`          // always emit (CI context evidence)
+		ContextLineageCount  int        `json:"context_lineage_count"`  // always emit
+		StreamsCount         int        `json:"streams_count"`          // always emit (CI streams list evidence)
+		StreamsNames         []string   `json:"streams_names"`          // always emit array (CI name sample)
+		KVBucket             string     `json:"kv_bucket"`              // always emit (empty when soft kv probe unset)
+		KVKeyCount           int        `json:"kv_key_count"`           // always emit (CI kv list evidence)
+		KVEnsured            bool       `json:"kv_ensured"`             // always emit (true only if ensure create succeeded)
+		PubProbed            bool       `json:"pub_probed"`             // always emit (true if pub subject set + attempt)
+		PubOK                bool       `json:"pub_ok"`                 // always emit (true only if soft pub succeeded)
+		ConsumerStream       string     `json:"consumer_stream"`        // always emit (empty when unset/partial)
+		ConsumerName         string     `json:"consumer_name"`          // always emit (empty when unset/partial)
+		ConsumerFilter       string     `json:"consumer_filter"`        // always emit (empty when unset)
 		ConsumerProbed       bool       `json:"consumer_probed"`        // always emit (true if stream+name set + create attempt)
 		ConsumerOK           bool       `json:"consumer_ok"`            // always emit (true if create 201/409)
 		ConsumerFetchOK      bool       `json:"consumer_fetch_ok"`      // always emit (true if optional fetch ok)
@@ -1301,22 +1305,16 @@ func FormatReport(r DogfoodReport) string {
 	} else {
 		fmt.Fprintf(&b, "  streams_names: (none)\n")
 	}
-	if r.KVBucket != "" {
-		fmt.Fprintf(&b, "  kv_bucket: %s\n", r.KVBucket)
-	}
+	// kv_bucket / consumer_* identity always-emit (empty when unset) for CI scrapers.
+	// Empty strings do not invent probe success — pair with *_probed / *_ok / counts.
+	fmt.Fprintf(&b, "  kv_bucket: %s\n", r.KVBucket)
 	fmt.Fprintf(&b, "  kv_key_count: %d\n", r.KVKeyCount)
 	fmt.Fprintf(&b, "  kv_ensured: %v\n", r.KVEnsured)
 	fmt.Fprintf(&b, "  pub_probed: %v\n", r.PubProbed)
 	fmt.Fprintf(&b, "  pub_ok: %v\n", r.PubOK)
-	if r.ConsumerStream != "" {
-		fmt.Fprintf(&b, "  consumer_stream: %s\n", r.ConsumerStream)
-	}
-	if r.ConsumerName != "" {
-		fmt.Fprintf(&b, "  consumer_name: %s\n", r.ConsumerName)
-	}
-	if r.ConsumerFilter != "" {
-		fmt.Fprintf(&b, "  consumer_filter: %s\n", r.ConsumerFilter)
-	}
+	fmt.Fprintf(&b, "  consumer_stream: %s\n", r.ConsumerStream)
+	fmt.Fprintf(&b, "  consumer_name: %s\n", r.ConsumerName)
+	fmt.Fprintf(&b, "  consumer_filter: %s\n", r.ConsumerFilter)
 	fmt.Fprintf(&b, "  consumer_probed: %v\n", r.ConsumerProbed)
 	fmt.Fprintf(&b, "  consumer_ok: %v\n", r.ConsumerOK)
 	fmt.Fprintf(&b, "  consumer_fetch_ok: %v\n", r.ConsumerFetchOK)

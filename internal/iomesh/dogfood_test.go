@@ -1883,6 +1883,113 @@ func TestFormatReport_AlwaysEmitsIdentity(t *testing.T) {
 	})
 }
 
+func TestFormatReport_AlwaysEmitsKVConsumerIdentity(t *testing.T) {
+	// kv_bucket / consumer_stream / consumer_name / consumer_filter always present as
+	// strings in JSON and text, including empty. Empty identity does not invent probe
+	// success (bools/counts stay zero-value). Peers identity always-emit continuum.
+	keys := []string{"kv_bucket", "consumer_stream", "consumer_name", "consumer_filter"}
+	t.Run("empty", func(t *testing.T) {
+		empty := DogfoodReport{Summary: "PASS", OK: true}
+		if empty.KVBucket != "" || empty.ConsumerStream != "" || empty.ConsumerName != "" || empty.ConsumerFilter != "" {
+			t.Fatalf("zero-value identity: kv=%q stream=%q name=%q filter=%q",
+				empty.KVBucket, empty.ConsumerStream, empty.ConsumerName, empty.ConsumerFilter)
+		}
+		// Empty identity must compose with false probe flags / zero counts.
+		if empty.KVKeyCount != 0 || empty.KVEnsured || empty.ConsumerProbed || empty.ConsumerOK {
+			t.Fatalf("zero-value must not invent success: count=%d ensured=%v probed=%v ok=%v",
+				empty.KVKeyCount, empty.KVEnsured, empty.ConsumerProbed, empty.ConsumerOK)
+		}
+		js := FormatReportJSON(empty)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		for _, key := range keys {
+			v, ok := parsed[key]
+			if !ok {
+				t.Fatalf("always-emit %s key missing:\n%s", key, js)
+			}
+			str, ok := v.(string)
+			if !ok {
+				t.Fatalf("%s: %v want string\n%s", key, v, js)
+			}
+			if str != "" {
+				t.Fatalf("%s: %q want empty string\n%s", key, str, js)
+			}
+		}
+		// Bools still always-emit false (unchanged).
+		for _, key := range []string{"kv_ensured", "consumer_probed", "consumer_ok"} {
+			if v, ok := parsed[key].(bool); !ok || v {
+				t.Fatalf("json %s: %v want false\n%s", key, parsed[key], js)
+			}
+		}
+		text := FormatReport(empty)
+		for _, want := range []string{
+			"kv_bucket: ",
+			"consumer_stream: ",
+			"consumer_name: ",
+			"consumer_filter: ",
+		} {
+			if !strings.Contains(text, want) {
+				t.Fatalf("text always-emit identity line missing %q:\n%s", want, text)
+			}
+		}
+		// Order: kv_bucket → consumer_stream → consumer_name → consumer_filter
+		kvIdx := strings.Index(text, "kv_bucket:")
+		csIdx := strings.Index(text, "consumer_stream:")
+		cnIdx := strings.Index(text, "consumer_name:")
+		cfIdx := strings.Index(text, "consumer_filter:")
+		if kvIdx < 0 || csIdx < 0 || cnIdx < 0 || cfIdx < 0 {
+			t.Fatalf("missing identity keys:\n%s", text)
+		}
+		if !(kvIdx < csIdx && csIdx < cnIdx && cnIdx < cfIdx) {
+			t.Fatalf("identity order want kv_bucket < consumer_stream < consumer_name < consumer_filter:\n%s", text)
+		}
+	})
+	t.Run("populated", func(t *testing.T) {
+		rep := DogfoodReport{
+			KVBucket:       "config",
+			ConsumerStream: "EVENTS",
+			ConsumerName:   "worker-1",
+			ConsumerFilter: "dept.events.>",
+			// Values pass through; probe flags independent (compose, don't invent).
+			KVKeyCount:     3,
+			ConsumerProbed: true,
+			ConsumerOK:     true,
+			Summary:        "PASS",
+			OK:             true,
+		}
+		js := FormatReportJSON(rep)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		want := map[string]string{
+			"kv_bucket":       "config",
+			"consumer_stream": "EVENTS",
+			"consumer_name":   "worker-1",
+			"consumer_filter": "dept.events.>",
+		}
+		for key, w := range want {
+			got, ok := parsed[key].(string)
+			if !ok || got != w {
+				t.Fatalf("%s: %v want %q\n%s", key, parsed[key], w, js)
+			}
+		}
+		text := FormatReport(rep)
+		for _, line := range []string{
+			"kv_bucket: config",
+			"consumer_stream: EVENTS",
+			"consumer_name: worker-1",
+			"consumer_filter: dept.events.>",
+		} {
+			if !strings.Contains(text, line) {
+				t.Fatalf("text missing %q:\n%s", line, text)
+			}
+		}
+	})
+}
+
 func TestFormatReport_AlwaysEmitsCatalogPolicySource(t *testing.T) {
 	// catalog_source / policy_source always present as strings in JSON and text, including empty.
 	// Peers identity / memory_endpoint / health_err always-emit continuum.
@@ -3397,7 +3504,7 @@ func TestDogfood_WaitReady_DefaultIntervalAndRequireHealth(t *testing.T) {
 }
 
 func TestDogfood_KV_UnsetSkip(t *testing.T) {
-	// Empty KVBucket → kv SKIP "kv probe unset"; kv_key_count=0; kv_bucket omitted.
+	// Empty KVBucket → kv SKIP "kv probe unset"; kv_key_count=0; kv_bucket always-emit empty.
 	srv := mockMeshServer(t, struct {
 		failHealth bool
 		noReady    bool
@@ -3436,8 +3543,13 @@ func TestDogfood_KV_UnsetSkip(t *testing.T) {
 	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
 		t.Fatalf("json: %v\n%s", err, js)
 	}
-	if _, has := parsed["kv_bucket"]; has {
-		t.Fatalf("json must omit kv_bucket when unset:\n%s", js)
+	// Always-emit empty string when unset (CI scrapers; does not invent probe success).
+	v, has := parsed["kv_bucket"]
+	if !has {
+		t.Fatalf("json must always emit kv_bucket when unset:\n%s", js)
+	}
+	if str, ok := v.(string); !ok || str != "" {
+		t.Fatalf("json kv_bucket: %v want empty string\n%s", v, js)
 	}
 	if n, ok := parsed["kv_key_count"].(float64); !ok || int(n) != 0 {
 		t.Fatalf("json kv_key_count: %v want 0\n%s", parsed["kv_key_count"], js)
@@ -3473,8 +3585,12 @@ func TestDogfood_KV_UnsetSkip(t *testing.T) {
 	if !strings.Contains(text, "kv_list_ms: 0") {
 		t.Fatalf("text report missing kv_list_ms: 0:\n%s", text)
 	}
-	if strings.Contains(text, "kv_bucket:") {
-		t.Fatalf("text report must omit kv_bucket when unset:\n%s", text)
+	if !strings.Contains(text, "kv_bucket: ") {
+		t.Fatalf("text report must always emit kv_bucket when unset:\n%s", text)
+	}
+	// Empty identity must not invent probe success: step is SKIP, counts zero, flags false.
+	if rep.KVKeyCount != 0 || rep.KVEnsured {
+		t.Fatalf("empty kv identity must not invent success: count=%d ensured=%v", rep.KVKeyCount, rep.KVEnsured)
 	}
 }
 
@@ -4237,9 +4353,15 @@ func TestDogfood_Consumer_UnsetSkip(t *testing.T) {
 			t.Fatalf("json %s: %v want false\n%s", key, parsed[key], js)
 		}
 	}
+	// Always-emit empty strings when unset (CI scrapers; does not invent probe success).
 	for _, key := range []string{"consumer_stream", "consumer_name", "consumer_filter"} {
-		if _, ok := parsed[key]; ok {
-			t.Fatalf("json %s should be omitted when unset\n%s", key, js)
+		v, ok := parsed[key]
+		if !ok {
+			t.Fatalf("json %s must always emit when unset\n%s", key, js)
+		}
+		str, ok := v.(string)
+		if !ok || str != "" {
+			t.Fatalf("json %s: %v want empty string\n%s", key, v, js)
 		}
 	}
 	text := FormatReport(rep)
@@ -4250,8 +4372,15 @@ func TestDogfood_Consumer_UnsetSkip(t *testing.T) {
 		!strings.Contains(text, "consumer_delete_ok: false") {
 		t.Fatalf("text report missing consumer fields:\n%s", text)
 	}
-	if strings.Contains(text, "consumer_stream:") || strings.Contains(text, "consumer_name:") {
-		t.Fatalf("text should omit identity when unset:\n%s", text)
+	if !strings.Contains(text, "consumer_stream: ") ||
+		!strings.Contains(text, "consumer_name: ") ||
+		!strings.Contains(text, "consumer_filter: ") {
+		t.Fatalf("text must always emit consumer identity when unset:\n%s", text)
+	}
+	// Empty identity must not invent probe success.
+	if rep.ConsumerProbed || rep.ConsumerOK {
+		t.Fatalf("empty consumer identity must not invent success: probed=%v ok=%v",
+			rep.ConsumerProbed, rep.ConsumerOK)
 	}
 }
 
@@ -4479,8 +4608,11 @@ func TestDogfood_Consumer_CreateSoftFail(t *testing.T) {
 	if parsed["consumer_stream"] != "EVENTS" || parsed["consumer_name"] != "worker-1" {
 		t.Fatalf("json identity on soft-fail: %v %v\n%s", parsed["consumer_stream"], parsed["consumer_name"], js)
 	}
-	if _, ok := parsed["consumer_filter"]; ok {
-		t.Fatalf("json consumer_filter should be omitted when empty\n%s", js)
+	// Always-emit empty filter when not configured (stream+name set, filter unset).
+	if v, ok := parsed["consumer_filter"]; !ok {
+		t.Fatalf("json consumer_filter must always emit when empty\n%s", js)
+	} else if str, ok := v.(string); !ok || str != "" {
+		t.Fatalf("json consumer_filter: %v want empty string\n%s", v, js)
 	}
 }
 
