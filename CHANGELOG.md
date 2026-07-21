@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.54.0] — 2026-07-20
+
+Minor release: mesh wait user_agent evidence.
+
 ### Added
 
 - **`mesh wait` user_agent evidence** — always emit `user_agent` (package mesh HTTP User-Agent via `iomesh.UserAgent()`, default `iomesh-tui`) in text and `--json` output so CI scrapers record the outbound mesh UA without re-parsing flags; peers mesh status/dogfood
