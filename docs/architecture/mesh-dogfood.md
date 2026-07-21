@@ -280,6 +280,7 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `user_agent` | string | Package mesh HTTP User-Agent (`iomesh-tui/<version>` via `iomesh.UserAgent`); always set for CI evidence — not scraped from server |
 | `strict` | bool | `--strict` |
 | `ok` | bool | no FAIL steps |
+| `exit_code` | int | Process exit code for this report (**always emitted**): `0` when `ok=true`, `1` when `ok=false` (matches `cmdMeshDogfood`; mesh-disabled SKIP → `0`) |
 | `summary` | string | e.g. `PASS (pass=N skip=M)` |
 | `result` | string | `PASS` \| `FAIL` \| `SKIP` (summary prefix) |
 | `started` / `finished` | RFC3339 | probe window |

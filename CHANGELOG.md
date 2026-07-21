@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Dogfood exit_code evidence** — always emit `exit_code` (int process exit matching `cmdMeshDogfood`: `0` when `ok=true`, `1` when `ok=false`) in text and JSON dogfood reports so CI scrapers record the intended exit without shell `$?`
+
 ## [0.50.0] — 2026-07-20
 
 Minor release: mesh status exit_code evidence.

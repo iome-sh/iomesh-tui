@@ -1777,10 +1777,7 @@ func cmdMeshDogfood(args []string) int {
 	} else {
 		fmt.Print(iomesh.FormatReport(rep))
 	}
-	if !rep.OK {
-		return 1
-	}
-	return 0
+	return rep.ExitCode
 }
 
 func cmdAgent(args []string) int {

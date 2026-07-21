@@ -704,6 +704,133 @@ func TestDogfood_HealthFail(t *testing.T) {
 	}
 }
 
+// TestDogfood_ExitCodeEvidence: exit_code always emitted; 0 when OK, 1 when not.
+func TestDogfood_ExitCodeEvidence(t *testing.T) {
+	// 1) Mesh disabled → OK=true → exit_code 0
+	cOff := New(Config{Enabled: false}, nil)
+	repOff := cOff.Dogfood(context.Background(), DogfoodOptions{})
+	if !repOff.OK {
+		t.Fatalf("disabled want OK: %+v", repOff)
+	}
+	if repOff.ExitCode != 0 {
+		t.Fatalf("disabled ExitCode: %d want 0", repOff.ExitCode)
+	}
+	jsOff := FormatReportJSON(repOff)
+	var parsedOff map[string]any
+	if err := json.Unmarshal([]byte(jsOff), &parsedOff); err != nil {
+		t.Fatalf("json disabled: %v\n%s", err, jsOff)
+	}
+	if n, ok := parsedOff["exit_code"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json disabled exit_code: %v want 0\n%s", parsedOff["exit_code"], jsOff)
+	}
+	if _, ok := parsedOff["exit_code"]; !ok {
+		t.Fatalf("json disabled exit_code missing\n%s", jsOff)
+	}
+	textOff := FormatReport(repOff)
+	if !strings.Contains(textOff, "exit_code: 0") {
+		t.Fatalf("text disabled missing exit_code 0:\n%s", textOff)
+	}
+	// exit_code appears after strict in text report
+	strictIdx := strings.Index(textOff, "strict:")
+	exitIdx := strings.Index(textOff, "exit_code:")
+	if strictIdx < 0 || exitIdx < 0 || exitIdx < strictIdx {
+		t.Fatalf("exit_code must appear after strict:\n%s", textOff)
+	}
+
+	// 2) Health fail → OK=false → exit_code 1
+	srvFail := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+		failRecall bool
+		noRecall   bool
+	}{failHealth: true})
+	t.Cleanup(srvFail.Close)
+	cFail := New(Config{Enabled: true, Endpoint: srvFail.URL, ContextPlane: true, EmitDeptStreams: true}, nil)
+	repFail := cFail.Dogfood(context.Background(), DogfoodOptions{})
+	if repFail.OK {
+		t.Fatal("health fail want !OK")
+	}
+	if repFail.ExitCode != 1 {
+		t.Fatalf("fail ExitCode: %d want 1", repFail.ExitCode)
+	}
+	jsFail := FormatReportJSON(repFail)
+	var parsedFail map[string]any
+	if err := json.Unmarshal([]byte(jsFail), &parsedFail); err != nil {
+		t.Fatalf("json fail: %v\n%s", err, jsFail)
+	}
+	if n, ok := parsedFail["exit_code"].(float64); !ok || int(n) != 1 {
+		t.Fatalf("json fail exit_code: %v want 1\n%s", parsedFail["exit_code"], jsFail)
+	}
+	// Compose: ok/strict/result still present
+	if v, ok := parsedFail["ok"].(bool); !ok || v {
+		t.Fatalf("json fail ok: %v want false\n%s", parsedFail["ok"], jsFail)
+	}
+	if _, ok := parsedFail["strict"]; !ok {
+		t.Fatalf("json fail strict missing\n%s", jsFail)
+	}
+	if s, ok := parsedFail["result"].(string); !ok || s != "FAIL" {
+		t.Fatalf("json fail result: %v want FAIL\n%s", parsedFail["result"], jsFail)
+	}
+	textFail := FormatReport(repFail)
+	if !strings.Contains(textFail, "exit_code: 1") {
+		t.Fatalf("text fail missing exit_code 1:\n%s", textFail)
+	}
+	if !strings.Contains(textFail, "RESULT=FAIL") {
+		t.Fatalf("text fail missing RESULT=FAIL:\n%s", textFail)
+	}
+
+	// 3) Full PASS → OK=true → exit_code 0
+	srvPass := mockMeshServer(t, struct {
+		failHealth bool
+		noReady    bool
+		emptyCtx   bool
+		failEmit   bool
+		failMemory bool
+		noMemory   bool
+		failRecall bool
+		noRecall   bool
+	}{})
+	t.Cleanup(srvPass.Close)
+	cPass := New(Config{
+		Enabled: true, Endpoint: srvPass.URL, Tenant: "stage",
+		ContextPlane: true, CatalogPlane: true, EmitDeptStreams: true,
+	}, nil)
+	repPass := cPass.Dogfood(context.Background(), DogfoodOptions{Strict: true, Workspace: "/ws"})
+	if !repPass.OK {
+		t.Fatalf("pass want OK: %s\n%s", repPass.Summary, FormatReport(repPass))
+	}
+	if repPass.ExitCode != 0 {
+		t.Fatalf("pass ExitCode: %d want 0", repPass.ExitCode)
+	}
+	jsPass := FormatReportJSON(repPass)
+	var parsedPass map[string]any
+	if err := json.Unmarshal([]byte(jsPass), &parsedPass); err != nil {
+		t.Fatalf("json pass: %v\n%s", err, jsPass)
+	}
+	if n, ok := parsedPass["exit_code"].(float64); !ok || int(n) != 0 {
+		t.Fatalf("json pass exit_code: %v want 0\n%s", parsedPass["exit_code"], jsPass)
+	}
+	if v, ok := parsedPass["ok"].(bool); !ok || !v {
+		t.Fatalf("json pass ok: %v want true\n%s", parsedPass["ok"], jsPass)
+	}
+	if s, ok := parsedPass["result"].(string); !ok || s != "PASS" {
+		t.Fatalf("json pass result: %v want PASS\n%s", parsedPass["result"], jsPass)
+	}
+	textPass := FormatReport(repPass)
+	if !strings.Contains(textPass, "exit_code: 0") {
+		t.Fatalf("text pass missing exit_code 0:\n%s", textPass)
+	}
+
+	// dogfoodExitCode helper parity
+	if dogfoodExitCode(true) != 0 || dogfoodExitCode(false) != 1 {
+		t.Fatalf("dogfoodExitCode(true)=%d dogfoodExitCode(false)=%d", dogfoodExitCode(true), dogfoodExitCode(false))
+	}
+}
+
 func TestDogfood_SoftContextSkip(t *testing.T) {
 	srv := mockMeshServer(t, struct {
 		failHealth bool

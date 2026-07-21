@@ -196,13 +196,17 @@ type DogfoodReport struct {
 	Version string `json:"version"`
 	// UserAgent is the package mesh HTTP User-Agent (iomesh-tui/<version>).
 	// Always set from UserAgent() for CI evidence; not scraped from server.
-	UserAgent string    `json:"user_agent"`
-	Strict    bool      `json:"strict"`
-	Steps     []Step    `json:"steps"`
-	OK        bool      `json:"ok"`
-	Summary   string    `json:"summary"`
-	Started   time.Time `json:"started"`
-	Finished  time.Time `json:"finished"`
+	UserAgent string `json:"user_agent"`
+	Strict    bool   `json:"strict"`
+	Steps     []Step `json:"steps"`
+	OK        bool   `json:"ok"`
+	// ExitCode is the process exit code for this report (0 when OK, 1 when not OK).
+	// Always emitted so CI scrapers record intended exit without shell $?.
+	// Matches cmdMeshDogfood (return 1 when !rep.OK).
+	ExitCode int       `json:"exit_code"`
+	Summary  string    `json:"summary"`
+	Started  time.Time `json:"started"`
+	Finished time.Time `json:"finished"`
 }
 
 // DogfoodOptions tune the probe.
@@ -326,6 +330,7 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		rep.Summary = "SKIP (mesh disabled)"
 		rep.Finished = time.Now().UTC()
 		rep.DurationMS = durationMS(rep.Started, rep.Finished)
+		rep.ExitCode = dogfoodExitCode(rep.OK)
 		return rep
 	}
 
@@ -967,7 +972,17 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 	}
 	rep.Finished = time.Now().UTC()
 	rep.DurationMS = durationMS(rep.Started, rep.Finished)
+	rep.ExitCode = dogfoodExitCode(rep.OK)
 	return rep
+}
+
+// dogfoodExitCode returns the process exit code for a dogfood report:
+// 0 when OK, 1 when not OK (matches cmdMeshDogfood).
+func dogfoodExitCode(ok bool) int {
+	if ok {
+		return 0
+	}
+	return 1
 }
 
 // durationMS returns Finished−Started in milliseconds, clamped to >= 0.
@@ -1134,6 +1149,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		UserAgent            string     `json:"user_agent,omitempty"`
 		Strict               bool       `json:"strict"`
 		OK                   bool       `json:"ok"`
+		ExitCode             int        `json:"exit_code"` // always emit (0 when OK, 1 when not)
 		Summary              string     `json:"summary"`
 		Started              time.Time  `json:"started"`
 		Finished             time.Time  `json:"finished"`
@@ -1207,6 +1223,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		UserAgent:            r.UserAgent,
 		Strict:               r.Strict,
 		OK:                   r.OK,
+		ExitCode:             r.ExitCode,
 		Summary:              r.Summary,
 		Started:              r.Started,
 		Finished:             r.Finished,
@@ -1325,6 +1342,7 @@ func FormatReport(r DogfoodReport) string {
 		fmt.Fprintf(&b, "  user_agent: %s\n", r.UserAgent)
 	}
 	fmt.Fprintf(&b, "  strict:   %v\n", r.Strict)
+	fmt.Fprintf(&b, "  exit_code: %d\n", r.ExitCode)
 	for _, s := range r.Steps {
 		lat := ""
 		if s.Latency > 0 {
