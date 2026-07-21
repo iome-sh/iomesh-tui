@@ -1168,7 +1168,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		PolicyAllow          *bool      `json:"policy_allow,omitempty"` // set when policy evaluated
 		MemoryEndpoint       string     `json:"memory_endpoint"`        // always emit (empty when unset; retrieve uses mesh endpoint)
 		Version              string     `json:"version"`                // always emit (empty when unset)
-		UserAgent            string     `json:"user_agent"` // always emit (empty when unset)
+		UserAgent            string     `json:"user_agent"`             // always emit (empty when unset)
 		Strict               bool       `json:"strict"`
 		OK                   bool       `json:"ok"`
 		ExitCode             int        `json:"exit_code"` // always emit (0 when OK, 1 when not)
