@@ -40,6 +40,9 @@ type MeshStatusSnapshot struct {
 	Result string `json:"result"`
 	// Strict is the --strict exit-gate flag (always emitted; false when unset).
 	Strict bool `json:"strict"`
+	// ExitCode is the process exit code for this snapshot under configured Strict
+	// (0 fail-open / non-err; 1 only when Strict && result=="err"). Always emitted.
+	ExitCode int `json:"exit_code"`
 }
 
 // AggregateProbeResult returns the aggregate mesh status result from health and
@@ -95,10 +98,12 @@ func ElapsedMS(d time.Duration) int {
 
 // FormatMeshStatusJSON returns indented JSON for stage CI / operator scrapers.
 // Result is filled from health/ready when empty so scrapers always see result.
+// ExitCode is derived from Strict+Result so scrapers always see the intended process exit.
 func FormatMeshStatusJSON(s MeshStatusSnapshot) string {
 	if s.Result == "" {
 		s.Result = AggregateProbeResult(s.Health, s.Ready)
 	}
+	s.ExitCode = MeshStatusExitCode(s.Strict, s.Result)
 	b, err := json.MarshalIndent(s, "", "  ")
 	if err != nil {
 		return `{"error":"mesh status json marshal failed"}` + "\n"
@@ -108,10 +113,12 @@ func FormatMeshStatusJSON(s MeshStatusSnapshot) string {
 
 // FormatMeshStatus renders a human-readable operator snapshot.
 // Result is filled from health/ready when empty so operators always see result.
+// ExitCode is derived from Strict+Result so operators always see the intended process exit.
 func FormatMeshStatus(s MeshStatusSnapshot) string {
 	if s.Result == "" {
 		s.Result = AggregateProbeResult(s.Health, s.Ready)
 	}
+	s.ExitCode = MeshStatusExitCode(s.Strict, s.Result)
 	var b strings.Builder
 	b.WriteString("iomesh mesh status\n")
 	fmt.Fprintf(&b, "  status_line: %s\n", s.StatusLine)
@@ -147,5 +154,6 @@ func FormatMeshStatus(s MeshStatusSnapshot) string {
 	fmt.Fprintf(&b, "  duration_ms: %d\n", s.DurationMS)
 	fmt.Fprintf(&b, "  result:      %s\n", s.Result)
 	fmt.Fprintf(&b, "  strict:      %t\n", s.Strict)
+	fmt.Fprintf(&b, "  exit_code:   %d\n", s.ExitCode)
 	return b.String()
 }

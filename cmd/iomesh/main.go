@@ -763,13 +763,14 @@ func cmdMeshStatus(args []string) int {
 	out.DurationMS = iomesh.ElapsedMS(time.Since(probeStart))
 	out.Result = iomesh.AggregateProbeResult(out.Health, out.Ready)
 	out.Strict = *strict
+	out.ExitCode = iomesh.MeshStatusExitCode(out.Strict, out.Result)
 
 	if *jsonOut {
 		fmt.Print(iomesh.FormatMeshStatusJSON(out))
 	} else {
 		fmt.Print(iomesh.FormatMeshStatus(out))
 	}
-	return iomesh.MeshStatusExitCode(*strict, out.Result)
+	return out.ExitCode
 }
 
 func cmdMeshCatalog(args []string) int {
