@@ -128,6 +128,72 @@ func TestFormatMeshStatus_JSONAlwaysEmitsLatencies(t *testing.T) {
 	}
 }
 
+func TestFormatMeshStatus_JSONAlwaysEmitsIdentity(t *testing.T) {
+	// endpoint/tenant/org/workspace always present as strings, including empty.
+	// Populated values pass through; zero-value identity still emits keys.
+	t.Run("empty", func(t *testing.T) {
+		s := MeshStatusSnapshot{
+			Enabled:    false,
+			Version:    "test",
+			PolicyMode: "off",
+			UserAgent:  "ua",
+			StatusLine: "mesh: disabled (offline-first)",
+			Health:     "skipped",
+			Ready:      "skipped",
+		}
+		js := FormatMeshStatusJSON(s)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		for _, key := range []string{"endpoint", "tenant", "org", "workspace"} {
+			v, ok := parsed[key]
+			if !ok {
+				t.Fatalf("%s missing from JSON:\n%s", key, js)
+			}
+			str, ok := v.(string)
+			if !ok {
+				t.Fatalf("%s: %v want string\n%s", key, v, js)
+			}
+			if str != "" {
+				t.Fatalf("%s: %q want empty string\n%s", key, str, js)
+			}
+		}
+	})
+	t.Run("populated", func(t *testing.T) {
+		s := MeshStatusSnapshot{
+			Enabled:    true,
+			Endpoint:   "http://mesh.example",
+			Tenant:     "t1",
+			Org:        "o1",
+			Workspace:  "w1",
+			Version:    "test",
+			PolicyMode: "off",
+			UserAgent:  "ua",
+			StatusLine: "mesh: enabled",
+			Health:     "ok",
+			Ready:      "ok",
+		}
+		js := FormatMeshStatusJSON(s)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		want := map[string]string{
+			"endpoint":  "http://mesh.example",
+			"tenant":    "t1",
+			"org":       "o1",
+			"workspace": "w1",
+		}
+		for key, w := range want {
+			got, ok := parsed[key].(string)
+			if !ok || got != w {
+				t.Fatalf("%s: %v want %q\n%s", key, parsed[key], w, js)
+			}
+		}
+	})
+}
+
 func TestFormatMeshStatus_JSONProbeLatencies(t *testing.T) {
 	s := MeshStatusSnapshot{
 		Enabled:    true,
@@ -394,6 +460,53 @@ func TestFormatMeshStatus_TextDisabledZeros(t *testing.T) {
 	}
 	if !strings.Contains(out, "exit_code:   0") {
 		t.Fatalf("missing exit_code 0:\n%s", out)
+	}
+}
+
+func TestFormatMeshStatus_TextAlwaysEmitsIdentity(t *testing.T) {
+	// tenant/org/workspace lines always print (empty when unset); endpoint already always printed.
+	empty := MeshStatusSnapshot{
+		Enabled: false, Version: "x", PolicyMode: "off", UserAgent: "ua",
+		StatusLine: "mesh: disabled (offline-first)", Health: "skipped", Ready: "skipped",
+	}
+	out := FormatMeshStatus(empty)
+	for _, want := range []string{
+		"endpoint:    ",
+		"tenant:      ",
+		"org:         ",
+		"workspace:   ",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("want identity line %q when empty:\n%s", want, out)
+		}
+	}
+	// Order: endpoint → tenant → org → workspace
+	epIdx := strings.Index(out, "endpoint:")
+	tnIdx := strings.Index(out, "tenant:")
+	orgIdx := strings.Index(out, "org:")
+	wsIdx := strings.Index(out, "workspace:")
+	if epIdx < 0 || tnIdx < 0 || orgIdx < 0 || wsIdx < 0 {
+		t.Fatalf("missing identity keys:\n%s", out)
+	}
+	if !(epIdx < tnIdx && tnIdx < orgIdx && orgIdx < wsIdx) {
+		t.Fatalf("identity order want endpoint < tenant < org < workspace:\n%s", out)
+	}
+
+	populated := MeshStatusSnapshot{
+		Enabled: true, Endpoint: "http://mesh.example", Tenant: "t1", Org: "o1", Workspace: "w1",
+		Version: "v", PolicyMode: "off", UserAgent: "ua",
+		StatusLine: "mesh: enabled", Health: "ok", Ready: "ok",
+	}
+	out = FormatMeshStatus(populated)
+	for _, want := range []string{
+		"endpoint:    http://mesh.example",
+		"tenant:      t1",
+		"org:         o1",
+		"workspace:   w1",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("want %q:\n%s", want, out)
+		}
 	}
 }
 

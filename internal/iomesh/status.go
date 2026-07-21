@@ -11,13 +11,15 @@ import (
 // `iomesh mesh status` (JSON and text). Probe fields are fail-open: health/ready
 // are "ok", "err", or "skipped"; latencies are always emitted (0 when skipped).
 // Result is always emitted (ok|err|skipped|partial) as the aggregate of health+ready.
+// Identity fields (endpoint, tenant, org, workspace) are always emitted as strings
+// (empty when unset) so CI scrapers can key on stable JSON keys / text lines.
 type MeshStatusSnapshot struct {
 	Enabled        bool   `json:"enabled"`
-	Endpoint       string `json:"endpoint,omitempty"`
-	Tenant         string `json:"tenant,omitempty"`
-	Org            string `json:"org,omitempty"`
-	Workspace      string `json:"workspace,omitempty"`
-	Version        string `json:"version"` // binary version (main.version)
+	Endpoint       string `json:"endpoint"`  // always emitted; empty when unset
+	Tenant         string `json:"tenant"`    // always emitted; empty when unset
+	Org            string `json:"org"`       // always emitted; empty when unset
+	Workspace      string `json:"workspace"` // always emitted; empty when unset
+	Version        string `json:"version"`   // binary version (main.version)
 	PolicyMode     string `json:"policy_mode"`
 	ContextPlane   bool   `json:"context_plane"`
 	CatalogPlane   bool   `json:"catalog_plane"`
@@ -124,15 +126,9 @@ func FormatMeshStatus(s MeshStatusSnapshot) string {
 	fmt.Fprintf(&b, "  status_line: %s\n", s.StatusLine)
 	fmt.Fprintf(&b, "  version:     %s\n", s.Version)
 	fmt.Fprintf(&b, "  endpoint:    %s\n", s.Endpoint)
-	if s.Tenant != "" {
-		fmt.Fprintf(&b, "  tenant:      %s\n", s.Tenant)
-	}
-	if s.Org != "" {
-		fmt.Fprintf(&b, "  org:         %s\n", s.Org)
-	}
-	if s.Workspace != "" {
-		fmt.Fprintf(&b, "  workspace:   %s\n", s.Workspace)
-	}
+	fmt.Fprintf(&b, "  tenant:      %s\n", s.Tenant)
+	fmt.Fprintf(&b, "  org:         %s\n", s.Org)
+	fmt.Fprintf(&b, "  workspace:   %s\n", s.Workspace)
 	fmt.Fprintf(&b, "  policy_mode: %s\n", s.PolicyMode)
 	fmt.Fprintf(&b, "  context_plane: %v\n", s.ContextPlane)
 	fmt.Fprintf(&b, "  catalog_plane: %v\n", s.CatalogPlane)
