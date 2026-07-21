@@ -115,6 +115,10 @@ type DogfoodReport struct {
 	// WaitReadyResult is wait_ready step outcome for CI: off|ok|err|skip.
 	// Always emitted. "off" when WaitReady budget 0 / step not run.
 	WaitReadyResult string `json:"wait_ready_result"`
+	// WaitReadyAttempts is the WaitReady probe cycle count from WaitReadyAttempts
+	// (0 when WaitReady budget off / step not run). Always emitted so CI sees how many
+	// Health/Ready loops ran without scraping step detail.
+	WaitReadyAttempts int `json:"wait_ready_attempts"`
 	// HealthMS is health step latency in milliseconds (0 when step skipped/absent).
 	// Always emitted in JSON so CI sees probe latency without scraping step detail.
 	HealthMS int `json:"health_ms"`
@@ -347,16 +351,19 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		if interval <= 0 {
 			interval = 500 * time.Millisecond
 		}
+		// Capture probe cycles from WaitReadyAttempts for always-emit wait_ready_attempts.
+		var waitAttempts int
 		waitReadyStep := c.stepTimed("wait_ready", func() (StepStatus, string) {
 			// Child budget: WithTimeout respects parent cancel/deadline (effective min).
 			wctx, cancel := context.WithTimeout(ctx, opts.WaitReady)
 			defer cancel()
-			err := c.WaitReady(wctx, WaitReadyOptions{
+			n, err := c.WaitReadyAttempts(wctx, WaitReadyOptions{
 				Interval:      interval,
 				RequireHealth: opts.WaitRequireHealth,
 			})
+			waitAttempts = n
 			if err == nil {
-				detail := fmt.Sprintf("WaitReady OK budget=%s interval=%s", opts.WaitReady, interval)
+				detail := fmt.Sprintf("WaitReady OK budget=%s interval=%s attempts=%d", opts.WaitReady, interval, n)
 				if opts.WaitRequireHealth {
 					detail += " require_health=true"
 				}
@@ -368,6 +375,7 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 			return StepSkip, "wait_ready soft-fail: " + err.Error()
 		})
 		rep.WaitReadyElapsedMS = int(waitReadyStep.Latency.Milliseconds())
+		rep.WaitReadyAttempts = waitAttempts
 		switch waitReadyStep.Status {
 		case StepPass:
 			rep.WaitReadyResult = "ok"
@@ -1097,6 +1105,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		WaitReadyIntervalMS  int        `json:"wait_ready_interval_ms"` // always emit (0 when wait preflight off; effective default 500)
 		WaitRequireHealth    bool       `json:"wait_require_health"`    // always emit (configured knob)
 		WaitReadyResult      string     `json:"wait_ready_result"`      // always emit (off|ok|err|skip)
+		WaitReadyAttempts    int        `json:"wait_ready_attempts"`    // always emit (0 when wait off / step not run)
 		HealthMS             int        `json:"health_ms"`              // always emit (0 when health step skipped/absent)
 		ReadyMS              int        `json:"ready_ms"`               // always emit (0 when ready step skipped/absent)
 		ContextMS            int        `json:"context_ms"`             // always emit (0 when context step skipped/absent)
@@ -1169,6 +1178,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		WaitReadyIntervalMS:  r.WaitReadyIntervalMS,
 		WaitRequireHealth:    r.WaitRequireHealth,
 		WaitReadyResult:      r.WaitReadyResult,
+		WaitReadyAttempts:    r.WaitReadyAttempts,
 		HealthMS:             r.HealthMS,
 		ReadyMS:              r.ReadyMS,
 		ContextMS:            r.ContextMS,
@@ -1279,6 +1289,7 @@ func FormatReport(r DogfoodReport) string {
 	fmt.Fprintf(&b, "  wait_ready_interval_ms: %d\n", r.WaitReadyIntervalMS)
 	fmt.Fprintf(&b, "  wait_require_health: %t\n", r.WaitRequireHealth)
 	fmt.Fprintf(&b, "  wait_ready_result: %s\n", r.WaitReadyResult)
+	fmt.Fprintf(&b, "  wait_ready_attempts: %d\n", r.WaitReadyAttempts)
 	fmt.Fprintf(&b, "  health_ms: %d\n", r.HealthMS)
 	fmt.Fprintf(&b, "  ready_ms: %d\n", r.ReadyMS)
 	fmt.Fprintf(&b, "  context_ms: %d\n", r.ContextMS)
