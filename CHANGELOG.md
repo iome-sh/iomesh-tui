@@ -13,6 +13,7 @@ Minor release: mesh wait user_agent evidence.
 
 ### Added
 
+- **`mesh wait` result evidence** — always emit `result` (`ok` when wait OK / `err` when wait fails; derived from OK / waitErr only) in text and `--json` output so CI scrapers peer mesh status `result` continuum without inventing readiness schema
 - **`mesh wait` user_agent evidence** — always emit `user_agent` (package mesh HTTP User-Agent via `iomesh.UserAgent()`, default `iomesh-tui`) in text and `--json` output so CI scrapers record the outbound mesh UA without re-parsing flags; peers mesh status/dogfood
 
 ## [0.53.0] — 2026-07-20
