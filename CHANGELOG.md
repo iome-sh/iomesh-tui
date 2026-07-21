@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.58.0] — 2026-07-21
+
+Minor release: mesh wait identity always-emit evidence.
+
 ### Added
 
 - **`mesh wait` identity always-emit** — always emit `endpoint`, `tenant`, `org`, and `workspace` (empty string when unset) in text and JSON so CI scrapers can key on stable identity fields without omitempty gaps; peers mesh status identity continuum; does not invent readiness from identity
