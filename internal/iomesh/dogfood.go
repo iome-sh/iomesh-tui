@@ -204,9 +204,11 @@ type DogfoodReport struct {
 	// mesh disabled before step / unset) so CI scrapers can key on a stable field without
 	// omitempty gaps. Peers identity / memory_endpoint / health_err always-emit continuum.
 	PolicySource string `json:"policy_source"`
-	// PolicyAllow is the evaluate decision when policy ran (mesh/fail-open/unavailable).
-	// Omitted when mode off / step skipped without evaluation.
-	PolicyAllow *bool `json:"policy_allow,omitempty"`
+	// PolicyAllow is the evaluate decision when policy ran: "true" | "false" | "".
+	// Always emitted (empty string when mode off / step skipped without evaluation /
+	// mesh disabled before step) so CI scrapers can key on a stable field without
+	// omitempty gaps. Peers health_err / ready_err / policy_source / memory_endpoint continuum.
+	PolicyAllow string `json:"policy_allow"`
 	// MemoryEndpoint is optional memory sidecar base used for sync memory_retrieve.
 	// Always emitted (empty string when unset — retrieve uses mesh Endpoint).
 	// Stage warm-plane evidence; does not invent memory plane readiness.
@@ -591,7 +593,7 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 	if c.cfg.PolicyMode == PolicyOff || c.cfg.PolicyMode == "" {
 		rep.PolicyMode = "off"
 		rep.PolicySource = "off"
-		// PolicyAllow omitted when mode off (no evaluate). PolicyMS stays 0.
+		// PolicyAllow stays "" when mode off (no evaluate). PolicyMS stays 0.
 		rep.Steps = append(rep.Steps, Step{Name: "policy", Status: StepSkip, Detail: "policy mode off"})
 	} else {
 		policyStep := c.stepTimed("policy", func() (StepStatus, string) {
@@ -606,8 +608,11 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 			if dec.Mode != "" {
 				rep.PolicyMode = string(dec.Mode)
 			}
-			allow := dec.Allow
-			rep.PolicyAllow = &allow
+			if dec.Allow {
+				rep.PolicyAllow = "true"
+			} else {
+				rep.PolicyAllow = "false"
+			}
 			detail := dec.Summary()
 			if dec.Source == "unavailable" {
 				if opts.Strict {
@@ -1173,7 +1178,7 @@ func FormatReportJSON(r DogfoodReport) string {
 		StepsSkip            int        `json:"steps_skip"`             // always emit (SKIP step count)
 		PolicyMode           string     `json:"policy_mode"`            // always emit (off|advisory|enforce)
 		PolicySource         string     `json:"policy_source"`          // always emit (empty when unset; CI policy source)
-		PolicyAllow          *bool      `json:"policy_allow,omitempty"` // set when policy evaluated
+		PolicyAllow          string     `json:"policy_allow"`           // always emit ("true"|"false"|"" when not evaluated)
 		MemoryEndpoint       string     `json:"memory_endpoint"`        // always emit (empty when unset; retrieve uses mesh endpoint)
 		Version              string     `json:"version"`                // always emit (empty when unset)
 		UserAgent            string     `json:"user_agent"`             // always emit (empty when unset)
@@ -1353,11 +1358,10 @@ func FormatReport(r DogfoodReport) string {
 		policyMode = "off"
 	}
 	fmt.Fprintf(&b, "  policy_mode: %s\n", policyMode)
-	// policy_source always-emit (empty when unset); peers identity / memory_endpoint continuum.
+	// policy_source / policy_allow always-emit (empty when unset / not evaluated);
+	// peers health_err / ready_err / memory_endpoint continuum.
 	fmt.Fprintf(&b, "  policy_source: %s\n", r.PolicySource)
-	if r.PolicyAllow != nil {
-		fmt.Fprintf(&b, "  policy_allow: %v\n", *r.PolicyAllow)
-	}
+	fmt.Fprintf(&b, "  policy_allow: %s\n", r.PolicyAllow)
 	// Always emit user_agent (empty when unset) for CI/operator evidence.
 	fmt.Fprintf(&b, "  user_agent: %s\n", r.UserAgent)
 	fmt.Fprintf(&b, "  strict:   %v\n", r.Strict)
