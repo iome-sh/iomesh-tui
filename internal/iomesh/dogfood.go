@@ -32,14 +32,16 @@ type Step struct {
 // DogfoodReport aggregates probe results for stage/CI evidence.
 type DogfoodReport struct {
 	Endpoint string `json:"endpoint"`
-	Tenant   string `json:"tenant,omitempty"`
+	// Tenant is Client cfg tenant (always emitted; empty string when unset).
+	Tenant string `json:"tenant"`
 	// Org is optional PlanGate / entitlements org from Client cfg (X-IOMesh-Org).
-	// Populated when [iomesh] org / IOMESH_ORG is set; omitted from JSON when empty.
-	Org string `json:"org,omitempty"`
+	// Populated when [iomesh] org / IOMESH_ORG is set; always emitted (empty when unset)
+	// so CI scrapers can key on stable identity fields (peers mesh status).
+	Org string `json:"org"`
 	// Workspace is optional workspace scope from Client cfg (X-IOMesh-Workspace).
-	// Populated when [iomesh] workspace / IOMESH_WORKSPACE is set; omitted from JSON when empty.
-	// Distinct from DogfoodOptions.Workspace (context-plane path).
-	Workspace string `json:"workspace,omitempty"`
+	// Populated when [iomesh] workspace / IOMESH_WORKSPACE is set; always emitted
+	// (empty when unset). Distinct from DogfoodOptions.Workspace (context-plane path).
+	Workspace string `json:"workspace"`
 	// DualWrite is agent [memory].dual_write / IOMESH_MEMORY_DUAL_WRITE from Client cfg.
 	// Always emitted in JSON (false when unset) so CI sees dual-write mode without
 	// scraping step detail. Does not gate the memory_ingest probe.
@@ -1092,11 +1094,12 @@ func FormatReportJSON(r DogfoodReport) string {
 		Latency string `json:"latency,omitempty"`
 	}
 	type out struct {
-		Endpoint             string     `json:"endpoint"`
-		Tenant               string     `json:"tenant,omitempty"`
-		Org                  string     `json:"org,omitempty"`
-		Workspace            string     `json:"workspace,omitempty"`
-		DualWrite            bool       `json:"dual_write"` // always emit (CI dual-write mode)
+		Endpoint  string `json:"endpoint"`
+		Tenant    string `json:"tenant"`     // always emit (empty when unset; peers mesh status)
+		Org       string `json:"org"`        // always emit (empty when unset; peers mesh status)
+		Workspace string `json:"workspace"`  // always emit (empty when unset; peers mesh status)
+		DualWrite bool   `json:"dual_write"` // always emit (CI dual-write mode)
+
 		CatalogSource        string     `json:"catalog_source,omitempty"`
 		CatalogCount         int        `json:"catalog_count"`             // always emit (CI catalog evidence)
 		ContextChars         int        `json:"context_chars"`             // always emit (CI context evidence)
@@ -1256,15 +1259,10 @@ func FormatReport(r DogfoodReport) string {
 	fmt.Fprintf(&b, "iomesh mesh dogfood\n")
 	fmt.Fprintf(&b, "  version:  %s\n", r.Version)
 	fmt.Fprintf(&b, "  endpoint: %s\n", r.Endpoint)
-	if r.Tenant != "" {
-		fmt.Fprintf(&b, "  tenant:   %s\n", r.Tenant)
-	}
-	if r.Org != "" {
-		fmt.Fprintf(&b, "  org:      %s\n", r.Org)
-	}
-	if r.Workspace != "" {
-		fmt.Fprintf(&b, "  workspace: %s\n", r.Workspace)
-	}
+	// Identity always-emit (empty when unset) for CI scrapers; peers mesh status.
+	fmt.Fprintf(&b, "  tenant:   %s\n", r.Tenant)
+	fmt.Fprintf(&b, "  org:      %s\n", r.Org)
+	fmt.Fprintf(&b, "  workspace: %s\n", r.Workspace)
 	if r.MemoryEndpoint != "" {
 		fmt.Fprintf(&b, "  memory_endpoint: %s\n", r.MemoryEndpoint)
 	}

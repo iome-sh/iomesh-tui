@@ -222,10 +222,10 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `endpoint` | string | Mesh base URL |
-| `tenant` | string | omitted when empty |
-| `org` | string | Client `[iomesh] org` / `IOMESH_ORG` (PlanGate); omitted when empty |
-| `workspace` | string | Client `[iomesh] workspace` / `IOMESH_WORKSPACE`; omitted when empty. **Not** the context-plane path (`DogfoodOptions.Workspace`) |
+| `endpoint` | string | Mesh base URL (**always emitted**, empty when unset) |
+| `tenant` | string | Client tenant (**always emitted**, empty when unset; peers mesh status identity) |
+| `org` | string | Client `[iomesh] org` / `IOMESH_ORG` (PlanGate); **always emitted**, empty when unset |
+| `workspace` | string | Client `[iomesh] workspace` / `IOMESH_WORKSPACE`; **always emitted**, empty when unset. **Not** the context-plane path (`DogfoodOptions.Workspace`) |
 | `dual_write` | bool | Agent `[memory].dual_write` / `IOMESH_MEMORY_DUAL_WRITE` from Client cfg (**always emitted**, default `false`). Report-only — does **not** gate the `memory_ingest` probe |
 | `catalog_source` | string | Last catalog probe source (`mesh` \| `portal` \| `fail-open` \| `off`); omitted when empty (mesh disabled before catalog step) |
 | `catalog_count` | int | Product count from last `ListCatalog` (**always emitted**, `0` when none/off). Top-level CI evidence — no step-detail scrape |
@@ -286,7 +286,7 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `started` / `finished` | RFC3339 | probe window |
 | `steps` | array | `{name,status,detail?,latency?}` |
 
-`org` / `workspace` are structured multi-tenant evidence for operators and multi-tenant CI: parse top-level JSON without scraping step detail. Detail strings on `memory_ingest` (and related memory steps) may also include `org=` / `workspace=` when set.
+`tenant` / `org` / `workspace` are structured multi-tenant identity evidence for operators and multi-tenant CI: always present in top-level JSON and text (empty string when unset) so scrapers can key on stable fields without omitempty gaps (peers `mesh status` identity). Detail strings on `memory_ingest` (and related memory steps) may also include `org=` / `workspace=` when set.
 
 `dual_write` is structured dual-write **mode** evidence for CI: parse top-level JSON instead of grepping detail strings. The same mode is also always present on the `memory_ingest` PASS detail string as `dual_write=true|false` for human logs. The CLI wires `cfg.Memory.DualWrite` into `iomesh.Config.DualWrite` when running `mesh dogfood`.
 
