@@ -212,6 +212,12 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 	if !strings.Contains(pass, "user_agent: ") {
 		t.Fatalf("pass missing user_agent key:\n%s", pass)
 	}
+	// identity always emitted (empty when unset on evidence).
+	for _, key := range []string{"endpoint: ", "tenant: ", "org: ", "workspace: "} {
+		if !strings.Contains(pass, key) {
+			t.Fatalf("pass missing identity key %q:\n%s", key, pass)
+		}
+	}
 	if strings.Contains(pass, "FAIL") {
 		t.Fatalf("pass should not contain FAIL:\n%s", pass)
 	}
@@ -250,6 +256,11 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 	}
 	if !strings.Contains(fail, "user_agent: ") {
 		t.Fatalf("fail missing user_agent key:\n%s", fail)
+	}
+	for _, key := range []string{"endpoint: ", "tenant: ", "org: ", "workspace: "} {
+		if !strings.Contains(fail, key) {
+			t.Fatalf("fail missing identity key %q:\n%s", key, fail)
+		}
 	}
 
 	// Negative elapsed/timeout/interval/attempts clamp to 0; empty Error gets a default.
@@ -311,6 +322,30 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 	if !strings.Contains(withUA, "user_agent: iomesh-tui/test-wait-ua") {
 		t.Fatalf("text user_agent should match field:\n%s", withUA)
 	}
+
+	// Explicit identity is rendered; CLI wires from config (empty honest when unset).
+	withID := FormatMeshWaitResult(MeshWaitEvidence{
+		OK: true, Attempts: 1,
+		Endpoint: "http://mesh.example", Tenant: "t1", Org: "o1", Workspace: "w1",
+	})
+	for _, want := range []string{
+		"endpoint: http://mesh.example",
+		"tenant: t1",
+		"org: o1",
+		"workspace: w1",
+	} {
+		if !strings.Contains(withID, want) {
+			t.Fatalf("text identity missing %q:\n%s", want, withID)
+		}
+	}
+	// Order: endpoint → tenant → org → workspace
+	epIdx := strings.Index(withID, "endpoint:")
+	tnIdx := strings.Index(withID, "tenant:")
+	orgIdx := strings.Index(withID, "org:")
+	wsIdx := strings.Index(withID, "workspace:")
+	if !(epIdx < tnIdx && tnIdx < orgIdx && orgIdx < wsIdx) {
+		t.Fatalf("identity order want endpoint < tenant < org < workspace:\n%s", withID)
+	}
 }
 
 func TestFormatMeshWaitResultJSON(t *testing.T) {
@@ -363,6 +398,16 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 	if ua != "" {
 		t.Fatalf("unset UserAgent should emit empty string, got %q\n%s", ua, js)
 	}
+	// identity always present; empty string when unset on evidence.
+	for _, key := range []string{"endpoint", "tenant", "org", "workspace"} {
+		v, has := okObj[key]
+		if !has {
+			t.Fatalf("success JSON missing %s:\n%s", key, js)
+		}
+		if v != "" {
+			t.Fatalf("unset %s should emit empty string, got %q\n%s", key, v, js)
+		}
+	}
 	if _, has := okObj["error"]; has {
 		t.Fatalf("success JSON should omit error:\n%s", js)
 	}
@@ -410,13 +455,13 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 		t.Fatalf("fail JSON missing user_agent:\n%s", jsFail)
 	}
 
-	// Always-emit shape: ok + elapsed_ms + require_health + timeout_ms + interval_ms + attempts + result + exit_code + version + user_agent on both paths.
+	// Always-emit shape: ok + elapsed_ms + require_health + timeout_ms + interval_ms + attempts + result + exit_code + version + user_agent + identity on both paths.
 	for _, s := range []string{js, jsFail} {
 		var m map[string]any
 		if err := json.Unmarshal([]byte(s), &m); err != nil {
 			t.Fatalf("unmarshal: %v\n%s", err, s)
 		}
-		for _, key := range []string{"ok", "elapsed_ms", "require_health", "timeout_ms", "interval_ms", "attempts", "result", "exit_code", "version", "user_agent"} {
+		for _, key := range []string{"ok", "elapsed_ms", "require_health", "timeout_ms", "interval_ms", "attempts", "result", "exit_code", "version", "user_agent", "endpoint", "tenant", "org", "workspace"} {
 			if _, ok := m[key]; !ok {
 				t.Fatalf("missing %s:\n%s", key, s)
 			}
@@ -490,6 +535,20 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 	}
 	if uaObj["user_agent"] != "iomesh-tui/json-wait-ua" {
 		t.Fatalf("user_agent: %v want iomesh-tui/json-wait-ua\n%s", uaObj["user_agent"], jsUA)
+	}
+
+	// Explicit identity field values always emitted (CLI sets from config).
+	jsID := FormatMeshWaitResultJSON(MeshWaitEvidence{
+		OK: true, Attempts: 1,
+		Endpoint: "http://mesh.example", Tenant: "t1", Org: "o1", Workspace: "w1",
+	})
+	var idObj map[string]any
+	if err := json.Unmarshal([]byte(jsID), &idObj); err != nil {
+		t.Fatalf("json id: %v\n%s", err, jsID)
+	}
+	if idObj["endpoint"] != "http://mesh.example" || idObj["tenant"] != "t1" || idObj["org"] != "o1" || idObj["workspace"] != "w1" {
+		t.Fatalf("identity: endpoint=%v tenant=%v org=%v workspace=%v\n%s",
+			idObj["endpoint"], idObj["tenant"], idObj["org"], idObj["workspace"], jsID)
 	}
 }
 
@@ -611,5 +670,52 @@ func TestFormatMeshWaitResult_AlwaysEmitsResult(t *testing.T) {
 	}
 	if errObj["result"] != "err" {
 		t.Fatalf("err json result: %v want err\n%s", errObj["result"], errJS)
+	}
+}
+
+func TestFormatMeshWaitResult_AlwaysEmitsIdentity(t *testing.T) {
+	// Text + JSON always emit endpoint/tenant/org/workspace (empty when unset; no invent readiness).
+	emptyText := FormatMeshWaitResult(MeshWaitEvidence{OK: true, Attempts: 0})
+	for _, want := range []string{"endpoint: ", "tenant: ", "org: ", "workspace: "} {
+		if !strings.Contains(emptyText, want) {
+			t.Fatalf("empty text missing %q:\n%s", want, emptyText)
+		}
+	}
+	// Empty identity lines present (value after colon may be blank).
+	for _, line := range []string{"endpoint: \n", "tenant: \n", "org: \n", "workspace: \n"} {
+		if !strings.Contains(emptyText, line) {
+			t.Fatalf("empty identity line want %q:\n%s", line, emptyText)
+		}
+	}
+
+	emptyJS := FormatMeshWaitResultJSON(MeshWaitEvidence{OK: false, Error: "x"})
+	var m map[string]any
+	if err := json.Unmarshal([]byte(emptyJS), &m); err != nil {
+		t.Fatalf("json: %v\n%s", err, emptyJS)
+	}
+	for _, key := range []string{"endpoint", "tenant", "org", "workspace"} {
+		v, has := m[key]
+		if !has {
+			t.Fatalf("always-emit %s missing:\n%s", key, emptyJS)
+		}
+		if v != "" {
+			t.Fatalf("unset %s should be empty string, got %q\n%s", key, v, emptyJS)
+		}
+	}
+
+	// Populated identity passes through; does not invent readiness success.
+	pop := FormatMeshWaitResultJSON(MeshWaitEvidence{
+		OK: false, Error: "wait ready: timeout", Attempts: 2,
+		Endpoint: "http://127.0.0.1:1", Tenant: "dept.x", Org: "org_a", Workspace: "ws_y",
+	})
+	var p map[string]any
+	if err := json.Unmarshal([]byte(pop), &p); err != nil {
+		t.Fatalf("json pop: %v\n%s", err, pop)
+	}
+	if p["ok"] != false || p["result"] != "err" {
+		t.Fatalf("identity must not invent success: ok=%v result=%v\n%s", p["ok"], p["result"], pop)
+	}
+	if p["endpoint"] != "http://127.0.0.1:1" || p["tenant"] != "dept.x" || p["org"] != "org_a" || p["workspace"] != "ws_y" {
+		t.Fatalf("populated identity: %v\n%s", p, pop)
 	}
 }

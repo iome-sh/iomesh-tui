@@ -89,6 +89,9 @@ func wrapWaitReadyErr(lastErr, ctxErr error) error {
 // ExitCode is the process exit code for this wait (0 when OK, 1 when not OK).
 // Version is the package product/binary version via ProductVersion() (empty when unset).
 // UserAgent is the package mesh HTTP User-Agent via UserAgent() (default "iomesh-tui").
+// Identity fields (Endpoint, Tenant, Org, Workspace) are always emitted as strings
+// (empty when unset) so CI scrapers can key on stable identity without omitempty gaps;
+// peer to mesh status identity continuum. Does not invent readiness from identity.
 type MeshWaitEvidence struct {
 	OK            bool
 	ElapsedMS     int
@@ -100,6 +103,10 @@ type MeshWaitEvidence struct {
 	ExitCode      int
 	Version       string // always emit; empty when ProductVersion unset
 	UserAgent     string // always emit; package mesh HTTP UA (default "iomesh-tui")
+	Endpoint      string // always emit; empty when unset
+	Tenant        string // always emit; empty when unset
+	Org           string // always emit; empty when unset
+	Workspace     string // always emit; empty when unset
 	Error         string // empty on success
 }
 
@@ -150,23 +157,29 @@ func (e MeshWaitEvidence) normalize() MeshWaitEvidence {
 }
 
 // FormatMeshWaitResult renders operator preflight wait outcome as text.
-// Always includes elapsed_ms, require_health, timeout_ms, interval_ms, attempts, result, exit_code, version, and user_agent for CI evidence.
+// Always includes elapsed_ms, require_health, timeout_ms, interval_ms, attempts, result,
+// exit_code, version, user_agent, and identity fields endpoint/tenant/org/workspace
+// (empty string when unset) for CI evidence.
 func FormatMeshWaitResult(e MeshWaitEvidence) string {
 	e = e.normalize()
 	if e.OK {
 		return fmt.Sprintf(
-			"PASS mesh wait: ready\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\nattempts: %d\nresult: %s\nexit_code: %d\nversion: %s\nuser_agent: %s\n",
+			"PASS mesh wait: ready\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\nattempts: %d\nresult: %s\nexit_code: %d\nversion: %s\nuser_agent: %s\nendpoint: %s\ntenant: %s\norg: %s\nworkspace: %s\n",
 			e.ElapsedMS, e.RequireHealth, e.TimeoutMS, e.IntervalMS, e.Attempts, e.Result, e.ExitCode, e.Version, e.UserAgent,
+			e.Endpoint, e.Tenant, e.Org, e.Workspace,
 		)
 	}
 	return fmt.Sprintf(
-		"FAIL mesh wait: %s\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\nattempts: %d\nresult: %s\nexit_code: %d\nversion: %s\nuser_agent: %s\n",
+		"FAIL mesh wait: %s\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\nattempts: %d\nresult: %s\nexit_code: %d\nversion: %s\nuser_agent: %s\nendpoint: %s\ntenant: %s\norg: %s\nworkspace: %s\n",
 		e.Error, e.ElapsedMS, e.RequireHealth, e.TimeoutMS, e.IntervalMS, e.Attempts, e.Result, e.ExitCode, e.Version, e.UserAgent,
+		e.Endpoint, e.Tenant, e.Org, e.Workspace,
 	)
 }
 
 // FormatMeshWaitResultJSON renders wait outcome as compact JSON for scrapers.
-// Always emits ok, elapsed_ms, require_health, timeout_ms, interval_ms, attempts, result, exit_code, version, user_agent; error only when ok is false.
+// Always emits ok, elapsed_ms, require_health, timeout_ms, interval_ms, attempts, result,
+// exit_code, version, user_agent, endpoint, tenant, org, workspace (empty string when
+// unset); error only when ok is false.
 func FormatMeshWaitResultJSON(e MeshWaitEvidence) string {
 	e = e.normalize()
 	type out struct {
@@ -180,6 +193,10 @@ func FormatMeshWaitResultJSON(e MeshWaitEvidence) string {
 		ExitCode      int    `json:"exit_code"`
 		Version       string `json:"version"`
 		UserAgent     string `json:"user_agent"`
+		Endpoint      string `json:"endpoint"`
+		Tenant        string `json:"tenant"`
+		Org           string `json:"org"`
+		Workspace     string `json:"workspace"`
 		Error         string `json:"error,omitempty"`
 	}
 	o := out{
@@ -193,13 +210,17 @@ func FormatMeshWaitResultJSON(e MeshWaitEvidence) string {
 		ExitCode:      e.ExitCode,
 		Version:       e.Version,
 		UserAgent:     e.UserAgent,
+		Endpoint:      e.Endpoint,
+		Tenant:        e.Tenant,
+		Org:           e.Org,
+		Workspace:     e.Workspace,
 	}
 	if !e.OK {
 		o.Error = e.Error
 	}
 	b, err := json.Marshal(o)
 	if err != nil {
-		return `{"ok":false,"elapsed_ms":0,"require_health":false,"timeout_ms":0,"interval_ms":0,"attempts":0,"result":"err","exit_code":1,"version":"","user_agent":"","error":"mesh wait json marshal failed"}` + "\n"
+		return `{"ok":false,"elapsed_ms":0,"require_health":false,"timeout_ms":0,"interval_ms":0,"attempts":0,"result":"err","exit_code":1,"version":"","user_agent":"","endpoint":"","tenant":"","org":"","workspace":"","error":"mesh wait json marshal failed"}` + "\n"
 	}
 	return string(b) + "\n"
 }
