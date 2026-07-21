@@ -82,7 +82,7 @@ func TestMeshStatusExitCode(t *testing.T) {
 
 func TestFormatMeshStatus_JSONAlwaysEmitsLatencies(t *testing.T) {
 	// Disabled / skipped: health_ms, ready_ms, duration_ms must be present as 0;
-	// result always present as skipped.
+	// result always present as skipped; strict always present (false when unset).
 	s := MeshStatusSnapshot{
 		Enabled:    false,
 		Version:    "test",
@@ -95,6 +95,7 @@ func TestFormatMeshStatus_JSONAlwaysEmitsLatencies(t *testing.T) {
 		ReadyMS:    0,
 		DurationMS: 0,
 		// Result intentionally empty — FormatMeshStatusJSON fills from health/ready.
+		// Strict zero-value false — must still appear in JSON.
 	}
 	js := FormatMeshStatusJSON(s)
 	var parsed map[string]any
@@ -119,6 +120,9 @@ func TestFormatMeshStatus_JSONAlwaysEmitsLatencies(t *testing.T) {
 	if parsed["result"] != "skipped" {
 		t.Fatalf("result: %v want skipped\n%s", parsed["result"], js)
 	}
+	if v, ok := parsed["strict"].(bool); !ok || v {
+		t.Fatalf("strict: %v want false always-emitted\n%s", parsed["strict"], js)
+	}
 }
 
 func TestFormatMeshStatus_JSONProbeLatencies(t *testing.T) {
@@ -136,6 +140,7 @@ func TestFormatMeshStatus_JSONProbeLatencies(t *testing.T) {
 		ReadyMS:    34,
 		DurationMS: 50,
 		Result:     "err",
+		Strict:     true,
 	}
 	js := FormatMeshStatusJSON(s)
 	var parsed map[string]any
@@ -169,6 +174,38 @@ func TestFormatMeshStatus_JSONProbeLatencies(t *testing.T) {
 	}
 	if parsed["result"] != "err" {
 		t.Fatalf("result: %v want err\n%s", parsed["result"], js)
+	}
+	if v, ok := parsed["strict"].(bool); !ok || !v {
+		t.Fatalf("strict: %v want true\n%s", parsed["strict"], js)
+	}
+}
+
+func TestFormatMeshStatus_JSONAlwaysEmitsStrict(t *testing.T) {
+	// strict is always present in JSON: false when zero-value, true when set.
+	for _, want := range []bool{false, true} {
+		s := MeshStatusSnapshot{
+			Enabled:    true,
+			Version:    "t",
+			PolicyMode: "off",
+			UserAgent:  "ua",
+			StatusLine: "mesh: enabled",
+			Health:     "ok",
+			Ready:      "ok",
+			Result:     "ok",
+			Strict:     want,
+		}
+		js := FormatMeshStatusJSON(s)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json strict=%v: %v\n%s", want, err, js)
+		}
+		got, ok := parsed["strict"].(bool)
+		if !ok {
+			t.Fatalf("strict missing or non-bool for want=%v: %v\n%s", want, parsed["strict"], js)
+		}
+		if got != want {
+			t.Fatalf("strict: %v want %v\n%s", got, want, js)
+		}
 	}
 }
 
@@ -255,6 +292,7 @@ func TestFormatMeshStatus_Text(t *testing.T) {
 		"ready_ms:    9",
 		"duration_ms: 16",
 		"result:      err",
+		"strict:      false",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("text missing %q:\n%s", want, out)
@@ -290,6 +328,32 @@ func TestFormatMeshStatus_TextDisabledZeros(t *testing.T) {
 	}
 	if !strings.Contains(out, "result:      skipped") {
 		t.Fatalf("missing result skipped:\n%s", out)
+	}
+	if !strings.Contains(out, "strict:      false") {
+		t.Fatalf("missing strict false:\n%s", out)
+	}
+}
+
+func TestFormatMeshStatus_TextAlwaysEmitsStrict(t *testing.T) {
+	// strict always appears in text for both false and true.
+	falseSnap := MeshStatusSnapshot{
+		Enabled: true, Version: "v", PolicyMode: "off", UserAgent: "ua",
+		StatusLine: "mesh: enabled", Health: "ok", Ready: "ok", Strict: false,
+	}
+	out := FormatMeshStatus(falseSnap)
+	if !strings.Contains(out, "strict:      false") {
+		t.Fatalf("want strict false:\n%s", out)
+	}
+	trueSnap := MeshStatusSnapshot{
+		Enabled: true, Version: "v", PolicyMode: "off", UserAgent: "ua",
+		StatusLine: "mesh: enabled", Health: "err", Ready: "err", Result: "err", Strict: true,
+	}
+	out = FormatMeshStatus(trueSnap)
+	if !strings.Contains(out, "strict:      true") {
+		t.Fatalf("want strict true:\n%s", out)
+	}
+	if !strings.Contains(out, "result:      err") {
+		t.Fatalf("want result err with strict true:\n%s", out)
 	}
 }
 
