@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.65.0] — 2026-07-22
+
+Minor release: dogfood step detail and latency always-emit.
+
 ### Added
 
 - **Dogfood step detail/latency always-emit** — always emit per-step `detail` (empty string when unset) and `latency` (duration string; empty string when zero) in dogfood JSON reports so CI scrapers can key on stable step fields without omitempty gaps; text report already prints steps with empty detail; peers identity / probe-err / policy_allow always-emit continuum
