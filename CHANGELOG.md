@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **FormatKVEntry `created_at` always-emit** — always emit `created_at` (RFC3339 UTC when set; blank when zero/unset) so operator/CI scrapers can key a stable field without omitempty gaps; peers mesh/stream format always-emit continuum
+- **FormatKVBucketInfo optional knobs always-emit** — always emit `history`, `max_bytes`, `ttl_seconds` (`0` / blank when unset; `*int64` nil prints blank after the colon rather than omitting the line) for operator/CI scrapers
+
 ## [0.67.0] — 2026-07-22
 
 Minor release: dogfood step latency_ms always-emit.
