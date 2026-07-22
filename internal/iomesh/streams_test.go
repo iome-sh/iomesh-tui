@@ -121,6 +121,77 @@ func TestGetStream_OK(t *testing.T) {
 	}
 }
 
+func TestFormatStreamDetail_Fields(t *testing.T) {
+	max := int64(1000)
+	age := int64(3600)
+	detail := FormatStreamDetail(StreamInfo{
+		Name:        "EVENTS",
+		Description: "ops events",
+		Retention:   "limits",
+		Partitions:  1,
+		MaxMsgs:     &max,
+		MaxAgeSec:   &age,
+		Messages:    10,
+		FirstSeq:    1,
+		LastSeq:     10,
+		CreatedAt:   time.Date(2026, 7, 1, 12, 0, 0, 0, time.UTC),
+		Subjects:    []string{"dept.events.>", "dept.ops.>"},
+	})
+	for _, want := range []string{
+		"iomesh stream",
+		"name:        EVENTS",
+		"description: ops events",
+		"retention:   limits",
+		"partitions:  1",
+		"max_msgs:    1000",
+		"max_age_sec: 3600",
+		"messages:    10",
+		"first_seq:   1",
+		"last_seq:    10",
+		"created_at:  2026-07-01T12:00:00Z",
+		"subjects:",
+		"dept.events.>",
+		"dept.ops.>",
+	} {
+		if !strings.Contains(detail, want) {
+			t.Fatalf("missing %q in:\n%s", want, detail)
+		}
+	}
+}
+
+// Empty / zero StreamInfo still always-emits every scraper key (honest blanks).
+func TestFormatStreamDetail_EmptyAlwaysEmit(t *testing.T) {
+	detail := FormatStreamDetail(StreamInfo{
+		Name: "SPARSE",
+	})
+	for _, want := range []string{
+		"iomesh stream",
+		"name:        SPARSE",
+		"description: \n",
+		"retention:   \n",
+		"partitions:  0\n",
+		"max_msgs:    \n",
+		"max_age_sec: \n",
+		"messages:    0\n",
+		"first_seq:   0\n",
+		"last_seq:    0\n",
+		"created_at:  \n",
+		"subjects:\n",
+		"  (none)\n",
+	} {
+		if !strings.Contains(detail, want) {
+			t.Fatalf("missing %q in:\n%s", want, detail)
+		}
+	}
+	// nil *int64 must not invent 0; blank value only
+	if strings.Contains(detail, "max_msgs:    0") {
+		t.Fatalf("max_msgs should be blank when nil, got:\n%s", detail)
+	}
+	if strings.Contains(detail, "max_age_sec: 0") {
+		t.Fatalf("max_age_sec should be blank when nil, got:\n%s", detail)
+	}
+}
+
 func TestGetStream_404(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)

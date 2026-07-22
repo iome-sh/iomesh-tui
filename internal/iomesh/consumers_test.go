@@ -148,13 +148,21 @@ func TestCreateConsumer_PathEscape(t *testing.T) {
 	}
 }
 
-func TestFormatConsumerInfo_OmitsEmptyFilter(t *testing.T) {
+func TestFormatConsumerInfo_EmptyFilterAlwaysEmit(t *testing.T) {
 	out := FormatConsumerInfo(ConsumerInfo{Stream: "S", Name: "c", AckFloor: 1, PendingCount: 0})
-	if strings.Contains(out, "filter_subject") {
-		t.Fatalf("empty filter should be omitted: %s", out)
+	// Always emit filter_subject (blank when unset) for scrapers.
+	if !strings.Contains(out, "filter_subject:  \n") {
+		t.Fatalf("want blank filter_subject always emitted, got:\n%q", out)
 	}
 	if !strings.Contains(out, "stream:          S") || !strings.Contains(out, "name:            c") {
 		t.Fatal(out)
+	}
+	// Set filter still prints value.
+	out2 := FormatConsumerInfo(ConsumerInfo{
+		Stream: "S", Name: "c", AckFloor: 1, PendingCount: 0, FilterSubject: "dept.events.>",
+	})
+	if !strings.Contains(out2, "filter_subject:  dept.events.>\n") {
+		t.Fatalf("want set filter_subject, got:\n%s", out2)
 	}
 }
 
