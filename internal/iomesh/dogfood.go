@@ -29,6 +29,9 @@ type Step struct {
 	// Latency stays Duration in the in-memory report; FormatReportJSON maps to a
 	// string latency field that is always emitted ("" when zero).
 	Latency time.Duration `json:"latency,omitempty"`
+	// LatencyMS is step wall time in milliseconds (always emitted; 0 when zero / not timed).
+	// Distinct from Latency (Duration for in-process use); set whenever Latency is set.
+	LatencyMS int `json:"latency_ms"`
 }
 
 // DogfoodReport aggregates probe results for stage/CI evidence.
@@ -1031,7 +1034,12 @@ func durationMS(started, finished time.Time) int {
 func (c *Client) stepTimed(name string, fn func() (StepStatus, string)) Step {
 	start := time.Now()
 	st, detail := fn()
-	return Step{Name: name, Status: st, Detail: detail, Latency: time.Since(start)}
+	lat := time.Since(start)
+	ms := int(lat.Milliseconds())
+	if ms < 0 {
+		ms = 0
+	}
+	return Step{Name: name, Status: st, Detail: detail, Latency: lat, LatencyMS: ms}
 }
 
 // Ready checks GET /ready (or /readyz). Error if non-2xx.
@@ -1119,10 +1127,11 @@ func (c *Client) EmitErr(ctx context.Context, ev DeptEvent) error {
 // FormatReportJSON returns the dogfood report as indented JSON (stage CI evidence).
 func FormatReportJSON(r DogfoodReport) string {
 	type stepJSON struct {
-		Name    string `json:"name"`
-		Status  string `json:"status"`
-		Detail  string `json:"detail"`  // always emit (empty when unset; CI scrapers)
-		Latency string `json:"latency"` // always emit ("" when zero; honest no-work)
+		Name      string `json:"name"`
+		Status    string `json:"status"`
+		Detail    string `json:"detail"`     // always emit (empty when unset; CI scrapers)
+		Latency   string `json:"latency"`    // always emit ("" when zero; honest no-work)
+		LatencyMS int    `json:"latency_ms"` // always emit (0 when zero / not timed; CI scrapers)
 	}
 	type out struct {
 		Endpoint  string `json:"endpoint"`
@@ -1275,13 +1284,21 @@ func FormatReportJSON(r DogfoodReport) string {
 		o.Result = "SKIP"
 	}
 	for _, s := range r.Steps {
-		// Always emit detail + latency keys (empty string when unset / zero) so CI
-		// scrapers can key on stable step fields without omitempty gaps.
-		sj := stepJSON{Name: s.Name, Status: string(s.Status), Detail: s.Detail}
+		// Always emit detail + latency + latency_ms keys (empty/0 when unset / zero)
+		// so CI scrapers can key on stable step fields without omitempty gaps.
+		sj := stepJSON{Name: s.Name, Status: string(s.Status), Detail: s.Detail, LatencyMS: s.LatencyMS}
 		if s.Latency > 0 {
 			sj.Latency = s.Latency.Round(time.Millisecond).String()
 		}
 		// else Latency stays "" — honest zero, no invented work
+		// Derive latency_ms from Latency when LatencyMS unset (hand-built Steps / tests).
+		if sj.LatencyMS == 0 && s.Latency > 0 {
+			ms := int(s.Latency.Milliseconds())
+			if ms < 0 {
+				ms = 0
+			}
+			sj.LatencyMS = ms
+		}
 		o.Steps = append(o.Steps, sj)
 	}
 	b, err := json.MarshalIndent(o, "", "  ")

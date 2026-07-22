@@ -2198,15 +2198,16 @@ func TestFormatReport_AlwaysEmitsMemoryEndpoint(t *testing.T) {
 }
 
 func TestFormatReportJSON_AlwaysEmitsStepDetailLatency(t *testing.T) {
-	// Per-step detail + latency always present in JSON (empty string when unset / zero)
-	// so CI scrapers can key on stable step fields without omitempty gaps.
-	// Text report already prints steps with empty detail (no change).
+	// Per-step detail + latency + latency_ms always present in JSON
+	// (empty string / 0 when unset / zero) so CI scrapers can key on stable
+	// step fields without omitempty gaps. Text report already prints steps
+	// with empty detail (no change); duration still shown in parens when timed.
 	t.Run("empty_detail_zero_latency", func(t *testing.T) {
 		rep := DogfoodReport{
 			Summary: "PASS (pass=1)",
 			OK:      true,
 			Steps: []Step{
-				{Name: "enabled", Status: StepPass}, // Detail="", Latency=0
+				{Name: "enabled", Status: StepPass}, // Detail="", Latency=0, LatencyMS=0
 			},
 		}
 		js := FormatReportJSON(rep)
@@ -2235,6 +2236,18 @@ func TestFormatReportJSON_AlwaysEmitsStepDetailLatency(t *testing.T) {
 				t.Fatalf("step %s: %q want empty string when unset/zero\n%s", key, str, js)
 			}
 		}
+		lms, ok := step["latency_ms"]
+		if !ok {
+			t.Fatalf("always-emit step latency_ms key missing:\n%s", js)
+		}
+		// JSON numbers unmarshal as float64 into map[string]any
+		n, ok := lms.(float64)
+		if !ok {
+			t.Fatalf("step latency_ms: %v (%T) want number\n%s", lms, lms, js)
+		}
+		if n != 0 {
+			t.Fatalf("step latency_ms: %v want 0 when zero/not timed\n%s", n, js)
+		}
 		// Text still prints step with empty detail OK.
 		text := FormatReport(rep)
 		if !strings.Contains(text, "enabled") || !strings.Contains(text, "PASS") {
@@ -2247,10 +2260,11 @@ func TestFormatReportJSON_AlwaysEmitsStepDetailLatency(t *testing.T) {
 			OK:      true,
 			Steps: []Step{
 				{
-					Name:    "health",
-					Status:  StepPass,
-					Detail:  "ok",
-					Latency: 12 * time.Millisecond,
+					Name:      "health",
+					Status:    StepPass,
+					Detail:    "ok",
+					Latency:   12 * time.Millisecond,
+					LatencyMS: 12,
 				},
 			},
 		}
@@ -2272,9 +2286,48 @@ func TestFormatReportJSON_AlwaysEmitsStepDetailLatency(t *testing.T) {
 		if lat != "12ms" {
 			t.Fatalf("latency: %q want 12ms\n%s", lat, js)
 		}
+		lms, ok := step["latency_ms"].(float64)
+		if !ok {
+			t.Fatalf("latency_ms: %v (%T) want number\n%s", step["latency_ms"], step["latency_ms"], js)
+		}
+		if lms != 12 {
+			t.Fatalf("latency_ms: %v want 12\n%s", lms, js)
+		}
+	})
+	t.Run("populated_derive_ms_from_latency", func(t *testing.T) {
+		// Hand-built Step with only Latency set still emits latency_ms from Duration.
+		rep := DogfoodReport{
+			Summary: "PASS (pass=1)",
+			OK:      true,
+			Steps: []Step{
+				{
+					Name:    "health",
+					Status:  StepPass,
+					Detail:  "ok",
+					Latency: 25 * time.Millisecond,
+					// LatencyMS left 0 — FormatReportJSON derives from Latency
+				},
+			},
+		}
+		js := FormatReportJSON(rep)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		step := parsed["steps"].([]any)[0].(map[string]any)
+		lms, ok := step["latency_ms"].(float64)
+		if !ok {
+			t.Fatalf("latency_ms: %v (%T) want number\n%s", step["latency_ms"], step["latency_ms"], js)
+		}
+		if lms != 25 {
+			t.Fatalf("latency_ms: %v want 25 (derived from Latency)\n%s", lms, js)
+		}
+		if lat, _ := step["latency"].(string); lat != "25ms" {
+			t.Fatalf("latency: %q want 25ms\n%s", lat, js)
+		}
 	})
 	t.Run("mesh_disabled_steps", func(t *testing.T) {
-		// Mesh-disabled early return still emits steps with detail+latency keys.
+		// Mesh-disabled early return still emits steps with detail+latency+latency_ms keys.
 		c := New(Config{Enabled: false}, nil)
 		rep := c.Dogfood(context.Background(), DogfoodOptions{})
 		if len(rep.Steps) == 0 {
@@ -2294,7 +2347,7 @@ func TestFormatReportJSON_AlwaysEmitsStepDetailLatency(t *testing.T) {
 			if !ok {
 				t.Fatalf("step[%d] type: %T", i, raw)
 			}
-			for _, key := range []string{"name", "status", "detail", "latency"} {
+			for _, key := range []string{"name", "status", "detail", "latency", "latency_ms"} {
 				if _, ok := step[key]; !ok {
 					t.Fatalf("step[%d] missing always-emit key %s:\n%s", i, key, js)
 				}
@@ -2304,6 +2357,92 @@ func TestFormatReportJSON_AlwaysEmitsStepDetailLatency(t *testing.T) {
 			}
 			if _, ok := step["latency"].(string); !ok {
 				t.Fatalf("step[%d] latency not string: %v\n%s", i, step["latency"], js)
+			}
+			if n, ok := step["latency_ms"].(float64); !ok {
+				t.Fatalf("step[%d] latency_ms not number: %v\n%s", i, step["latency_ms"], js)
+			} else if n < 0 {
+				t.Fatalf("step[%d] latency_ms: %v want >= 0\n%s", i, n, js)
+			}
+		}
+	})
+	t.Run("step_timed_sets_latency_ms", func(t *testing.T) {
+		// Live probe path: stepTimed populates both Latency and LatencyMS; JSON emits both.
+		srv := mockMeshServer(t, struct {
+			failHealth bool
+			noReady    bool
+			emptyCtx   bool
+			failEmit   bool
+			failMemory bool
+			noMemory   bool
+			failRecall bool
+			noRecall   bool
+		}{})
+		t.Cleanup(srv.Close)
+		c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+		rep := c.Dogfood(context.Background(), DogfoodOptions{
+			SkipContext: true,
+			SkipEmit:    true,
+			SkipMemory:  true,
+			SkipStreams: true,
+		})
+		js := FormatReportJSON(rep)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		steps, ok := parsed["steps"].([]any)
+		if !ok || len(steps) == 0 {
+			t.Fatalf("steps missing/empty:\n%s", js)
+		}
+		var sawTimed bool
+		for i, raw := range steps {
+			step := raw.(map[string]any)
+			if _, ok := step["latency_ms"]; !ok {
+				t.Fatalf("step[%d] missing latency_ms:\n%s", i, js)
+			}
+			n, ok := step["latency_ms"].(float64)
+			if !ok {
+				t.Fatalf("step[%d] latency_ms not number: %v\n%s", i, step["latency_ms"], js)
+			}
+			if n < 0 {
+				t.Fatalf("step[%d] latency_ms: %v want >= 0\n%s", i, n, js)
+			}
+			// Timed steps (health/ready via stepTimed) should have Latency set on report.
+			name, _ := step["name"].(string)
+			if name == "health" || name == "ready" {
+				if n <= 0 {
+					// Allow 0 on extremely fast local mock; still require key + number type.
+					// Prefer >0 when wall clock records any ms.
+				}
+				// In-memory Step should have LatencyMS set when Latency is set.
+				for _, s := range rep.Steps {
+					if s.Name == name && s.Latency > 0 {
+						if s.LatencyMS < 0 {
+							t.Fatalf("in-memory step %s LatencyMS %d want >= 0", name, s.LatencyMS)
+						}
+						// LatencyMS should match Milliseconds() of Latency (clamped).
+						want := int(s.Latency.Milliseconds())
+						if want < 0 {
+							want = 0
+						}
+						if s.LatencyMS != want {
+							t.Fatalf("step %s LatencyMS=%d want %d (from Latency)", name, s.LatencyMS, want)
+						}
+						sawTimed = true
+					}
+				}
+			}
+		}
+		if !sawTimed {
+			// health/ready always run when mesh enabled; at least one should be timed.
+			for _, s := range rep.Steps {
+				if (s.Name == "health" || s.Name == "ready") && s.Latency > 0 {
+					sawTimed = true
+					break
+				}
+			}
+			if !sawTimed {
+				t.Fatalf("expected health/ready steps with Latency set from stepTimed; steps=%+v", rep.Steps)
 			}
 		}
 	})
