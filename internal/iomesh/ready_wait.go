@@ -92,6 +92,7 @@ func wrapWaitReadyErr(lastErr, ctxErr error) error {
 // Identity fields (Endpoint, Tenant, Org, Workspace) are always emitted as strings
 // (empty when unset) so CI scrapers can key on stable identity without omitempty gaps;
 // peer to mesh status identity continuum. Does not invent readiness from identity.
+// Error is always emitted (empty string when OK) so CI scrapers can key without omitempty gaps.
 type MeshWaitEvidence struct {
 	OK            bool
 	ElapsedMS     int
@@ -107,7 +108,7 @@ type MeshWaitEvidence struct {
 	Tenant        string // always emit; empty when unset
 	Org           string // always emit; empty when unset
 	Workspace     string // always emit; empty when unset
-	Error         string // empty on success
+	Error         string // always emit; empty string when OK (or unset on success)
 }
 
 // MeshWaitResult returns the always-emitted mesh wait result token:
@@ -129,7 +130,8 @@ func MeshWaitExitCode(e MeshWaitEvidence) int {
 }
 
 // normalize clamps negative elapsed/timeout/interval/attempts to 0, defaults empty
-// Error on failure, and always re-derives Result + ExitCode from OK so scrapers trust the pair.
+// Error on failure (and clears Error when OK so scrapers trust empty error with ok),
+// and always re-derives Result + ExitCode from OK so scrapers trust the pair.
 func (e MeshWaitEvidence) normalize() MeshWaitEvidence {
 	if e.ElapsedMS < 0 {
 		e.ElapsedMS = 0
@@ -143,7 +145,9 @@ func (e MeshWaitEvidence) normalize() MeshWaitEvidence {
 	if e.Attempts < 0 {
 		e.Attempts = 0
 	}
-	if !e.OK && e.Error == "" {
+	if e.OK {
+		e.Error = ""
+	} else if e.Error == "" {
 		e.Error = "unknown error"
 	}
 	// Always re-derive from OK so scrapers trust result + exit_code with the ok flag.
@@ -158,28 +162,28 @@ func (e MeshWaitEvidence) normalize() MeshWaitEvidence {
 
 // FormatMeshWaitResult renders operator preflight wait outcome as text.
 // Always includes elapsed_ms, require_health, timeout_ms, interval_ms, attempts, result,
-// exit_code, version, user_agent, and identity fields endpoint/tenant/org/workspace
-// (empty string when unset) for CI evidence.
+// exit_code, version, user_agent, identity fields endpoint/tenant/org/workspace, and error
+// (empty string when OK / unset) for CI evidence.
 func FormatMeshWaitResult(e MeshWaitEvidence) string {
 	e = e.normalize()
 	if e.OK {
 		return fmt.Sprintf(
-			"PASS mesh wait: ready\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\nattempts: %d\nresult: %s\nexit_code: %d\nversion: %s\nuser_agent: %s\nendpoint: %s\ntenant: %s\norg: %s\nworkspace: %s\n",
+			"PASS mesh wait: ready\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\nattempts: %d\nresult: %s\nexit_code: %d\nversion: %s\nuser_agent: %s\nendpoint: %s\ntenant: %s\norg: %s\nworkspace: %s\nerror: %s\n",
 			e.ElapsedMS, e.RequireHealth, e.TimeoutMS, e.IntervalMS, e.Attempts, e.Result, e.ExitCode, e.Version, e.UserAgent,
-			e.Endpoint, e.Tenant, e.Org, e.Workspace,
+			e.Endpoint, e.Tenant, e.Org, e.Workspace, e.Error,
 		)
 	}
 	return fmt.Sprintf(
-		"FAIL mesh wait: %s\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\nattempts: %d\nresult: %s\nexit_code: %d\nversion: %s\nuser_agent: %s\nendpoint: %s\ntenant: %s\norg: %s\nworkspace: %s\n",
+		"FAIL mesh wait: %s\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\nattempts: %d\nresult: %s\nexit_code: %d\nversion: %s\nuser_agent: %s\nendpoint: %s\ntenant: %s\norg: %s\nworkspace: %s\nerror: %s\n",
 		e.Error, e.ElapsedMS, e.RequireHealth, e.TimeoutMS, e.IntervalMS, e.Attempts, e.Result, e.ExitCode, e.Version, e.UserAgent,
-		e.Endpoint, e.Tenant, e.Org, e.Workspace,
+		e.Endpoint, e.Tenant, e.Org, e.Workspace, e.Error,
 	)
 }
 
 // FormatMeshWaitResultJSON renders wait outcome as compact JSON for scrapers.
 // Always emits ok, elapsed_ms, require_health, timeout_ms, interval_ms, attempts, result,
-// exit_code, version, user_agent, endpoint, tenant, org, workspace (empty string when
-// unset); error only when ok is false.
+// exit_code, version, user_agent, endpoint, tenant, org, workspace, and error (empty
+// string when OK / unset) so CI scrapers can key on stable fields without omitempty gaps.
 func FormatMeshWaitResultJSON(e MeshWaitEvidence) string {
 	e = e.normalize()
 	type out struct {
@@ -197,7 +201,7 @@ func FormatMeshWaitResultJSON(e MeshWaitEvidence) string {
 		Tenant        string `json:"tenant"`
 		Org           string `json:"org"`
 		Workspace     string `json:"workspace"`
-		Error         string `json:"error,omitempty"`
+		Error         string `json:"error"`
 	}
 	o := out{
 		OK:            e.OK,
@@ -214,9 +218,7 @@ func FormatMeshWaitResultJSON(e MeshWaitEvidence) string {
 		Tenant:        e.Tenant,
 		Org:           e.Org,
 		Workspace:     e.Workspace,
-	}
-	if !e.OK {
-		o.Error = e.Error
+		Error:         e.Error,
 	}
 	b, err := json.Marshal(o)
 	if err != nil {
