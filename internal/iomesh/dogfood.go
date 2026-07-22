@@ -23,9 +23,11 @@ const (
 
 // Step is one named check in a dogfood report.
 type Step struct {
-	Name    string        `json:"name"`
-	Status  StepStatus    `json:"status"`
-	Detail  string        `json:"detail,omitempty"`
+	Name   string     `json:"name"`
+	Status StepStatus `json:"status"`
+	Detail string     `json:"detail"` // always emit (empty when unset; CI scrapers)
+	// Latency stays Duration in the in-memory report; FormatReportJSON maps to a
+	// string latency field that is always emitted ("" when zero).
 	Latency time.Duration `json:"latency,omitempty"`
 }
 
@@ -1119,8 +1121,8 @@ func FormatReportJSON(r DogfoodReport) string {
 	type stepJSON struct {
 		Name    string `json:"name"`
 		Status  string `json:"status"`
-		Detail  string `json:"detail,omitempty"`
-		Latency string `json:"latency,omitempty"`
+		Detail  string `json:"detail"`  // always emit (empty when unset; CI scrapers)
+		Latency string `json:"latency"` // always emit ("" when zero; honest no-work)
 	}
 	type out struct {
 		Endpoint  string `json:"endpoint"`
@@ -1273,10 +1275,13 @@ func FormatReportJSON(r DogfoodReport) string {
 		o.Result = "SKIP"
 	}
 	for _, s := range r.Steps {
+		// Always emit detail + latency keys (empty string when unset / zero) so CI
+		// scrapers can key on stable step fields without omitempty gaps.
 		sj := stepJSON{Name: s.Name, Status: string(s.Status), Detail: s.Detail}
 		if s.Latency > 0 {
-			sj.Latency = s.Latency.String()
+			sj.Latency = s.Latency.Round(time.Millisecond).String()
 		}
+		// else Latency stays "" — honest zero, no invented work
 		o.Steps = append(o.Steps, sj)
 	}
 	b, err := json.MarshalIndent(o, "", "  ")
