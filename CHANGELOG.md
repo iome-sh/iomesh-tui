@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **FormatStreamDetail always-emit** — always emit optional stream knobs (description, retention, partitions, max_msgs, max_age_sec, created_at, subjects; empty/zero/blank honest when unset)
+- **FormatConsumerInfo filter_subject always-emit** — always emit `filter_subject` (empty when unset)
+
 ## [0.68.0] — 2026-07-22
 
 Minor release: FormatKV always-emit for entry `created_at` and bucket knobs.

@@ -290,7 +290,7 @@ func (c *Client) DeleteConsumer(ctx context.Context, stream, name string) error 
 }
 
 // FormatConsumerInfo is a multi-line view for one durable consumer (CLI).
-// Pure helper with no network I/O. filter_subject is omitted when empty.
+// Pure helper with no network I/O. Always emits filter_subject (empty string when unset).
 func FormatConsumerInfo(info ConsumerInfo) string {
 	var b strings.Builder
 	b.WriteString("iomesh consumer\n")
@@ -298,8 +298,6 @@ func FormatConsumerInfo(info ConsumerInfo) string {
 	fmt.Fprintf(&b, "name:            %s\n", info.Name)
 	fmt.Fprintf(&b, "ack_floor:       %d\n", info.AckFloor)
 	fmt.Fprintf(&b, "pending_count:   %d\n", info.PendingCount)
-	if info.FilterSubject != "" {
-		fmt.Fprintf(&b, "filter_subject:  %s\n", info.FilterSubject)
-	}
+	fmt.Fprintf(&b, "filter_subject:  %s\n", info.FilterSubject)
 	return b.String()
 }
