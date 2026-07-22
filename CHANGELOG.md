@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.68.0] — 2026-07-22
+
+Minor release: FormatKV always-emit for entry `created_at` and bucket knobs.
+
 ### Changed
 
 - **FormatKVEntry `created_at` always-emit** — always emit `created_at` (RFC3339 UTC when set; blank when zero/unset) so operator/CI scrapers can key a stable field without omitempty gaps; peers mesh/stream format always-emit continuum
