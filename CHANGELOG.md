@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.69.0] — 2026-07-22
+
+Minor release: Format stream/consumer always-emit for optional knobs and filter_subject.
+
 ### Changed
 
 - **FormatStreamDetail always-emit** — always emit optional stream knobs (description, retention, partitions, max_msgs, max_age_sec, created_at, subjects; empty/zero/blank honest when unset)
