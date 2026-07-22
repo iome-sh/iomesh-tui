@@ -284,7 +284,7 @@ CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
 | `summary` | string | e.g. `PASS (pass=N skip=M)` |
 | `result` | string | `PASS` \| `FAIL` \| `SKIP` (summary prefix) |
 | `started` / `finished` | RFC3339 | probe window |
-| `steps` | array | `{name,status,detail,latency}` — **always emit** `detail` (empty string when unset) and `latency` (duration string; `""` when zero / no work) so CI scrapers can key on stable step fields without omitempty gaps |
+| `steps` | array | `{name,status,detail,latency,latency_ms}` — **always emit** `detail` (empty string when unset), `latency` (duration string; `""` when zero / no work), and `latency_ms` (int milliseconds; `0` when zero / not timed) so CI scrapers can key on stable step fields without omitempty gaps. `latency_ms` peers the string `latency` for native int marshaling |
 
 `tenant` / `org` / `workspace` are structured multi-tenant identity evidence for operators and multi-tenant CI: always present in top-level JSON and text (empty string when unset) so scrapers can key on stable fields without omitempty gaps (peers `mesh status` identity). Detail strings on `memory_ingest` (and related memory steps) may also include `org=` / `workspace=` when set.
 
