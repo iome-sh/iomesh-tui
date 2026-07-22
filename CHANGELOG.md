@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.67.0] — 2026-07-22
+
+Minor release: dogfood step latency_ms always-emit.
+
 ### Added
 
 - **Dogfood step `latency_ms` always-emit** — always emit per-step `latency_ms` (int milliseconds; `0` when zero / not timed) in dogfood JSON reports alongside existing string `latency` so CI scrapers who marshal steps natively get a stable numeric field without omitempty gaps; set whenever step `Latency` is set (`stepTimed`); text report unchanged (duration still shown in parens when timed)
