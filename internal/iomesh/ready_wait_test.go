@@ -218,6 +218,10 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 			t.Fatalf("pass missing identity key %q:\n%s", key, pass)
 		}
 	}
+	// error always emitted (empty string when OK).
+	if !strings.Contains(pass, "error: \n") {
+		t.Fatalf("pass missing empty error line:\n%s", pass)
+	}
 	if strings.Contains(pass, "FAIL") {
 		t.Fatalf("pass should not contain FAIL:\n%s", pass)
 	}
@@ -262,6 +266,9 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 			t.Fatalf("fail missing identity key %q:\n%s", key, fail)
 		}
 	}
+	if !strings.Contains(fail, "error: wait ready: context deadline exceeded") {
+		t.Fatalf("fail missing error line:\n%s", fail)
+	}
 
 	// Negative elapsed/timeout/interval/attempts clamp to 0; empty Error gets a default.
 	clamped := FormatMeshWaitResult(MeshWaitEvidence{
@@ -281,6 +288,9 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 	}
 	if !strings.Contains(clamped, "unknown error") {
 		t.Fatalf("empty Error should default:\n%s", clamped)
+	}
+	if !strings.Contains(clamped, "error: unknown error") {
+		t.Fatalf("clamped fail missing error line:\n%s", clamped)
 	}
 	if !strings.Contains(clamped, "require_health: false") {
 		t.Fatalf("clamped missing require_health:\n%s", clamped)
@@ -408,8 +418,13 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 			t.Fatalf("unset %s should emit empty string, got %q\n%s", key, v, js)
 		}
 	}
-	if _, has := okObj["error"]; has {
-		t.Fatalf("success JSON should omit error:\n%s", js)
+	// error always present; empty string when OK (stale Error cleared in normalize).
+	errVal, hasErr := okObj["error"]
+	if !hasErr {
+		t.Fatalf("success JSON missing error:\n%s", js)
+	}
+	if errVal != "" {
+		t.Fatalf("success JSON error should be empty string, got %q\n%s", errVal, js)
 	}
 
 	jsFail := FormatMeshWaitResultJSON(MeshWaitEvidence{
@@ -455,13 +470,13 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 		t.Fatalf("fail JSON missing user_agent:\n%s", jsFail)
 	}
 
-	// Always-emit shape: ok + elapsed_ms + require_health + timeout_ms + interval_ms + attempts + result + exit_code + version + user_agent + identity on both paths.
+	// Always-emit shape: ok + elapsed_ms + require_health + timeout_ms + interval_ms + attempts + result + exit_code + version + user_agent + identity + error on both paths.
 	for _, s := range []string{js, jsFail} {
 		var m map[string]any
 		if err := json.Unmarshal([]byte(s), &m); err != nil {
 			t.Fatalf("unmarshal: %v\n%s", err, s)
 		}
-		for _, key := range []string{"ok", "elapsed_ms", "require_health", "timeout_ms", "interval_ms", "attempts", "result", "exit_code", "version", "user_agent", "endpoint", "tenant", "org", "workspace"} {
+		for _, key := range []string{"ok", "elapsed_ms", "require_health", "timeout_ms", "interval_ms", "attempts", "result", "exit_code", "version", "user_agent", "endpoint", "tenant", "org", "workspace", "error"} {
 			if _, ok := m[key]; !ok {
 				t.Fatalf("missing %s:\n%s", key, s)
 			}
@@ -670,6 +685,47 @@ func TestFormatMeshWaitResult_AlwaysEmitsResult(t *testing.T) {
 	}
 	if errObj["result"] != "err" {
 		t.Fatalf("err json result: %v want err\n%s", errObj["result"], errJS)
+	}
+}
+
+func TestFormatMeshWaitResult_AlwaysEmitsError(t *testing.T) {
+	// Text + JSON always emit error (empty when OK; message when fail).
+	okText := FormatMeshWaitResult(MeshWaitEvidence{OK: true, Attempts: 1})
+	if !strings.Contains(okText, "error: ") {
+		t.Fatalf("ok text missing error key:\n%s", okText)
+	}
+	if !strings.Contains(okText, "error: \n") {
+		t.Fatalf("ok text error should be empty line:\n%s", okText)
+	}
+	// Stale Error on OK is cleared in normalize.
+	staleText := FormatMeshWaitResult(MeshWaitEvidence{OK: true, Attempts: 1, Error: "stale"})
+	if strings.Contains(staleText, "error: stale") {
+		t.Fatalf("ok text must clear stale Error:\n%s", staleText)
+	}
+	errText := FormatMeshWaitResult(MeshWaitEvidence{OK: false, Error: "timeout", Attempts: 2})
+	if !strings.Contains(errText, "error: timeout") {
+		t.Fatalf("err text missing error line:\n%s", errText)
+	}
+
+	okJS := FormatMeshWaitResultJSON(MeshWaitEvidence{OK: true, Attempts: 1, Error: "ignored"})
+	var okObj map[string]any
+	if err := json.Unmarshal([]byte(okJS), &okObj); err != nil {
+		t.Fatalf("ok json: %v\n%s", err, okJS)
+	}
+	if _, has := okObj["error"]; !has {
+		t.Fatalf("ok json missing error:\n%s", okJS)
+	}
+	if okObj["error"] != "" {
+		t.Fatalf("ok json error: %v want empty\n%s", okObj["error"], okJS)
+	}
+
+	errJS := FormatMeshWaitResultJSON(MeshWaitEvidence{OK: false, Error: "timeout", Attempts: 2})
+	var errObj map[string]any
+	if err := json.Unmarshal([]byte(errJS), &errObj); err != nil {
+		t.Fatalf("err json: %v\n%s", err, errJS)
+	}
+	if errObj["error"] != "timeout" {
+		t.Fatalf("err json error: %v want timeout\n%s", errObj["error"], errJS)
 	}
 }
 
