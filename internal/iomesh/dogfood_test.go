@@ -2197,6 +2197,118 @@ func TestFormatReport_AlwaysEmitsMemoryEndpoint(t *testing.T) {
 	})
 }
 
+func TestFormatReportJSON_AlwaysEmitsStepDetailLatency(t *testing.T) {
+	// Per-step detail + latency always present in JSON (empty string when unset / zero)
+	// so CI scrapers can key on stable step fields without omitempty gaps.
+	// Text report already prints steps with empty detail (no change).
+	t.Run("empty_detail_zero_latency", func(t *testing.T) {
+		rep := DogfoodReport{
+			Summary: "PASS (pass=1)",
+			OK:      true,
+			Steps: []Step{
+				{Name: "enabled", Status: StepPass}, // Detail="", Latency=0
+			},
+		}
+		js := FormatReportJSON(rep)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		steps, ok := parsed["steps"].([]any)
+		if !ok || len(steps) != 1 {
+			t.Fatalf("steps: %v want len 1\n%s", parsed["steps"], js)
+		}
+		step, ok := steps[0].(map[string]any)
+		if !ok {
+			t.Fatalf("step[0] type: %T\n%s", steps[0], js)
+		}
+		for _, key := range []string{"detail", "latency"} {
+			v, ok := step[key]
+			if !ok {
+				t.Fatalf("always-emit step %s key missing:\n%s", key, js)
+			}
+			str, ok := v.(string)
+			if !ok {
+				t.Fatalf("step %s: %v (%T) want string\n%s", key, v, v, js)
+			}
+			if str != "" {
+				t.Fatalf("step %s: %q want empty string when unset/zero\n%s", key, str, js)
+			}
+		}
+		// Text still prints step with empty detail OK.
+		text := FormatReport(rep)
+		if !strings.Contains(text, "enabled") || !strings.Contains(text, "PASS") {
+			t.Fatalf("text missing enabled PASS step:\n%s", text)
+		}
+	})
+	t.Run("populated", func(t *testing.T) {
+		rep := DogfoodReport{
+			Summary: "PASS (pass=1)",
+			OK:      true,
+			Steps: []Step{
+				{
+					Name:    "health",
+					Status:  StepPass,
+					Detail:  "ok",
+					Latency: 12 * time.Millisecond,
+				},
+			},
+		}
+		js := FormatReportJSON(rep)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		steps := parsed["steps"].([]any)
+		step := steps[0].(map[string]any)
+		if got, _ := step["detail"].(string); got != "ok" {
+			t.Fatalf("detail: %v want ok\n%s", step["detail"], js)
+		}
+		lat, ok := step["latency"].(string)
+		if !ok || lat == "" {
+			t.Fatalf("latency: %v want non-empty duration string\n%s", step["latency"], js)
+		}
+		// Round(ms) → "12ms"
+		if lat != "12ms" {
+			t.Fatalf("latency: %q want 12ms\n%s", lat, js)
+		}
+	})
+	t.Run("mesh_disabled_steps", func(t *testing.T) {
+		// Mesh-disabled early return still emits steps with detail+latency keys.
+		c := New(Config{Enabled: false}, nil)
+		rep := c.Dogfood(context.Background(), DogfoodOptions{})
+		if len(rep.Steps) == 0 {
+			t.Fatal("expected at least one step when mesh disabled")
+		}
+		js := FormatReportJSON(rep)
+		var parsed map[string]any
+		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+			t.Fatalf("json: %v\n%s", err, js)
+		}
+		steps, ok := parsed["steps"].([]any)
+		if !ok || len(steps) == 0 {
+			t.Fatalf("steps missing/empty:\n%s", js)
+		}
+		for i, raw := range steps {
+			step, ok := raw.(map[string]any)
+			if !ok {
+				t.Fatalf("step[%d] type: %T", i, raw)
+			}
+			for _, key := range []string{"name", "status", "detail", "latency"} {
+				if _, ok := step[key]; !ok {
+					t.Fatalf("step[%d] missing always-emit key %s:\n%s", i, key, js)
+				}
+			}
+			if _, ok := step["detail"].(string); !ok {
+				t.Fatalf("step[%d] detail not string: %v\n%s", i, step["detail"], js)
+			}
+			if _, ok := step["latency"].(string); !ok {
+				t.Fatalf("step[%d] latency not string: %v\n%s", i, step["latency"], js)
+			}
+		}
+	})
+}
+
 func TestDogfood_JSONDualWriteTrue(t *testing.T) {
 	srv := mockMeshServer(t, struct {
 		failHealth bool
