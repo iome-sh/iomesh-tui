@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.66.0] — 2026-07-22
+
+Minor release: mesh wait error always-emit.
+
 ### Added
 
 - **`mesh wait` error always-emit** — always emit `error` (empty string when OK) in text and JSON so CI scrapers can key on a stable field without omitempty gaps; text always prints `error:` after identity; peers result / exit_code / identity always-emit continuum
