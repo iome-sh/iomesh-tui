@@ -63,6 +63,79 @@ func TestKVGet_OKAndUserAgent(t *testing.T) {
 	if !strings.Contains(out, "app.json") || !strings.Contains(out, "hello") {
 		t.Fatal(out)
 	}
+	// created_at always-emitted when set (RFC3339 UTC).
+	if !strings.Contains(out, "created_at: 2026-07-01T12:00:00Z") {
+		t.Fatalf("want created_at RFC3339 present, got:\n%s", out)
+	}
+}
+
+func TestFormatKVEntry_CreatedAtAlwaysEmit(t *testing.T) {
+	// Zero CreatedAt always emits blank created_at: line (not omitted).
+	out := FormatKVEntry(KVEntry{
+		Bucket:   "cfg",
+		Key:      "k",
+		Revision: 1,
+		Value:    []byte("v"),
+	})
+	// "created_at: %s\n" with empty created → "created_at: \n" (space after colon).
+	if !strings.Contains(out, "created_at: \n") {
+		t.Fatalf("want blank created_at line always emitted, got:\n%q", out)
+	}
+	// Set CreatedAt → RFC3339 value.
+	ts := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
+	out2 := FormatKVEntry(KVEntry{
+		Bucket:    "cfg",
+		Key:       "k",
+		Revision:  2,
+		CreatedAt: ts,
+		Value:     []byte("v"),
+	})
+	if !strings.Contains(out2, "created_at: 2026-01-02T03:04:05Z") {
+		t.Fatalf("want RFC3339 created_at, got:\n%s", out2)
+	}
+}
+
+func TestFormatKVBucketInfo_AlwaysEmitOptionalKnobs(t *testing.T) {
+	// Nil optional *int64 knobs: always emit blank max_bytes / ttl_seconds (do not invent 0).
+	out := FormatKVBucketInfo(KVBucketInfo{Name: "cfg", History: 0})
+	if !strings.Contains(out, "name:       cfg\n") {
+		t.Fatalf("name missing:\n%s", out)
+	}
+	if !strings.Contains(out, "history:    0\n") {
+		t.Fatalf("history always-emit missing:\n%s", out)
+	}
+	if !strings.Contains(out, "max_bytes:  \n") {
+		t.Fatalf("want blank max_bytes line when nil, got:\n%q", out)
+	}
+	if !strings.Contains(out, "ttl_seconds: \n") {
+		t.Fatalf("want blank ttl_seconds line when nil, got:\n%q", out)
+	}
+	// Must not invent zero values for nil pointers.
+	if strings.Contains(out, "max_bytes:  0\n") {
+		t.Fatalf("invented 0 for nil max_bytes:\n%s", out)
+	}
+	if strings.Contains(out, "ttl_seconds: 0\n") {
+		t.Fatalf("invented 0 for nil ttl_seconds:\n%s", out)
+	}
+
+	// When set, show values.
+	var maxBytes int64 = 1024
+	var ttl int64 = 3600
+	out2 := FormatKVBucketInfo(KVBucketInfo{
+		Name:       "cfg",
+		History:    5,
+		MaxBytes:   &maxBytes,
+		TTLSeconds: &ttl,
+	})
+	if !strings.Contains(out2, "history:    5\n") {
+		t.Fatalf("history value missing:\n%s", out2)
+	}
+	if !strings.Contains(out2, "max_bytes:  1024\n") {
+		t.Fatalf("max_bytes value missing:\n%s", out2)
+	}
+	if !strings.Contains(out2, "ttl_seconds: 3600\n") {
+		t.Fatalf("ttl_seconds value missing:\n%s", out2)
+	}
 }
 
 func TestKVGet_404(t *testing.T) {

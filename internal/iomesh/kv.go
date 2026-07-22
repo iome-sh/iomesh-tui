@@ -280,30 +280,42 @@ func decodeKVKeys(raw []byte) ([]string, error) {
 }
 
 // FormatKVBucketInfo renders bucket metadata for CLI operator display.
+// Always emits history, max_bytes, and ttl_seconds (history as 0 when unset;
+// *int64 nil prints blank after the colon rather than omitting the line) so
+// operator/CI scrapers can key on stable fields without omitempty gaps.
 func FormatKVBucketInfo(info KVBucketInfo) string {
 	var b strings.Builder
 	b.WriteString("iomesh kv bucket\n")
 	fmt.Fprintf(&b, "name:       %s\n", info.Name)
 	fmt.Fprintf(&b, "history:    %d\n", info.History)
+	// Always emit max_bytes, ttl_seconds (blank when *int64 nil; do not invent 0).
 	if info.MaxBytes != nil {
 		fmt.Fprintf(&b, "max_bytes:  %d\n", *info.MaxBytes)
+	} else {
+		fmt.Fprintf(&b, "max_bytes:  \n")
 	}
 	if info.TTLSeconds != nil {
 		fmt.Fprintf(&b, "ttl_seconds: %d\n", *info.TTLSeconds)
+	} else {
+		fmt.Fprintf(&b, "ttl_seconds: \n")
 	}
 	return b.String()
 }
 
 // FormatKVEntry renders one KV entry for CLI operator display.
+// Always emits created_at (RFC3339 UTC when set; blank when zero/unset) so
+// operator/CI scrapers can key a stable field without omitempty gaps.
 func FormatKVEntry(e KVEntry) string {
 	var b strings.Builder
 	b.WriteString("iomesh kv entry\n")
 	fmt.Fprintf(&b, "bucket:    %s\n", e.Bucket)
 	fmt.Fprintf(&b, "key:       %s\n", e.Key)
 	fmt.Fprintf(&b, "revision:  %d\n", e.Revision)
+	created := ""
 	if !e.CreatedAt.IsZero() {
-		fmt.Fprintf(&b, "created_at: %s\n", e.CreatedAt.UTC().Format(time.RFC3339))
+		created = e.CreatedAt.UTC().Format(time.RFC3339)
 	}
+	fmt.Fprintf(&b, "created_at: %s\n", created)
 	val := string(e.Value)
 	// Prefer printable preview; fall back to base64-looking hex length note for binary.
 	if isMostlyPrintable(e.Value) {
