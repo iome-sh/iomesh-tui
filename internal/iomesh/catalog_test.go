@@ -119,6 +119,90 @@ func TestGetCatalogProduct_Detail(t *testing.T) {
 	}
 }
 
+func TestFormatProductDetail_Fields(t *testing.T) {
+	detail := FormatProductDetail(DataProduct{
+		ID:          "ops-incidents",
+		Name:        "Incidents",
+		Title:       "SRE Incidents",
+		Layer:       "operational",
+		Subject:     "dept.sre.incidents",
+		Status:      "ga",
+		Department:  "sre",
+		Description: "incident stream",
+		Lineage:     []string{"pagerduty", "connector", "mesh"},
+		Subjects:    []string{"dept.sre.incidents.>", "dept.sre.alerts.>"},
+	}, CatalogResult{Source: "portal", Detail: "/v17/portal/catalog/data-products/ops-incidents"})
+	for _, want := range []string{
+		"iomesh catalog product source=portal detail=/v17/portal/catalog/data-products/ops-incidents",
+		"id:          ops-incidents",
+		"name:        SRE Incidents",
+		"layer:       operational",
+		"subject:     dept.sre.incidents",
+		"status:      ga",
+		"department:  sre",
+		"description: incident stream",
+		"lineage:",
+		"  - pagerduty",
+		"  - connector",
+		"  - mesh",
+		"subjects:",
+		"  - dept.sre.incidents.>",
+		"  - dept.sre.alerts.>",
+	} {
+		if !strings.Contains(detail, want) {
+			t.Fatalf("missing %q in:\n%s", want, detail)
+		}
+	}
+	if strings.Contains(detail, "(none)") {
+		t.Fatalf("filled product should not print (none):\n%s", detail)
+	}
+}
+
+// Sparse product still always-emits every scraper key (honest blanks / (none)).
+func TestFormatProductDetail_EmptyAlwaysEmit(t *testing.T) {
+	detail := FormatProductDetail(DataProduct{
+		ID: "sparse-product",
+	}, CatalogResult{Source: "mesh", Detail: ""})
+	for _, want := range []string{
+		"iomesh catalog product source=mesh detail=\n",
+		"id:          sparse-product\n",
+		"name:        sparse-product\n", // Title falls back via firstNonEmpty(Title, Name) then Normalize sets Title from ID
+		"layer:       \n",
+		"subject:     \n",
+		"status:      \n",
+		"department:  \n",
+		"description: \n",
+		"lineage:\n",
+		"  (none)\n",
+		"subjects:\n",
+		"  (none)\n",
+	} {
+		if !strings.Contains(detail, want) {
+			t.Fatalf("missing %q in:\n%s", want, detail)
+		}
+	}
+}
+
+func TestFormatProductDetail_LineageSubjectsCap(t *testing.T) {
+	lineage := make([]string, 15)
+	subjects := make([]string, 14)
+	for i := range lineage {
+		lineage[i] = "step-" + string(rune('a'+i))
+	}
+	for i := range subjects {
+		subjects[i] = "subj-" + string(rune('a'+i))
+	}
+	detail := FormatProductDetail(DataProduct{
+		ID: "capped", Lineage: lineage, Subjects: subjects,
+	}, CatalogResult{Source: "mesh", Detail: "x"})
+	if !strings.Contains(detail, "  … +3 more\n") {
+		t.Fatalf("expected lineage cap +3 more:\n%s", detail)
+	}
+	if !strings.Contains(detail, "  … +2 more\n") {
+		t.Fatalf("expected subjects cap +2 more:\n%s", detail)
+	}
+}
+
 func TestListCatalog_Off(t *testing.T) {
 	c := New(Config{Enabled: true, Endpoint: "http://127.0.0.1:1", CatalogPlane: false}, nil)
 	res := c.ListCatalog(context.Background(), "")

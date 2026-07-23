@@ -274,6 +274,13 @@ func FormatCatalog(res CatalogResult) string {
 }
 
 // FormatProductDetail is a multi-line view for one product (agent / CLI).
+// Pure helper with no network I/O.
+//
+// Always emits optional knobs for scrapers: status, department, description,
+// lineage, subjects (empty string / blank when unset; empty lineage/subjects →
+// "  (none)"). Header always includes detail= even when meta.Detail is empty.
+// Description uses firstNonEmpty(Description, Summary). Lineage and subjects
+// lists are capped at 12 items with "… +N more".
 func FormatProductDetail(p DataProduct, meta CatalogResult) string {
 	p.Normalize()
 	var b strings.Builder
@@ -282,23 +289,25 @@ func FormatProductDetail(p DataProduct, meta CatalogResult) string {
 	fmt.Fprintf(&b, "name:        %s\n", firstNonEmpty(p.Title, p.Name))
 	fmt.Fprintf(&b, "layer:       %s\n", p.Layer)
 	fmt.Fprintf(&b, "subject:     %s\n", p.Subject)
-	if p.Status != "" {
-		fmt.Fprintf(&b, "status:      %s\n", p.Status)
-	}
-	if p.Department != "" {
-		fmt.Fprintf(&b, "department:  %s\n", p.Department)
-	}
-	if d := firstNonEmpty(p.Description, p.Summary); d != "" {
-		fmt.Fprintf(&b, "description: %s\n", d)
-	}
-	if len(p.Lineage) > 0 {
-		b.WriteString("lineage:\n")
-		for _, step := range p.Lineage {
+	fmt.Fprintf(&b, "status:      %s\n", p.Status)
+	fmt.Fprintf(&b, "department:  %s\n", p.Department)
+	fmt.Fprintf(&b, "description: %s\n", firstNonEmpty(p.Description, p.Summary))
+	b.WriteString("lineage:\n")
+	if len(p.Lineage) == 0 {
+		b.WriteString("  (none)\n")
+	} else {
+		for i, step := range p.Lineage {
+			if i >= 12 {
+				fmt.Fprintf(&b, "  … +%d more\n", len(p.Lineage)-12)
+				break
+			}
 			fmt.Fprintf(&b, "  - %s\n", step)
 		}
 	}
-	if len(p.Subjects) > 0 {
-		b.WriteString("subjects:\n")
+	b.WriteString("subjects:\n")
+	if len(p.Subjects) == 0 {
+		b.WriteString("  (none)\n")
+	} else {
 		for i, s := range p.Subjects {
 			if i >= 12 {
 				fmt.Fprintf(&b, "  … +%d more\n", len(p.Subjects)-12)
