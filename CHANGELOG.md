@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.70.0] — 2026-07-22
+
+Minor release: FormatProductDetail always-emit for optional knobs.
+
 ### Changed
 
 - **FormatProductDetail always-emit** — always emit status/department/description/lineage/subjects (empty/(none) honest when unset) for operator/CI scrapers
