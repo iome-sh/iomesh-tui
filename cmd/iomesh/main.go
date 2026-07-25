@@ -1893,7 +1893,7 @@ func cmdMemory(args []string) int {
 	case "pull":
 		return cmdMemoryPull(args[1:])
 	case "help", "-h", "--help":
-		fmt.Fprintln(os.Stderr, `iomesh memory — local-first Memory Palace operators (cost-max M1)
+		fmt.Fprint(os.Stderr, `iomesh memory — local-first Memory Palace operators (cost-max M1)
 
   iomesh memory pull   durable mesh pull → local MCP memory_ingest_turn
 
@@ -2056,7 +2056,7 @@ func cmdMemoryPull(args []string) int {
 			servers = append(servers, mcpServerFromTOML(s))
 		}
 		mgr := mcp.NewManager(ctx, servers, logger)
-		defer mgr.Close()
+		defer func() { _ = mgr.Close() }()
 		cl := mgr.ClientByName(serverName)
 		if cl == nil {
 			fmt.Fprintf(os.Stderr, "FAIL memory pull: MCP server %q not connected\n", serverName)
