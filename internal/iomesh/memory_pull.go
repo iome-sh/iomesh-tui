@@ -38,6 +38,27 @@ type MemoryPullStats struct {
 	CreateOK  bool
 	Consumer  string
 	Stream    string
+	Filter    string // effective filter_subject passed to CreateConsumer
+}
+
+// DefaultMemoryPullFilter returns an effective consumer filter_subject (s660).
+// When explicit is non-empty after trim, it wins. Otherwise, if tenant looks like
+// a hierarchical / dept.* id (contains a '.' or has prefix "dept"), defaults to
+// tenant + ".>" (e.g. dept.engineering → dept.engineering.>). Empty otherwise.
+// Pure: no I/O.
+func DefaultMemoryPullFilter(explicit, tenant string) string {
+	explicit = strings.TrimSpace(explicit)
+	if explicit != "" {
+		return explicit
+	}
+	tenant = strings.TrimSpace(tenant)
+	if tenant == "" {
+		return ""
+	}
+	if strings.Contains(tenant, ".") || strings.HasPrefix(tenant, "dept") {
+		return tenant + ".>"
+	}
+	return ""
 }
 
 // MapStreamMessageToEnvelope converts a durable-fetch message into a MemoryEnvelope for local ingest.
@@ -146,8 +167,11 @@ func (c *Client) RunMemoryPull(ctx context.Context, opt MemoryPullOptions) (Memo
 	if !opt.DryRun && opt.LocalIngest == nil {
 		return st, fmt.Errorf("memory pull: LocalIngest required unless DryRun")
 	}
+	// s660: default filter_subject from client tenant when unset (CLI also pre-resolves).
+	opt.Filter = DefaultMemoryPullFilter(opt.Filter, c.Tenant())
 	st.Stream = opt.Stream
 	st.Consumer = opt.Name
+	st.Filter = opt.Filter
 
 	if _, err := c.CreateConsumer(ctx, opt.Stream, opt.Name, opt.Filter); err != nil {
 		return st, fmt.Errorf("memory pull create consumer: %w", err)

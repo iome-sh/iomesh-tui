@@ -1901,7 +1901,7 @@ Flags (pull):
   --config path         config.toml
   --stream S            durable stream (default: [memory].pull_stream or EVENTS)
   --name C              durable consumer name (required unless config pull_consumer)
-  --filter F            optional filter_subject
+  --filter F            optional filter_subject (default: tenant.> when tenant is dept.* / hierarchical)
   --batch N             fetch batch (default 8)
   --max-wait dur        long-poll wait (default 2s)
   --once                single fetch cycle then exit
@@ -1970,6 +1970,12 @@ func cmdMemoryPull(args []string) int {
 	if filterSub == "" {
 		filterSub = strings.TrimSpace(cfg.Memory.PullFilter)
 	}
+	// s660: empty --filter / pull_filter → default filter_subject from memory or mesh tenant.
+	pullTenant := strings.TrimSpace(cfg.Memory.Tenant)
+	if pullTenant == "" {
+		pullTenant = strings.TrimSpace(cfg.IOMesh.Tenant)
+	}
+	filterSub = iomesh.DefaultMemoryPullFilter(filterSub, pullTenant)
 	batchN := *batch
 	if batchN <= 0 {
 		batchN = cfg.Memory.PullBatch
@@ -2002,10 +2008,15 @@ func cmdMemoryPull(args []string) int {
 		return 2
 	}
 
+	// Prefer [iomesh].tenant for X-IOMesh-Tenant; fall back to memory tenant (s660).
+	meshTenant := strings.TrimSpace(cfg.IOMesh.Tenant)
+	if meshTenant == "" {
+		meshTenant = strings.TrimSpace(cfg.Memory.Tenant)
+	}
 	mesh := iomesh.New(iomesh.Config{
 		Enabled:     cfg.IOMesh.Enabled,
 		Endpoint:    cfg.IOMesh.Endpoint,
-		Tenant:      cfg.IOMesh.Tenant,
+		Tenant:      meshTenant,
 		APIKeyEnv:   cfg.IOMesh.APIKeyEnv,
 		OrgID:       cfg.IOMesh.Org,
 		WorkspaceID: cfg.IOMesh.Workspace,
@@ -2014,6 +2025,9 @@ func cmdMemoryPull(args []string) int {
 		fmt.Fprintln(os.Stderr, "FAIL memory pull: mesh disabled (set IOMESH_ENDPOINT / [iomesh])")
 		return 1
 	}
+
+	// Always log effective filter once at start (s660); empty means broker-wide for stream.
+	fmt.Fprintf(os.Stderr, "memory pull filter_subject=%q tenant=%q\n", filterSub, pullTenant)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
