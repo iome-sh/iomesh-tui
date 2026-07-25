@@ -1003,13 +1003,15 @@ func cmdMeshConsumer(args []string) int {
 	case "help", "-h", "--help":
 		fmt.Fprintln(os.Stderr, `iomesh mesh consumer — durable pull consumers
 
-  iomesh mesh consumer create --stream S --name C [--filter F] --yes [--json]
+  iomesh mesh consumer create --stream S --name C [--filter F] [--role R] [--pull-allow-suffix S] --yes [--json]
   iomesh mesh consumer fetch  --stream S --name C [--batch N] --yes [--json]
   iomesh mesh consumer ack    --stream S --name C --seq N [--seq N...] --yes
   iomesh mesh consumer nack   --stream S --name C --seq N [--seq N...] --yes
   iomesh mesh consumer delete --stream S --name C --yes [--json]
 
 Create: POST /v1/streams/{stream}/consumers (201 full info; 409 idempotent name-only).
+  --role / [memory].pull_role → X-IOMesh-Role; --pull-allow-suffix / pull_allow_suffix → allow-suffix.
+  Empty --filter → role-aware default (s681; same as memory pull s678). Beta; not full mesh RBAC GA.
 Fetch:  POST /v1/streams/{stream}/consumers/{name}/fetch (default batch=1, max_wait 2s).
 Ack:    POST .../consumers/{name}/ack body {"seqs":[...]} (prints optional ack_floor).
 Nack:   POST .../consumers/{name}/nack body {"seqs":[...]} (prints optional ack_floor).
@@ -1209,15 +1211,17 @@ func cmdMeshConsumerCreate(args []string) int {
 	fs := flag.NewFlagSet("mesh consumer create", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	var (
-		configPath = fs.String("config", "", "config.toml path")
-		stream     = fs.String("stream", "", "stream name (required)")
-		name       = fs.String("name", "", "consumer name (required)")
-		filter     = fs.String("filter", "", "optional filter_subject")
-		yes        = fs.Bool("yes", false, "confirm mutating create (required)")
-		jsonOut    = fs.Bool("json", false, "print ConsumerInfo as JSON")
-		verbose    = fs.Bool("v", false, "verbose logs")
-		endpoint   = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
-		tenant     = fs.String("tenant", "", "override tenant")
+		configPath      = fs.String("config", "", "config.toml path")
+		stream          = fs.String("stream", "", "stream name (required)")
+		name            = fs.String("name", "", "consumer name (required)")
+		filter          = fs.String("filter", "", "optional filter_subject (role-aware default when empty; s681)")
+		role            = fs.String("role", "", "optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|custom); [memory].pull_role")
+		pullAllowSuffix = fs.String("pull-allow-suffix", "", "optional X-IOMesh-Pull-Allow-Suffix (comma tokens; role=custom); [memory].pull_allow_suffix")
+		yes             = fs.Bool("yes", false, "confirm mutating create (required)")
+		jsonOut         = fs.Bool("json", false, "print ConsumerInfo as JSON")
+		verbose         = fs.Bool("v", false, "verbose logs")
+		endpoint        = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
+		tenant          = fs.String("tenant", "", "override tenant")
 	)
 	if err := fs.Parse(args); err != nil {
 		return 2
@@ -1225,7 +1229,7 @@ func cmdMeshConsumerCreate(args []string) int {
 	streamName := strings.TrimSpace(*stream)
 	consumerName := strings.TrimSpace(*name)
 	if streamName == "" || consumerName == "" || !*yes {
-		fmt.Fprintln(os.Stderr, "usage: iomesh mesh consumer create --stream S --name C [--filter F] --yes [--json]")
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh consumer create --stream S --name C [--filter F] [--role R] [--pull-allow-suffix S] --yes [--json]")
 		fmt.Fprintln(os.Stderr, "  --stream and --name required; --yes required (mutating)")
 		return 2
 	}
@@ -1243,20 +1247,32 @@ func cmdMeshConsumerCreate(args []string) int {
 	if *tenant != "" {
 		cfg.IOMesh.Tenant = *tenant
 	}
+	// s681: federated role + allow-suffix (flags override [memory] config) + role-aware default filter.
+	// Tenant is IOMesh tenant (mesh command pattern). Fail-open empty role/suffix → omit headers.
+	meshTenant := strings.TrimSpace(cfg.IOMesh.Tenant)
+	filterSub, pullRole, allowSuffix := iomesh.ResolveConsumerCreateAuthAndFilter(
+		*filter, meshTenant, *role, *pullAllowSuffix, cfg.Memory.PullRole, cfg.Memory.PullAllowSuffix,
+	)
 	mesh := iomesh.New(iomesh.Config{
-		Enabled:     cfg.IOMesh.Enabled,
-		Endpoint:    cfg.IOMesh.Endpoint,
-		Tenant:      cfg.IOMesh.Tenant,
-		APIKeyEnv:   cfg.IOMesh.APIKeyEnv,
-		OrgID:       cfg.IOMesh.Org,
-		WorkspaceID: cfg.IOMesh.Workspace,
+		Enabled:         cfg.IOMesh.Enabled,
+		Endpoint:        cfg.IOMesh.Endpoint,
+		Tenant:          meshTenant,
+		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
+		OrgID:           cfg.IOMesh.Org,
+		WorkspaceID:     cfg.IOMesh.Workspace,
+		Role:            pullRole,
+		PullAllowSuffix: allowSuffix,
 	}, logger)
+	// Log effective filter/role/suffix once (same honesty as memory pull s675/s678).
+	fmt.Fprintf(os.Stderr, "mesh consumer create filter_subject=%q tenant=%q role=%q pull_allow_suffix=%q\n",
+		filterSub, meshTenant, pullRole, allowSuffix)
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	info, err := mesh.CreateConsumer(ctx, streamName, consumerName, strings.TrimSpace(*filter))
+	info, err := mesh.CreateConsumer(ctx, streamName, consumerName, filterSub)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "FAIL mesh consumer create: %v\n", err)
 		return 1

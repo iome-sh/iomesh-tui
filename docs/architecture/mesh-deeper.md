@@ -205,6 +205,7 @@ Lean consumer surface (no SDK dependency; wire parity with SDK `CreateConsumer` 
 ```bash
 iomesh mesh consumer create --stream EVENTS --name worker-1 --yes
 iomesh mesh consumer create --stream EVENTS --name worker-1 --filter 'dept.events.>' --yes --json
+iomesh mesh consumer create --stream EVENTS --name agent-1 --role agent --yes   # s681: X-IOMesh-Role + default filter tenant.events.>
 iomesh mesh consumer fetch --stream EVENTS --name worker-1 --batch 1 --yes
 iomesh mesh consumer fetch --stream EVENTS --name worker-1 --batch 5 --yes --json
 iomesh mesh consumer ack  --stream EVENTS --name worker-1 --seq 1 --seq 2 --yes
@@ -213,7 +214,7 @@ iomesh mesh consumer delete --stream EVENTS --name worker-1 --yes
 iomesh mesh consumer delete --stream EVENTS --name worker-1 --yes --json
 ```
 
-Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 already-exists → success). Fetch long-polls up to 2s. Ack/nack require at least one `--seq` (repeatable; CSV ok). Delete prints `PASS ...` (or `{"ok":true,"stream":"...","name":"..."}` with `--json`). Mesh disabled → error `mesh disabled` (non-zero CLI exit). Not auto-probed by dogfood.
+Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 already-exists → success). Optional `--role` / `--pull-allow-suffix` (or `[memory].pull_role` / `pull_allow_suffix`) set create auth headers (s675 path); empty `--filter` gets role-aware default via `DefaultMemoryPullFilterForRole` (s681 / s678). **Beta** federated ACL — fail-open without role; not full mesh RBAC GA. Fetch long-polls up to 2s. Ack/nack require at least one `--seq` (repeatable; CSV ok). Delete prints `PASS ...` (or `{"ok":true,"stream":"...","name":"..."}` with `--json`). Mesh disabled → error `mesh disabled` (non-zero CLI exit). Not auto-probed by dogfood.
 
 ## Packages
 

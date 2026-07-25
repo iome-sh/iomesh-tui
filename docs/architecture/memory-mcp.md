@@ -100,6 +100,8 @@ When `--filter` / `[memory].pull_filter` is empty and `[memory].tenant` or `[iom
 
 **s678 (Beta):** when `--filter` / `pull_filter` is empty, default `filter_subject` is role-aware (`DefaultMemoryPullFilterForRole`): empty role keeps s660; `agent`/`viewer` → `tenant.events.>`; `auditor` → `tenant.audit.>`; `operator`/`admin` → `tenant.>`; `custom` with exactly one allow-suffix token → `tenant.<suffix>.>`; custom multi/no suffix → empty (fail closed). Explicit filter always wins. Peer aion s678; not full mesh RBAC GA.
 
+**s681 (Beta):** `iomesh mesh consumer create` also accepts `--role` / `[memory].pull_role` and `--pull-allow-suffix` / `[memory].pull_allow_suffix` (sets client `Config.Role` / `PullAllowSuffix` so create auth sends the same headers as memory pull). Empty `--filter` uses the same `DefaultMemoryPullFilterForRole` defaults (IOMesh tenant). Fail-open without role; dual_write default OFF; peer aion s680 continuum — not full mesh RBAC GA.
+
 Env: `MEMORY_MCP_HTTP_ADDR` / `AION_MEMORY_MCP_HTTP_ADDR`, path `MEMORY_MCP_HTTP_PATH` (default `/mcp`).
 
 ### Alternate: stdio
