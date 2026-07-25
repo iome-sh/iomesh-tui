@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **`iomesh mesh consumer fetch` role + allow-suffix headers (s684)** — `--role` / `--pull-allow-suffix` (config fallbacks `[memory].pull_role` / `pull_allow_suffix`) set client auth headers on fetch (and ack/nack/delete for defense-in-depth). Same path as create s681; logs effective role/suffix on fetch when set. Beta; fail-open without role; not full mesh RBAC GA; peer aion s683 continuum
 - **`iomesh mesh consumer create` role + default filter (s681)** — `--role` / `--pull-allow-suffix` (config fallbacks `[memory].pull_role` / `pull_allow_suffix`) set client auth headers; empty `--filter` uses role-aware `DefaultMemoryPullFilterForRole` (same as memory pull s678). Beta; fail-open without role; not full mesh RBAC GA
 - **`iomesh memory pull` (s652 cost-max M1)** — durable mesh consumer → map envelopes → local MCP `memory_ingest_turn` (optional `--dry-run` / `--once`); config `[memory] pull_*`; dual_write remains optional audit default OFF; hosted Palace sunset until scale ([docs/architecture/memory-mcp.md](docs/architecture/memory-mcp.md))
 

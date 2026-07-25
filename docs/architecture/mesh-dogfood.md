@@ -316,10 +316,10 @@ iomesh mesh streams [--name] [--json] [--delete --yes]  # lean list/get/delete (
 iomesh mesh kv --bucket NAME --list|--get|--put|--delete|--create-bucket  # put/delete/create-bucket require --yes
 iomesh mesh pub --subject S --payload STR|--payload-file F --yes  # ephemeral POST /v1/pub
 iomesh mesh consumer create --stream S --name C [--filter F] [--role R] [--pull-allow-suffix S] --yes  # durable pull (409 idempotent); role headers + role-aware empty filter Beta (s681; not full RBAC GA)
-iomesh mesh consumer fetch --stream S --name C [--batch N] --yes    # long-poll fetch (default batch 1, 2s)
-iomesh mesh consumer ack  --stream S --name C --seq N [--seq N...] --yes  # ack sequences
-iomesh mesh consumer nack --stream S --name C --seq N [--seq N...] --yes  # nack sequences
-iomesh mesh consumer delete --stream S --name C --yes               # DELETE durable consumer (204/2xx)
+iomesh mesh consumer fetch --stream S --name C [--batch N] [--role R] [--pull-allow-suffix S] --yes  # long-poll fetch (default batch 1, 2s); role headers s684
+iomesh mesh consumer ack  --stream S --name C --seq N [--seq N...] [--role R] [--pull-allow-suffix S] --yes  # ack sequences
+iomesh mesh consumer nack --stream S --name C --seq N [--seq N...] [--role R] [--pull-allow-suffix S] --yes  # nack sequences
+iomesh mesh consumer delete --stream S --name C [--role R] [--pull-allow-suffix S] --yes  # DELETE durable consumer (204/2xx)
 iomesh mesh wait [--timeout 30s] [--json]  # preflight Ready poll; always emits elapsed_ms + require_health
 iomesh mesh status [--json] [--strict]  # operator snapshot; --strict exits 1 on result=err
 ```

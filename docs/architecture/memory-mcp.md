@@ -102,6 +102,8 @@ When `--filter` / `[memory].pull_filter` is empty and `[memory].tenant` or `[iom
 
 **s681 (Beta):** `iomesh mesh consumer create` also accepts `--role` / `[memory].pull_role` and `--pull-allow-suffix` / `[memory].pull_allow_suffix` (sets client `Config.Role` / `PullAllowSuffix` so create auth sends the same headers as memory pull). Empty `--filter` uses the same `DefaultMemoryPullFilterForRole` defaults (IOMesh tenant). Fail-open without role; dual_write default OFF; peer aion s680 continuum — not full mesh RBAC GA.
 
+**s684 (Beta):** `iomesh mesh consumer fetch` (and ack/nack/delete) accept the same `--role` / `--pull-allow-suffix` flags and config fallbacks so broker fetch validates federated ACL headers (aion s683 continuum). Fail-open without role; dual_write default OFF — not full mesh RBAC GA.
+
 Env: `MEMORY_MCP_HTTP_ADDR` / `AION_MEMORY_MCP_HTTP_ADDR`, path `MEMORY_MCP_HTTP_PATH` (default `/mcp`).
 
 ### Alternate: stdio

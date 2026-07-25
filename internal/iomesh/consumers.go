@@ -24,6 +24,24 @@ type ConsumerInfo struct {
 	PendingCount  int    `json:"pending_count"`
 }
 
+// ResolveMeshPullAuth resolves federated role + pull-allow-suffix for mesh client
+// Config (s675/s681/s684). Flag values override config ([memory].pull_role /
+// pull_allow_suffix). Whitespace-only is treated as empty. Fail-open empty →
+// Client.auth omits X-IOMesh-Role / X-IOMesh-Pull-Allow-Suffix. Pure: no I/O.
+//
+// Beta federated ACL — not full mesh RBAC GA. Peer aion continuum (s680/s683).
+func ResolveMeshPullAuth(roleFlag, suffixFlag, configRole, configSuffix string) (role, allowSuffix string) {
+	role = strings.TrimSpace(roleFlag)
+	if role == "" {
+		role = strings.TrimSpace(configRole)
+	}
+	allowSuffix = strings.TrimSpace(suffixFlag)
+	if allowSuffix == "" {
+		allowSuffix = strings.TrimSpace(configSuffix)
+	}
+	return role, allowSuffix
+}
+
 // ResolveConsumerCreateAuthAndFilter resolves role, pull-allow-suffix, and effective
 // filter_subject for mesh consumer create (s681). Flag values override config
 // ([memory].pull_role / pull_allow_suffix). Empty filter uses
@@ -33,14 +51,7 @@ type ConsumerInfo struct {
 // Beta federated ACL headers + defaults — fail-open when role/suffix empty
 // (headers omitted); not full mesh RBAC GA. Peer aion s680 continuum.
 func ResolveConsumerCreateAuthAndFilter(explicitFilter, tenant, roleFlag, suffixFlag, configRole, configSuffix string) (filter, role, allowSuffix string) {
-	role = strings.TrimSpace(roleFlag)
-	if role == "" {
-		role = strings.TrimSpace(configRole)
-	}
-	allowSuffix = strings.TrimSpace(suffixFlag)
-	if allowSuffix == "" {
-		allowSuffix = strings.TrimSpace(configSuffix)
-	}
+	role, allowSuffix = ResolveMeshPullAuth(roleFlag, suffixFlag, configRole, configSuffix)
 	filter = DefaultMemoryPullFilterForRole(explicitFilter, tenant, role, allowSuffix)
 	return filter, role, allowSuffix
 }
