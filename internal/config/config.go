@@ -176,9 +176,17 @@ type MemorySection struct {
 	AutoRecall bool   `toml:"auto_recall"`
 	AutoIngest bool   `toml:"auto_ingest"`
 	// DualWrite also emits memory_ingest envelopes to MEMORY_INGEST when mesh is enabled.
+	// Cost-max: dual_write is optional mesh **audit** (default OFF) — not primary cloud palace.
 	DualWrite       bool `toml:"dual_write"`
 	Limit           int  `toml:"limit"`
 	MaxSnippetBytes int  `toml:"max_snippet_bytes"`
+	// Pull* configure `iomesh memory pull` (mesh durable consumer → local MCP palace). s652 M1.
+	// Primary product path under cost-max local-memory charter (dual_write remains optional audit).
+	PullStream    string `toml:"pull_stream"`    // e.g. EVENTS or MEMORY_INGEST
+	PullConsumer  string `toml:"pull_consumer"`  // durable consumer name
+	PullFilter    string `toml:"pull_filter"`    // optional filter_subject
+	PullBatch     int    `toml:"pull_batch"`     // default 8
+	PullMaxWaitMS int    `toml:"pull_max_wait_ms"` // default 2000
 }
 
 // SubagentsSection tunes child-session orchestration.
@@ -519,6 +527,16 @@ func (c *Config) applyEnvOverrides() {
 		case "1", "true", "on", "yes":
 			c.Memory.DualWrite = true
 		}
+	}
+	// Memory pull (mesh → local palace) s652.
+	if v := os.Getenv("IOMESH_MEMORY_PULL_STREAM"); v != "" {
+		c.Memory.PullStream = v
+	}
+	if v := os.Getenv("IOMESH_MEMORY_PULL_CONSUMER"); v != "" {
+		c.Memory.PullConsumer = v
+	}
+	if v := os.Getenv("IOMESH_MEMORY_PULL_FILTER"); v != "" {
+		c.Memory.PullFilter = v
 	}
 	// Memory sidecar base for sync retrieve (stage warm plane). Prefer explicit IOMESH_*.
 	if v := os.Getenv("IOMESH_MEMORY_ENDPOINT"); v != "" {
