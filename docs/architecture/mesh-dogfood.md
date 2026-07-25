@@ -12,11 +12,12 @@ Operator preflight polls readiness without running the full dogfood suite:
 iomesh mesh wait [--timeout 30s] [--interval 500ms] [--require-health] [--json]
 # Exit 0 + "PASS mesh wait: ready" + elapsed_ms + require_health + timeout_ms + interval_ms when Ready succeeds;
 # non-zero + FAIL + same budget fields on deadline.
-# --json: {"ok":true,"elapsed_ms":N,"require_health":false|true,"timeout_ms":N,"interval_ms":N}
-#      or {"ok":false,"elapsed_ms":N,"require_health":false|true,"timeout_ms":N,"interval_ms":N,"error":"..."}
+# Always emits identity: endpoint/tenant/org/workspace + pull_role/pull_allow_suffix (empty when unset).
+# --json: {"ok":true,"elapsed_ms":N,...,"pull_role":"","pull_allow_suffix":"",...}
+#      or {"ok":false,"elapsed_ms":N,...,"error":"..."}
 ```
 
-`Client.WaitReady` retries `GET /ready` (or `/readyz`) until success or context deadline. With `--require-health`, each attempt requires `GET /health` OK first. Disabled/empty endpoint is offline-first (immediate success). Wall-clock wait duration is always emitted as `elapsed_ms` (text line or JSON field) on both PASS and FAIL for CI evidence. `require_health` is always emitted (boolean matching the flag). Configured preflight budget knobs are always emitted as `timeout_ms` and `interval_ms` so scrapers record the WaitReady budget and poll interval without re-parsing argv. Use before stage dogfood or agent attach when the broker is still warming.
+`Client.WaitReady` retries `GET /ready` (or `/readyz`) until success or context deadline. With `--require-health`, each attempt requires `GET /health` OK first. Disabled/empty endpoint is offline-first (immediate success). Wall-clock wait duration is always emitted as `elapsed_ms` (text line or JSON field) on both PASS and FAIL for CI evidence. `require_health` is always emitted (boolean matching the flag). Configured preflight budget knobs are always emitted as `timeout_ms` and `interval_ms` so scrapers record the WaitReady budget and poll interval without re-parsing argv. Builds the client like status/dogfood (including `[memory].pull_role` / `pull_allow_suffix` → Client `Role` / `PullAllowSuffix`). **s693:** always emit `pull_role` / `pull_allow_suffix` (empty string when unset) in text and JSON for CI scrapers — peers status s690 + dogfood s687; Beta federated ACL, fail-open empty, dual_write default OFF, not full mesh RBAC GA (peer aion s692 Ops Pack floors residual gate continuum). Use before stage dogfood or agent attach when the broker is still warming.
 
 ### Dogfood WaitReady soft preflight
 

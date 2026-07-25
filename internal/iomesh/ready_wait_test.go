@@ -213,7 +213,8 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 		t.Fatalf("pass missing user_agent key:\n%s", pass)
 	}
 	// identity always emitted (empty when unset on evidence).
-	for _, key := range []string{"endpoint: ", "tenant: ", "org: ", "workspace: "} {
+	// s693: pull_role / pull_allow_suffix peer status s690 always-emit continuum.
+	for _, key := range []string{"endpoint: ", "tenant: ", "org: ", "workspace: ", "pull_role: ", "pull_allow_suffix: "} {
 		if !strings.Contains(pass, key) {
 			t.Fatalf("pass missing identity key %q:\n%s", key, pass)
 		}
@@ -261,7 +262,7 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 	if !strings.Contains(fail, "user_agent: ") {
 		t.Fatalf("fail missing user_agent key:\n%s", fail)
 	}
-	for _, key := range []string{"endpoint: ", "tenant: ", "org: ", "workspace: "} {
+	for _, key := range []string{"endpoint: ", "tenant: ", "org: ", "workspace: ", "pull_role: ", "pull_allow_suffix: "} {
 		if !strings.Contains(fail, key) {
 			t.Fatalf("fail missing identity key %q:\n%s", key, fail)
 		}
@@ -337,24 +338,29 @@ func TestFormatMeshWaitResult_Text(t *testing.T) {
 	withID := FormatMeshWaitResult(MeshWaitEvidence{
 		OK: true, Attempts: 1,
 		Endpoint: "http://mesh.example", Tenant: "t1", Org: "o1", Workspace: "w1",
+		PullRole: "memory", PullAllowSuffix: "ops",
 	})
 	for _, want := range []string{
 		"endpoint: http://mesh.example",
 		"tenant: t1",
 		"org: o1",
 		"workspace: w1",
+		"pull_role: memory",
+		"pull_allow_suffix: ops",
 	} {
 		if !strings.Contains(withID, want) {
 			t.Fatalf("text identity missing %q:\n%s", want, withID)
 		}
 	}
-	// Order: endpoint → tenant → org → workspace
+	// Order: endpoint → tenant → org → workspace → pull_role → pull_allow_suffix
 	epIdx := strings.Index(withID, "endpoint:")
 	tnIdx := strings.Index(withID, "tenant:")
 	orgIdx := strings.Index(withID, "org:")
 	wsIdx := strings.Index(withID, "workspace:")
-	if !(epIdx < tnIdx && tnIdx < orgIdx && orgIdx < wsIdx) {
-		t.Fatalf("identity order want endpoint < tenant < org < workspace:\n%s", withID)
+	prIdx := strings.Index(withID, "pull_role:")
+	pasIdx := strings.Index(withID, "pull_allow_suffix:")
+	if !(epIdx < tnIdx && tnIdx < orgIdx && orgIdx < wsIdx && wsIdx < prIdx && prIdx < pasIdx) {
+		t.Fatalf("identity order want endpoint < tenant < org < workspace < pull_role < pull_allow_suffix:\n%s", withID)
 	}
 }
 
@@ -409,7 +415,8 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 		t.Fatalf("unset UserAgent should emit empty string, got %q\n%s", ua, js)
 	}
 	// identity always present; empty string when unset on evidence.
-	for _, key := range []string{"endpoint", "tenant", "org", "workspace"} {
+	// s693: pull_role / pull_allow_suffix peer status s690 always-emit continuum.
+	for _, key := range []string{"endpoint", "tenant", "org", "workspace", "pull_role", "pull_allow_suffix"} {
 		v, has := okObj[key]
 		if !has {
 			t.Fatalf("success JSON missing %s:\n%s", key, js)
@@ -470,13 +477,13 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 		t.Fatalf("fail JSON missing user_agent:\n%s", jsFail)
 	}
 
-	// Always-emit shape: ok + elapsed_ms + require_health + timeout_ms + interval_ms + attempts + result + exit_code + version + user_agent + identity + error on both paths.
+	// Always-emit shape: ok + elapsed_ms + require_health + timeout_ms + interval_ms + attempts + result + exit_code + version + user_agent + identity (incl. pull_role/pull_allow_suffix) + error on both paths.
 	for _, s := range []string{js, jsFail} {
 		var m map[string]any
 		if err := json.Unmarshal([]byte(s), &m); err != nil {
 			t.Fatalf("unmarshal: %v\n%s", err, s)
 		}
-		for _, key := range []string{"ok", "elapsed_ms", "require_health", "timeout_ms", "interval_ms", "attempts", "result", "exit_code", "version", "user_agent", "endpoint", "tenant", "org", "workspace", "error"} {
+		for _, key := range []string{"ok", "elapsed_ms", "require_health", "timeout_ms", "interval_ms", "attempts", "result", "exit_code", "version", "user_agent", "endpoint", "tenant", "org", "workspace", "pull_role", "pull_allow_suffix", "error"} {
 			if _, ok := m[key]; !ok {
 				t.Fatalf("missing %s:\n%s", key, s)
 			}
@@ -556,6 +563,7 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 	jsID := FormatMeshWaitResultJSON(MeshWaitEvidence{
 		OK: true, Attempts: 1,
 		Endpoint: "http://mesh.example", Tenant: "t1", Org: "o1", Workspace: "w1",
+		PullRole: "agent", PullAllowSuffix: "ops,memory",
 	})
 	var idObj map[string]any
 	if err := json.Unmarshal([]byte(jsID), &idObj); err != nil {
@@ -564,6 +572,10 @@ func TestFormatMeshWaitResultJSON(t *testing.T) {
 	if idObj["endpoint"] != "http://mesh.example" || idObj["tenant"] != "t1" || idObj["org"] != "o1" || idObj["workspace"] != "w1" {
 		t.Fatalf("identity: endpoint=%v tenant=%v org=%v workspace=%v\n%s",
 			idObj["endpoint"], idObj["tenant"], idObj["org"], idObj["workspace"], jsID)
+	}
+	if idObj["pull_role"] != "agent" || idObj["pull_allow_suffix"] != "ops,memory" {
+		t.Fatalf("pull identity: pull_role=%v pull_allow_suffix=%v\n%s",
+			idObj["pull_role"], idObj["pull_allow_suffix"], jsID)
 	}
 }
 
@@ -730,15 +742,16 @@ func TestFormatMeshWaitResult_AlwaysEmitsError(t *testing.T) {
 }
 
 func TestFormatMeshWaitResult_AlwaysEmitsIdentity(t *testing.T) {
-	// Text + JSON always emit endpoint/tenant/org/workspace (empty when unset; no invent readiness).
+	// Text + JSON always emit endpoint/tenant/org/workspace/pull_role/pull_allow_suffix
+	// (empty when unset; no invent readiness). s693 pull identity peers status s690.
 	emptyText := FormatMeshWaitResult(MeshWaitEvidence{OK: true, Attempts: 0})
-	for _, want := range []string{"endpoint: ", "tenant: ", "org: ", "workspace: "} {
+	for _, want := range []string{"endpoint: ", "tenant: ", "org: ", "workspace: ", "pull_role: ", "pull_allow_suffix: "} {
 		if !strings.Contains(emptyText, want) {
 			t.Fatalf("empty text missing %q:\n%s", want, emptyText)
 		}
 	}
 	// Empty identity lines present (value after colon may be blank).
-	for _, line := range []string{"endpoint: \n", "tenant: \n", "org: \n", "workspace: \n"} {
+	for _, line := range []string{"endpoint: \n", "tenant: \n", "org: \n", "workspace: \n", "pull_role: \n", "pull_allow_suffix: \n"} {
 		if !strings.Contains(emptyText, line) {
 			t.Fatalf("empty identity line want %q:\n%s", line, emptyText)
 		}
@@ -749,7 +762,7 @@ func TestFormatMeshWaitResult_AlwaysEmitsIdentity(t *testing.T) {
 	if err := json.Unmarshal([]byte(emptyJS), &m); err != nil {
 		t.Fatalf("json: %v\n%s", err, emptyJS)
 	}
-	for _, key := range []string{"endpoint", "tenant", "org", "workspace"} {
+	for _, key := range []string{"endpoint", "tenant", "org", "workspace", "pull_role", "pull_allow_suffix"} {
 		v, has := m[key]
 		if !has {
 			t.Fatalf("always-emit %s missing:\n%s", key, emptyJS)
@@ -763,6 +776,7 @@ func TestFormatMeshWaitResult_AlwaysEmitsIdentity(t *testing.T) {
 	pop := FormatMeshWaitResultJSON(MeshWaitEvidence{
 		OK: false, Error: "wait ready: timeout", Attempts: 2,
 		Endpoint: "http://127.0.0.1:1", Tenant: "dept.x", Org: "org_a", Workspace: "ws_y",
+		PullRole: "memory", PullAllowSuffix: "ops",
 	})
 	var p map[string]any
 	if err := json.Unmarshal([]byte(pop), &p); err != nil {
@@ -773,5 +787,81 @@ func TestFormatMeshWaitResult_AlwaysEmitsIdentity(t *testing.T) {
 	}
 	if p["endpoint"] != "http://127.0.0.1:1" || p["tenant"] != "dept.x" || p["org"] != "org_a" || p["workspace"] != "ws_y" {
 		t.Fatalf("populated identity: %v\n%s", p, pop)
+	}
+	if p["pull_role"] != "memory" || p["pull_allow_suffix"] != "ops" {
+		t.Fatalf("populated pull identity: pull_role=%v pull_allow_suffix=%v\n%s",
+			p["pull_role"], p["pull_allow_suffix"], pop)
+	}
+}
+
+// s693: dedicated pull_role / pull_allow_suffix always-emit (empty + populated) for CI scrapers.
+func TestFormatMeshWaitResult_AlwaysEmitsPullRoleIdentity(t *testing.T) {
+	// Empty keys always present as "" when unset (text + JSON).
+	emptyText := FormatMeshWaitResult(MeshWaitEvidence{OK: true, Attempts: 0})
+	if !strings.Contains(emptyText, "pull_role: \n") {
+		t.Fatalf("empty text missing blank pull_role line:\n%s", emptyText)
+	}
+	if !strings.Contains(emptyText, "pull_allow_suffix: \n") {
+		t.Fatalf("empty text missing blank pull_allow_suffix line:\n%s", emptyText)
+	}
+
+	emptyJS := FormatMeshWaitResultJSON(MeshWaitEvidence{OK: true, Attempts: 0})
+	var empty map[string]any
+	if err := json.Unmarshal([]byte(emptyJS), &empty); err != nil {
+		t.Fatalf("json empty: %v\n%s", err, emptyJS)
+	}
+	for _, key := range []string{"pull_role", "pull_allow_suffix"} {
+		v, has := empty[key]
+		if !has {
+			t.Fatalf("always-emit %s missing:\n%s", key, emptyJS)
+		}
+		if v != "" {
+			t.Fatalf("unset %s should be empty string, got %q\n%s", key, v, emptyJS)
+		}
+	}
+
+	// Populated values pass through on both PASS and FAIL paths.
+	passText := FormatMeshWaitResult(MeshWaitEvidence{
+		OK: true, Attempts: 1, PullRole: "viewer", PullAllowSuffix: "memory",
+	})
+	for _, want := range []string{"pull_role: viewer", "pull_allow_suffix: memory"} {
+		if !strings.Contains(passText, want) {
+			t.Fatalf("pass text missing %q:\n%s", want, passText)
+		}
+	}
+	failText := FormatMeshWaitResult(MeshWaitEvidence{
+		OK: false, Error: "timeout", Attempts: 2,
+		PullRole: "custom", PullAllowSuffix: "ops,memory",
+	})
+	for _, want := range []string{"pull_role: custom", "pull_allow_suffix: ops,memory"} {
+		if !strings.Contains(failText, want) {
+			t.Fatalf("fail text missing %q:\n%s", want, failText)
+		}
+	}
+
+	passJS := FormatMeshWaitResultJSON(MeshWaitEvidence{
+		OK: true, Attempts: 1, PullRole: "viewer", PullAllowSuffix: "memory",
+	})
+	var passObj map[string]any
+	if err := json.Unmarshal([]byte(passJS), &passObj); err != nil {
+		t.Fatalf("json pass: %v\n%s", err, passJS)
+	}
+	if passObj["pull_role"] != "viewer" || passObj["pull_allow_suffix"] != "memory" {
+		t.Fatalf("pass json pull identity: %v %v\n%s", passObj["pull_role"], passObj["pull_allow_suffix"], passJS)
+	}
+	// Identity must not invent readiness success when wait failed.
+	failJS := FormatMeshWaitResultJSON(MeshWaitEvidence{
+		OK: false, Error: "timeout", Attempts: 2,
+		PullRole: "custom", PullAllowSuffix: "ops,memory",
+	})
+	var failObj map[string]any
+	if err := json.Unmarshal([]byte(failJS), &failObj); err != nil {
+		t.Fatalf("json fail: %v\n%s", err, failJS)
+	}
+	if failObj["ok"] != false || failObj["result"] != "err" {
+		t.Fatalf("pull identity must not invent success: ok=%v result=%v\n%s", failObj["ok"], failObj["result"], failJS)
+	}
+	if failObj["pull_role"] != "custom" || failObj["pull_allow_suffix"] != "ops,memory" {
+		t.Fatalf("fail json pull identity: %v %v\n%s", failObj["pull_role"], failObj["pull_allow_suffix"], failJS)
 	}
 }
