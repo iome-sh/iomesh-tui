@@ -509,6 +509,8 @@ Flags (status):
   --json                  print status as JSON
   --strict                exit 1 when aggregate result is err (skipped/partial still 0)
   -v                      verbose
+  Identity always-emits pull_role / pull_allow_suffix from [memory].pull_role / pull_allow_suffix
+  (empty when unset; Beta federated ACL; fail-open; not full mesh RBAC GA; dual_write default OFF).
 
 Flags (dogfood):
   --config path           config.toml
@@ -722,6 +724,10 @@ func cmdMeshStatus(args []string) int {
 		cfg.IOMesh.Endpoint = *endpoint
 		cfg.IOMesh.Enabled = true
 	}
+	// s690: wire [memory].pull_role / pull_allow_suffix onto Client so status
+	// always-emits pull identity from Config (empty when unset; peers dogfood s687).
+	pullRole := strings.TrimSpace(cfg.Memory.PullRole)
+	pullAllowSuffix := strings.TrimSpace(cfg.Memory.PullAllowSuffix)
 	mesh := iomesh.New(iomesh.Config{
 		Enabled:         cfg.IOMesh.Enabled,
 		Endpoint:        cfg.IOMesh.Endpoint,
@@ -734,6 +740,8 @@ func cmdMeshStatus(args []string) int {
 		IncludeLineage:  cfg.IOMesh.IncludeLineage,
 		PolicyMode:      iomesh.PolicyMode(cfg.IOMesh.PolicyMode),
 		CatalogPlane:    cfg.IOMesh.CatalogPlane,
+		Role:            pullRole,
+		PullAllowSuffix: pullAllowSuffix,
 	}, logger)
 
 	policyMode := strings.ToLower(strings.TrimSpace(cfg.IOMesh.PolicyMode))
@@ -741,21 +749,23 @@ func cmdMeshStatus(args []string) int {
 		policyMode = "off"
 	}
 	out := iomesh.MeshStatusSnapshot{
-		Enabled:        mesh.Enabled(),
-		Endpoint:       cfg.IOMesh.Endpoint,
-		Tenant:         cfg.IOMesh.Tenant,
-		Org:            strings.TrimSpace(cfg.IOMesh.Org),
-		Workspace:      strings.TrimSpace(cfg.IOMesh.Workspace),
-		Version:        version,
-		PolicyMode:     policyMode,
-		ContextPlane:   cfg.IOMesh.ContextPlane,
-		CatalogPlane:   cfg.IOMesh.CatalogPlane,
-		IncludeLineage: cfg.IOMesh.IncludeLineage,
-		EmitDept:       cfg.IOMesh.EmitDeptStreams,
-		UserAgent:      iomesh.UserAgent(),
-		StatusLine:     mesh.StatusLine(),
-		Health:         "skipped",
-		Ready:          "skipped",
+		Enabled:         mesh.Enabled(),
+		Endpoint:        cfg.IOMesh.Endpoint,
+		Tenant:          cfg.IOMesh.Tenant,
+		Org:             strings.TrimSpace(cfg.IOMesh.Org),
+		Workspace:       strings.TrimSpace(cfg.IOMesh.Workspace),
+		PullRole:        pullRole,
+		PullAllowSuffix: pullAllowSuffix,
+		Version:         version,
+		PolicyMode:      policyMode,
+		ContextPlane:    cfg.IOMesh.ContextPlane,
+		CatalogPlane:    cfg.IOMesh.CatalogPlane,
+		IncludeLineage:  cfg.IOMesh.IncludeLineage,
+		EmitDept:        cfg.IOMesh.EmitDeptStreams,
+		UserAgent:       iomesh.UserAgent(),
+		StatusLine:      mesh.StatusLine(),
+		Health:          "skipped",
+		Ready:           "skipped",
 		// health_ms / ready_ms / duration_ms always 0 when mesh disabled / probes skipped
 	}
 

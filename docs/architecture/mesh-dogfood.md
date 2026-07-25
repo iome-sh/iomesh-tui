@@ -43,18 +43,21 @@ One-shot operator snapshot without the full dogfood suite:
 
 ```bash
 iomesh mesh status [--json] [--strict] [--endpoint url] [--config path]
-# Human: StatusLine + version + endpoint/tenant/org/workspace + plane flags + ua + health/ready + latencies + result
+# Human: StatusLine + version + endpoint/tenant/org/workspace + pull_role/pull_allow_suffix + plane flags + ua + health/ready + latencies + result
 # --json: structured object with the same fields
 # default: fail-open — exit 0 even when probes err (result still reports err/partial/skipped)
 # --strict: exit 1 only when aggregate result is err; skipped (mesh disabled) and partial stay exit 0
 ```
 
-Builds the client like dogfood/wait. Prints `StatusLine` config summary (includes `version=` when `iomesh.SetProductVersion` is set from main) plus optional one-shot `Health` / `Ready` probes (errors shown as `err` + message). Default exit is fail-open (`0` even on probe err); with `--strict`, exit `1` only when aggregate `result` is `err` (mesh disabled → `skipped` is not an error; `partial` stays `0`). Probe wall times are always emitted as `health_ms` / `ready_ms` (`0` when mesh disabled / probes skipped). Whole probe-path wall time is always emitted as `duration_ms` (`0` when mesh disabled / probes skipped). Aggregate `result` is always emitted (`ok` \| `err` \| `skipped` \| `partial`) from health+ready.
+Builds the client like dogfood/wait (including `[memory].pull_role` / `pull_allow_suffix` → Client `Role` / `PullAllowSuffix`). Prints `StatusLine` config summary (includes `version=` when `iomesh.SetProductVersion` is set from main) plus optional one-shot `Health` / `Ready` probes (errors shown as `err` + message). Default exit is fail-open (`0` even on probe err); with `--strict`, exit `1` only when aggregate `result` is `err` (mesh disabled → `skipped` is not an error; `partial` stays `0`). Probe wall times are always emitted as `health_ms` / `ready_ms` (`0` when mesh disabled / probes skipped). Whole probe-path wall time is always emitted as `duration_ms` (`0` when mesh disabled / probes skipped). Aggregate `result` is always emitted (`ok` \| `err` \| `skipped` \| `partial`) from health+ready. **s690:** always emit `pull_role` / `pull_allow_suffix` (empty string when unset) for CI scrapers — peers dogfood s687; Beta federated ACL, fail-open empty, dual_write default OFF, not full mesh RBAC GA (peer aion s689 residual gate continuum).
 
 JSON/text fields beyond StatusLine identity:
 
 | Field | Source |
 |-------|--------|
+| `endpoint` / `tenant` / `org` / `workspace` | Client config (**always emitted**, empty when unset) |
+| `pull_role` | `[memory].pull_role` → Client `Role` (**always emitted**, empty when unset; s690) |
+| `pull_allow_suffix` | `[memory].pull_allow_suffix` → Client `PullAllowSuffix` (**always emitted**, empty when unset; s690) |
 | `version` | Binary version (`main.version` / `iomesh version`) |
 | `policy_mode` | `[iomesh] policy_mode` (default `off`) |
 | `context_plane` | `[iomesh] context_plane` |

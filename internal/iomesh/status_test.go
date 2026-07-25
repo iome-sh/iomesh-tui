@@ -129,8 +129,9 @@ func TestFormatMeshStatus_JSONAlwaysEmitsLatencies(t *testing.T) {
 }
 
 func TestFormatMeshStatus_JSONAlwaysEmitsIdentity(t *testing.T) {
-	// endpoint/tenant/org/workspace always present as strings, including empty.
-	// Populated values pass through; zero-value identity still emits keys.
+	// endpoint/tenant/org/workspace/pull_role/pull_allow_suffix always present as
+	// strings, including empty. Populated values pass through; zero-value still emits.
+	// s690: pull_role / pull_allow_suffix peer dogfood s687 always-emit continuum.
 	t.Run("empty", func(t *testing.T) {
 		s := MeshStatusSnapshot{
 			Enabled:    false,
@@ -146,7 +147,7 @@ func TestFormatMeshStatus_JSONAlwaysEmitsIdentity(t *testing.T) {
 		if err := json.Unmarshal([]byte(js), &parsed); err != nil {
 			t.Fatalf("json: %v\n%s", err, js)
 		}
-		for _, key := range []string{"endpoint", "tenant", "org", "workspace"} {
+		for _, key := range []string{"endpoint", "tenant", "org", "workspace", "pull_role", "pull_allow_suffix"} {
 			v, ok := parsed[key]
 			if !ok {
 				t.Fatalf("%s missing from JSON:\n%s", key, js)
@@ -162,17 +163,19 @@ func TestFormatMeshStatus_JSONAlwaysEmitsIdentity(t *testing.T) {
 	})
 	t.Run("populated", func(t *testing.T) {
 		s := MeshStatusSnapshot{
-			Enabled:    true,
-			Endpoint:   "http://mesh.example",
-			Tenant:     "t1",
-			Org:        "o1",
-			Workspace:  "w1",
-			Version:    "test",
-			PolicyMode: "off",
-			UserAgent:  "ua",
-			StatusLine: "mesh: enabled",
-			Health:     "ok",
-			Ready:      "ok",
+			Enabled:         true,
+			Endpoint:        "http://mesh.example",
+			Tenant:          "t1",
+			Org:             "o1",
+			Workspace:       "w1",
+			PullRole:        "memory",
+			PullAllowSuffix: "ops",
+			Version:         "test",
+			PolicyMode:      "off",
+			UserAgent:       "ua",
+			StatusLine:      "mesh: enabled",
+			Health:          "ok",
+			Ready:           "ok",
 		}
 		js := FormatMeshStatusJSON(s)
 		var parsed map[string]any
@@ -180,10 +183,12 @@ func TestFormatMeshStatus_JSONAlwaysEmitsIdentity(t *testing.T) {
 			t.Fatalf("json: %v\n%s", err, js)
 		}
 		want := map[string]string{
-			"endpoint":  "http://mesh.example",
-			"tenant":    "t1",
-			"org":       "o1",
-			"workspace": "w1",
+			"endpoint":          "http://mesh.example",
+			"tenant":            "t1",
+			"org":               "o1",
+			"workspace":         "w1",
+			"pull_role":         "memory",
+			"pull_allow_suffix": "ops",
 		}
 		for key, w := range want {
 			got, ok := parsed[key].(string)
@@ -379,26 +384,28 @@ func TestFormatMeshStatus_JSONAlwaysEmitsExitCode(t *testing.T) {
 
 func TestFormatMeshStatus_Text(t *testing.T) {
 	s := MeshStatusSnapshot{
-		Enabled:        true,
-		Endpoint:       "http://mesh.example",
-		Tenant:         "t1",
-		Org:            "o1",
-		Workspace:      "w1",
-		Version:        "dev",
-		PolicyMode:     "advisory",
-		ContextPlane:   true,
-		CatalogPlane:   false,
-		IncludeLineage: true,
-		EmitDept:       true,
-		UserAgent:      "iomesh-tui/dev",
-		StatusLine:     "mesh: enabled · endpoint=http://mesh.example",
-		Health:         "ok",
-		HealthMS:       7,
-		Ready:          "err",
-		ReadyErr:       "timeout",
-		ReadyMS:        9,
-		DurationMS:     16,
-		Result:         "err",
+		Enabled:         true,
+		Endpoint:        "http://mesh.example",
+		Tenant:          "t1",
+		Org:             "o1",
+		Workspace:       "w1",
+		PullRole:        "agent",
+		PullAllowSuffix: "ops,memory",
+		Version:         "dev",
+		PolicyMode:      "advisory",
+		ContextPlane:    true,
+		CatalogPlane:    false,
+		IncludeLineage:  true,
+		EmitDept:        true,
+		UserAgent:       "iomesh-tui/dev",
+		StatusLine:      "mesh: enabled · endpoint=http://mesh.example",
+		Health:          "ok",
+		HealthMS:        7,
+		Ready:           "err",
+		ReadyErr:        "timeout",
+		ReadyMS:         9,
+		DurationMS:      16,
+		Result:          "err",
 	}
 	out := FormatMeshStatus(s)
 	for _, want := range []string{
@@ -409,6 +416,8 @@ func TestFormatMeshStatus_Text(t *testing.T) {
 		"tenant:      t1",
 		"org:         o1",
 		"workspace:   w1",
+		"pull_role:   agent",
+		"pull_allow_suffix: ops,memory",
 		"policy_mode: advisory",
 		"context_plane: true",
 		"catalog_plane: false",
@@ -474,7 +483,8 @@ func TestFormatMeshStatus_TextDisabledZeros(t *testing.T) {
 }
 
 func TestFormatMeshStatus_TextAlwaysEmitsIdentity(t *testing.T) {
-	// tenant/org/workspace lines always print (empty when unset); endpoint already always printed.
+	// tenant/org/workspace/pull_role/pull_allow_suffix lines always print (empty when unset);
+	// endpoint already always printed. s690 peers dogfood s687 pull identity continuum.
 	empty := MeshStatusSnapshot{
 		Enabled: false, Version: "x", PolicyMode: "off", UserAgent: "ua",
 		StatusLine: "mesh: disabled (offline-first)", Health: "skipped", Ready: "skipped",
@@ -485,25 +495,30 @@ func TestFormatMeshStatus_TextAlwaysEmitsIdentity(t *testing.T) {
 		"tenant:      ",
 		"org:         ",
 		"workspace:   ",
+		"pull_role:   ",
+		"pull_allow_suffix: ",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("want identity line %q when empty:\n%s", want, out)
 		}
 	}
-	// Order: endpoint → tenant → org → workspace
+	// Order: endpoint → tenant → org → workspace → pull_role → pull_allow_suffix
 	epIdx := strings.Index(out, "endpoint:")
 	tnIdx := strings.Index(out, "tenant:")
 	orgIdx := strings.Index(out, "org:")
 	wsIdx := strings.Index(out, "workspace:")
-	if epIdx < 0 || tnIdx < 0 || orgIdx < 0 || wsIdx < 0 {
+	prIdx := strings.Index(out, "pull_role:")
+	psIdx := strings.Index(out, "pull_allow_suffix:")
+	if epIdx < 0 || tnIdx < 0 || orgIdx < 0 || wsIdx < 0 || prIdx < 0 || psIdx < 0 {
 		t.Fatalf("missing identity keys:\n%s", out)
 	}
-	if !(epIdx < tnIdx && tnIdx < orgIdx && orgIdx < wsIdx) {
-		t.Fatalf("identity order want endpoint < tenant < org < workspace:\n%s", out)
+	if !(epIdx < tnIdx && tnIdx < orgIdx && orgIdx < wsIdx && wsIdx < prIdx && prIdx < psIdx) {
+		t.Fatalf("identity order want endpoint < tenant < org < workspace < pull_role < pull_allow_suffix:\n%s", out)
 	}
 
 	populated := MeshStatusSnapshot{
 		Enabled: true, Endpoint: "http://mesh.example", Tenant: "t1", Org: "o1", Workspace: "w1",
+		PullRole: "memory", PullAllowSuffix: "ops",
 		Version: "v", PolicyMode: "off", UserAgent: "ua",
 		StatusLine: "mesh: enabled", Health: "ok", Ready: "ok",
 	}
@@ -513,6 +528,8 @@ func TestFormatMeshStatus_TextAlwaysEmitsIdentity(t *testing.T) {
 		"tenant:      t1",
 		"org:         o1",
 		"workspace:   w1",
+		"pull_role:   memory",
+		"pull_allow_suffix: ops",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("want %q:\n%s", want, out)
