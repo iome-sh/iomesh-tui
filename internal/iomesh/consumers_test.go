@@ -110,6 +110,60 @@ func TestCreateConsumer_EmptyArgsAndDisabled(t *testing.T) {
 	}
 }
 
+// s675: Role + PullAllowSuffix ride Client.auth on all authenticated mesh requests (e.g. CreateConsumer).
+func TestCreateConsumer_RoleAndPullAllowSuffixHeaders(t *testing.T) {
+	var gotRole, gotSuffix, gotTenant string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotRole = r.Header.Get("X-IOMesh-Role")
+		gotSuffix = r.Header.Get("X-IOMesh-Pull-Allow-Suffix")
+		gotTenant = r.Header.Get("X-IOMesh-Tenant")
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(map[string]any{"stream": "EVENTS", "name": "c"})
+	}))
+	defer srv.Close()
+
+	c := New(Config{
+		Enabled:         true,
+		Endpoint:        srv.URL,
+		Tenant:          "dept.research",
+		Role:            "custom",
+		PullAllowSuffix: "ops,memory",
+	}, nil)
+	if _, err := c.CreateConsumer(context.Background(), "EVENTS", "c", "dept.research.>"); err != nil {
+		t.Fatal(err)
+	}
+	if gotTenant != "dept.research" {
+		t.Fatalf("X-IOMesh-Tenant=%q", gotTenant)
+	}
+	if gotRole != "custom" {
+		t.Fatalf("X-IOMesh-Role=%q", gotRole)
+	}
+	if gotSuffix != "ops,memory" {
+		t.Fatalf("X-IOMesh-Pull-Allow-Suffix=%q", gotSuffix)
+	}
+}
+
+func TestCreateConsumer_OmitsRoleAndSuffixWhenEmpty(t *testing.T) {
+	var gotRole, gotSuffix string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Header.Get is case-insensitive; empty means fail-open omit (not set / blank).
+		gotRole = r.Header.Get("X-IOMesh-Role")
+		gotSuffix = r.Header.Get("X-IOMesh-Pull-Allow-Suffix")
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(map[string]any{"stream": "S", "name": "c"})
+	}))
+	defer srv.Close()
+
+	// Whitespace-only is fail-open omit (TrimSpace).
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "t", Role: "  ", PullAllowSuffix: "\t"}, nil)
+	if _, err := c.CreateConsumer(context.Background(), "S", "c", ""); err != nil {
+		t.Fatal(err)
+	}
+	if gotRole != "" || gotSuffix != "" {
+		t.Fatalf("expected no role/suffix headers when empty; role=%q suffix=%q", gotRole, gotSuffix)
+	}
+}
+
 func TestCreateConsumer_HTTPError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)

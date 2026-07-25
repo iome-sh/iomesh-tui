@@ -187,6 +187,12 @@ type MemorySection struct {
 	PullFilter    string `toml:"pull_filter"`      // optional filter_subject
 	PullBatch     int    `toml:"pull_batch"`       // default 8
 	PullMaxWaitMS int    `toml:"pull_max_wait_ms"` // default 2000
+	// PullRole optional X-IOMesh-Role on mesh auth (operator|admin|agent|auditor|viewer|custom).
+	// Fail-open empty → omit header. Beta federated ACL (s675); not full IdP RBAC.
+	PullRole string `toml:"pull_role"`
+	// PullAllowSuffix optional X-IOMesh-Pull-Allow-Suffix (comma-separated tokens for role=custom).
+	// Fail-open empty → omit. s675 / aion s671 peer.
+	PullAllowSuffix string `toml:"pull_allow_suffix"`
 }
 
 // SubagentsSection tunes child-session orchestration.
@@ -537,6 +543,12 @@ func (c *Config) applyEnvOverrides() {
 	}
 	if v := os.Getenv("IOMESH_MEMORY_PULL_FILTER"); v != "" {
 		c.Memory.PullFilter = v
+	}
+	if v := os.Getenv("IOMESH_MEMORY_PULL_ROLE"); v != "" {
+		c.Memory.PullRole = v
+	}
+	if v := os.Getenv("IOMESH_MEMORY_PULL_ALLOW_SUFFIX"); v != "" {
+		c.Memory.PullAllowSuffix = v
 	}
 	// Memory sidecar base for sync retrieve (stage warm plane). Prefer explicit IOMESH_*.
 	if v := os.Getenv("IOMESH_MEMORY_ENDPOINT"); v != "" {
