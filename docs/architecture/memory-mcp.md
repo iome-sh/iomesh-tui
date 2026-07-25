@@ -74,6 +74,8 @@ auto_ingest = false        # opt-in: write user+assistant turns after success
 # pull_filter = ""
 # pull_batch = 8
 # pull_max_wait_ms = 2000
+# pull_role = ""           # optional X-IOMesh-Role (s675 Beta; fail-open empty)
+# pull_allow_suffix = ""   # optional X-IOMesh-Pull-Allow-Suffix for role=custom
 # limit = 8
 # max_snippet_bytes = 6000
 ```
@@ -93,6 +95,8 @@ iomesh memory pull --stream EVENTS --name tui-local-palace --once --dry-run
 Loop: `CreateConsumer` (idempotent) → `ConsumerFetch` → map envelope → MCP `memory_ingest_turn` → `ConsumerAck`.  
 Primary: connector/`dept.*` or `EVENTS`. Optional: pull `MEMORY_INGEST` when using mesh as audit mirror.  
 When `--filter` / `[memory].pull_filter` is empty and `[memory].tenant` or `[iomesh].tenant` is hierarchical (`dept.*` or contains `.`), default `filter_subject` is `tenant.>` (s660); create/fetch/ack send `X-IOMesh-Tenant` via client auth.
+
+**s675 (Beta):** optional `--role` / `[memory].pull_role` → `X-IOMesh-Role` and `--pull-allow-suffix` / `[memory].pull_allow_suffix` → `X-IOMesh-Pull-Allow-Suffix` on authenticated mesh requests (create/fetch/ack). Fail-open when empty (headers omitted). Not full mesh IdP RBAC GA; dual_write remains optional audit (default OFF). Hosted Palace sunset — TUI path is local palace.
 
 Env: `MEMORY_MCP_HTTP_ADDR` / `AION_MEMORY_MCP_HTTP_ADDR`, path `MEMORY_MCP_HTTP_PATH` (default `/mcp`).
 

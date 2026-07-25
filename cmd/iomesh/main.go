@@ -1910,9 +1910,12 @@ Flags (pull):
   --yes                 confirm mutating pull loop (required unless --dry-run)
   --endpoint url        override IOMESH_ENDPOINT
   --mcp-server name     MCP server name for memory tools (default memory)
+  --role R              optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|custom); [memory].pull_role
+  --pull-allow-suffix S optional X-IOMesh-Pull-Allow-Suffix (comma tokens; role=custom); [memory].pull_allow_suffix
   -v                    verbose
 
 Honesty: dual_write remains optional audit (default OFF). Hosted Palace sunset until scale.
+  Role/suffix headers are Beta federated ACL (s675); fail-open when empty — not full IdP RBAC GA.
 `)
 		return 0
 	default:
@@ -1926,19 +1929,21 @@ func cmdMemoryPull(args []string) int {
 	fs := flag.NewFlagSet("memory pull", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	var (
-		configPath = fs.String("config", "", "config.toml path")
-		stream     = fs.String("stream", "", "durable stream name")
-		name       = fs.String("name", "", "durable consumer name")
-		filter     = fs.String("filter", "", "optional filter_subject")
-		batch      = fs.Int("batch", 0, "fetch batch size")
-		maxWait    = fs.Duration("max-wait", 0, "long-poll max wait")
-		once       = fs.Bool("once", false, "single fetch cycle")
-		dryRun     = fs.Bool("dry-run", false, "map only; no MCP local ingest")
-		noAck      = fs.Bool("no-ack", false, "do not ack after success")
-		yes        = fs.Bool("yes", false, "confirm mutating pull (required unless --dry-run)")
-		endpoint   = fs.String("endpoint", "", "override mesh endpoint")
-		mcpServer  = fs.String("mcp-server", "", "MCP memory server name")
-		verbose    = fs.Bool("v", false, "verbose logs")
+		configPath      = fs.String("config", "", "config.toml path")
+		stream          = fs.String("stream", "", "durable stream name")
+		name            = fs.String("name", "", "durable consumer name")
+		filter          = fs.String("filter", "", "optional filter_subject")
+		batch           = fs.Int("batch", 0, "fetch batch size")
+		maxWait         = fs.Duration("max-wait", 0, "long-poll max wait")
+		once            = fs.Bool("once", false, "single fetch cycle")
+		dryRun          = fs.Bool("dry-run", false, "map only; no MCP local ingest")
+		noAck           = fs.Bool("no-ack", false, "do not ack after success")
+		yes             = fs.Bool("yes", false, "confirm mutating pull (required unless --dry-run)")
+		endpoint        = fs.String("endpoint", "", "override mesh endpoint")
+		mcpServer       = fs.String("mcp-server", "", "MCP memory server name")
+		role            = fs.String("role", "", "optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|custom)")
+		pullAllowSuffix = fs.String("pull-allow-suffix", "", "optional X-IOMesh-Pull-Allow-Suffix (comma tokens; role=custom)")
+		verbose         = fs.Bool("v", false, "verbose logs")
 	)
 	if err := fs.Parse(args); err != nil {
 		return 2
@@ -2013,21 +2018,33 @@ func cmdMemoryPull(args []string) int {
 	if meshTenant == "" {
 		meshTenant = strings.TrimSpace(cfg.Memory.Tenant)
 	}
+	// s675: federated pull role + custom allow-suffix (flags override [memory] config). Fail-open empty → omit headers.
+	pullRole := strings.TrimSpace(*role)
+	if pullRole == "" {
+		pullRole = strings.TrimSpace(cfg.Memory.PullRole)
+	}
+	allowSuffix := strings.TrimSpace(*pullAllowSuffix)
+	if allowSuffix == "" {
+		allowSuffix = strings.TrimSpace(cfg.Memory.PullAllowSuffix)
+	}
 	mesh := iomesh.New(iomesh.Config{
-		Enabled:     cfg.IOMesh.Enabled,
-		Endpoint:    cfg.IOMesh.Endpoint,
-		Tenant:      meshTenant,
-		APIKeyEnv:   cfg.IOMesh.APIKeyEnv,
-		OrgID:       cfg.IOMesh.Org,
-		WorkspaceID: cfg.IOMesh.Workspace,
+		Enabled:         cfg.IOMesh.Enabled,
+		Endpoint:        cfg.IOMesh.Endpoint,
+		Tenant:          meshTenant,
+		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
+		OrgID:           cfg.IOMesh.Org,
+		WorkspaceID:     cfg.IOMesh.Workspace,
+		Role:            pullRole,
+		PullAllowSuffix: allowSuffix,
 	}, logger)
 	if !mesh.Enabled() {
 		fmt.Fprintln(os.Stderr, "FAIL memory pull: mesh disabled (set IOMESH_ENDPOINT / [iomesh])")
 		return 1
 	}
 
-	// Always log effective filter once at start (s660); empty means broker-wide for stream.
-	fmt.Fprintf(os.Stderr, "memory pull filter_subject=%q tenant=%q\n", filterSub, pullTenant)
+	// Always log effective filter once at start (s660); role/suffix once (s675). Empty role/suffix = fail-open omit headers.
+	fmt.Fprintf(os.Stderr, "memory pull filter_subject=%q tenant=%q role=%q pull_allow_suffix=%q\n",
+		filterSub, pullTenant, pullRole, allowSuffix)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

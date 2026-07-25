@@ -94,6 +94,8 @@ auto_recall = true
 auto_ingest = true
 dual_write = true
 limit = 12
+pull_role = "agent"
+pull_allow_suffix = "ops,memory"
 `
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
@@ -110,6 +112,21 @@ limit = 12
 	}
 	if cfg.Memory.Endpoint != "http://127.0.0.1:8765" {
 		t.Fatalf("endpoint=%q", cfg.Memory.Endpoint)
+	}
+	if cfg.Memory.PullRole != "agent" || cfg.Memory.PullAllowSuffix != "ops,memory" {
+		t.Fatalf("pull role/suffix=%q %q", cfg.Memory.PullRole, cfg.Memory.PullAllowSuffix)
+	}
+}
+
+func TestEnv_MemoryPullRoleAndSuffix(t *testing.T) {
+	t.Setenv("IOMESH_MEMORY_PULL_ROLE", "custom")
+	t.Setenv("IOMESH_MEMORY_PULL_ALLOW_SUFFIX", "a,b")
+	cfg, err := Load(filepath.Join(t.TempDir(), "nope.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Memory.PullRole != "custom" || cfg.Memory.PullAllowSuffix != "a,b" {
+		t.Fatalf("got role=%q suffix=%q", cfg.Memory.PullRole, cfg.Memory.PullAllowSuffix)
 	}
 }
 
