@@ -1884,15 +1884,18 @@ func TestFormatReport_AlwaysEmitsIdentity(t *testing.T) {
 }
 
 func TestFormatReport_AlwaysEmitsKVConsumerIdentity(t *testing.T) {
-	// kv_bucket / consumer_stream / consumer_name / consumer_filter always present as
-	// strings in JSON and text, including empty. Empty identity does not invent probe
-	// success (bools/counts stay zero-value). Peers identity always-emit continuum.
-	keys := []string{"kv_bucket", "consumer_stream", "consumer_name", "consumer_filter"}
+	// kv_bucket / consumer_stream / consumer_name / consumer_filter / pull_role /
+	// pull_allow_suffix always present as strings in JSON and text, including empty.
+	// Empty identity does not invent probe success (bools/counts stay zero-value).
+	// Peers identity always-emit continuum (s687 pull_role/pull_allow_suffix).
+	keys := []string{"kv_bucket", "consumer_stream", "consumer_name", "consumer_filter", "pull_role", "pull_allow_suffix"}
 	t.Run("empty", func(t *testing.T) {
 		empty := DogfoodReport{Summary: "PASS", OK: true}
-		if empty.KVBucket != "" || empty.ConsumerStream != "" || empty.ConsumerName != "" || empty.ConsumerFilter != "" {
-			t.Fatalf("zero-value identity: kv=%q stream=%q name=%q filter=%q",
-				empty.KVBucket, empty.ConsumerStream, empty.ConsumerName, empty.ConsumerFilter)
+		if empty.KVBucket != "" || empty.ConsumerStream != "" || empty.ConsumerName != "" || empty.ConsumerFilter != "" ||
+			empty.PullRole != "" || empty.PullAllowSuffix != "" {
+			t.Fatalf("zero-value identity: kv=%q stream=%q name=%q filter=%q role=%q suffix=%q",
+				empty.KVBucket, empty.ConsumerStream, empty.ConsumerName, empty.ConsumerFilter,
+				empty.PullRole, empty.PullAllowSuffix)
 		}
 		// Empty identity must compose with false probe flags / zero counts.
 		if empty.KVKeyCount != 0 || empty.KVEnsured || empty.ConsumerProbed || empty.ConsumerOK {
@@ -1929,29 +1932,35 @@ func TestFormatReport_AlwaysEmitsKVConsumerIdentity(t *testing.T) {
 			"consumer_stream: ",
 			"consumer_name: ",
 			"consumer_filter: ",
+			"pull_role: ",
+			"pull_allow_suffix: ",
 		} {
 			if !strings.Contains(text, want) {
 				t.Fatalf("text always-emit identity line missing %q:\n%s", want, text)
 			}
 		}
-		// Order: kv_bucket → consumer_stream → consumer_name → consumer_filter
+		// Order: kv_bucket → consumer_stream → consumer_name → consumer_filter → pull_role → pull_allow_suffix
 		kvIdx := strings.Index(text, "kv_bucket:")
 		csIdx := strings.Index(text, "consumer_stream:")
 		cnIdx := strings.Index(text, "consumer_name:")
 		cfIdx := strings.Index(text, "consumer_filter:")
-		if kvIdx < 0 || csIdx < 0 || cnIdx < 0 || cfIdx < 0 {
+		prIdx := strings.Index(text, "pull_role:")
+		psIdx := strings.Index(text, "pull_allow_suffix:")
+		if kvIdx < 0 || csIdx < 0 || cnIdx < 0 || cfIdx < 0 || prIdx < 0 || psIdx < 0 {
 			t.Fatalf("missing identity keys:\n%s", text)
 		}
-		if !(kvIdx < csIdx && csIdx < cnIdx && cnIdx < cfIdx) {
-			t.Fatalf("identity order want kv_bucket < consumer_stream < consumer_name < consumer_filter:\n%s", text)
+		if !(kvIdx < csIdx && csIdx < cnIdx && cnIdx < cfIdx && cfIdx < prIdx && prIdx < psIdx) {
+			t.Fatalf("identity order want kv_bucket < consumer_stream < consumer_name < consumer_filter < pull_role < pull_allow_suffix:\n%s", text)
 		}
 	})
 	t.Run("populated", func(t *testing.T) {
 		rep := DogfoodReport{
-			KVBucket:       "config",
-			ConsumerStream: "EVENTS",
-			ConsumerName:   "worker-1",
-			ConsumerFilter: "dept.events.>",
+			KVBucket:        "config",
+			ConsumerStream:  "EVENTS",
+			ConsumerName:    "worker-1",
+			ConsumerFilter:  "dept.events.>",
+			PullRole:        "memory",
+			PullAllowSuffix: "ops",
 			// Values pass through; probe flags independent (compose, don't invent).
 			KVKeyCount:     3,
 			ConsumerProbed: true,
@@ -1965,10 +1974,12 @@ func TestFormatReport_AlwaysEmitsKVConsumerIdentity(t *testing.T) {
 			t.Fatalf("json: %v\n%s", err, js)
 		}
 		want := map[string]string{
-			"kv_bucket":       "config",
-			"consumer_stream": "EVENTS",
-			"consumer_name":   "worker-1",
-			"consumer_filter": "dept.events.>",
+			"kv_bucket":         "config",
+			"consumer_stream":   "EVENTS",
+			"consumer_name":     "worker-1",
+			"consumer_filter":   "dept.events.>",
+			"pull_role":         "memory",
+			"pull_allow_suffix": "ops",
 		}
 		for key, w := range want {
 			got, ok := parsed[key].(string)
@@ -1982,6 +1993,8 @@ func TestFormatReport_AlwaysEmitsKVConsumerIdentity(t *testing.T) {
 			"consumer_stream: EVENTS",
 			"consumer_name: worker-1",
 			"consumer_filter: dept.events.>",
+			"pull_role: memory",
+			"pull_allow_suffix: ops",
 		} {
 			if !strings.Contains(text, line) {
 				t.Fatalf("text missing %q:\n%s", line, text)
@@ -4608,7 +4621,7 @@ func TestDogfood_Consumer_UnsetSkip(t *testing.T) {
 		}
 	}
 	// Always-emit empty strings when unset (CI scrapers; does not invent probe success).
-	for _, key := range []string{"consumer_stream", "consumer_name", "consumer_filter"} {
+	for _, key := range []string{"consumer_stream", "consumer_name", "consumer_filter", "pull_role", "pull_allow_suffix"} {
 		v, ok := parsed[key]
 		if !ok {
 			t.Fatalf("json %s must always emit when unset\n%s", key, js)
@@ -4628,7 +4641,9 @@ func TestDogfood_Consumer_UnsetSkip(t *testing.T) {
 	}
 	if !strings.Contains(text, "consumer_stream: ") ||
 		!strings.Contains(text, "consumer_name: ") ||
-		!strings.Contains(text, "consumer_filter: ") {
+		!strings.Contains(text, "consumer_filter: ") ||
+		!strings.Contains(text, "pull_role: ") ||
+		!strings.Contains(text, "pull_allow_suffix: ") {
 		t.Fatalf("text must always emit consumer identity when unset:\n%s", text)
 	}
 	// Empty identity must not invent probe success.
@@ -4742,6 +4757,127 @@ func TestDogfood_Consumer_Create201OK(t *testing.T) {
 		!strings.Contains(text, "consumer_name: worker-1") ||
 		!strings.Contains(text, "consumer_filter: dept.events.>") {
 		t.Fatalf("text missing identity:\n%s", text)
+	}
+}
+
+// s687: dogfood always-emits pull_role / pull_allow_suffix from Client Config;
+// empty consumer filter + role=memory → tenant.memory.> (peer aion s686).
+func TestDogfood_PullRoleIdentityAndMemoryDefaultFilter(t *testing.T) {
+	var gotRole, gotSuffix, gotFilter string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/health":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ok"))
+		case r.URL.Path == "/ready" || r.URL.Path == "/readyz":
+			w.WriteHeader(200)
+			_, _ = w.Write([]byte("ready"))
+		case strings.HasSuffix(r.URL.Path, "/consumers") && r.Method == http.MethodPost:
+			gotRole = r.Header.Get("X-IOMesh-Role")
+			gotSuffix = r.Header.Get("X-IOMesh-Pull-Allow-Suffix")
+			var body map[string]any
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			if f, ok := body["filter_subject"].(string); ok {
+				gotFilter = f
+			}
+			w.WriteHeader(201)
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"stream": "EVENTS", "name": "mem-1",
+				"filter_subject": "dept.research.memory.>", "ack_floor": 0, "pending_count": 0,
+			})
+		default:
+			if strings.Contains(r.URL.Path, "catalog") {
+				_ = json.NewEncoder(w).Encode(map[string]any{"products": []any{}})
+				return
+			}
+			if r.URL.Path == "/v1/streams" {
+				_ = json.NewEncoder(w).Encode([]any{})
+				return
+			}
+			if r.URL.Path == "/v1/context/query" {
+				_ = json.NewEncoder(w).Encode(map[string]string{"text": "ctx"})
+				return
+			}
+			if strings.Contains(r.URL.Path, "/publish") {
+				w.WriteHeader(204)
+				return
+			}
+			w.WriteHeader(404)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "dept.research",
+		EmitDeptStreams: true,
+		Role:            "memory",
+		PullAllowSuffix: "ops",
+	}, nil)
+	rep := c.Dogfood(context.Background(), DogfoodOptions{
+		SkipMemory:     true,
+		ConsumerStream: "EVENTS",
+		ConsumerName:   "mem-1",
+		// empty filter → role-aware default tenant.memory.>
+	})
+	if !rep.OK {
+		t.Fatalf("%s\n%s", rep.Summary, FormatReport(rep))
+	}
+	if gotRole != "memory" {
+		t.Fatalf("X-IOMesh-Role=%q want memory", gotRole)
+	}
+	if gotSuffix != "ops" {
+		t.Fatalf("X-IOMesh-Pull-Allow-Suffix=%q want ops", gotSuffix)
+	}
+	if gotFilter != "dept.research.memory.>" {
+		t.Fatalf("filter_subject=%q want dept.research.memory.>", gotFilter)
+	}
+	if rep.PullRole != "memory" || rep.PullAllowSuffix != "ops" {
+		t.Fatalf("report identity role=%q suffix=%q", rep.PullRole, rep.PullAllowSuffix)
+	}
+	if rep.ConsumerFilter != "dept.research.memory.>" {
+		t.Fatalf("report consumer_filter=%q", rep.ConsumerFilter)
+	}
+	js := FormatReportJSON(rep)
+	var parsed map[string]any
+	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
+		t.Fatalf("json: %v\n%s", err, js)
+	}
+	if parsed["pull_role"] != "memory" || parsed["pull_allow_suffix"] != "ops" {
+		t.Fatalf("json pull identity: role=%v suffix=%v\n%s", parsed["pull_role"], parsed["pull_allow_suffix"], js)
+	}
+	if parsed["consumer_filter"] != "dept.research.memory.>" {
+		t.Fatalf("json consumer_filter: %v\n%s", parsed["consumer_filter"], js)
+	}
+	text := FormatReport(rep)
+	for _, line := range []string{
+		"pull_role: memory",
+		"pull_allow_suffix: ops",
+		"consumer_filter: dept.research.memory.>",
+	} {
+		if !strings.Contains(text, line) {
+			t.Fatalf("text missing %q:\n%s", line, text)
+		}
+	}
+
+	// Disabled mesh still always-emits empty pull identity (no invent).
+	disabled := New(Config{Enabled: false}, nil)
+	repOff := disabled.Dogfood(context.Background(), DogfoodOptions{SkipMemory: true})
+	if repOff.PullRole != "" || repOff.PullAllowSuffix != "" {
+		t.Fatalf("disabled: role=%q suffix=%q want empty", repOff.PullRole, repOff.PullAllowSuffix)
+	}
+	jsOff := FormatReportJSON(repOff)
+	var parsedOff map[string]any
+	if err := json.Unmarshal([]byte(jsOff), &parsedOff); err != nil {
+		t.Fatalf("json off: %v\n%s", err, jsOff)
+	}
+	for _, key := range []string{"pull_role", "pull_allow_suffix"} {
+		v, ok := parsedOff[key]
+		if !ok {
+			t.Fatalf("disabled always-emit %s missing\n%s", key, jsOff)
+		}
+		if s, ok := v.(string); !ok || s != "" {
+			t.Fatalf("disabled %s: %v want empty string\n%s", key, v, jsOff)
+		}
 	}
 }
 

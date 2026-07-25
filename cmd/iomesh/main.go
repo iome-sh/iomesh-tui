@@ -1011,7 +1011,8 @@ func cmdMeshConsumer(args []string) int {
 
 Create: POST /v1/streams/{stream}/consumers (201 full info; 409 idempotent name-only).
   --role / [memory].pull_role → X-IOMesh-Role; --pull-allow-suffix / pull_allow_suffix → allow-suffix.
-  Empty --filter → role-aware default (s681; same as memory pull s678). Beta; not full mesh RBAC GA.
+  Roles: operator|admin|agent|auditor|viewer|memory|custom (s687 memory → tenant.memory.>).
+  Empty --filter → role-aware default (s681/s687; same as memory pull s678). Beta; not full mesh RBAC GA.
 Fetch:  POST /v1/streams/{stream}/consumers/{name}/fetch (default batch=1, max_wait 2s).
   Same --role / --pull-allow-suffix headers (s684; aion validates role on fetch). Fail-open empty.
 Ack:    POST .../consumers/{name}/ack body {"seqs":[...]} (prints optional ack_floor).
@@ -1076,7 +1077,7 @@ func cmdMeshConsumerAckNack(args []string, nack bool) int {
 		configPath      = fs.String("config", "", "config.toml path")
 		stream          = fs.String("stream", "", "stream name (required)")
 		name            = fs.String("name", "", "consumer name (required)")
-		role            = fs.String("role", "", "optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|custom); [memory].pull_role")
+		role            = fs.String("role", "", "optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|memory|custom); [memory].pull_role")
 		pullAllowSuffix = fs.String("pull-allow-suffix", "", "optional X-IOMesh-Pull-Allow-Suffix (comma tokens; role=custom); [memory].pull_allow_suffix")
 		yes             = fs.Bool("yes", false, "confirm mutating "+op+" (required)")
 		verbose         = fs.Bool("v", false, "verbose logs")
@@ -1153,7 +1154,7 @@ func cmdMeshConsumerDelete(args []string) int {
 		configPath      = fs.String("config", "", "config.toml path")
 		stream          = fs.String("stream", "", "stream name (required)")
 		name            = fs.String("name", "", "consumer name (required)")
-		role            = fs.String("role", "", "optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|custom); [memory].pull_role")
+		role            = fs.String("role", "", "optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|memory|custom); [memory].pull_role")
 		pullAllowSuffix = fs.String("pull-allow-suffix", "", "optional X-IOMesh-Pull-Allow-Suffix (comma tokens; role=custom); [memory].pull_allow_suffix")
 		yes             = fs.Bool("yes", false, "confirm mutating delete (required)")
 		jsonOut         = fs.Bool("json", false, "print {ok,stream,name} as JSON")
@@ -1233,7 +1234,7 @@ func cmdMeshConsumerCreate(args []string) int {
 		stream          = fs.String("stream", "", "stream name (required)")
 		name            = fs.String("name", "", "consumer name (required)")
 		filter          = fs.String("filter", "", "optional filter_subject (role-aware default when empty; s681)")
-		role            = fs.String("role", "", "optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|custom); [memory].pull_role")
+		role            = fs.String("role", "", "optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|memory|custom); [memory].pull_role")
 		pullAllowSuffix = fs.String("pull-allow-suffix", "", "optional X-IOMesh-Pull-Allow-Suffix (comma tokens; role=custom); [memory].pull_allow_suffix")
 		yes             = fs.Bool("yes", false, "confirm mutating create (required)")
 		jsonOut         = fs.Bool("json", false, "print ConsumerInfo as JSON")
@@ -1320,7 +1321,7 @@ func cmdMeshConsumerFetch(args []string) int {
 		stream          = fs.String("stream", "", "stream name (required)")
 		name            = fs.String("name", "", "consumer name (required)")
 		batch           = fs.Int("batch", 1, "max messages to fetch (default 1)")
-		role            = fs.String("role", "", "optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|custom); [memory].pull_role")
+		role            = fs.String("role", "", "optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|memory|custom); [memory].pull_role")
 		pullAllowSuffix = fs.String("pull-allow-suffix", "", "optional X-IOMesh-Pull-Allow-Suffix (comma tokens; role=custom); [memory].pull_allow_suffix")
 		yes             = fs.Bool("yes", false, "confirm mutating fetch (required)")
 		jsonOut         = fs.Bool("json", false, "print messages as JSON")
@@ -1782,6 +1783,8 @@ func cmdMeshDogfood(args []string) int {
 		cfg.IOMesh.Tenant = *tenant
 	}
 	// Env already applied by config.Load; allow empty endpoint → SKIP report.
+	// s687: wire [memory].pull_role / pull_allow_suffix onto Client so consumer probe
+	// sends federated ACL headers + dogfood report always-emits pull_role/pull_allow_suffix.
 	mesh := iomesh.New(iomesh.Config{
 		Enabled:         cfg.IOMesh.Enabled,
 		Endpoint:        cfg.IOMesh.Endpoint,
@@ -1797,6 +1800,8 @@ func cmdMeshDogfood(args []string) int {
 		PolicyMode:      iomesh.PolicyMode(cfg.IOMesh.PolicyMode),
 		CatalogPlane:    cfg.IOMesh.CatalogPlane,
 		InjectCatalog:   cfg.IOMesh.InjectCatalog,
+		Role:            strings.TrimSpace(cfg.Memory.PullRole),
+		PullAllowSuffix: strings.TrimSpace(cfg.Memory.PullAllowSuffix),
 	}, logger)
 
 	ws := *workspace
@@ -1948,7 +1953,7 @@ Flags (pull):
   --config path         config.toml
   --stream S            durable stream (default: [memory].pull_stream or EVENTS)
   --name C              durable consumer name (required unless config pull_consumer)
-  --filter F            optional filter_subject (role-aware default when empty; s660/s678)
+  --filter F            optional filter_subject (role-aware default when empty; s660/s678/s687)
   --batch N             fetch batch (default 8)
   --max-wait dur        long-poll wait (default 2s)
   --once                single fetch cycle then exit
@@ -1957,13 +1962,13 @@ Flags (pull):
   --yes                 confirm mutating pull loop (required unless --dry-run)
   --endpoint url        override IOMESH_ENDPOINT
   --mcp-server name     MCP server name for memory tools (default memory)
-  --role R              optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|custom); [memory].pull_role
+  --role R              optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|memory|custom); [memory].pull_role
   --pull-allow-suffix S optional X-IOMesh-Pull-Allow-Suffix (comma tokens; role=custom); [memory].pull_allow_suffix
   -v                    verbose
 
 Honesty: dual_write remains optional audit (default OFF). Hosted Palace sunset until scale.
-  Role/suffix headers are Beta federated ACL (s675); role-aware default filter is s678 Beta —
-  fail-open when empty — not full IdP RBAC GA.
+  Role/suffix headers are Beta federated ACL (s675); role-aware default filter is s678/s687 Beta —
+  memory → tenant.memory.> (peer aion s686); fail-open when empty — not full IdP RBAC GA.
 `)
 		return 0
 	default:
@@ -1989,7 +1994,7 @@ func cmdMemoryPull(args []string) int {
 		yes             = fs.Bool("yes", false, "confirm mutating pull (required unless --dry-run)")
 		endpoint        = fs.String("endpoint", "", "override mesh endpoint")
 		mcpServer       = fs.String("mcp-server", "", "MCP memory server name")
-		role            = fs.String("role", "", "optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|custom)")
+		role            = fs.String("role", "", "optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|memory|custom)")
 		pullAllowSuffix = fs.String("pull-allow-suffix", "", "optional X-IOMesh-Pull-Allow-Suffix (comma tokens; role=custom)")
 		verbose         = fs.Bool("v", false, "verbose logs")
 	)

@@ -48,11 +48,12 @@ func DefaultMemoryPullFilter(explicit, tenant string) string {
 	return DefaultMemoryPullFilterForRole(explicit, tenant, "", "")
 }
 
-// DefaultMemoryPullFilterForRole returns an effective consumer filter_subject (s678).
+// DefaultMemoryPullFilterForRole returns an effective consumer filter_subject (s678/s687).
 // When explicit is non-empty after trim, it always wins.
 // When filter is empty:
 //   - role empty: s660 — tenant.> only for hierarchical / dept.* tenants
 //   - agent|viewer: tenant.events.> when tenant set
+//   - memory (s687 / peer aion s686): tenant.memory.> when tenant set
 //   - auditor: tenant.audit.> when tenant set
 //   - operator|admin: tenant.> when tenant set
 //   - custom + exactly one allow-suffix token: tenant.<suffix>.>
@@ -81,6 +82,9 @@ func DefaultMemoryPullFilterForRole(explicit, tenant, role, allowSuffix string) 
 		return ""
 	case "agent", "viewer":
 		return tenant + ".events.>"
+	case "memory":
+		// s687: local-palace memory subjects under tenant (peer aion s686).
+		return tenant + ".memory.>"
 	case "auditor":
 		return tenant + ".audit.>"
 	case "operator", "admin":

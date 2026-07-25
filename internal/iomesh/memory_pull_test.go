@@ -117,6 +117,13 @@ func TestDefaultMemoryPullFilterForRole(t *testing.T) {
 		{name: "viewer", explicit: "", tenant: "dept.eng", role: "viewer", want: "dept.eng.events.>"},
 		{name: "agent case insensitive", explicit: "", tenant: "t", role: "Agent", want: "t.events.>"},
 
+		// memory (s687 / peer aion s686) → tenant.memory.>
+		{name: "memory hierarchical", explicit: "", tenant: "dept.research", role: "memory", want: "dept.research.memory.>"},
+		{name: "memory plain tenant", explicit: "", tenant: "acme", role: "memory", want: "acme.memory.>"},
+		{name: "memory case insensitive", explicit: "", tenant: "t", role: "Memory", want: "t.memory.>"},
+		{name: "explicit wins over memory", explicit: "custom.>", tenant: "dept.eng", role: "memory", want: "custom.>"},
+		{name: "memory empty tenant", explicit: "", tenant: "", role: "memory", want: ""},
+
 		// auditor → tenant.audit.>
 		{name: "auditor", explicit: "", tenant: "dept.eng", role: "auditor", want: "dept.eng.audit.>"},
 		{name: "auditor plain", explicit: "", tenant: "acme", role: "auditor", want: "acme.audit.>"},

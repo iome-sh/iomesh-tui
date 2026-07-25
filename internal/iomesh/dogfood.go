@@ -96,6 +96,14 @@ type DogfoodReport struct {
 	// ConsumerFilter is the optional filter_subject when set with stream+name.
 	// Always emitted (empty when unset / not configured with stream+name).
 	ConsumerFilter string `json:"consumer_filter"`
+	// PullRole is Client Config Role / X-IOMesh-Role used on consumer create/fetch
+	// (and other authenticated mesh requests). Always emitted (empty when unset).
+	// s687 dogfood identity for CI scrapers; peers tenant/org/workspace always-emit.
+	// Empty does not invent probe success — pair with consumer_probed / consumer_ok.
+	PullRole string `json:"pull_role"`
+	// PullAllowSuffix is Client Config PullAllowSuffix / X-IOMesh-Pull-Allow-Suffix.
+	// Always emitted (empty when unset). s687 dogfood identity.
+	PullAllowSuffix string `json:"pull_allow_suffix"`
 	// ConsumerProbed is true when both ConsumerStream and ConsumerName were set and a create attempt ran.
 	// Always emitted in JSON (false when unset / partial / mesh disabled before step).
 	ConsumerProbed bool `json:"consumer_probed"`
@@ -334,6 +342,10 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		rep.Workspace = strings.TrimSpace(c.cfg.WorkspaceID)
 		rep.DualWrite = c.cfg.DualWrite
 		rep.MemoryEndpoint = strings.TrimSpace(c.cfg.MemoryEndpoint)
+		// s687: always-emit federated pull identity from Client Config (empty when unset).
+		// Soft: create/fetch already send headers when Role/PullAllowSuffix set on Client.
+		rep.PullRole = strings.TrimSpace(c.cfg.Role)
+		rep.PullAllowSuffix = strings.TrimSpace(c.cfg.PullAllowSuffix)
 		mode := strings.ToLower(strings.TrimSpace(string(c.cfg.PolicyMode)))
 		if mode == "" {
 			mode = "off"
@@ -717,6 +729,8 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 	// 6c) Soft consumer create (+ optional fetch + optional delete cleanup) probe — after streams; no ack.
 	// Both ConsumerStream and ConsumerName required; optional filter + fetch + delete.
 	// ConsumerMS stays 0 when probe unset/skipped.
+	// Soft: Role/PullAllowSuffix on Client ride auth headers (s675 continuum); empty filter
+	// gets role-aware DefaultMemoryPullFilterForRole when Role set (s678/s687).
 	consumerStream := strings.TrimSpace(opts.ConsumerStream)
 	consumerName := strings.TrimSpace(opts.ConsumerName)
 	consumerFilter := strings.TrimSpace(opts.ConsumerFilter)
@@ -735,6 +749,10 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		rep.ConsumerDeleteOK = false
 		rep.Steps = append(rep.Steps, Step{Name: "consumer", Status: StepSkip, Detail: "consumer probe needs stream and name"})
 	} else {
+		// Role-aware default filter when filter empty (same pure path as memory pull / consumer create).
+		consumerFilter = DefaultMemoryPullFilterForRole(
+			consumerFilter, c.Tenant(), c.cfg.Role, c.cfg.PullAllowSuffix,
+		)
 		// Identity evidence when both stream+name provided (even if create later fails).
 		rep.ConsumerStream = consumerStream
 		rep.ConsumerName = consumerName
@@ -1154,6 +1172,8 @@ func FormatReportJSON(r DogfoodReport) string {
 		ConsumerStream       string     `json:"consumer_stream"`        // always emit (empty when unset/partial)
 		ConsumerName         string     `json:"consumer_name"`          // always emit (empty when unset/partial)
 		ConsumerFilter       string     `json:"consumer_filter"`        // always emit (empty when unset)
+		PullRole             string     `json:"pull_role"`              // always emit (empty when unset; s687)
+		PullAllowSuffix      string     `json:"pull_allow_suffix"`      // always emit (empty when unset; s687)
 		ConsumerProbed       bool       `json:"consumer_probed"`        // always emit (true if stream+name set + create attempt)
 		ConsumerOK           bool       `json:"consumer_ok"`            // always emit (true if create 201/409)
 		ConsumerFetchOK      bool       `json:"consumer_fetch_ok"`      // always emit (true if optional fetch ok)
@@ -1230,6 +1250,8 @@ func FormatReportJSON(r DogfoodReport) string {
 		ConsumerStream:       r.ConsumerStream,
 		ConsumerName:         r.ConsumerName,
 		ConsumerFilter:       r.ConsumerFilter,
+		PullRole:             r.PullRole,
+		PullAllowSuffix:      r.PullAllowSuffix,
 		ConsumerProbed:       r.ConsumerProbed,
 		ConsumerOK:           r.ConsumerOK,
 		ConsumerFetchOK:      r.ConsumerFetchOK,
@@ -1342,6 +1364,9 @@ func FormatReport(r DogfoodReport) string {
 	fmt.Fprintf(&b, "  consumer_stream: %s\n", r.ConsumerStream)
 	fmt.Fprintf(&b, "  consumer_name: %s\n", r.ConsumerName)
 	fmt.Fprintf(&b, "  consumer_filter: %s\n", r.ConsumerFilter)
+	// s687: pull_role / pull_allow_suffix always-emit (empty when unset) for CI scrapers.
+	fmt.Fprintf(&b, "  pull_role: %s\n", r.PullRole)
+	fmt.Fprintf(&b, "  pull_allow_suffix: %s\n", r.PullAllowSuffix)
 	fmt.Fprintf(&b, "  consumer_probed: %v\n", r.ConsumerProbed)
 	fmt.Fprintf(&b, "  consumer_ok: %v\n", r.ConsumerOK)
 	fmt.Fprintf(&b, "  consumer_fetch_ok: %v\n", r.ConsumerFetchOK)
