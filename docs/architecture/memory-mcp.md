@@ -104,6 +104,8 @@ When `--filter` / `[memory].pull_filter` is empty and `[memory].tenant` or `[iom
 
 **s684 (Beta):** `iomesh mesh consumer fetch` (and ack/nack/delete) accept the same `--role` / `--pull-allow-suffix` flags and config fallbacks so broker fetch validates federated ACL headers (aion s683 continuum). Fail-open without role; dual_write default OFF — not full mesh RBAC GA.
 
+**s687 (Beta):** role=`memory` default filter → `tenant.memory.>` when tenant set (peer aion s686 federated pull memory role; local-palace memory subjects only). Dogfood report always-emits `pull_role` / `pull_allow_suffix` from Client Config (empty when unset) for CI scrapers; dogfood CLI wires `[memory].pull_role` / `pull_allow_suffix` onto Client so the soft consumer probe sends headers + applies role-aware empty-filter defaults. Fail-open without role; dual_write default OFF; not full mesh RBAC GA.
+
 Env: `MEMORY_MCP_HTTP_ADDR` / `AION_MEMORY_MCP_HTTP_ADDR`, path `MEMORY_MCP_HTTP_PATH` (default `/mcp`).
 
 ### Alternate: stdio

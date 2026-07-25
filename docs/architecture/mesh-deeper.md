@@ -206,6 +206,7 @@ Lean consumer surface (no SDK dependency; wire parity with SDK `CreateConsumer` 
 iomesh mesh consumer create --stream EVENTS --name worker-1 --yes
 iomesh mesh consumer create --stream EVENTS --name worker-1 --filter 'dept.events.>' --yes --json
 iomesh mesh consumer create --stream EVENTS --name agent-1 --role agent --yes   # s681: X-IOMesh-Role + default filter tenant.events.>
+iomesh mesh consumer create --stream EVENTS --name mem-1 --role memory --yes    # s687: default filter tenant.memory.>
 iomesh mesh consumer fetch --stream EVENTS --name worker-1 --batch 1 --yes
 iomesh mesh consumer fetch --stream EVENTS --name agent-1 --role agent --batch 1 --yes   # s684: role headers on fetch path
 iomesh mesh consumer fetch --stream EVENTS --name worker-1 --batch 5 --yes --json
@@ -215,7 +216,7 @@ iomesh mesh consumer delete --stream EVENTS --name worker-1 --yes
 iomesh mesh consumer delete --stream EVENTS --name worker-1 --yes --json
 ```
 
-Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 already-exists → success). Optional `--role` / `--pull-allow-suffix` (or `[memory].pull_role` / `pull_allow_suffix`) set auth headers on create (s681), fetch (s684; aion validates role on fetch), and ack/nack/delete (defense-in-depth); empty `--filter` on create gets role-aware default via `DefaultMemoryPullFilterForRole` (s681 / s678). **Beta** federated ACL — fail-open without role; not full mesh RBAC GA; peer aion s683 continuum. Fetch long-polls up to 2s. Ack/nack require at least one `--seq` (repeatable; CSV ok). Delete prints `PASS ...` (or `{"ok":true,"stream":"...","name":"..."}` with `--json`). Mesh disabled → error `mesh disabled` (non-zero CLI exit). Not auto-probed by dogfood.
+Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 already-exists → success). Optional `--role` / `--pull-allow-suffix` (or `[memory].pull_role` / `pull_allow_suffix`) set auth headers on create (s681), fetch (s684; aion validates role on fetch), and ack/nack/delete (defense-in-depth); empty `--filter` on create gets role-aware default via `DefaultMemoryPullFilterForRole` (s681 / s678 / s687 — `memory` → `tenant.memory.>`). **Beta** federated ACL — fail-open without role; not full mesh RBAC GA; peer aion s686 continuum. Fetch long-polls up to 2s. Ack/nack require at least one `--seq` (repeatable; CSV ok). Delete prints `PASS ...` (or `{"ok":true,"stream":"...","name":"..."}` with `--json`). Mesh disabled → error `mesh disabled` (non-zero CLI exit). Soft consumer probe in dogfood always-emits `pull_role` / `pull_allow_suffix` identity (s687).
 
 ## Packages
 

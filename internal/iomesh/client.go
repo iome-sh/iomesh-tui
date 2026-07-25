@@ -59,8 +59,9 @@ type Config struct {
 	// When set, RetrieveMemory prefers this over Endpoint (stage warm plane vs broker-only mesh).
 	// Env: IOMESH_MEMORY_ENDPOINT / MEMORY_SIDECAR_URL · config [memory].endpoint
 	MemoryEndpoint string
-	// Role is optional federated mesh role for X-IOMesh-Role (operator|admin|agent|auditor|viewer|custom).
-	// Fail-open: empty omits the header (local/dev honesty; not full IdP RBAC). s675 / aion s671 peer.
+	// Role is optional federated mesh role for X-IOMesh-Role (operator|admin|agent|auditor|viewer|memory|custom).
+	// Fail-open: empty omits the header (local/dev honesty; not full IdP RBAC). s675/s687 / aion s671/s686 peer.
+	// role=memory → default filter tenant.memory.> via DefaultMemoryPullFilterForRole.
 	Role string
 	// PullAllowSuffix is optional comma-separated literal tokens for role=custom
 	// (X-IOMesh-Pull-Allow-Suffix). Fail-open: empty omits the header. s675.
