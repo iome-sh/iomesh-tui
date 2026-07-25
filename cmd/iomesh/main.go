@@ -1901,7 +1901,7 @@ Flags (pull):
   --config path         config.toml
   --stream S            durable stream (default: [memory].pull_stream or EVENTS)
   --name C              durable consumer name (required unless config pull_consumer)
-  --filter F            optional filter_subject (default: tenant.> when tenant is dept.* / hierarchical)
+  --filter F            optional filter_subject (role-aware default when empty; s660/s678)
   --batch N             fetch batch (default 8)
   --max-wait dur        long-poll wait (default 2s)
   --once                single fetch cycle then exit
@@ -1915,7 +1915,8 @@ Flags (pull):
   -v                    verbose
 
 Honesty: dual_write remains optional audit (default OFF). Hosted Palace sunset until scale.
-  Role/suffix headers are Beta federated ACL (s675); fail-open when empty — not full IdP RBAC GA.
+  Role/suffix headers are Beta federated ACL (s675); role-aware default filter is s678 Beta —
+  fail-open when empty — not full IdP RBAC GA.
 `)
 		return 0
 	default:
@@ -1975,12 +1976,22 @@ func cmdMemoryPull(args []string) int {
 	if filterSub == "" {
 		filterSub = strings.TrimSpace(cfg.Memory.PullFilter)
 	}
-	// s660: empty --filter / pull_filter → default filter_subject from memory or mesh tenant.
+	// s660/s678: empty --filter / pull_filter → role-aware default from memory or mesh tenant.
 	pullTenant := strings.TrimSpace(cfg.Memory.Tenant)
 	if pullTenant == "" {
 		pullTenant = strings.TrimSpace(cfg.IOMesh.Tenant)
 	}
-	filterSub = iomesh.DefaultMemoryPullFilter(filterSub, pullTenant)
+	// s675: federated pull role + custom allow-suffix (flags override [memory] config). Fail-open empty → omit headers.
+	// Resolved before default filter so s678 can use role + single custom suffix.
+	pullRole := strings.TrimSpace(*role)
+	if pullRole == "" {
+		pullRole = strings.TrimSpace(cfg.Memory.PullRole)
+	}
+	allowSuffix := strings.TrimSpace(*pullAllowSuffix)
+	if allowSuffix == "" {
+		allowSuffix = strings.TrimSpace(cfg.Memory.PullAllowSuffix)
+	}
+	filterSub = iomesh.DefaultMemoryPullFilterForRole(filterSub, pullTenant, pullRole, allowSuffix)
 	batchN := *batch
 	if batchN <= 0 {
 		batchN = cfg.Memory.PullBatch
@@ -2018,15 +2029,6 @@ func cmdMemoryPull(args []string) int {
 	if meshTenant == "" {
 		meshTenant = strings.TrimSpace(cfg.Memory.Tenant)
 	}
-	// s675: federated pull role + custom allow-suffix (flags override [memory] config). Fail-open empty → omit headers.
-	pullRole := strings.TrimSpace(*role)
-	if pullRole == "" {
-		pullRole = strings.TrimSpace(cfg.Memory.PullRole)
-	}
-	allowSuffix := strings.TrimSpace(*pullAllowSuffix)
-	if allowSuffix == "" {
-		allowSuffix = strings.TrimSpace(cfg.Memory.PullAllowSuffix)
-	}
 	mesh := iomesh.New(iomesh.Config{
 		Enabled:         cfg.IOMesh.Enabled,
 		Endpoint:        cfg.IOMesh.Endpoint,
@@ -2042,7 +2044,7 @@ func cmdMemoryPull(args []string) int {
 		return 1
 	}
 
-	// Always log effective filter once at start (s660); role/suffix once (s675). Empty role/suffix = fail-open omit headers.
+	// Always log effective filter once at start (s660/s678); role/suffix once (s675). Empty role/suffix = fail-open omit headers.
 	fmt.Fprintf(os.Stderr, "memory pull filter_subject=%q tenant=%q role=%q pull_allow_suffix=%q\n",
 		filterSub, pullTenant, pullRole, allowSuffix)
 

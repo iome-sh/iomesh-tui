@@ -177,8 +177,8 @@ enabled = false
 # pull_filter = ""
 # pull_batch = 8
 # pull_max_wait_ms = 2000
-# pull_role = ""           # optional X-IOMesh-Role on mesh auth (s675 Beta; fail-open empty)
-# pull_allow_suffix = ""   # optional X-IOMesh-Pull-Allow-Suffix (role=custom comma tokens)
+# pull_role = ""           # optional X-IOMesh-Role on mesh auth (s675 Beta; fail-open empty; s678 role-aware default filter)
+# pull_allow_suffix = ""   # optional X-IOMesh-Pull-Allow-Suffix (role=custom comma tokens; s678 single-token default filter)
 # limit = 8
 # max_snippet_bytes = 6000
 # IOMESH_MEMORY=1 · IOMESH_MEMORY_TENANT · IOMESH_MEMORY_ENDPOINT · MEMORY_SIDECAR_URL

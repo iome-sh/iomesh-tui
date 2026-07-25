@@ -41,12 +41,28 @@ type MemoryPullStats struct {
 	Filter    string // effective filter_subject passed to CreateConsumer
 }
 
-// DefaultMemoryPullFilter returns an effective consumer filter_subject (s660).
-// When explicit is non-empty after trim, it wins. Otherwise, if tenant looks like
-// a hierarchical / dept.* id (contains a '.' or has prefix "dept"), defaults to
-// tenant + ".>" (e.g. dept.engineering → dept.engineering.>). Empty otherwise.
+// DefaultMemoryPullFilter returns an effective consumer filter_subject with empty
+// role (s660). Prefer DefaultMemoryPullFilterForRole when pull role is known.
 // Pure: no I/O.
 func DefaultMemoryPullFilter(explicit, tenant string) string {
+	return DefaultMemoryPullFilterForRole(explicit, tenant, "", "")
+}
+
+// DefaultMemoryPullFilterForRole returns an effective consumer filter_subject (s678).
+// When explicit is non-empty after trim, it always wins.
+// When filter is empty:
+//   - role empty: s660 — tenant.> only for hierarchical / dept.* tenants
+//   - agent|viewer: tenant.events.> when tenant set
+//   - auditor: tenant.audit.> when tenant set
+//   - operator|admin: tenant.> when tenant set
+//   - custom + exactly one allow-suffix token: tenant.<suffix>.>
+//   - custom + multiple/no suffixes: empty (fail closed; operator must pass --filter)
+//   - unknown role: empty (no invent)
+//
+// Beta federated ACL defaults — not full mesh RBAC GA. Fail-open headers remain
+// separate (empty role/suffix still omit X-IOMesh-* auth headers).
+// Pure: no I/O.
+func DefaultMemoryPullFilterForRole(explicit, tenant, role, allowSuffix string) string {
 	explicit = strings.TrimSpace(explicit)
 	if explicit != "" {
 		return explicit
@@ -55,10 +71,49 @@ func DefaultMemoryPullFilter(explicit, tenant string) string {
 	if tenant == "" {
 		return ""
 	}
-	if strings.Contains(tenant, ".") || strings.HasPrefix(tenant, "dept") {
+	role = strings.ToLower(strings.TrimSpace(role))
+	switch role {
+	case "":
+		// s660: hierarchical / dept.* only.
+		if strings.Contains(tenant, ".") || strings.HasPrefix(tenant, "dept") {
+			return tenant + ".>"
+		}
+		return ""
+	case "agent", "viewer":
+		return tenant + ".events.>"
+	case "auditor":
+		return tenant + ".audit.>"
+	case "operator", "admin":
 		return tenant + ".>"
+	case "custom":
+		tokens := splitPullAllowSuffixTokens(allowSuffix)
+		if len(tokens) == 1 {
+			return tenant + "." + tokens[0] + ".>"
+		}
+		// Multiple or zero suffixes: leave empty so mesh fails closed without --filter.
+		return ""
+	default:
+		// Unknown role: do not invent a default filter.
+		return ""
 	}
-	return ""
+}
+
+// splitPullAllowSuffixTokens splits comma-separated X-IOMesh-Pull-Allow-Suffix
+// tokens, trimming whitespace and dropping empty entries.
+func splitPullAllowSuffixTokens(s string) []string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil
+	}
+	parts := strings.Split(s, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 // MapStreamMessageToEnvelope converts a durable-fetch message into a MemoryEnvelope for local ingest.
@@ -167,8 +222,8 @@ func (c *Client) RunMemoryPull(ctx context.Context, opt MemoryPullOptions) (Memo
 	if !opt.DryRun && opt.LocalIngest == nil {
 		return st, fmt.Errorf("memory pull: LocalIngest required unless DryRun")
 	}
-	// s660: default filter_subject from client tenant when unset (CLI also pre-resolves).
-	opt.Filter = DefaultMemoryPullFilter(opt.Filter, c.Tenant())
+	// s660/s678: default filter_subject from tenant + role when unset (CLI also pre-resolves).
+	opt.Filter = DefaultMemoryPullFilterForRole(opt.Filter, c.Tenant(), c.cfg.Role, c.cfg.PullAllowSuffix)
 	st.Stream = opt.Stream
 	st.Consumer = opt.Name
 	st.Filter = opt.Filter
