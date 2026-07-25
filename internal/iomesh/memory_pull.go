@@ -28,16 +28,16 @@ type MemoryPullOptions struct {
 
 // MemoryPullStats summarizes one RunMemoryPull invocation.
 type MemoryPullStats struct {
-	Loops      int
-	Fetched    int
-	Ingested   int
-	Skipped    int
-	Acked      int
-	Errors     int
-	LastError  string
-	CreateOK   bool
-	Consumer   string
-	Stream     string
+	Loops     int
+	Fetched   int
+	Ingested  int
+	Skipped   int
+	Acked     int
+	Errors    int
+	LastError string
+	CreateOK  bool
+	Consumer  string
+	Stream    string
 }
 
 // MapStreamMessageToEnvelope converts a durable-fetch message into a MemoryEnvelope for local ingest.
@@ -45,6 +45,7 @@ type MemoryPullStats struct {
 //   - MEMORY_INGEST style JSON (type memory_ingest / fields content, role, session_id, session_seq, event_time)
 //   - generic JSON with content/text/body/message
 //   - raw text payload (connector events)
+//
 // Returns ok=false when there is no ingestible content.
 func MapStreamMessageToEnvelope(msg StreamMessage) (MemoryEnvelope, string /*dedupeKey*/, bool) {
 	payload := bytesTrimSpace(msg.Payload)

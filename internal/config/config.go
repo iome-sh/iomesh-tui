@@ -182,10 +182,10 @@ type MemorySection struct {
 	MaxSnippetBytes int  `toml:"max_snippet_bytes"`
 	// Pull* configure `iomesh memory pull` (mesh durable consumer → local MCP palace). s652 M1.
 	// Primary product path under cost-max local-memory charter (dual_write remains optional audit).
-	PullStream    string `toml:"pull_stream"`    // e.g. EVENTS or MEMORY_INGEST
-	PullConsumer  string `toml:"pull_consumer"`  // durable consumer name
-	PullFilter    string `toml:"pull_filter"`    // optional filter_subject
-	PullBatch     int    `toml:"pull_batch"`     // default 8
+	PullStream    string `toml:"pull_stream"`      // e.g. EVENTS or MEMORY_INGEST
+	PullConsumer  string `toml:"pull_consumer"`    // durable consumer name
+	PullFilter    string `toml:"pull_filter"`      // optional filter_subject
+	PullBatch     int    `toml:"pull_batch"`       // default 8
 	PullMaxWaitMS int    `toml:"pull_max_wait_ms"` // default 2000
 }
 
