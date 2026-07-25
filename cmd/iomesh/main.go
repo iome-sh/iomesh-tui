@@ -589,10 +589,12 @@ Flags (wait):
   --timeout dur       max wait (default 30s)
   --interval dur      poll interval (default 500ms)
   --require-health    require Health OK each attempt before Ready
-  --json              print {ok,elapsed_ms[,error]} as JSON
+  --json              print wait evidence as JSON (always-emits pull_role / pull_allow_suffix)
   --endpoint url      override IOMESH_ENDPOINT
   --config path       config.toml
   -v                  verbose
+  Identity always-emits pull_role / pull_allow_suffix from [memory].pull_role / pull_allow_suffix
+  (empty when unset; Beta federated ACL; fail-open; not full mesh RBAC GA; dual_write default OFF).
 
 Flags (status):
   --endpoint url      override IOMESH_ENDPOINT
@@ -615,7 +617,7 @@ func cmdMeshWait(args []string) int {
 		timeout       = fs.Duration("timeout", 30*time.Second, "max wait duration")
 		interval      = fs.Duration("interval", 500*time.Millisecond, "poll interval")
 		requireHealth = fs.Bool("require-health", false, "require Health OK each attempt before Ready")
-		jsonOut       = fs.Bool("json", false, "print {ok,elapsed_ms,require_health,timeout_ms,interval_ms,attempts,result,exit_code,version,user_agent,endpoint,tenant,org,workspace[,error]} as JSON")
+		jsonOut       = fs.Bool("json", false, "print {ok,elapsed_ms,require_health,timeout_ms,interval_ms,attempts,result,exit_code,version,user_agent,endpoint,tenant,org,workspace,pull_role,pull_allow_suffix[,error]} as JSON")
 		verbose       = fs.Bool("v", false, "verbose logs")
 	)
 	if err := fs.Parse(args); err != nil {
@@ -631,13 +633,19 @@ func cmdMeshWait(args []string) int {
 		cfg.IOMesh.Endpoint = *endpoint
 		cfg.IOMesh.Enabled = true
 	}
+	// s693: wire [memory].pull_role / pull_allow_suffix onto Client so wait
+	// always-emits pull identity from Config (empty when unset; peers status s690).
+	pullRole := strings.TrimSpace(cfg.Memory.PullRole)
+	pullAllowSuffix := strings.TrimSpace(cfg.Memory.PullAllowSuffix)
 	mesh := iomesh.New(iomesh.Config{
-		Enabled:     cfg.IOMesh.Enabled,
-		Endpoint:    cfg.IOMesh.Endpoint,
-		Tenant:      cfg.IOMesh.Tenant,
-		APIKeyEnv:   cfg.IOMesh.APIKeyEnv,
-		OrgID:       cfg.IOMesh.Org,
-		WorkspaceID: cfg.IOMesh.Workspace,
+		Enabled:         cfg.IOMesh.Enabled,
+		Endpoint:        cfg.IOMesh.Endpoint,
+		Tenant:          cfg.IOMesh.Tenant,
+		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
+		OrgID:           cfg.IOMesh.Org,
+		WorkspaceID:     cfg.IOMesh.Workspace,
+		Role:            pullRole,
+		PullAllowSuffix: pullAllowSuffix,
 	}, logger)
 
 	parent, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -652,8 +660,9 @@ func cmdMeshWait(args []string) int {
 	// exit_code is the process exit (0 when OK, 1 when not) always emit for scrapers.
 	// version is package ProductVersion (set from main; empty when unset) always emit.
 	// user_agent is package UserAgent (set from main; default "iomesh-tui") always emit.
-	// endpoint/tenant/org/workspace are configured identity (empty when unset) always emit;
-	// peer mesh status identity continuum — does not invent readiness from identity.
+	// endpoint/tenant/org/workspace/pull_role/pull_allow_suffix are configured identity
+	// (empty when unset) always emit; peer mesh status s690 identity continuum —
+	// does not invent readiness from identity.
 	start := time.Now()
 	attempts, waitErr := mesh.WaitReadyAttempts(ctx, iomesh.WaitReadyOptions{
 		Interval:      *interval,
@@ -661,18 +670,20 @@ func cmdMeshWait(args []string) int {
 	})
 	elapsedMS := iomesh.ElapsedMS(time.Since(start))
 	ev := iomesh.MeshWaitEvidence{
-		OK:            waitErr == nil,
-		ElapsedMS:     elapsedMS,
-		RequireHealth: *requireHealth,
-		TimeoutMS:     int(timeout.Milliseconds()),
-		IntervalMS:    int(interval.Milliseconds()),
-		Attempts:      attempts,
-		Version:       iomesh.ProductVersion(),
-		UserAgent:     iomesh.UserAgent(),
-		Endpoint:      cfg.IOMesh.Endpoint,
-		Tenant:        cfg.IOMesh.Tenant,
-		Org:           strings.TrimSpace(cfg.IOMesh.Org),
-		Workspace:     strings.TrimSpace(cfg.IOMesh.Workspace),
+		OK:              waitErr == nil,
+		ElapsedMS:       elapsedMS,
+		RequireHealth:   *requireHealth,
+		TimeoutMS:       int(timeout.Milliseconds()),
+		IntervalMS:      int(interval.Milliseconds()),
+		Attempts:        attempts,
+		Version:         iomesh.ProductVersion(),
+		UserAgent:       iomesh.UserAgent(),
+		Endpoint:        cfg.IOMesh.Endpoint,
+		Tenant:          cfg.IOMesh.Tenant,
+		Org:             strings.TrimSpace(cfg.IOMesh.Org),
+		Workspace:       strings.TrimSpace(cfg.IOMesh.Workspace),
+		PullRole:        pullRole,
+		PullAllowSuffix: pullAllowSuffix,
 	}
 	if waitErr != nil {
 		ev.Error = waitErr.Error()

@@ -89,9 +89,12 @@ func wrapWaitReadyErr(lastErr, ctxErr error) error {
 // ExitCode is the process exit code for this wait (0 when OK, 1 when not OK).
 // Version is the package product/binary version via ProductVersion() (empty when unset).
 // UserAgent is the package mesh HTTP User-Agent via UserAgent() (default "iomesh-tui").
-// Identity fields (Endpoint, Tenant, Org, Workspace) are always emitted as strings
-// (empty when unset) so CI scrapers can key on stable identity without omitempty gaps;
-// peer to mesh status identity continuum. Does not invent readiness from identity.
+// Identity fields (Endpoint, Tenant, Org, Workspace, PullRole, PullAllowSuffix) are always
+// emitted as strings (empty when unset) so CI scrapers can key on stable identity without
+// omitempty gaps; peer to mesh status identity continuum (s690 pull_role / pull_allow_suffix).
+// pull_role / pull_allow_suffix come from Client Config Role / PullAllowSuffix
+// ([memory].pull_role / pull_allow_suffix; Beta federated ACL, fail-open empty, not full RBAC GA).
+// Does not invent readiness from identity.
 // Error is always emitted (empty string when OK) so CI scrapers can key without omitempty gaps.
 type MeshWaitEvidence struct {
 	OK            bool
@@ -108,7 +111,13 @@ type MeshWaitEvidence struct {
 	Tenant        string // always emit; empty when unset
 	Org           string // always emit; empty when unset
 	Workspace     string // always emit; empty when unset
-	Error         string // always emit; empty string when OK (or unset on success)
+	// PullRole is Client Config Role / X-IOMesh-Role (always emitted; empty when unset).
+	// s693 mesh wait identity for CI scrapers; peers status s690 + dogfood s687.
+	PullRole string
+	// PullAllowSuffix is Client Config PullAllowSuffix / X-IOMesh-Pull-Allow-Suffix
+	// (always emitted; empty when unset). s693 mesh wait identity.
+	PullAllowSuffix string
+	Error           string // always emit; empty string when OK (or unset on success)
 }
 
 // MeshWaitResult returns the always-emitted mesh wait result token:
@@ -162,67 +171,72 @@ func (e MeshWaitEvidence) normalize() MeshWaitEvidence {
 
 // FormatMeshWaitResult renders operator preflight wait outcome as text.
 // Always includes elapsed_ms, require_health, timeout_ms, interval_ms, attempts, result,
-// exit_code, version, user_agent, identity fields endpoint/tenant/org/workspace, and error
-// (empty string when OK / unset) for CI evidence.
+// exit_code, version, user_agent, identity fields endpoint/tenant/org/workspace/
+// pull_role/pull_allow_suffix, and error (empty string when OK / unset) for CI evidence.
 func FormatMeshWaitResult(e MeshWaitEvidence) string {
 	e = e.normalize()
 	if e.OK {
 		return fmt.Sprintf(
-			"PASS mesh wait: ready\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\nattempts: %d\nresult: %s\nexit_code: %d\nversion: %s\nuser_agent: %s\nendpoint: %s\ntenant: %s\norg: %s\nworkspace: %s\nerror: %s\n",
+			"PASS mesh wait: ready\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\nattempts: %d\nresult: %s\nexit_code: %d\nversion: %s\nuser_agent: %s\nendpoint: %s\ntenant: %s\norg: %s\nworkspace: %s\npull_role: %s\npull_allow_suffix: %s\nerror: %s\n",
 			e.ElapsedMS, e.RequireHealth, e.TimeoutMS, e.IntervalMS, e.Attempts, e.Result, e.ExitCode, e.Version, e.UserAgent,
-			e.Endpoint, e.Tenant, e.Org, e.Workspace, e.Error,
+			e.Endpoint, e.Tenant, e.Org, e.Workspace, e.PullRole, e.PullAllowSuffix, e.Error,
 		)
 	}
 	return fmt.Sprintf(
-		"FAIL mesh wait: %s\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\nattempts: %d\nresult: %s\nexit_code: %d\nversion: %s\nuser_agent: %s\nendpoint: %s\ntenant: %s\norg: %s\nworkspace: %s\nerror: %s\n",
+		"FAIL mesh wait: %s\nelapsed_ms: %d\nrequire_health: %t\ntimeout_ms: %d\ninterval_ms: %d\nattempts: %d\nresult: %s\nexit_code: %d\nversion: %s\nuser_agent: %s\nendpoint: %s\ntenant: %s\norg: %s\nworkspace: %s\npull_role: %s\npull_allow_suffix: %s\nerror: %s\n",
 		e.Error, e.ElapsedMS, e.RequireHealth, e.TimeoutMS, e.IntervalMS, e.Attempts, e.Result, e.ExitCode, e.Version, e.UserAgent,
-		e.Endpoint, e.Tenant, e.Org, e.Workspace, e.Error,
+		e.Endpoint, e.Tenant, e.Org, e.Workspace, e.PullRole, e.PullAllowSuffix, e.Error,
 	)
 }
 
 // FormatMeshWaitResultJSON renders wait outcome as compact JSON for scrapers.
 // Always emits ok, elapsed_ms, require_health, timeout_ms, interval_ms, attempts, result,
-// exit_code, version, user_agent, endpoint, tenant, org, workspace, and error (empty
-// string when OK / unset) so CI scrapers can key on stable fields without omitempty gaps.
+// exit_code, version, user_agent, endpoint, tenant, org, workspace, pull_role,
+// pull_allow_suffix, and error (empty string when OK / unset) so CI scrapers can key on
+// stable fields without omitempty gaps.
 func FormatMeshWaitResultJSON(e MeshWaitEvidence) string {
 	e = e.normalize()
 	type out struct {
-		OK            bool   `json:"ok"`
-		ElapsedMS     int    `json:"elapsed_ms"`
-		RequireHealth bool   `json:"require_health"`
-		TimeoutMS     int    `json:"timeout_ms"`
-		IntervalMS    int    `json:"interval_ms"`
-		Attempts      int    `json:"attempts"`
-		Result        string `json:"result"`
-		ExitCode      int    `json:"exit_code"`
-		Version       string `json:"version"`
-		UserAgent     string `json:"user_agent"`
-		Endpoint      string `json:"endpoint"`
-		Tenant        string `json:"tenant"`
-		Org           string `json:"org"`
-		Workspace     string `json:"workspace"`
-		Error         string `json:"error"`
+		OK              bool   `json:"ok"`
+		ElapsedMS       int    `json:"elapsed_ms"`
+		RequireHealth   bool   `json:"require_health"`
+		TimeoutMS       int    `json:"timeout_ms"`
+		IntervalMS      int    `json:"interval_ms"`
+		Attempts        int    `json:"attempts"`
+		Result          string `json:"result"`
+		ExitCode        int    `json:"exit_code"`
+		Version         string `json:"version"`
+		UserAgent       string `json:"user_agent"`
+		Endpoint        string `json:"endpoint"`
+		Tenant          string `json:"tenant"`
+		Org             string `json:"org"`
+		Workspace       string `json:"workspace"`
+		PullRole        string `json:"pull_role"`
+		PullAllowSuffix string `json:"pull_allow_suffix"`
+		Error           string `json:"error"`
 	}
 	o := out{
-		OK:            e.OK,
-		ElapsedMS:     e.ElapsedMS,
-		RequireHealth: e.RequireHealth,
-		TimeoutMS:     e.TimeoutMS,
-		IntervalMS:    e.IntervalMS,
-		Attempts:      e.Attempts,
-		Result:        e.Result,
-		ExitCode:      e.ExitCode,
-		Version:       e.Version,
-		UserAgent:     e.UserAgent,
-		Endpoint:      e.Endpoint,
-		Tenant:        e.Tenant,
-		Org:           e.Org,
-		Workspace:     e.Workspace,
-		Error:         e.Error,
+		OK:              e.OK,
+		ElapsedMS:       e.ElapsedMS,
+		RequireHealth:   e.RequireHealth,
+		TimeoutMS:       e.TimeoutMS,
+		IntervalMS:      e.IntervalMS,
+		Attempts:        e.Attempts,
+		Result:          e.Result,
+		ExitCode:        e.ExitCode,
+		Version:         e.Version,
+		UserAgent:       e.UserAgent,
+		Endpoint:        e.Endpoint,
+		Tenant:          e.Tenant,
+		Org:             e.Org,
+		Workspace:       e.Workspace,
+		PullRole:        e.PullRole,
+		PullAllowSuffix: e.PullAllowSuffix,
+		Error:           e.Error,
 	}
 	b, err := json.Marshal(o)
 	if err != nil {
-		return `{"ok":false,"elapsed_ms":0,"require_health":false,"timeout_ms":0,"interval_ms":0,"attempts":0,"result":"err","exit_code":1,"version":"","user_agent":"","endpoint":"","tenant":"","org":"","workspace":"","error":"mesh wait json marshal failed"}` + "\n"
+		return `{"ok":false,"elapsed_ms":0,"require_health":false,"timeout_ms":0,"interval_ms":0,"attempts":0,"result":"err","exit_code":1,"version":"","user_agent":"","endpoint":"","tenant":"","org":"","workspace":"","pull_role":"","pull_allow_suffix":"","error":"mesh wait json marshal failed"}` + "\n"
 	}
 	return string(b) + "\n"
 }
