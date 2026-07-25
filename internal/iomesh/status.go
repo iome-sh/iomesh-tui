@@ -11,26 +11,34 @@ import (
 // `iomesh mesh status` (JSON and text). Probe fields are fail-open: health/ready
 // are "ok", "err", or "skipped"; latencies are always emitted (0 when skipped).
 // Result is always emitted (ok|err|skipped|partial) as the aggregate of health+ready.
-// Identity fields (endpoint, tenant, org, workspace) are always emitted as strings
-// (empty when unset) so CI scrapers can key on stable JSON keys / text lines.
+// Identity fields (endpoint, tenant, org, workspace, pull_role, pull_allow_suffix)
+// are always emitted as strings (empty when unset) so CI scrapers can key on stable
+// JSON keys / text lines. pull_role / pull_allow_suffix peer dogfood s687 always-emit
+// (Client Config Role / PullAllowSuffix; Beta federated ACL, fail-open empty, not full RBAC GA).
 // Probe error strings (HealthErr, ReadyErr) are always emitted (empty string when OK /
 // skipped) so scrapers can key on stable health_err / ready_err without omitempty gaps.
 // Peers SDK ConnectionStatus always-emit probe-err continuum.
 type MeshStatusSnapshot struct {
-	Enabled        bool   `json:"enabled"`
-	Endpoint       string `json:"endpoint"`  // always emitted; empty when unset
-	Tenant         string `json:"tenant"`    // always emitted; empty when unset
-	Org            string `json:"org"`       // always emitted; empty when unset
-	Workspace      string `json:"workspace"` // always emitted; empty when unset
-	Version        string `json:"version"`   // binary version (main.version)
-	PolicyMode     string `json:"policy_mode"`
-	ContextPlane   bool   `json:"context_plane"`
-	CatalogPlane   bool   `json:"catalog_plane"`
-	IncludeLineage bool   `json:"include_lineage"`
-	EmitDept       bool   `json:"emit_dept"`
-	UserAgent      string `json:"user_agent"`
-	StatusLine     string `json:"status_line"`
-	Health         string `json:"health"` // ok|err|skipped
+	Enabled   bool   `json:"enabled"`
+	Endpoint  string `json:"endpoint"`  // always emitted; empty when unset
+	Tenant    string `json:"tenant"`    // always emitted; empty when unset
+	Org       string `json:"org"`       // always emitted; empty when unset
+	Workspace string `json:"workspace"` // always emitted; empty when unset
+	// PullRole is Client Config Role / X-IOMesh-Role (always emitted; empty when unset).
+	// s690 mesh status identity for CI scrapers; peers tenant/org/workspace + dogfood s687.
+	PullRole string `json:"pull_role"`
+	// PullAllowSuffix is Client Config PullAllowSuffix / X-IOMesh-Pull-Allow-Suffix
+	// (always emitted; empty when unset). s690 mesh status identity.
+	PullAllowSuffix string `json:"pull_allow_suffix"`
+	Version         string `json:"version"` // binary version (main.version)
+	PolicyMode      string `json:"policy_mode"`
+	ContextPlane    bool   `json:"context_plane"`
+	CatalogPlane    bool   `json:"catalog_plane"`
+	IncludeLineage  bool   `json:"include_lineage"`
+	EmitDept        bool   `json:"emit_dept"`
+	UserAgent       string `json:"user_agent"`
+	StatusLine      string `json:"status_line"`
+	Health          string `json:"health"` // ok|err|skipped
 	// HealthErr is the Health probe error (always emitted; empty string when OK/skipped).
 	HealthErr string `json:"health_err"`
 	// HealthMS is Health probe latency in milliseconds (always emitted; 0 when skipped/disabled).
@@ -136,6 +144,9 @@ func FormatMeshStatus(s MeshStatusSnapshot) string {
 	fmt.Fprintf(&b, "  tenant:      %s\n", s.Tenant)
 	fmt.Fprintf(&b, "  org:         %s\n", s.Org)
 	fmt.Fprintf(&b, "  workspace:   %s\n", s.Workspace)
+	// s690: pull_role / pull_allow_suffix always-emit (empty when unset) for CI scrapers.
+	fmt.Fprintf(&b, "  pull_role:   %s\n", s.PullRole)
+	fmt.Fprintf(&b, "  pull_allow_suffix: %s\n", s.PullAllowSuffix)
 	fmt.Fprintf(&b, "  policy_mode: %s\n", s.PolicyMode)
 	fmt.Fprintf(&b, "  context_plane: %v\n", s.ContextPlane)
 	fmt.Fprintf(&b, "  catalog_plane: %v\n", s.CatalogPlane)
