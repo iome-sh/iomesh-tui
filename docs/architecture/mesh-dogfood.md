@@ -315,7 +315,7 @@ iomesh mesh catalog              # broker then portal paths
 iomesh mesh streams [--name] [--json] [--delete --yes]  # lean list/get/delete (delete destructive); dogfood probes list + streams_names
 iomesh mesh kv --bucket NAME --list|--get|--put|--delete|--create-bucket  # put/delete/create-bucket require --yes
 iomesh mesh pub --subject S --payload STR|--payload-file F --yes  # ephemeral POST /v1/pub
-iomesh mesh consumer create --stream S --name C [--filter F] --yes  # durable pull consumer (409 idempotent)
+iomesh mesh consumer create --stream S --name C [--filter F] [--role R] [--pull-allow-suffix S] --yes  # durable pull (409 idempotent); role headers + role-aware empty filter Beta (s681; not full RBAC GA)
 iomesh mesh consumer fetch --stream S --name C [--batch N] --yes    # long-poll fetch (default batch 1, 2s)
 iomesh mesh consumer ack  --stream S --name C --seq N [--seq N...] --yes  # ack sequences
 iomesh mesh consumer nack --stream S --name C --seq N [--seq N...] --yes  # nack sequences

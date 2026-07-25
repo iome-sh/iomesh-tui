@@ -220,6 +220,100 @@ func TestFormatConsumerInfo_EmptyFilterAlwaysEmit(t *testing.T) {
 	}
 }
 
+// s681: mesh consumer create resolves role/suffix (flag > config) and role-aware empty filter
+// via DefaultMemoryPullFilterForRole (same pure path as memory pull s678).
+func TestResolveConsumerCreateAuthAndFilter(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name            string
+		explicit        string
+		tenant          string
+		roleFlag        string
+		suffixFlag      string
+		configRole      string
+		configSuffix    string
+		wantFilter      string
+		wantRole        string
+		wantAllowSuffix string
+	}{
+		{
+			name:   "agent empty filter → tenant.events.>",
+			tenant: "acme", roleFlag: "agent",
+			wantFilter: "acme.events.>", wantRole: "agent",
+		},
+		{
+			name:     "flag role overrides config; explicit filter wins",
+			explicit: "dept.ops.>", tenant: "acme",
+			roleFlag: "viewer", configRole: "admin",
+			wantFilter: "dept.ops.>", wantRole: "viewer",
+		},
+		{
+			name:   "config role/suffix when flags empty",
+			tenant: "dept.research", configRole: "custom", configSuffix: "memory",
+			wantFilter: "dept.research.memory.>", wantRole: "custom", wantAllowSuffix: "memory",
+		},
+		{
+			name:   "flag suffix overrides config",
+			tenant: "t", roleFlag: "custom", suffixFlag: "ops", configSuffix: "memory",
+			wantFilter: "t.ops.>", wantRole: "custom", wantAllowSuffix: "ops",
+		},
+		{
+			name:       "empty role fail-open; hierarchical tenant s660 default",
+			tenant:     "dept.research",
+			wantFilter: "dept.research.>",
+		},
+		{
+			name:   "whitespace flags fall back to config",
+			tenant: "acme", roleFlag: "  ", configRole: "auditor",
+			wantFilter: "acme.audit.>", wantRole: "auditor",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			gotF, gotR, gotS := ResolveConsumerCreateAuthAndFilter(
+				tt.explicit, tt.tenant, tt.roleFlag, tt.suffixFlag, tt.configRole, tt.configSuffix,
+			)
+			if gotF != tt.wantFilter || gotR != tt.wantRole || gotS != tt.wantAllowSuffix {
+				t.Fatalf("got filter=%q role=%q suffix=%q want filter=%q role=%q suffix=%q",
+					gotF, gotR, gotS, tt.wantFilter, tt.wantRole, tt.wantAllowSuffix)
+			}
+		})
+	}
+}
+
+// s681 end-to-end pure path: empty filter + role=agent feeds CreateConsumer body via resolved filter.
+func TestCreateConsumer_ResolvedAgentDefaultFilter(t *testing.T) {
+	var gotBody map[string]any
+	var gotRole string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotRole = r.Header.Get("X-IOMesh-Role")
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(map[string]any{"stream": "EVENTS", "name": "agent-1", "filter_subject": gotBody["filter_subject"]})
+	}))
+	defer srv.Close()
+
+	filter, role, suffix := ResolveConsumerCreateAuthAndFilter("", "acme", "agent", "", "", "")
+	if filter != "acme.events.>" || role != "agent" || suffix != "" {
+		t.Fatalf("resolve filter=%q role=%q suffix=%q", filter, role, suffix)
+	}
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "acme", Role: role, PullAllowSuffix: suffix}, nil)
+	info, err := c.CreateConsumer(context.Background(), "EVENTS", "agent-1", filter)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotRole != "agent" {
+		t.Fatalf("X-IOMesh-Role=%q", gotRole)
+	}
+	if gotBody["filter_subject"] != "acme.events.>" {
+		t.Fatalf("body filter_subject=%v", gotBody["filter_subject"])
+	}
+	if info == nil || info.Name != "agent-1" {
+		t.Fatalf("info=%+v", info)
+	}
+}
+
 func TestConsumerFetch_OK(t *testing.T) {
 	payload := []byte(`{"ok":true}`)
 	var gotBody map[string]any

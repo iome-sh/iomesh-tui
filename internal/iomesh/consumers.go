@@ -24,6 +24,27 @@ type ConsumerInfo struct {
 	PendingCount  int    `json:"pending_count"`
 }
 
+// ResolveConsumerCreateAuthAndFilter resolves role, pull-allow-suffix, and effective
+// filter_subject for mesh consumer create (s681). Flag values override config
+// ([memory].pull_role / pull_allow_suffix). Empty filter uses
+// DefaultMemoryPullFilterForRole (same role-aware defaults as memory pull s678).
+// Tenant should be the IOMesh tenant (mesh command pattern). Pure: no I/O.
+//
+// Beta federated ACL headers + defaults — fail-open when role/suffix empty
+// (headers omitted); not full mesh RBAC GA. Peer aion s680 continuum.
+func ResolveConsumerCreateAuthAndFilter(explicitFilter, tenant, roleFlag, suffixFlag, configRole, configSuffix string) (filter, role, allowSuffix string) {
+	role = strings.TrimSpace(roleFlag)
+	if role == "" {
+		role = strings.TrimSpace(configRole)
+	}
+	allowSuffix = strings.TrimSpace(suffixFlag)
+	if allowSuffix == "" {
+		allowSuffix = strings.TrimSpace(configSuffix)
+	}
+	filter = DefaultMemoryPullFilterForRole(explicitFilter, tenant, role, allowSuffix)
+	return filter, role, allowSuffix
+}
+
 // CreateConsumer registers a durable pull consumer via POST /v1/streams/{stream}/consumers.
 // Body: name, optional filter_subject (max_deliver / ack_wait_sec omitted when zero).
 // 201 decodes ConsumerInfo; 409 Conflict is treated as success (idempotent) returning
