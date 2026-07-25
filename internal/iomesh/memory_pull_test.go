@@ -62,6 +62,34 @@ func TestMapStreamMessageToEnvelope_Empty(t *testing.T) {
 	}
 }
 
+func TestDefaultMemoryPullFilter(t *testing.T) {
+	tests := []struct {
+		name     string
+		explicit string
+		tenant   string
+		want     string
+	}{
+		{name: "explicit wins", explicit: "custom.>", tenant: "dept.engineering", want: "custom.>"},
+		{name: "explicit trim", explicit: "  custom.>  ", tenant: "dept.x", want: "custom.>"},
+		{name: "dept hierarchical", explicit: "", tenant: "dept.engineering", want: "dept.engineering.>"},
+		{name: "contains dot", explicit: "", tenant: "acme.prod", want: "acme.prod.>"},
+		{name: "prefix dept no dot", explicit: "", tenant: "dept", want: "dept.>"},
+		{name: "prefix deptfoo", explicit: "", tenant: "deptfoo", want: "deptfoo.>"},
+		{name: "plain tenant no default", explicit: "", tenant: "acme", want: ""},
+		{name: "empty tenant", explicit: "", tenant: "", want: ""},
+		{name: "whitespace tenant", explicit: "", tenant: "  ", want: ""},
+		{name: "whitespace explicit falls through", explicit: "   ", tenant: "dept.eng", want: "dept.eng.>"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := DefaultMemoryPullFilter(tt.explicit, tt.tenant)
+			if got != tt.want {
+				t.Fatalf("DefaultMemoryPullFilter(%q, %q)=%q want %q", tt.explicit, tt.tenant, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestRunMemoryPull_RequiresIngest(t *testing.T) {
 	c := &Client{} // disabled
 	_, err := c.RunMemoryPull(context.Background(), MemoryPullOptions{

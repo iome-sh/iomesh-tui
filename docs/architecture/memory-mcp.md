@@ -91,7 +91,8 @@ iomesh memory pull --stream EVENTS --name tui-local-palace --once --dry-run
 ```
 
 Loop: `CreateConsumer` (idempotent) → `ConsumerFetch` → map envelope → MCP `memory_ingest_turn` → `ConsumerAck`.  
-Primary: connector/`dept.*` or `EVENTS`. Optional: pull `MEMORY_INGEST` when using mesh as audit mirror.
+Primary: connector/`dept.*` or `EVENTS`. Optional: pull `MEMORY_INGEST` when using mesh as audit mirror.  
+When `--filter` / `[memory].pull_filter` is empty and `[memory].tenant` or `[iomesh].tenant` is hierarchical (`dept.*` or contains `.`), default `filter_subject` is `tenant.>` (s660); create/fetch/ack send `X-IOMesh-Tenant` via client auth.
 
 Env: `MEMORY_MCP_HTTP_ADDR` / `AION_MEMORY_MCP_HTTP_ADDR`, path `MEMORY_MCP_HTTP_PATH` (default `/mcp`).
 
