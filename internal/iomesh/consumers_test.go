@@ -220,6 +220,34 @@ func TestFormatConsumerInfo_EmptyFilterAlwaysEmit(t *testing.T) {
 	}
 }
 
+// s684: ResolveMeshPullAuth is the pure flag>config path for fetch/ack/nack/delete (and create).
+func TestResolveMeshPullAuth(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name         string
+		roleFlag     string
+		suffixFlag   string
+		configRole   string
+		configSuffix string
+		wantRole     string
+		wantSuffix   string
+	}{
+		{name: "flag wins", roleFlag: "agent", suffixFlag: "ops", configRole: "admin", configSuffix: "memory", wantRole: "agent", wantSuffix: "ops"},
+		{name: "config when flags empty", configRole: "viewer", configSuffix: "a,b", wantRole: "viewer", wantSuffix: "a,b"},
+		{name: "whitespace flags fall back to config", roleFlag: "  ", suffixFlag: "\t", configRole: "auditor", configSuffix: "x", wantRole: "auditor", wantSuffix: "x"},
+		{name: "empty fail-open"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			gotR, gotS := ResolveMeshPullAuth(tt.roleFlag, tt.suffixFlag, tt.configRole, tt.configSuffix)
+			if gotR != tt.wantRole || gotS != tt.wantSuffix {
+				t.Fatalf("got role=%q suffix=%q want role=%q suffix=%q", gotR, gotS, tt.wantRole, tt.wantSuffix)
+			}
+		})
+	}
+}
+
 // s681: mesh consumer create resolves role/suffix (flag > config) and role-aware empty filter
 // via DefaultMemoryPullFilterForRole (same pure path as memory pull s678).
 func TestResolveConsumerCreateAuthAndFilter(t *testing.T) {
@@ -355,6 +383,83 @@ func TestConsumerFetch_OK(t *testing.T) {
 	}
 	if len(msgs) != 1 || msgs[0].Seq != 7 || string(msgs[0].Payload) != string(payload) {
 		t.Fatalf("msgs=%+v", msgs)
+	}
+}
+
+// s684: Role + PullAllowSuffix ride Client.auth on ConsumerFetch (federated ACL on broker fetch path).
+func TestConsumerFetch_RoleAndPullAllowSuffixHeaders(t *testing.T) {
+	var gotRole, gotSuffix, gotTenant string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotRole = r.Header.Get("X-IOMesh-Role")
+		gotSuffix = r.Header.Get("X-IOMesh-Pull-Allow-Suffix")
+		gotTenant = r.Header.Get("X-IOMesh-Tenant")
+		_ = json.NewEncoder(w).Encode(map[string]any{"messages": []any{}})
+	}))
+	defer srv.Close()
+
+	role, suffix := ResolveMeshPullAuth("custom", "ops,memory", "agent", "ignored")
+	c := New(Config{
+		Enabled:         true,
+		Endpoint:        srv.URL,
+		Tenant:          "dept.research",
+		Role:            role,
+		PullAllowSuffix: suffix,
+	}, nil)
+	if _, err := c.ConsumerFetch(context.Background(), "EVENTS", "c", 1, time.Second); err != nil {
+		t.Fatal(err)
+	}
+	if gotTenant != "dept.research" {
+		t.Fatalf("X-IOMesh-Tenant=%q", gotTenant)
+	}
+	if gotRole != "custom" {
+		t.Fatalf("X-IOMesh-Role=%q", gotRole)
+	}
+	if gotSuffix != "ops,memory" {
+		t.Fatalf("X-IOMesh-Pull-Allow-Suffix=%q", gotSuffix)
+	}
+}
+
+func TestConsumerFetch_OmitsRoleAndSuffixWhenEmpty(t *testing.T) {
+	var gotRole, gotSuffix string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotRole = r.Header.Get("X-IOMesh-Role")
+		gotSuffix = r.Header.Get("X-IOMesh-Pull-Allow-Suffix")
+		_ = json.NewEncoder(w).Encode(map[string]any{"messages": []any{}})
+	}))
+	defer srv.Close()
+
+	role, suffix := ResolveMeshPullAuth("  ", "\t", "", "")
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "t", Role: role, PullAllowSuffix: suffix}, nil)
+	if _, err := c.ConsumerFetch(context.Background(), "S", "c", 1, time.Second); err != nil {
+		t.Fatal(err)
+	}
+	if gotRole != "" || gotSuffix != "" {
+		t.Fatalf("expected no role/suffix headers when empty; role=%q suffix=%q", gotRole, gotSuffix)
+	}
+}
+
+// s684 defense-in-depth: ack also carries Role/PullAllowSuffix via Client.auth.
+func TestConsumerAck_RoleAndPullAllowSuffixHeaders(t *testing.T) {
+	var gotRole, gotSuffix string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotRole = r.Header.Get("X-IOMesh-Role")
+		gotSuffix = r.Header.Get("X-IOMesh-Pull-Allow-Suffix")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ack_floor": 1})
+	}))
+	defer srv.Close()
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "t",
+		Role: "agent", PullAllowSuffix: "memory",
+	}, nil)
+	if _, err := c.ConsumerAck(context.Background(), "S", "c", 1); err != nil {
+		t.Fatal(err)
+	}
+	if gotRole != "agent" {
+		t.Fatalf("X-IOMesh-Role=%q", gotRole)
+	}
+	if gotSuffix != "memory" {
+		t.Fatalf("X-IOMesh-Pull-Allow-Suffix=%q", gotSuffix)
 	}
 }
 
