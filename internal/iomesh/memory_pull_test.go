@@ -63,6 +63,7 @@ func TestMapStreamMessageToEnvelope_Empty(t *testing.T) {
 }
 
 func TestDefaultMemoryPullFilter(t *testing.T) {
+	// s660 empty-role path (wrapper around DefaultMemoryPullFilterForRole).
 	tests := []struct {
 		name     string
 		explicit string
@@ -85,6 +86,66 @@ func TestDefaultMemoryPullFilter(t *testing.T) {
 			got := DefaultMemoryPullFilter(tt.explicit, tt.tenant)
 			if got != tt.want {
 				t.Fatalf("DefaultMemoryPullFilter(%q, %q)=%q want %q", tt.explicit, tt.tenant, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDefaultMemoryPullFilterForRole(t *testing.T) {
+	// s678: role-aware defaults when --filter / pull_filter empty.
+	tests := []struct {
+		name        string
+		explicit    string
+		tenant      string
+		role        string
+		allowSuffix string
+		want        string
+	}{
+		// explicit always wins
+		{name: "explicit wins over agent", explicit: "custom.>", tenant: "dept.eng", role: "agent", want: "custom.>"},
+		{name: "explicit wins over custom", explicit: "x.>", tenant: "t", role: "custom", allowSuffix: "ops", want: "x.>"},
+		{name: "whitespace explicit falls through agent", explicit: "  ", tenant: "dept.eng", role: "agent", want: "dept.eng.events.>"},
+
+		// empty role → s660
+		{name: "empty role hierarchical", explicit: "", tenant: "dept.engineering", role: "", want: "dept.engineering.>"},
+		{name: "empty role plain tenant", explicit: "", tenant: "acme", role: "", want: ""},
+		{name: "empty role empty tenant", explicit: "", tenant: "", role: "agent", want: ""},
+
+		// agent / viewer → tenant.events.>
+		{name: "agent hierarchical", explicit: "", tenant: "dept.eng", role: "agent", want: "dept.eng.events.>"},
+		{name: "agent plain tenant", explicit: "", tenant: "acme", role: "agent", want: "acme.events.>"},
+		{name: "viewer", explicit: "", tenant: "dept.eng", role: "viewer", want: "dept.eng.events.>"},
+		{name: "agent case insensitive", explicit: "", tenant: "t", role: "Agent", want: "t.events.>"},
+
+		// auditor → tenant.audit.>
+		{name: "auditor", explicit: "", tenant: "dept.eng", role: "auditor", want: "dept.eng.audit.>"},
+		{name: "auditor plain", explicit: "", tenant: "acme", role: "auditor", want: "acme.audit.>"},
+
+		// operator / admin → tenant.>
+		{name: "operator hierarchical", explicit: "", tenant: "dept.eng", role: "operator", want: "dept.eng.>"},
+		{name: "admin plain tenant", explicit: "", tenant: "acme", role: "admin", want: "acme.>"},
+		{name: "operator case", explicit: "", tenant: "t", role: "OPERATOR", want: "t.>"},
+
+		// custom + single suffix → tenant.<suffix>.>
+		{name: "custom one suffix", explicit: "", tenant: "dept.eng", role: "custom", allowSuffix: "ops", want: "dept.eng.ops.>"},
+		{name: "custom one suffix trim", explicit: "", tenant: "t", role: "custom", allowSuffix: "  memory  ", want: "t.memory.>"},
+		// custom multi / none → empty (fail closed)
+		{name: "custom multi suffix", explicit: "", tenant: "dept.eng", role: "custom", allowSuffix: "ops,memory", want: ""},
+		{name: "custom empty suffix", explicit: "", tenant: "dept.eng", role: "custom", allowSuffix: "", want: ""},
+		{name: "custom only commas", explicit: "", tenant: "t", role: "custom", allowSuffix: " , , ", want: ""},
+		{name: "custom multi with spaces", explicit: "", tenant: "t", role: "custom", allowSuffix: "a, b", want: ""},
+		// custom single after dropping empties
+		{name: "custom one after empty tokens", explicit: "", tenant: "t", role: "custom", allowSuffix: ",ops,", want: "t.ops.>"},
+
+		// unknown role → empty (no invent)
+		{name: "unknown role", explicit: "", tenant: "dept.eng", role: "superuser", want: ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := DefaultMemoryPullFilterForRole(tt.explicit, tt.tenant, tt.role, tt.allowSuffix)
+			if got != tt.want {
+				t.Fatalf("DefaultMemoryPullFilterForRole(%q, %q, %q, %q)=%q want %q",
+					tt.explicit, tt.tenant, tt.role, tt.allowSuffix, got, tt.want)
 			}
 		})
 	}
