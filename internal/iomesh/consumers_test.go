@@ -225,45 +225,45 @@ func TestFormatConsumerInfo_EmptyFilterAlwaysEmit(t *testing.T) {
 func TestResolveConsumerCreateAuthAndFilter(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name           string
-		explicit       string
-		tenant         string
-		roleFlag       string
-		suffixFlag     string
-		configRole     string
-		configSuffix   string
-		wantFilter     string
-		wantRole       string
+		name            string
+		explicit        string
+		tenant          string
+		roleFlag        string
+		suffixFlag      string
+		configRole      string
+		configSuffix    string
+		wantFilter      string
+		wantRole        string
 		wantAllowSuffix string
 	}{
 		{
-			name: "agent empty filter → tenant.events.>",
+			name:   "agent empty filter → tenant.events.>",
 			tenant: "acme", roleFlag: "agent",
 			wantFilter: "acme.events.>", wantRole: "agent",
 		},
 		{
-			name: "flag role overrides config; explicit filter wins",
+			name:     "flag role overrides config; explicit filter wins",
 			explicit: "dept.ops.>", tenant: "acme",
 			roleFlag: "viewer", configRole: "admin",
 			wantFilter: "dept.ops.>", wantRole: "viewer",
 		},
 		{
-			name: "config role/suffix when flags empty",
+			name:   "config role/suffix when flags empty",
 			tenant: "dept.research", configRole: "custom", configSuffix: "memory",
 			wantFilter: "dept.research.memory.>", wantRole: "custom", wantAllowSuffix: "memory",
 		},
 		{
-			name: "flag suffix overrides config",
+			name:   "flag suffix overrides config",
 			tenant: "t", roleFlag: "custom", suffixFlag: "ops", configSuffix: "memory",
 			wantFilter: "t.ops.>", wantRole: "custom", wantAllowSuffix: "ops",
 		},
 		{
-			name: "empty role fail-open; hierarchical tenant s660 default",
-			tenant: "dept.research",
+			name:       "empty role fail-open; hierarchical tenant s660 default",
+			tenant:     "dept.research",
 			wantFilter: "dept.research.>",
 		},
 		{
-			name: "whitespace flags fall back to config",
+			name:   "whitespace flags fall back to config",
 			tenant: "acme", roleFlag: "  ", configRole: "auditor",
 			wantFilter: "acme.audit.>", wantRole: "auditor",
 		},
