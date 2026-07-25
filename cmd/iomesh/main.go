@@ -55,6 +55,8 @@ func run(args []string) int {
 			return cmdMCP(args[1:])
 		case "mesh":
 			return cmdMesh(args[1:])
+		case "memory":
+			return cmdMemory(args[1:])
 		case "agent":
 			return cmdAgent(args[1:])
 		case "help", "-h", "--help":
@@ -1881,6 +1883,226 @@ func cmdAgent(args []string) int {
 	}
 }
 
+// cmdMemory is the Memory Palace operator surface (local-first cost-max path).
+func cmdMemory(args []string) int {
+	if len(args) == 0 {
+		fmt.Fprintln(os.Stderr, "usage: iomesh memory pull [flags]")
+		return 2
+	}
+	switch args[0] {
+	case "pull":
+		return cmdMemoryPull(args[1:])
+	case "help", "-h", "--help":
+		fmt.Fprint(os.Stderr, `iomesh memory — local-first Memory Palace operators (cost-max M1)
+
+  iomesh memory pull   durable mesh pull → local MCP memory_ingest_turn
+
+Flags (pull):
+  --config path         config.toml
+  --stream S            durable stream (default: [memory].pull_stream or EVENTS)
+  --name C              durable consumer name (required unless config pull_consumer)
+  --filter F            optional filter_subject
+  --batch N             fetch batch (default 8)
+  --max-wait dur        long-poll wait (default 2s)
+  --once                single fetch cycle then exit
+  --dry-run             map messages only (no MCP ingest); still acks when --ack
+  --no-ack              do not ack after ingest (default: ack)
+  --yes                 confirm mutating pull loop (required unless --dry-run)
+  --endpoint url        override IOMESH_ENDPOINT
+  --mcp-server name     MCP server name for memory tools (default memory)
+  -v                    verbose
+
+Honesty: dual_write remains optional audit (default OFF). Hosted Palace sunset until scale.
+`)
+		return 0
+	default:
+		fmt.Fprintf(os.Stderr, "unknown memory subcommand %q\n", args[0])
+		fmt.Fprintln(os.Stderr, "usage: iomesh memory pull [flags]")
+		return 2
+	}
+}
+
+func cmdMemoryPull(args []string) int {
+	fs := flag.NewFlagSet("memory pull", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	var (
+		configPath = fs.String("config", "", "config.toml path")
+		stream     = fs.String("stream", "", "durable stream name")
+		name       = fs.String("name", "", "durable consumer name")
+		filter     = fs.String("filter", "", "optional filter_subject")
+		batch      = fs.Int("batch", 0, "fetch batch size")
+		maxWait    = fs.Duration("max-wait", 0, "long-poll max wait")
+		once       = fs.Bool("once", false, "single fetch cycle")
+		dryRun     = fs.Bool("dry-run", false, "map only; no MCP local ingest")
+		noAck      = fs.Bool("no-ack", false, "do not ack after success")
+		yes        = fs.Bool("yes", false, "confirm mutating pull (required unless --dry-run)")
+		endpoint   = fs.String("endpoint", "", "override mesh endpoint")
+		mcpServer  = fs.String("mcp-server", "", "MCP memory server name")
+		verbose    = fs.Bool("v", false, "verbose logs")
+	)
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+
+	logger := newLogger(*verbose)
+	cfg, err := loadConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "config: %v\n", err)
+		return 1
+	}
+	if *endpoint != "" {
+		cfg.IOMesh.Endpoint = *endpoint
+		cfg.IOMesh.Enabled = true
+	}
+
+	streamName := strings.TrimSpace(*stream)
+	if streamName == "" {
+		streamName = strings.TrimSpace(cfg.Memory.PullStream)
+	}
+	if streamName == "" {
+		streamName = "EVENTS"
+	}
+	consumerName := strings.TrimSpace(*name)
+	if consumerName == "" {
+		consumerName = strings.TrimSpace(cfg.Memory.PullConsumer)
+	}
+	filterSub := strings.TrimSpace(*filter)
+	if filterSub == "" {
+		filterSub = strings.TrimSpace(cfg.Memory.PullFilter)
+	}
+	batchN := *batch
+	if batchN <= 0 {
+		batchN = cfg.Memory.PullBatch
+	}
+	if batchN <= 0 {
+		batchN = 8
+	}
+	wait := *maxWait
+	if wait <= 0 && cfg.Memory.PullMaxWaitMS > 0 {
+		wait = time.Duration(cfg.Memory.PullMaxWaitMS) * time.Millisecond
+	}
+	if wait <= 0 {
+		wait = 2 * time.Second
+	}
+	serverName := strings.TrimSpace(*mcpServer)
+	if serverName == "" {
+		serverName = strings.TrimSpace(cfg.Memory.Server)
+	}
+	if serverName == "" {
+		serverName = "memory"
+	}
+
+	if consumerName == "" {
+		fmt.Fprintln(os.Stderr, "usage: iomesh memory pull --name C [--stream S] --yes")
+		fmt.Fprintln(os.Stderr, "  consumer name required (flag or [memory].pull_consumer)")
+		return 2
+	}
+	if !*dryRun && !*yes {
+		fmt.Fprintln(os.Stderr, "memory pull: --yes required for mutating local ingest (or use --dry-run)")
+		return 2
+	}
+
+	mesh := iomesh.New(iomesh.Config{
+		Enabled:     cfg.IOMesh.Enabled,
+		Endpoint:    cfg.IOMesh.Endpoint,
+		Tenant:      cfg.IOMesh.Tenant,
+		APIKeyEnv:   cfg.IOMesh.APIKeyEnv,
+		OrgID:       cfg.IOMesh.Org,
+		WorkspaceID: cfg.IOMesh.Workspace,
+	}, logger)
+	if !mesh.Enabled() {
+		fmt.Fprintln(os.Stderr, "FAIL memory pull: mesh disabled (set IOMESH_ENDPOINT / [iomesh])")
+		return 1
+	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	opt := iomesh.MemoryPullOptions{
+		Stream:  streamName,
+		Name:    consumerName,
+		Filter:  filterSub,
+		Batch:   batchN,
+		MaxWait: wait,
+		Ack:     !*noAck,
+		DryRun:  *dryRun,
+		OnMessage: func(msg iomesh.StreamMessage, env iomesh.MemoryEnvelope, skipped bool, err error) {
+			if !*verbose && err == nil && !skipped {
+				return
+			}
+			status := "ingest"
+			if skipped {
+				status = "skip"
+			}
+			if err != nil {
+				status = "err"
+			}
+			fmt.Fprintf(os.Stderr, "memory pull %s seq=%d subject=%s content_len=%d err=%v\n",
+				status, msg.Seq, msg.Subject, len(env.Content), err)
+		},
+	}
+	if *once {
+		opt.MaxLoops = 1
+	}
+
+	if !*dryRun {
+		// Local palace via MCP memory_ingest_turn (fail-closed if no server).
+		if !cfg.MCP.Enabled && !cfg.Features.MCP {
+			fmt.Fprintln(os.Stderr, "FAIL memory pull: MCP disabled — enable [mcp] or use --dry-run")
+			return 1
+		}
+		var servers []mcp.ServerConfig
+		for _, s := range cfg.MCP.Servers {
+			servers = append(servers, mcpServerFromTOML(s))
+		}
+		mgr := mcp.NewManager(ctx, servers, logger)
+		defer func() { _ = mgr.Close() }()
+		cl := mgr.ClientByName(serverName)
+		if cl == nil {
+			fmt.Fprintf(os.Stderr, "FAIL memory pull: MCP server %q not connected\n", serverName)
+			return 1
+		}
+		tenant := strings.TrimSpace(cfg.Memory.Tenant)
+		if tenant == "" {
+			tenant = strings.TrimSpace(cfg.IOMesh.Tenant)
+		}
+		opt.LocalIngest = func(cctx context.Context, env iomesh.MemoryEnvelope) error {
+			args := map[string]any{
+				"role":    env.Role,
+				"content": env.Content,
+			}
+			if env.EventTime != "" {
+				args["event_time"] = env.EventTime
+			}
+			if env.SessionID != "" {
+				args["session_id"] = env.SessionID
+			}
+			if tenant != "" {
+				args["tenant"] = tenant
+			}
+			_, err := cl.CallTool(cctx, "memory_ingest_turn", args)
+			return err
+		}
+	}
+
+	st, err := mesh.RunMemoryPull(ctx, opt)
+	if err != nil && ctx.Err() == nil {
+		fmt.Fprintf(os.Stderr, "FAIL memory pull: %v\n", err)
+		fmt.Fprintf(os.Stderr, "stats loops=%d fetched=%d ingested=%d skipped=%d acked=%d errors=%d\n",
+			st.Loops, st.Fetched, st.Ingested, st.Skipped, st.Acked, st.Errors)
+		return 1
+	}
+	fmt.Printf("PASS memory pull stream=%s consumer=%s create_ok=%v loops=%d fetched=%d ingested=%d skipped=%d acked=%d errors=%d dry_run=%v\n",
+		st.Stream, st.Consumer, st.CreateOK, st.Loops, st.Fetched, st.Ingested, st.Skipped, st.Acked, st.Errors, *dryRun)
+	if st.LastError != "" && st.Errors > 0 {
+		fmt.Fprintf(os.Stderr, "last_error=%s\n", st.LastError)
+	}
+	if st.Errors > 0 && st.Ingested == 0 && !*dryRun {
+		return 1
+	}
+	return 0
+}
+
 func loadConfig(path string) (*config.Config, error) {
 	if path != "" {
 		return config.Load(path)
@@ -1915,6 +2137,7 @@ Usage:
   iomesh mesh consumer ack|nack  ack/nack sequences (--stream --name --seq --yes)
   iomesh mesh wait               poll mesh Ready until OK (operator preflight)
   iomesh mesh status             operator snapshot (StatusLine + Health/Ready; --strict gates result=err)
+  iomesh memory pull             mesh durable pull → local MCP palace (cost-max M1; --yes)
   iomesh models                  list configured models
   iomesh agent stdio             ACP JSON-RPC over stdio (IDE integration)
   iomesh agent serve             ACP JSON-RPC over WebSocket (default 127.0.0.1:7400/acp)

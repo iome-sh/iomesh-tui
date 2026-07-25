@@ -171,7 +171,12 @@ enabled = false
 # endpoint = "http://127.0.0.1:8765"  # memory sidecar (stage warm plane); IOMESH_MEMORY_ENDPOINT
 # auto_recall = true     # inject <memory-context> each turn (fail-open; sync then MCP)
 # auto_ingest = false    # opt-in: persist user+assistant after successful turn
-# dual_write = false     # opt-in: mesh MEMORY_INGEST (IOMESH_MEMORY_DUAL_WRITE=1)
+# dual_write = false     # opt-in audit only: mesh MEMORY_INGEST (IOMESH_MEMORY_DUAL_WRITE=1); not primary palace
+# pull_stream = "EVENTS" # iomesh memory pull — durable stream (s652 cost-max M1)
+# pull_consumer = "tui-local-palace"
+# pull_filter = ""
+# pull_batch = 8
+# pull_max_wait_ms = 2000
 # limit = 8
 # max_snippet_bytes = 6000
 # IOMESH_MEMORY=1 · IOMESH_MEMORY_TENANT · IOMESH_MEMORY_ENDPOINT · MEMORY_SIDECAR_URL

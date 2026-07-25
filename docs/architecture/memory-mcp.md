@@ -24,6 +24,9 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 | **3 partial** | **done (dogfood)** | Async `MEMORY_RPC` recall probe (`PublishMemoryRecall`) |
 | **3** | **done (v0.4.0 dogfood)** | Sync `RetrieveMemory` → `POST /v1/memory/retrieve` (+ `/v5` fallback) + dogfood `memory_retrieve` step |
 | **3+** | **done (v0.4.0 agent)** | Agent auto-recall + `/memory recall` prefer sync HTTP when mesh **or** `[memory].endpoint` sidecar is set; MCP fallback |
+| **4 pull (s652)** | **done (M1)** | `iomesh memory pull` — durable mesh consumer → local MCP `memory_ingest_turn` (cost-max local palace; dual_write remains optional audit) |
+
+**Cost-max (s650+):** primary Memory UX is **local Palace** (this TUI + `aion-memory-mcp`). Mesh is **pull egress** of ops events; hosted cloud Palace is **sunset until scale**. Dual-write = optional **audit** only (default OFF).
 
 **Non-goals:** private monorepo imports in public TUI; embedding Qdrant/Palace in-process; dependency on `iomesh-client-sdk-go`.
 
@@ -65,10 +68,30 @@ server = "memory"          # must match [[mcp.servers]].name
 tenant = "dept.research"   # or MEMORY_TENANT / IOMESH_MEMORY_TENANT
 auto_recall = true         # inject <memory-context> each turn (fail-open)
 auto_ingest = false        # opt-in: write user+assistant turns after success
-# dual_write = false       # opt-in: also publish MEMORY_INGEST (needs [iomesh])
+# dual_write = false       # optional mesh audit only (needs [iomesh]); not primary palace
+# pull_stream = "EVENTS"   # iomesh memory pull (s652)
+# pull_consumer = "tui-local-palace"
+# pull_filter = ""
+# pull_batch = 8
+# pull_max_wait_ms = 2000
 # limit = 8
 # max_snippet_bytes = 6000
 ```
+
+### Mesh pull → local palace (s652 M1)
+
+```bash
+# Terminal A: local palace MCP
+aion-memory-mcp -http-addr :8080 -palace-root ~/.iomesh/palace
+
+# Terminal B: pull mesh events into local palace (requires [iomesh] + [mcp] memory server)
+iomesh memory pull --stream EVENTS --name tui-local-palace --once --yes
+# dry-run (map only, no MCP):
+iomesh memory pull --stream EVENTS --name tui-local-palace --once --dry-run
+```
+
+Loop: `CreateConsumer` (idempotent) → `ConsumerFetch` → map envelope → MCP `memory_ingest_turn` → `ConsumerAck`.  
+Primary: connector/`dept.*` or `EVENTS`. Optional: pull `MEMORY_INGEST` when using mesh as audit mirror.
 
 Env: `MEMORY_MCP_HTTP_ADDR` / `AION_MEMORY_MCP_HTTP_ADDR`, path `MEMORY_MCP_HTTP_PATH` (default `/mcp`).
 

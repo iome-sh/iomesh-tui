@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`iomesh memory pull` (s652 cost-max M1)** — durable mesh consumer → map envelopes → local MCP `memory_ingest_turn` (optional `--dry-run` / `--once`); config `[memory] pull_*`; dual_write remains optional audit default OFF; hosted Palace sunset until scale ([docs/architecture/memory-mcp.md](docs/architecture/memory-mcp.md))
+
 ## [0.70.0] — 2026-07-22
 
 Minor release: FormatProductDetail always-emit for optional knobs.
