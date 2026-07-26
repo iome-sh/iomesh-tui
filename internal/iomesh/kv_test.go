@@ -264,6 +264,178 @@ func TestKVKeysPrint_AlwaysEmit(t *testing.T) {
 	}
 }
 
+// s729: KVPutPrint JSON always-emits {ok,bucket,key,revision} (no pull_role / value invent).
+func TestKVPutPrint_JSONAlwaysEmitKeys(t *testing.T) {
+	t.Parallel()
+
+	// Empty bucket/key + revision 0 honest (still always-emit keys).
+	emptyDTO := NewKVPutPrint("", "", 0)
+	emptyJS, err := json.Marshal(emptyDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var emptyObj map[string]any
+	if err := json.Unmarshal(emptyJS, &emptyObj); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"ok", "bucket", "key", "revision"} {
+		if _, ok := emptyObj[key]; !ok {
+			t.Fatalf("empty json missing key %q: %s", key, emptyJS)
+		}
+	}
+	if emptyObj["ok"] != true {
+		t.Fatalf("ok want true: %s", emptyJS)
+	}
+	if emptyObj["bucket"] != "" || emptyObj["key"] != "" {
+		t.Fatalf("empty identity want \"\"; got bucket=%v key=%v\n%s", emptyObj["bucket"], emptyObj["key"], emptyJS)
+	}
+	if emptyObj["revision"].(float64) != 0 {
+		t.Fatalf("revision want 0; got %v\n%s", emptyObj["revision"], emptyJS)
+	}
+	// Do not invent pull_role or value echo on put JSON.
+	if _, ok := emptyObj["pull_role"]; ok {
+		t.Fatalf("must not invent pull_role on KVPutPrint: %s", emptyJS)
+	}
+	if _, ok := emptyObj["value"]; ok {
+		t.Fatalf("must not invent value echo on KVPutPrint: %s", emptyJS)
+	}
+
+	popDTO := NewKVPutPrint("config", "app.json", 7)
+	popJS, err := json.Marshal(popDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var popObj map[string]any
+	if err := json.Unmarshal(popJS, &popObj); err != nil {
+		t.Fatal(err)
+	}
+	if popObj["ok"] != true || popObj["bucket"] != "config" ||
+		popObj["key"] != "app.json" || popObj["revision"].(float64) != 7 {
+		t.Fatalf("populated: %s", popJS)
+	}
+
+	// Format helpers round-trip keys for scrapers.
+	formatted := FormatKVPutJSON(popDTO)
+	if !strings.Contains(formatted, `"ok": true`) ||
+		!strings.Contains(formatted, `"bucket": "config"`) ||
+		!strings.Contains(formatted, `"key": "app.json"`) ||
+		!strings.Contains(formatted, `"revision": 7`) {
+		t.Fatalf("FormatKVPutJSON: %s", formatted)
+	}
+	if strings.Contains(formatted, "pull_role") || strings.Contains(formatted, `"value"`) {
+		t.Fatalf("FormatKVPutJSON must not invent pull_role/value: %s", formatted)
+	}
+}
+
+// s729: FormatKVPut always-emits bucket/key/revision (empty or populated).
+func TestFormatKVPut_AlwaysEmit(t *testing.T) {
+	t.Parallel()
+
+	empty := FormatKVPut(NewKVPutPrint("", "", 0))
+	for _, want := range []string{
+		"PASS mesh kv put\n",
+		"bucket:   \n",
+		"key:      \n",
+		"revision: 0\n",
+	} {
+		if !strings.Contains(empty, want) {
+			t.Fatalf("empty missing %q in:\n%q", want, empty)
+		}
+	}
+
+	pop := FormatKVPut(NewKVPutPrint("config", "app.json", 7))
+	if !strings.Contains(pop, "PASS mesh kv put\n") ||
+		!strings.Contains(pop, "bucket:   config\n") ||
+		!strings.Contains(pop, "key:      app.json\n") ||
+		!strings.Contains(pop, "revision: 7\n") {
+		t.Fatalf("populated:\n%s", pop)
+	}
+	if strings.Contains(pop, "pull_role") {
+		t.Fatalf("text must not invent pull_role:\n%s", pop)
+	}
+}
+
+// s729: KVDeletePrint JSON always-emits {ok,bucket,key} (no pull_role invent).
+func TestKVDeletePrint_JSONAlwaysEmitKeys(t *testing.T) {
+	t.Parallel()
+
+	// Empty bucket/key honest (still always-emit keys).
+	emptyDTO := NewKVDeletePrint("", "")
+	emptyJS, err := json.Marshal(emptyDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var emptyObj map[string]any
+	if err := json.Unmarshal(emptyJS, &emptyObj); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"ok", "bucket", "key"} {
+		if _, ok := emptyObj[key]; !ok {
+			t.Fatalf("empty json missing key %q: %s", key, emptyJS)
+		}
+	}
+	if emptyObj["ok"] != true {
+		t.Fatalf("ok want true: %s", emptyJS)
+	}
+	if emptyObj["bucket"] != "" || emptyObj["key"] != "" {
+		t.Fatalf("empty identity want \"\"; got bucket=%v key=%v\n%s", emptyObj["bucket"], emptyObj["key"], emptyJS)
+	}
+	// Do not invent pull_role on kv delete.
+	if _, ok := emptyObj["pull_role"]; ok {
+		t.Fatalf("must not invent pull_role on KVDeletePrint: %s", emptyJS)
+	}
+
+	popDTO := NewKVDeletePrint("config", "tmp.key")
+	popJS, err := json.Marshal(popDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var popObj map[string]any
+	if err := json.Unmarshal(popJS, &popObj); err != nil {
+		t.Fatal(err)
+	}
+	if popObj["ok"] != true || popObj["bucket"] != "config" || popObj["key"] != "tmp.key" {
+		t.Fatalf("populated: %s", popJS)
+	}
+
+	// Format helpers round-trip keys for scrapers.
+	formatted := FormatKVDeleteJSON(popDTO)
+	if !strings.Contains(formatted, `"ok": true`) ||
+		!strings.Contains(formatted, `"bucket": "config"`) ||
+		!strings.Contains(formatted, `"key": "tmp.key"`) {
+		t.Fatalf("FormatKVDeleteJSON: %s", formatted)
+	}
+	if strings.Contains(formatted, "pull_role") {
+		t.Fatalf("FormatKVDeleteJSON must not invent pull_role: %s", formatted)
+	}
+}
+
+// s729: FormatKVDelete always-emits bucket/key (empty or populated).
+func TestFormatKVDelete_AlwaysEmit(t *testing.T) {
+	t.Parallel()
+
+	empty := FormatKVDelete(NewKVDeletePrint("", ""))
+	for _, want := range []string{
+		"PASS mesh kv delete\n",
+		"bucket: \n",
+		"key:    \n",
+	} {
+		if !strings.Contains(empty, want) {
+			t.Fatalf("empty missing %q in:\n%q", want, empty)
+		}
+	}
+
+	pop := FormatKVDelete(NewKVDeletePrint("config", "tmp.key"))
+	if !strings.Contains(pop, "PASS mesh kv delete\n") ||
+		!strings.Contains(pop, "bucket: config\n") ||
+		!strings.Contains(pop, "key:    tmp.key\n") {
+		t.Fatalf("populated:\n%s", pop)
+	}
+	if strings.Contains(pop, "pull_role") {
+		t.Fatalf("text must not invent pull_role:\n%s", pop)
+	}
+}
+
 func TestFormatKVBucketInfo_AlwaysEmitOptionalKnobs(t *testing.T) {
 	// Nil optional *int64 knobs: always emit blank max_bytes / ttl_seconds (do not invent 0).
 	out := FormatKVBucketInfo(KVBucketInfo{Name: "cfg", History: 0})
