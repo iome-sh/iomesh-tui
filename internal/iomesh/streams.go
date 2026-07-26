@@ -15,18 +15,23 @@ import (
 // StreamInfo is broker stream metadata from GET /v1/streams and GET /v1/streams/{name}.
 // Wire shape matches broker / iomesh-client-sdk-go StreamInfo (name, subjects, stats, retention knobs).
 // Lean TUI surface — no SDK dependency.
+//
+// RetentionTier is the broker product-facing class (hot|temp|extended|archive) when present
+// on the wire (aion s701 / s654). omitempty keeps the wire lean; do not invent tier from
+// max_age alone — empty means the broker omitted it. Beta · offline unit ≠ live APPLY.
 type StreamInfo struct {
-	Name        string    `json:"name"`
-	Subjects    []string  `json:"subjects"`
-	Retention   string    `json:"retention,omitempty"`
-	Partitions  int       `json:"partitions,omitempty"`
-	MaxMsgs     *int64    `json:"max_msgs,omitempty"`
-	MaxAgeSec   *int64    `json:"max_age_sec,omitempty"`
-	Description string    `json:"description,omitempty"`
-	Messages    uint64    `json:"messages"`
-	FirstSeq    uint64    `json:"first_seq"`
-	LastSeq     uint64    `json:"last_seq"`
-	CreatedAt   time.Time `json:"created_at"`
+	Name          string    `json:"name"`
+	Subjects      []string  `json:"subjects"`
+	Retention     string    `json:"retention,omitempty"`
+	RetentionTier string    `json:"retention_tier,omitempty"`
+	Partitions    int       `json:"partitions,omitempty"`
+	MaxMsgs       *int64    `json:"max_msgs,omitempty"`
+	MaxAgeSec     *int64    `json:"max_age_sec,omitempty"`
+	Description   string    `json:"description,omitempty"`
+	Messages      uint64    `json:"messages"`
+	FirstSeq      uint64    `json:"first_seq"`
+	LastSeq       uint64    `json:"last_seq"`
+	CreatedAt     time.Time `json:"created_at"`
 }
 
 // ListStreams returns all streams via GET /v1/streams.
@@ -151,8 +156,8 @@ func decodeStreamsList(raw []byte) ([]StreamInfo, error) {
 
 // FormatStreams renders a compact table for CLI operator discovery.
 // Always prints PART (0 when unset) and RETENTION (empty when unset), plus
-// MAX_MSGS / MAX_AGE numeric columns (0 when *int64 nil) for CI scrapers (s699).
-// Does not invent retention_tier (not on StreamInfo wire).
+// MAX_MSGS / MAX_AGE numeric columns (0 when *int64 nil) for CI scrapers (s699),
+// and TIER (retention_tier; empty when broker omits — never invent from max_age) (s702).
 func FormatStreams(streams []StreamInfo) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "iomesh streams count=%d\n", len(streams))
@@ -160,8 +165,8 @@ func FormatStreams(streams []StreamInfo) string {
 		b.WriteString("(no streams)\n")
 		return b.String()
 	}
-	fmt.Fprintf(&b, "%-20s %8s %8s %8s %5s %8s %8s %-10s %s\n",
-		"NAME", "MSGS", "FIRST", "LAST", "PART", "MAX_MSGS", "MAX_AGE", "RETENTION", "SUBJECTS")
+	fmt.Fprintf(&b, "%-20s %8s %8s %8s %5s %8s %8s %-10s %-8s %s\n",
+		"NAME", "MSGS", "FIRST", "LAST", "PART", "MAX_MSGS", "MAX_AGE", "RETENTION", "TIER", "SUBJECTS")
 	for i, s := range streams {
 		if i >= 50 {
 			fmt.Fprintf(&b, "… (%d more)\n", len(streams)-50)
@@ -176,11 +181,12 @@ func FormatStreams(streams []StreamInfo) string {
 		if s.MaxAgeSec != nil {
 			maxAge = *s.MaxAgeSec
 		}
-		fmt.Fprintf(&b, "%-20s %8d %8d %8d %5d %8d %8d %-10s %s\n",
+		fmt.Fprintf(&b, "%-20s %8d %8d %8d %5d %8d %8d %-10s %-8s %s\n",
 			truncateRunes(s.Name, 20),
 			s.Messages, s.FirstSeq, s.LastSeq, s.Partitions,
 			maxMsgs, maxAge,
 			truncateRunes(s.Retention, 10),
+			truncateRunes(s.RetentionTier, 8),
 			truncateRunes(subj, 40),
 		)
 	}
@@ -189,40 +195,44 @@ func FormatStreams(streams []StreamInfo) string {
 
 // StreamInfoPrint is a CLI-side print DTO for mesh stream get/detail JSON.
 // Always emits retention knobs for CI scrapers without omitempty gaps:
-// description, retention (empty string when unset), partitions (0 when unset),
+// description, retention (empty string when unset), retention_tier (empty when
+// broker omits — never invent from max_age), partitions (0 when unset),
 // max_msgs / max_age_sec (0 when wire *int64 nil), created_at ("" when zero),
 // subjects ([] when empty). Separate from wire StreamInfo so broker decode stays
 // lean (omitempty intact on the wire type).
 //
-// s699: peer FormatStreamDetail text always-emit + aion s698 cost-max residual
-// suite. Does not invent retention_tier (not on StreamInfo wire). Beta · offline
-// unit ≠ live APPLY.
+// s699 retention knobs + s702 retention_tier always-emit. Peer FormatStreamDetail
+// text + aion s701 mesh-stream-retention residual. Beta · offline unit ≠ live APPLY
+// · does not invent freemium unlimited retain · dual_write default OFF.
 type StreamInfoPrint struct {
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Retention   string   `json:"retention"`
-	Partitions  int      `json:"partitions"`
-	MaxMsgs     int64    `json:"max_msgs"`
-	MaxAgeSec   int64    `json:"max_age_sec"`
-	Messages    uint64   `json:"messages"`
-	FirstSeq    uint64   `json:"first_seq"`
-	LastSeq     uint64   `json:"last_seq"`
-	CreatedAt   string   `json:"created_at"`
-	Subjects    []string `json:"subjects"`
+	Name          string   `json:"name"`
+	Description   string   `json:"description"`
+	Retention     string   `json:"retention"`
+	RetentionTier string   `json:"retention_tier"`
+	Partitions    int      `json:"partitions"`
+	MaxMsgs       int64    `json:"max_msgs"`
+	MaxAgeSec     int64    `json:"max_age_sec"`
+	Messages      uint64   `json:"messages"`
+	FirstSeq      uint64   `json:"first_seq"`
+	LastSeq       uint64   `json:"last_seq"`
+	CreatedAt     string   `json:"created_at"`
+	Subjects      []string `json:"subjects"`
 }
 
 // NewStreamInfoPrint builds a print DTO from wire StreamInfo. Nil *int64 knobs
 // become 0; empty strings/slices stay empty (never omitted on marshal).
+// RetentionTier maps s.RetentionTier as-is (empty when broker omit).
 func NewStreamInfoPrint(s StreamInfo) StreamInfoPrint {
 	p := StreamInfoPrint{
-		Name:        s.Name,
-		Description: s.Description,
-		Retention:   s.Retention,
-		Partitions:  s.Partitions,
-		Messages:    s.Messages,
-		FirstSeq:    s.FirstSeq,
-		LastSeq:     s.LastSeq,
-		Subjects:    s.Subjects,
+		Name:          s.Name,
+		Description:   s.Description,
+		Retention:     s.Retention,
+		RetentionTier: s.RetentionTier,
+		Partitions:    s.Partitions,
+		Messages:      s.Messages,
+		FirstSeq:      s.FirstSeq,
+		LastSeq:       s.LastSeq,
+		Subjects:      s.Subjects,
 	}
 	if p.Subjects == nil {
 		p.Subjects = []string{}
@@ -242,37 +252,38 @@ func NewStreamInfoPrint(s StreamInfo) StreamInfoPrint {
 // FormatStreamDetail is a multi-line view for one stream (CLI).
 // Pure helper with no network I/O.
 //
-// s699 always-emit retention knobs for CI scrapers (same discipline as
-// filter_subject / pull_role): description, retention (empty when unset),
-// partitions (0 when unset), max_msgs / max_age_sec (numeric; 0 when *int64
-// nil), created_at (blank when zero), subjects ("  (none)" when empty).
-// Does not invent retention_tier (not on StreamInfo wire). Beta · offline unit
-// ≠ live APPLY · peer aion s698 cost-max residual suite.
+// s699 always-emit retention knobs + s702 retention_tier for CI scrapers (same
+// discipline as filter_subject / pull_role): description, retention, retention_tier
+// (empty when unset — never invent from max_age alone), partitions (0 when unset),
+// max_msgs / max_age_sec (numeric; 0 when *int64 nil), created_at (blank when zero),
+// subjects ("  (none)" when empty). Beta · offline unit ≠ live APPLY · peer aion
+// s701 mesh-stream-retention residual · dual_write default OFF.
 func FormatStreamDetail(s StreamInfo) string {
 	var b strings.Builder
 	b.WriteString("iomesh stream\n")
-	fmt.Fprintf(&b, "name:        %s\n", s.Name)
-	fmt.Fprintf(&b, "description: %s\n", s.Description)
-	fmt.Fprintf(&b, "retention:   %s\n", s.Retention)
-	fmt.Fprintf(&b, "partitions:  %d\n", s.Partitions)
+	fmt.Fprintf(&b, "name:           %s\n", s.Name)
+	fmt.Fprintf(&b, "description:    %s\n", s.Description)
+	fmt.Fprintf(&b, "retention:      %s\n", s.Retention)
+	fmt.Fprintf(&b, "retention_tier: %s\n", s.RetentionTier)
+	fmt.Fprintf(&b, "partitions:     %d\n", s.Partitions)
 	maxMsgs := int64(0)
 	if s.MaxMsgs != nil {
 		maxMsgs = *s.MaxMsgs
 	}
-	fmt.Fprintf(&b, "max_msgs:    %d\n", maxMsgs)
+	fmt.Fprintf(&b, "max_msgs:       %d\n", maxMsgs)
 	maxAge := int64(0)
 	if s.MaxAgeSec != nil {
 		maxAge = *s.MaxAgeSec
 	}
-	fmt.Fprintf(&b, "max_age_sec: %d\n", maxAge)
-	fmt.Fprintf(&b, "messages:    %d\n", s.Messages)
-	fmt.Fprintf(&b, "first_seq:   %d\n", s.FirstSeq)
-	fmt.Fprintf(&b, "last_seq:    %d\n", s.LastSeq)
+	fmt.Fprintf(&b, "max_age_sec:    %d\n", maxAge)
+	fmt.Fprintf(&b, "messages:       %d\n", s.Messages)
+	fmt.Fprintf(&b, "first_seq:      %d\n", s.FirstSeq)
+	fmt.Fprintf(&b, "last_seq:       %d\n", s.LastSeq)
 	created := ""
 	if !s.CreatedAt.IsZero() {
 		created = s.CreatedAt.UTC().Format(time.RFC3339)
 	}
-	fmt.Fprintf(&b, "created_at:  %s\n", created)
+	fmt.Fprintf(&b, "created_at:     %s\n", created)
 	b.WriteString("subjects:\n")
 	if len(s.Subjects) == 0 {
 		b.WriteString("  (none)\n")

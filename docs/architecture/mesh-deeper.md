@@ -128,10 +128,20 @@ Lean client surface (no SDK dependency; wire parity with [iomesh-client-sdk-go](
 | `DeleteStream(name)` | `DELETE /v1/streams/{name}` | Path-escaped name; 2xx/204 success; empty name / non-2xx → error |
 | `ListStreamMessages(name, opts)` | `GET /v1/streams/{name}/messages` | Query `from_seq` / `to_seq` / `limit`; path-escaped name; empty name / non-2xx (incl. 403 replay gate) → error; base64 payload decoded |
 
+Wire `StreamInfo` stays lean (`omitempty` on optional knobs including `retention_tier`). CLI print surfaces always-emit for scrapers (s699 retention knobs + s702 `retention_tier`):
+
+| Surface | Behaviour |
+|---------|-----------|
+| `FormatStreamDetail` / get text | Always prints `description`, `retention`, `retention_tier`, `partitions`, `max_msgs`, `max_age_sec`, … (empty/`0` when unset) |
+| `StreamInfoPrint` / get+list `--json` | Same knobs without omitempty gaps; list path maps via `NewStreamInfoPrint` |
+| `FormatStreams` table | Columns include MAX_MSGS, MAX_AGE, RETENTION, **TIER** (empty when broker omits) |
+
+`retention_tier` is decoded from the broker wire only (hot\|temp\|extended\|archive when present). **Never invent** tier from `max_age_sec` alone — empty string is honest when the broker omits. Beta · offline unit ≠ live APPLY · peer aion s701.
+
 ```bash
 iomesh mesh streams                  # table of all streams
 iomesh mesh streams --name EVENTS    # multi-line detail
-iomesh mesh streams --json           # JSON array
+iomesh mesh streams --json           # JSON array (print DTO always-emit)
 iomesh mesh streams --name EVENTS --json
 # Message inspection (requires --name; default --limit 20; not dogfood):
 iomesh mesh streams --messages --name EVENTS
