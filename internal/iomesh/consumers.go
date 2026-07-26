@@ -388,31 +388,32 @@ func FormatConsumerInfoWithAuth(info ConsumerInfo, role, allowSuffix string) str
 // ConsumerFetchPrint is a CLI-side print DTO for mesh consumer fetch JSON.
 // Always emits stream/name (consumer), pull_role / pull_allow_suffix (empty
 // string honest when unset), batch / max_wait_ms knobs, count, and messages
-// so CI scrapers can key stable pull identity without omitempty gaps. Wire
-// []StreamMessage stays lean (no auth fields).
+// (each StreamMessagePrint nested always-emit, s723) so CI scrapers can key
+// stable pull identity without omitempty gaps. Wire []StreamMessage stays lean
+// (no auth fields; omitempty on nested scraper-optional keys).
 //
-// s708: peer create FormatConsumerInfo s696 + memory-pull s705 continuum;
-// peer aion s707 gate completeness. Beta · offline unit ≠ live APPLY · empty
-// role honest · dual_write OFF · not full mesh RBAC GA · does not invent
-// fetch success from identity fields alone.
+// s708 outer identity + s723 nested message always-emit. Peer create
+// FormatConsumerInfo s696 + memory-pull s705 continuum; peer aion s707/s722.
+// Beta · offline unit ≠ live APPLY · empty role / empty/0/""/{} honest ·
+// dual_write OFF · not full mesh RBAC GA · does not invent fetch success from
+// identity fields alone.
 type ConsumerFetchPrint struct {
-	Stream          string          `json:"stream"`
-	Name            string          `json:"name"`
-	PullRole        string          `json:"pull_role"`
-	PullAllowSuffix string          `json:"pull_allow_suffix"`
-	Batch           int             `json:"batch"`
-	MaxWaitMS       int             `json:"max_wait_ms"`
-	Count           int             `json:"count"`
-	Messages        []StreamMessage `json:"messages"`
+	Stream          string               `json:"stream"`
+	Name            string               `json:"name"`
+	PullRole        string               `json:"pull_role"`
+	PullAllowSuffix string               `json:"pull_allow_suffix"`
+	Batch           int                  `json:"batch"`
+	MaxWaitMS       int                  `json:"max_wait_ms"`
+	Count           int                  `json:"count"`
+	Messages        []StreamMessagePrint `json:"messages"`
 }
 
 // NewConsumerFetchPrint builds a fetch print DTO from resolved fetch identity
 // (s684 role/suffix), knobs, and wire messages. Nil msgs becomes empty slice;
-// Count is always len(messages). Empty role/suffix always emit as "".
+// nested messages map via NewStreamMessagePrint (s723). Count is always
+// len(messages). Empty role/suffix always emit as "".
 func NewConsumerFetchPrint(stream, name, role, allowSuffix string, batch, maxWaitMS int, msgs []StreamMessage) ConsumerFetchPrint {
-	if msgs == nil {
-		msgs = []StreamMessage{}
-	}
+	prints := streamMessagePrints(msgs)
 	return ConsumerFetchPrint{
 		Stream:          stream,
 		Name:            name,
@@ -420,15 +421,15 @@ func NewConsumerFetchPrint(stream, name, role, allowSuffix string, batch, maxWai
 		PullAllowSuffix: allowSuffix,
 		Batch:           batch,
 		MaxWaitMS:       maxWaitMS,
-		Count:           len(msgs),
-		Messages:        msgs,
+		Count:           len(prints),
+		Messages:        prints,
 	}
 }
 
 // FormatConsumerFetch is a multi-line operator view for mesh consumer fetch
 // (s708). Always emits pull identity + knobs + count, then the message table
-// (FormatStreamMessages). Pure helper; no I/O. Does not invent success from
-// identity — messages/count come from the fetch result only.
+// (FormatStreamMessages / StreamMessagePrint). Pure helper; no I/O. Does not
+// invent success from identity — messages/count come from the fetch result only.
 func FormatConsumerFetch(p ConsumerFetchPrint) string {
 	var b strings.Builder
 	b.WriteString("iomesh consumer fetch\n")
@@ -440,7 +441,7 @@ func FormatConsumerFetch(p ConsumerFetchPrint) string {
 	fmt.Fprintf(&b, "max_wait_ms:       %d\n", p.MaxWaitMS)
 	fmt.Fprintf(&b, "count:             %d\n", p.Count)
 	label := p.Stream + "/" + p.Name
-	b.WriteString(FormatStreamMessages(label, p.Messages))
+	b.WriteString(formatStreamMessagesHeader(label, 0, 0, 0, p.Messages, false))
 	return b.String()
 }
 

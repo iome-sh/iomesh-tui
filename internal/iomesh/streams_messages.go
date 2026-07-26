@@ -137,36 +137,94 @@ func decodeStreamMessages(raw []byte) ([]StreamMessage, error) {
 	return out, nil
 }
 
+// StreamMessagePrint is a CLI-side print DTO for one nested stream message in
+// scraper JSON (StreamMessagesPrint / ConsumerFetchPrint). Always emits stream
+// ("" honest), seq, subject, partition (0 honest), payload (base64 []byte wire
+// behaviour; nil → empty), headers (nil → {}), and timestamp as string
+// ("" when zero; RFC3339 UTC when set — KVEntryPrint mold). Separate from wire
+// StreamMessage so omitempty gaps never hide scraper keys.
+//
+// s723: nested always-emit residual after s720 outer envelope. Mold
+// StreamInfoPrint s699/s702 / KVEntryPrint s714. Peer aion s722 residual.
+// Beta · offline unit ≠ live APPLY · empty/0/""/{} honest · dual_write default
+// OFF · not full mesh RBAC GA · does not invent message success from fields alone.
+type StreamMessagePrint struct {
+	Stream    string            `json:"stream"`
+	Seq       uint64            `json:"seq"`
+	Subject   string            `json:"subject"`
+	Partition int               `json:"partition"`
+	Payload   []byte            `json:"payload"`
+	Headers   map[string]string `json:"headers"`
+	Timestamp string            `json:"timestamp"`
+}
+
+// NewStreamMessagePrint builds a nested message print DTO from wire StreamMessage.
+// Nil payload → empty []byte; nil headers → empty map; zero Timestamp → "".
+func NewStreamMessagePrint(m StreamMessage) StreamMessagePrint {
+	p := StreamMessagePrint{
+		Stream:    m.Stream,
+		Seq:       m.Seq,
+		Subject:   m.Subject,
+		Partition: m.Partition,
+		Payload:   m.Payload,
+		Headers:   m.Headers,
+	}
+	if p.Payload == nil {
+		p.Payload = []byte{}
+	}
+	if p.Headers == nil {
+		p.Headers = map[string]string{}
+	}
+	if !m.Timestamp.IsZero() {
+		p.Timestamp = m.Timestamp.UTC().Format(time.RFC3339)
+	}
+	return p
+}
+
+// streamMessagePrints maps wire messages to always-emit print DTOs.
+// Nil msgs become []StreamMessagePrint{}.
+func streamMessagePrints(msgs []StreamMessage) []StreamMessagePrint {
+	if msgs == nil {
+		return []StreamMessagePrint{}
+	}
+	out := make([]StreamMessagePrint, 0, len(msgs))
+	for _, m := range msgs {
+		out = append(out, NewStreamMessagePrint(m))
+	}
+	return out
+}
+
 // StreamMessagesPrint is a CLI-side print DTO for mesh streams --messages --json.
 // Always emits stream, from_seq / to_seq / limit (0 honest when unset), count,
-// and messages (empty array when none) so CI scrapers get a stable envelope
-// rather than a bare []StreamMessage. Wire StreamMessage stays lean omitempty.
+// and messages (empty array when none; each element StreamMessagePrint nested
+// always-emit, s723) so CI scrapers get a stable envelope rather than a bare
+// []StreamMessage. Wire StreamMessage stays lean omitempty.
 //
-// s720: mold KVKeysPrint s714 / ConsumerFetchPrint s708. Peer aion s719 residual.
-// Beta · offline unit ≠ live APPLY · empty/0 honest · dual_write default OFF ·
-// not full mesh RBAC GA · does not invent message success from knobs alone.
+// s720 outer envelope + s723 nested message always-emit. Mold KVKeysPrint s714 /
+// ConsumerFetchPrint s708. Peer aion s719/s722 residual. Beta · offline unit ≠
+// live APPLY · empty/0/""/{} honest · dual_write default OFF · not full mesh
+// RBAC GA · does not invent message success from knobs alone.
 type StreamMessagesPrint struct {
-	Stream   string          `json:"stream"`
-	FromSeq  uint64          `json:"from_seq"`
-	ToSeq    uint64          `json:"to_seq"`
-	Limit    int             `json:"limit"`
-	Count    int             `json:"count"`
-	Messages []StreamMessage `json:"messages"`
+	Stream   string               `json:"stream"`
+	FromSeq  uint64               `json:"from_seq"`
+	ToSeq    uint64               `json:"to_seq"`
+	Limit    int                  `json:"limit"`
+	Count    int                  `json:"count"`
+	Messages []StreamMessagePrint `json:"messages"`
 }
 
 // NewStreamMessagesPrint builds a messages print envelope. Nil msgs become
-// []StreamMessage{}; Count is always len(messages). Zero knobs emit as 0.
+// []StreamMessagePrint{}; Count is always len(messages). Nested messages map
+// via NewStreamMessagePrint (s723). Zero knobs emit as 0.
 func NewStreamMessagesPrint(stream string, fromSeq, toSeq uint64, limit int, msgs []StreamMessage) StreamMessagesPrint {
-	if msgs == nil {
-		msgs = []StreamMessage{}
-	}
+	prints := streamMessagePrints(msgs)
 	return StreamMessagesPrint{
 		Stream:   stream,
 		FromSeq:  fromSeq,
 		ToSeq:    toSeq,
 		Limit:    limit,
-		Count:    len(msgs),
-		Messages: msgs,
+		Count:    len(prints),
+		Messages: prints,
 	}
 }
 
@@ -175,7 +233,7 @@ func NewStreamMessagesPrint(stream string, fromSeq, toSeq uint64, limit int, msg
 // Long payloads are truncated. Header includes count only (no query knobs);
 // use FormatStreamMessagesPrint when from_seq/to_seq/limit should appear (s720).
 func FormatStreamMessages(name string, msgs []StreamMessage) string {
-	return formatStreamMessagesHeader(name, 0, 0, 0, msgs, false)
+	return formatStreamMessagesHeader(name, 0, 0, 0, streamMessagePrints(msgs), false)
 }
 
 // FormatStreamMessagesPrint is the operator text view for mesh streams --messages
@@ -185,7 +243,7 @@ func FormatStreamMessagesPrint(p StreamMessagesPrint) string {
 	return formatStreamMessagesHeader(p.Stream, p.FromSeq, p.ToSeq, p.Limit, p.Messages, true)
 }
 
-func formatStreamMessagesHeader(name string, fromSeq, toSeq uint64, limit int, msgs []StreamMessage, withKnobs bool) string {
+func formatStreamMessagesHeader(name string, fromSeq, toSeq uint64, limit int, msgs []StreamMessagePrint, withKnobs bool) string {
 	var b strings.Builder
 	if withKnobs {
 		fmt.Fprintf(&b, "iomesh stream messages name=%s count=%d from_seq=%d to_seq=%d limit=%d\n",
@@ -203,14 +261,10 @@ func formatStreamMessagesHeader(name string, fromSeq, toSeq uint64, limit int, m
 			fmt.Fprintf(&b, "… (%d more)\n", len(msgs)-50)
 			break
 		}
-		ts := ""
-		if !m.Timestamp.IsZero() {
-			ts = m.Timestamp.UTC().Format(time.RFC3339)
-		}
 		fmt.Fprintf(&b, "%-8d %-28s %-20s %s\n",
 			m.Seq,
 			truncateRunes(m.Subject, 28),
-			truncateRunes(ts, 20),
+			truncateRunes(m.Timestamp, 20),
 			truncateRunes(formatPayloadPreview(m.Payload), 64),
 		)
 	}

@@ -602,8 +602,99 @@ func TestListStreamMessages_BareArray(t *testing.T) {
 	}
 }
 
+// s723: StreamMessagePrint nested always-emits scraper keys without omitempty gaps;
+// wire StreamMessage stays lean (stream/partition/headers omitempty).
+func TestStreamMessagePrint_AlwaysEmit(t *testing.T) {
+	t.Parallel()
+
+	// Empty / zero fields: stream "", partition 0, headers {}, timestamp "", payload "".
+	emptyJS, err := json.Marshal(NewStreamMessagePrint(StreamMessage{Seq: 0, Subject: ""}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var emptyObj map[string]any
+	if err := json.Unmarshal(emptyJS, &emptyObj); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"stream", "seq", "subject", "partition", "payload", "headers", "timestamp"} {
+		if _, ok := emptyObj[key]; !ok {
+			t.Fatalf("empty json missing key %q: %s", key, emptyJS)
+		}
+	}
+	if emptyObj["stream"] != "" {
+		t.Fatalf("stream want \"\"; got %v", emptyObj["stream"])
+	}
+	if emptyObj["partition"] != float64(0) {
+		t.Fatalf("partition want 0; got %v", emptyObj["partition"])
+	}
+	if emptyObj["timestamp"] != "" {
+		t.Fatalf("timestamp want \"\"; got %v", emptyObj["timestamp"])
+	}
+	if emptyObj["payload"] != "" {
+		t.Fatalf("payload want \"\"; got %v", emptyObj["payload"])
+	}
+	headers, ok := emptyObj["headers"].(map[string]any)
+	if !ok || len(headers) != 0 {
+		t.Fatalf("headers want empty object: %s", emptyJS)
+	}
+	// Confirm not JSON null for headers/payload.
+	if strings.Contains(string(emptyJS), `"headers":null`) || strings.Contains(string(emptyJS), `"payload":null`) {
+		t.Fatalf("headers/payload must not be null: %s", emptyJS)
+	}
+
+	// Populated nested message.
+	ts := time.Date(2026, 7, 1, 12, 0, 0, 0, time.UTC)
+	pop := NewStreamMessagePrint(StreamMessage{
+		Stream:    "EVENTS",
+		Seq:       7,
+		Subject:   "dept.events.hello",
+		Partition: 2,
+		Payload:   []byte("hi"),
+		Headers:   map[string]string{"x-trace": "abc"},
+		Timestamp: ts,
+	})
+	popJS, err := json.Marshal(pop)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var popObj map[string]any
+	if err := json.Unmarshal(popJS, &popObj); err != nil {
+		t.Fatal(err)
+	}
+	if popObj["stream"] != "EVENTS" || popObj["seq"] != float64(7) || popObj["subject"] != "dept.events.hello" {
+		t.Fatalf("identity: %s", popJS)
+	}
+	if popObj["partition"] != float64(2) {
+		t.Fatalf("partition: %s", popJS)
+	}
+	if popObj["timestamp"] != "2026-07-01T12:00:00Z" {
+		t.Fatalf("timestamp: %s", popJS)
+	}
+	wantB64 := base64.StdEncoding.EncodeToString([]byte("hi"))
+	if popObj["payload"] != wantB64 {
+		t.Fatalf("payload b64 want %q got %v", wantB64, popObj["payload"])
+	}
+	popHeaders, ok := popObj["headers"].(map[string]any)
+	if !ok || popHeaders["x-trace"] != "abc" {
+		t.Fatalf("headers: %s", popJS)
+	}
+
+	// Wire StreamMessage omits empty stream/partition/headers (lean omitempty).
+	wire, err := json.Marshal(StreamMessage{Seq: 1, Subject: "s"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(wire), `"stream"`) || strings.Contains(string(wire), `"partition"`) ||
+		strings.Contains(string(wire), `"headers"`) {
+		t.Fatalf("wire StreamMessage should omit empty stream/partition/headers: %s", wire)
+	}
+	if NewStreamMessagePrint(StreamMessage{}).Timestamp != "" {
+		t.Fatal("zero Timestamp must print as empty string")
+	}
+}
+
 // s720: StreamMessagesPrint envelope always-emits stream + knobs + count + messages
-// without omitempty gaps; wire StreamMessage stays lean.
+// without omitempty gaps; s723 nested StreamMessagePrint always-emit; wire stays lean.
 func TestStreamMessagesPrint_AlwaysEmit(t *testing.T) {
 	t.Parallel()
 
@@ -636,9 +727,9 @@ func TestStreamMessagesPrint_AlwaysEmit(t *testing.T) {
 		t.Fatalf("messages want empty array: %s", emptyJS)
 	}
 
-	// Populated knobs + one message.
+	// Populated knobs + one sparse message → nested always-emit keys present.
 	popMsgs := []StreamMessage{
-		{Stream: "EVENTS", Seq: 7, Subject: "dept.events.hello", Payload: []byte("hi")},
+		{Seq: 7, Subject: "dept.events.hello", Payload: []byte("hi")},
 	}
 	popDTO := NewStreamMessagesPrint("EVENTS", 1, 100, 20, popMsgs)
 	popJS, err := json.Marshal(popDTO)
@@ -661,6 +752,22 @@ func TestStreamMessagesPrint_AlwaysEmit(t *testing.T) {
 	popList, ok := popObj["messages"].([]any)
 	if !ok || len(popList) != 1 {
 		t.Fatalf("messages: %s", popJS)
+	}
+	nested, ok := popList[0].(map[string]any)
+	if !ok {
+		t.Fatalf("nested message not object: %s", popJS)
+	}
+	for _, key := range []string{"stream", "seq", "subject", "partition", "payload", "headers", "timestamp"} {
+		if _, ok := nested[key]; !ok {
+			t.Fatalf("nested missing always-emit key %q: %s", key, popJS)
+		}
+	}
+	if nested["stream"] != "" || nested["partition"] != float64(0) || nested["timestamp"] != "" {
+		t.Fatalf("nested empty/0 honest: %s", popJS)
+	}
+	nestedHeaders, ok := nested["headers"].(map[string]any)
+	if !ok || len(nestedHeaders) != 0 {
+		t.Fatalf("nested headers want {}: %s", popJS)
 	}
 
 	// Wire StreamMessage JSON has no envelope knobs (print DTO is separate).
