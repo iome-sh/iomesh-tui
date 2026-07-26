@@ -601,3 +601,97 @@ func TestListStreamMessages_BareArray(t *testing.T) {
 		t.Fatalf("msgs=%+v", msgs)
 	}
 }
+
+// s720: StreamMessagesPrint envelope always-emits stream + knobs + count + messages
+// without omitempty gaps; wire StreamMessage stays lean.
+func TestStreamMessagesPrint_AlwaysEmit(t *testing.T) {
+	t.Parallel()
+
+	// Empty/nil messages + zero knobs → empty slice, count 0, knobs 0 honest.
+	emptyDTO := NewStreamMessagesPrint("EVENTS", 0, 0, 0, nil)
+	emptyJS, err := json.Marshal(emptyDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var emptyObj map[string]any
+	if err := json.Unmarshal(emptyJS, &emptyObj); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"stream", "from_seq", "to_seq", "limit", "count", "messages"} {
+		if _, ok := emptyObj[key]; !ok {
+			t.Fatalf("empty json missing key %q: %s", key, emptyJS)
+		}
+	}
+	if emptyObj["stream"] != "EVENTS" {
+		t.Fatalf("stream: %s", emptyJS)
+	}
+	if emptyObj["from_seq"] != float64(0) || emptyObj["to_seq"] != float64(0) || emptyObj["limit"] != float64(0) {
+		t.Fatalf("zero knobs honest: %s", emptyJS)
+	}
+	if emptyObj["count"] != float64(0) {
+		t.Fatalf("count want 0: %s", emptyJS)
+	}
+	msgs, ok := emptyObj["messages"].([]any)
+	if !ok || len(msgs) != 0 {
+		t.Fatalf("messages want empty array: %s", emptyJS)
+	}
+
+	// Populated knobs + one message.
+	popMsgs := []StreamMessage{
+		{Stream: "EVENTS", Seq: 7, Subject: "dept.events.hello", Payload: []byte("hi")},
+	}
+	popDTO := NewStreamMessagesPrint("EVENTS", 1, 100, 20, popMsgs)
+	popJS, err := json.Marshal(popDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var popObj map[string]any
+	if err := json.Unmarshal(popJS, &popObj); err != nil {
+		t.Fatal(err)
+	}
+	if popObj["stream"] != "EVENTS" {
+		t.Fatalf("stream: %s", popJS)
+	}
+	if popObj["from_seq"] != float64(1) || popObj["to_seq"] != float64(100) || popObj["limit"] != float64(20) {
+		t.Fatalf("knobs: %s", popJS)
+	}
+	if popObj["count"] != float64(1) {
+		t.Fatalf("count: %s", popJS)
+	}
+	popList, ok := popObj["messages"].([]any)
+	if !ok || len(popList) != 1 {
+		t.Fatalf("messages: %s", popJS)
+	}
+
+	// Wire StreamMessage JSON has no envelope knobs (print DTO is separate).
+	wire, err := json.Marshal(StreamMessage{Seq: 1, Subject: "s"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"from_seq", "to_seq", "limit", "count"} {
+		if strings.Contains(string(wire), key) {
+			t.Fatalf("wire StreamMessage should not carry %q: %s", key, wire)
+		}
+	}
+
+	// Text path with knobs (FormatStreamMessagesPrint).
+	emptyText := FormatStreamMessagesPrint(emptyDTO)
+	for _, want := range []string{
+		"iomesh stream messages name=EVENTS count=0 from_seq=0 to_seq=0 limit=0\n",
+		"(no messages)\n",
+	} {
+		if !strings.Contains(emptyText, want) {
+			t.Fatalf("empty text missing %q:\n%s", want, emptyText)
+		}
+	}
+	popText := FormatStreamMessagesPrint(popDTO)
+	if !strings.Contains(popText, "count=1 from_seq=1 to_seq=100 limit=20") ||
+		!strings.Contains(popText, "dept.events.hello") {
+		t.Fatalf("populated text:\n%s", popText)
+	}
+	// Legacy FormatStreamMessages (no knobs) still used by consumer fetch.
+	legacy := FormatStreamMessages("EVENTS", nil)
+	if strings.Contains(legacy, "from_seq=") || !strings.Contains(legacy, "count=0") {
+		t.Fatalf("legacy FormatStreamMessages: %s", legacy)
+	}
+}
