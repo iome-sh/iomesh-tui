@@ -135,8 +135,12 @@ Wire `StreamInfo` stays lean (`omitempty` on optional knobs including `retention
 | `FormatStreamDetail` / get text | Always prints `description`, `retention`, `retention_tier`, `partitions`, `max_msgs`, `max_age_sec`, … (empty/`0` when unset) |
 | `StreamInfoPrint` / get+list `--json` | Same knobs without omitempty gaps; list path maps via `NewStreamInfoPrint` |
 | `FormatStreams` table | Columns include MAX_MSGS, MAX_AGE, RETENTION, **TIER** (empty when broker omits) |
+| `StreamMessagesPrint` / `--messages --json` | Envelope `{stream, from_seq, to_seq, limit, count, messages}` (not bare array; s720; 0 honest) |
+| `FormatStreamMessagesPrint` / `--messages` text | Header includes knobs + count; table of messages (empty → `(no messages)`) |
 
 `retention_tier` is decoded from the broker wire only (hot\|temp\|extended\|archive when present). **Never invent** tier from `max_age_sec` alone — empty string is honest when the broker omits. Beta · offline unit ≠ live APPLY · peer aion s701.
+
+**s720 messages envelope** (mold KVKeysPrint s714 / ConsumerFetchPrint s708; peer aion s719 residual): `--messages --json` marshals `StreamMessagesPrint` always-emitting scraper keys without omitempty gaps. Wire `StreamMessage` stays lean. Empty/0 knobs are honest; does not invent message success from knobs alone. dual_write default OFF · not full mesh RBAC GA.
 
 ```bash
 iomesh mesh streams                  # table of all streams
@@ -146,7 +150,7 @@ iomesh mesh streams --name EVENTS --json
 # Message inspection (requires --name; default --limit 20; not dogfood):
 iomesh mesh streams --messages --name EVENTS
 iomesh mesh streams --messages --name EVENTS --from-seq 1 --to-seq 100 --limit 50
-iomesh mesh streams --messages --name EVENTS --json
+iomesh mesh streams --messages --name EVENTS --json   # StreamMessagesPrint envelope (s720)
 # DESTRUCTIVE — requires both --name and --yes (incompatible with --messages):
 iomesh mesh streams --delete --name TEMP --yes
 ```
@@ -253,7 +257,7 @@ Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 alread
 - `internal/iomesh/meter.go` — UsageMeter / FormatUsage
 - `internal/iomesh/catalog.go` — ListCatalog / FormatCatalog / CatalogSnippet
 - `internal/iomesh/streams.go` — ListStreams / GetStream / DeleteStream / FormatStreams
-- `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages
+- `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages / NewStreamMessagesPrint / FormatStreamMessagesPrint
 - `internal/iomesh/consumers.go` — CreateConsumer / ConsumerFetch / ConsumerAck / ConsumerNack / DeleteConsumer / FormatConsumerInfo / FormatConsumerInfoWithAuth / NewConsumerInfoPrint / NewConsumerFetchPrint / FormatConsumerFetch / NewConsumerAckPrint / FormatConsumerAck / NewConsumerDeletePrint / FormatConsumerDelete
 - `internal/iomesh/kv.go` — KVGet / KVListKeys / KVPut / KVDelete / KVCreateBucket / FormatKVEntry / FormatKVKeys / FormatKVBucketInfo / NewKVBucketInfoPrint / NewKVEntryPrint / NewKVKeysPrint
 - `internal/iomesh/pub.go` — Pub (ephemeral `POST /v1/pub`)

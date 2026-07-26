@@ -137,12 +137,62 @@ func decodeStreamMessages(raw []byte) ([]StreamMessage, error) {
 	return out, nil
 }
 
+// StreamMessagesPrint is a CLI-side print DTO for mesh streams --messages --json.
+// Always emits stream, from_seq / to_seq / limit (0 honest when unset), count,
+// and messages (empty array when none) so CI scrapers get a stable envelope
+// rather than a bare []StreamMessage. Wire StreamMessage stays lean omitempty.
+//
+// s720: mold KVKeysPrint s714 / ConsumerFetchPrint s708. Peer aion s719 residual.
+// Beta · offline unit ≠ live APPLY · empty/0 honest · dual_write default OFF ·
+// not full mesh RBAC GA · does not invent message success from knobs alone.
+type StreamMessagesPrint struct {
+	Stream   string          `json:"stream"`
+	FromSeq  uint64          `json:"from_seq"`
+	ToSeq    uint64          `json:"to_seq"`
+	Limit    int             `json:"limit"`
+	Count    int             `json:"count"`
+	Messages []StreamMessage `json:"messages"`
+}
+
+// NewStreamMessagesPrint builds a messages print envelope. Nil msgs become
+// []StreamMessage{}; Count is always len(messages). Zero knobs emit as 0.
+func NewStreamMessagesPrint(stream string, fromSeq, toSeq uint64, limit int, msgs []StreamMessage) StreamMessagesPrint {
+	if msgs == nil {
+		msgs = []StreamMessage{}
+	}
+	return StreamMessagesPrint{
+		Stream:   stream,
+		FromSeq:  fromSeq,
+		ToSeq:    toSeq,
+		Limit:    limit,
+		Count:    len(msgs),
+		Messages: msgs,
+	}
+}
+
 // FormatStreamMessages renders a compact table for CLI operator inspection.
 // Decoded payloads are shown as printable text when valid UTF-8; otherwise base64.
-// Long payloads are truncated.
+// Long payloads are truncated. Header includes count only (no query knobs);
+// use FormatStreamMessagesPrint when from_seq/to_seq/limit should appear (s720).
 func FormatStreamMessages(name string, msgs []StreamMessage) string {
+	return formatStreamMessagesHeader(name, 0, 0, 0, msgs, false)
+}
+
+// FormatStreamMessagesPrint is the operator text view for mesh streams --messages
+// (s720). Always emits query knobs (from_seq / to_seq / limit; 0 honest) + count
+// then the message table. Pure helper; no I/O. Does not invent success from knobs.
+func FormatStreamMessagesPrint(p StreamMessagesPrint) string {
+	return formatStreamMessagesHeader(p.Stream, p.FromSeq, p.ToSeq, p.Limit, p.Messages, true)
+}
+
+func formatStreamMessagesHeader(name string, fromSeq, toSeq uint64, limit int, msgs []StreamMessage, withKnobs bool) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "iomesh stream messages name=%s count=%d\n", name, len(msgs))
+	if withKnobs {
+		fmt.Fprintf(&b, "iomesh stream messages name=%s count=%d from_seq=%d to_seq=%d limit=%d\n",
+			name, len(msgs), fromSeq, toSeq, limit)
+	} else {
+		fmt.Fprintf(&b, "iomesh stream messages name=%s count=%d\n", name, len(msgs))
+	}
 	if len(msgs) == 0 {
 		b.WriteString("(no messages)\n")
 		return b.String()

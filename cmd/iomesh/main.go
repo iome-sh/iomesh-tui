@@ -870,7 +870,7 @@ func cmdMeshStreams(args []string) int {
 		name       = fs.String("name", "", "get/delete/messages one stream by name (omit to list all)")
 		endpoint   = fs.String("endpoint", "", "override IOMESH_ENDPOINT")
 		tenant     = fs.String("tenant", "", "override tenant")
-		jsonOut    = fs.Bool("json", false, "print streams/messages as JSON")
+		jsonOut    = fs.Bool("json", false, "print streams/messages as JSON (messages: StreamMessagesPrint envelope)")
 		doMessages = fs.Bool("messages", false, "list messages for --name (requires --name; GET /v1/streams/{name}/messages)")
 		fromSeq    = fs.Uint64("from-seq", 0, "messages: from_seq lower bound (0=omit; broker default)")
 		toSeq      = fs.Uint64("to-seq", 0, "messages: to_seq upper bound (0=omit; broker default)")
@@ -947,11 +947,10 @@ func cmdMeshStreams(args []string) int {
 			fmt.Fprintf(os.Stderr, "FAIL mesh streams messages: %v\n", err)
 			return 1
 		}
+		// s720: print DTO always-emits stream + knobs + count + messages (not bare array).
+		printDTO := iomesh.NewStreamMessagesPrint(streamName, *fromSeq, *toSeq, *limit, msgs)
 		if *jsonOut {
-			if msgs == nil {
-				msgs = []iomesh.StreamMessage{}
-			}
-			b, err := json.MarshalIndent(msgs, "", "  ")
+			b, err := json.MarshalIndent(printDTO, "", "  ")
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "json: %v\n", err)
 				return 1
@@ -959,7 +958,7 @@ func cmdMeshStreams(args []string) int {
 			fmt.Println(string(b))
 			return 0
 		}
-		fmt.Print(iomesh.FormatStreamMessages(streamName, msgs))
+		fmt.Print(iomesh.FormatStreamMessagesPrint(printDTO))
 		return 0
 	}
 
