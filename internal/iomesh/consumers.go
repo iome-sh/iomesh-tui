@@ -321,9 +321,58 @@ func (c *Client) DeleteConsumer(ctx context.Context, stream, name string) error 
 	return nil
 }
 
+// ConsumerInfoPrint is a CLI-side print DTO for consumer create JSON output.
+// Always emits filter_subject, pull_role, and pull_allow_suffix as strings
+// (empty when unset) so CI scrapers can key stable identity without omitempty
+// gaps. Separate from wire ConsumerInfo so broker decode stays lean.
+//
+// s696: peer status/wait/dogfood pull identity continuum. Beta federated ACL;
+// fail-open empty; dual_write default OFF; not full mesh RBAC GA.
+type ConsumerInfoPrint struct {
+	Stream          string `json:"stream"`
+	Name            string `json:"name"`
+	FilterSubject   string `json:"filter_subject"`
+	AckFloor        uint64 `json:"ack_floor"`
+	PendingCount    int    `json:"pending_count"`
+	PullRole        string `json:"pull_role"`
+	PullAllowSuffix string `json:"pull_allow_suffix"`
+}
+
+// NewConsumerInfoPrint builds a print DTO from broker ConsumerInfo plus
+// resolved pull auth identity (role / allow-suffix from s681/s684). Empty
+// role/suffix are always emitted as "" (not omitted).
+func NewConsumerInfoPrint(info ConsumerInfo, role, allowSuffix string) ConsumerInfoPrint {
+	return ConsumerInfoPrint{
+		Stream:          info.Stream,
+		Name:            info.Name,
+		FilterSubject:   info.FilterSubject,
+		AckFloor:        info.AckFloor,
+		PendingCount:    info.PendingCount,
+		PullRole:        role,
+		PullAllowSuffix: allowSuffix,
+	}
+}
+
 // FormatConsumerInfo is a multi-line view for one durable consumer (CLI).
-// Pure helper with no network I/O. Always emits filter_subject (empty string when unset).
+// Pure helper with no network I/O. Always emits filter_subject, pull_role, and
+// pull_allow_suffix (empty string when unset). Delegates to
+// FormatConsumerInfoWithAuth with empty auth identity.
 func FormatConsumerInfo(info ConsumerInfo) string {
+	return FormatConsumerInfoWithAuth(info, "", "")
+}
+
+// FormatConsumerInfoWithAuth is a multi-line operator view for one durable
+// consumer including resolved pull auth identity (s696). Always emits:
+//   - filter_subject: (empty when unset)
+//   - pull_role: (empty when unset)
+//   - pull_allow_suffix: (empty when unset)
+//
+// Pure helper with no network I/O. Use from mesh consumer create with role/
+// suffix resolved via ResolveConsumerCreateAuthAndFilter (s681) so scrapers
+// always see pull identity next to filter_subject. Beta federated ACL;
+// fail-open empty; dual_write default OFF; not full mesh RBAC GA; peer aion
+// s695 sales claim continuum.
+func FormatConsumerInfoWithAuth(info ConsumerInfo, role, allowSuffix string) string {
 	var b strings.Builder
 	b.WriteString("iomesh consumer\n")
 	fmt.Fprintf(&b, "stream:          %s\n", info.Stream)
@@ -331,5 +380,7 @@ func FormatConsumerInfo(info ConsumerInfo) string {
 	fmt.Fprintf(&b, "ack_floor:       %d\n", info.AckFloor)
 	fmt.Fprintf(&b, "pending_count:   %d\n", info.PendingCount)
 	fmt.Fprintf(&b, "filter_subject:  %s\n", info.FilterSubject)
+	fmt.Fprintf(&b, "pull_role:       %s\n", role)
+	fmt.Fprintf(&b, "pull_allow_suffix: %s\n", allowSuffix)
 	return b.String()
 }

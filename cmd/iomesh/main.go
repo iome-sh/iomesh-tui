@@ -1033,7 +1033,9 @@ func cmdMeshConsumer(args []string) int {
 Create: POST /v1/streams/{stream}/consumers (201 full info; 409 idempotent name-only).
   --role / [memory].pull_role → X-IOMesh-Role; --pull-allow-suffix / pull_allow_suffix → allow-suffix.
   Roles: operator|admin|agent|auditor|viewer|memory|custom (s687 memory → tenant.memory.>).
-  Empty --filter → role-aware default (s681/s687; same as memory pull s678). Beta; not full mesh RBAC GA.
+  Empty --filter → role-aware default (s681/s687; same as memory pull s678).
+  Text/JSON always-emit pull_role / pull_allow_suffix next to filter_subject (s696; empty when unset).
+  Beta; fail-open; dual_write default OFF; not full mesh RBAC GA.
 Fetch:  POST /v1/streams/{stream}/consumers/{name}/fetch (default batch=1, max_wait 2s).
   Same --role / --pull-allow-suffix headers (s684; aion validates role on fetch). Fail-open empty.
 Ack:    POST .../consumers/{name}/ack body {"seqs":[...]} (prints optional ack_floor).
@@ -1258,7 +1260,7 @@ func cmdMeshConsumerCreate(args []string) int {
 		role            = fs.String("role", "", "optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|memory|custom); [memory].pull_role")
 		pullAllowSuffix = fs.String("pull-allow-suffix", "", "optional X-IOMesh-Pull-Allow-Suffix (comma tokens; role=custom); [memory].pull_allow_suffix")
 		yes             = fs.Bool("yes", false, "confirm mutating create (required)")
-		jsonOut         = fs.Bool("json", false, "print ConsumerInfo as JSON")
+		jsonOut         = fs.Bool("json", false, "print ConsumerInfoPrint JSON (always-emits pull_role / pull_allow_suffix)")
 		verbose         = fs.Bool("v", false, "verbose logs")
 		endpoint        = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
 		tenant          = fs.String("tenant", "", "override tenant")
@@ -1271,6 +1273,7 @@ func cmdMeshConsumerCreate(args []string) int {
 	if streamName == "" || consumerName == "" || !*yes {
 		fmt.Fprintln(os.Stderr, "usage: iomesh mesh consumer create --stream S --name C [--filter F] [--role R] [--pull-allow-suffix S] --yes [--json]")
 		fmt.Fprintln(os.Stderr, "  --stream and --name required; --yes required (mutating)")
+		fmt.Fprintln(os.Stderr, "  text/JSON always-emit pull_role / pull_allow_suffix next to filter_subject (s696)")
 		return 2
 	}
 
@@ -1321,8 +1324,10 @@ func cmdMeshConsumerCreate(args []string) int {
 		fmt.Fprintln(os.Stderr, "FAIL mesh consumer create: empty response")
 		return 1
 	}
+	// s696: always-emit pull_role / pull_allow_suffix next to filter_subject for CI scrapers.
+	// CLI print DTO keeps wire ConsumerInfo free of auth identity fields.
 	if *jsonOut {
-		b, err := json.MarshalIndent(info, "", "  ")
+		b, err := json.MarshalIndent(iomesh.NewConsumerInfoPrint(*info, pullRole, allowSuffix), "", "  ")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "json: %v\n", err)
 			return 1
@@ -1330,7 +1335,7 @@ func cmdMeshConsumerCreate(args []string) int {
 		fmt.Println(string(b))
 		return 0
 	}
-	fmt.Print(iomesh.FormatConsumerInfo(*info))
+	fmt.Print(iomesh.FormatConsumerInfoWithAuth(*info, pullRole, allowSuffix))
 	return 0
 }
 

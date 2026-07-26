@@ -211,12 +211,134 @@ func TestFormatConsumerInfo_EmptyFilterAlwaysEmit(t *testing.T) {
 	if !strings.Contains(out, "stream:          S") || !strings.Contains(out, "name:            c") {
 		t.Fatal(out)
 	}
+	// s696: FormatConsumerInfo always-emits blank pull identity when no auth passed.
+	if !strings.Contains(out, "pull_role:       \n") {
+		t.Fatalf("want blank pull_role always emitted, got:\n%q", out)
+	}
+	if !strings.Contains(out, "pull_allow_suffix: \n") {
+		t.Fatalf("want blank pull_allow_suffix always emitted, got:\n%q", out)
+	}
 	// Set filter still prints value.
 	out2 := FormatConsumerInfo(ConsumerInfo{
 		Stream: "S", Name: "c", AckFloor: 1, PendingCount: 0, FilterSubject: "dept.events.>",
 	})
 	if !strings.Contains(out2, "filter_subject:  dept.events.>\n") {
 		t.Fatalf("want set filter_subject, got:\n%s", out2)
+	}
+}
+
+// s696: FormatConsumerInfoWithAuth always-emits pull_role / pull_allow_suffix
+// (empty when unset; populated when set) next to filter_subject for CI scrapers.
+func TestFormatConsumerInfoWithAuth_AlwaysEmitPullIdentity(t *testing.T) {
+	t.Parallel()
+
+	// Empty auth identity: blank lines always present.
+	empty := FormatConsumerInfoWithAuth(ConsumerInfo{
+		Stream: "EVENTS", Name: "c", AckFloor: 0, PendingCount: 0, FilterSubject: "",
+	}, "", "")
+	for _, want := range []string{
+		"filter_subject:  \n",
+		"pull_role:       \n",
+		"pull_allow_suffix: \n",
+	} {
+		if !strings.Contains(empty, want) {
+			t.Fatalf("empty auth missing %q in:\n%q", want, empty)
+		}
+	}
+	// Order: filter_subject → pull_role → pull_allow_suffix
+	fsIdx := strings.Index(empty, "filter_subject:")
+	prIdx := strings.Index(empty, "pull_role:")
+	psIdx := strings.Index(empty, "pull_allow_suffix:")
+	if fsIdx < 0 || prIdx < 0 || psIdx < 0 || !(fsIdx < prIdx && prIdx < psIdx) {
+		t.Fatalf("identity order want filter_subject < pull_role < pull_allow_suffix:\n%s", empty)
+	}
+
+	// Populated values.
+	pop := FormatConsumerInfoWithAuth(ConsumerInfo{
+		Stream: "EVENTS", Name: "agent-1", AckFloor: 1, PendingCount: 2,
+		FilterSubject: "acme.events.>",
+	}, "agent", "ops")
+	for _, want := range []string{
+		"filter_subject:  acme.events.>\n",
+		"pull_role:       agent\n",
+		"pull_allow_suffix: ops\n",
+	} {
+		if !strings.Contains(pop, want) {
+			t.Fatalf("populated missing %q in:\n%s", want, pop)
+		}
+	}
+
+	// custom + multi-suffix.
+	custom := FormatConsumerInfoWithAuth(ConsumerInfo{
+		Stream: "S", Name: "c", FilterSubject: "t.ops.>",
+	}, "custom", "ops,memory")
+	if !strings.Contains(custom, "pull_role:       custom\n") ||
+		!strings.Contains(custom, "pull_allow_suffix: ops,memory\n") {
+		t.Fatalf("custom role/suffix:\n%s", custom)
+	}
+
+	// FormatConsumerInfo delegates empty auth (same always-emit contract).
+	base := FormatConsumerInfo(ConsumerInfo{Stream: "S", Name: "c"})
+	withEmpty := FormatConsumerInfoWithAuth(ConsumerInfo{Stream: "S", Name: "c"}, "", "")
+	if base != withEmpty {
+		t.Fatalf("FormatConsumerInfo should equal WithAuth empty; base:\n%q\nwith:\n%q", base, withEmpty)
+	}
+}
+
+// s696: ConsumerInfoPrint JSON always-emits pull_role / pull_allow_suffix
+// (and filter_subject) without omitempty gaps; does not pollute wire ConsumerInfo.
+func TestConsumerInfoPrint_JSONAlwaysEmitPullIdentity(t *testing.T) {
+	t.Parallel()
+
+	// Empty auth.
+	emptyDTO := NewConsumerInfoPrint(ConsumerInfo{
+		Stream: "EVENTS", Name: "c", AckFloor: 0, PendingCount: 0,
+	}, "", "")
+	emptyJS, err := json.Marshal(emptyDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var emptyObj map[string]any
+	if err := json.Unmarshal(emptyJS, &emptyObj); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"stream", "name", "filter_subject", "ack_floor", "pending_count", "pull_role", "pull_allow_suffix"} {
+		if _, ok := emptyObj[key]; !ok {
+			t.Fatalf("empty json missing key %q: %s", key, emptyJS)
+		}
+	}
+	if emptyObj["pull_role"] != "" || emptyObj["pull_allow_suffix"] != "" || emptyObj["filter_subject"] != "" {
+		t.Fatalf("empty identity want \"\"; got pull_role=%v pull_allow_suffix=%v filter_subject=%v\n%s",
+			emptyObj["pull_role"], emptyObj["pull_allow_suffix"], emptyObj["filter_subject"], emptyJS)
+	}
+
+	// Populated.
+	popDTO := NewConsumerInfoPrint(ConsumerInfo{
+		Stream: "EVENTS", Name: "agent-1", FilterSubject: "acme.events.>",
+		AckFloor: 3, PendingCount: 1,
+	}, "memory", "ops")
+	popJS, err := json.Marshal(popDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var popObj map[string]any
+	if err := json.Unmarshal(popJS, &popObj); err != nil {
+		t.Fatal(err)
+	}
+	if popObj["pull_role"] != "memory" || popObj["pull_allow_suffix"] != "ops" {
+		t.Fatalf("populated pull identity: %v %v\n%s", popObj["pull_role"], popObj["pull_allow_suffix"], popJS)
+	}
+	if popObj["filter_subject"] != "acme.events.>" || popObj["name"] != "agent-1" {
+		t.Fatalf("populated consumer fields: %s", popJS)
+	}
+
+	// Wire ConsumerInfo still omits empty filter_subject (omitempty) — print DTO is separate.
+	wire, err := json.Marshal(ConsumerInfo{Stream: "S", Name: "c"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(wire), "pull_role") || strings.Contains(string(wire), "filter_subject") {
+		t.Fatalf("wire ConsumerInfo should not carry pull_role / empty filter_subject: %s", wire)
 	}
 }
 

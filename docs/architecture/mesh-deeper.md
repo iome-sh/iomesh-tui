@@ -200,7 +200,8 @@ Lean consumer surface (no SDK dependency; wire parity with SDK `CreateConsumer` 
 | `ConsumerAck(stream, name, seqs...)` | `POST .../consumers/{name}/ack` | Body `{"seqs":[...]}`; path-escaped stream+name; returns optional `ack_floor` (0 if empty body); empty stream/name/seqs / non-2xx → error |
 | `ConsumerNack(stream, name, seqs...)` | `POST .../consumers/{name}/nack` | Same shape as ack |
 | `DeleteConsumer(stream, name)` | `DELETE .../consumers/{name}` | Path-escaped stream+name; **204/2xx** success; empty stream/name / non-2xx → error |
-| `FormatConsumerInfo` | — | multi-line operator view (omits empty `filter_subject`) |
+| `FormatConsumerInfo` / `FormatConsumerInfoWithAuth` | — | multi-line operator view; always emits `filter_subject` / `pull_role` / `pull_allow_suffix` (empty when unset; s696) |
+| `NewConsumerInfoPrint` | — | CLI create JSON DTO with always-emit pull identity (does not pollute wire `ConsumerInfo`) |
 
 ```bash
 iomesh mesh consumer create --stream EVENTS --name worker-1 --yes
@@ -216,7 +217,7 @@ iomesh mesh consumer delete --stream EVENTS --name worker-1 --yes
 iomesh mesh consumer delete --stream EVENTS --name worker-1 --yes --json
 ```
 
-Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 already-exists → success). Optional `--role` / `--pull-allow-suffix` (or `[memory].pull_role` / `pull_allow_suffix`) set auth headers on create (s681), fetch (s684; aion validates role on fetch), and ack/nack/delete (defense-in-depth); empty `--filter` on create gets role-aware default via `DefaultMemoryPullFilterForRole` (s681 / s678 / s687 — `memory` → `tenant.memory.>`). **Beta** federated ACL — fail-open without role; not full mesh RBAC GA; peer aion s686 continuum. Fetch long-polls up to 2s. Ack/nack require at least one `--seq` (repeatable; CSV ok). Delete prints `PASS ...` (or `{"ok":true,"stream":"...","name":"..."}` with `--json`). Mesh disabled → error `mesh disabled` (non-zero CLI exit). Soft consumer probe in dogfood always-emits `pull_role` / `pull_allow_suffix` identity (s687).
+Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 already-exists → success). Optional `--role` / `--pull-allow-suffix` (or `[memory].pull_role` / `pull_allow_suffix`) set auth headers on create (s681), fetch (s684; aion validates role on fetch), and ack/nack/delete (defense-in-depth); empty `--filter` on create gets role-aware default via `DefaultMemoryPullFilterForRole` (s681 / s678 / s687 — `memory` → `tenant.memory.>`). **s696:** create text (`FormatConsumerInfoWithAuth`) and JSON (`ConsumerInfoPrint`) always emit `pull_role` / `pull_allow_suffix` next to `filter_subject` (empty when unset) so CI scrapers see pull auth identity without omitempty gaps. **Beta** federated ACL — fail-open without role; dual_write default OFF; not full mesh RBAC GA; peer aion s695/s686 continuum. Fetch long-polls up to 2s. Ack/nack require at least one `--seq` (repeatable; CSV ok). Delete prints `PASS ...` (or `{"ok":true,"stream":"...","name":"..."}` with `--json`). Mesh disabled → error `mesh disabled` (non-zero CLI exit). Soft consumer probe in dogfood always-emits `pull_role` / `pull_allow_suffix` identity (s687).
 
 ## Packages
 
@@ -226,7 +227,7 @@ Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 alread
 - `internal/iomesh/catalog.go` — ListCatalog / FormatCatalog / CatalogSnippet
 - `internal/iomesh/streams.go` — ListStreams / GetStream / DeleteStream / FormatStreams
 - `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages
-- `internal/iomesh/consumers.go` — CreateConsumer / ConsumerFetch / ConsumerAck / ConsumerNack / DeleteConsumer / FormatConsumerInfo
+- `internal/iomesh/consumers.go` — CreateConsumer / ConsumerFetch / ConsumerAck / ConsumerNack / DeleteConsumer / FormatConsumerInfo / FormatConsumerInfoWithAuth / NewConsumerInfoPrint
 - `internal/iomesh/kv.go` — KVGet / KVListKeys / KVPut / KVDelete / KVCreateBucket / FormatKVEntry / FormatKVKeys / FormatKVBucketInfo
 - `internal/iomesh/pub.go` — Pub (ephemeral `POST /v1/pub`)
 - `internal/agent` — policy before tool execute; mesh catalog tools; `EventMeshPolicy`
