@@ -165,6 +165,18 @@ Lean KV surface (no SDK dependency; wire parity with SDK `KVEntry` / `Get` / `Li
 | `KVDelete(bucket, key)` | `DELETE /v1/kv/{bucket}/{key}` | 2xx/204 success; empty args / non-2xx → error |
 | `KVCreateBucket(name)` | `POST /v1/kv/{bucket}` | Empty body; 201 decodes `KVBucketInfo`; **409 Conflict = success** (idempotent, returns `{Name}`); empty name / other non-2xx → error |
 
+Wire `KVBucketInfo` / `KVEntry` stay lean (`omitempty` on optional knobs). CLI print surfaces always-emit for scrapers (s714; peer text FormatKV s560 + StreamInfoPrint s699/s702 mold):
+
+| Surface | Behaviour |
+|---------|-----------|
+| `FormatKVBucketInfo` / create-bucket text | Always prints `history`, `max_bytes`, `ttl_seconds` (blank when `*int64` nil) |
+| `KVBucketInfoPrint` / create-bucket `--json` | Always emits `name`, `history` (0), `max_bytes` / `ttl_seconds` (0 when nil) — no omitempty |
+| `FormatKVEntry` / get text | Always prints `created_at` (blank when zero) |
+| `KVEntryPrint` / get `--json` | Always emits `bucket`, `key`, `value` (base64), `revision`, `created_at` (`""` when zero) |
+| `KVKeysPrint` / list `--json` | Envelope `{bucket, prefix, count, keys}` (not bare string array) |
+
+Beta · offline unit ≠ live APPLY · empty/0 honest · dual_write default OFF · peer aion s713 · does not invent KV success from knobs alone.
+
 ```bash
 iomesh mesh kv --bucket config --list
 iomesh mesh kv --bucket config --list --prefix app
@@ -243,6 +255,6 @@ Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 alread
 - `internal/iomesh/streams.go` — ListStreams / GetStream / DeleteStream / FormatStreams
 - `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages
 - `internal/iomesh/consumers.go` — CreateConsumer / ConsumerFetch / ConsumerAck / ConsumerNack / DeleteConsumer / FormatConsumerInfo / FormatConsumerInfoWithAuth / NewConsumerInfoPrint / NewConsumerFetchPrint / FormatConsumerFetch / NewConsumerAckPrint / FormatConsumerAck / NewConsumerDeletePrint / FormatConsumerDelete
-- `internal/iomesh/kv.go` — KVGet / KVListKeys / KVPut / KVDelete / KVCreateBucket / FormatKVEntry / FormatKVKeys / FormatKVBucketInfo
+- `internal/iomesh/kv.go` — KVGet / KVListKeys / KVPut / KVDelete / KVCreateBucket / FormatKVEntry / FormatKVKeys / FormatKVBucketInfo / NewKVBucketInfoPrint / NewKVEntryPrint / NewKVKeysPrint
 - `internal/iomesh/pub.go` — Pub (ephemeral `POST /v1/pub`)
 - `internal/agent` — policy before tool execute; mesh catalog tools; `EventMeshPolicy`

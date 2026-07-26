@@ -1648,7 +1648,8 @@ func cmdMeshKV(args []string) int {
 			return 1
 		}
 		if *jsonOut {
-			b, err := json.MarshalIndent(info, "", "  ")
+			// s714: print DTO always-emits name/history/max_bytes/ttl_seconds (0 when nil).
+			b, err := json.MarshalIndent(iomesh.NewKVBucketInfoPrint(*info), "", "  ")
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "json: %v\n", err)
 				return 1
@@ -1697,19 +1698,9 @@ func cmdMeshKV(args []string) int {
 			return 1
 		}
 		if *jsonOut {
-			// Encode value as base64 string for JSON portability (mirrors wire).
-			type entryJSON struct {
-				Bucket    string    `json:"bucket"`
-				Key       string    `json:"key"`
-				Value     []byte    `json:"value"`
-				Revision  uint64    `json:"revision"`
-				CreatedAt time.Time `json:"created_at,omitempty"`
-			}
-			ej := entryJSON{
-				Bucket: entry.Bucket, Key: entry.Key, Value: entry.Value,
-				Revision: entry.Revision, CreatedAt: entry.CreatedAt,
-			}
-			b, err := json.MarshalIndent(ej, "", "  ")
+			// s714: print DTO always-emits bucket/key/value/revision/created_at
+			// ("" when zero; value base64, never omitempty-hide created_at).
+			b, err := json.MarshalIndent(iomesh.NewKVEntryPrint(*entry), "", "  ")
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "json: %v\n", err)
 				return 1
@@ -1727,10 +1718,8 @@ func cmdMeshKV(args []string) int {
 		return 1
 	}
 	if *jsonOut {
-		if keys == nil {
-			keys = []string{}
-		}
-		b, err := json.MarshalIndent(keys, "", "  ")
+		// s714: list envelope always-emits bucket/prefix/count/keys (not bare array).
+		b, err := json.MarshalIndent(iomesh.NewKVKeysPrint(bucketName, *prefix, keys), "", "  ")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "json: %v\n", err)
 			return 1
