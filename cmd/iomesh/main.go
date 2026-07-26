@@ -562,7 +562,7 @@ Flags (catalog):
 
 Flags (streams):
   --name NAME       get one stream (omit to list all); required with --delete / --messages
-  --json            JSON array (list/messages) or object (get)
+  --json            JSON array (list/messages) or object (get); delete: StreamDeletePrint
   --messages        list messages for --name (requires --name; incompatible with --delete)
   --from-seq N      messages: lower seq bound (query from_seq)
   --to-seq N        messages: upper seq bound (query to_seq)
@@ -870,7 +870,7 @@ func cmdMeshStreams(args []string) int {
 		name       = fs.String("name", "", "get/delete/messages one stream by name (omit to list all)")
 		endpoint   = fs.String("endpoint", "", "override IOMESH_ENDPOINT")
 		tenant     = fs.String("tenant", "", "override tenant")
-		jsonOut    = fs.Bool("json", false, "print streams/messages as JSON (messages: StreamMessagesPrint envelope)")
+		jsonOut    = fs.Bool("json", false, "print streams/messages as JSON (messages: StreamMessagesPrint; delete: StreamDeletePrint)")
 		doMessages = fs.Bool("messages", false, "list messages for --name (requires --name; GET /v1/streams/{name}/messages)")
 		fromSeq    = fs.Uint64("from-seq", 0, "messages: from_seq lower bound (0=omit; broker default)")
 		toSeq      = fs.Uint64("to-seq", 0, "messages: to_seq upper bound (0=omit; broker default)")
@@ -890,8 +890,9 @@ func cmdMeshStreams(args []string) int {
 	}
 	if *doDelete {
 		if streamName == "" || !*yes {
-			fmt.Fprintln(os.Stderr, "usage: iomesh mesh streams --delete --name NAME --yes")
+			fmt.Fprintln(os.Stderr, "usage: iomesh mesh streams --delete --name NAME --yes [--json]")
 			fmt.Fprintln(os.Stderr, "  --delete is destructive; requires --name and --yes")
+			fmt.Fprintln(os.Stderr, "  text/JSON always-emit StreamDeletePrint {ok,name} (s726; empty name honest)")
 			return 2
 		}
 	}
@@ -933,7 +934,13 @@ func cmdMeshStreams(args []string) int {
 			fmt.Fprintf(os.Stderr, "FAIL mesh streams delete: %v\n", err)
 			return 1
 		}
-		fmt.Printf("PASS mesh streams delete name=%s\n", streamName)
+		// s726: always-emit StreamDeletePrint on delete success (mold ConsumerDeletePrint s708).
+		printDTO := iomesh.NewStreamDeletePrint(streamName)
+		if *jsonOut {
+			fmt.Print(iomesh.FormatStreamDeleteJSON(printDTO))
+			return 0
+		}
+		fmt.Print(iomesh.FormatStreamDelete(printDTO))
 		return 0
 	}
 

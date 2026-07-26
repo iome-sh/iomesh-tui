@@ -249,6 +249,49 @@ func NewStreamInfoPrint(s StreamInfo) StreamInfoPrint {
 	return p
 }
 
+// StreamDeletePrint is a CLI-side print DTO for mesh streams --delete success.
+// Always emits ok / name (empty string honest when unset) so scrapers see a
+// stable envelope without omitempty gaps. No pull_role — stream delete is not
+// consumer pull-auth; do not invent identity fields. Wire DeleteStream stays
+// lean (error return only).
+//
+// s726: mold ConsumerDeletePrint s708; peer aion s725 residual. Beta · offline
+// unit ≠ live APPLY · empty name honest · dual_write OFF · not full mesh RBAC
+// GA · does not invent delete success when HTTP failed (call only after
+// DeleteStream returns nil).
+type StreamDeletePrint struct {
+	OK   bool   `json:"ok"`
+	Name string `json:"name"`
+}
+
+// NewStreamDeletePrint builds a delete success print DTO. OK is always true
+// (call only after DeleteStream returns nil).
+func NewStreamDeletePrint(name string) StreamDeletePrint {
+	return StreamDeletePrint{
+		OK:   true,
+		Name: name,
+	}
+}
+
+// FormatStreamDelete is a multi-line operator view for mesh streams delete
+// success (s726). Always emits name (empty when unset). Pure helper; no I/O.
+func FormatStreamDelete(p StreamDeletePrint) string {
+	var b strings.Builder
+	b.WriteString("PASS mesh streams delete\n")
+	fmt.Fprintf(&b, "name: %s\n", p.Name)
+	return b.String()
+}
+
+// FormatStreamDeleteJSON returns indented JSON for stage CI / scrapers.
+// Always emits all StreamDeletePrint fields without omitempty gaps.
+func FormatStreamDeleteJSON(p StreamDeletePrint) string {
+	b, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return `{"error":"stream delete json marshal failed"}` + "\n"
+	}
+	return string(b) + "\n"
+}
+
 // FormatStreamDetail is a multi-line view for one stream (CLI).
 // Pure helper with no network I/O.
 //

@@ -138,12 +138,16 @@ Wire `StreamInfo` stays lean (`omitempty` on optional knobs including `retention
 | `StreamMessagesPrint` / `--messages --json` | Envelope `{stream, from_seq, to_seq, limit, count, messages}` (not bare array; s720; 0 honest); nested `messages[]` are `StreamMessagePrint` (s723) |
 | `StreamMessagePrint` / nested message JSON | Always emits `stream`, `seq`, `subject`, `partition`, `payload`, `headers`, `timestamp` (s723; empty/0/`""`/`{}` honest) |
 | `FormatStreamMessagesPrint` / `--messages` text | Header includes knobs + count; table of messages (empty → `(no messages)`) |
+| `StreamDeletePrint` / `--delete --json` | Always emits `{ok,name}` on success only (s726; empty name honest); FAIL stays stderr; no pull_role invent |
+| `FormatStreamDelete` / `--delete` text | PASS + always-emit `name:` line (s726) |
 
 `retention_tier` is decoded from the broker wire only (hot\|temp\|extended\|archive when present). **Never invent** tier from `max_age_sec` alone — empty string is honest when the broker omits. Beta · offline unit ≠ live APPLY · peer aion s701.
 
 **s720 messages envelope** (mold KVKeysPrint s714 / ConsumerFetchPrint s708; peer aion s719 residual): `--messages --json` marshals `StreamMessagesPrint` always-emitting scraper keys without omitempty gaps. Wire `StreamMessage` stays lean. Empty/0 knobs are honest; does not invent message success from knobs alone. dual_write default OFF · not full mesh RBAC GA.
 
 **s723 nested message always-emit** (mold StreamInfoPrint s699/s702 / KVEntryPrint s714; peer aion s722 residual): closes the half-gap where outer envelope always-emitted but nested `messages[]` still used lean wire omitempty. `NewStreamMessagePrint` maps each wire message so scrapers always see `stream` (`""`), `partition` (`0`), `headers` (`{}`), `timestamp` (`""` or RFC3339). Same nested type used by `ConsumerFetchPrint.Messages`. Wire `StreamMessage` stays lean. Beta · offline unit ≠ live APPLY · empty/0/`""`/`{}` honest · dual_write default OFF · not full mesh RBAC GA · does not invent message success from fields alone.
+
+**s726 stream delete print always-emit** (mold ConsumerDeletePrint s708; peer aion s725 residual): `--delete --name N --yes [--json]` prints `StreamDeletePrint` always-emitting `{ok,name}` (empty name honest). Success path only — FAIL stays stderr. Wire `DeleteStream` stays lean (error return only). No `pull_role` invent (stream delete ≠ consumer pull-auth). Beta · offline unit ≠ live APPLY · dual_write default OFF · not full mesh RBAC GA · DTO ≠ invent delete success when HTTP failed.
 
 ```bash
 iomesh mesh streams                  # table of all streams
@@ -156,6 +160,7 @@ iomesh mesh streams --messages --name EVENTS --from-seq 1 --to-seq 100 --limit 5
 iomesh mesh streams --messages --name EVENTS --json   # StreamMessagesPrint envelope (s720)
 # DESTRUCTIVE — requires both --name and --yes (incompatible with --messages):
 iomesh mesh streams --delete --name TEMP --yes
+iomesh mesh streams --delete --name TEMP --yes --json   # StreamDeletePrint {ok,name} (s726)
 ```
 
 Mesh disabled / empty endpoint → error `mesh disabled` (non-zero CLI exit). Dogfood probes list only (`streams` step + `streams_count` / `streams_names`); delete and message list are CLI-only. Message list does not enable broker replay flags and is not auto-probed by dogfood.
@@ -259,7 +264,7 @@ Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 alread
 - `internal/iomesh/policy.go` — EvaluatePolicy
 - `internal/iomesh/meter.go` — UsageMeter / FormatUsage
 - `internal/iomesh/catalog.go` — ListCatalog / FormatCatalog / CatalogSnippet
-- `internal/iomesh/streams.go` — ListStreams / GetStream / DeleteStream / FormatStreams
+- `internal/iomesh/streams.go` — ListStreams / GetStream / DeleteStream / FormatStreams / NewStreamDeletePrint / FormatStreamDelete / FormatStreamDeleteJSON
 - `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages / NewStreamMessagePrint / NewStreamMessagesPrint / FormatStreamMessagesPrint
 - `internal/iomesh/consumers.go` — CreateConsumer / ConsumerFetch / ConsumerAck / ConsumerNack / DeleteConsumer / FormatConsumerInfo / FormatConsumerInfoWithAuth / NewConsumerInfoPrint / NewConsumerFetchPrint / FormatConsumerFetch / NewConsumerAckPrint / FormatConsumerAck / NewConsumerDeletePrint / FormatConsumerDelete
 - `internal/iomesh/kv.go` — KVGet / KVListKeys / KVPut / KVDelete / KVCreateBucket / FormatKVEntry / FormatKVKeys / FormatKVBucketInfo / NewKVBucketInfoPrint / NewKVEntryPrint / NewKVKeysPrint
