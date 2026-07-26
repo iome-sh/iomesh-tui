@@ -455,6 +455,84 @@ func TestDeleteStream_204(t *testing.T) {
 	}
 }
 
+// s726: StreamDeletePrint JSON always-emits {ok,name} (no pull_role invent).
+func TestStreamDeletePrint_JSONAlwaysEmitKeys(t *testing.T) {
+	t.Parallel()
+
+	// Empty name honest (still always-emit keys).
+	emptyDTO := NewStreamDeletePrint("")
+	emptyJS, err := json.Marshal(emptyDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var emptyObj map[string]any
+	if err := json.Unmarshal(emptyJS, &emptyObj); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"ok", "name"} {
+		if _, ok := emptyObj[key]; !ok {
+			t.Fatalf("empty json missing key %q: %s", key, emptyJS)
+		}
+	}
+	if emptyObj["ok"] != true {
+		t.Fatalf("ok want true: %s", emptyJS)
+	}
+	if emptyObj["name"] != "" {
+		t.Fatalf("empty name want \"\"; got %v\n%s", emptyObj["name"], emptyJS)
+	}
+	// Do not invent pull_role on stream delete.
+	if _, ok := emptyObj["pull_role"]; ok {
+		t.Fatalf("must not invent pull_role on StreamDeletePrint: %s", emptyJS)
+	}
+
+	popDTO := NewStreamDeletePrint("TEMP")
+	popJS, err := json.Marshal(popDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var popObj map[string]any
+	if err := json.Unmarshal(popJS, &popObj); err != nil {
+		t.Fatal(err)
+	}
+	if popObj["ok"] != true || popObj["name"] != "TEMP" {
+		t.Fatalf("populated: %s", popJS)
+	}
+
+	// Format helpers round-trip keys for scrapers.
+	formatted := FormatStreamDeleteJSON(popDTO)
+	if !strings.Contains(formatted, `"ok": true`) ||
+		!strings.Contains(formatted, `"name": "TEMP"`) {
+		t.Fatalf("FormatStreamDeleteJSON: %s", formatted)
+	}
+	if strings.Contains(formatted, "pull_role") {
+		t.Fatalf("FormatStreamDeleteJSON must not invent pull_role: %s", formatted)
+	}
+}
+
+// s726: FormatStreamDelete always-emits name (empty or populated).
+func TestFormatStreamDelete_AlwaysEmitName(t *testing.T) {
+	t.Parallel()
+
+	empty := FormatStreamDelete(NewStreamDeletePrint(""))
+	for _, want := range []string{
+		"PASS mesh streams delete\n",
+		"name: \n",
+	} {
+		if !strings.Contains(empty, want) {
+			t.Fatalf("empty missing %q in:\n%q", want, empty)
+		}
+	}
+
+	pop := FormatStreamDelete(NewStreamDeletePrint("TEMP"))
+	if !strings.Contains(pop, "PASS mesh streams delete\n") ||
+		!strings.Contains(pop, "name: TEMP\n") {
+		t.Fatalf("populated:\n%s", pop)
+	}
+	if strings.Contains(pop, "pull_role") {
+		t.Fatalf("text must not invent pull_role:\n%s", pop)
+	}
+}
+
 func TestDeleteStream_EmptyName(t *testing.T) {
 	c := New(Config{Enabled: true, Endpoint: "http://127.0.0.1:9"}, nil)
 	err := c.DeleteStream(context.Background(), "  ")
