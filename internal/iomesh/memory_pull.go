@@ -42,14 +42,16 @@ type MemoryPullStats struct {
 }
 
 // MemoryPullStatsPrint is a CLI-side print DTO for `iomesh memory pull` text/JSON.
-// Always emits identity + knobs + counters without omitempty so CI scrapers can key
-// stable fields (empty string / false / 0 honest when unset). Separate from
-// MemoryPullStats so the runtime stats shape stays lean.
+// Always emits identity + knobs + counters + process evidence without omitempty so
+// CI scrapers can key stable fields (empty string / false / 0 honest when unset).
+// Separate from MemoryPullStats so the runtime stats shape stays lean.
 //
 // s705: peer create FormatConsumerInfo s696 + status/wait pull identity continuum;
-// peer aion s704 sales claim suite/retention honesty. Beta · offline unit ≠ live
-// APPLY · dual_write default OFF (report-only) · fail-open empty role/tenant ·
-// not full mesh RBAC GA · does not invent pull success from identity fields alone.
+// peer aion s704 sales claim suite/retention honesty.
+// s717: process evidence always-emit (endpoint/org/workspace + result/exit_code +
+// duration_ms/ack); peer aion s716 residual. Beta · offline unit ≠ live APPLY ·
+// dual_write default OFF (report-only) · fail-open empty role/tenant · not full
+// mesh RBAC GA · process evidence ≠ invent pull success from identity fields alone.
 type MemoryPullStatsPrint struct {
 	// Identity (always emit; empty string when unset).
 	Stream          string `json:"stream"`
@@ -58,12 +60,17 @@ type MemoryPullStatsPrint struct {
 	PullRole        string `json:"pull_role"`
 	PullAllowSuffix string `json:"pull_allow_suffix"`
 	Tenant          string `json:"tenant"`
+	// Process / mesh identity (s717 always emit; empty string when unset).
+	Endpoint  string `json:"endpoint"`
+	Org       string `json:"org"`
+	Workspace string `json:"workspace"`
 	// Knobs (always emit).
 	DryRun    bool `json:"dry_run"`
 	DualWrite bool `json:"dual_write"` // report-only from [memory].dual_write; default false
 	Batch     int  `json:"batch"`
 	MaxWaitMS int  `json:"max_wait_ms"`
 	Once      bool `json:"once"`
+	Ack       bool `json:"ack"` // effective ack knob (true when not --no-ack)
 	// Counters (always emit).
 	CreateOK  bool   `json:"create_ok"`
 	Loops     int    `json:"loops"`
@@ -73,26 +80,44 @@ type MemoryPullStatsPrint struct {
 	Acked     int    `json:"acked"`
 	Errors    int    `json:"errors"`
 	LastError string `json:"last_error"` // empty when none
+	// Process evidence (s717 always emit).
+	// Result is "ok" | "err" matching process intent (not invent from identity alone).
+	Result string `json:"result"`
+	// ExitCode is intended process exit (0 success; 1 hard/soft fail). Always emitted.
+	ExitCode int `json:"exit_code"`
+	// DurationMS is wall-clock pull duration in ms (0 when not timed). Always emitted.
+	DurationMS int `json:"duration_ms"`
 }
 
 // MemoryPullPrintMeta holds pull identity + knobs that are not on MemoryPullStats
-// (resolved CLI/config auth, dual_write mode, batch/wait/once). Used by
-// NewMemoryPullStatsPrint so scrapers always see the same surface as stderr start log.
+// (resolved CLI/config auth, dual_write mode, batch/wait/once, process evidence).
+// Used by NewMemoryPullStatsPrint so scrapers always see the same surface as
+// stderr start log + process result/exit.
 type MemoryPullPrintMeta struct {
 	Tenant          string
 	PullRole        string
 	PullAllowSuffix string
-	DryRun          bool
-	DualWrite       bool // report-only; does not gate pull
-	Batch           int
-	MaxWaitMS       int
-	Once            bool
+	// Endpoint / Org / Workspace from [iomesh] (empty string honest when unset).
+	Endpoint  string
+	Org       string
+	Workspace string
+	DryRun    bool
+	DualWrite bool // report-only; does not gate pull
+	Batch     int
+	MaxWaitMS int
+	Once      bool
+	Ack       bool // effective ack after --no-ack resolution
+	// Process evidence (caller sets after path resolution; empty/0 honest).
+	Result     string // "ok" | "err"
+	ExitCode   int    // 0 | 1 matching process intent
+	DurationMS int    // wall-clock ms; 0 if not timed
 }
 
 // NewMemoryPullStatsPrint builds a print DTO from runtime stats + resolved meta.
 // Empty identity strings and zero knobs are always present (not omitted on marshal).
-// Does not invent success from identity: counters come from st only.
-// FilterSubject is st.Filter (effective filter_subject passed to CreateConsumer).
+// Does not invent success from identity: counters come from st only; result/exit_code
+// come from meta (caller sets process intent). FilterSubject is st.Filter (effective
+// filter_subject passed to CreateConsumer).
 func NewMemoryPullStatsPrint(st MemoryPullStats, meta MemoryPullPrintMeta) MemoryPullStatsPrint {
 	return MemoryPullStatsPrint{
 		Stream:          st.Stream,
@@ -101,11 +126,15 @@ func NewMemoryPullStatsPrint(st MemoryPullStats, meta MemoryPullPrintMeta) Memor
 		PullRole:        meta.PullRole,
 		PullAllowSuffix: meta.PullAllowSuffix,
 		Tenant:          meta.Tenant,
+		Endpoint:        meta.Endpoint,
+		Org:             meta.Org,
+		Workspace:       meta.Workspace,
 		DryRun:          meta.DryRun,
 		DualWrite:       meta.DualWrite,
 		Batch:           meta.Batch,
 		MaxWaitMS:       meta.MaxWaitMS,
 		Once:            meta.Once,
+		Ack:             meta.Ack,
 		CreateOK:        st.CreateOK,
 		Loops:           st.Loops,
 		Fetched:         st.Fetched,
@@ -114,13 +143,17 @@ func NewMemoryPullStatsPrint(st MemoryPullStats, meta MemoryPullPrintMeta) Memor
 		Acked:           st.Acked,
 		Errors:          st.Errors,
 		LastError:       st.LastError,
+		Result:          meta.Result,
+		ExitCode:        meta.ExitCode,
+		DurationMS:      meta.DurationMS,
 	}
 }
 
 // FormatMemoryPullStats renders memory pull outcome as multi-line operator text.
-// Always emits identity (stream/consumer/filter_subject/pull_role/pull_allow_suffix/tenant),
-// knobs (dry_run/dual_write/batch/max_wait_ms/once), and counters including last_error
-// (empty when none) so scrapers do not rely only on stderr start log. Pure helper; no I/O.
+// Always emits identity (stream/consumer/filter_subject/pull_role/pull_allow_suffix/tenant
+// + endpoint/org/workspace), knobs (dry_run/dual_write/batch/max_wait_ms/once/ack),
+// counters including last_error, and process evidence (result/exit_code/duration_ms)
+// so scrapers do not rely only on stderr start log. Pure helper; no I/O.
 //
 // ok=true → PASS header; ok=false → FAIL header (errMsg optional detail; empty uses last_error).
 func FormatMemoryPullStats(p MemoryPullStatsPrint, ok bool, errMsg string) string {
@@ -142,11 +175,15 @@ func FormatMemoryPullStats(p MemoryPullStatsPrint, ok bool, errMsg string) strin
 	fmt.Fprintf(&b, "pull_role:         %s\n", p.PullRole)
 	fmt.Fprintf(&b, "pull_allow_suffix: %s\n", p.PullAllowSuffix)
 	fmt.Fprintf(&b, "tenant:            %s\n", p.Tenant)
+	fmt.Fprintf(&b, "endpoint:          %s\n", p.Endpoint)
+	fmt.Fprintf(&b, "org:               %s\n", p.Org)
+	fmt.Fprintf(&b, "workspace:         %s\n", p.Workspace)
 	fmt.Fprintf(&b, "dry_run:           %t\n", p.DryRun)
 	fmt.Fprintf(&b, "dual_write:        %t\n", p.DualWrite)
 	fmt.Fprintf(&b, "batch:             %d\n", p.Batch)
 	fmt.Fprintf(&b, "max_wait_ms:       %d\n", p.MaxWaitMS)
 	fmt.Fprintf(&b, "once:              %t\n", p.Once)
+	fmt.Fprintf(&b, "ack:               %t\n", p.Ack)
 	fmt.Fprintf(&b, "create_ok:         %t\n", p.CreateOK)
 	fmt.Fprintf(&b, "loops:             %d\n", p.Loops)
 	fmt.Fprintf(&b, "fetched:           %d\n", p.Fetched)
@@ -155,6 +192,9 @@ func FormatMemoryPullStats(p MemoryPullStatsPrint, ok bool, errMsg string) strin
 	fmt.Fprintf(&b, "acked:             %d\n", p.Acked)
 	fmt.Fprintf(&b, "errors:            %d\n", p.Errors)
 	fmt.Fprintf(&b, "last_error:        %s\n", p.LastError)
+	fmt.Fprintf(&b, "result:            %s\n", p.Result)
+	fmt.Fprintf(&b, "exit_code:         %d\n", p.ExitCode)
+	fmt.Fprintf(&b, "duration_ms:       %d\n", p.DurationMS)
 	return b.String()
 }
 

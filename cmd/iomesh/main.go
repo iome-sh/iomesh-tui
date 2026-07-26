@@ -1977,7 +1977,7 @@ Flags (pull):
   --dry-run             map messages only (no MCP ingest); still acks when --ack
   --no-ack              do not ack after ingest (default: ack)
   --yes                 confirm mutating pull loop (required unless --dry-run)
-  --json                print MemoryPullStatsPrint JSON (always-emits identity + knobs + counters)
+  --json                print MemoryPullStatsPrint JSON (always-emits identity + knobs + counters + process evidence)
   --endpoint url        override IOMESH_ENDPOINT
   --mcp-server name     MCP server name for memory tools (default memory)
   --role R              optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|memory|custom); [memory].pull_role
@@ -1989,6 +1989,8 @@ Honesty: dual_write remains optional audit (default OFF). Hosted Palace sunset u
   memory → tenant.memory.> (peer aion s686); fail-open when empty — not full IdP RBAC GA.
   s705: PASS/summary and --json always emit stream/consumer/filter_subject/pull_role/pull_allow_suffix/tenant
   + knobs (dry_run/dual_write/batch/max_wait_ms/once) + counters; empty identity honest; peer aion s704.
+  s717: always emit process evidence endpoint/org/workspace (empty honest) + result(ok|err)/exit_code(0|1)
+  + duration_ms/ack; peer aion s716 — process evidence ≠ invent pull success.
 `)
 		return 0
 	default:
@@ -2012,7 +2014,7 @@ func cmdMemoryPull(args []string) int {
 		dryRun          = fs.Bool("dry-run", false, "map only; no MCP local ingest")
 		noAck           = fs.Bool("no-ack", false, "do not ack after success")
 		yes             = fs.Bool("yes", false, "confirm mutating pull (required unless --dry-run)")
-		jsonOut         = fs.Bool("json", false, "print MemoryPullStatsPrint JSON (always-emits identity + knobs + counters)")
+		jsonOut         = fs.Bool("json", false, "print MemoryPullStatsPrint JSON (always-emits identity + knobs + counters + process evidence)")
 		endpoint        = fs.String("endpoint", "", "override mesh endpoint")
 		mcpServer       = fs.String("mcp-server", "", "MCP memory server name")
 		role            = fs.String("role", "", "optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|memory|custom)")
@@ -2102,6 +2104,49 @@ func cmdMemoryPull(args []string) int {
 	if meshTenant == "" {
 		meshTenant = strings.TrimSpace(cfg.Memory.Tenant)
 	}
+	// s717: process mesh identity from [iomesh] (empty string honest when unset).
+	meshEndpoint := strings.TrimSpace(cfg.IOMesh.Endpoint)
+	meshOrg := strings.TrimSpace(cfg.IOMesh.Org)
+	meshWorkspace := strings.TrimSpace(cfg.IOMesh.Workspace)
+	ackKnob := !*noAck
+
+	// s705+s717: print meta for always-emit identity + knobs + process evidence.
+	// dual_write is report-only from [memory].dual_write (default OFF); does not gate pull.
+	// Result/exit_code/duration_ms filled on each exit path.
+	printMeta := iomesh.MemoryPullPrintMeta{
+		Tenant:          pullTenant,
+		PullRole:        pullRole,
+		PullAllowSuffix: allowSuffix,
+		Endpoint:        meshEndpoint,
+		Org:             meshOrg,
+		Workspace:       meshWorkspace,
+		DryRun:          *dryRun,
+		DualWrite:       cfg.Memory.DualWrite,
+		Batch:           batchN,
+		MaxWaitMS:       int(wait / time.Millisecond),
+		Once:            *once,
+		Ack:             ackKnob,
+	}
+	// Seed partial stats for early fail emit (stream/consumer/filter known pre-run).
+	seedStats := func() iomesh.MemoryPullStats {
+		return iomesh.MemoryPullStats{
+			Stream:   streamName,
+			Consumer: consumerName,
+			Filter:   filterSub,
+		}
+	}
+	emitPullPrint := func(st iomesh.MemoryPullStats, meta iomesh.MemoryPullPrintMeta, ok bool, errMsg string) {
+		dto := iomesh.NewMemoryPullStatsPrint(st, meta)
+		if *jsonOut {
+			fmt.Fprint(os.Stdout, iomesh.FormatMemoryPullStatsJSON(dto))
+			if !ok && strings.TrimSpace(errMsg) != "" {
+				fmt.Fprintf(os.Stderr, "FAIL memory pull: %s\n", errMsg)
+			}
+		} else {
+			fmt.Fprint(os.Stdout, iomesh.FormatMemoryPullStats(dto, ok, errMsg))
+		}
+	}
+
 	mesh := iomesh.New(iomesh.Config{
 		Enabled:         cfg.IOMesh.Enabled,
 		Endpoint:        cfg.IOMesh.Endpoint,
@@ -2113,26 +2158,15 @@ func cmdMemoryPull(args []string) int {
 		PullAllowSuffix: allowSuffix,
 	}, logger)
 	if !mesh.Enabled() {
-		fmt.Fprintln(os.Stderr, "FAIL memory pull: mesh disabled (set IOMESH_ENDPOINT / [iomesh])")
+		printMeta.Result = "err"
+		printMeta.ExitCode = 1
+		emitPullPrint(seedStats(), printMeta, false, "mesh disabled (set IOMESH_ENDPOINT / [iomesh])")
 		return 1
 	}
 
 	// Always log effective filter once at start (s660/s678); role/suffix once (s675). Empty role/suffix = fail-open omit headers.
 	fmt.Fprintf(os.Stderr, "memory pull filter_subject=%q tenant=%q role=%q pull_allow_suffix=%q\n",
 		filterSub, pullTenant, pullRole, allowSuffix)
-
-	// s705: print meta for always-emit identity + knobs (stdout PASS/summary + --json).
-	// dual_write is report-only from [memory].dual_write (default OFF); does not gate pull.
-	printMeta := iomesh.MemoryPullPrintMeta{
-		Tenant:          pullTenant,
-		PullRole:        pullRole,
-		PullAllowSuffix: allowSuffix,
-		DryRun:          *dryRun,
-		DualWrite:       cfg.Memory.DualWrite,
-		Batch:           batchN,
-		MaxWaitMS:       int(wait / time.Millisecond),
-		Once:            *once,
-	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -2143,7 +2177,7 @@ func cmdMemoryPull(args []string) int {
 		Filter:  filterSub,
 		Batch:   batchN,
 		MaxWait: wait,
-		Ack:     !*noAck,
+		Ack:     ackKnob,
 		DryRun:  *dryRun,
 		OnMessage: func(msg iomesh.StreamMessage, env iomesh.MemoryEnvelope, skipped bool, err error) {
 			if !*verbose && err == nil && !skipped {
@@ -2167,7 +2201,9 @@ func cmdMemoryPull(args []string) int {
 	if !*dryRun {
 		// Local palace via MCP memory_ingest_turn (fail-closed if no server).
 		if !cfg.MCP.Enabled && !cfg.Features.MCP {
-			fmt.Fprintln(os.Stderr, "FAIL memory pull: MCP disabled — enable [mcp] or use --dry-run")
+			printMeta.Result = "err"
+			printMeta.ExitCode = 1
+			emitPullPrint(seedStats(), printMeta, false, "MCP disabled — enable [mcp] or use --dry-run")
 			return 1
 		}
 		var servers []mcp.ServerConfig
@@ -2178,7 +2214,9 @@ func cmdMemoryPull(args []string) int {
 		defer func() { _ = mgr.Close() }()
 		cl := mgr.ClientByName(serverName)
 		if cl == nil {
-			fmt.Fprintf(os.Stderr, "FAIL memory pull: MCP server %q not connected\n", serverName)
+			printMeta.Result = "err"
+			printMeta.ExitCode = 1
+			emitPullPrint(seedStats(), printMeta, false, fmt.Sprintf("MCP server %q not connected", serverName))
 			return 1
 		}
 		tenant := strings.TrimSpace(cfg.Memory.Tenant)
@@ -2204,7 +2242,9 @@ func cmdMemoryPull(args []string) int {
 		}
 	}
 
+	started := time.Now()
 	st, err := mesh.RunMemoryPull(ctx, opt)
+	printMeta.DurationMS = int(time.Since(started).Milliseconds())
 	// Seed identity on stats when create failed early (st may be partial).
 	if st.Stream == "" {
 		st.Stream = streamName
@@ -2215,28 +2255,28 @@ func cmdMemoryPull(args []string) int {
 	if st.Filter == "" {
 		st.Filter = filterSub
 	}
-	printDTO := iomesh.NewMemoryPullStatsPrint(st, printMeta)
 
+	// Hard err (non-cancel): result=err, exit_code=1.
 	if err != nil && ctx.Err() == nil {
-		if *jsonOut {
-			// JSON still always-emits identity + counters; error detail on stderr.
-			fmt.Fprint(os.Stdout, iomesh.FormatMemoryPullStatsJSON(printDTO))
-			fmt.Fprintf(os.Stderr, "FAIL memory pull: %v\n", err)
-		} else {
-			fmt.Fprint(os.Stdout, iomesh.FormatMemoryPullStats(printDTO, false, err.Error()))
-		}
+		printMeta.Result = "err"
+		printMeta.ExitCode = 1
+		emitPullPrint(st, printMeta, false, err.Error())
 		return 1
 	}
-	// Summary always-emits identity (s705). Soft-fail (errors, zero ingest) still
-	// prints PASS/summary with counters + last_error and exits 1 (pre-s705 honesty).
-	if *jsonOut {
-		fmt.Fprint(os.Stdout, iomesh.FormatMemoryPullStatsJSON(printDTO))
-	} else {
-		fmt.Fprint(os.Stdout, iomesh.FormatMemoryPullStats(printDTO, true, ""))
-	}
-	if st.Errors > 0 && st.Ingested == 0 && !*dryRun {
+	// Soft-fail (errors>0 && ingested==0 && !dryRun): result=err, exit_code=1.
+	// Success (incl. cancel with partial progress): result=ok, exit_code=0.
+	// Process evidence ≠ invent pull success from identity alone (s717 / peer aion s716).
+	softFail := st.Errors > 0 && st.Ingested == 0 && !*dryRun
+	if softFail {
+		printMeta.Result = "err"
+		printMeta.ExitCode = 1
+		emitPullPrint(st, printMeta, false, "")
 		return 1
 	}
+	printMeta.Result = "ok"
+	printMeta.ExitCode = 0
+	// Summary always-emits identity (s705) + process evidence (s717).
+	emitPullPrint(st, printMeta, true, "")
 	return 0
 }
 
