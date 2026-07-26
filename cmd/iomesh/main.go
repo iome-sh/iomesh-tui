@@ -970,7 +970,8 @@ func cmdMeshStreams(args []string) int {
 			return 1
 		}
 		if *jsonOut {
-			b, err := json.MarshalIndent(info, "", "  ")
+			// s699: print DTO always-emits retention knobs (0 / "" when unset).
+			b, err := json.MarshalIndent(iomesh.NewStreamInfoPrint(*info), "", "  ")
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "json: %v\n", err)
 				return 1
