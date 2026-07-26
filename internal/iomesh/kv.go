@@ -371,6 +371,101 @@ func NewKVKeysPrint(bucket, prefix string, keys []string) KVKeysPrint {
 	}
 }
 
+// KVPutPrint is a CLI-side print DTO for mesh kv --put success.
+// Always emits ok / bucket / key / revision (0 honest when unset) so scrapers
+// see a stable envelope without omitempty gaps. No pull_role invent and no
+// value echo on put JSON (mutate success ≠ get). Wire KVPut stays lean
+// (revision, error return only).
+//
+// s729: mold StreamDeletePrint s726 + s714 read DTOs; peer aion s728 residual.
+// Closes s714 mutate half-gap. Beta · offline unit ≠ live APPLY · empty/0
+// honest · dual_write OFF · not full mesh RBAC GA · does not invent put
+// success when HTTP failed (call only after KVPut returns nil error).
+type KVPutPrint struct {
+	OK       bool   `json:"ok"`
+	Bucket   string `json:"bucket"`
+	Key      string `json:"key"`
+	Revision uint64 `json:"revision"`
+}
+
+// NewKVPutPrint builds a put success print DTO. OK is always true (call only
+// after KVPut returns a nil error). Revision 0 is honest when the broker
+// returns 0.
+func NewKVPutPrint(bucket, key string, revision uint64) KVPutPrint {
+	return KVPutPrint{
+		OK:       true,
+		Bucket:   bucket,
+		Key:      key,
+		Revision: revision,
+	}
+}
+
+// FormatKVPut is a multi-line operator view for mesh kv put success (s729).
+// Always emits bucket, key, revision (0 when unset). Pure helper; no I/O.
+func FormatKVPut(p KVPutPrint) string {
+	var b strings.Builder
+	b.WriteString("PASS mesh kv put\n")
+	fmt.Fprintf(&b, "bucket:   %s\n", p.Bucket)
+	fmt.Fprintf(&b, "key:      %s\n", p.Key)
+	fmt.Fprintf(&b, "revision: %d\n", p.Revision)
+	return b.String()
+}
+
+// FormatKVPutJSON returns indented JSON for stage CI / scrapers.
+// Always emits all KVPutPrint fields without omitempty gaps.
+func FormatKVPutJSON(p KVPutPrint) string {
+	b, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return `{"error":"kv put json marshal failed"}` + "\n"
+	}
+	return string(b) + "\n"
+}
+
+// KVDeletePrint is a CLI-side print DTO for mesh kv --delete success.
+// Always emits ok / bucket / key (empty string honest when unset) so scrapers
+// see a stable envelope without omitempty gaps. No pull_role invent. Wire
+// KVDelete stays lean (error return only).
+//
+// s729: mold StreamDeletePrint s726 + s714 read DTOs; peer aion s728 residual.
+// Closes s714 mutate half-gap. Beta · offline unit ≠ live APPLY · empty
+// honest · dual_write OFF · not full mesh RBAC GA · does not invent delete
+// success when HTTP failed (call only after KVDelete returns nil).
+type KVDeletePrint struct {
+	OK     bool   `json:"ok"`
+	Bucket string `json:"bucket"`
+	Key    string `json:"key"`
+}
+
+// NewKVDeletePrint builds a delete success print DTO. OK is always true
+// (call only after KVDelete returns nil).
+func NewKVDeletePrint(bucket, key string) KVDeletePrint {
+	return KVDeletePrint{
+		OK:     true,
+		Bucket: bucket,
+		Key:    key,
+	}
+}
+
+// FormatKVDelete is a multi-line operator view for mesh kv delete success
+// (s729). Always emits bucket and key (empty when unset). Pure helper; no I/O.
+func FormatKVDelete(p KVDeletePrint) string {
+	var b strings.Builder
+	b.WriteString("PASS mesh kv delete\n")
+	fmt.Fprintf(&b, "bucket: %s\n", p.Bucket)
+	fmt.Fprintf(&b, "key:    %s\n", p.Key)
+	return b.String()
+}
+
+// FormatKVDeleteJSON returns indented JSON for stage CI / scrapers.
+// Always emits all KVDeletePrint fields without omitempty gaps.
+func FormatKVDeleteJSON(p KVDeletePrint) string {
+	b, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return `{"error":"kv delete json marshal failed"}` + "\n"
+	}
+	return string(b) + "\n"
+}
+
 // FormatKVBucketInfo renders bucket metadata for CLI operator display.
 // Always emits history, max_bytes, and ttl_seconds (history as 0 when unset;
 // *int64 nil prints blank after the colon rather than omitting the line) so

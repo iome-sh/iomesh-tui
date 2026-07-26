@@ -177,7 +177,7 @@ Lean KV surface (no SDK dependency; wire parity with SDK `KVEntry` / `Get` / `Li
 | `KVDelete(bucket, key)` | `DELETE /v1/kv/{bucket}/{key}` | 2xx/204 success; empty args / non-2xx → error |
 | `KVCreateBucket(name)` | `POST /v1/kv/{bucket}` | Empty body; 201 decodes `KVBucketInfo`; **409 Conflict = success** (idempotent, returns `{Name}`); empty name / other non-2xx → error |
 
-Wire `KVBucketInfo` / `KVEntry` stay lean (`omitempty` on optional knobs). CLI print surfaces always-emit for scrapers (s714; peer text FormatKV s560 + StreamInfoPrint s699/s702 mold):
+Wire `KVBucketInfo` / `KVEntry` stay lean (`omitempty` on optional knobs). CLI print surfaces always-emit for scrapers (s714 read + s729 put/delete; peer text FormatKV s560 + StreamInfoPrint s699/s702 mold + StreamDeletePrint s726):
 
 | Surface | Behaviour |
 |---------|-----------|
@@ -186,8 +186,14 @@ Wire `KVBucketInfo` / `KVEntry` stay lean (`omitempty` on optional knobs). CLI p
 | `FormatKVEntry` / get text | Always prints `created_at` (blank when zero) |
 | `KVEntryPrint` / get `--json` | Always emits `bucket`, `key`, `value` (base64), `revision`, `created_at` (`""` when zero) |
 | `KVKeysPrint` / list `--json` | Envelope `{bucket, prefix, count, keys}` (not bare string array) |
+| `KVPutPrint` / `--put --json` | Always emits `{ok,bucket,key,revision}` on success only (s729; revision `0` honest; no value echo; no pull_role) |
+| `FormatKVPut` / `--put` text | PASS + always-emit `bucket` / `key` / `revision` lines (s729) |
+| `KVDeletePrint` / `--delete --json` | Always emits `{ok,bucket,key}` on success only (s729; empty honest; FAIL stays stderr) |
+| `FormatKVDelete` / `--delete` text | PASS + always-emit `bucket` / `key` lines (s729) |
 
-Beta · offline unit ≠ live APPLY · empty/0 honest · dual_write default OFF · peer aion s713 · does not invent KV success from knobs alone.
+**s729 kv put/delete print always-emit** (mold StreamDeletePrint s726 + s714 read DTOs; peer aion s728 residual): closes s714 mutate half-gap. `--put … --yes [--json]` / `--delete … --yes [--json]` print DTOs on success only — FAIL stays stderr. Wire `KVPut` / `KVDelete` stay lean. No `pull_role` invent and no value echo on put JSON. Beta · offline unit ≠ live APPLY · empty/0 honest · dual_write default OFF · not full mesh RBAC GA · DTO ≠ invent mutate success when HTTP failed.
+
+Beta · offline unit ≠ live APPLY · empty/0 honest · dual_write default OFF · peer aion s713/s728 · does not invent KV success from knobs alone.
 
 ```bash
 iomesh mesh kv --bucket config --list
@@ -197,8 +203,10 @@ iomesh mesh kv --bucket config --list --json
 iomesh mesh kv --bucket config --get app.json --json
 # Mutating — requires --yes:
 iomesh mesh kv --bucket config --put app.json --value '{"ok":true}' --yes
+iomesh mesh kv --bucket config --put app.json --value '{"ok":true}' --yes --json   # KVPutPrint {ok,bucket,key,revision} (s729)
 iomesh mesh kv --bucket config --put app.json --value-file ./app.json --yes
 iomesh mesh kv --bucket config --delete tmp.key --yes
+iomesh mesh kv --bucket config --delete tmp.key --yes --json   # KVDeletePrint {ok,bucket,key} (s729)
 iomesh mesh kv --bucket config --create-bucket --yes
 iomesh mesh kv --bucket config --create-bucket --yes --json
 ```
@@ -267,6 +275,6 @@ Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 alread
 - `internal/iomesh/streams.go` — ListStreams / GetStream / DeleteStream / FormatStreams / NewStreamDeletePrint / FormatStreamDelete / FormatStreamDeleteJSON
 - `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages / NewStreamMessagePrint / NewStreamMessagesPrint / FormatStreamMessagesPrint
 - `internal/iomesh/consumers.go` — CreateConsumer / ConsumerFetch / ConsumerAck / ConsumerNack / DeleteConsumer / FormatConsumerInfo / FormatConsumerInfoWithAuth / NewConsumerInfoPrint / NewConsumerFetchPrint / FormatConsumerFetch / NewConsumerAckPrint / FormatConsumerAck / NewConsumerDeletePrint / FormatConsumerDelete
-- `internal/iomesh/kv.go` — KVGet / KVListKeys / KVPut / KVDelete / KVCreateBucket / FormatKVEntry / FormatKVKeys / FormatKVBucketInfo / NewKVBucketInfoPrint / NewKVEntryPrint / NewKVKeysPrint
+- `internal/iomesh/kv.go` — KVGet / KVListKeys / KVPut / KVDelete / KVCreateBucket / FormatKVEntry / FormatKVKeys / FormatKVBucketInfo / NewKVBucketInfoPrint / NewKVEntryPrint / NewKVKeysPrint / NewKVPutPrint / FormatKVPut / FormatKVPutJSON / NewKVDeletePrint / FormatKVDelete / FormatKVDeleteJSON
 - `internal/iomesh/pub.go` — Pub (ephemeral `POST /v1/pub`)
 - `internal/agent` — policy before tool execute; mesh catalog tools; `EventMeshPolicy`

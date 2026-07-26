@@ -1544,7 +1544,7 @@ func cmdMeshKV(args []string) int {
 		prefix       = fs.String("prefix", "", "list: key prefix filter")
 		endpoint     = fs.String("endpoint", "", "override IOMESH_ENDPOINT")
 		tenant       = fs.String("tenant", "", "override tenant")
-		jsonOut      = fs.Bool("json", false, "print keys/entry/bucket as JSON")
+		jsonOut      = fs.Bool("json", false, "print keys/entry/bucket/put/delete as JSON (put: KVPutPrint; delete: KVDeletePrint)")
 		verbose      = fs.Bool("v", false, "verbose logs")
 	)
 	if err := fs.Parse(args); err != nil {
@@ -1558,8 +1558,8 @@ func cmdMeshKV(args []string) int {
 	printKVUsage := func() {
 		fmt.Fprintln(os.Stderr, "usage: iomesh mesh kv --bucket NAME --list [--prefix P] [--json]")
 		fmt.Fprintln(os.Stderr, "       iomesh mesh kv --bucket NAME --get KEY [--json]")
-		fmt.Fprintln(os.Stderr, "       iomesh mesh kv --bucket NAME --put KEY --value STR|--value-file PATH --yes")
-		fmt.Fprintln(os.Stderr, "       iomesh mesh kv --bucket NAME --delete KEY --yes")
+		fmt.Fprintln(os.Stderr, "       iomesh mesh kv --bucket NAME --put KEY --value STR|--value-file PATH --yes [--json]")
+		fmt.Fprintln(os.Stderr, "       iomesh mesh kv --bucket NAME --delete KEY --yes [--json]")
 		fmt.Fprintln(os.Stderr, "       iomesh mesh kv --bucket NAME --create-bucket --yes [--json]")
 		fmt.Fprintln(os.Stderr, "  --bucket required; exactly one of --list|--get|--put|--delete|--create-bucket")
 	}
@@ -1601,7 +1601,7 @@ func cmdMeshKV(args []string) int {
 	if putName != "" {
 		hasVal := strings.TrimSpace(*valueStr) != "" || strings.TrimSpace(*valueFile) != ""
 		if !hasVal || !*yes {
-			fmt.Fprintln(os.Stderr, "usage: iomesh mesh kv --bucket NAME --put KEY --value STR|--value-file PATH --yes")
+			fmt.Fprintln(os.Stderr, "usage: iomesh mesh kv --bucket NAME --put KEY --value STR|--value-file PATH --yes [--json]")
 			fmt.Fprintln(os.Stderr, "  --put requires --value or --value-file and --yes")
 			return 2
 		}
@@ -1611,7 +1611,7 @@ func cmdMeshKV(args []string) int {
 		}
 	}
 	if delName != "" && !*yes {
-		fmt.Fprintln(os.Stderr, "usage: iomesh mesh kv --bucket NAME --delete KEY --yes")
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh kv --bucket NAME --delete KEY --yes [--json]")
 		fmt.Fprintln(os.Stderr, "  --delete is destructive; requires --yes")
 		return 2
 	}
@@ -1684,7 +1684,13 @@ func cmdMeshKV(args []string) int {
 			fmt.Fprintf(os.Stderr, "FAIL mesh kv put: %v\n", err)
 			return 1
 		}
-		fmt.Printf("PASS mesh kv put bucket=%s key=%s revision=%d\n", bucketName, putName, rev)
+		// s729: always-emit KVPutPrint on put success (mold StreamDeletePrint s726 + s714).
+		printDTO := iomesh.NewKVPutPrint(bucketName, putName, rev)
+		if *jsonOut {
+			fmt.Print(iomesh.FormatKVPutJSON(printDTO))
+			return 0
+		}
+		fmt.Print(iomesh.FormatKVPut(printDTO))
 		return 0
 	}
 
@@ -1693,7 +1699,13 @@ func cmdMeshKV(args []string) int {
 			fmt.Fprintf(os.Stderr, "FAIL mesh kv delete: %v\n", err)
 			return 1
 		}
-		fmt.Printf("PASS mesh kv delete bucket=%s key=%s\n", bucketName, delName)
+		// s729: always-emit KVDeletePrint on delete success (mold StreamDeletePrint s726 + s714).
+		printDTO := iomesh.NewKVDeletePrint(bucketName, delName)
+		if *jsonOut {
+			fmt.Print(iomesh.FormatKVDeleteJSON(printDTO))
+			return 0
+		}
+		fmt.Print(iomesh.FormatKVDelete(printDTO))
 		return 0
 	}
 
