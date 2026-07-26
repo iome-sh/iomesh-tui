@@ -58,6 +58,10 @@ func TestListStreams_OKAndUserAgent(t *testing.T) {
 	if !strings.Contains(out, "EVENTS") || !strings.Contains(out, "count=1") {
 		t.Fatal(out)
 	}
+	// s699: list table always emits MAX_MSGS / MAX_AGE column headers for scrapers.
+	if !strings.Contains(out, "MAX_MSGS") || !strings.Contains(out, "MAX_AGE") {
+		t.Fatalf("want MAX_MSGS/MAX_AGE headers, got:\n%s", out)
+	}
 }
 
 func TestListStreams_Envelope(t *testing.T) {
@@ -159,7 +163,8 @@ func TestFormatStreamDetail_Fields(t *testing.T) {
 	}
 }
 
-// Empty / zero StreamInfo still always-emits every scraper key (honest blanks).
+// s699: Empty / zero StreamInfo still always-emits every scraper key.
+// max_msgs / max_age_sec print numeric 0 when *int64 nil (honest zero, not omit).
 func TestFormatStreamDetail_EmptyAlwaysEmit(t *testing.T) {
 	detail := FormatStreamDetail(StreamInfo{
 		Name: "SPARSE",
@@ -170,8 +175,8 @@ func TestFormatStreamDetail_EmptyAlwaysEmit(t *testing.T) {
 		"description: \n",
 		"retention:   \n",
 		"partitions:  0\n",
-		"max_msgs:    \n",
-		"max_age_sec: \n",
+		"max_msgs:    0\n",
+		"max_age_sec: 0\n",
 		"messages:    0\n",
 		"first_seq:   0\n",
 		"last_seq:    0\n",
@@ -183,12 +188,132 @@ func TestFormatStreamDetail_EmptyAlwaysEmit(t *testing.T) {
 			t.Fatalf("missing %q in:\n%s", want, detail)
 		}
 	}
-	// nil *int64 must not invent 0; blank value only
-	if strings.Contains(detail, "max_msgs:    0") {
-		t.Fatalf("max_msgs should be blank when nil, got:\n%s", detail)
+	// Must not invent retention_tier (not on StreamInfo wire).
+	if strings.Contains(detail, "retention_tier") {
+		t.Fatalf("must not invent retention_tier, got:\n%s", detail)
 	}
-	if strings.Contains(detail, "max_age_sec: 0") {
-		t.Fatalf("max_age_sec should be blank when nil, got:\n%s", detail)
+}
+
+// s699: explicit zero *int64 still prints 0 (same as nil → 0).
+func TestFormatStreamDetail_ZeroPointerKnobs(t *testing.T) {
+	zero := int64(0)
+	detail := FormatStreamDetail(StreamInfo{
+		Name:      "ZEROED",
+		MaxMsgs:   &zero,
+		MaxAgeSec: &zero,
+	})
+	for _, want := range []string{
+		"max_msgs:    0\n",
+		"max_age_sec: 0\n",
+		"description: \n",
+		"retention:   \n",
+		"partitions:  0\n",
+	} {
+		if !strings.Contains(detail, want) {
+			t.Fatalf("missing %q in:\n%s", want, detail)
+		}
+	}
+}
+
+// s699: StreamInfoPrint JSON always-emits retention knobs (empty/0 when unset).
+func TestStreamInfoPrint_AlwaysEmit(t *testing.T) {
+	// Empty / nil knobs
+	emptyJS, err := json.Marshal(NewStreamInfoPrint(StreamInfo{Name: "SPARSE"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var emptyObj map[string]any
+	if err := json.Unmarshal(emptyJS, &emptyObj); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{
+		"name", "description", "retention", "partitions", "max_msgs", "max_age_sec",
+		"messages", "first_seq", "last_seq", "created_at", "subjects",
+	} {
+		if _, ok := emptyObj[key]; !ok {
+			t.Fatalf("missing always-emit key %q in %s", key, emptyJS)
+		}
+	}
+	if emptyObj["description"] != "" || emptyObj["retention"] != "" || emptyObj["created_at"] != "" {
+		t.Fatalf("empty strings want \"\"; got %v", emptyObj)
+	}
+	if emptyObj["partitions"].(float64) != 0 || emptyObj["max_msgs"].(float64) != 0 || emptyObj["max_age_sec"].(float64) != 0 {
+		t.Fatalf("numeric knobs want 0; got partitions=%v max_msgs=%v max_age_sec=%v",
+			emptyObj["partitions"], emptyObj["max_msgs"], emptyObj["max_age_sec"])
+	}
+	subs, ok := emptyObj["subjects"].([]any)
+	if !ok || len(subs) != 0 {
+		t.Fatalf("subjects want []; got %v", emptyObj["subjects"])
+	}
+	if _, ok := emptyObj["retention_tier"]; ok {
+		t.Fatalf("must not invent retention_tier: %s", emptyJS)
+	}
+
+	// Populated knobs
+	max := int64(1000)
+	age := int64(3600)
+	pop := NewStreamInfoPrint(StreamInfo{
+		Name:        "EVENTS",
+		Description: "ops events",
+		Retention:   "limits",
+		Partitions:  2,
+		MaxMsgs:     &max,
+		MaxAgeSec:   &age,
+		Messages:    10,
+		FirstSeq:    1,
+		LastSeq:     10,
+		CreatedAt:   time.Date(2026, 7, 1, 12, 0, 0, 0, time.UTC),
+		Subjects:    []string{"dept.events.>"},
+	})
+	popJS, err := json.Marshal(pop)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var popObj map[string]any
+	if err := json.Unmarshal(popJS, &popObj); err != nil {
+		t.Fatal(err)
+	}
+	if popObj["description"] != "ops events" || popObj["retention"] != "limits" {
+		t.Fatalf("populated strings: %s", popJS)
+	}
+	if popObj["partitions"].(float64) != 2 || popObj["max_msgs"].(float64) != 1000 || popObj["max_age_sec"].(float64) != 3600 {
+		t.Fatalf("populated nums: %s", popJS)
+	}
+	if popObj["created_at"] != "2026-07-01T12:00:00Z" {
+		t.Fatalf("created_at: %s", popJS)
+	}
+
+	// Wire StreamInfo still omitempty on empty optional knobs
+	wire, err := json.Marshal(StreamInfo{Name: "SPARSE"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wireS := string(wire)
+	if strings.Contains(wireS, "retention") || strings.Contains(wireS, "max_msgs") || strings.Contains(wireS, "description") {
+		t.Fatalf("wire StreamInfo should omitempty empty optionals: %s", wireS)
+	}
+}
+
+// s699: FormatStreams always emits MAX_MSGS / MAX_AGE (0 when nil) + RETENTION.
+func TestFormatStreams_AlwaysEmitRetentionColumns(t *testing.T) {
+	max := int64(5000)
+	age := int64(604800)
+	out := FormatStreams([]StreamInfo{
+		{Name: "TEMP", Messages: 1, FirstSeq: 1, LastSeq: 1, Partitions: 1, Retention: "limits"},
+		{Name: "CAPPED", MaxMsgs: &max, MaxAgeSec: &age, Messages: 2, FirstSeq: 1, LastSeq: 2, Retention: "limits"},
+	})
+	for _, want := range []string{"MAX_MSGS", "MAX_AGE", "RETENTION", "TEMP", "CAPPED", "5000", "604800"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("missing %q in:\n%s", want, out)
+		}
+	}
+	// Nil knobs on TEMP still print numeric 0 columns (headers present + row values).
+	if !strings.Contains(out, "count=2") {
+		t.Fatalf("count:\n%s", out)
+	}
+	empty := FormatStreams(nil)
+	if !strings.Contains(empty, "count=0") {
+		t.Fatalf("empty list:\n%s", empty)
 	}
 }
 
