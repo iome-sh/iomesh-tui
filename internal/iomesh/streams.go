@@ -150,6 +150,8 @@ func decodeStreamsList(raw []byte) ([]StreamInfo, error) {
 }
 
 // FormatStreams renders a compact table for CLI operator discovery.
+// Always emits retention knobs for scrapers (s699): MAX_MSGS / MAX_AGE columns
+// (blank when *int64 nil; numeric when set). Does not invent retention_tier.
 func FormatStreams(streams []StreamInfo) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "iomesh streams count=%d\n", len(streams))
@@ -157,19 +159,28 @@ func FormatStreams(streams []StreamInfo) string {
 		b.WriteString("(no streams)\n")
 		return b.String()
 	}
-	fmt.Fprintf(&b, "%-24s %8s %8s %8s %5s %-10s %s\n",
-		"NAME", "MSGS", "FIRST", "LAST", "PART", "RETENTION", "SUBJECTS")
+	fmt.Fprintf(&b, "%-20s %8s %8s %8s %5s %8s %8s %-10s %s\n",
+		"NAME", "MSGS", "FIRST", "LAST", "PART", "MAX_MSGS", "MAX_AGE", "RETENTION", "SUBJECTS")
 	for i, s := range streams {
 		if i >= 50 {
 			fmt.Fprintf(&b, "… (%d more)\n", len(streams)-50)
 			break
 		}
 		subj := strings.Join(s.Subjects, ",")
-		fmt.Fprintf(&b, "%-24s %8d %8d %8d %5d %-10s %s\n",
-			truncateRunes(s.Name, 24),
+		maxMsgs := ""
+		if s.MaxMsgs != nil {
+			maxMsgs = fmt.Sprintf("%d", *s.MaxMsgs)
+		}
+		maxAge := ""
+		if s.MaxAgeSec != nil {
+			maxAge = fmt.Sprintf("%d", *s.MaxAgeSec)
+		}
+		fmt.Fprintf(&b, "%-20s %8d %8d %8d %5d %8s %8s %-10s %s\n",
+			truncateRunes(s.Name, 20),
 			s.Messages, s.FirstSeq, s.LastSeq, s.Partitions,
+			maxMsgs, maxAge,
 			truncateRunes(s.Retention, 10),
-			truncateRunes(subj, 48),
+			truncateRunes(subj, 40),
 		)
 	}
 	return b.String()

@@ -58,6 +58,33 @@ func TestListStreams_OKAndUserAgent(t *testing.T) {
 	if !strings.Contains(out, "EVENTS") || !strings.Contains(out, "count=1") {
 		t.Fatal(out)
 	}
+	// s699: list table always emits MAX_MSGS / MAX_AGE column headers for scrapers.
+	if !strings.Contains(out, "MAX_MSGS") || !strings.Contains(out, "MAX_AGE") {
+		t.Fatalf("want MAX_MSGS/MAX_AGE headers, got:\n%s", out)
+	}
+}
+
+func TestFormatStreams_AlwaysEmitRetentionColumns(t *testing.T) {
+	max := int64(5000)
+	age := int64(604800)
+	out := FormatStreams([]StreamInfo{
+		{Name: "TEMP", Messages: 1, FirstSeq: 1, LastSeq: 1, Partitions: 1, Retention: "limits"},
+		{Name: "CAPPED", MaxMsgs: &max, MaxAgeSec: &age, Messages: 2, FirstSeq: 1, LastSeq: 2, Retention: "limits"},
+	})
+	if !strings.Contains(out, "MAX_MSGS") || !strings.Contains(out, "MAX_AGE") {
+		t.Fatalf("headers missing:\n%s", out)
+	}
+	if !strings.Contains(out, "TEMP") || !strings.Contains(out, "CAPPED") {
+		t.Fatalf("names missing:\n%s", out)
+	}
+	if !strings.Contains(out, "5000") || !strings.Contains(out, "604800") {
+		t.Fatalf("want populated max_msgs/max_age:\n%s", out)
+	}
+	// Empty list still honest
+	empty := FormatStreams(nil)
+	if !strings.Contains(empty, "count=0") {
+		t.Fatalf("empty list:\n%s", empty)
+	}
 }
 
 func TestListStreams_Envelope(t *testing.T) {
