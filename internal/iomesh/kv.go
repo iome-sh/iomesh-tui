@@ -279,6 +279,98 @@ func decodeKVKeys(raw []byte) ([]string, error) {
 	return env.Keys, nil
 }
 
+// KVBucketInfoPrint is a CLI-side print DTO for mesh kv create-bucket --json.
+// Always emits name, history (0 when unset), max_bytes / ttl_seconds (0 when
+// wire *int64 nil) without omitempty gaps for CI scrapers. Separate from wire
+// KVBucketInfo so broker decode stays lean (omitempty intact on the wire type).
+//
+// s714 always-emit knobs. Peer FormatKVBucketInfo text (s560) + StreamInfoPrint
+// s699/s702 mold. Peer aion s713 lifecycle completeness. Beta · offline unit ≠
+// live APPLY · empty/0 honest · dual_write default OFF · does not invent KV
+// success from knobs alone.
+type KVBucketInfoPrint struct {
+	Name       string `json:"name"`
+	History    int    `json:"history"`
+	MaxBytes   int64  `json:"max_bytes"`
+	TTLSeconds int64  `json:"ttl_seconds"`
+}
+
+// NewKVBucketInfoPrint builds a print DTO from wire KVBucketInfo. Nil *int64
+// knobs become 0; history stays 0 when unset (never omitted on marshal).
+func NewKVBucketInfoPrint(info KVBucketInfo) KVBucketInfoPrint {
+	p := KVBucketInfoPrint{
+		Name:    info.Name,
+		History: info.History,
+	}
+	if info.MaxBytes != nil {
+		p.MaxBytes = *info.MaxBytes
+	}
+	if info.TTLSeconds != nil {
+		p.TTLSeconds = *info.TTLSeconds
+	}
+	return p
+}
+
+// KVEntryPrint is a CLI-side print DTO for mesh kv get --json.
+// Always emits bucket, key, value (base64; empty string when nil/empty),
+// revision, created_at ("" when zero; RFC3339 UTC when set) without omitempty
+// gaps. Separate from wire KVEntry so zero created_at is not omitempty-hidden.
+//
+// s714 always-emit. Peer FormatKVEntry text (s560) + StreamInfoPrint s699/s702
+// mold. Peer aion s713. Beta · offline unit ≠ live APPLY · empty/0 honest ·
+// dual_write default OFF · does not invent KV success from knobs alone.
+type KVEntryPrint struct {
+	Bucket    string `json:"bucket"`
+	Key       string `json:"key"`
+	Value     []byte `json:"value"`
+	Revision  uint64 `json:"revision"`
+	CreatedAt string `json:"created_at"`
+}
+
+// NewKVEntryPrint builds a print DTO from wire KVEntry. Nil value becomes empty
+// []byte (JSON ""); zero CreatedAt becomes "" (never omitted on marshal).
+func NewKVEntryPrint(e KVEntry) KVEntryPrint {
+	p := KVEntryPrint{
+		Bucket:   e.Bucket,
+		Key:      e.Key,
+		Value:    e.Value,
+		Revision: e.Revision,
+	}
+	if p.Value == nil {
+		p.Value = []byte{}
+	}
+	if !e.CreatedAt.IsZero() {
+		p.CreatedAt = e.CreatedAt.UTC().Format(time.RFC3339)
+	}
+	return p
+}
+
+// KVKeysPrint is a CLI-side print DTO for mesh kv list --json.
+// Always emits bucket, prefix (empty when unset), count, and keys ([] when
+// empty) so CI scrapers get a stable envelope rather than a bare string array.
+//
+// s714 list envelope. Peer StreamInfoPrint list mold. Peer aion s713. Beta ·
+// offline unit ≠ live APPLY · empty/0 honest · dual_write default OFF.
+type KVKeysPrint struct {
+	Bucket string   `json:"bucket"`
+	Prefix string   `json:"prefix"`
+	Count  int      `json:"count"`
+	Keys   []string `json:"keys"`
+}
+
+// NewKVKeysPrint builds a list print envelope. Nil keys become []string{}.
+func NewKVKeysPrint(bucket, prefix string, keys []string) KVKeysPrint {
+	if keys == nil {
+		keys = []string{}
+	}
+	return KVKeysPrint{
+		Bucket: bucket,
+		Prefix: prefix,
+		Count:  len(keys),
+		Keys:   keys,
+	}
+}
+
 // FormatKVBucketInfo renders bucket metadata for CLI operator display.
 // Always emits history, max_bytes, and ttl_seconds (history as 0 when unset;
 // *int64 nil prints blank after the colon rather than omitting the line) so

@@ -95,6 +95,175 @@ func TestFormatKVEntry_CreatedAtAlwaysEmit(t *testing.T) {
 	}
 }
 
+// s714: KVBucketInfoPrint JSON always-emits name/history/max_bytes/ttl_seconds (0 when nil).
+func TestKVBucketInfoPrint_AlwaysEmit(t *testing.T) {
+	// Empty / nil knobs
+	emptyJS, err := json.Marshal(NewKVBucketInfoPrint(KVBucketInfo{Name: "cfg"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var emptyObj map[string]any
+	if err := json.Unmarshal(emptyJS, &emptyObj); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"name", "history", "max_bytes", "ttl_seconds"} {
+		if _, ok := emptyObj[key]; !ok {
+			t.Fatalf("missing always-emit key %q in %s", key, emptyJS)
+		}
+	}
+	if emptyObj["name"] != "cfg" {
+		t.Fatalf("name: %s", emptyJS)
+	}
+	if emptyObj["history"].(float64) != 0 || emptyObj["max_bytes"].(float64) != 0 || emptyObj["ttl_seconds"].(float64) != 0 {
+		t.Fatalf("numeric knobs want 0; got %s", emptyJS)
+	}
+
+	// Populated knobs
+	var maxBytes int64 = 1024
+	var ttl int64 = 3600
+	pop := NewKVBucketInfoPrint(KVBucketInfo{
+		Name:       "config",
+		History:    5,
+		MaxBytes:   &maxBytes,
+		TTLSeconds: &ttl,
+	})
+	popJS, err := json.Marshal(pop)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var popObj map[string]any
+	if err := json.Unmarshal(popJS, &popObj); err != nil {
+		t.Fatal(err)
+	}
+	if popObj["name"] != "config" || popObj["history"].(float64) != 5 ||
+		popObj["max_bytes"].(float64) != 1024 || popObj["ttl_seconds"].(float64) != 3600 {
+		t.Fatalf("populated: %s", popJS)
+	}
+
+	// Wire KVBucketInfo still omitempty on empty optional knobs
+	wire, err := json.Marshal(KVBucketInfo{Name: "cfg"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wireS := string(wire)
+	if strings.Contains(wireS, "history") || strings.Contains(wireS, "max_bytes") || strings.Contains(wireS, "ttl_seconds") {
+		t.Fatalf("wire KVBucketInfo should omitempty empty optionals: %s", wireS)
+	}
+}
+
+// s714: KVEntryPrint JSON always-emits bucket/key/value/revision/created_at.
+func TestKVEntryPrint_AlwaysEmit(t *testing.T) {
+	// Empty / zero created_at + nil value
+	emptyJS, err := json.Marshal(NewKVEntryPrint(KVEntry{
+		Bucket: "cfg", Key: "k", Revision: 0,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var emptyObj map[string]any
+	if err := json.Unmarshal(emptyJS, &emptyObj); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"bucket", "key", "value", "revision", "created_at"} {
+		if _, ok := emptyObj[key]; !ok {
+			t.Fatalf("missing always-emit key %q in %s", key, emptyJS)
+		}
+	}
+	if emptyObj["bucket"] != "cfg" || emptyObj["key"] != "k" {
+		t.Fatalf("identity: %s", emptyJS)
+	}
+	if emptyObj["created_at"] != "" {
+		t.Fatalf("created_at want \"\"; got %v", emptyObj["created_at"])
+	}
+	if emptyObj["revision"].(float64) != 0 {
+		t.Fatalf("revision want 0; got %v", emptyObj["revision"])
+	}
+	// nil value → empty []byte → JSON ""
+	if emptyObj["value"] != "" {
+		t.Fatalf("value want \"\"; got %v", emptyObj["value"])
+	}
+
+	// Populated
+	payload := []byte(`{"hello":"world"}`)
+	pop := NewKVEntryPrint(KVEntry{
+		Bucket:    "config",
+		Key:       "app.json",
+		Value:     payload,
+		Revision:  7,
+		CreatedAt: time.Date(2026, 7, 1, 12, 0, 0, 0, time.UTC),
+	})
+	popJS, err := json.Marshal(pop)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var popObj map[string]any
+	if err := json.Unmarshal(popJS, &popObj); err != nil {
+		t.Fatal(err)
+	}
+	if popObj["bucket"] != "config" || popObj["key"] != "app.json" || popObj["revision"].(float64) != 7 {
+		t.Fatalf("populated identity: %s", popJS)
+	}
+	if popObj["created_at"] != "2026-07-01T12:00:00Z" {
+		t.Fatalf("created_at: %s", popJS)
+	}
+	wantB64 := base64.StdEncoding.EncodeToString(payload)
+	if popObj["value"] != wantB64 {
+		t.Fatalf("value b64 want %q got %v", wantB64, popObj["value"])
+	}
+
+	// Wire KVEntry: zero time.Time marshals as zero RFC3339 but value nil → null;
+	// print DTO is the scraper surface (always-emit created_at as "" when zero).
+	// Confirm print empty path is stable and wire type remains distinct (lean decode).
+	if NewKVEntryPrint(KVEntry{}).CreatedAt != "" {
+		t.Fatal("zero CreatedAt must print as empty string")
+	}
+}
+
+// s714: KVKeysPrint list envelope always-emits bucket/prefix/count/keys.
+func TestKVKeysPrint_AlwaysEmit(t *testing.T) {
+	// Empty keys + empty prefix
+	emptyJS, err := json.Marshal(NewKVKeysPrint("cfg", "", nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var emptyObj map[string]any
+	if err := json.Unmarshal(emptyJS, &emptyObj); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"bucket", "prefix", "count", "keys"} {
+		if _, ok := emptyObj[key]; !ok {
+			t.Fatalf("missing always-emit key %q in %s", key, emptyJS)
+		}
+	}
+	if emptyObj["bucket"] != "cfg" || emptyObj["prefix"] != "" {
+		t.Fatalf("identity: %s", emptyJS)
+	}
+	if emptyObj["count"].(float64) != 0 {
+		t.Fatalf("count want 0; got %v", emptyObj["count"])
+	}
+	keys, ok := emptyObj["keys"].([]any)
+	if !ok || len(keys) != 0 {
+		t.Fatalf("keys want []; got %v", emptyObj["keys"])
+	}
+
+	// Populated
+	popJS, err := json.Marshal(NewKVKeysPrint("config", "app", []string{"app.json", "app.toml"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var popObj map[string]any
+	if err := json.Unmarshal(popJS, &popObj); err != nil {
+		t.Fatal(err)
+	}
+	if popObj["bucket"] != "config" || popObj["prefix"] != "app" || popObj["count"].(float64) != 2 {
+		t.Fatalf("populated: %s", popJS)
+	}
+	popKeys, ok := popObj["keys"].([]any)
+	if !ok || len(popKeys) != 2 || popKeys[0] != "app.json" {
+		t.Fatalf("keys: %s", popJS)
+	}
+}
+
 func TestFormatKVBucketInfo_AlwaysEmitOptionalKnobs(t *testing.T) {
 	// Nil optional *int64 knobs: always emit blank max_bytes / ttl_seconds (do not invent 0).
 	out := FormatKVBucketInfo(KVBucketInfo{Name: "cfg", History: 0})
