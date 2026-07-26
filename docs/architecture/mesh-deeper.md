@@ -135,12 +135,15 @@ Wire `StreamInfo` stays lean (`omitempty` on optional knobs including `retention
 | `FormatStreamDetail` / get text | Always prints `description`, `retention`, `retention_tier`, `partitions`, `max_msgs`, `max_age_sec`, … (empty/`0` when unset) |
 | `StreamInfoPrint` / get+list `--json` | Same knobs without omitempty gaps; list path maps via `NewStreamInfoPrint` |
 | `FormatStreams` table | Columns include MAX_MSGS, MAX_AGE, RETENTION, **TIER** (empty when broker omits) |
-| `StreamMessagesPrint` / `--messages --json` | Envelope `{stream, from_seq, to_seq, limit, count, messages}` (not bare array; s720; 0 honest) |
+| `StreamMessagesPrint` / `--messages --json` | Envelope `{stream, from_seq, to_seq, limit, count, messages}` (not bare array; s720; 0 honest); nested `messages[]` are `StreamMessagePrint` (s723) |
+| `StreamMessagePrint` / nested message JSON | Always emits `stream`, `seq`, `subject`, `partition`, `payload`, `headers`, `timestamp` (s723; empty/0/`""`/`{}` honest) |
 | `FormatStreamMessagesPrint` / `--messages` text | Header includes knobs + count; table of messages (empty → `(no messages)`) |
 
 `retention_tier` is decoded from the broker wire only (hot\|temp\|extended\|archive when present). **Never invent** tier from `max_age_sec` alone — empty string is honest when the broker omits. Beta · offline unit ≠ live APPLY · peer aion s701.
 
 **s720 messages envelope** (mold KVKeysPrint s714 / ConsumerFetchPrint s708; peer aion s719 residual): `--messages --json` marshals `StreamMessagesPrint` always-emitting scraper keys without omitempty gaps. Wire `StreamMessage` stays lean. Empty/0 knobs are honest; does not invent message success from knobs alone. dual_write default OFF · not full mesh RBAC GA.
+
+**s723 nested message always-emit** (mold StreamInfoPrint s699/s702 / KVEntryPrint s714; peer aion s722 residual): closes the half-gap where outer envelope always-emitted but nested `messages[]` still used lean wire omitempty. `NewStreamMessagePrint` maps each wire message so scrapers always see `stream` (`""`), `partition` (`0`), `headers` (`{}`), `timestamp` (`""` or RFC3339). Same nested type used by `ConsumerFetchPrint.Messages`. Wire `StreamMessage` stays lean. Beta · offline unit ≠ live APPLY · empty/0/`""`/`{}` honest · dual_write default OFF · not full mesh RBAC GA · does not invent message success from fields alone.
 
 ```bash
 iomesh mesh streams                  # table of all streams
@@ -228,7 +231,7 @@ Lean consumer surface (no SDK dependency; wire parity with SDK `CreateConsumer` 
 | `DeleteConsumer(stream, name)` | `DELETE .../consumers/{name}` | Path-escaped stream+name; **204/2xx** success; empty stream/name / non-2xx → error |
 | `FormatConsumerInfo` / `FormatConsumerInfoWithAuth` | — | multi-line operator view; always emits `filter_subject` / `pull_role` / `pull_allow_suffix` (empty when unset; s696) |
 | `NewConsumerInfoPrint` | — | CLI create JSON DTO with always-emit pull identity (does not pollute wire `ConsumerInfo`) |
-| `NewConsumerFetchPrint` / `FormatConsumerFetch` | — | CLI fetch text/JSON envelope; always emits `stream` / `name` / `pull_role` / `pull_allow_suffix` / `batch` / `max_wait_ms` / `count` / `messages` (s708; empty role honest) |
+| `NewConsumerFetchPrint` / `FormatConsumerFetch` | — | CLI fetch text/JSON envelope; always emits `stream` / `name` / `pull_role` / `pull_allow_suffix` / `batch` / `max_wait_ms` / `count` / `messages` (s708; empty role honest; nested `StreamMessagePrint` s723) |
 | `NewConsumerAckPrint` / `FormatConsumerAck` | — | CLI ack|nack text/JSON; always emits `{ok,op,stream,name,pull_role,pull_allow_suffix,seqs,ack_floor,count}` (s711; empty role honest) |
 | `NewConsumerDeletePrint` / `FormatConsumerDelete` | — | CLI delete text/JSON; always emits `{ok,stream,name,pull_role,pull_allow_suffix}` (s708) |
 
@@ -257,7 +260,7 @@ Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 alread
 - `internal/iomesh/meter.go` — UsageMeter / FormatUsage
 - `internal/iomesh/catalog.go` — ListCatalog / FormatCatalog / CatalogSnippet
 - `internal/iomesh/streams.go` — ListStreams / GetStream / DeleteStream / FormatStreams
-- `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages / NewStreamMessagesPrint / FormatStreamMessagesPrint
+- `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages / NewStreamMessagePrint / NewStreamMessagesPrint / FormatStreamMessagesPrint
 - `internal/iomesh/consumers.go` — CreateConsumer / ConsumerFetch / ConsumerAck / ConsumerNack / DeleteConsumer / FormatConsumerInfo / FormatConsumerInfoWithAuth / NewConsumerInfoPrint / NewConsumerFetchPrint / FormatConsumerFetch / NewConsumerAckPrint / FormatConsumerAck / NewConsumerDeletePrint / FormatConsumerDelete
 - `internal/iomesh/kv.go` — KVGet / KVListKeys / KVPut / KVDelete / KVCreateBucket / FormatKVEntry / FormatKVKeys / FormatKVBucketInfo / NewKVBucketInfoPrint / NewKVEntryPrint / NewKVKeysPrint
 - `internal/iomesh/pub.go` — Pub (ephemeral `POST /v1/pub`)

@@ -343,7 +343,7 @@ func TestConsumerInfoPrint_JSONAlwaysEmitPullIdentity(t *testing.T) {
 }
 
 // s708: ConsumerFetchPrint JSON always-emits pull identity + knobs + count
-// without omitempty gaps; wire messages stay lean (no auth fields).
+// without omitempty gaps; s723 nested StreamMessagePrint always-emit; wire lean.
 func TestConsumerFetchPrint_JSONAlwaysEmitPullIdentity(t *testing.T) {
 	t.Parallel()
 
@@ -383,9 +383,9 @@ func TestConsumerFetchPrint_JSONAlwaysEmitPullIdentity(t *testing.T) {
 		t.Fatalf("messages want empty array: %s", emptyJS)
 	}
 
-	// Populated role/suffix + one message.
+	// Populated role/suffix + one sparse message → nested always-emit keys (s723).
 	popMsgs := []StreamMessage{
-		{Stream: "EVENTS", Seq: 7, Subject: "dept.events.hello", Payload: []byte("hi")},
+		{Seq: 7, Subject: "dept.events.hello", Payload: []byte("hi")},
 	}
 	popDTO := NewConsumerFetchPrint("EVENTS", "agent-1", "agent", "ops", 5, 2000, popMsgs)
 	popJS, err := json.Marshal(popDTO)
@@ -401,6 +401,22 @@ func TestConsumerFetchPrint_JSONAlwaysEmitPullIdentity(t *testing.T) {
 	}
 	if popObj["count"] != float64(1) || popObj["batch"] != float64(5) {
 		t.Fatalf("count/batch: %s", popJS)
+	}
+	popList, ok := popObj["messages"].([]any)
+	if !ok || len(popList) != 1 {
+		t.Fatalf("messages: %s", popJS)
+	}
+	nested, ok := popList[0].(map[string]any)
+	if !ok {
+		t.Fatalf("nested message not object: %s", popJS)
+	}
+	for _, key := range []string{"stream", "seq", "subject", "partition", "payload", "headers", "timestamp"} {
+		if _, ok := nested[key]; !ok {
+			t.Fatalf("nested missing always-emit key %q: %s", key, popJS)
+		}
+	}
+	if nested["stream"] != "" || nested["partition"] != float64(0) || nested["timestamp"] != "" {
+		t.Fatalf("nested empty/0 honest: %s", popJS)
 	}
 	// custom + multi-suffix still always present as strings.
 	customDTO := NewConsumerFetchPrint("S", "c", "custom", "ops,memory", 1, 500, []StreamMessage{})
