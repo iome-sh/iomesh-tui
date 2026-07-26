@@ -1030,8 +1030,8 @@ func cmdMeshConsumer(args []string) int {
 
   iomesh mesh consumer create --stream S --name C [--filter F] [--role R] [--pull-allow-suffix S] --yes [--json]
   iomesh mesh consumer fetch  --stream S --name C [--batch N] [--role R] [--pull-allow-suffix S] --yes [--json]
-  iomesh mesh consumer ack    --stream S --name C --seq N [--seq N...] [--role R] [--pull-allow-suffix S] --yes
-  iomesh mesh consumer nack   --stream S --name C --seq N [--seq N...] [--role R] [--pull-allow-suffix S] --yes
+  iomesh mesh consumer ack    --stream S --name C --seq N [--seq N...] [--role R] [--pull-allow-suffix S] --yes [--json]
+  iomesh mesh consumer nack   --stream S --name C --seq N [--seq N...] [--role R] [--pull-allow-suffix S] --yes [--json]
   iomesh mesh consumer delete --stream S --name C [--role R] [--pull-allow-suffix S] --yes [--json]
 
 Create: POST /v1/streams/{stream}/consumers (201 full info; 409 idempotent name-only).
@@ -1043,8 +1043,9 @@ Create: POST /v1/streams/{stream}/consumers (201 full info; 409 idempotent name-
 Fetch:  POST /v1/streams/{stream}/consumers/{name}/fetch (default batch=1, max_wait 2s).
   Same --role / --pull-allow-suffix headers (s684; aion validates role on fetch). Fail-open empty.
   Text/JSON always-emit pull identity + knobs + count + messages (s708 ConsumerFetchPrint; empty role honest).
-Ack:    POST .../consumers/{name}/ack body {"seqs":[...]} (prints optional ack_floor).
-Nack:   POST .../consumers/{name}/nack body {"seqs":[...]} (prints optional ack_floor).
+Ack:    POST .../consumers/{name}/ack body {"seqs":[...]} (optional ack_floor on response).
+  Text/JSON always-emit pull identity + op/seqs/ack_floor/count (s711 ConsumerAckPrint; empty role honest).
+Nack:   POST .../consumers/{name}/nack body {"seqs":[...]} (same print DTO shape as ack; op=nack).
 Delete: DELETE .../consumers/{name} (204/2xx success).
   Text/JSON always-emit {ok,stream,name,pull_role,pull_allow_suffix} (s708; empty role honest).
   Ack/nack/delete also accept --role / --pull-allow-suffix for defense-in-depth auth headers.
@@ -1109,6 +1110,7 @@ func cmdMeshConsumerAckNack(args []string, nack bool) int {
 		role            = fs.String("role", "", "optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|memory|custom); [memory].pull_role")
 		pullAllowSuffix = fs.String("pull-allow-suffix", "", "optional X-IOMesh-Pull-Allow-Suffix (comma tokens; role=custom); [memory].pull_allow_suffix")
 		yes             = fs.Bool("yes", false, "confirm mutating "+op+" (required)")
+		jsonOut         = fs.Bool("json", false, "print ConsumerAckPrint JSON (always-emits pull_role / pull_allow_suffix)")
 		verbose         = fs.Bool("v", false, "verbose logs")
 		endpoint        = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
 		tenant          = fs.String("tenant", "", "override tenant")
@@ -1120,8 +1122,9 @@ func cmdMeshConsumerAckNack(args []string, nack bool) int {
 	streamName := strings.TrimSpace(*stream)
 	consumerName := strings.TrimSpace(*name)
 	if streamName == "" || consumerName == "" || len(seqs) == 0 || !*yes {
-		fmt.Fprintf(os.Stderr, "usage: iomesh mesh consumer %s --stream S --name C --seq N [--seq N...] [--role R] [--pull-allow-suffix S] --yes\n", op)
+		fmt.Fprintf(os.Stderr, "usage: iomesh mesh consumer %s --stream S --name C --seq N [--seq N...] [--role R] [--pull-allow-suffix S] --yes [--json]\n", op)
 		fmt.Fprintln(os.Stderr, "  --stream, --name, and at least one --seq required; --yes required (mutating)")
+		fmt.Fprintln(os.Stderr, "  text/JSON always-emit pull_role / pull_allow_suffix (s711; empty when unset)")
 		return 2
 	}
 
@@ -1167,12 +1170,13 @@ func cmdMeshConsumerAckNack(args []string, nack bool) int {
 		fmt.Fprintf(os.Stderr, "FAIL mesh consumer %s: %v\n", op, err)
 		return 1
 	}
-	seqParts := make([]string, len(seqs))
-	for i, s := range seqs {
-		seqParts[i] = strconv.FormatUint(s, 10)
+	// s711: always-emit pull identity on ack/nack success (peer create s696 / fetch/delete s708).
+	printDTO := iomesh.NewConsumerAckPrint(op, streamName, consumerName, pullRole, allowSuffix, []uint64(seqs), floor)
+	if *jsonOut {
+		fmt.Print(iomesh.FormatConsumerAckJSON(printDTO))
+		return 0
 	}
-	fmt.Printf("PASS mesh consumer %s stream=%s name=%s seqs=%s ack_floor=%d\n",
-		op, streamName, consumerName, strings.Join(seqParts, ","), floor)
+	fmt.Print(iomesh.FormatConsumerAck(printDTO))
 	return 0
 }
 
