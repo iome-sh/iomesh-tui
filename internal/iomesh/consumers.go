@@ -505,3 +505,79 @@ func FormatConsumerDeleteJSON(p ConsumerDeletePrint) string {
 	}
 	return string(b) + "\n"
 }
+
+// ConsumerAckPrint is a CLI-side print DTO for mesh consumer ack|nack JSON.
+// Always emits ok / op / stream / name / pull_role / pull_allow_suffix (empty
+// string honest when unset) / seqs / ack_floor / count so scrapers see pull
+// identity on ack/nack success without omitempty gaps. Wire ack/nack API stays
+// lean (no auth fields).
+//
+// s711: peer create FormatConsumerInfo s696 + fetch/delete s708 continuum;
+// peer aion s710 residual. Beta · offline unit ≠ live APPLY · empty role honest
+// · dual_write OFF · not full mesh RBAC GA · does not invent ack success from
+// identity fields alone.
+type ConsumerAckPrint struct {
+	OK              bool     `json:"ok"`
+	Op              string   `json:"op"` // "ack" | "nack"
+	Stream          string   `json:"stream"`
+	Name            string   `json:"name"`
+	PullRole        string   `json:"pull_role"`
+	PullAllowSuffix string   `json:"pull_allow_suffix"`
+	Seqs            []uint64 `json:"seqs"`
+	AckFloor        uint64   `json:"ack_floor"`
+	Count           int      `json:"count"`
+}
+
+// NewConsumerAckPrint builds an ack|nack success print DTO with always-emit
+// pull identity from resolved s684 auth. OK is always true (call only after
+// ConsumerAck / ConsumerNack returns without error). Nil seqs becomes empty
+// slice; Count is always len(seqs). Op should be "ack" or "nack". Empty
+// role/suffix always emit as "".
+func NewConsumerAckPrint(op, stream, name, role, allowSuffix string, seqs []uint64, ackFloor uint64) ConsumerAckPrint {
+	if seqs == nil {
+		seqs = []uint64{}
+	}
+	return ConsumerAckPrint{
+		OK:              true,
+		Op:              op,
+		Stream:          stream,
+		Name:            name,
+		PullRole:        role,
+		PullAllowSuffix: allowSuffix,
+		Seqs:            seqs,
+		AckFloor:        ackFloor,
+		Count:           len(seqs),
+	}
+}
+
+// FormatConsumerAck is a multi-line operator view for mesh consumer ack|nack
+// success (s711). Always emits pull_role / pull_allow_suffix (empty when unset)
+// next to stream/name, plus op / seqs / ack_floor / count. Pure helper; no I/O.
+// Does not invent success from identity — floor/seqs come from the call result.
+func FormatConsumerAck(p ConsumerAckPrint) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "PASS mesh consumer %s\n", p.Op)
+	fmt.Fprintf(&b, "op:                %s\n", p.Op)
+	fmt.Fprintf(&b, "stream:            %s\n", p.Stream)
+	fmt.Fprintf(&b, "name:              %s\n", p.Name)
+	fmt.Fprintf(&b, "pull_role:         %s\n", p.PullRole)
+	fmt.Fprintf(&b, "pull_allow_suffix: %s\n", p.PullAllowSuffix)
+	seqParts := make([]string, len(p.Seqs))
+	for i, s := range p.Seqs {
+		seqParts[i] = fmt.Sprintf("%d", s)
+	}
+	fmt.Fprintf(&b, "seqs:              %s\n", strings.Join(seqParts, ","))
+	fmt.Fprintf(&b, "ack_floor:         %d\n", p.AckFloor)
+	fmt.Fprintf(&b, "count:             %d\n", p.Count)
+	return b.String()
+}
+
+// FormatConsumerAckJSON returns indented JSON for stage CI / scrapers.
+// Always emits all ConsumerAckPrint fields without omitempty gaps.
+func FormatConsumerAckJSON(p ConsumerAckPrint) string {
+	b, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return `{"error":"consumer ack json marshal failed"}` + "\n"
+	}
+	return string(b) + "\n"
+}

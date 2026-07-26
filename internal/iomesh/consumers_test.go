@@ -544,6 +544,160 @@ func TestFormatConsumerDelete_AlwaysEmitPullIdentity(t *testing.T) {
 	}
 }
 
+// s711: ConsumerAckPrint JSON always-emits {ok,op,stream,name,pull_role,pull_allow_suffix,seqs,ack_floor,count}.
+func TestConsumerAckPrint_JSONAlwaysEmitPullIdentity(t *testing.T) {
+	t.Parallel()
+
+	// Empty auth + single seq → blank identity, count 1.
+	emptyDTO := NewConsumerAckPrint("ack", "EVENTS", "worker-1", "", "", []uint64{1}, 0)
+	emptyJS, err := json.Marshal(emptyDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var emptyObj map[string]any
+	if err := json.Unmarshal(emptyJS, &emptyObj); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{
+		"ok", "op", "stream", "name", "pull_role", "pull_allow_suffix",
+		"seqs", "ack_floor", "count",
+	} {
+		if _, ok := emptyObj[key]; !ok {
+			t.Fatalf("empty json missing key %q: %s", key, emptyJS)
+		}
+	}
+	if emptyObj["ok"] != true {
+		t.Fatalf("ok want true: %s", emptyJS)
+	}
+	if emptyObj["op"] != "ack" {
+		t.Fatalf("op want ack: %s", emptyJS)
+	}
+	if emptyObj["pull_role"] != "" || emptyObj["pull_allow_suffix"] != "" {
+		t.Fatalf("empty identity want \"\"; got pull_role=%v pull_allow_suffix=%v\n%s",
+			emptyObj["pull_role"], emptyObj["pull_allow_suffix"], emptyJS)
+	}
+	if emptyObj["stream"] != "EVENTS" || emptyObj["name"] != "worker-1" {
+		t.Fatalf("stream/name: %s", emptyJS)
+	}
+	if emptyObj["ack_floor"] != float64(0) || emptyObj["count"] != float64(1) {
+		t.Fatalf("ack_floor/count: %s", emptyJS)
+	}
+	seqs, ok := emptyObj["seqs"].([]any)
+	if !ok || len(seqs) != 1 || seqs[0] != float64(1) {
+		t.Fatalf("seqs want [1]: %s", emptyJS)
+	}
+
+	// Populated role/suffix + multi seq + floor + nack op.
+	popDTO := NewConsumerAckPrint("nack", "EVENTS", "agent-1", "agent", "ops", []uint64{2, 3}, 3)
+	popJS, err := json.Marshal(popDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var popObj map[string]any
+	if err := json.Unmarshal(popJS, &popObj); err != nil {
+		t.Fatal(err)
+	}
+	if popObj["pull_role"] != "agent" || popObj["pull_allow_suffix"] != "ops" || popObj["ok"] != true {
+		t.Fatalf("populated: %s", popJS)
+	}
+	if popObj["op"] != "nack" || popObj["ack_floor"] != float64(3) || popObj["count"] != float64(2) {
+		t.Fatalf("op/floor/count: %s", popJS)
+	}
+
+	// custom + multi-suffix still always present as strings.
+	customDTO := NewConsumerAckPrint("ack", "S", "c", "custom", "ops,memory", []uint64{9}, 9)
+	customJS, err := json.Marshal(customDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(customJS), `"pull_role":"custom"`) ||
+		!strings.Contains(string(customJS), `"pull_allow_suffix":"ops,memory"`) {
+		t.Fatalf("custom role/suffix: %s", customJS)
+	}
+
+	// Nil seqs → empty array, count 0 (honest empty; CLI requires seqs before call).
+	nilDTO := NewConsumerAckPrint("ack", "S", "c", "", "", nil, 0)
+	nilJS, err := json.Marshal(nilDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var nilObj map[string]any
+	if err := json.Unmarshal(nilJS, &nilObj); err != nil {
+		t.Fatal(err)
+	}
+	nilSeqs, ok := nilObj["seqs"].([]any)
+	if !ok || len(nilSeqs) != 0 {
+		t.Fatalf("nil seqs want empty array: %s", nilJS)
+	}
+	if nilObj["count"] != float64(0) {
+		t.Fatalf("nil count want 0: %s", nilJS)
+	}
+
+	// Format helpers round-trip keys for scrapers.
+	formatted := FormatConsumerAckJSON(popDTO)
+	if !strings.Contains(formatted, `"pull_role": "agent"`) ||
+		!strings.Contains(formatted, `"pull_allow_suffix": "ops"`) ||
+		!strings.Contains(formatted, `"op": "nack"`) {
+		t.Fatalf("FormatConsumerAckJSON: %s", formatted)
+	}
+}
+
+// s711: FormatConsumerAck always-emits pull identity + op/seqs/ack_floor/count (empty or populated).
+func TestFormatConsumerAck_AlwaysEmitPullIdentity(t *testing.T) {
+	t.Parallel()
+
+	empty := FormatConsumerAck(NewConsumerAckPrint("ack", "EVENTS", "c", "", "", []uint64{1}, 0))
+	for _, want := range []string{
+		"PASS mesh consumer ack\n",
+		"op:                ack\n",
+		"stream:            EVENTS\n",
+		"name:              c\n",
+		"pull_role:         \n",
+		"pull_allow_suffix: \n",
+		"seqs:              1\n",
+		"ack_floor:         0\n",
+		"count:             1\n",
+	} {
+		if !strings.Contains(empty, want) {
+			t.Fatalf("empty missing %q in:\n%q", want, empty)
+		}
+	}
+	// Order: op → stream → name → pull_role → pull_allow_suffix
+	opIdx := strings.Index(empty, "op:")
+	sIdx := strings.Index(empty, "stream:")
+	nIdx := strings.Index(empty, "name:")
+	prIdx := strings.Index(empty, "pull_role:")
+	psIdx := strings.Index(empty, "pull_allow_suffix:")
+	if opIdx < 0 || sIdx < 0 || nIdx < 0 || prIdx < 0 || psIdx < 0 ||
+		!(opIdx < sIdx && sIdx < nIdx && nIdx < prIdx && prIdx < psIdx) {
+		t.Fatalf("identity order want op < stream < name < pull_role < pull_allow_suffix:\n%s", empty)
+	}
+
+	pop := FormatConsumerAck(NewConsumerAckPrint(
+		"nack", "EVENTS", "agent-1", "memory", "ops",
+		[]uint64{2, 5}, 5,
+	))
+	for _, want := range []string{
+		"PASS mesh consumer nack\n",
+		"op:                nack\n",
+		"pull_role:         memory\n",
+		"pull_allow_suffix: ops\n",
+		"seqs:              2,5\n",
+		"ack_floor:         5\n",
+		"count:             2\n",
+	} {
+		if !strings.Contains(pop, want) {
+			t.Fatalf("populated missing %q in:\n%s", want, pop)
+		}
+	}
+
+	custom := FormatConsumerAck(NewConsumerAckPrint("ack", "S", "mem-1", "custom", "ops,memory", []uint64{7}, 7))
+	if !strings.Contains(custom, "pull_role:         custom\n") ||
+		!strings.Contains(custom, "pull_allow_suffix: ops,memory\n") {
+		t.Fatalf("custom:\n%s", custom)
+	}
+}
+
 // s684: ResolveMeshPullAuth is the pure flag>config path for fetch/ack/nack/delete (and create).
 func TestResolveMeshPullAuth(t *testing.T) {
 	t.Parallel()
