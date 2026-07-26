@@ -59,8 +59,12 @@ func TestListStreams_OKAndUserAgent(t *testing.T) {
 		t.Fatal(out)
 	}
 	// s699: list table always emits MAX_MSGS / MAX_AGE column headers for scrapers.
+	// s702: TIER (retention_tier) column always present (empty when broker omits).
 	if !strings.Contains(out, "MAX_MSGS") || !strings.Contains(out, "MAX_AGE") {
 		t.Fatalf("want MAX_MSGS/MAX_AGE headers, got:\n%s", out)
+	}
+	if !strings.Contains(out, "TIER") {
+		t.Fatalf("want TIER header, got:\n%s", out)
 	}
 }
 
@@ -129,30 +133,32 @@ func TestFormatStreamDetail_Fields(t *testing.T) {
 	max := int64(1000)
 	age := int64(3600)
 	detail := FormatStreamDetail(StreamInfo{
-		Name:        "EVENTS",
-		Description: "ops events",
-		Retention:   "limits",
-		Partitions:  1,
-		MaxMsgs:     &max,
-		MaxAgeSec:   &age,
-		Messages:    10,
-		FirstSeq:    1,
-		LastSeq:     10,
-		CreatedAt:   time.Date(2026, 7, 1, 12, 0, 0, 0, time.UTC),
-		Subjects:    []string{"dept.events.>", "dept.ops.>"},
+		Name:          "EVENTS",
+		Description:   "ops events",
+		Retention:     "limits",
+		RetentionTier: "temp",
+		Partitions:    1,
+		MaxMsgs:       &max,
+		MaxAgeSec:     &age,
+		Messages:      10,
+		FirstSeq:      1,
+		LastSeq:       10,
+		CreatedAt:     time.Date(2026, 7, 1, 12, 0, 0, 0, time.UTC),
+		Subjects:      []string{"dept.events.>", "dept.ops.>"},
 	})
 	for _, want := range []string{
 		"iomesh stream",
-		"name:        EVENTS",
-		"description: ops events",
-		"retention:   limits",
-		"partitions:  1",
-		"max_msgs:    1000",
-		"max_age_sec: 3600",
-		"messages:    10",
-		"first_seq:   1",
-		"last_seq:    10",
-		"created_at:  2026-07-01T12:00:00Z",
+		"name:           EVENTS",
+		"description:    ops events",
+		"retention:      limits",
+		"retention_tier: temp",
+		"partitions:     1",
+		"max_msgs:       1000",
+		"max_age_sec:    3600",
+		"messages:       10",
+		"first_seq:      1",
+		"last_seq:       10",
+		"created_at:     2026-07-01T12:00:00Z",
 		"subjects:",
 		"dept.events.>",
 		"dept.ops.>",
@@ -163,24 +169,26 @@ func TestFormatStreamDetail_Fields(t *testing.T) {
 	}
 }
 
-// s699: Empty / zero StreamInfo still always-emits every scraper key.
+// s699/s702: Empty / zero StreamInfo still always-emits every scraper key.
 // max_msgs / max_age_sec print numeric 0 when *int64 nil (honest zero, not omit).
+// retention_tier always-emits empty string when unset (decode real wire; never invent from max_age).
 func TestFormatStreamDetail_EmptyAlwaysEmit(t *testing.T) {
 	detail := FormatStreamDetail(StreamInfo{
 		Name: "SPARSE",
 	})
 	for _, want := range []string{
 		"iomesh stream",
-		"name:        SPARSE",
-		"description: \n",
-		"retention:   \n",
-		"partitions:  0\n",
-		"max_msgs:    0\n",
-		"max_age_sec: 0\n",
-		"messages:    0\n",
-		"first_seq:   0\n",
-		"last_seq:    0\n",
-		"created_at:  \n",
+		"name:           SPARSE",
+		"description:    \n",
+		"retention:      \n",
+		"retention_tier: \n",
+		"partitions:     0\n",
+		"max_msgs:       0\n",
+		"max_age_sec:    0\n",
+		"messages:       0\n",
+		"first_seq:      0\n",
+		"last_seq:       0\n",
+		"created_at:     \n",
 		"subjects:\n",
 		"  (none)\n",
 	} {
@@ -188,9 +196,29 @@ func TestFormatStreamDetail_EmptyAlwaysEmit(t *testing.T) {
 			t.Fatalf("missing %q in:\n%s", want, detail)
 		}
 	}
-	// Must not invent retention_tier (not on StreamInfo wire).
-	if strings.Contains(detail, "retention_tier") {
-		t.Fatalf("must not invent retention_tier, got:\n%s", detail)
+}
+
+// s702: populated retention_tier prints as-is; max_age alone does not invent tier.
+func TestFormatStreamDetail_RetentionTier(t *testing.T) {
+	age := int64(604800) // 7d — must not invent "temp" from max_age alone
+	emptyTier := FormatStreamDetail(StreamInfo{
+		Name:      "AGED",
+		MaxAgeSec: &age,
+	})
+	if !strings.Contains(emptyTier, "retention_tier: \n") {
+		t.Fatalf("want empty retention_tier when unset, got:\n%s", emptyTier)
+	}
+	if strings.Contains(emptyTier, "retention_tier: temp") || strings.Contains(emptyTier, "retention_tier: hot") {
+		t.Fatalf("must not invent tier from max_age alone, got:\n%s", emptyTier)
+	}
+
+	pop := FormatStreamDetail(StreamInfo{
+		Name:          "TEMP",
+		RetentionTier: "temp",
+		MaxAgeSec:     &age,
+	})
+	if !strings.Contains(pop, "retention_tier: temp\n") {
+		t.Fatalf("want populated retention_tier, got:\n%s", pop)
 	}
 }
 
@@ -203,11 +231,12 @@ func TestFormatStreamDetail_ZeroPointerKnobs(t *testing.T) {
 		MaxAgeSec: &zero,
 	})
 	for _, want := range []string{
-		"max_msgs:    0\n",
-		"max_age_sec: 0\n",
-		"description: \n",
-		"retention:   \n",
-		"partitions:  0\n",
+		"max_msgs:       0\n",
+		"max_age_sec:    0\n",
+		"description:    \n",
+		"retention:      \n",
+		"retention_tier: \n",
+		"partitions:     0\n",
 	} {
 		if !strings.Contains(detail, want) {
 			t.Fatalf("missing %q in:\n%s", want, detail)
@@ -215,9 +244,9 @@ func TestFormatStreamDetail_ZeroPointerKnobs(t *testing.T) {
 	}
 }
 
-// s699: StreamInfoPrint JSON always-emits retention knobs (empty/0 when unset).
+// s699/s702: StreamInfoPrint JSON always-emits retention knobs + retention_tier (empty/0 when unset).
 func TestStreamInfoPrint_AlwaysEmit(t *testing.T) {
-	// Empty / nil knobs
+	// Empty / nil knobs — retention_tier always present as ""
 	emptyJS, err := json.Marshal(NewStreamInfoPrint(StreamInfo{Name: "SPARSE"}))
 	if err != nil {
 		t.Fatal(err)
@@ -227,14 +256,14 @@ func TestStreamInfoPrint_AlwaysEmit(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, key := range []string{
-		"name", "description", "retention", "partitions", "max_msgs", "max_age_sec",
+		"name", "description", "retention", "retention_tier", "partitions", "max_msgs", "max_age_sec",
 		"messages", "first_seq", "last_seq", "created_at", "subjects",
 	} {
 		if _, ok := emptyObj[key]; !ok {
 			t.Fatalf("missing always-emit key %q in %s", key, emptyJS)
 		}
 	}
-	if emptyObj["description"] != "" || emptyObj["retention"] != "" || emptyObj["created_at"] != "" {
+	if emptyObj["description"] != "" || emptyObj["retention"] != "" || emptyObj["retention_tier"] != "" || emptyObj["created_at"] != "" {
 		t.Fatalf("empty strings want \"\"; got %v", emptyObj)
 	}
 	if emptyObj["partitions"].(float64) != 0 || emptyObj["max_msgs"].(float64) != 0 || emptyObj["max_age_sec"].(float64) != 0 {
@@ -245,25 +274,23 @@ func TestStreamInfoPrint_AlwaysEmit(t *testing.T) {
 	if !ok || len(subs) != 0 {
 		t.Fatalf("subjects want []; got %v", emptyObj["subjects"])
 	}
-	if _, ok := emptyObj["retention_tier"]; ok {
-		t.Fatalf("must not invent retention_tier: %s", emptyJS)
-	}
 
-	// Populated knobs
+	// Populated knobs including retention_tier from wire (not invented from max_age)
 	max := int64(1000)
 	age := int64(3600)
 	pop := NewStreamInfoPrint(StreamInfo{
-		Name:        "EVENTS",
-		Description: "ops events",
-		Retention:   "limits",
-		Partitions:  2,
-		MaxMsgs:     &max,
-		MaxAgeSec:   &age,
-		Messages:    10,
-		FirstSeq:    1,
-		LastSeq:     10,
-		CreatedAt:   time.Date(2026, 7, 1, 12, 0, 0, 0, time.UTC),
-		Subjects:    []string{"dept.events.>"},
+		Name:          "EVENTS",
+		Description:   "ops events",
+		Retention:     "limits",
+		RetentionTier: "hot",
+		Partitions:    2,
+		MaxMsgs:       &max,
+		MaxAgeSec:     &age,
+		Messages:      10,
+		FirstSeq:      1,
+		LastSeq:       10,
+		CreatedAt:     time.Date(2026, 7, 1, 12, 0, 0, 0, time.UTC),
+		Subjects:      []string{"dept.events.>"},
 	})
 	popJS, err := json.Marshal(pop)
 	if err != nil {
@@ -273,7 +300,7 @@ func TestStreamInfoPrint_AlwaysEmit(t *testing.T) {
 	if err := json.Unmarshal(popJS, &popObj); err != nil {
 		t.Fatal(err)
 	}
-	if popObj["description"] != "ops events" || popObj["retention"] != "limits" {
+	if popObj["description"] != "ops events" || popObj["retention"] != "limits" || popObj["retention_tier"] != "hot" {
 		t.Fatalf("populated strings: %s", popJS)
 	}
 	if popObj["partitions"].(float64) != 2 || popObj["max_msgs"].(float64) != 1000 || popObj["max_age_sec"].(float64) != 3600 {
@@ -283,7 +310,7 @@ func TestStreamInfoPrint_AlwaysEmit(t *testing.T) {
 		t.Fatalf("created_at: %s", popJS)
 	}
 
-	// Wire StreamInfo still omitempty on empty optional knobs
+	// Wire StreamInfo still omitempty on empty optional knobs (including retention_tier)
 	wire, err := json.Marshal(StreamInfo{Name: "SPARSE"})
 	if err != nil {
 		t.Fatal(err)
@@ -292,17 +319,38 @@ func TestStreamInfoPrint_AlwaysEmit(t *testing.T) {
 	if strings.Contains(wireS, "retention") || strings.Contains(wireS, "max_msgs") || strings.Contains(wireS, "description") {
 		t.Fatalf("wire StreamInfo should omitempty empty optionals: %s", wireS)
 	}
+
+	// Wire decodes retention_tier when broker sends it; print maps as-is
+	wirePop, err := json.Marshal(StreamInfo{Name: "T", RetentionTier: "archive"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(wirePop), `"retention_tier":"archive"`) {
+		t.Fatalf("wire should include set retention_tier: %s", wirePop)
+	}
+	var decoded StreamInfo
+	if err := json.Unmarshal([]byte(`{"name":"T","retention_tier":"extended","max_age_sec":2592000}`), &decoded); err != nil {
+		t.Fatal(err)
+	}
+	if decoded.RetentionTier != "extended" {
+		t.Fatalf("decode retention_tier: %+v", decoded)
+	}
+	// max_age alone must not fill tier on print
+	ageOnly := NewStreamInfoPrint(StreamInfo{Name: "A", MaxAgeSec: &age})
+	if ageOnly.RetentionTier != "" {
+		t.Fatalf("must not invent tier from max_age: %+v", ageOnly)
+	}
 }
 
-// s699: FormatStreams always emits MAX_MSGS / MAX_AGE (0 when nil) + RETENTION.
+// s699/s702: FormatStreams always emits MAX_MSGS / MAX_AGE / RETENTION / TIER.
 func TestFormatStreams_AlwaysEmitRetentionColumns(t *testing.T) {
 	max := int64(5000)
 	age := int64(604800)
 	out := FormatStreams([]StreamInfo{
-		{Name: "TEMP", Messages: 1, FirstSeq: 1, LastSeq: 1, Partitions: 1, Retention: "limits"},
+		{Name: "TEMP", Messages: 1, FirstSeq: 1, LastSeq: 1, Partitions: 1, Retention: "limits", RetentionTier: "temp"},
 		{Name: "CAPPED", MaxMsgs: &max, MaxAgeSec: &age, Messages: 2, FirstSeq: 1, LastSeq: 2, Retention: "limits"},
 	})
-	for _, want := range []string{"MAX_MSGS", "MAX_AGE", "RETENTION", "TEMP", "CAPPED", "5000", "604800"} {
+	for _, want := range []string{"MAX_MSGS", "MAX_AGE", "RETENTION", "TIER", "TEMP", "CAPPED", "5000", "604800", "temp"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("missing %q in:\n%s", want, out)
 		}

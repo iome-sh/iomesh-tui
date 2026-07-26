@@ -989,10 +989,13 @@ func cmdMeshStreams(args []string) int {
 		return 1
 	}
 	if *jsonOut {
-		if streams == nil {
-			streams = []iomesh.StreamInfo{}
+		// s702: list --json always-emits retention knobs + retention_tier via print DTO
+		// (closes s699 half-gap that marshaled lean wire []StreamInfo).
+		printList := make([]iomesh.StreamInfoPrint, 0, len(streams))
+		for _, s := range streams {
+			printList = append(printList, iomesh.NewStreamInfoPrint(s))
 		}
-		b, err := json.MarshalIndent(streams, "", "  ")
+		b, err := json.MarshalIndent(printList, "", "  ")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "json: %v\n", err)
 			return 1
