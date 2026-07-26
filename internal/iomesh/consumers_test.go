@@ -342,6 +342,208 @@ func TestConsumerInfoPrint_JSONAlwaysEmitPullIdentity(t *testing.T) {
 	}
 }
 
+// s708: ConsumerFetchPrint JSON always-emits pull identity + knobs + count
+// without omitempty gaps; wire messages stay lean (no auth fields).
+func TestConsumerFetchPrint_JSONAlwaysEmitPullIdentity(t *testing.T) {
+	t.Parallel()
+
+	// Empty auth + nil messages → empty slice, count 0, blank identity.
+	emptyDTO := NewConsumerFetchPrint("EVENTS", "worker-1", "", "", 1, 2000, nil)
+	emptyJS, err := json.Marshal(emptyDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var emptyObj map[string]any
+	if err := json.Unmarshal(emptyJS, &emptyObj); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{
+		"stream", "name", "pull_role", "pull_allow_suffix",
+		"batch", "max_wait_ms", "count", "messages",
+	} {
+		if _, ok := emptyObj[key]; !ok {
+			t.Fatalf("empty json missing key %q: %s", key, emptyJS)
+		}
+	}
+	if emptyObj["pull_role"] != "" || emptyObj["pull_allow_suffix"] != "" {
+		t.Fatalf("empty identity want \"\"; got pull_role=%v pull_allow_suffix=%v\n%s",
+			emptyObj["pull_role"], emptyObj["pull_allow_suffix"], emptyJS)
+	}
+	if emptyObj["stream"] != "EVENTS" || emptyObj["name"] != "worker-1" {
+		t.Fatalf("identity stream/name: %s", emptyJS)
+	}
+	if emptyObj["batch"] != float64(1) || emptyObj["max_wait_ms"] != float64(2000) {
+		t.Fatalf("knobs: %s", emptyJS)
+	}
+	if emptyObj["count"] != float64(0) {
+		t.Fatalf("count want 0: %s", emptyJS)
+	}
+	msgs, ok := emptyObj["messages"].([]any)
+	if !ok || len(msgs) != 0 {
+		t.Fatalf("messages want empty array: %s", emptyJS)
+	}
+
+	// Populated role/suffix + one message.
+	popMsgs := []StreamMessage{
+		{Stream: "EVENTS", Seq: 7, Subject: "dept.events.hello", Payload: []byte("hi")},
+	}
+	popDTO := NewConsumerFetchPrint("EVENTS", "agent-1", "agent", "ops", 5, 2000, popMsgs)
+	popJS, err := json.Marshal(popDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var popObj map[string]any
+	if err := json.Unmarshal(popJS, &popObj); err != nil {
+		t.Fatal(err)
+	}
+	if popObj["pull_role"] != "agent" || popObj["pull_allow_suffix"] != "ops" {
+		t.Fatalf("populated pull identity: %v %v\n%s", popObj["pull_role"], popObj["pull_allow_suffix"], popJS)
+	}
+	if popObj["count"] != float64(1) || popObj["batch"] != float64(5) {
+		t.Fatalf("count/batch: %s", popJS)
+	}
+	// custom + multi-suffix still always present as strings.
+	customDTO := NewConsumerFetchPrint("S", "c", "custom", "ops,memory", 1, 500, []StreamMessage{})
+	customJS, err := json.Marshal(customDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(customJS), `"pull_role":"custom"`) ||
+		!strings.Contains(string(customJS), `"pull_allow_suffix":"ops,memory"`) {
+		t.Fatalf("custom role/suffix: %s", customJS)
+	}
+
+	// Wire StreamMessage slice JSON still has no pull_role (print DTO is separate).
+	wire, err := json.Marshal([]StreamMessage{{Seq: 1, Subject: "s"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(wire), "pull_role") {
+		t.Fatalf("wire []StreamMessage should not carry pull_role: %s", wire)
+	}
+}
+
+// s708: FormatConsumerFetch always-emits pull identity + knobs + count (empty or populated).
+func TestFormatConsumerFetch_AlwaysEmitPullIdentity(t *testing.T) {
+	t.Parallel()
+
+	empty := FormatConsumerFetch(NewConsumerFetchPrint("EVENTS", "c", "", "", 1, 2000, nil))
+	for _, want := range []string{
+		"iomesh consumer fetch\n",
+		"stream:            EVENTS\n",
+		"name:              c\n",
+		"pull_role:         \n",
+		"pull_allow_suffix: \n",
+		"batch:             1\n",
+		"max_wait_ms:       2000\n",
+		"count:             0\n",
+		"name=EVENTS/c count=0",
+	} {
+		if !strings.Contains(empty, want) {
+			t.Fatalf("empty missing %q in:\n%q", want, empty)
+		}
+	}
+	// Order: stream → name → pull_role → pull_allow_suffix
+	sIdx := strings.Index(empty, "stream:")
+	nIdx := strings.Index(empty, "name:")
+	prIdx := strings.Index(empty, "pull_role:")
+	psIdx := strings.Index(empty, "pull_allow_suffix:")
+	if sIdx < 0 || nIdx < 0 || prIdx < 0 || psIdx < 0 || !(sIdx < nIdx && nIdx < prIdx && prIdx < psIdx) {
+		t.Fatalf("identity order want stream < name < pull_role < pull_allow_suffix:\n%s", empty)
+	}
+
+	pop := FormatConsumerFetch(NewConsumerFetchPrint(
+		"EVENTS", "agent-1", "memory", "ops",
+		5, 2000,
+		[]StreamMessage{{Seq: 3, Subject: "dept.events.x", Payload: []byte("body")}},
+	))
+	for _, want := range []string{
+		"pull_role:         memory\n",
+		"pull_allow_suffix: ops\n",
+		"batch:             5\n",
+		"count:             1\n",
+		"dept.events.x",
+	} {
+		if !strings.Contains(pop, want) {
+			t.Fatalf("populated missing %q in:\n%s", want, pop)
+		}
+	}
+}
+
+// s708: ConsumerDeletePrint JSON always-emits {ok,stream,name,pull_role,pull_allow_suffix}.
+func TestConsumerDeletePrint_JSONAlwaysEmitPullIdentity(t *testing.T) {
+	t.Parallel()
+
+	emptyDTO := NewConsumerDeletePrint("EVENTS", "worker-1", "", "")
+	emptyJS, err := json.Marshal(emptyDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var emptyObj map[string]any
+	if err := json.Unmarshal(emptyJS, &emptyObj); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"ok", "stream", "name", "pull_role", "pull_allow_suffix"} {
+		if _, ok := emptyObj[key]; !ok {
+			t.Fatalf("empty json missing key %q: %s", key, emptyJS)
+		}
+	}
+	if emptyObj["ok"] != true {
+		t.Fatalf("ok want true: %s", emptyJS)
+	}
+	if emptyObj["pull_role"] != "" || emptyObj["pull_allow_suffix"] != "" {
+		t.Fatalf("empty identity want \"\"; got %v %v\n%s",
+			emptyObj["pull_role"], emptyObj["pull_allow_suffix"], emptyJS)
+	}
+	if emptyObj["stream"] != "EVENTS" || emptyObj["name"] != "worker-1" {
+		t.Fatalf("stream/name: %s", emptyJS)
+	}
+
+	popDTO := NewConsumerDeletePrint("EVENTS", "agent-1", "agent", "ops")
+	popJS, err := json.Marshal(popDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var popObj map[string]any
+	if err := json.Unmarshal(popJS, &popObj); err != nil {
+		t.Fatal(err)
+	}
+	if popObj["pull_role"] != "agent" || popObj["pull_allow_suffix"] != "ops" || popObj["ok"] != true {
+		t.Fatalf("populated: %s", popJS)
+	}
+
+	// Format helpers round-trip keys for scrapers.
+	formatted := FormatConsumerDeleteJSON(popDTO)
+	if !strings.Contains(formatted, `"pull_role": "agent"`) ||
+		!strings.Contains(formatted, `"pull_allow_suffix": "ops"`) {
+		t.Fatalf("FormatConsumerDeleteJSON: %s", formatted)
+	}
+}
+
+// s708: FormatConsumerDelete always-emits pull identity (empty or populated).
+func TestFormatConsumerDelete_AlwaysEmitPullIdentity(t *testing.T) {
+	t.Parallel()
+
+	empty := FormatConsumerDelete(NewConsumerDeletePrint("EVENTS", "c", "", ""))
+	for _, want := range []string{
+		"PASS mesh consumer delete\n",
+		"stream:            EVENTS\n",
+		"name:              c\n",
+		"pull_role:         \n",
+		"pull_allow_suffix: \n",
+	} {
+		if !strings.Contains(empty, want) {
+			t.Fatalf("empty missing %q in:\n%q", want, empty)
+		}
+	}
+
+	pop := FormatConsumerDelete(NewConsumerDeletePrint("S", "mem-1", "custom", "ops,memory"))
+	if !strings.Contains(pop, "pull_role:         custom\n") ||
+		!strings.Contains(pop, "pull_allow_suffix: ops,memory\n") {
+		t.Fatalf("populated:\n%s", pop)
+	}
+}
+
 // s684: ResolveMeshPullAuth is the pure flag>config path for fetch/ack/nack/delete (and create).
 func TestResolveMeshPullAuth(t *testing.T) {
 	t.Parallel()

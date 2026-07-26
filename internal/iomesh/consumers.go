@@ -384,3 +384,124 @@ func FormatConsumerInfoWithAuth(info ConsumerInfo, role, allowSuffix string) str
 	fmt.Fprintf(&b, "pull_allow_suffix: %s\n", allowSuffix)
 	return b.String()
 }
+
+// ConsumerFetchPrint is a CLI-side print DTO for mesh consumer fetch JSON.
+// Always emits stream/name (consumer), pull_role / pull_allow_suffix (empty
+// string honest when unset), batch / max_wait_ms knobs, count, and messages
+// so CI scrapers can key stable pull identity without omitempty gaps. Wire
+// []StreamMessage stays lean (no auth fields).
+//
+// s708: peer create FormatConsumerInfo s696 + memory-pull s705 continuum;
+// peer aion s707 gate completeness. Beta · offline unit ≠ live APPLY · empty
+// role honest · dual_write OFF · not full mesh RBAC GA · does not invent
+// fetch success from identity fields alone.
+type ConsumerFetchPrint struct {
+	Stream          string          `json:"stream"`
+	Name            string          `json:"name"`
+	PullRole        string          `json:"pull_role"`
+	PullAllowSuffix string          `json:"pull_allow_suffix"`
+	Batch           int             `json:"batch"`
+	MaxWaitMS       int             `json:"max_wait_ms"`
+	Count           int             `json:"count"`
+	Messages        []StreamMessage `json:"messages"`
+}
+
+// NewConsumerFetchPrint builds a fetch print DTO from resolved fetch identity
+// (s684 role/suffix), knobs, and wire messages. Nil msgs becomes empty slice;
+// Count is always len(messages). Empty role/suffix always emit as "".
+func NewConsumerFetchPrint(stream, name, role, allowSuffix string, batch, maxWaitMS int, msgs []StreamMessage) ConsumerFetchPrint {
+	if msgs == nil {
+		msgs = []StreamMessage{}
+	}
+	return ConsumerFetchPrint{
+		Stream:          stream,
+		Name:            name,
+		PullRole:        role,
+		PullAllowSuffix: allowSuffix,
+		Batch:           batch,
+		MaxWaitMS:       maxWaitMS,
+		Count:           len(msgs),
+		Messages:        msgs,
+	}
+}
+
+// FormatConsumerFetch is a multi-line operator view for mesh consumer fetch
+// (s708). Always emits pull identity + knobs + count, then the message table
+// (FormatStreamMessages). Pure helper; no I/O. Does not invent success from
+// identity — messages/count come from the fetch result only.
+func FormatConsumerFetch(p ConsumerFetchPrint) string {
+	var b strings.Builder
+	b.WriteString("iomesh consumer fetch\n")
+	fmt.Fprintf(&b, "stream:            %s\n", p.Stream)
+	fmt.Fprintf(&b, "name:              %s\n", p.Name)
+	fmt.Fprintf(&b, "pull_role:         %s\n", p.PullRole)
+	fmt.Fprintf(&b, "pull_allow_suffix: %s\n", p.PullAllowSuffix)
+	fmt.Fprintf(&b, "batch:             %d\n", p.Batch)
+	fmt.Fprintf(&b, "max_wait_ms:       %d\n", p.MaxWaitMS)
+	fmt.Fprintf(&b, "count:             %d\n", p.Count)
+	label := p.Stream + "/" + p.Name
+	b.WriteString(FormatStreamMessages(label, p.Messages))
+	return b.String()
+}
+
+// FormatConsumerFetchJSON returns indented JSON for stage CI / scrapers.
+// Always emits all ConsumerFetchPrint fields without omitempty gaps.
+func FormatConsumerFetchJSON(p ConsumerFetchPrint) string {
+	b, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return `{"error":"consumer fetch json marshal failed"}` + "\n"
+	}
+	return string(b) + "\n"
+}
+
+// ConsumerDeletePrint is a CLI-side print DTO for mesh consumer delete JSON.
+// Always emits ok / stream / name / pull_role / pull_allow_suffix (empty string
+// honest when unset) so scrapers see pull identity on delete success without
+// omitempty gaps.
+//
+// s708: peer create FormatConsumerInfo s696 + fetch identity continuum; peer
+// aion s707. Beta · offline unit ≠ live APPLY · empty role honest · dual_write
+// OFF · not full mesh RBAC GA · does not invent delete success from identity.
+type ConsumerDeletePrint struct {
+	OK              bool   `json:"ok"`
+	Stream          string `json:"stream"`
+	Name            string `json:"name"`
+	PullRole        string `json:"pull_role"`
+	PullAllowSuffix string `json:"pull_allow_suffix"`
+}
+
+// NewConsumerDeletePrint builds a delete success print DTO with always-emit
+// pull identity from resolved s684 auth. OK is always true (call only after
+// DeleteConsumer returns nil).
+func NewConsumerDeletePrint(stream, name, role, allowSuffix string) ConsumerDeletePrint {
+	return ConsumerDeletePrint{
+		OK:              true,
+		Stream:          stream,
+		Name:            name,
+		PullRole:        role,
+		PullAllowSuffix: allowSuffix,
+	}
+}
+
+// FormatConsumerDelete is a multi-line operator view for mesh consumer delete
+// success (s708). Always emits pull_role / pull_allow_suffix (empty when unset)
+// next to stream/name. Pure helper; no I/O.
+func FormatConsumerDelete(p ConsumerDeletePrint) string {
+	var b strings.Builder
+	b.WriteString("PASS mesh consumer delete\n")
+	fmt.Fprintf(&b, "stream:            %s\n", p.Stream)
+	fmt.Fprintf(&b, "name:              %s\n", p.Name)
+	fmt.Fprintf(&b, "pull_role:         %s\n", p.PullRole)
+	fmt.Fprintf(&b, "pull_allow_suffix: %s\n", p.PullAllowSuffix)
+	return b.String()
+}
+
+// FormatConsumerDeleteJSON returns indented JSON for stage CI / scrapers.
+// Always emits all ConsumerDeletePrint fields without omitempty gaps.
+func FormatConsumerDeleteJSON(p ConsumerDeletePrint) string {
+	b, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return `{"error":"consumer delete json marshal failed"}` + "\n"
+	}
+	return string(b) + "\n"
+}

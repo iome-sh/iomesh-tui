@@ -212,6 +212,8 @@ Lean consumer surface (no SDK dependency; wire parity with SDK `CreateConsumer` 
 | `DeleteConsumer(stream, name)` | `DELETE .../consumers/{name}` | Path-escaped stream+name; **204/2xx** success; empty stream/name / non-2xx → error |
 | `FormatConsumerInfo` / `FormatConsumerInfoWithAuth` | — | multi-line operator view; always emits `filter_subject` / `pull_role` / `pull_allow_suffix` (empty when unset; s696) |
 | `NewConsumerInfoPrint` | — | CLI create JSON DTO with always-emit pull identity (does not pollute wire `ConsumerInfo`) |
+| `NewConsumerFetchPrint` / `FormatConsumerFetch` | — | CLI fetch text/JSON envelope; always emits `stream` / `name` / `pull_role` / `pull_allow_suffix` / `batch` / `max_wait_ms` / `count` / `messages` (s708; empty role honest) |
+| `NewConsumerDeletePrint` / `FormatConsumerDelete` | — | CLI delete text/JSON; always emits `{ok,stream,name,pull_role,pull_allow_suffix}` (s708) |
 
 ```bash
 iomesh mesh consumer create --stream EVENTS --name worker-1 --yes
@@ -227,7 +229,7 @@ iomesh mesh consumer delete --stream EVENTS --name worker-1 --yes
 iomesh mesh consumer delete --stream EVENTS --name worker-1 --yes --json
 ```
 
-Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 already-exists → success). Optional `--role` / `--pull-allow-suffix` (or `[memory].pull_role` / `pull_allow_suffix`) set auth headers on create (s681), fetch (s684; aion validates role on fetch), and ack/nack/delete (defense-in-depth); empty `--filter` on create gets role-aware default via `DefaultMemoryPullFilterForRole` (s681 / s678 / s687 — `memory` → `tenant.memory.>`). **s696:** create text (`FormatConsumerInfoWithAuth`) and JSON (`ConsumerInfoPrint`) always emit `pull_role` / `pull_allow_suffix` next to `filter_subject` (empty when unset) so CI scrapers see pull auth identity without omitempty gaps. **Beta** federated ACL — fail-open without role; dual_write default OFF; not full mesh RBAC GA; peer aion s695/s686 continuum. Fetch long-polls up to 2s. Ack/nack require at least one `--seq` (repeatable; CSV ok). Delete prints `PASS ...` (or `{"ok":true,"stream":"...","name":"..."}` with `--json`). Mesh disabled → error `mesh disabled` (non-zero CLI exit). Soft consumer probe in dogfood always-emits `pull_role` / `pull_allow_suffix` identity (s687).
+Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 already-exists → success). Optional `--role` / `--pull-allow-suffix` (or `[memory].pull_role` / `pull_allow_suffix`) set auth headers on create (s681), fetch (s684; aion validates role on fetch), and ack/nack/delete (defense-in-depth); empty `--filter` on create gets role-aware default via `DefaultMemoryPullFilterForRole` (s681 / s678 / s687 — `memory` → `tenant.memory.>`). **s696:** create text (`FormatConsumerInfoWithAuth`) and JSON (`ConsumerInfoPrint`) always emit `pull_role` / `pull_allow_suffix` next to `filter_subject` (empty when unset) so CI scrapers see pull auth identity without omitempty gaps. **s708:** fetch text/JSON (`ConsumerFetchPrint`) always emits pull identity + knobs (`batch` / `max_wait_ms`) + `count` + `messages` (not raw `[]StreamMessage`); delete text/JSON (`ConsumerDeletePrint`) always emits `{ok,stream,name,pull_role,pull_allow_suffix}` (empty role honest). Peer create s696 + memory-pull s705; peer aion s707 gate completeness. **Beta** federated ACL — fail-open without role; dual_write default OFF; not full mesh RBAC GA; offline unit ≠ live APPLY; does not invent fetch/delete success from identity. Fetch long-polls up to 2s. Ack/nack require at least one `--seq` (repeatable; CSV ok). Mesh disabled → error `mesh disabled` (non-zero CLI exit). Soft consumer probe in dogfood always-emits `pull_role` / `pull_allow_suffix` identity (s687).
 
 ## Packages
 
@@ -237,7 +239,7 @@ Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 alread
 - `internal/iomesh/catalog.go` — ListCatalog / FormatCatalog / CatalogSnippet
 - `internal/iomesh/streams.go` — ListStreams / GetStream / DeleteStream / FormatStreams
 - `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages
-- `internal/iomesh/consumers.go` — CreateConsumer / ConsumerFetch / ConsumerAck / ConsumerNack / DeleteConsumer / FormatConsumerInfo / FormatConsumerInfoWithAuth / NewConsumerInfoPrint
+- `internal/iomesh/consumers.go` — CreateConsumer / ConsumerFetch / ConsumerAck / ConsumerNack / DeleteConsumer / FormatConsumerInfo / FormatConsumerInfoWithAuth / NewConsumerInfoPrint / NewConsumerFetchPrint / FormatConsumerFetch / NewConsumerDeletePrint / FormatConsumerDelete
 - `internal/iomesh/kv.go` — KVGet / KVListKeys / KVPut / KVDelete / KVCreateBucket / FormatKVEntry / FormatKVKeys / FormatKVBucketInfo
 - `internal/iomesh/pub.go` — Pub (ephemeral `POST /v1/pub`)
 - `internal/agent` — policy before tool execute; mesh catalog tools; `EventMeshPolicy`

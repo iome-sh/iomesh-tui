@@ -1042,9 +1042,11 @@ Create: POST /v1/streams/{stream}/consumers (201 full info; 409 idempotent name-
   Beta; fail-open; dual_write default OFF; not full mesh RBAC GA.
 Fetch:  POST /v1/streams/{stream}/consumers/{name}/fetch (default batch=1, max_wait 2s).
   Same --role / --pull-allow-suffix headers (s684; aion validates role on fetch). Fail-open empty.
+  Text/JSON always-emit pull identity + knobs + count + messages (s708 ConsumerFetchPrint; empty role honest).
 Ack:    POST .../consumers/{name}/ack body {"seqs":[...]} (prints optional ack_floor).
 Nack:   POST .../consumers/{name}/nack body {"seqs":[...]} (prints optional ack_floor).
 Delete: DELETE .../consumers/{name} (204/2xx success).
+  Text/JSON always-emit {ok,stream,name,pull_role,pull_allow_suffix} (s708; empty role honest).
   Ack/nack/delete also accept --role / --pull-allow-suffix for defense-in-depth auth headers.
 All require --yes (mutating).`)
 		return 0
@@ -1184,7 +1186,7 @@ func cmdMeshConsumerDelete(args []string) int {
 		role            = fs.String("role", "", "optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|memory|custom); [memory].pull_role")
 		pullAllowSuffix = fs.String("pull-allow-suffix", "", "optional X-IOMesh-Pull-Allow-Suffix (comma tokens; role=custom); [memory].pull_allow_suffix")
 		yes             = fs.Bool("yes", false, "confirm mutating delete (required)")
-		jsonOut         = fs.Bool("json", false, "print {ok,stream,name} as JSON")
+		jsonOut         = fs.Bool("json", false, "print ConsumerDeletePrint JSON (always-emits pull_role / pull_allow_suffix)")
 		verbose         = fs.Bool("v", false, "verbose logs")
 		endpoint        = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
 		tenant          = fs.String("tenant", "", "override tenant")
@@ -1197,6 +1199,7 @@ func cmdMeshConsumerDelete(args []string) int {
 	if streamName == "" || consumerName == "" || !*yes {
 		fmt.Fprintln(os.Stderr, "usage: iomesh mesh consumer delete --stream S --name C [--role R] [--pull-allow-suffix S] --yes [--json]")
 		fmt.Fprintln(os.Stderr, "  --stream and --name required; --yes required (mutating)")
+		fmt.Fprintln(os.Stderr, "  text/JSON always-emit pull_role / pull_allow_suffix (s708; empty when unset)")
 		return 2
 	}
 
@@ -1236,20 +1239,13 @@ func cmdMeshConsumerDelete(args []string) int {
 		fmt.Fprintf(os.Stderr, "FAIL mesh consumer delete: %v\n", err)
 		return 1
 	}
+	// s708: always-emit pull identity on delete success (peer create s696 / fetch print DTO).
+	printDTO := iomesh.NewConsumerDeletePrint(streamName, consumerName, pullRole, allowSuffix)
 	if *jsonOut {
-		b, err := json.MarshalIndent(map[string]any{
-			"ok":     true,
-			"stream": streamName,
-			"name":   consumerName,
-		}, "", "  ")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "json: %v\n", err)
-			return 1
-		}
-		fmt.Println(string(b))
+		fmt.Print(iomesh.FormatConsumerDeleteJSON(printDTO))
 		return 0
 	}
-	fmt.Printf("PASS mesh consumer delete stream=%s name=%s\n", streamName, consumerName)
+	fmt.Print(iomesh.FormatConsumerDelete(printDTO))
 	return 0
 }
 
@@ -1354,7 +1350,7 @@ func cmdMeshConsumerFetch(args []string) int {
 		role            = fs.String("role", "", "optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|memory|custom); [memory].pull_role")
 		pullAllowSuffix = fs.String("pull-allow-suffix", "", "optional X-IOMesh-Pull-Allow-Suffix (comma tokens; role=custom); [memory].pull_allow_suffix")
 		yes             = fs.Bool("yes", false, "confirm mutating fetch (required)")
-		jsonOut         = fs.Bool("json", false, "print messages as JSON")
+		jsonOut         = fs.Bool("json", false, "print ConsumerFetchPrint JSON (always-emits pull_role / pull_allow_suffix)")
 		verbose         = fs.Bool("v", false, "verbose logs")
 		endpoint        = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
 		tenant          = fs.String("tenant", "", "override tenant")
@@ -1367,6 +1363,7 @@ func cmdMeshConsumerFetch(args []string) int {
 	if streamName == "" || consumerName == "" || !*yes {
 		fmt.Fprintln(os.Stderr, "usage: iomesh mesh consumer fetch --stream S --name C [--batch N] [--role R] [--pull-allow-suffix S] --yes [--json]")
 		fmt.Fprintln(os.Stderr, "  --stream and --name required; --yes required (long-poll mutate)")
+		fmt.Fprintln(os.Stderr, "  text/JSON always-emit pull_role / pull_allow_suffix + knobs + count (s708; empty when unset)")
 		return 2
 	}
 	if *batch <= 0 {
@@ -1406,30 +1403,27 @@ func cmdMeshConsumerFetch(args []string) int {
 	if pullRole != "" || allowSuffix != "" {
 		fmt.Fprintf(os.Stderr, "mesh consumer fetch role=%q pull_allow_suffix=%q\n", pullRole, allowSuffix)
 	}
+	// Default long-poll budget (matches ConsumerFetch maxWait default path).
+	const maxWait = 2 * time.Second
+	maxWaitMS := int(maxWait / time.Millisecond)
 	// Allow slightly more than the 2s long-poll budget.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	msgs, err := mesh.ConsumerFetch(ctx, streamName, consumerName, *batch, 2*time.Second)
+	msgs, err := mesh.ConsumerFetch(ctx, streamName, consumerName, *batch, maxWait)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "FAIL mesh consumer fetch: %v\n", err)
 		return 1
 	}
-	if msgs == nil {
-		msgs = []iomesh.StreamMessage{}
-	}
+	// s708: print DTO always-emits pull identity + knobs + count (not raw []StreamMessage).
+	printDTO := iomesh.NewConsumerFetchPrint(streamName, consumerName, pullRole, allowSuffix, *batch, maxWaitMS, msgs)
 	if *jsonOut {
-		b, err := json.MarshalIndent(msgs, "", "  ")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "json: %v\n", err)
-			return 1
-		}
-		fmt.Println(string(b))
+		fmt.Print(iomesh.FormatConsumerFetchJSON(printDTO))
 		return 0
 	}
-	fmt.Print(iomesh.FormatStreamMessages(streamName+"/"+consumerName, msgs))
+	fmt.Print(iomesh.FormatConsumerFetch(printDTO))
 	return 0
 }
 
