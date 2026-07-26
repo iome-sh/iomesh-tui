@@ -1990,6 +1990,7 @@ Flags (pull):
   --dry-run             map messages only (no MCP ingest); still acks when --ack
   --no-ack              do not ack after ingest (default: ack)
   --yes                 confirm mutating pull loop (required unless --dry-run)
+  --json                print MemoryPullStatsPrint JSON (always-emits identity + knobs + counters)
   --endpoint url        override IOMESH_ENDPOINT
   --mcp-server name     MCP server name for memory tools (default memory)
   --role R              optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|memory|custom); [memory].pull_role
@@ -1999,6 +2000,8 @@ Flags (pull):
 Honesty: dual_write remains optional audit (default OFF). Hosted Palace sunset until scale.
   Role/suffix headers are Beta federated ACL (s675); role-aware default filter is s678/s687 Beta —
   memory → tenant.memory.> (peer aion s686); fail-open when empty — not full IdP RBAC GA.
+  s705: PASS/summary and --json always emit stream/consumer/filter_subject/pull_role/pull_allow_suffix/tenant
+  + knobs (dry_run/dual_write/batch/max_wait_ms/once) + counters; empty identity honest; peer aion s704.
 `)
 		return 0
 	default:
@@ -2022,6 +2025,7 @@ func cmdMemoryPull(args []string) int {
 		dryRun          = fs.Bool("dry-run", false, "map only; no MCP local ingest")
 		noAck           = fs.Bool("no-ack", false, "do not ack after success")
 		yes             = fs.Bool("yes", false, "confirm mutating pull (required unless --dry-run)")
+		jsonOut         = fs.Bool("json", false, "print MemoryPullStatsPrint JSON (always-emits identity + knobs + counters)")
 		endpoint        = fs.String("endpoint", "", "override mesh endpoint")
 		mcpServer       = fs.String("mcp-server", "", "MCP memory server name")
 		role            = fs.String("role", "", "optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|memory|custom)")
@@ -2130,6 +2134,19 @@ func cmdMemoryPull(args []string) int {
 	fmt.Fprintf(os.Stderr, "memory pull filter_subject=%q tenant=%q role=%q pull_allow_suffix=%q\n",
 		filterSub, pullTenant, pullRole, allowSuffix)
 
+	// s705: print meta for always-emit identity + knobs (stdout PASS/summary + --json).
+	// dual_write is report-only from [memory].dual_write (default OFF); does not gate pull.
+	printMeta := iomesh.MemoryPullPrintMeta{
+		Tenant:          pullTenant,
+		PullRole:        pullRole,
+		PullAllowSuffix: allowSuffix,
+		DryRun:          *dryRun,
+		DualWrite:       cfg.Memory.DualWrite,
+		Batch:           batchN,
+		MaxWaitMS:       int(wait / time.Millisecond),
+		Once:            *once,
+	}
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -2201,16 +2218,34 @@ func cmdMemoryPull(args []string) int {
 	}
 
 	st, err := mesh.RunMemoryPull(ctx, opt)
+	// Seed identity on stats when create failed early (st may be partial).
+	if st.Stream == "" {
+		st.Stream = streamName
+	}
+	if st.Consumer == "" {
+		st.Consumer = consumerName
+	}
+	if st.Filter == "" {
+		st.Filter = filterSub
+	}
+	printDTO := iomesh.NewMemoryPullStatsPrint(st, printMeta)
+
 	if err != nil && ctx.Err() == nil {
-		fmt.Fprintf(os.Stderr, "FAIL memory pull: %v\n", err)
-		fmt.Fprintf(os.Stderr, "stats loops=%d fetched=%d ingested=%d skipped=%d acked=%d errors=%d\n",
-			st.Loops, st.Fetched, st.Ingested, st.Skipped, st.Acked, st.Errors)
+		if *jsonOut {
+			// JSON still always-emits identity + counters; error detail on stderr.
+			fmt.Fprint(os.Stdout, iomesh.FormatMemoryPullStatsJSON(printDTO))
+			fmt.Fprintf(os.Stderr, "FAIL memory pull: %v\n", err)
+		} else {
+			fmt.Fprint(os.Stdout, iomesh.FormatMemoryPullStats(printDTO, false, err.Error()))
+		}
 		return 1
 	}
-	fmt.Printf("PASS memory pull stream=%s consumer=%s create_ok=%v loops=%d fetched=%d ingested=%d skipped=%d acked=%d errors=%d dry_run=%v\n",
-		st.Stream, st.Consumer, st.CreateOK, st.Loops, st.Fetched, st.Ingested, st.Skipped, st.Acked, st.Errors, *dryRun)
-	if st.LastError != "" && st.Errors > 0 {
-		fmt.Fprintf(os.Stderr, "last_error=%s\n", st.LastError)
+	// Summary always-emits identity (s705). Soft-fail (errors, zero ingest) still
+	// prints PASS/summary with counters + last_error and exits 1 (pre-s705 honesty).
+	if *jsonOut {
+		fmt.Fprint(os.Stdout, iomesh.FormatMemoryPullStatsJSON(printDTO))
+	} else {
+		fmt.Fprint(os.Stdout, iomesh.FormatMemoryPullStats(printDTO, true, ""))
 	}
 	if st.Errors > 0 && st.Ingested == 0 && !*dryRun {
 		return 1

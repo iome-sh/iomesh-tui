@@ -41,6 +41,133 @@ type MemoryPullStats struct {
 	Filter    string // effective filter_subject passed to CreateConsumer
 }
 
+// MemoryPullStatsPrint is a CLI-side print DTO for `iomesh memory pull` text/JSON.
+// Always emits identity + knobs + counters without omitempty so CI scrapers can key
+// stable fields (empty string / false / 0 honest when unset). Separate from
+// MemoryPullStats so the runtime stats shape stays lean.
+//
+// s705: peer create FormatConsumerInfo s696 + status/wait pull identity continuum;
+// peer aion s704 sales claim suite/retention honesty. Beta · offline unit ≠ live
+// APPLY · dual_write default OFF (report-only) · fail-open empty role/tenant ·
+// not full mesh RBAC GA · does not invent pull success from identity fields alone.
+type MemoryPullStatsPrint struct {
+	// Identity (always emit; empty string when unset).
+	Stream          string `json:"stream"`
+	Consumer        string `json:"consumer"`
+	FilterSubject   string `json:"filter_subject"`
+	PullRole        string `json:"pull_role"`
+	PullAllowSuffix string `json:"pull_allow_suffix"`
+	Tenant          string `json:"tenant"`
+	// Knobs (always emit).
+	DryRun    bool `json:"dry_run"`
+	DualWrite bool `json:"dual_write"` // report-only from [memory].dual_write; default false
+	Batch     int  `json:"batch"`
+	MaxWaitMS int  `json:"max_wait_ms"`
+	Once      bool `json:"once"`
+	// Counters (always emit).
+	CreateOK  bool   `json:"create_ok"`
+	Loops     int    `json:"loops"`
+	Fetched   int    `json:"fetched"`
+	Ingested  int    `json:"ingested"`
+	Skipped   int    `json:"skipped"`
+	Acked     int    `json:"acked"`
+	Errors    int    `json:"errors"`
+	LastError string `json:"last_error"` // empty when none
+}
+
+// MemoryPullPrintMeta holds pull identity + knobs that are not on MemoryPullStats
+// (resolved CLI/config auth, dual_write mode, batch/wait/once). Used by
+// NewMemoryPullStatsPrint so scrapers always see the same surface as stderr start log.
+type MemoryPullPrintMeta struct {
+	Tenant          string
+	PullRole        string
+	PullAllowSuffix string
+	DryRun          bool
+	DualWrite       bool // report-only; does not gate pull
+	Batch           int
+	MaxWaitMS       int
+	Once            bool
+}
+
+// NewMemoryPullStatsPrint builds a print DTO from runtime stats + resolved meta.
+// Empty identity strings and zero knobs are always present (not omitted on marshal).
+// Does not invent success from identity: counters come from st only.
+// FilterSubject is st.Filter (effective filter_subject passed to CreateConsumer).
+func NewMemoryPullStatsPrint(st MemoryPullStats, meta MemoryPullPrintMeta) MemoryPullStatsPrint {
+	return MemoryPullStatsPrint{
+		Stream:          st.Stream,
+		Consumer:        st.Consumer,
+		FilterSubject:   st.Filter,
+		PullRole:        meta.PullRole,
+		PullAllowSuffix: meta.PullAllowSuffix,
+		Tenant:          meta.Tenant,
+		DryRun:          meta.DryRun,
+		DualWrite:       meta.DualWrite,
+		Batch:           meta.Batch,
+		MaxWaitMS:       meta.MaxWaitMS,
+		Once:            meta.Once,
+		CreateOK:        st.CreateOK,
+		Loops:           st.Loops,
+		Fetched:         st.Fetched,
+		Ingested:        st.Ingested,
+		Skipped:         st.Skipped,
+		Acked:           st.Acked,
+		Errors:          st.Errors,
+		LastError:       st.LastError,
+	}
+}
+
+// FormatMemoryPullStats renders memory pull outcome as multi-line operator text.
+// Always emits identity (stream/consumer/filter_subject/pull_role/pull_allow_suffix/tenant),
+// knobs (dry_run/dual_write/batch/max_wait_ms/once), and counters including last_error
+// (empty when none) so scrapers do not rely only on stderr start log. Pure helper; no I/O.
+//
+// ok=true → PASS header; ok=false → FAIL header (errMsg optional detail; empty uses last_error).
+func FormatMemoryPullStats(p MemoryPullStatsPrint, ok bool, errMsg string) string {
+	var b strings.Builder
+	if ok {
+		b.WriteString("PASS memory pull\n")
+	} else {
+		if strings.TrimSpace(errMsg) == "" {
+			errMsg = p.LastError
+		}
+		if strings.TrimSpace(errMsg) == "" {
+			errMsg = "unknown error"
+		}
+		fmt.Fprintf(&b, "FAIL memory pull: %s\n", errMsg)
+	}
+	fmt.Fprintf(&b, "stream:            %s\n", p.Stream)
+	fmt.Fprintf(&b, "consumer:          %s\n", p.Consumer)
+	fmt.Fprintf(&b, "filter_subject:    %s\n", p.FilterSubject)
+	fmt.Fprintf(&b, "pull_role:         %s\n", p.PullRole)
+	fmt.Fprintf(&b, "pull_allow_suffix: %s\n", p.PullAllowSuffix)
+	fmt.Fprintf(&b, "tenant:            %s\n", p.Tenant)
+	fmt.Fprintf(&b, "dry_run:           %t\n", p.DryRun)
+	fmt.Fprintf(&b, "dual_write:        %t\n", p.DualWrite)
+	fmt.Fprintf(&b, "batch:             %d\n", p.Batch)
+	fmt.Fprintf(&b, "max_wait_ms:       %d\n", p.MaxWaitMS)
+	fmt.Fprintf(&b, "once:              %t\n", p.Once)
+	fmt.Fprintf(&b, "create_ok:         %t\n", p.CreateOK)
+	fmt.Fprintf(&b, "loops:             %d\n", p.Loops)
+	fmt.Fprintf(&b, "fetched:           %d\n", p.Fetched)
+	fmt.Fprintf(&b, "ingested:          %d\n", p.Ingested)
+	fmt.Fprintf(&b, "skipped:           %d\n", p.Skipped)
+	fmt.Fprintf(&b, "acked:             %d\n", p.Acked)
+	fmt.Fprintf(&b, "errors:            %d\n", p.Errors)
+	fmt.Fprintf(&b, "last_error:        %s\n", p.LastError)
+	return b.String()
+}
+
+// FormatMemoryPullStatsJSON returns indented JSON for stage CI / scrapers.
+// Always emits all MemoryPullStatsPrint fields without omitempty gaps.
+func FormatMemoryPullStatsJSON(p MemoryPullStatsPrint) string {
+	b, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return `{"error":"memory pull stats json marshal failed"}` + "\n"
+	}
+	return string(b) + "\n"
+}
+
 // DefaultMemoryPullFilter returns an effective consumer filter_subject with empty
 // role (s660). Prefer DefaultMemoryPullFilterForRole when pull role is known.
 // Pure: no I/O.
