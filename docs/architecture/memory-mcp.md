@@ -90,11 +90,15 @@ aion-memory-mcp -http-addr :8080 -palace-root ~/.iomesh/palace
 iomesh memory pull --stream EVENTS --name tui-local-palace --once --yes
 # dry-run (map only, no MCP):
 iomesh memory pull --stream EVENTS --name tui-local-palace --once --dry-run
+# JSON always-emit identity + knobs + counters for CI scrapers (s705):
+iomesh memory pull --stream EVENTS --name tui-local-palace --once --dry-run --json
 ```
 
 Loop: `CreateConsumer` (idempotent) → `ConsumerFetch` → map envelope → MCP `memory_ingest_turn` → `ConsumerAck`.  
 Primary: connector/`dept.*` or `EVENTS`. Optional: pull `MEMORY_INGEST` when using mesh as audit mirror.  
 When `--filter` / `[memory].pull_filter` is empty and `[memory].tenant` or `[iomesh].tenant` is hierarchical (`dept.*` or contains `.`), default `filter_subject` is `tenant.>` (s660); create/fetch/ack send `X-IOMesh-Tenant` via client auth.
+
+**s705 (Beta):** PASS/summary text and `--json` always emit identity (`stream`, `consumer`, `filter_subject`, `pull_role`, `pull_allow_suffix`, `tenant` — empty string when unset), knobs (`dry_run`, `dual_write` report-only default false, `batch`, `max_wait_ms`, `once`), and counters including `last_error` (empty when none). Print DTO is `MemoryPullStatsPrint` (no omitempty on scraper keys). Does not invent pull success from identity fields alone. Peer create FormatConsumerInfo s696 + status/wait pull identity continuum; peer aion s704. Fail-open empty role/tenant; dual_write default OFF; not full mesh RBAC GA.
 
 **s675 (Beta):** optional `--role` / `[memory].pull_role` → `X-IOMesh-Role` and `--pull-allow-suffix` / `[memory].pull_allow_suffix` → `X-IOMesh-Pull-Allow-Suffix` on authenticated mesh requests (create/fetch/ack). Fail-open when empty (headers omitted). Not full mesh IdP RBAC GA; dual_write remains optional audit (default OFF). Hosted Palace sunset — TUI path is local palace.
 
@@ -111,6 +115,8 @@ When `--filter` / `[memory].pull_filter` is empty and `[memory].tenant` or `[iom
 **s693 (Beta):** `iomesh mesh wait` always-emits `pull_role` / `pull_allow_suffix` (empty when unset) in text and JSON from the same Client Config path (`[memory].pull_role` / `pull_allow_suffix` wired onto Client like status s690). CI scrapers can key stable identity without omitempty gaps. Fail-open without role; dual_write default OFF; not full mesh RBAC GA; peer aion s692 Ops Pack floors residual gate continuum.
 
 **s696 (Beta):** `iomesh mesh consumer create` text (`FormatConsumerInfoWithAuth`) and JSON (`ConsumerInfoPrint`) always-emit `pull_role` / `pull_allow_suffix` (empty when unset) next to `filter_subject` from resolved create auth (s681). Wire `ConsumerInfo` decode stays free of auth fields. CI scrapers can key stable identity without omitempty gaps. Fail-open without role; dual_write default OFF; not full mesh RBAC GA; peer aion s695 sales claim continuum.
+
+**s705 (Beta):** `iomesh memory pull` always-emits full pull identity + knobs + counters in PASS/summary text and `--json` (`MemoryPullStatsPrint`) so scrapers are not limited to stderr start log. Empty role/tenant/filter honest; dual_write report-only default OFF; peer aion s704 continuum — not full mesh RBAC GA.
 
 Env: `MEMORY_MCP_HTTP_ADDR` / `AION_MEMORY_MCP_HTTP_ADDR`, path `MEMORY_MCP_HTTP_PATH` (default `/mcp`).
 
