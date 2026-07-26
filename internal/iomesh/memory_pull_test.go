@@ -184,8 +184,9 @@ func TestRunMemoryPull_DryRunValidation(t *testing.T) {
 	_ = time.Second
 }
 
-// s705: MemoryPullStatsPrint / FormatMemoryPullStats always-emit identity + knobs +
-// counters without omitempty gaps (empty identity honest; dual_write default false).
+// s705+s717: MemoryPullStatsPrint / FormatMemoryPullStats always-emit identity +
+// knobs + counters + process evidence without omitempty gaps (empty identity honest;
+// dual_write default false; result/exit_code/duration_ms/ack always present).
 func TestMemoryPullStatsPrint_EmptyIdentityAlwaysEmit(t *testing.T) {
 	t.Parallel()
 
@@ -202,16 +203,21 @@ func TestMemoryPullStatsPrint_EmptyIdentityAlwaysEmit(t *testing.T) {
 	// Scraper keys must always be present (no omitempty).
 	wantKeys := []string{
 		"stream", "consumer", "filter_subject", "pull_role", "pull_allow_suffix", "tenant",
-		"dry_run", "dual_write", "batch", "max_wait_ms", "once",
+		"endpoint", "org", "workspace",
+		"dry_run", "dual_write", "batch", "max_wait_ms", "once", "ack",
 		"create_ok", "loops", "fetched", "ingested", "skipped", "acked", "errors", "last_error",
+		"result", "exit_code", "duration_ms",
 	}
 	for _, key := range wantKeys {
 		if _, ok := obj[key]; !ok {
 			t.Fatalf("empty json missing key %q: %s", key, js)
 		}
 	}
-	// Empty identity honest strings.
-	for _, key := range []string{"stream", "consumer", "filter_subject", "pull_role", "pull_allow_suffix", "tenant", "last_error"} {
+	// Empty identity honest strings (incl. s717 process mesh identity + result).
+	for _, key := range []string{
+		"stream", "consumer", "filter_subject", "pull_role", "pull_allow_suffix", "tenant",
+		"endpoint", "org", "workspace", "last_error", "result",
+	} {
 		if s, _ := obj[key].(string); s != "" {
 			t.Fatalf("want empty %s, got %q", key, s)
 		}
@@ -220,11 +226,11 @@ func TestMemoryPullStatsPrint_EmptyIdentityAlwaysEmit(t *testing.T) {
 	if obj["dual_write"] != false {
 		t.Fatalf("want dual_write=false default, got %v", obj["dual_write"])
 	}
-	if obj["dry_run"] != false || obj["once"] != false || obj["create_ok"] != false {
+	if obj["dry_run"] != false || obj["once"] != false || obj["create_ok"] != false || obj["ack"] != false {
 		t.Fatalf("want bool zeros false: %s", js)
 	}
-	// Numeric zeros.
-	for _, key := range []string{"batch", "max_wait_ms", "loops", "fetched", "ingested", "skipped", "acked", "errors"} {
+	// Numeric zeros (incl. process evidence exit_code/duration_ms).
+	for _, key := range []string{"batch", "max_wait_ms", "loops", "fetched", "ingested", "skipped", "acked", "errors", "exit_code", "duration_ms"} {
 		if n, ok := obj[key].(float64); !ok || n != 0 {
 			t.Fatalf("want %s=0, got %v", key, obj[key])
 		}
@@ -240,31 +246,53 @@ func TestMemoryPullStatsPrint_EmptyIdentityAlwaysEmit(t *testing.T) {
 		"pull_role:         \n",
 		"pull_allow_suffix: \n",
 		"tenant:            \n",
+		"endpoint:          \n",
+		"org:               \n",
+		"workspace:         \n",
 		"dry_run:           false\n",
 		"dual_write:        false\n",
 		"batch:             0\n",
 		"max_wait_ms:       0\n",
 		"once:              false\n",
+		"ack:               false\n",
 		"create_ok:         false\n",
 		"last_error:        \n",
+		"result:            \n",
+		"exit_code:         0\n",
+		"duration_ms:       0\n",
 	} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("empty text missing %q in:\n%q", want, text)
 		}
 	}
 	// Identity order: stream → consumer → filter_subject → pull_role → pull_allow_suffix → tenant
+	// → endpoint → org → workspace (s717 process mesh identity).
 	streamIdx := strings.Index(text, "stream:")
 	consumerIdx := strings.Index(text, "consumer:")
 	filterIdx := strings.Index(text, "filter_subject:")
 	roleIdx := strings.Index(text, "pull_role:")
 	suffixIdx := strings.Index(text, "pull_allow_suffix:")
 	tenantIdx := strings.Index(text, "tenant:")
+	endpointIdx := strings.Index(text, "endpoint:")
+	orgIdx := strings.Index(text, "org:")
+	wsIdx := strings.Index(text, "workspace:")
 	if !(streamIdx < consumerIdx && consumerIdx < filterIdx && filterIdx < roleIdx && roleIdx < suffixIdx && suffixIdx < tenantIdx) {
 		t.Fatalf("identity order wrong:\n%s", text)
 	}
+	if !(tenantIdx < endpointIdx && endpointIdx < orgIdx && orgIdx < wsIdx) {
+		t.Fatalf("process identity order wrong:\n%s", text)
+	}
+	// Process evidence after counters.
+	lastErrIdx := strings.Index(text, "last_error:")
+	resultIdx := strings.Index(text, "result:")
+	exitIdx := strings.Index(text, "exit_code:")
+	durIdx := strings.Index(text, "duration_ms:")
+	if !(lastErrIdx < resultIdx && resultIdx < exitIdx && exitIdx < durIdx) {
+		t.Fatalf("process evidence order wrong:\n%s", text)
+	}
 }
 
-// s705: populated role/filter/tenant + knobs always-emit for scrapers.
+// s705+s717: populated role/filter/tenant + knobs + process evidence always-emit.
 func TestMemoryPullStatsPrint_PopulatedRoleFilter(t *testing.T) {
 	t.Parallel()
 
@@ -285,11 +313,18 @@ func TestMemoryPullStatsPrint_PopulatedRoleFilter(t *testing.T) {
 		Tenant:          "acme",
 		PullRole:        "agent",
 		PullAllowSuffix: "",
+		Endpoint:        "https://mesh.example",
+		Org:             "org_dev",
+		Workspace:       "ws_alpha",
 		DryRun:          true,
 		DualWrite:       false,
 		Batch:           8,
 		MaxWaitMS:       2000,
 		Once:            true,
+		Ack:             true,
+		Result:          "ok",
+		ExitCode:        0,
+		DurationMS:      42,
 	}
 	p := NewMemoryPullStatsPrint(st, meta)
 	if p.FilterSubject != "acme.events.>" || p.PullRole != "agent" || p.Tenant != "acme" {
@@ -298,8 +333,14 @@ func TestMemoryPullStatsPrint_PopulatedRoleFilter(t *testing.T) {
 	if p.PullAllowSuffix != "" {
 		t.Fatalf("want empty pull_allow_suffix, got %q", p.PullAllowSuffix)
 	}
-	if !p.DryRun || !p.Once || p.DualWrite || p.Batch != 8 || p.MaxWaitMS != 2000 {
+	if p.Endpoint != "https://mesh.example" || p.Org != "org_dev" || p.Workspace != "ws_alpha" {
+		t.Fatalf("process identity: %+v", p)
+	}
+	if !p.DryRun || !p.Once || p.DualWrite || p.Batch != 8 || p.MaxWaitMS != 2000 || !p.Ack {
 		t.Fatalf("knobs: %+v", p)
+	}
+	if p.Result != "ok" || p.ExitCode != 0 || p.DurationMS != 42 {
+		t.Fatalf("process evidence: %+v", p)
 	}
 
 	js := FormatMemoryPullStatsJSON(p)
@@ -313,6 +354,9 @@ func TestMemoryPullStatsPrint_PopulatedRoleFilter(t *testing.T) {
 	if obj["filter_subject"] != "acme.events.>" || obj["pull_role"] != "agent" || obj["tenant"] != "acme" {
 		t.Fatalf("identity json: %s", js)
 	}
+	if obj["endpoint"] != "https://mesh.example" || obj["org"] != "org_dev" || obj["workspace"] != "ws_alpha" {
+		t.Fatalf("process identity json: %s", js)
+	}
 	// pull_allow_suffix always present even when empty.
 	if _, ok := obj["pull_allow_suffix"]; !ok {
 		t.Fatalf("missing pull_allow_suffix: %s", js)
@@ -320,7 +364,7 @@ func TestMemoryPullStatsPrint_PopulatedRoleFilter(t *testing.T) {
 	if s, _ := obj["pull_allow_suffix"].(string); s != "" {
 		t.Fatalf("want empty pull_allow_suffix, got %q", s)
 	}
-	if obj["dry_run"] != true || obj["once"] != true || obj["dual_write"] != false {
+	if obj["dry_run"] != true || obj["once"] != true || obj["dual_write"] != false || obj["ack"] != true {
 		t.Fatalf("knobs json: %s", js)
 	}
 	if obj["batch"] != float64(8) || obj["max_wait_ms"] != float64(2000) {
@@ -332,6 +376,9 @@ func TestMemoryPullStatsPrint_PopulatedRoleFilter(t *testing.T) {
 	if s, _ := obj["last_error"].(string); s != "" {
 		t.Fatalf("want empty last_error, got %q", s)
 	}
+	if obj["result"] != "ok" || obj["exit_code"] != float64(0) || obj["duration_ms"] != float64(42) {
+		t.Fatalf("process evidence json: %s", js)
+	}
 
 	text := FormatMemoryPullStats(p, true, "")
 	for _, want := range []string{
@@ -342,11 +389,15 @@ func TestMemoryPullStatsPrint_PopulatedRoleFilter(t *testing.T) {
 		"pull_role:         agent\n",
 		"pull_allow_suffix: \n",
 		"tenant:            acme\n",
+		"endpoint:          https://mesh.example\n",
+		"org:               org_dev\n",
+		"workspace:         ws_alpha\n",
 		"dry_run:           true\n",
 		"dual_write:        false\n",
 		"batch:             8\n",
 		"max_wait_ms:       2000\n",
 		"once:              true\n",
+		"ack:               true\n",
 		"create_ok:         true\n",
 		"fetched:           3\n",
 		"ingested:          2\n",
@@ -354,19 +405,24 @@ func TestMemoryPullStatsPrint_PopulatedRoleFilter(t *testing.T) {
 		"acked:             3\n",
 		"errors:            0\n",
 		"last_error:        \n",
+		"result:            ok\n",
+		"exit_code:         0\n",
+		"duration_ms:       42\n",
 	} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("populated text missing %q in:\n%s", want, text)
 		}
 	}
 
-	// custom role + allow-suffix + last_error on FAIL path.
+	// custom role + allow-suffix + last_error + process err evidence on FAIL path.
 	st2 := MemoryPullStats{
 		Stream: "S", Consumer: "c", Filter: "t.ops.>",
 		Errors: 1, LastError: "fetch timeout",
 	}
 	p2 := NewMemoryPullStatsPrint(st2, MemoryPullPrintMeta{
 		Tenant: "t", PullRole: "custom", PullAllowSuffix: "ops,memory",
+		Endpoint: "http://127.0.0.1:8080", Org: "", Workspace: "",
+		Result: "err", ExitCode: 1, DurationMS: 7, Ack: false,
 	})
 	failText := FormatMemoryPullStats(p2, false, "")
 	if !strings.Contains(failText, "FAIL memory pull: fetch timeout\n") {
@@ -375,7 +431,14 @@ func TestMemoryPullStatsPrint_PopulatedRoleFilter(t *testing.T) {
 	for _, want := range []string{
 		"pull_role:         custom\n",
 		"pull_allow_suffix: ops,memory\n",
+		"endpoint:          http://127.0.0.1:8080\n",
+		"org:               \n",
+		"workspace:         \n",
+		"ack:               false\n",
 		"last_error:        fetch timeout\n",
+		"result:            err\n",
+		"exit_code:         1\n",
+		"duration_ms:       7\n",
 	} {
 		if !strings.Contains(failText, want) {
 			t.Fatalf("FAIL text missing %q in:\n%s", want, failText)
@@ -388,5 +451,20 @@ func TestMemoryPullStatsPrint_PopulatedRoleFilter(t *testing.T) {
 	}
 	if !strings.Contains(failText2, "last_error:        fetch timeout\n") {
 		t.Fatalf("last_error still from stats:\n%s", failText2)
+	}
+	// Soft-fail process evidence: result=err exit_code=1 with empty org/workspace honest.
+	jsFail := FormatMemoryPullStatsJSON(p2)
+	var objFail map[string]any
+	if err := json.Unmarshal([]byte(jsFail), &objFail); err != nil {
+		t.Fatal(err)
+	}
+	if objFail["result"] != "err" || objFail["exit_code"] != float64(1) {
+		t.Fatalf("soft/hard fail process evidence: %s", jsFail)
+	}
+	if s, _ := objFail["org"].(string); s != "" {
+		t.Fatalf("want empty org, got %q", s)
+	}
+	if s, _ := objFail["workspace"].(string); s != "" {
+		t.Fatalf("want empty workspace, got %q", s)
 	}
 }
