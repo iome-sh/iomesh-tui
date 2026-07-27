@@ -249,6 +249,34 @@ func NewStreamInfoPrint(s StreamInfo) StreamInfoPrint {
 	return p
 }
 
+// FormatStreamInfoJSON returns indented JSON for stage CI / scrapers.
+// Always emits all StreamInfoPrint fields without omitempty gaps.
+// s741: Format*JSON helper completeness (DTO already always-emit s699/s702).
+// Peer aion s740 residual. Mold FormatPubJSON / FormatStreamDeleteJSON.
+func FormatStreamInfoJSON(p StreamInfoPrint) string {
+	b, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return `{"error":"stream info json marshal failed"}` + "\n"
+	}
+	return string(b) + "\n"
+}
+
+// FormatStreamInfoListJSON returns indented JSON for mesh streams list --json.
+// Nil list becomes empty array (never null). Always emits each StreamInfoPrint
+// element without omitempty gaps.
+// s741: Format*JSON helper completeness (list print DTO already always-emit s702).
+// Peer aion s740 residual. Mold FormatStreamInfoJSON / FormatPubJSON.
+func FormatStreamInfoListJSON(list []StreamInfoPrint) string {
+	if list == nil {
+		list = []StreamInfoPrint{}
+	}
+	b, err := json.MarshalIndent(list, "", "  ")
+	if err != nil {
+		return `{"error":"stream info list json marshal failed"}` + "\n"
+	}
+	return string(b) + "\n"
+}
+
 // StreamDeletePrint is a CLI-side print DTO for mesh streams --delete success.
 // Always emits ok / name (empty string honest when unset) so scrapers see a
 // stable envelope without omitempty gaps. No pull_role — stream delete is not

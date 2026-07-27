@@ -342,6 +342,71 @@ func TestStreamInfoPrint_AlwaysEmit(t *testing.T) {
 	}
 }
 
+// s741: FormatStreamInfoJSON keys present + trailing newline (DTO already always-emit s699/s702).
+func TestFormatStreamInfoJSON_KeysAndNewline(t *testing.T) {
+	t.Parallel()
+
+	js := FormatStreamInfoJSON(NewStreamInfoPrint(StreamInfo{Name: "SPARSE"}))
+	if !strings.HasSuffix(js, "\n") {
+		t.Fatal("expected trailing newline")
+	}
+	var obj map[string]any
+	if err := json.Unmarshal([]byte(js), &obj); err != nil {
+		t.Fatalf("unmarshal: %v\n%s", err, js)
+	}
+	for _, key := range []string{
+		"name", "description", "retention", "retention_tier", "partitions", "max_msgs", "max_age_sec",
+		"messages", "first_seq", "last_seq", "created_at", "subjects",
+	} {
+		if _, ok := obj[key]; !ok {
+			t.Fatalf("missing key %q: %s", key, js)
+		}
+	}
+	if obj["name"] != "SPARSE" {
+		t.Fatalf("name: %s", js)
+	}
+	subs, ok := obj["subjects"].([]any)
+	if !ok || len(subs) != 0 {
+		t.Fatalf("subjects want [] not null: %s", js)
+	}
+	if strings.Contains(js, `"subjects": null`) {
+		t.Fatalf("subjects must not be null: %s", js)
+	}
+}
+
+// s741: FormatStreamInfoListJSON nil → empty array not null + trailing newline.
+func TestFormatStreamInfoListJSON_NilEmptyNotNull(t *testing.T) {
+	t.Parallel()
+
+	js := FormatStreamInfoListJSON(nil)
+	if !strings.HasSuffix(js, "\n") {
+		t.Fatal("expected trailing newline")
+	}
+	if strings.Contains(js, "null") {
+		t.Fatalf("nil list must not marshal as null: %s", js)
+	}
+	var list []any
+	if err := json.Unmarshal([]byte(js), &list); err != nil {
+		t.Fatalf("unmarshal: %v\n%s", err, js)
+	}
+	if len(list) != 0 {
+		t.Fatalf("want empty array; got %v\n%s", list, js)
+	}
+
+	// One element still always-emits StreamInfoPrint keys.
+	pop := FormatStreamInfoListJSON([]StreamInfoPrint{NewStreamInfoPrint(StreamInfo{Name: "EVENTS"})})
+	var popList []map[string]any
+	if err := json.Unmarshal([]byte(pop), &popList); err != nil {
+		t.Fatalf("unmarshal pop: %v\n%s", err, pop)
+	}
+	if len(popList) != 1 || popList[0]["name"] != "EVENTS" {
+		t.Fatalf("populated list: %s", pop)
+	}
+	if _, ok := popList[0]["retention_tier"]; !ok {
+		t.Fatalf("list element missing retention_tier: %s", pop)
+	}
+}
+
 // s699/s702: FormatStreams always emits MAX_MSGS / MAX_AGE / RETENTION / TIER.
 func TestFormatStreams_AlwaysEmitRetentionColumns(t *testing.T) {
 	max := int64(5000)
@@ -878,5 +943,34 @@ func TestStreamMessagesPrint_AlwaysEmit(t *testing.T) {
 	legacy := FormatStreamMessages("EVENTS", nil)
 	if strings.Contains(legacy, "from_seq=") || !strings.Contains(legacy, "count=0") {
 		t.Fatalf("legacy FormatStreamMessages: %s", legacy)
+	}
+}
+
+// s741: FormatStreamMessagesJSON keys present + empty messages not null + trailing newline.
+func TestFormatStreamMessagesJSON_KeysAndNewline(t *testing.T) {
+	t.Parallel()
+
+	js := FormatStreamMessagesJSON(NewStreamMessagesPrint("EVENTS", 0, 0, 0, nil))
+	if !strings.HasSuffix(js, "\n") {
+		t.Fatal("expected trailing newline")
+	}
+	var obj map[string]any
+	if err := json.Unmarshal([]byte(js), &obj); err != nil {
+		t.Fatalf("unmarshal: %v\n%s", err, js)
+	}
+	for _, key := range []string{"stream", "from_seq", "to_seq", "limit", "count", "messages"} {
+		if _, ok := obj[key]; !ok {
+			t.Fatalf("missing key %q: %s", key, js)
+		}
+	}
+	if obj["stream"] != "EVENTS" || obj["count"].(float64) != 0 {
+		t.Fatalf("identity/count: %s", js)
+	}
+	msgs, ok := obj["messages"].([]any)
+	if !ok || len(msgs) != 0 {
+		t.Fatalf("messages want [] not null: %s", js)
+	}
+	if strings.Contains(js, `"messages": null`) {
+		t.Fatalf("messages must not be null: %s", js)
 	}
 }

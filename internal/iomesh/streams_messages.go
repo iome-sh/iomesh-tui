@@ -243,6 +243,18 @@ func FormatStreamMessagesPrint(p StreamMessagesPrint) string {
 	return formatStreamMessagesHeader(p.Stream, p.FromSeq, p.ToSeq, p.Limit, p.Messages, true)
 }
 
+// FormatStreamMessagesJSON returns indented JSON for stage CI / scrapers.
+// Always emits all StreamMessagesPrint fields without omitempty gaps.
+// s741: Format*JSON helper completeness (DTO already always-emit s720/s723).
+// Peer aion s740 residual. Mold FormatPubJSON / FormatCatalogJSON.
+func FormatStreamMessagesJSON(p StreamMessagesPrint) string {
+	b, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return `{"error":"stream messages json marshal failed"}` + "\n"
+	}
+	return string(b) + "\n"
+}
+
 func formatStreamMessagesHeader(name string, fromSeq, toSeq uint64, limit int, msgs []StreamMessagePrint, withKnobs bool) string {
 	var b strings.Builder
 	if withKnobs {

@@ -342,6 +342,33 @@ func TestConsumerInfoPrint_JSONAlwaysEmitPullIdentity(t *testing.T) {
 	}
 }
 
+// s741: FormatConsumerInfoJSON keys present + trailing newline (DTO already always-emit s696).
+func TestFormatConsumerInfoJSON_KeysAndNewline(t *testing.T) {
+	t.Parallel()
+
+	js := FormatConsumerInfoJSON(NewConsumerInfoPrint(ConsumerInfo{
+		Stream: "EVENTS", Name: "c",
+	}, "", ""))
+	if !strings.HasSuffix(js, "\n") {
+		t.Fatal("expected trailing newline")
+	}
+	var obj map[string]any
+	if err := json.Unmarshal([]byte(js), &obj); err != nil {
+		t.Fatalf("unmarshal: %v\n%s", err, js)
+	}
+	for _, key := range []string{"stream", "name", "filter_subject", "ack_floor", "pending_count", "pull_role", "pull_allow_suffix"} {
+		if _, ok := obj[key]; !ok {
+			t.Fatalf("missing key %q: %s", key, js)
+		}
+	}
+	if obj["stream"] != "EVENTS" || obj["name"] != "c" {
+		t.Fatalf("identity: %s", js)
+	}
+	if obj["pull_role"] != "" || obj["pull_allow_suffix"] != "" || obj["filter_subject"] != "" {
+		t.Fatalf("empty identity want \"\": %s", js)
+	}
+}
+
 // s708: ConsumerFetchPrint JSON always-emits pull identity + knobs + count
 // without omitempty gaps; s723 nested StreamMessagePrint always-emit; wire lean.
 func TestConsumerFetchPrint_JSONAlwaysEmitPullIdentity(t *testing.T) {
