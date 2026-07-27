@@ -974,3 +974,88 @@ func TestFormatStreamMessagesJSON_KeysAndNewline(t *testing.T) {
 		t.Fatalf("messages must not be null: %s", js)
 	}
 }
+
+// s750: Format*JSON helper completeness pin — names all 7 s741 helpers and locks
+// presence/always-emit behavior (trailing newline · valid JSON · nil list → [] not
+// null). Completeness pin only — does not invent new DTO fields or re-claim s741
+// product body. Peer aion s749 residual.
+// helper completeness ≠ invent new DTO fields · CLI prefer Format*JSON ·
+// dual_write OFF · offline unit ≠ live APPLY · not full mesh RBAC GA.
+func TestFormatJSONHelpers_CompletenessPin(t *testing.T) {
+	t.Parallel()
+
+	// Named s741 residual helper surface (completeness pin inventory).
+	type helperCase struct {
+		name string
+		js   string
+	}
+	cases := []helperCase{
+		{
+			name: "FormatStreamMessagesJSON",
+			js:   FormatStreamMessagesJSON(NewStreamMessagesPrint("EVENTS", 0, 0, 0, nil)),
+		},
+		{
+			name: "FormatStreamInfoJSON",
+			js:   FormatStreamInfoJSON(NewStreamInfoPrint(StreamInfo{Name: "EVENTS"})),
+		},
+		{
+			name: "FormatStreamInfoListJSON",
+			js:   FormatStreamInfoListJSON(nil),
+		},
+		{
+			name: "FormatConsumerInfoJSON",
+			js: FormatConsumerInfoJSON(NewConsumerInfoPrint(ConsumerInfo{
+				Stream: "EVENTS", Name: "c",
+			}, "", "")),
+		},
+		{
+			name: "FormatKVBucketInfoJSON",
+			js:   FormatKVBucketInfoJSON(NewKVBucketInfoPrint(KVBucketInfo{Name: "cfg"})),
+		},
+		{
+			name: "FormatKVEntryJSON",
+			js:   FormatKVEntryJSON(NewKVEntryPrint(KVEntry{Bucket: "cfg", Key: "k"})),
+		},
+		{
+			name: "FormatKVKeysJSON",
+			js:   FormatKVKeysJSON(NewKVKeysPrint("cfg", "", nil)),
+		},
+	}
+	if len(cases) != 7 {
+		t.Fatalf("s741 residual helper set must be 7; got %d", len(cases))
+	}
+
+	for _, tc := range cases {
+		if !strings.HasSuffix(tc.js, "\n") {
+			t.Fatalf("%s: expected trailing newline; got %q", tc.name, tc.js)
+		}
+		// All helpers emit valid JSON (object or array).
+		var raw any
+		if err := json.Unmarshal([]byte(tc.js), &raw); err != nil {
+			t.Fatalf("%s: unmarshal: %v\n%s", tc.name, err, tc.js)
+		}
+	}
+
+	// FormatStreamInfoListJSON(nil) → [] not null (list mold).
+	listJS := FormatStreamInfoListJSON(nil)
+	if strings.Contains(listJS, "null") {
+		t.Fatalf("FormatStreamInfoListJSON(nil) must not marshal as null: %s", listJS)
+	}
+	var list []any
+	if err := json.Unmarshal([]byte(listJS), &list); err != nil {
+		t.Fatalf("FormatStreamInfoListJSON: %v\n%s", err, listJS)
+	}
+	if len(list) != 0 {
+		t.Fatalf("FormatStreamInfoListJSON(nil) want []; got %v", list)
+	}
+
+	// Empty nested slices stay [] not null (keys / messages molds).
+	keysJS := FormatKVKeysJSON(NewKVKeysPrint("cfg", "", nil))
+	if strings.Contains(keysJS, `"keys": null`) {
+		t.Fatalf("FormatKVKeysJSON keys must not be null: %s", keysJS)
+	}
+	msgsJS := FormatStreamMessagesJSON(NewStreamMessagesPrint("EVENTS", 0, 0, 0, nil))
+	if strings.Contains(msgsJS, `"messages": null`) {
+		t.Fatalf("FormatStreamMessagesJSON messages must not be null: %s", msgsJS)
+	}
+}

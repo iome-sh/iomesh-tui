@@ -252,6 +252,12 @@ func NewStreamInfoPrint(s StreamInfo) StreamInfoPrint {
 // FormatStreamInfoJSON returns indented JSON for stage CI / scrapers.
 // Always emits all StreamInfoPrint fields without omitempty gaps.
 // s741: Format*JSON helper completeness (DTO already always-emit s699/s702).
+// s750: completeness pin — docs + unit tests lock the full s741 helper set
+// (this helper + FormatStreamMessagesJSON / FormatStreamInfoListJSON /
+// FormatConsumerInfoJSON / FormatKVBucketInfoJSON / FormatKVEntryJSON /
+// FormatKVKeysJSON); does not invent new DTO fields or re-claim s741 product
+// body. Peer aion s749 residual. CLI prefer Format*JSON · dual_write OFF ·
+// offline unit ≠ live APPLY · not full mesh RBAC GA.
 // Peer aion s740 residual. Mold FormatPubJSON / FormatStreamDeleteJSON.
 func FormatStreamInfoJSON(p StreamInfoPrint) string {
 	b, err := json.MarshalIndent(p, "", "  ")
