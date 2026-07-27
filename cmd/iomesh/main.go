@@ -494,7 +494,7 @@ func cmdMesh(args []string) int {
   iomesh mesh dogfood   stage smoke (health → ready → context → emit → [pub] → policy → catalog → streams → [consumer] → [kv] → memory_*)
   iomesh mesh probe     alias for dogfood
   iomesh mesh usage     local LLM metering rollup for this process (UsagePrint always-emit --json)
-  iomesh mesh catalog   list governed data products (broker + portal federation)
+  iomesh mesh catalog   list/detail governed data products (--id detail; CatalogPrint / CatalogProductPrint --json)
   iomesh mesh streams   list/get/delete/messages broker streams (GET|DELETE /v1/streams; explicit errors)
   iomesh mesh kv        KV list/get/put/delete/create-bucket (GET|PUT|DELETE|POST /v1/kv; mutate ops require --yes)
   iomesh mesh pub       ephemeral fire-and-forget publish (POST /v1/pub; requires --yes; PubPrint always-emit)
@@ -555,8 +555,9 @@ Flags (consumer):
   --endpoint / --tenant / --config / -v
 
 Flags (catalog):
-  --query q         optional search filter
-  --json            CatalogPrint always-emit {source,detail,query,count,products[]} (s735; empty/0/[] honest)
+  --query q         optional search filter (list path)
+  --id ID           product id detail path (GetCatalogProduct; omit for list)
+  --json            list: CatalogPrint (s735); detail: CatalogProductPrint {source,detail,id,found,product} (s744; empty/0/[]/false honest)
   --endpoint url    override mesh endpoint
   --tenant id       override tenant
 
@@ -827,10 +828,11 @@ func cmdMeshCatalog(args []string) int {
 	fs.SetOutput(os.Stderr)
 	var (
 		configPath = fs.String("config", "", "config.toml path")
-		query      = fs.String("query", "", "optional catalog search filter")
+		query      = fs.String("query", "", "optional catalog search filter (list path)")
+		id         = fs.String("id", "", "product id for detail path (omit for list)")
 		endpoint   = fs.String("endpoint", "", "override IOMESH_ENDPOINT")
 		tenant     = fs.String("tenant", "", "override tenant")
-		jsonOut    = fs.Bool("json", false, "print CatalogPrint always-emit JSON (source/detail/query/count/products; empty/0/[] honest)")
+		jsonOut    = fs.Bool("json", false, "list: CatalogPrint always-emit; detail (--id): CatalogProductPrint always-emit (empty/0/[]/false honest)")
 		verbose    = fs.Bool("v", false, "verbose logs")
 	)
 	if err := fs.Parse(args); err != nil {
@@ -863,6 +865,27 @@ func cmdMeshCatalog(args []string) int {
 	defer stop()
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
+
+	// Detail path: GetCatalogProduct + CatalogProductPrint (s744).
+	// List path (id empty) unchanged: CatalogPrint (s735).
+	productID := strings.TrimSpace(*id)
+	if productID != "" {
+		p, meta := mesh.GetCatalogProduct(ctx, productID)
+		// found=false when empty product / fail-open not found / off — no invent.
+		found := p.ID != "" || p.Name != ""
+		if *jsonOut {
+			fmt.Print(iomesh.FormatCatalogProductJSON(iomesh.NewCatalogProductPrint(productID, p, meta, found)))
+		} else {
+			fmt.Print(iomesh.FormatProductDetail(p, meta))
+		}
+		// Exit 1 only when source off (mesh/catalog disabled). fail-open not-found
+		// keeps exit 0 (match list fail-open honesty — operator sees found=false).
+		if meta.Source == "off" {
+			return 1
+		}
+		return 0
+	}
+
 	res := mesh.ListCatalog(ctx, *query)
 	if *jsonOut {
 		// CatalogPrint always-emit (s735); Source=="off" still exit 1 (honesty).

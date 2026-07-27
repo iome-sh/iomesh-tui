@@ -366,6 +366,55 @@ func FormatCatalogJSON(p CatalogPrint) string {
 	return string(b) + "\n"
 }
 
+// CatalogProductPrint — single-product detail always-emit envelope (s744).
+// Reuses DataProductPrint for nested product. found=false honest when missing.
+//
+// s744: mold CatalogPrint s735 + PubPrint s732. Peer aion s743 residual.
+// Beta catalog · offline unit ≠ live APPLY · dual_write OFF · not full mesh
+// RBAC GA · empty/0/[]/false honest · DTO ≠ invent catalog/product success ·
+// fail-open · found=false honest · s735 list ≠ product detail residual ·
+// portal federation not invent GA · no invent GA.
+type CatalogProductPrint struct {
+	Source  string           `json:"source"`
+	Detail  string           `json:"detail"`
+	ID      string           `json:"id"` // requested id (empty honest)
+	Found   bool             `json:"found"`
+	Product DataProductPrint `json:"product"` // empty fields + [] subjects/lineage when not found
+}
+
+// NewCatalogProductPrint builds a single-product detail print envelope.
+// id is the operator-requested product id (empty string honest when unset).
+// When found is false, product is an empty DataProductPrint (empty strings +
+// subjects/lineage []) — do not invent success from partial wire fields.
+// Source/Detail come from GetCatalogProduct meta (mesh|portal|fail-open|off).
+func NewCatalogProductPrint(id string, p DataProduct, meta CatalogResult, found bool) CatalogProductPrint {
+	var product DataProductPrint
+	if found {
+		product = NewDataProductPrint(p)
+	} else {
+		// Empty always-emit product: no invent; subjects/lineage [] not null.
+		product = NewDataProductPrint(DataProduct{})
+	}
+	return CatalogProductPrint{
+		Source:  meta.Source,
+		Detail:  meta.Detail,
+		ID:      id,
+		Found:   found,
+		Product: product,
+	}
+}
+
+// FormatCatalogProductJSON returns indented JSON for stage CI / scrapers.
+// Always emits all CatalogProductPrint / DataProductPrint fields without
+// omitempty gaps. Mold FormatCatalogJSON s735.
+func FormatCatalogProductJSON(p CatalogProductPrint) string {
+	b, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return `{"error":"catalog product json marshal failed"}` + "\n"
+	}
+	return string(b) + "\n"
+}
+
 // FormatProductDetail is a multi-line view for one product (agent / CLI).
 // Pure helper with no network I/O.
 //

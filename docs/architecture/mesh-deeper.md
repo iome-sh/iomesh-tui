@@ -117,14 +117,16 @@ When `catalog_plane = true` (default), discovery tries **broker then portal** (I
 
 Portal JSON fields (`mesh_layer`, `subject_pattern`, `sample_subjects`, `summary`) normalize into the shared product shape.
 
-Wire `DataProduct` stays lean (`omitempty` on optional fields). CLI print surfaces always-emit for scrapers (s735 CatalogPrint; mold PubPrint s732 + StreamMessagesPrint s720 + KVKeysPrint s714; peer aion s734 residual):
+Wire `DataProduct` stays lean (`omitempty` on optional fields). CLI print surfaces always-emit for scrapers (s735 CatalogPrint list + s744 CatalogProductPrint detail; mold PubPrint s732 + StreamMessagesPrint s720 + KVKeysPrint s714; peer aion s734 / s743 residual):
 
 | Surface | Behaviour |
 |---------|-----------|
 | CLI `iomesh mesh catalog [--query q]` | Operator table (`source=mesh\|portal\|fail-open\|off`) |
 | CLI `iomesh mesh catalog --json` | `CatalogPrint` always-emit `{source,detail,query,count,products[]}` (s735); nested rows are `DataProductPrint` |
+| CLI `iomesh mesh catalog --id ID` | Text `FormatProductDetail` for one product via `GetCatalogProduct` |
+| CLI `iomesh mesh catalog --id ID --json` | `CatalogProductPrint` always-emit `{source,detail,id,found,product}` (s744); nested `product` is `DataProductPrint` |
 | `DataProductPrint` / nested product JSON | Always emits `id` / `name` / `title` / `description` / `subject` / `layer` / `status` / `department` / `subjects` / `lineage` (empty string / `[]` honest; never null arrays) |
-| TUI `/catalog [query]` | Text table (same as non-JSON CLI) |
+| TUI `/catalog [query]` | Text table (same as non-JSON CLI list) |
 | Agent `list_mesh_catalog` / `get_mesh_catalog_product` / `mesh_status` | Read-only |
 | `inject_catalog = true` | Per-turn `<iomesh-catalog>` system block (opt-in) |
 | Dogfood **catalog** step | PASS for mesh **or** portal; soft-skip on 404 |
@@ -132,11 +134,15 @@ Wire `DataProduct` stays lean (`omitempty` on optional fields). CLI print surfac
 
 **s735 catalog print always-emit** (mold PubPrint s732 + StreamMessagesPrint s720 + KVKeysPrint s714; peer aion s734 residual): `iomesh mesh catalog [--query q] [--json]` prints `CatalogPrint` always-emitting `{source,detail,query,count,products}` with nested `DataProductPrint` rows (empty/`0`/`[]` honest; subjects/lineage never null). Text `FormatCatalog` unchanged. Wire `DataProduct` stays lean omitempty; `CatalogResult` stays untagged. Exit 1 when `Source=="off"` unchanged. **Beta catalog** · offline unit ≠ live APPLY · dual_write default OFF · fail-open source honest · not full mesh RBAC GA · portal federation not invent GA · DTO ≠ invent catalog/product success · wire omitempty ≠ print always-emit.
 
+**s744 catalog product detail print always-emit** (mold CatalogPrint s735 + PubPrint s732; peer aion s743 residual): `iomesh mesh catalog --id ID [--json]` fetches one product via `GetCatalogProduct` (portal detail routes, then list filter fallback). `--json` prints `CatalogProductPrint` always-emitting `{source,detail,id,found,product}` with nested `DataProductPrint` (empty/`0`/`[]`/`false` honest; subjects/lineage never null). `found=false` when product missing / fail-open not-found / off — nested product is empty fields + `[]` arrays (no invent). Text path uses `FormatProductDetail` unchanged. List path (`--id` omitted) stays s735 CatalogPrint. Exit 1 when `Source=="off"`; fail-open not-found keeps exit 0 so scrapers see `found=false` without treating operator disable as success. Wire `DataProduct` / `GetCatalogProduct` tags unchanged. **Beta catalog** · offline unit ≠ live APPLY · dual_write default OFF · fail-open source honest · not full mesh RBAC GA · portal federation not invent GA · DTO ≠ invent catalog/product success · s735 list ≠ product detail residual · no invent GA.
+
 ```bash
 iomesh mesh catalog
 iomesh mesh catalog --query operational
 iomesh mesh catalog --json                    # CatalogPrint always-emit (s735)
 iomesh mesh catalog --query ops --json        # query echoed; count + products[]
+iomesh mesh catalog --id ops-incidents        # FormatProductDetail text
+iomesh mesh catalog --id ops-incidents --json # CatalogProductPrint always-emit (s744)
 ```
 
 ## Stream discovery (operator list/get/delete/messages)
@@ -302,7 +308,7 @@ Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 alread
 - `internal/iomesh/client.go` — QueryContext, lineage format, meter hook
 - `internal/iomesh/policy.go` — EvaluatePolicy
 - `internal/iomesh/meter.go` — UsageMeter / FormatUsage / NewUsagePrint / FormatUsageJSON (UsagePrint always-emit s738)
-- `internal/iomesh/catalog.go` — ListCatalog / FormatCatalog / NewCatalogPrint / FormatCatalogJSON / CatalogSnippet (CatalogPrint always-emit s735)
+- `internal/iomesh/catalog.go` — ListCatalog / GetCatalogProduct / FormatCatalog / NewCatalogPrint / FormatCatalogJSON / NewCatalogProductPrint / FormatCatalogProductJSON / FormatProductDetail / CatalogSnippet (CatalogPrint s735 + CatalogProductPrint s744)
 - `internal/iomesh/streams.go` — ListStreams / GetStream / DeleteStream / FormatStreams / NewStreamInfoPrint / FormatStreamInfoJSON / FormatStreamInfoListJSON / NewStreamDeletePrint / FormatStreamDelete / FormatStreamDeleteJSON
 - `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages / NewStreamMessagePrint / NewStreamMessagesPrint / FormatStreamMessagesPrint / FormatStreamMessagesJSON
 - `internal/iomesh/consumers.go` — CreateConsumer / ConsumerFetch / ConsumerAck / ConsumerNack / DeleteConsumer / FormatConsumerInfo / FormatConsumerInfoWithAuth / NewConsumerInfoPrint / FormatConsumerInfoJSON / NewConsumerFetchPrint / FormatConsumerFetch / FormatConsumerFetchJSON / NewConsumerAckPrint / FormatConsumerAck / NewConsumerDeletePrint / FormatConsumerDelete
