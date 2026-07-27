@@ -494,7 +494,7 @@ func cmdMesh(args []string) int {
 
   iomesh mesh dogfood   stage smoke (health → ready → context → emit → [pub] → policy → catalog → streams → [consumer] → [kv] → memory_*)
   iomesh mesh probe     alias for dogfood
-  iomesh mesh usage     local LLM metering rollup for this process (--json for scrapers)
+  iomesh mesh usage     local LLM metering rollup for this process (UsagePrint always-emit --json)
   iomesh mesh catalog   list governed data products (broker + portal federation)
   iomesh mesh streams   list/get/delete/messages broker streams (GET|DELETE /v1/streams; explicit errors)
   iomesh mesh kv        KV list/get/put/delete/create-bucket (GET|PUT|DELETE|POST /v1/kv; mutate ops require --yes)
@@ -541,7 +541,7 @@ Flags (pub):
   --payload STR           payload string (raw wire; not base64)
   --payload-file PATH     read payload bytes from file
   --yes                   required gate (mutating)
-  --json                  print {"subject","ok":true} on success
+  --json                  PubPrint always-emit {ok,subject,bytes} (s732; empty/0 honest; no payload echo)
   --endpoint / --tenant / --config / -v
 
 Flags (consumer):
@@ -1765,19 +1765,21 @@ func cmdMeshUsage(args []string) int {
 	// Local process meter is empty in a fresh CLI process; still print schema + guidance.
 	// When wired as MetricsSink during agent runs, snapshots are in-process only.
 	// Remote multi-tenant dashboards consume dept.agent.llm_call on the platform (not this CLI).
+	// s738: --json marshals UsagePrint always-emit (via FormatUsageJSON → NewUsagePrint).
 	fs := flag.NewFlagSet("mesh usage", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
-	jsonOut := fs.Bool("json", false, "print usage snapshot as JSON")
+	jsonOut := fs.Bool("json", false, "print UsagePrint always-emit JSON (started/as_of \"\" when zero; by_model []; s738)")
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
 	mesh := iomesh.New(iomesh.Config{}, nil)
 	snap := mesh.Usage()
 	if *jsonOut {
+		// FormatUsageJSON → UsagePrint always-emit (empty-time honesty; by_model [] not null).
 		fmt.Print(iomesh.FormatUsageJSON(snap))
 	} else {
 		fmt.Print(iomesh.FormatUsage(snap))
-		fmt.Fprintln(os.Stderr, "note: metering accumulates during agent runs in-process (MetricsSink); CLI `mesh usage` shows the current process only. Use --json for scrapers. Platform remote dashboards use dept.agent.llm_call when mesh is enabled.")
+		fmt.Fprintln(os.Stderr, "note: metering accumulates during agent runs in-process (MetricsSink); CLI `mesh usage` shows the current process only. Use --json for UsagePrint scrapers (s738; empty-time honest). Platform remote dashboards use dept.agent.llm_call when mesh is enabled.")
 	}
 	return 0
 }

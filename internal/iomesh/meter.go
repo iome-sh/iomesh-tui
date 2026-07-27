@@ -123,13 +123,83 @@ func FormatUsage(s UsageSnapshot) string {
 	return b.String()
 }
 
-// FormatUsageJSON returns indented JSON for stage CI / operator scrapers.
-// Same schema as UsageSnapshot (local process meter — not a remote dashboard).
-func FormatUsageJSON(s UsageSnapshot) string {
-	if s.ByModel == nil {
-		s.ByModel = []ModelUsage{}
+// ModelUsagePrint is a CLI-side print row for mesh usage --json by_model[].
+// Always emits all fields (empty string / 0 honest) without omitempty gaps.
+//
+// s738: mold CatalogPrint s735 + KVEntryPrint time honesty. Peer aion s737.
+// Beta · offline unit ≠ live APPLY · dual_write OFF · not full mesh RBAC GA ·
+// local process meter ≠ remote dashboard · DTO ≠ invent usage success.
+type ModelUsagePrint struct {
+	Model            string  `json:"model"`
+	Calls            int     `json:"calls"`
+	Errors           int     `json:"errors"`
+	PromptTokens     int     `json:"prompt_tokens"`
+	CompletionTokens int     `json:"completion_tokens"`
+	TotalTokens      int     `json:"total_tokens"`
+	EstUSD           float64 `json:"est_usd"`
+	DurationMS       int64   `json:"duration_ms"`
+}
+
+// UsagePrint is a CLI-side print DTO for mesh usage --json.
+// Always emits started/as_of as strings (RFC3339 when set; "" when zero — never
+// "0001-01-01T00:00:00Z"), counters (0 honest), and by_model as [] not null.
+// Wire UsageSnapshot keeps time.Time for in-process rollup; scrapers use this
+// print surface.
+//
+// s738: mold CatalogPrint s735 + PubPrint s732 + KVPutPrint s729; peer aion s737.
+// Beta · offline unit ≠ live APPLY · empty/0/[] honest · dual_write OFF ·
+// not full mesh RBAC GA · local process meter ≠ remote dashboard ·
+// DTO ≠ invent usage/meter success.
+type UsagePrint struct {
+	Started string            `json:"started"` // RFC3339 or "" when zero
+	AsOf    string            `json:"as_of"`   // RFC3339 or "" when zero
+	Calls   int               `json:"calls"`
+	Errors  int               `json:"errors"`
+	Tokens  int               `json:"tokens"`
+	EstUSD  float64           `json:"est_usd"`
+	ByModel []ModelUsagePrint `json:"by_model"` // empty [] not null
+}
+
+// NewUsagePrint maps UsageSnapshot → UsagePrint. Zero times become ""; nil
+// ByModel becomes []ModelUsagePrint{} so JSON emits [] not null. Empty strings
+// and 0 counters are honest when unset.
+func NewUsagePrint(s UsageSnapshot) UsagePrint {
+	p := UsagePrint{
+		Calls:   s.Calls,
+		Errors:  s.Errors,
+		Tokens:  s.Tokens,
+		EstUSD:  s.EstUSD,
+		ByModel: make([]ModelUsagePrint, 0, len(s.ByModel)),
 	}
-	b, err := json.MarshalIndent(s, "", "  ")
+	if !s.Started.IsZero() {
+		p.Started = s.Started.UTC().Format(time.RFC3339)
+	}
+	if !s.AsOf.IsZero() {
+		p.AsOf = s.AsOf.UTC().Format(time.RFC3339)
+	}
+	for _, row := range s.ByModel {
+		p.ByModel = append(p.ByModel, ModelUsagePrint{
+			Model:            row.Model,
+			Calls:            row.Calls,
+			Errors:           row.Errors,
+			PromptTokens:     row.PromptTokens,
+			CompletionTokens: row.CompletionTokens,
+			TotalTokens:      row.TotalTokens,
+			EstUSD:           row.EstUSD,
+			DurationMS:       row.DurationMS,
+		})
+	}
+	return p
+}
+
+// FormatUsageJSON returns indented JSON for stage CI / operator scrapers.
+// Marshals UsagePrint (via NewUsagePrint) so zero times emit "" rather than
+// "0001-01-01T00:00:00Z", and by_model is always [] not null. Call sites stay
+// FormatUsageJSON(UsageSnapshot). Local process meter — not a remote dashboard.
+//
+// s738: UsagePrint always-emit. Mold CatalogPrint s735. Peer aion s737 residual.
+func FormatUsageJSON(s UsageSnapshot) string {
+	b, err := json.MarshalIndent(NewUsagePrint(s), "", "  ")
 	if err != nil {
 		return `{"error":"usage json marshal failed"}` + "\n"
 	}

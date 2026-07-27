@@ -51,9 +51,18 @@ Agent order: **mesh policy → interactive approval → execute**.
 `Client` implements `router.MetricsSink` and keeps an **in-process** rollup (`UsageMeter`):
 
 - `iomesh mesh usage` — print table for the **current process** (empty in a fresh CLI)
-- `iomesh mesh usage --json` — same snapshot as indented JSON (stage scrapers / CI)
+- `iomesh mesh usage --json` — `UsagePrint` always-emit indented JSON (stage scrapers / CI)
 - After agent LLM calls, totals accumulate; emit still goes to `dept.agent.llm_call` when mesh is enabled
 - **Not** a remote multi-tenant dashboard UI — that lives on the platform. This CLI surface is operator-local cost telemetry only.
+
+**s738 usage print always-emit** (mold CatalogPrint s735 + PubPrint s732 + KVPutPrint s729; peer aion s737 residual): `iomesh mesh usage --json` marshals `UsagePrint` (via `FormatUsageJSON` → `NewUsagePrint`) always-emitting `{started,as_of,calls,errors,tokens,est_usd,by_model[]}` with nested `ModelUsagePrint` rows (`model,calls,errors,prompt_tokens,completion_tokens,total_tokens,est_usd,duration_ms`). Zero `time.Time` maps to `""` (never `"0001-01-01T00:00:00Z"`); `by_model` is always `[]` not null; empty/`0` honest. Wire `UsageSnapshot` / `ModelUsage` stay as in-process rollup (`time.Time` fields). Text `FormatUsage` unchanged. Call sites keep `FormatUsageJSON(UsageSnapshot)`.
+
+**Honesty:** Beta · offline unit ≠ live APPLY · dual_write default OFF · not full mesh RBAC GA · empty/`0`/`[]` honest · zero time → empty string · **local process meter ≠ remote dashboard** · DTO ≠ invent usage/meter success · peer aion s737 residual · no invent GA.
+
+```bash
+iomesh mesh usage              # text table (process lifetime; often empty in fresh CLI)
+iomesh mesh usage --json       # UsagePrint always-emit (s738; empty-time honest)
+```
 
 ## Remote metering path (platform dashboards)
 
@@ -292,7 +301,7 @@ Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 alread
 
 - `internal/iomesh/client.go` — QueryContext, lineage format, meter hook
 - `internal/iomesh/policy.go` — EvaluatePolicy
-- `internal/iomesh/meter.go` — UsageMeter / FormatUsage
+- `internal/iomesh/meter.go` — UsageMeter / FormatUsage / NewUsagePrint / FormatUsageJSON (UsagePrint always-emit s738)
 - `internal/iomesh/catalog.go` — ListCatalog / FormatCatalog / NewCatalogPrint / FormatCatalogJSON / CatalogSnippet (CatalogPrint always-emit s735)
 - `internal/iomesh/streams.go` — ListStreams / GetStream / DeleteStream / FormatStreams / NewStreamDeletePrint / FormatStreamDelete / FormatStreamDeleteJSON
 - `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages / NewStreamMessagePrint / NewStreamMessagesPrint / FormatStreamMessagesPrint
