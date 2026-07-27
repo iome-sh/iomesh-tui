@@ -243,6 +243,7 @@ func decodeCatalogBody(resp *http.Response) ([]DataProduct, error) {
 }
 
 // FormatCatalog renders a compact table for CLI / agent tools.
+// Text path is unchanged by s735; scrapers prefer FormatCatalogJSON / CatalogPrint.
 func FormatCatalog(res CatalogResult) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "iomesh catalog source=%s", res.Source)
@@ -271,6 +272,98 @@ func FormatCatalog(res CatalogResult) string {
 			truncateRunes(id, 24), truncateRunes(p.Layer, 12), truncateRunes(subj, 28), truncateRunes(title, 48))
 	}
 	return b.String()
+}
+
+// DataProductPrint is a CLI-side print DTO for mesh catalog --json product rows.
+// Always-emit scraper fields (no omitempty). Wire DataProduct stays lean with
+// omitempty. Call after Normalize() via NewDataProductPrint.
+//
+// s735: mold PubPrint s732 + StreamMessagesPrint s720 + KVKeysPrint s714.
+// Peer aion s734 residual. Beta catalog · offline unit ≠ live APPLY · empty/0/[]
+// honest · dual_write OFF · not full mesh RBAC GA · DTO ≠ invent catalog/product
+// success · fail-open source honest · wire omitempty ≠ print always-emit.
+type DataProductPrint struct {
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
+	Subject     string   `json:"subject"`
+	Layer       string   `json:"layer"`
+	Status      string   `json:"status"`
+	Department  string   `json:"department"`
+	Subjects    []string `json:"subjects"` // empty [] not null
+	Lineage     []string `json:"lineage"`  // empty [] not null
+}
+
+// CatalogPrint is a CLI-side print DTO for mesh catalog --json list envelope.
+// Always emits source / detail / query / count / products (empty [] not null)
+// so scrapers see a stable envelope without omitempty gaps. Wire CatalogResult
+// stays lean (no JSON tags). Source is honest (mesh|portal|fail-open|off).
+//
+// s735: mold StreamMessagesPrint s720 + KVKeysPrint s714. Peer aion s734.
+// Beta catalog · offline unit ≠ live APPLY · empty/0/[] honest · dual_write OFF
+// · not full mesh RBAC GA · DTO ≠ invent catalog success · portal federation
+// not invent GA.
+type CatalogPrint struct {
+	Source   string             `json:"source"`
+	Detail   string             `json:"detail"`
+	Query    string             `json:"query"`
+	Count    int                `json:"count"`
+	Products []DataProductPrint `json:"products"` // empty [] not null
+}
+
+// NewDataProductPrint builds a product print DTO. Normalizes portal aliases
+// first; maps common fields; nil subjects/lineage become []string{} so JSON
+// emits [] not null. Empty strings are honest when unset.
+func NewDataProductPrint(p DataProduct) DataProductPrint {
+	p.Normalize()
+	subjects := p.Subjects
+	if subjects == nil {
+		subjects = []string{}
+	}
+	lineage := p.Lineage
+	if lineage == nil {
+		lineage = []string{}
+	}
+	return DataProductPrint{
+		ID:          p.ID,
+		Name:        p.Name,
+		Title:       p.Title,
+		Description: p.Description,
+		Subject:     p.Subject,
+		Layer:       p.Layer,
+		Status:      p.Status,
+		Department:  p.Department,
+		Subjects:    subjects,
+		Lineage:     lineage,
+	}
+}
+
+// NewCatalogPrint builds a catalog list print envelope. count is len(products);
+// nil Products become []DataProductPrint{}. query is the operator filter as
+// passed to ListCatalog (empty string honest when unset).
+func NewCatalogPrint(res CatalogResult, query string) CatalogPrint {
+	products := make([]DataProductPrint, 0, len(res.Products))
+	for _, p := range res.Products {
+		products = append(products, NewDataProductPrint(p))
+	}
+	return CatalogPrint{
+		Source:   res.Source,
+		Detail:   res.Detail,
+		Query:    query,
+		Count:    len(products),
+		Products: products,
+	}
+}
+
+// FormatCatalogJSON returns indented JSON for stage CI / scrapers.
+// Always emits all CatalogPrint / DataProductPrint fields without omitempty gaps.
+func FormatCatalogJSON(p CatalogPrint) string {
+	b, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return `{"error":"catalog json marshal failed"}` + "\n"
+	}
+	return string(b) + "\n"
 }
 
 // FormatProductDetail is a multi-line view for one product (agent / CLI).

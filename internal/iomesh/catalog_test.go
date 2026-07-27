@@ -230,3 +230,157 @@ func TestDecodeCatalogArray(t *testing.T) {
 		t.Fatalf("%+v", res)
 	}
 }
+
+// s735: CatalogPrint JSON always-emits envelope + product keys (no omitempty gaps).
+func TestCatalogPrint_JSONAlwaysEmitKeys(t *testing.T) {
+	t.Parallel()
+
+	// Empty catalog (nil products) still emits source/detail/query/count/products; products=[].
+	emptyDTO := NewCatalogPrint(CatalogResult{Source: "off", Detail: "mesh disabled"}, "")
+	emptyJS := FormatCatalogJSON(emptyDTO)
+	var emptyObj map[string]any
+	if err := json.Unmarshal([]byte(emptyJS), &emptyObj); err != nil {
+		t.Fatalf("empty marshal/unmarshal: %v\n%s", err, emptyJS)
+	}
+	for _, key := range []string{"source", "detail", "query", "count", "products"} {
+		if _, ok := emptyObj[key]; !ok {
+			t.Fatalf("empty json missing key %q: %s", key, emptyJS)
+		}
+	}
+	if emptyObj["source"] != "off" || emptyObj["detail"] != "mesh disabled" {
+		t.Fatalf("empty envelope identity: %s", emptyJS)
+	}
+	if emptyObj["query"] != "" {
+		t.Fatalf("empty query want \"\"; got %v\n%s", emptyObj["query"], emptyJS)
+	}
+	if emptyObj["count"].(float64) != 0 {
+		t.Fatalf("count want 0; got %v\n%s", emptyObj["count"], emptyJS)
+	}
+	prods, ok := emptyObj["products"].([]any)
+	if !ok {
+		t.Fatalf("products want array not null: %s", emptyJS)
+	}
+	if len(prods) != 0 {
+		t.Fatalf("products want []; got %v\n%s", prods, emptyJS)
+	}
+	// products must be [] not null in raw JSON.
+	if strings.Contains(emptyJS, `"products": null`) {
+		t.Fatalf("products must not be null: %s", emptyJS)
+	}
+
+	// Sparse single product: all DataProductPrint keys; empty strings honest; subjects/lineage [].
+	sparseDTO := NewCatalogPrint(CatalogResult{
+		Source:   "fail-open",
+		Detail:   "no catalog path succeeded",
+		Products: []DataProduct{{ID: "sparse-product"}},
+	}, "ops")
+	sparseJS, err := json.Marshal(sparseDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var sparseObj map[string]any
+	if err := json.Unmarshal(sparseJS, &sparseObj); err != nil {
+		t.Fatal(err)
+	}
+	if sparseObj["query"] != "ops" || sparseObj["count"].(float64) != 1 {
+		t.Fatalf("sparse envelope: %s", sparseJS)
+	}
+	sparseProds, ok := sparseObj["products"].([]any)
+	if !ok || len(sparseProds) != 1 {
+		t.Fatalf("sparse products: %s", sparseJS)
+	}
+	row, ok := sparseProds[0].(map[string]any)
+	if !ok {
+		t.Fatalf("product row: %s", sparseJS)
+	}
+	for _, key := range []string{
+		"id", "name", "title", "description", "subject", "layer",
+		"status", "department", "subjects", "lineage",
+	} {
+		if _, ok := row[key]; !ok {
+			t.Fatalf("product missing key %q: %s", key, sparseJS)
+		}
+	}
+	// Title falls back via Normalize (Name|ID); other strings empty-honest.
+	if row["id"] != "sparse-product" {
+		t.Fatalf("id: %s", sparseJS)
+	}
+	if row["title"] != "sparse-product" {
+		t.Fatalf("title after Normalize want id fallback; got %v\n%s", row["title"], sparseJS)
+	}
+	if row["name"] != "" || row["description"] != "" || row["subject"] != "" ||
+		row["layer"] != "" || row["status"] != "" || row["department"] != "" {
+		t.Fatalf("empty strings not honest: %s", sparseJS)
+	}
+	for _, arrKey := range []string{"subjects", "lineage"} {
+		arr, ok := row[arrKey].([]any)
+		if !ok {
+			t.Fatalf("%s want array not null: %s", arrKey, sparseJS)
+		}
+		if len(arr) != 0 {
+			t.Fatalf("%s want []; got %v\n%s", arrKey, arr, sparseJS)
+		}
+	}
+	// Raw JSON: subjects/lineage must be [] not null (omitempty would drop or nil→null).
+	if strings.Contains(string(sparseJS), `"subjects":null`) || strings.Contains(string(sparseJS), `"lineage":null`) {
+		t.Fatalf("subjects/lineage must not be null: %s", sparseJS)
+	}
+
+	// Populated product: all keys + non-empty arrays.
+	popDTO := NewDataProductPrint(DataProduct{
+		ID:          "ops-incidents",
+		Name:        "Incidents",
+		Title:       "SRE Incidents",
+		Description: "incident stream",
+		Subject:     "dept.sre.incidents",
+		Layer:       "operational",
+		Status:      "ga",
+		Department:  "sre",
+		Subjects:    []string{"dept.sre.incidents.>", "dept.sre.alerts.>"},
+		Lineage:     []string{"pagerduty", "mesh"},
+	})
+	popJS, err := json.Marshal(popDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var popObj map[string]any
+	if err := json.Unmarshal(popJS, &popObj); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{
+		"id", "name", "title", "description", "subject", "layer",
+		"status", "department", "subjects", "lineage",
+	} {
+		if _, ok := popObj[key]; !ok {
+			t.Fatalf("populated missing key %q: %s", key, popJS)
+		}
+	}
+	if popObj["id"] != "ops-incidents" || popObj["name"] != "Incidents" ||
+		popObj["title"] != "SRE Incidents" || popObj["layer"] != "operational" ||
+		popObj["status"] != "ga" || popObj["department"] != "sre" {
+		t.Fatalf("populated scalars: %s", popJS)
+	}
+	subs := popObj["subjects"].([]any)
+	lin := popObj["lineage"].([]any)
+	if len(subs) != 2 || len(lin) != 2 {
+		t.Fatalf("populated arrays: %s", popJS)
+	}
+	// Wire DataProduct still has omitempty — print DTO must not.
+	wireJS, err := json.Marshal(DataProduct{ID: "x"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(wireJS), `"status"`) {
+		// status omitempty on wire — if present with empty it would still show;
+		// ensure lean wire does omit empty optional fields.
+		t.Fatalf("unexpected: lean wire should omit empty status: %s", wireJS)
+	}
+	// Print DTO always includes status even when empty.
+	printJS, err := json.Marshal(NewDataProductPrint(DataProduct{ID: "x"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(printJS), `"status"`) {
+		t.Fatalf("print DTO must always-emit status: %s", printJS)
+	}
+}

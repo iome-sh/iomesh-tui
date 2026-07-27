@@ -557,6 +557,7 @@ Flags (consumer):
 
 Flags (catalog):
   --query q         optional search filter
+  --json            CatalogPrint always-emit {source,detail,query,count,products[]} (s735; empty/0/[] honest)
   --endpoint url    override mesh endpoint
   --tenant id       override tenant
 
@@ -830,6 +831,7 @@ func cmdMeshCatalog(args []string) int {
 		query      = fs.String("query", "", "optional catalog search filter")
 		endpoint   = fs.String("endpoint", "", "override IOMESH_ENDPOINT")
 		tenant     = fs.String("tenant", "", "override tenant")
+		jsonOut    = fs.Bool("json", false, "print CatalogPrint always-emit JSON (source/detail/query/count/products; empty/0/[] honest)")
 		verbose    = fs.Bool("v", false, "verbose logs")
 	)
 	if err := fs.Parse(args); err != nil {
@@ -863,7 +865,12 @@ func cmdMeshCatalog(args []string) int {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	res := mesh.ListCatalog(ctx, *query)
-	fmt.Print(iomesh.FormatCatalog(res))
+	if *jsonOut {
+		// CatalogPrint always-emit (s735); Source=="off" still exit 1 (honesty).
+		fmt.Print(iomesh.FormatCatalogJSON(iomesh.NewCatalogPrint(res, *query)))
+	} else {
+		fmt.Print(iomesh.FormatCatalog(res))
+	}
 	if res.Source == "off" {
 		return 1
 	}
