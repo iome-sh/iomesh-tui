@@ -49,9 +49,13 @@ type MemoryPullStats struct {
 // s705: peer create FormatConsumerInfo s696 + status/wait pull identity continuum;
 // peer aion s704 sales claim suite/retention honesty.
 // s717: process evidence always-emit (endpoint/org/workspace + result/exit_code +
-// duration_ms/ack); peer aion s716 residual. Beta · offline unit ≠ live APPLY ·
-// dual_write default OFF (report-only) · fail-open empty role/tenant · not full
-// mesh RBAC GA · process evidence ≠ invent pull success from identity fields alone.
+// duration_ms/ack); peer aion s716 residual.
+// s747: process-evidence completeness pin — docs + unit tests lock the complete
+// s705 identity/knobs/counters + s717 process evidence surface; does not invent
+// new always-emit fields or re-claim s717 product body. Peer aion s746 residual.
+// Beta · offline unit ≠ live APPLY · dual_write default OFF (report-only) ·
+// fail-open empty role/tenant · not full mesh RBAC GA · process evidence ≠ invent
+// pull success from identity fields alone.
 type MemoryPullStatsPrint struct {
 	// Identity (always emit; empty string when unset).
 	Stream          string `json:"stream"`

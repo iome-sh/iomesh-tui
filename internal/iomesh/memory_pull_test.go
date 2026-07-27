@@ -468,3 +468,102 @@ func TestMemoryPullStatsPrint_PopulatedRoleFilter(t *testing.T) {
 		t.Fatalf("want empty workspace, got %q", s)
 	}
 }
+
+// s747: process-evidence completeness pin — FormatMemoryPullStatsJSON always emits
+// result / exit_code / endpoint / org / workspace on both empty and populated paths
+// (DTO already always-emit s717; this serial locks the complete surface, does not
+// invent new fields or re-claim s717 product body). Peer aion s746 residual.
+// process evidence ≠ invent pull success · dual_write OFF · offline unit ≠ live APPLY.
+func TestMemoryPullStatsPrint_ProcessEvidenceCompletenessPin(t *testing.T) {
+	t.Parallel()
+
+	// Process evidence keys residual-framed at aion s716 / product s717.
+	processEvidenceKeys := []string{"result", "exit_code", "endpoint", "org", "workspace"}
+
+	// Empty path: zero meta → keys present, empty/0 honest.
+	emptyJS := FormatMemoryPullStatsJSON(NewMemoryPullStatsPrint(MemoryPullStats{}, MemoryPullPrintMeta{}))
+	if !strings.HasSuffix(emptyJS, "\n") {
+		t.Fatal("empty FormatMemoryPullStatsJSON: expected trailing newline")
+	}
+	var emptyObj map[string]any
+	if err := json.Unmarshal([]byte(emptyJS), &emptyObj); err != nil {
+		t.Fatalf("empty unmarshal: %v\n%s", err, emptyJS)
+	}
+	for _, key := range processEvidenceKeys {
+		if _, ok := emptyObj[key]; !ok {
+			t.Fatalf("empty missing process evidence key %q: %s", key, emptyJS)
+		}
+	}
+	for _, key := range []string{"result", "endpoint", "org", "workspace"} {
+		if s, _ := emptyObj[key].(string); s != "" {
+			t.Fatalf("empty want honest blank %s, got %q", key, s)
+		}
+	}
+	if n, ok := emptyObj["exit_code"].(float64); !ok || n != 0 {
+		t.Fatalf("empty want exit_code=0, got %v", emptyObj["exit_code"])
+	}
+
+	// Populated path: process evidence values round-trip; all keys still present.
+	pop := NewMemoryPullStatsPrint(
+		MemoryPullStats{Stream: "EVENTS", Consumer: "c1", Filter: "t.>"},
+		MemoryPullPrintMeta{
+			Endpoint:   "https://mesh.example",
+			Org:        "org_dev",
+			Workspace:  "ws_alpha",
+			Result:     "ok",
+			ExitCode:   0,
+			DurationMS: 9,
+			Ack:        true,
+		},
+	)
+	popJS := FormatMemoryPullStatsJSON(pop)
+	if !strings.HasSuffix(popJS, "\n") {
+		t.Fatal("populated FormatMemoryPullStatsJSON: expected trailing newline")
+	}
+	var popObj map[string]any
+	if err := json.Unmarshal([]byte(popJS), &popObj); err != nil {
+		t.Fatalf("populated unmarshal: %v\n%s", err, popJS)
+	}
+	for _, key := range processEvidenceKeys {
+		if _, ok := popObj[key]; !ok {
+			t.Fatalf("populated missing process evidence key %q: %s", key, popJS)
+		}
+	}
+	if popObj["result"] != "ok" || popObj["exit_code"] != float64(0) {
+		t.Fatalf("populated result/exit_code: %s", popJS)
+	}
+	if popObj["endpoint"] != "https://mesh.example" || popObj["org"] != "org_dev" || popObj["workspace"] != "ws_alpha" {
+		t.Fatalf("populated endpoint/org/workspace: %s", popJS)
+	}
+
+	// Err path still always-emits the same five keys (empty org/workspace honest).
+	errJS := FormatMemoryPullStatsJSON(NewMemoryPullStatsPrint(
+		MemoryPullStats{Stream: "S", Errors: 1, LastError: "boom"},
+		MemoryPullPrintMeta{
+			Endpoint: "http://127.0.0.1:8080",
+			Result:   "err",
+			ExitCode: 1,
+		},
+	))
+	var errObj map[string]any
+	if err := json.Unmarshal([]byte(errJS), &errObj); err != nil {
+		t.Fatalf("err unmarshal: %v\n%s", err, errJS)
+	}
+	for _, key := range processEvidenceKeys {
+		if _, ok := errObj[key]; !ok {
+			t.Fatalf("err missing process evidence key %q: %s", key, errJS)
+		}
+	}
+	if errObj["result"] != "err" || errObj["exit_code"] != float64(1) {
+		t.Fatalf("err result/exit_code: %s", errJS)
+	}
+	if errObj["endpoint"] != "http://127.0.0.1:8080" {
+		t.Fatalf("err endpoint: %s", errJS)
+	}
+	if s, _ := errObj["org"].(string); s != "" {
+		t.Fatalf("err want empty org, got %q", s)
+	}
+	if s, _ := errObj["workspace"].(string); s != "" {
+		t.Fatalf("err want empty workspace, got %q", s)
+	}
+}
