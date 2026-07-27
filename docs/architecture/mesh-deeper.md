@@ -221,13 +221,22 @@ Lean fire-and-forget publish (no stream name; not durable stream append). Wire p
 |--------|------|-------|
 | `Pub(subject, payload, headers)` | `POST /v1/pub` | Body `{"subject","payload" as **raw string** (not base64), `headers?`}; empty subject / non-2xx → error; mesh disabled → `mesh disabled` |
 
+Wire `Pub` stays lean (error return only). CLI print surfaces always-emit for scrapers (mold StreamDeletePrint s726 + KVPutPrint s729; peer aion s731 residual):
+
+| Surface | Behaviour |
+|---------|-----------|
+| `PubPrint` / `--json` | Always emits `{ok,subject,bytes}` on success only (s732; bytes `0` honest; empty subject honest); FAIL stays stderr; no pull_role invent; no payload echo |
+| `FormatPub` / text | PASS + always-emit `subject:` / `bytes:` lines (s732) |
+
+**s732 pub print always-emit** (mold StreamDeletePrint s726 + KVPutPrint s729; peer aion s731 residual): `--subject S --payload STR|--payload-file F --yes [--json]` prints `PubPrint` always-emitting `{ok,subject,bytes}` (empty/0 honest). Success path only — FAIL stays stderr. Wire `Pub` stays lean (error return only). No `pull_role` invent and no payload echo. Ephemeral `POST /v1/pub` ≠ durable stream publish. Beta · offline unit ≠ live APPLY · dual_write default OFF · not full mesh RBAC GA · DTO ≠ invent pub success when HTTP failed.
+
 ```bash
 iomesh mesh pub --subject dept.agent.ping --payload '{"ok":true}' --yes
 iomesh mesh pub --subject dept.agent.ping --payload-file ./evt.json --yes
-iomesh mesh pub --subject dept.agent.ping --payload hello --yes --json
+iomesh mesh pub --subject dept.agent.ping --payload hello --yes --json   # PubPrint {ok,subject,bytes} (s732)
 ```
 
-Requires `--subject` and `--payload` or `--payload-file` and **`--yes`**. Success prints `PASS mesh pub subject=… bytes=N` (or JSON `{subject,ok,bytes}`). Distinct from stream `POST /v1/streams/{name}/publish` (dept emit / memory ingest use that path).
+Requires `--subject` and `--payload` or `--payload-file` and **`--yes`**. Success prints `PubPrint` always-emit text/JSON `{ok,subject,bytes}` (s732; empty/0 honest). Distinct from stream `POST /v1/streams/{name}/publish` (dept emit / memory ingest use that path).
 
 Dogfood soft-probes the same path when `--pub-subject` / `DogfoodOptions.PubSubject` is set (fixed payload `{"source":"iomesh-tui-dogfood"}`; soft SKIP on error unless `--strict`).
 
@@ -276,5 +285,5 @@ Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 alread
 - `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages / NewStreamMessagePrint / NewStreamMessagesPrint / FormatStreamMessagesPrint
 - `internal/iomesh/consumers.go` — CreateConsumer / ConsumerFetch / ConsumerAck / ConsumerNack / DeleteConsumer / FormatConsumerInfo / FormatConsumerInfoWithAuth / NewConsumerInfoPrint / NewConsumerFetchPrint / FormatConsumerFetch / NewConsumerAckPrint / FormatConsumerAck / NewConsumerDeletePrint / FormatConsumerDelete
 - `internal/iomesh/kv.go` — KVGet / KVListKeys / KVPut / KVDelete / KVCreateBucket / FormatKVEntry / FormatKVKeys / FormatKVBucketInfo / NewKVBucketInfoPrint / NewKVEntryPrint / NewKVKeysPrint / NewKVPutPrint / FormatKVPut / FormatKVPutJSON / NewKVDeletePrint / FormatKVDelete / FormatKVDeleteJSON
-- `internal/iomesh/pub.go` — Pub (ephemeral `POST /v1/pub`)
+- `internal/iomesh/pub.go` — Pub / NewPubPrint / FormatPub / FormatPubJSON (ephemeral `POST /v1/pub`; PubPrint always-emit s732)
 - `internal/agent` — policy before tool execute; mesh catalog tools; `EventMeshPolicy`

@@ -58,3 +58,50 @@ func (c *Client) Pub(ctx context.Context, subject string, payload []byte, header
 	}
 	return nil
 }
+
+// PubPrint is a CLI-side print DTO for mesh pub success.
+// Always emits ok / subject / bytes (0 honest when unset; empty subject honest)
+// so scrapers see a stable envelope without omitempty gaps. No pull_role invent
+// and no payload echo (pub success ≠ get/fetch). Wire Pub stays lean (error
+// return only).
+//
+// s732: mold StreamDeletePrint s726 + KVPutPrint s729; peer aion s731 residual.
+// Ephemeral POST /v1/pub ≠ durable stream publish. Beta · offline unit ≠ live
+// APPLY · empty/0 honest · dual_write OFF · not full mesh RBAC GA · does not
+// invent pub success when HTTP failed (call only after Pub returns nil).
+type PubPrint struct {
+	OK      bool   `json:"ok"`
+	Subject string `json:"subject"`
+	Bytes   int    `json:"bytes"`
+}
+
+// NewPubPrint builds a pub success print DTO. OK is always true (call only
+// after mesh.Pub returns a nil error). Bytes 0 is honest for empty payload;
+// empty subject is honest when unset (CLI still requires --subject before call).
+func NewPubPrint(subject string, bytes int) PubPrint {
+	return PubPrint{
+		OK:      true,
+		Subject: subject,
+		Bytes:   bytes,
+	}
+}
+
+// FormatPub is a multi-line operator view for mesh pub success (s732).
+// Always emits subject and bytes (0 when unset). Pure helper; no I/O.
+func FormatPub(p PubPrint) string {
+	var b strings.Builder
+	b.WriteString("PASS mesh pub\n")
+	fmt.Fprintf(&b, "subject: %s\n", p.Subject)
+	fmt.Fprintf(&b, "bytes:   %d\n", p.Bytes)
+	return b.String()
+}
+
+// FormatPubJSON returns indented JSON for stage CI / scrapers.
+// Always emits all PubPrint fields without omitempty gaps.
+func FormatPubJSON(p PubPrint) string {
+	b, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return `{"error":"pub json marshal failed"}` + "\n"
+	}
+	return string(b) + "\n"
+}

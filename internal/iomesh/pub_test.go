@@ -147,3 +147,91 @@ func TestPub_OmitsHeadersWhenNil(t *testing.T) {
 		t.Fatalf("nil headers should be omitempty: %s", raw)
 	}
 }
+
+// s732: PubPrint JSON always-emits {ok,subject,bytes} (no pull_role / payload invent).
+func TestPubPrint_JSONAlwaysEmitKeys(t *testing.T) {
+	t.Parallel()
+
+	// Empty subject + 0 bytes honest (still always-emit keys).
+	emptyDTO := NewPubPrint("", 0)
+	emptyJS, err := json.Marshal(emptyDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var emptyObj map[string]any
+	if err := json.Unmarshal(emptyJS, &emptyObj); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"ok", "subject", "bytes"} {
+		if _, ok := emptyObj[key]; !ok {
+			t.Fatalf("empty json missing key %q: %s", key, emptyJS)
+		}
+	}
+	if emptyObj["ok"] != true {
+		t.Fatalf("ok want true: %s", emptyJS)
+	}
+	if emptyObj["subject"] != "" {
+		t.Fatalf("empty subject want \"\"; got %v\n%s", emptyObj["subject"], emptyJS)
+	}
+	if emptyObj["bytes"].(float64) != 0 {
+		t.Fatalf("bytes want 0; got %v\n%s", emptyObj["bytes"], emptyJS)
+	}
+	// Do not invent pull_role or payload echo on pub JSON.
+	if _, ok := emptyObj["pull_role"]; ok {
+		t.Fatalf("must not invent pull_role on PubPrint: %s", emptyJS)
+	}
+	if _, ok := emptyObj["payload"]; ok {
+		t.Fatalf("must not invent payload echo on PubPrint: %s", emptyJS)
+	}
+
+	popDTO := NewPubPrint("dept.agent.ping", 11)
+	popJS, err := json.Marshal(popDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var popObj map[string]any
+	if err := json.Unmarshal(popJS, &popObj); err != nil {
+		t.Fatal(err)
+	}
+	if popObj["ok"] != true || popObj["subject"] != "dept.agent.ping" ||
+		popObj["bytes"].(float64) != 11 {
+		t.Fatalf("populated: %s", popJS)
+	}
+
+	// Format helpers round-trip keys for scrapers.
+	formatted := FormatPubJSON(popDTO)
+	if !strings.Contains(formatted, `"ok": true`) ||
+		!strings.Contains(formatted, `"subject": "dept.agent.ping"`) ||
+		!strings.Contains(formatted, `"bytes": 11`) {
+		t.Fatalf("FormatPubJSON: %s", formatted)
+	}
+	if strings.Contains(formatted, "pull_role") || strings.Contains(formatted, `"payload"`) {
+		t.Fatalf("FormatPubJSON must not invent pull_role/payload: %s", formatted)
+	}
+}
+
+// s732: FormatPub always-emits subject/bytes (empty or populated).
+func TestFormatPub_AlwaysEmit(t *testing.T) {
+	t.Parallel()
+
+	empty := FormatPub(NewPubPrint("", 0))
+	for _, want := range []string{
+		"PASS mesh pub\n",
+		"subject: \n",
+		"bytes:   0\n",
+	} {
+		if !strings.Contains(empty, want) {
+			t.Fatalf("empty missing %q in:\n%q", want, empty)
+		}
+	}
+
+	pop := FormatPub(NewPubPrint("dept.agent.ping", 11))
+	if !strings.Contains(pop, "PASS mesh pub\n") ||
+		!strings.Contains(pop, "subject: dept.agent.ping\n") ||
+		!strings.Contains(pop, "bytes:   11\n") {
+		t.Fatalf("populated:\n%s", pop)
+	}
+	if strings.Contains(pop, "pull_role") {
+		t.Fatalf("text must not invent pull_role:\n%s", pop)
+	}
+}
