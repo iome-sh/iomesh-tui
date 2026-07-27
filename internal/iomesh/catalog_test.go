@@ -555,3 +555,173 @@ func TestCatalogProductPrint_JSONAlwaysEmitKeys(t *testing.T) {
 		t.Fatalf("blank id envelope: %s", blankJS)
 	}
 }
+
+// s753: catalog print JSON completeness pin — locks list CatalogPrint (s735) +
+// product CatalogProductPrint (s744) + nested DataProductPrint always-emit keys
+// (DTO surfaces already always-emit; this serial docs+tests pin completeness,
+// does not invent new fields or re-claim s735/s744 product bodies). Peer aion
+// s752 residual. DTO ≠ invent catalog/product success · found=false honest ·
+// dual_write OFF · offline unit ≠ live APPLY · not full mesh RBAC GA · Beta catalog.
+func TestCatalogPrint_JSONCompletenessPin(t *testing.T) {
+	t.Parallel()
+
+	listKeys := []string{"source", "detail", "query", "count", "products"}
+	detailKeys := []string{"source", "detail", "id", "found", "product"}
+	productKeys := []string{
+		"id", "name", "title", "description", "subject", "layer",
+		"status", "department", "subjects", "lineage",
+	}
+
+	// List surface (s735): empty catalog still always-emits envelope keys;
+	// products is [] not null.
+	listJS := FormatCatalogJSON(NewCatalogPrint(CatalogResult{
+		Source: "off", Detail: "mesh disabled",
+	}, ""))
+	if !strings.HasSuffix(listJS, "\n") {
+		t.Fatal("list FormatCatalogJSON: expected trailing newline")
+	}
+	var listObj map[string]any
+	if err := json.Unmarshal([]byte(listJS), &listObj); err != nil {
+		t.Fatalf("list unmarshal: %v\n%s", err, listJS)
+	}
+	for _, key := range listKeys {
+		if _, ok := listObj[key]; !ok {
+			t.Fatalf("list missing CatalogPrint key %q: %s", key, listJS)
+		}
+	}
+	prods, ok := listObj["products"].([]any)
+	if !ok {
+		t.Fatalf("list products want array not null: %s", listJS)
+	}
+	if len(prods) != 0 {
+		t.Fatalf("list products want []; got %v\n%s", prods, listJS)
+	}
+	if strings.Contains(listJS, `"products": null`) || strings.Contains(listJS, `"products":null`) {
+		t.Fatalf("list products must not be null: %s", listJS)
+	}
+
+	// List nested DataProductPrint keys + subjects/lineage [] not null.
+	listSparseJS := FormatCatalogJSON(NewCatalogPrint(CatalogResult{
+		Source:   "fail-open",
+		Detail:   "no catalog path succeeded",
+		Products: []DataProduct{{ID: "sparse-product"}},
+	}, "ops"))
+	var listSparseObj map[string]any
+	if err := json.Unmarshal([]byte(listSparseJS), &listSparseObj); err != nil {
+		t.Fatalf("list sparse unmarshal: %v\n%s", err, listSparseJS)
+	}
+	sparseProds, ok := listSparseObj["products"].([]any)
+	if !ok || len(sparseProds) != 1 {
+		t.Fatalf("list sparse products: %s", listSparseJS)
+	}
+	listRow, ok := sparseProds[0].(map[string]any)
+	if !ok {
+		t.Fatalf("list product row: %s", listSparseJS)
+	}
+	for _, key := range productKeys {
+		if _, ok := listRow[key]; !ok {
+			t.Fatalf("list nested DataProductPrint missing key %q: %s", key, listSparseJS)
+		}
+	}
+	for _, arrKey := range []string{"subjects", "lineage"} {
+		arr, ok := listRow[arrKey].([]any)
+		if !ok {
+			t.Fatalf("list %s want array not null: %s", arrKey, listSparseJS)
+		}
+		if len(arr) != 0 {
+			t.Fatalf("list %s want []; got %v\n%s", arrKey, arr, listSparseJS)
+		}
+	}
+	if strings.Contains(listSparseJS, `"subjects": null`) || strings.Contains(listSparseJS, `"lineage": null`) ||
+		strings.Contains(listSparseJS, `"subjects":null`) || strings.Contains(listSparseJS, `"lineage":null`) {
+		t.Fatalf("list subjects/lineage must not be null: %s", listSparseJS)
+	}
+
+	// Detail surface (s744): found=false always-emits envelope keys; product empty
+	// fields + subjects/lineage [] (no invent).
+	detailJS := FormatCatalogProductJSON(NewCatalogProductPrint(
+		"missing-id",
+		DataProduct{},
+		CatalogResult{Source: "fail-open", Detail: "product not found: missing-id"},
+		false,
+	))
+	if !strings.HasSuffix(detailJS, "\n") {
+		t.Fatal("detail FormatCatalogProductJSON: expected trailing newline")
+	}
+	var detailObj map[string]any
+	if err := json.Unmarshal([]byte(detailJS), &detailObj); err != nil {
+		t.Fatalf("detail unmarshal: %v\n%s", err, detailJS)
+	}
+	for _, key := range detailKeys {
+		if _, ok := detailObj[key]; !ok {
+			t.Fatalf("detail missing CatalogProductPrint key %q: %s", key, detailJS)
+		}
+	}
+	if detailObj["found"] != false {
+		t.Fatalf("detail found want false: %s", detailJS)
+	}
+	if detailObj["id"] != "missing-id" {
+		t.Fatalf("detail requested id: %s", detailJS)
+	}
+	detailProd, ok := detailObj["product"].(map[string]any)
+	if !ok {
+		t.Fatalf("detail product want object not null: %s", detailJS)
+	}
+	for _, key := range productKeys {
+		if _, ok := detailProd[key]; !ok {
+			t.Fatalf("detail nested DataProductPrint missing key %q: %s", key, detailJS)
+		}
+	}
+	if detailProd["id"] != "" || detailProd["name"] != "" || detailProd["title"] != "" {
+		t.Fatalf("found=false must not invent product identity: %s", detailJS)
+	}
+	for _, arrKey := range []string{"subjects", "lineage"} {
+		arr, ok := detailProd[arrKey].([]any)
+		if !ok {
+			t.Fatalf("detail %s want array not null: %s", arrKey, detailJS)
+		}
+		if len(arr) != 0 {
+			t.Fatalf("detail %s want []; got %v\n%s", arrKey, arr, detailJS)
+		}
+	}
+	if strings.Contains(detailJS, `"subjects": null`) || strings.Contains(detailJS, `"lineage": null`) ||
+		strings.Contains(detailJS, `"subjects":null`) || strings.Contains(detailJS, `"lineage":null`) ||
+		strings.Contains(detailJS, `"product": null`) || strings.Contains(detailJS, `"product":null`) {
+		t.Fatalf("detail product/subjects/lineage must not be null: %s", detailJS)
+	}
+
+	// Detail found=true still always-emits the same key sets (populated path).
+	popJS := FormatCatalogProductJSON(NewCatalogProductPrint(
+		"ops-incidents",
+		DataProduct{
+			ID: "ops-incidents", Name: "Incidents", Title: "SRE Incidents",
+			Subjects: []string{"dept.sre.incidents.>"}, Lineage: []string{"mesh"},
+		},
+		CatalogResult{Source: "portal", Detail: "/v17/portal/catalog/data-products/ops-incidents"},
+		true,
+	))
+	var popObj map[string]any
+	if err := json.Unmarshal([]byte(popJS), &popObj); err != nil {
+		t.Fatalf("populated detail unmarshal: %v\n%s", err, popJS)
+	}
+	for _, key := range detailKeys {
+		if _, ok := popObj[key]; !ok {
+			t.Fatalf("populated detail missing key %q: %s", key, popJS)
+		}
+	}
+	if popObj["found"] != true {
+		t.Fatalf("populated found want true: %s", popJS)
+	}
+	popProd, ok := popObj["product"].(map[string]any)
+	if !ok {
+		t.Fatalf("populated product: %s", popJS)
+	}
+	for _, key := range productKeys {
+		if _, ok := popProd[key]; !ok {
+			t.Fatalf("populated DataProductPrint missing key %q: %s", key, popJS)
+		}
+	}
+	if len(popProd["subjects"].([]any)) != 1 || len(popProd["lineage"].([]any)) != 1 {
+		t.Fatalf("populated subjects/lineage: %s", popJS)
+	}
+}
