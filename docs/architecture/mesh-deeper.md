@@ -136,13 +136,15 @@ Wire `DataProduct` stays lean (`omitempty` on optional fields). CLI print surfac
 
 **s744 catalog product detail print always-emit** (mold CatalogPrint s735 + PubPrint s732; peer aion s743 residual): `iomesh mesh catalog --id ID [--json]` fetches one product via `GetCatalogProduct` (portal detail routes, then list filter fallback). `--json` prints `CatalogProductPrint` always-emitting `{source,detail,id,found,product}` with nested `DataProductPrint` (empty/`0`/`[]`/`false` honest; subjects/lineage never null). `found=false` when product missing / fail-open not-found / off — nested product is empty fields + `[]` arrays (no invent). Text path uses `FormatProductDetail` unchanged. List path (`--id` omitted) stays s735 CatalogPrint. Exit 1 when `Source=="off"`; fail-open not-found keeps exit 0 so scrapers see `found=false` without treating operator disable as success. Wire `DataProduct` / `GetCatalogProduct` tags unchanged. **Beta catalog** · offline unit ≠ live APPLY · dual_write default OFF · fail-open source honest · not full mesh RBAC GA · portal federation not invent GA · DTO ≠ invent catalog/product success · s735 list ≠ product detail residual · no invent GA.
 
+**s753 (Beta · completeness pin):** catalog print JSON **complete** — list `CatalogPrint` (s735) + product detail `CatalogProductPrint` (s744) locked by docs + unit tests (always-emit keys: list `{source,detail,query,count,products}`; detail `{source,detail,id,found,product}`; nested `DataProductPrint` subjects/lineage `[]` not null). Completeness pin **s753** · peer aion **s752**. Completeness pin **does not** invent new DTO fields · **does not** re-claim s735/s744 product bodies · DTO ≠ invent catalog/product success · `found=false` honest · s735 list ≠ product detail · dual_write OFF · not full mesh RBAC GA · offline unit ≠ live APPLY · Beta catalog · portal federation not invent GA.
+
 ```bash
 iomesh mesh catalog
 iomesh mesh catalog --query operational
-iomesh mesh catalog --json                    # CatalogPrint always-emit (s735)
+iomesh mesh catalog --json                    # CatalogPrint always-emit (s735; completeness pin s753)
 iomesh mesh catalog --query ops --json        # query echoed; count + products[]
 iomesh mesh catalog --id ops-incidents        # FormatProductDetail text
-iomesh mesh catalog --id ops-incidents --json # CatalogProductPrint always-emit (s744)
+iomesh mesh catalog --id ops-incidents --json # CatalogProductPrint always-emit (s744; completeness pin s753)
 ```
 
 ## Stream discovery (operator list/get/delete/messages)
@@ -308,7 +310,7 @@ Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 alread
 - `internal/iomesh/client.go` — QueryContext, lineage format, meter hook
 - `internal/iomesh/policy.go` — EvaluatePolicy
 - `internal/iomesh/meter.go` — UsageMeter / FormatUsage / NewUsagePrint / FormatUsageJSON (UsagePrint always-emit s738)
-- `internal/iomesh/catalog.go` — ListCatalog / GetCatalogProduct / FormatCatalog / NewCatalogPrint / FormatCatalogJSON / NewCatalogProductPrint / FormatCatalogProductJSON / FormatProductDetail / CatalogSnippet (CatalogPrint s735 + CatalogProductPrint s744)
+- `internal/iomesh/catalog.go` — ListCatalog / GetCatalogProduct / FormatCatalog / NewCatalogPrint / FormatCatalogJSON / NewCatalogProductPrint / FormatCatalogProductJSON / FormatProductDetail / CatalogSnippet (CatalogPrint s735 + CatalogProductPrint s744; completeness pin s753)
 - `internal/iomesh/streams.go` — ListStreams / GetStream / DeleteStream / FormatStreams / NewStreamInfoPrint / FormatStreamInfoJSON / FormatStreamInfoListJSON / NewStreamDeletePrint / FormatStreamDelete / FormatStreamDeleteJSON
 - `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages / NewStreamMessagePrint / NewStreamMessagesPrint / FormatStreamMessagesPrint / FormatStreamMessagesJSON
 - `internal/iomesh/consumers.go` — CreateConsumer / ConsumerFetch / ConsumerAck / ConsumerNack / DeleteConsumer / FormatConsumerInfo / FormatConsumerInfoWithAuth / NewConsumerInfoPrint / FormatConsumerInfoJSON / NewConsumerFetchPrint / FormatConsumerFetch / FormatConsumerFetchJSON / NewConsumerAckPrint / FormatConsumerAck / NewConsumerDeletePrint / FormatConsumerDelete
@@ -319,3 +321,5 @@ Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 alread
 **s741 Format\*JSON helper completeness** (peer aion s740 residual): CLI `--json` success paths prefer package `Format*JSON` helpers over ad-hoc `json.MarshalIndent`. Helpers share mold (MarshalIndent + trailing newline + marshal-error fallback). Print DTOs already always-emit from prior serials (s714/s696/s699/s702/s720/…); this serial does **not** invent new DTO fields or re-claim product always-emit bodies — helper surface + CLI wire only. `FormatStreamInfoListJSON(nil)` emits `[]` not null. Beta · offline unit ≠ live APPLY · dual_write default OFF · empty/0/`[]` honest · not full mesh RBAC GA.
 
 **s750 (Beta · completeness pin):** Format\*JSON helper completeness **complete** — prior always-emit Format\*JSON continuum + **s741 residual helpers** (`FormatStreamMessagesJSON` · `FormatStreamInfoJSON` · `FormatStreamInfoListJSON` · `FormatConsumerInfoJSON` · `FormatKVBucketInfoJSON` · `FormatKVEntryJSON` · `FormatKVKeysJSON`) locked by docs + unit tests (keys present · trailing newline · nil list → `[]` not null). Completeness pin **s750** · peer aion **s749**. Completeness pin **does not** invent new DTO fields · **does not** re-claim s741 product body · CLI prefer Format\*JSON · dual_write OFF · not full mesh RBAC GA · offline unit ≠ live APPLY · helper completeness ≠ invent new DTO fields.
+
+**s753 (Beta · completeness pin):** catalog print JSON **complete** — list CatalogPrint (s735) + product CatalogProductPrint (s744) + nested DataProductPrint locked by docs + unit tests. Completeness pin **s753** · peer aion **s752**. Completeness pin **does not** invent new DTO fields · **does not** re-claim s735/s744 product bodies · DTO ≠ invent catalog/product success · `found=false` honest · dual_write OFF · not full mesh RBAC GA · offline unit ≠ live APPLY · Beta catalog.

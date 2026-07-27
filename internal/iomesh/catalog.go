@@ -301,6 +301,11 @@ type DataProductPrint struct {
 // stays lean (no JSON tags). Source is honest (mesh|portal|fail-open|off).
 //
 // s735: mold StreamMessagesPrint s720 + KVKeysPrint s714. Peer aion s734.
+// s753: completeness pin — docs + unit tests lock CatalogPrint (s735) +
+// CatalogProductPrint (s744) + nested DataProductPrint always-emit keys;
+// does not invent new DTO fields or re-claim s735/s744 product bodies. Peer
+// aion s752 residual. DTO ≠ invent catalog/product success · found=false
+// honest · dual_write OFF · offline unit ≠ live APPLY · not full mesh RBAC GA.
 // Beta catalog · offline unit ≠ live APPLY · empty/0/[] honest · dual_write OFF
 // · not full mesh RBAC GA · DTO ≠ invent catalog success · portal federation
 // not invent GA.
@@ -370,6 +375,9 @@ func FormatCatalogJSON(p CatalogPrint) string {
 // Reuses DataProductPrint for nested product. found=false honest when missing.
 //
 // s744: mold CatalogPrint s735 + PubPrint s732. Peer aion s743 residual.
+// s753: completeness pin — docs + unit tests lock list CatalogPrint (s735) +
+// this detail envelope + nested DataProductPrint; does not invent new DTO
+// fields or re-claim s735/s744 product bodies. Peer aion s752 residual.
 // Beta catalog · offline unit ≠ live APPLY · dual_write OFF · not full mesh
 // RBAC GA · empty/0/[]/false honest · DTO ≠ invent catalog/product success ·
 // fail-open · found=false honest · s735 list ≠ product detail residual ·
