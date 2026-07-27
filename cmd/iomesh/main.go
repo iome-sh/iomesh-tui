@@ -498,7 +498,7 @@ func cmdMesh(args []string) int {
   iomesh mesh catalog   list governed data products (broker + portal federation)
   iomesh mesh streams   list/get/delete/messages broker streams (GET|DELETE /v1/streams; explicit errors)
   iomesh mesh kv        KV list/get/put/delete/create-bucket (GET|PUT|DELETE|POST /v1/kv; mutate ops require --yes)
-  iomesh mesh pub       ephemeral fire-and-forget publish (POST /v1/pub; requires --yes)
+  iomesh mesh pub       ephemeral fire-and-forget publish (POST /v1/pub; requires --yes; PubPrint always-emit)
   iomesh mesh consumer  durable pull consumer create/fetch/ack/nack/delete (.../consumers; requires --yes)
   iomesh mesh wait      poll Ready until OK or timeout (operator preflight)
   iomesh mesh status    operator snapshot (StatusLine + optional Health/Ready)
@@ -579,7 +579,18 @@ Flags (kv):
   --list            list keys in bucket (optional --prefix)
   --get KEY         get one key value
   --prefix P        list: key prefix filter
-  --json            JSON output (keys array or entry object)
+  --json            JSON output (keys array or entry object; put: KVPutPrint; delete: KVDeletePrint)
+  --endpoint url    override mesh endpoint
+  --config path     config.toml
+  --tenant id       override tenant
+  -v                verbose
+
+Flags (pub):
+  --subject S       pub subject (required)
+  --payload STR     payload string (raw wire, not base64)
+  --payload-file F  read payload from file (not both with --payload)
+  --yes             confirm mutating ephemeral pub (required)
+  --json            PubPrint always-emit {ok,subject,bytes} (s732; empty/0 honest; no payload echo)
   --endpoint url    override mesh endpoint
   --config path     config.toml
   --tenant id       override tenant
@@ -1447,7 +1458,7 @@ func cmdMeshPub(args []string) int {
 		payloadStr  = fs.String("payload", "", "payload string (raw wire, not base64)")
 		payloadFile = fs.String("payload-file", "", "read payload from file")
 		yes         = fs.Bool("yes", false, "confirm mutating pub (required)")
-		jsonOut     = fs.Bool("json", false, "print success as JSON")
+		jsonOut     = fs.Bool("json", false, "print success as JSON (PubPrint always-emit {ok,subject,bytes})")
 		verbose     = fs.Bool("v", false, "verbose logs")
 		endpoint    = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
 		tenant      = fs.String("tenant", "", "override tenant")
@@ -1460,6 +1471,7 @@ func cmdMeshPub(args []string) int {
 	if subj == "" || !hasPayload || !*yes {
 		fmt.Fprintln(os.Stderr, "usage: iomesh mesh pub --subject S --payload STR|--payload-file F --yes [--json]")
 		fmt.Fprintln(os.Stderr, "  --subject and --payload or --payload-file required; --yes required (ephemeral mutate)")
+		fmt.Fprintln(os.Stderr, "  text/JSON always-emit PubPrint {ok,subject,bytes} (s732; empty/0 honest; no payload echo)")
 		return 2
 	}
 	if strings.TrimSpace(*payloadStr) != "" && strings.TrimSpace(*payloadFile) != "" {
@@ -1508,20 +1520,13 @@ func cmdMeshPub(args []string) int {
 		fmt.Fprintf(os.Stderr, "FAIL mesh pub: %v\n", err)
 		return 1
 	}
+	// s732: always-emit PubPrint on pub success (mold StreamDeletePrint s726 + KVPutPrint s729).
+	printDTO := iomesh.NewPubPrint(subj, len(payload))
 	if *jsonOut {
-		b, err := json.MarshalIndent(map[string]any{
-			"subject": subj,
-			"ok":      true,
-			"bytes":   len(payload),
-		}, "", "  ")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "json: %v\n", err)
-			return 1
-		}
-		fmt.Println(string(b))
+		fmt.Print(iomesh.FormatPubJSON(printDTO))
 		return 0
 	}
-	fmt.Printf("PASS mesh pub subject=%s bytes=%d\n", subj, len(payload))
+	fmt.Print(iomesh.FormatPub(printDTO))
 	return 0
 }
 
@@ -2326,7 +2331,7 @@ Usage:
   iomesh skills                  list SKILL.md catalogs
   iomesh mcp [--connect]         list configured MCP servers
   iomesh mesh dogfood            stage I/O Mesh smoke (health/context/emit/pub/memory)
-  iomesh mesh pub                ephemeral POST /v1/pub (--subject --payload|--payload-file --yes)
+  iomesh mesh pub                ephemeral POST /v1/pub (--subject --payload|--payload-file --yes; PubPrint always-emit)
   iomesh mesh consumer create    durable pull consumer create (--stream --name --yes)
   iomesh mesh consumer delete    durable pull consumer delete (--stream --name --yes)
   iomesh mesh consumer ack|nack  ack/nack sequences (--stream --name --seq --yes)
