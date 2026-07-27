@@ -353,6 +353,18 @@ func NewConsumerInfoPrint(info ConsumerInfo, role, allowSuffix string) ConsumerI
 	}
 }
 
+// FormatConsumerInfoJSON returns indented JSON for stage CI / scrapers.
+// Always emits all ConsumerInfoPrint fields without omitempty gaps.
+// s741: Format*JSON helper completeness (DTO already always-emit s696).
+// Peer aion s740 residual. Mold FormatConsumerFetchJSON / FormatPubJSON.
+func FormatConsumerInfoJSON(p ConsumerInfoPrint) string {
+	b, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return `{"error":"consumer info json marshal failed"}` + "\n"
+	}
+	return string(b) + "\n"
+}
+
 // FormatConsumerInfo is a multi-line view for one durable consumer (CLI).
 // Pure helper with no network I/O. Always emits filter_subject, pull_role, and
 // pull_allow_suffix (empty string when unset). Delegates to

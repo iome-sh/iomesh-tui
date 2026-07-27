@@ -264,6 +264,64 @@ func TestKVKeysPrint_AlwaysEmit(t *testing.T) {
 	}
 }
 
+// s741: FormatKVBucketInfoJSON / FormatKVEntryJSON / FormatKVKeysJSON keys + trailing newline
+// (DTOs already always-emit s714; helper completeness only — no new fields).
+func TestFormatKVPrintJSON_KeysAndNewline(t *testing.T) {
+	t.Parallel()
+
+	bucketJS := FormatKVBucketInfoJSON(NewKVBucketInfoPrint(KVBucketInfo{Name: "cfg"}))
+	if !strings.HasSuffix(bucketJS, "\n") {
+		t.Fatal("bucket: expected trailing newline")
+	}
+	var bucketObj map[string]any
+	if err := json.Unmarshal([]byte(bucketJS), &bucketObj); err != nil {
+		t.Fatalf("bucket unmarshal: %v\n%s", err, bucketJS)
+	}
+	for _, key := range []string{"name", "history", "max_bytes", "ttl_seconds"} {
+		if _, ok := bucketObj[key]; !ok {
+			t.Fatalf("bucket missing key %q: %s", key, bucketJS)
+		}
+	}
+
+	entryJS := FormatKVEntryJSON(NewKVEntryPrint(KVEntry{Bucket: "cfg", Key: "k"}))
+	if !strings.HasSuffix(entryJS, "\n") {
+		t.Fatal("entry: expected trailing newline")
+	}
+	var entryObj map[string]any
+	if err := json.Unmarshal([]byte(entryJS), &entryObj); err != nil {
+		t.Fatalf("entry unmarshal: %v\n%s", err, entryJS)
+	}
+	for _, key := range []string{"bucket", "key", "value", "revision", "created_at"} {
+		if _, ok := entryObj[key]; !ok {
+			t.Fatalf("entry missing key %q: %s", key, entryJS)
+		}
+	}
+	if entryObj["created_at"] != "" {
+		t.Fatalf("created_at want \"\"; got %v", entryObj["created_at"])
+	}
+
+	keysJS := FormatKVKeysJSON(NewKVKeysPrint("cfg", "", nil))
+	if !strings.HasSuffix(keysJS, "\n") {
+		t.Fatal("keys: expected trailing newline")
+	}
+	var keysObj map[string]any
+	if err := json.Unmarshal([]byte(keysJS), &keysObj); err != nil {
+		t.Fatalf("keys unmarshal: %v\n%s", err, keysJS)
+	}
+	for _, key := range []string{"bucket", "prefix", "count", "keys"} {
+		if _, ok := keysObj[key]; !ok {
+			t.Fatalf("keys missing key %q: %s", key, keysJS)
+		}
+	}
+	keys, ok := keysObj["keys"].([]any)
+	if !ok || len(keys) != 0 {
+		t.Fatalf("keys want [] not null: %s", keysJS)
+	}
+	if strings.Contains(keysJS, `"keys": null`) {
+		t.Fatalf("keys must not be null: %s", keysJS)
+	}
+}
+
 // s729: KVPutPrint JSON always-emits {ok,bucket,key,revision} (no pull_role / value invent).
 func TestKVPutPrint_JSONAlwaysEmitKeys(t *testing.T) {
 	t.Parallel()

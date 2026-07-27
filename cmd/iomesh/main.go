@@ -4,7 +4,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -973,14 +972,10 @@ func cmdMeshStreams(args []string) int {
 			return 1
 		}
 		// s720: print DTO always-emits stream + knobs + count + messages (not bare array).
+		// s741: FormatStreamMessagesJSON (helper completeness; no ad-hoc MarshalIndent).
 		printDTO := iomesh.NewStreamMessagesPrint(streamName, *fromSeq, *toSeq, *limit, msgs)
 		if *jsonOut {
-			b, err := json.MarshalIndent(printDTO, "", "  ")
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "json: %v\n", err)
-				return 1
-			}
-			fmt.Println(string(b))
+			fmt.Print(iomesh.FormatStreamMessagesJSON(printDTO))
 			return 0
 		}
 		fmt.Print(iomesh.FormatStreamMessagesPrint(printDTO))
@@ -995,12 +990,8 @@ func cmdMeshStreams(args []string) int {
 		}
 		if *jsonOut {
 			// s699: print DTO always-emits retention knobs (0 / "" when unset).
-			b, err := json.MarshalIndent(iomesh.NewStreamInfoPrint(*info), "", "  ")
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "json: %v\n", err)
-				return 1
-			}
-			fmt.Println(string(b))
+			// s741: FormatStreamInfoJSON (helper completeness; no ad-hoc MarshalIndent).
+			fmt.Print(iomesh.FormatStreamInfoJSON(iomesh.NewStreamInfoPrint(*info)))
 			return 0
 		}
 		fmt.Print(iomesh.FormatStreamDetail(*info))
@@ -1015,16 +1006,12 @@ func cmdMeshStreams(args []string) int {
 	if *jsonOut {
 		// s702: list --json always-emits retention knobs + retention_tier via print DTO
 		// (closes s699 half-gap that marshaled lean wire []StreamInfo).
+		// s741: FormatStreamInfoListJSON (nil → []; no ad-hoc MarshalIndent).
 		printList := make([]iomesh.StreamInfoPrint, 0, len(streams))
 		for _, s := range streams {
 			printList = append(printList, iomesh.NewStreamInfoPrint(s))
 		}
-		b, err := json.MarshalIndent(printList, "", "  ")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "json: %v\n", err)
-			return 1
-		}
-		fmt.Println(string(b))
+		fmt.Print(iomesh.FormatStreamInfoListJSON(printList))
 		return 0
 	}
 	fmt.Print(iomesh.FormatStreams(streams))
@@ -1354,13 +1341,9 @@ func cmdMeshConsumerCreate(args []string) int {
 	}
 	// s696: always-emit pull_role / pull_allow_suffix next to filter_subject for CI scrapers.
 	// CLI print DTO keeps wire ConsumerInfo free of auth identity fields.
+	// s741: FormatConsumerInfoJSON (helper completeness; no ad-hoc MarshalIndent).
 	if *jsonOut {
-		b, err := json.MarshalIndent(iomesh.NewConsumerInfoPrint(*info, pullRole, allowSuffix), "", "  ")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "json: %v\n", err)
-			return 1
-		}
-		fmt.Println(string(b))
+		fmt.Print(iomesh.FormatConsumerInfoJSON(iomesh.NewConsumerInfoPrint(*info, pullRole, allowSuffix)))
 		return 0
 	}
 	fmt.Print(iomesh.FormatConsumerInfoWithAuth(*info, pullRole, allowSuffix))
@@ -1667,12 +1650,8 @@ func cmdMeshKV(args []string) int {
 		}
 		if *jsonOut {
 			// s714: print DTO always-emits name/history/max_bytes/ttl_seconds (0 when nil).
-			b, err := json.MarshalIndent(iomesh.NewKVBucketInfoPrint(*info), "", "  ")
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "json: %v\n", err)
-				return 1
-			}
-			fmt.Println(string(b))
+			// s741: FormatKVBucketInfoJSON (helper completeness; no ad-hoc MarshalIndent).
+			fmt.Print(iomesh.FormatKVBucketInfoJSON(iomesh.NewKVBucketInfoPrint(*info)))
 			return 0
 		}
 		fmt.Print(iomesh.FormatKVBucketInfo(*info))
@@ -1730,12 +1709,8 @@ func cmdMeshKV(args []string) int {
 		if *jsonOut {
 			// s714: print DTO always-emits bucket/key/value/revision/created_at
 			// ("" when zero; value base64, never omitempty-hide created_at).
-			b, err := json.MarshalIndent(iomesh.NewKVEntryPrint(*entry), "", "  ")
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "json: %v\n", err)
-				return 1
-			}
-			fmt.Println(string(b))
+			// s741: FormatKVEntryJSON (helper completeness; no ad-hoc MarshalIndent).
+			fmt.Print(iomesh.FormatKVEntryJSON(iomesh.NewKVEntryPrint(*entry)))
 			return 0
 		}
 		fmt.Print(iomesh.FormatKVEntry(*entry))
@@ -1749,12 +1724,8 @@ func cmdMeshKV(args []string) int {
 	}
 	if *jsonOut {
 		// s714: list envelope always-emits bucket/prefix/count/keys (not bare array).
-		b, err := json.MarshalIndent(iomesh.NewKVKeysPrint(bucketName, *prefix, keys), "", "  ")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "json: %v\n", err)
-			return 1
-		}
-		fmt.Println(string(b))
+		// s741: FormatKVKeysJSON (helper completeness; no ad-hoc MarshalIndent).
+		fmt.Print(iomesh.FormatKVKeysJSON(iomesh.NewKVKeysPrint(bucketName, *prefix, keys)))
 		return 0
 	}
 	fmt.Print(iomesh.FormatKVKeys(bucketName, keys))

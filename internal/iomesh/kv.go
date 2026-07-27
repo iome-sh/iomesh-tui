@@ -311,6 +311,18 @@ func NewKVBucketInfoPrint(info KVBucketInfo) KVBucketInfoPrint {
 	return p
 }
 
+// FormatKVBucketInfoJSON returns indented JSON for stage CI / scrapers.
+// Always emits all KVBucketInfoPrint fields without omitempty gaps.
+// s741: Format*JSON helper completeness (DTO already always-emit s714).
+// Peer aion s740 residual. Mold FormatKVPutJSON / FormatPubJSON.
+func FormatKVBucketInfoJSON(p KVBucketInfoPrint) string {
+	b, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return `{"error":"kv bucket info json marshal failed"}` + "\n"
+	}
+	return string(b) + "\n"
+}
+
 // KVEntryPrint is a CLI-side print DTO for mesh kv get --json.
 // Always emits bucket, key, value (base64; empty string when nil/empty),
 // revision, created_at ("" when zero; RFC3339 UTC when set) without omitempty
@@ -345,6 +357,18 @@ func NewKVEntryPrint(e KVEntry) KVEntryPrint {
 	return p
 }
 
+// FormatKVEntryJSON returns indented JSON for stage CI / scrapers.
+// Always emits all KVEntryPrint fields without omitempty gaps.
+// s741: Format*JSON helper completeness (DTO already always-emit s714).
+// Peer aion s740 residual. Mold FormatKVPutJSON / FormatPubJSON.
+func FormatKVEntryJSON(p KVEntryPrint) string {
+	b, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return `{"error":"kv entry json marshal failed"}` + "\n"
+	}
+	return string(b) + "\n"
+}
+
 // KVKeysPrint is a CLI-side print DTO for mesh kv list --json.
 // Always emits bucket, prefix (empty when unset), count, and keys ([] when
 // empty) so CI scrapers get a stable envelope rather than a bare string array.
@@ -369,6 +393,18 @@ func NewKVKeysPrint(bucket, prefix string, keys []string) KVKeysPrint {
 		Count:  len(keys),
 		Keys:   keys,
 	}
+}
+
+// FormatKVKeysJSON returns indented JSON for stage CI / scrapers.
+// Always emits all KVKeysPrint fields without omitempty gaps.
+// s741: Format*JSON helper completeness (DTO already always-emit s714).
+// Peer aion s740 residual. Mold FormatKVPutJSON / FormatPubJSON.
+func FormatKVKeysJSON(p KVKeysPrint) string {
+	b, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return `{"error":"kv keys json marshal failed"}` + "\n"
+	}
+	return string(b) + "\n"
 }
 
 // KVPutPrint is a CLI-side print DTO for mesh kv --put success.
