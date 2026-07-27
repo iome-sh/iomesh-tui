@@ -384,3 +384,174 @@ func TestCatalogPrint_JSONAlwaysEmitKeys(t *testing.T) {
 		t.Fatalf("print DTO must always-emit status: %s", printJS)
 	}
 }
+
+// s744: CatalogProductPrint JSON always-emits detail envelope + nested product keys.
+func TestCatalogProductPrint_JSONAlwaysEmitKeys(t *testing.T) {
+	t.Parallel()
+
+	// Not-found / empty: found=false; all envelope keys; product empty + subjects/lineage [].
+	emptyDTO := NewCatalogProductPrint("missing-id", DataProduct{}, CatalogResult{
+		Source: "fail-open",
+		Detail: "product not found: missing-id",
+	}, false)
+	emptyJS := FormatCatalogProductJSON(emptyDTO)
+	var emptyObj map[string]any
+	if err := json.Unmarshal([]byte(emptyJS), &emptyObj); err != nil {
+		t.Fatalf("empty marshal/unmarshal: %v\n%s", err, emptyJS)
+	}
+	for _, key := range []string{"source", "detail", "id", "found", "product"} {
+		if _, ok := emptyObj[key]; !ok {
+			t.Fatalf("empty json missing key %q: %s", key, emptyJS)
+		}
+	}
+	if emptyObj["source"] != "fail-open" || emptyObj["detail"] != "product not found: missing-id" {
+		t.Fatalf("empty envelope identity: %s", emptyJS)
+	}
+	if emptyObj["id"] != "missing-id" {
+		t.Fatalf("requested id want missing-id; got %v\n%s", emptyObj["id"], emptyJS)
+	}
+	if emptyObj["found"] != false {
+		t.Fatalf("found want false; got %v\n%s", emptyObj["found"], emptyJS)
+	}
+	prod, ok := emptyObj["product"].(map[string]any)
+	if !ok {
+		t.Fatalf("product want object not null: %s", emptyJS)
+	}
+	for _, key := range []string{
+		"id", "name", "title", "description", "subject", "layer",
+		"status", "department", "subjects", "lineage",
+	} {
+		if _, ok := prod[key]; !ok {
+			t.Fatalf("empty product missing key %q: %s", key, emptyJS)
+		}
+	}
+	if prod["id"] != "" || prod["name"] != "" || prod["title"] != "" {
+		t.Fatalf("not-found must not invent product identity: %s", emptyJS)
+	}
+	for _, arrKey := range []string{"subjects", "lineage"} {
+		arr, ok := prod[arrKey].([]any)
+		if !ok {
+			t.Fatalf("%s want array not null: %s", arrKey, emptyJS)
+		}
+		if len(arr) != 0 {
+			t.Fatalf("%s want []; got %v\n%s", arrKey, arr, emptyJS)
+		}
+	}
+	if strings.Contains(emptyJS, `"subjects": null`) || strings.Contains(emptyJS, `"lineage": null`) ||
+		strings.Contains(emptyJS, `"subjects":null`) || strings.Contains(emptyJS, `"lineage":null`) {
+		t.Fatalf("subjects/lineage must not be null: %s", emptyJS)
+	}
+	if strings.Contains(emptyJS, `"product": null`) || strings.Contains(emptyJS, `"product":null`) {
+		t.Fatalf("product must not be null: %s", emptyJS)
+	}
+
+	// found=false with off source (mesh disabled honesty).
+	offDTO := NewCatalogProductPrint("any", DataProduct{ID: "should-not-emit"}, CatalogResult{
+		Source: "off", Detail: "mesh disabled",
+	}, false)
+	offJS := FormatCatalogProductJSON(offDTO)
+	var offObj map[string]any
+	if err := json.Unmarshal([]byte(offJS), &offObj); err != nil {
+		t.Fatal(err)
+	}
+	if offObj["found"] != false || offObj["source"] != "off" {
+		t.Fatalf("off not-found: %s", offJS)
+	}
+	offProd := offObj["product"].(map[string]any)
+	if offProd["id"] != "" {
+		t.Fatalf("found=false must ignore partial product: %s", offJS)
+	}
+
+	// Populated product: found=true; all keys + non-empty arrays.
+	popDTO := NewCatalogProductPrint("ops-incidents", DataProduct{
+		ID:          "ops-incidents",
+		Name:        "Incidents",
+		Title:       "SRE Incidents",
+		Description: "incident stream",
+		Subject:     "dept.sre.incidents",
+		Layer:       "operational",
+		Status:      "ga",
+		Department:  "sre",
+		Subjects:    []string{"dept.sre.incidents.>", "dept.sre.alerts.>"},
+		Lineage:     []string{"pagerduty", "mesh"},
+	}, CatalogResult{
+		Source: "portal",
+		Detail: "/v17/portal/catalog/data-products/ops-incidents",
+	}, true)
+	popJS := FormatCatalogProductJSON(popDTO)
+	var popObj map[string]any
+	if err := json.Unmarshal([]byte(popJS), &popObj); err != nil {
+		t.Fatalf("populated: %v\n%s", err, popJS)
+	}
+	if popObj["found"] != true {
+		t.Fatalf("found want true: %s", popJS)
+	}
+	if popObj["id"] != "ops-incidents" || popObj["source"] != "portal" {
+		t.Fatalf("populated envelope: %s", popJS)
+	}
+	popProd := popObj["product"].(map[string]any)
+	for _, key := range []string{
+		"id", "name", "title", "description", "subject", "layer",
+		"status", "department", "subjects", "lineage",
+	} {
+		if _, ok := popProd[key]; !ok {
+			t.Fatalf("populated product missing key %q: %s", key, popJS)
+		}
+	}
+	if popProd["id"] != "ops-incidents" || popProd["name"] != "Incidents" ||
+		popProd["title"] != "SRE Incidents" || popProd["layer"] != "operational" ||
+		popProd["status"] != "ga" || popProd["department"] != "sre" {
+		t.Fatalf("populated product scalars: %s", popJS)
+	}
+	subs := popProd["subjects"].([]any)
+	lin := popProd["lineage"].([]any)
+	if len(subs) != 2 || len(lin) != 2 {
+		t.Fatalf("populated arrays: %s", popJS)
+	}
+
+	// Sparse found product: empty strings honest; subjects/lineage [].
+	sparseDTO := NewCatalogProductPrint("sparse-product", DataProduct{ID: "sparse-product"}, CatalogResult{
+		Source: "mesh", Detail: "/v1/catalog/data-products/sparse-product",
+	}, true)
+	sparseJS, err := json.Marshal(sparseDTO)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var sparseObj map[string]any
+	if err := json.Unmarshal(sparseJS, &sparseObj); err != nil {
+		t.Fatal(err)
+	}
+	if sparseObj["found"] != true {
+		t.Fatalf("sparse found: %s", sparseJS)
+	}
+	sparseProd := sparseObj["product"].(map[string]any)
+	if sparseProd["id"] != "sparse-product" {
+		t.Fatalf("sparse id: %s", sparseJS)
+	}
+	if sparseProd["title"] != "sparse-product" {
+		t.Fatalf("title after Normalize want id fallback; got %v\n%s", sparseProd["title"], sparseJS)
+	}
+	for _, arrKey := range []string{"subjects", "lineage"} {
+		arr, ok := sparseProd[arrKey].([]any)
+		if !ok {
+			t.Fatalf("%s want array not null: %s", arrKey, sparseJS)
+		}
+		if len(arr) != 0 {
+			t.Fatalf("%s want []; got %v\n%s", arrKey, arr, sparseJS)
+		}
+	}
+	if strings.Contains(string(sparseJS), `"subjects":null`) || strings.Contains(string(sparseJS), `"lineage":null`) {
+		t.Fatalf("subjects/lineage must not be null: %s", sparseJS)
+	}
+
+	// Empty requested id honest when New called with "".
+	blankID := NewCatalogProductPrint("", DataProduct{}, CatalogResult{Source: "off", Detail: "mesh disabled"}, false)
+	blankJS := FormatCatalogProductJSON(blankID)
+	var blankObj map[string]any
+	if err := json.Unmarshal([]byte(blankJS), &blankObj); err != nil {
+		t.Fatal(err)
+	}
+	if blankObj["id"] != "" || blankObj["found"] != false {
+		t.Fatalf("blank id envelope: %s", blankJS)
+	}
+}
