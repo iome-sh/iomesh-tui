@@ -2003,7 +2003,7 @@ Flags (pull):
   --dry-run             map messages only (no MCP ingest); still acks when --ack
   --no-ack              do not ack after ingest (default: ack)
   --yes                 confirm mutating pull loop (required unless --dry-run)
-  --json                print MemoryPullStatsPrint JSON (always-emits identity + knobs + counters + process evidence)
+  --json                print MemoryPullStatsPrint JSON (always-emits identity + knobs + counters + process evidence; complete s747)
   --endpoint url        override IOMESH_ENDPOINT
   --mcp-server name     MCP server name for memory tools (default memory)
   --role R              optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|memory|custom); [memory].pull_role
@@ -2017,6 +2017,8 @@ Honesty: dual_write remains optional audit (default OFF). Hosted Palace sunset u
   + knobs (dry_run/dual_write/batch/max_wait_ms/once) + counters; empty identity honest; peer aion s704.
   s717: always emit process evidence endpoint/org/workspace (empty honest) + result(ok|err)/exit_code(0|1)
   + duration_ms/ack; peer aion s716 — process evidence ≠ invent pull success.
+  s747: process evidence complete (identity + knobs/counters + process evidence); completeness pin only —
+  no new fields; peer aion s746 — process evidence ≠ invent pull success · dual_write OFF · not full mesh RBAC GA.
 `)
 		return 0
 	default:
@@ -2040,7 +2042,7 @@ func cmdMemoryPull(args []string) int {
 		dryRun          = fs.Bool("dry-run", false, "map only; no MCP local ingest")
 		noAck           = fs.Bool("no-ack", false, "do not ack after success")
 		yes             = fs.Bool("yes", false, "confirm mutating pull (required unless --dry-run)")
-		jsonOut         = fs.Bool("json", false, "print MemoryPullStatsPrint JSON (always-emits identity + knobs + counters + process evidence)")
+		jsonOut         = fs.Bool("json", false, "print MemoryPullStatsPrint JSON (always-emits identity + knobs + counters + process evidence; complete s747)")
 		endpoint        = fs.String("endpoint", "", "override mesh endpoint")
 		mcpServer       = fs.String("mcp-server", "", "MCP memory server name")
 		role            = fs.String("role", "", "optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|memory|custom)")

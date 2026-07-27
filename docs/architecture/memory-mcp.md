@@ -90,7 +90,8 @@ aion-memory-mcp -http-addr :8080 -palace-root ~/.iomesh/palace
 iomesh memory pull --stream EVENTS --name tui-local-palace --once --yes
 # dry-run (map only, no MCP):
 iomesh memory pull --stream EVENTS --name tui-local-palace --once --dry-run
-# JSON always-emit identity + knobs + counters + process evidence for CI scrapers (s705/s717):
+# JSON always-emit identity + knobs + counters + process evidence for CI scrapers
+# (s705/s717 product; s747 completeness pin — surface complete):
 iomesh memory pull --stream EVENTS --name tui-local-palace --once --dry-run --json
 ```
 
@@ -101,6 +102,8 @@ When `--filter` / `[memory].pull_filter` is empty and `[memory].tenant` or `[iom
 **s705 (Beta):** PASS/summary text and `--json` always emit identity (`stream`, `consumer`, `filter_subject`, `pull_role`, `pull_allow_suffix`, `tenant` — empty string when unset), knobs (`dry_run`, `dual_write` report-only default false, `batch`, `max_wait_ms`, `once`), and counters including `last_error` (empty when none). Print DTO is `MemoryPullStatsPrint` (no omitempty on scraper keys). Does not invent pull success from identity fields alone. Peer create FormatConsumerInfo s696 + status/wait pull identity continuum; peer aion s704. Fail-open empty role/tenant; dual_write default OFF; not full mesh RBAC GA.
 
 **s717 (Beta):** process evidence always-emit on the same print DTO: `endpoint` / `org` / `workspace` (from `[iomesh]`; empty string honest when unset), `result` (`ok`|`err`), `exit_code` (0 success; 1 hard-fail non-cancel or soft-fail `errors>0 && ingested==0 && !dryRun`), `duration_ms` (wall-clock; 0 if not timed), `ack` knob. Early fail paths (mesh disabled / MCP missing) emit the DTO when possible. Process evidence ≠ invent pull success from identity alone. Peer aion s716 residual after s705. Dual_write default OFF; not full mesh RBAC GA.
+
+**s747 (Beta · completeness pin):** memory pull process evidence **complete** — identity (s705) + knobs/counters + process evidence (s717) locked by docs + unit tests (`MemoryPullStatsPrint` JSON always-emits `result` / `exit_code` / `endpoint` / `org` / `workspace` on empty and populated paths). Completeness pin **does not** invent new always-emit fields and **does not** re-claim s717 product body. Peer aion s746 residual honesty. Process evidence ≠ invent pull success · dual_write OFF · not full mesh RBAC GA · offline unit ≠ live APPLY · empty honest.
 
 **s675 (Beta):** optional `--role` / `[memory].pull_role` → `X-IOMesh-Role` and `--pull-allow-suffix` / `[memory].pull_allow_suffix` → `X-IOMesh-Pull-Allow-Suffix` on authenticated mesh requests (create/fetch/ack). Fail-open when empty (headers omitted). Not full mesh IdP RBAC GA; dual_write remains optional audit (default OFF). Hosted Palace sunset — TUI path is local palace.
 
@@ -121,6 +124,8 @@ When `--filter` / `[memory].pull_filter` is empty and `[memory].tenant` or `[iom
 **s705 (Beta):** `iomesh memory pull` always-emits full pull identity + knobs + counters in PASS/summary text and `--json` (`MemoryPullStatsPrint`) so scrapers are not limited to stderr start log. Empty role/tenant/filter honest; dual_write report-only default OFF; peer aion s704 continuum — not full mesh RBAC GA.
 
 **s717 (Beta):** same surface always-emits process evidence (`endpoint`/`org`/`workspace` empty honest; `result` ok|err; `exit_code` 0|1; `duration_ms`; `ack`) so CI scrapers record intended exit without shell `$?`. Soft-fail and hard-fail set `result=err`/`exit_code=1`; success sets `ok`/`0`. Process evidence ≠ invent pull success. Peer aion s716 residual — dual_write default OFF; not full mesh RBAC GA.
+
+**s747 (Beta · completeness pin):** process evidence surface complete (s705 + s717) — unit tests pin always-emit keys; no new DTO fields. Peer aion s746 · process evidence ≠ invent pull success · dual_write OFF · not full mesh RBAC GA · offline unit ≠ live APPLY.
 
 Env: `MEMORY_MCP_HTTP_ADDR` / `AION_MEMORY_MCP_HTTP_ADDR`, path `MEMORY_MCP_HTTP_PATH` (default `/mcp`).
 
