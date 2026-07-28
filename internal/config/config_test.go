@@ -21,6 +21,19 @@ func TestDefault_DeepSeekPrimary(t *testing.T) {
 	}
 }
 
+// TestDefault_DualWriteOff pins s768 local-primary honesty:
+// [memory].dual_write defaults OFF (optional mesh audit — not primary cloud palace).
+func TestDefault_DualWriteOff(t *testing.T) {
+	// s768: dual_write default OFF (local-primary honesty)
+	cfg := Default()
+	if cfg.Memory.DualWrite {
+		t.Fatalf("s768 honesty: Memory.DualWrite must default false, got %+v", cfg.Memory)
+	}
+	if cfg.Memory.Enabled {
+		t.Fatalf("memory enabled must default false, got %+v", cfg.Memory)
+	}
+}
+
 func TestLoad_MergeModelOverride(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.toml")

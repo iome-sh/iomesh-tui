@@ -50,7 +50,7 @@ Built-in catalog (`iomesh models`). **Default cascade** uses the first three row
 
 Any other **OpenAI-compatible** chat endpoint can be added under `[model.<name>]` in config (OpenAI, Anthropic-compatible gateways, other Ollama tags, llama.cpp/vLLM, etc.). Details: [docs/architecture/llm-cascade.md](docs/architecture/llm-cascade.md).
 
-**Local AI (Beta):** `ollama serve` + `ollama pull llama3.2`, then `iomesh -m ollama-llama3.2`. Local only — not platform GPU / not invent GA. Cost-max stack: mesh pull egress + local memory MCP + Ollama pin; dual_write optional audit default OFF. Local-edge stack complete (completeness pin; catalog pin ≠ cascade default).
+**Local AI (Beta):** `ollama serve` + `ollama pull llama3.2`, then `iomesh -m ollama-llama3.2`. Local only — not platform GPU / not invent GA. Cost-max stack: mesh pull egress + local memory MCP (primary LT palace) + Ollama pin; dual_write optional audit default OFF; hosted Palace sunset. Local-edge stack complete (completeness pin; catalog pin ≠ cascade default). See [memory-mcp.md](docs/architecture/memory-mcp.md#local-primary-lt-honesty-s768-pin).
 
 ## Quick start
 

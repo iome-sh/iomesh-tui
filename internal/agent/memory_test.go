@@ -214,6 +214,16 @@ func TestDefaultMemoryConfig(t *testing.T) {
 	}
 }
 
+// TestDefaultMemoryConfig_DualWriteOff pins s768 local-primary honesty:
+// dual_write is optional mesh audit only and defaults OFF (not primary cloud palace).
+func TestDefaultMemoryConfig_DualWriteOff(t *testing.T) {
+	// s768: dual_write default OFF (local-primary honesty)
+	d := DefaultMemoryConfig()
+	if d.DualWrite {
+		t.Fatalf("s768 honesty: DualWrite must default false, got %+v", d)
+	}
+}
+
 func TestMaybeAutoIngest_DualWriteOnly(t *testing.T) {
 	var mu sync.Mutex
 	var publishes []map[string]any
