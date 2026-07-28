@@ -87,6 +87,8 @@ env_key = "VERTEX_API_KEY"
 
 **Beta · local only · not platform GPU · not invent GA.** Cost-max path: I/O Mesh cloud (pull egress) ↔ iomesh-tui ↔ local memory MCP ↔ local AI (Ollama). Cloud mesh ≠ local AI. Dual-write remains optional audit (**default OFF**). Hosted Palace is sunset until scale — primary memory is local Palace.
 
+**s765 (Beta · completeness pin):** local-edge stack complete after s761 Ollama product — docs + unit tests lock inventory; does not invent catalog models or re-claim s761; catalog pin ≠ cascade default · offline unit ≠ live Ollama green. See [memory-mcp.md](./memory-mcp.md#local-edge-stack-s761-product--s765-completeness-pin).
+
 ```bash
 # Install + serve (https://ollama.com)
 ollama serve
