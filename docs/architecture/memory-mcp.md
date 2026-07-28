@@ -47,6 +47,22 @@ See [llm-cascade.md](./llm-cascade.md) for Ollama install (`ollama serve` / `oll
 
 **s765 (Beta · completeness pin):** local edge stack **complete** after s761 first-class Ollama product Shipped — inventory (mesh pull egress ↔ TUI ↔ local memory MCP ↔ Ollama pin) locked by docs + unit tests (`TestDefaultModels_OllamaLocalEdgeCompletenessPin`: catalog name `ollama-llama3.2`, model id `llama3.2`, cost 0, caps `local`+`ollama`, priority after DeepSeek cascade / Premium). Completeness pin **does not** invent new catalog models and **does not** re-claim s761 product body. Peer aion **s764** heartbeat-local-edge-path residual. Local AI ≠ platform GPU · dual_write OFF · Palace sunset · offline unit ≠ live Ollama green · catalog pin ≠ cascade default · not full mesh RBAC GA · no invent GA.
 
+#### Local-primary LT honesty (s768 pin)
+
+Honesty pin so TUI surfaces agree with the **cost-max local-primary** charter after s761/s765 product bodies (this serial is docs/tests only — **does not** re-claim s761 Ollama product or s765 completeness inventory):
+
+| Claim | Honesty |
+|-------|---------|
+| **Long-term / temporal memory** | Customer **local palace** — local MCP (`aion-memory-mcp`) + optional local AI (Ollama pin). Not hosted cloud GPU palace. |
+| **Mesh heartbeats** | **Pull egress** into local palace (`iomesh memory pull`) — not a push-to-cloud-palace product path. |
+| **dual_write** | Optional mesh audit only · **default OFF** (`[memory].dual_write` / `IOMESH_MEMORY_DUAL_WRITE`). |
+| **$119 language** (if any) | **Memory Ops Pack** (pull / retain / audit / support) — **not** hosted cloud GPU palace. |
+| **Local AI** | Customer-edge Ollama only · **≠ platform GPU**. |
+| **Hosted Palace** | **Sunset** until scale. |
+| **Does not invent** | GA · freemium unlimited palace · platform GPU · full mesh RBAC GA. |
+
+Peer aion **s767** bi-heartbeats local-primary honesty continuum. Unit pin: `TestDefaultMemoryConfig` / config `Default().Memory.DualWrite == false` (s768). Offline unit ≠ live APPLY · Beta · no invent GA.
+
 **Non-goals:** private monorepo imports in public TUI; embedding Qdrant/Palace in-process; dependency on `iomesh-client-sdk-go`.
 
 ## Public Go SDK

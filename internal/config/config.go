@@ -257,7 +257,7 @@ func Default() *Config {
 			Server:          "memory",
 			AutoRecall:      true,  // when enabled
 			AutoIngest:      false, // opt-in write path
-			DualWrite:       false, // opt-in mesh MEMORY_INGEST dual-write
+			DualWrite:       false, // s768: dual_write default OFF (local-primary honesty)
 			Limit:           8,
 			MaxSnippetBytes: 6000,
 		},
