@@ -8,7 +8,7 @@
 
 Official open-source tooling from [IOMesh](https://iome.sh) (**IOMesh Technology Ltd.**).
 
-> **Status:** public open-source **v0.28.x** (pre-1.0). Agent loop, subagents, full-screen TUI, permissions, ACP, skills, MCP, Memory Palace (HTTP MCP + dual-write `MEMORY_INGEST` + sync retrieve / sidecar auto-recall), stage mesh dogfood, deeper mesh (lineage · policy · catalog · metering), multi-model catalog (DeepSeek · Grok · Gemini · Vertex). Not a multi-tenant remote sandbox — see [SECURITY.md](SECURITY.md).
+> **Status:** public open-source **v0.28.x** (pre-1.0). Agent loop, subagents, full-screen TUI, permissions, ACP, skills, MCP, Memory Palace (HTTP MCP + dual-write `MEMORY_INGEST` + sync retrieve / sidecar auto-recall), stage mesh dogfood, deeper mesh (lineage · policy · catalog · metering), multi-model catalog (DeepSeek · Grok · Gemini · Vertex · Ollama local). Not a multi-tenant remote sandbox — see [SECURITY.md](SECURITY.md).
 
 ## Table of contents
 
@@ -27,15 +27,15 @@ Official open-source tooling from [IOMesh](https://iome.sh) (**IOMesh Technology
 
 | Concern | Approach |
 |---------|----------|
-| Multi-provider agents | Built-in **DeepSeek**, **xAI Grok**, **Gemini**, **Vertex Gemini**; pin any logical name or add OpenAI-compatible endpoints |
-| Sustainable defaults | Auto-cascade prefers **DeepSeek V4 Flash → Pro → Grok 4.5** for price/performance (override anytime) |
+| Multi-provider agents | Built-in **DeepSeek**, **xAI Grok**, **Gemini**, **Vertex Gemini**, **Ollama** (local pin); pin any logical name or add OpenAI-compatible endpoints |
+| Sustainable defaults | Auto-cascade prefers **DeepSeek V4 Flash → Pro → Grok 4.5** for price/performance (override anytime; Ollama is pin-only) |
 | Integration simplicity | Pure-Go OpenAI-compatible HTTP + SSE (`internal/router`) |
 | Platform fit | Optional I/O Mesh context plane, policy gates, `dept.*` usage streams (`internal/iomesh`) |
 | Familiar agent UX | TUI / headless / ACP, tools, subagents, workspace root, slash commands |
 
 ## Supported models
 
-Built-in catalog (`iomesh models`). **Default cascade** uses the first three rows for automatic step-up/fallback; Google entries are first-class pins (`-m` / `/model` / `IOMESH_DEFAULT_MODEL`).
+Built-in catalog (`iomesh models`). **Default cascade** uses the first three rows for automatic step-up/fallback; Google and local Ollama entries are first-class pins (`-m` / `/model` / `IOMESH_DEFAULT_MODEL`).
 
 | Logical name | Provider | API model id | Auth env | Role |
 |--------------|----------|--------------|----------|------|
@@ -46,8 +46,11 @@ Built-in catalog (`iomesh models`). **Default cascade** uses the first three row
 | `gemini-2.5-pro` | Google AI Studio | `gemini-2.5-pro` | `GEMINI_API_KEY` | Opt-in pin |
 | `vertex-gemini-2.5-flash` | Vertex AI | `google/gemini-2.5-flash` | `GOOGLE_CLOUD_PROJECT` + ADC/`gcloud` token (or `VERTEX_API_KEY`) | Opt-in pin |
 | `vertex-gemini-2.5-pro` | Vertex AI | `google/gemini-2.5-pro` | same | Opt-in pin |
+| `ollama-llama3.2` | Ollama (local) | `llama3.2` | none (`OLLAMA_URL` / `OLLAMA_HOST` optional) | Local pin ($0; not cascade default) |
 
-Any other **OpenAI-compatible** chat endpoint can be added under `[model.<name>]` in config (OpenAI, Anthropic-compatible gateways, local llama.cpp/vLLM, etc.). Details: [docs/architecture/llm-cascade.md](docs/architecture/llm-cascade.md).
+Any other **OpenAI-compatible** chat endpoint can be added under `[model.<name>]` in config (OpenAI, Anthropic-compatible gateways, other Ollama tags, llama.cpp/vLLM, etc.). Details: [docs/architecture/llm-cascade.md](docs/architecture/llm-cascade.md).
+
+**Local AI (Beta):** `ollama serve` + `ollama pull llama3.2`, then `iomesh -m ollama-llama3.2`. Local only — not platform GPU / not invent GA. Cost-max stack: mesh pull egress + local memory MCP + Ollama pin; dual_write optional audit default OFF.
 
 ## Quick start
 
@@ -68,12 +71,15 @@ export DEEPSEEK_API_KEY=…          # required for default cascade
 # export GEMINI_API_KEY=…          # optional Gemini AI Studio
 # export GOOGLE_CLOUD_PROJECT=…    # required for Vertex models
 # # Vertex auth: auto gcloud print-access-token (cache ~50m) or VERTEX_API_KEY override
+# # Local Ollama (pin-only; no API key): ollama serve && ollama pull llama3.2
+# # export OLLAMA_URL=http://127.0.0.1:11434/v1   # optional override
 
 ./bin/iomesh models
 ./bin/iomesh -p "List the top-level packages in this repo"
 # optional pins:
 # ./bin/iomesh -m gemini-2.5-flash -p "Reply with ok"
 # ./bin/iomesh -m vertex-gemini-2.5-flash -p "Reply with ok"
+# ./bin/iomesh -m ollama-llama3.2 -p "Reply with ok"
 ./bin/iomesh                       # full-screen TUI (TTY)
 ./bin/iomesh --repl                # classic line REPL
 ./bin/iomesh -c                    # continue latest session
@@ -95,7 +101,7 @@ deepseek-v4-flash  →  deepseek-v4-pro  →  grok-4.5
      (routine)            (plan)          (high-stakes / fallback)
 ```
 
-Pin Google (or any catalog entry) explicitly, e.g. `-m gemini-2.5-flash` or `export IOMESH_DEFAULT_MODEL=vertex-gemini-2.5-flash`.
+Pin Google or local Ollama (or any catalog entry) explicitly, e.g. `-m gemini-2.5-flash`, `-m ollama-llama3.2`, or `export IOMESH_DEFAULT_MODEL=vertex-gemini-2.5-flash`.
 
 ## CLI
 
