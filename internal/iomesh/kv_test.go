@@ -494,6 +494,99 @@ func TestFormatKVDelete_AlwaysEmit(t *testing.T) {
 	}
 }
 
+// s756: mutate/print JSON completeness pin — locks KVPutPrint + KVDeletePrint
+// (s729) always-emit keys via FormatKVPutJSON / FormatKVDeleteJSON / New*
+// helpers (DTO surfaces already always-emit; this serial docs+tests pin
+// completeness, does not invent new fields or re-claim s729 product body). Peer
+// aion s755 residual. No value echo · no pull_role · s714 ≠ mutate residual ·
+// DTO ≠ invent mutate success · dual_write OFF · offline unit ≠ live APPLY ·
+// not full mesh RBAC GA.
+func TestKVMutatePrint_JSONCompletenessPin(t *testing.T) {
+	t.Parallel()
+
+	putKeys := []string{"ok", "bucket", "key", "revision"}
+	deleteKeys := []string{"ok", "bucket", "key"}
+
+	// Put empty surface: all keys present; revision 0 honest; no value invent.
+	putEmptyJS := FormatKVPutJSON(NewKVPutPrint("", "", 0))
+	if !strings.HasSuffix(putEmptyJS, "\n") {
+		t.Fatal("FormatKVPutJSON: expected trailing newline")
+	}
+	var putEmptyObj map[string]any
+	if err := json.Unmarshal([]byte(putEmptyJS), &putEmptyObj); err != nil {
+		t.Fatalf("put empty unmarshal: %v\n%s", err, putEmptyJS)
+	}
+	for _, key := range putKeys {
+		if _, ok := putEmptyObj[key]; !ok {
+			t.Fatalf("put empty missing KVPutPrint key %q: %s", key, putEmptyJS)
+		}
+	}
+	if putEmptyObj["ok"] != true || putEmptyObj["revision"].(float64) != 0 {
+		t.Fatalf("put empty ok/revision: %s", putEmptyJS)
+	}
+	if strings.Contains(putEmptyJS, `"value"`) || strings.Contains(putEmptyJS, "pull_role") {
+		t.Fatalf("put must not invent value/pull_role: %s", putEmptyJS)
+	}
+
+	// Put populated path still always-emits the same key set.
+	putPopJS := FormatKVPutJSON(NewKVPutPrint("config", "app.json", 7))
+	var putPopObj map[string]any
+	if err := json.Unmarshal([]byte(putPopJS), &putPopObj); err != nil {
+		t.Fatalf("put populated unmarshal: %v\n%s", err, putPopJS)
+	}
+	for _, key := range putKeys {
+		if _, ok := putPopObj[key]; !ok {
+			t.Fatalf("put populated missing KVPutPrint key %q: %s", key, putPopJS)
+		}
+	}
+	if putPopObj["ok"] != true || putPopObj["bucket"] != "config" ||
+		putPopObj["key"] != "app.json" || putPopObj["revision"].(float64) != 7 {
+		t.Fatalf("put populated values: %s", putPopJS)
+	}
+	if strings.Contains(putPopJS, `"value"`) || strings.Contains(putPopJS, "pull_role") {
+		t.Fatalf("put populated must not invent value/pull_role: %s", putPopJS)
+	}
+
+	// Delete empty surface: all keys present; no invent fields.
+	delEmptyJS := FormatKVDeleteJSON(NewKVDeletePrint("", ""))
+	if !strings.HasSuffix(delEmptyJS, "\n") {
+		t.Fatal("FormatKVDeleteJSON: expected trailing newline")
+	}
+	var delEmptyObj map[string]any
+	if err := json.Unmarshal([]byte(delEmptyJS), &delEmptyObj); err != nil {
+		t.Fatalf("delete empty unmarshal: %v\n%s", err, delEmptyJS)
+	}
+	for _, key := range deleteKeys {
+		if _, ok := delEmptyObj[key]; !ok {
+			t.Fatalf("delete empty missing KVDeletePrint key %q: %s", key, delEmptyJS)
+		}
+	}
+	if delEmptyObj["ok"] != true || delEmptyObj["bucket"] != "" || delEmptyObj["key"] != "" {
+		t.Fatalf("delete empty values: %s", delEmptyJS)
+	}
+	if strings.Contains(delEmptyJS, "pull_role") || strings.Contains(delEmptyJS, `"revision"`) {
+		t.Fatalf("delete must not invent pull_role/revision: %s", delEmptyJS)
+	}
+
+	// Delete populated path still always-emits the same key set.
+	delPopJS := FormatKVDeleteJSON(NewKVDeletePrint("config", "tmp.key"))
+	var delPopObj map[string]any
+	if err := json.Unmarshal([]byte(delPopJS), &delPopObj); err != nil {
+		t.Fatalf("delete populated unmarshal: %v\n%s", err, delPopJS)
+	}
+	for _, key := range deleteKeys {
+		if _, ok := delPopObj[key]; !ok {
+			t.Fatalf("delete populated missing KVDeletePrint key %q: %s", key, delPopJS)
+		}
+	}
+	if delPopObj["ok"] != true || delPopObj["bucket"] != "config" || delPopObj["key"] != "tmp.key" {
+		t.Fatalf("delete populated values: %s", delPopJS)
+	}
+	if strings.Contains(delPopJS, "pull_role") || strings.Contains(delPopJS, `"revision"`) {
+		t.Fatalf("delete populated must not invent pull_role/revision: %s", delPopJS)
+	}
+}
+
 func TestFormatKVBucketInfo_AlwaysEmitOptionalKnobs(t *testing.T) {
 	// Nil optional *int64 knobs: always emit blank max_bytes / ttl_seconds (do not invent 0).
 	out := FormatKVBucketInfo(KVBucketInfo{Name: "cfg", History: 0})

@@ -414,6 +414,11 @@ func FormatKVKeysJSON(p KVKeysPrint) string {
 // (revision, error return only).
 //
 // s729: mold StreamDeletePrint s726 + s714 read DTOs; peer aion s728 residual.
+// s756: completeness pin — docs + unit tests lock KVPutPrint/KVDeletePrint
+// (s729) with UsagePrint (s738) + PubPrint (s732) always-emit keys; does not
+// invent new DTO fields or re-claim s729/s732/s738 product bodies. Peer aion
+// s755 residual. DTO ≠ invent mutate success · s714 ≠ mutate residual ·
+// dual_write OFF · offline unit ≠ live APPLY · not full mesh RBAC GA.
 // Closes s714 mutate half-gap. Beta · offline unit ≠ live APPLY · empty/0
 // honest · dual_write OFF · not full mesh RBAC GA · does not invent put
 // success when HTTP failed (call only after KVPut returns nil error).

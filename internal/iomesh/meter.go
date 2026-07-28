@@ -147,6 +147,11 @@ type ModelUsagePrint struct {
 // print surface.
 //
 // s738: mold CatalogPrint s735 + PubPrint s732 + KVPutPrint s729; peer aion s737.
+// s756: completeness pin — docs + unit tests lock UsagePrint (s738) with
+// PubPrint (s732) + KVPutPrint/KVDeletePrint (s729) always-emit keys; does not
+// invent new DTO fields or re-claim s729/s732/s738 product bodies. Peer aion
+// s755 residual. DTO ≠ invent usage success · local process meter ≠ remote
+// dashboard · dual_write OFF · offline unit ≠ live APPLY · not full mesh RBAC GA.
 // Beta · offline unit ≠ live APPLY · empty/0/[] honest · dual_write OFF ·
 // not full mesh RBAC GA · local process meter ≠ remote dashboard ·
 // DTO ≠ invent usage/meter success.
