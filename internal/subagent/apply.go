@@ -140,10 +140,11 @@ func (g *GitWorktree) Apply(ctx context.Context, parentRoot, idOrPath string, re
 	if len(strings.TrimSpace(string(out))) == 0 {
 		res.Skipped = append(res.Skipped, "(no changes)")
 		if removeAfter {
-			if err := g.Remove(ctx, parentRoot, wt); err != nil {
-				return res, err
+			// Best-effort cleanup: parallel ApplyMany can race on git worktree
+			// metadata; apply itself already succeeded with no file changes.
+			if err := g.Remove(ctx, parentRoot, wt); err == nil {
+				res.Removed = true
 			}
-			res.Removed = true
 		}
 		return res, nil
 	}
@@ -212,10 +213,12 @@ func (g *GitWorktree) Apply(ctx context.Context, parentRoot, idOrPath string, re
 	}
 
 	if removeAfter {
-		if err := g.Remove(ctx, parentRoot, wt); err != nil {
-			return res, fmt.Errorf("apply ok but remove failed: %w", err)
+		// Best-effort cleanup after a successful apply. Parallel ApplyMany can
+		// race git worktree remove (Invalid path / already gone); do not fail
+		// the apply or mark ApplyResult.Error when files were already copied.
+		if err := g.Remove(ctx, parentRoot, wt); err == nil {
+			res.Removed = true
 		}
-		res.Removed = true
 	}
 	return res, nil
 }

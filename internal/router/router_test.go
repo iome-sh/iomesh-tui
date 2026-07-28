@@ -292,15 +292,19 @@ func TestDefaultModels_CascadeOrder(t *testing.T) {
 		t.Fatal(err)
 	}
 	names := r.fallbackChain("deepseek-v4-flash")
-	// DeepSeek cascade first; Gemini/Vertex are opt-in (later priority) but present in catalog.
+	// DeepSeek cascade first; Gemini/Vertex/Ollama are opt-in (later priority) but present in catalog.
 	if len(names) < 3 {
 		t.Fatalf("chain=%v", names)
 	}
 	if names[0] != "deepseek-v4-flash" || names[1] != "deepseek-v4-pro" || names[2] != "grok-4.5" {
 		t.Fatalf("chain=%v", names)
 	}
-	// Gemini / Vertex built-ins must load without GOOGLE_CLOUD_PROJECT set.
-	foundGemini, foundVertex := false, false
+	// Default model remains DeepSeek Flash (cascade unchanged by Ollama pin entry).
+	if r.DefaultModel() != DefaultModelName || DefaultModelName != "deepseek-v4-flash" {
+		t.Fatalf("default model=%q want deepseek-v4-flash", r.DefaultModel())
+	}
+	// Gemini / Vertex / Ollama built-ins must load without GOOGLE_CLOUD_PROJECT set.
+	foundGemini, foundVertex, foundOllama := false, false, false
 	for _, n := range names {
 		if n == GeminiFlashModelName {
 			foundGemini = true
@@ -308,9 +312,110 @@ func TestDefaultModels_CascadeOrder(t *testing.T) {
 		if n == VertexGeminiFlashModelName {
 			foundVertex = true
 		}
+		if n == OllamaLlama32ModelName {
+			foundOllama = true
+		}
 	}
-	if !foundGemini || !foundVertex {
-		t.Fatalf("expected gemini+vertex in catalog, chain=%v", names)
+	if !foundGemini || !foundVertex || !foundOllama {
+		t.Fatalf("expected gemini+vertex+ollama in catalog, chain=%v", names)
+	}
+}
+
+func TestDefaultModels_OllamaCatalog(t *testing.T) {
+	var ollama *ModelConfig
+	for i := range DefaultModels() {
+		m := DefaultModels()[i]
+		if m.Name == OllamaLlama32ModelName {
+			ollama = &m
+			break
+		}
+	}
+	if ollama == nil {
+		t.Fatal("missing ollama-llama3.2 in DefaultModels")
+	}
+	if ollama.BaseURL != OllamaOpenAIBaseURL {
+		t.Fatalf("BaseURL=%q want %q", ollama.BaseURL, OllamaOpenAIBaseURL)
+	}
+	if ollama.ModelID != "llama3.2" {
+		t.Fatalf("ModelID=%q", ollama.ModelID)
+	}
+	if ollama.CostTier != 0 || ollama.InputCostPerM != 0 || ollama.OutputCostPerM != 0 {
+		t.Fatalf("want free local costs, got tier=%v in=%v out=%v", ollama.CostTier, ollama.InputCostPerM, ollama.OutputCostPerM)
+	}
+	if !hasCapability(ollama.Capabilities, "ollama") || !hasCapability(ollama.Capabilities, "local") {
+		t.Fatalf("capabilities=%v", ollama.Capabilities)
+	}
+	if ollama.Priority != 60 {
+		t.Fatalf("priority=%d want 60", ollama.Priority)
+	}
+	// Empty API key is OK for Ollama (no EnvKey required).
+	if ollama.EnvKey != "" {
+		t.Fatalf("EnvKey=%q want empty", ollama.EnvKey)
+	}
+	if got := ollama.ResolvedAPIKey(); got != "" {
+		t.Fatalf("ResolvedAPIKey=%q want empty", got)
+	}
+}
+
+func TestResolvedBaseURL_OllamaEnvOverrides(t *testing.T) {
+	m := ModelConfig{
+		Name:         OllamaLlama32ModelName,
+		BaseURL:      OllamaOpenAIBaseURL,
+		ModelID:      "llama3.2",
+		Capabilities: []string{"local", "ollama"},
+	}
+
+	t.Run("default", func(t *testing.T) {
+		t.Setenv("OLLAMA_URL", "")
+		t.Setenv("OLLAMA_HOST", "")
+		if got := m.ResolvedBaseURL(); got != OllamaOpenAIBaseURL {
+			t.Fatalf("got %q want %q", got, OllamaOpenAIBaseURL)
+		}
+	})
+
+	t.Run("OLLAMA_URL host root", func(t *testing.T) {
+		t.Setenv("OLLAMA_URL", "http://127.0.0.1:11434")
+		t.Setenv("OLLAMA_HOST", "ignored")
+		if got := m.ResolvedBaseURL(); got != "http://127.0.0.1:11434/v1" {
+			t.Fatalf("got %q", got)
+		}
+	})
+
+	t.Run("OLLAMA_URL already /v1", func(t *testing.T) {
+		t.Setenv("OLLAMA_URL", "http://10.0.0.2:11434/v1/")
+		if got := m.ResolvedBaseURL(); got != "http://10.0.0.2:11434/v1" {
+			t.Fatalf("got %q", got)
+		}
+	})
+
+	t.Run("OLLAMA_HOST host:port", func(t *testing.T) {
+		t.Setenv("OLLAMA_URL", "")
+		t.Setenv("OLLAMA_HOST", "192.168.1.10:11434")
+		if got := m.ResolvedBaseURL(); got != "http://192.168.1.10:11434/v1" {
+			t.Fatalf("got %q", got)
+		}
+	})
+
+	t.Run("non-ollama ignores env", func(t *testing.T) {
+		other := ModelConfig{BaseURL: "https://api.deepseek.com/v1", Capabilities: []string{"fast"}}
+		t.Setenv("OLLAMA_URL", "http://127.0.0.1:11434")
+		if got := other.ResolvedBaseURL(); got != "https://api.deepseek.com/v1" {
+			t.Fatalf("got %q", got)
+		}
+	})
+}
+
+func TestNew_AcceptsOllamaLoopback(t *testing.T) {
+	r, err := New(DefaultModels(), DefaultModelName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg, ok := r.Model(OllamaLlama32ModelName)
+	if !ok {
+		t.Fatal("ollama model missing from router")
+	}
+	if cfg.BaseURL != OllamaOpenAIBaseURL {
+		t.Fatalf("BaseURL=%q", cfg.BaseURL)
 	}
 }
 

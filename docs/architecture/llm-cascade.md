@@ -2,7 +2,7 @@
 
 Research baseline: **July 2026** public pricing and coding-agent benchmarks.
 
-`iomesh-tui` is **multi-provider**: the built-in catalog includes DeepSeek, xAI Grok, Google Gemini (AI Studio), and Vertex AI Gemini. All speak OpenAI-compatible chat + tools over pure-Go HTTP/SSE. The **default auto-cascade** still prefers DeepSeek for cost; any catalog model can be the session default.
+`iomesh-tui` is **multi-provider**: the built-in catalog includes DeepSeek, xAI Grok, Google Gemini (AI Studio), Vertex AI Gemini, and local **Ollama** (OpenAI-compatible `/v1`). All speak OpenAI-compatible chat + tools over pure-Go HTTP/SSE. The **default auto-cascade** still prefers DeepSeek for cost; any catalog model can be the session default (Ollama is pin-only).
 
 List live catalog: `iomesh models`.
 
@@ -17,6 +17,7 @@ List live catalog: `iomesh models`.
 | `gemini-2.5-pro` | Google AI Studio | `gemini-2.5-pro` | `GEMINI_API_KEY` | Pin / optional default |
 | `vertex-gemini-2.5-flash` | Vertex AI | `google/gemini-2.5-flash` | `VERTEX_API_KEY` + `GOOGLE_CLOUD_PROJECT` | Pin / optional default |
 | `vertex-gemini-2.5-pro` | Vertex AI | `google/gemini-2.5-pro` | `VERTEX_API_KEY` + `GOOGLE_CLOUD_PROJECT` | Pin / optional default |
+| `ollama-llama3.2` | Ollama (local) | `llama3.2` | (none; optional `OLLAMA_URL` / `OLLAMA_HOST`) | **Pin-only** (not cascade default) |
 
 ### Pricing snapshot (indicative)
 
@@ -28,6 +29,7 @@ List live catalog: `iomesh models`.
 | Google | Gemini 2.5 Flash | ~$0.30 | ~$2.50 | — | 1M |
 | Google | Gemini 2.5 Pro | ~$1.25 | ~$10 | — | 1M |
 | Vertex | Gemini Flash / Pro | (GCP list) | (GCP list) | — | 1M |
+| Local | Ollama llama3.2 | $0 | $0 | — | ~128K (model-dependent) |
 
 > Legacy DeepSeek ids `deepseek-chat` / `deepseek-reasoner` are deprecated (July 2026). Always use `deepseek-v4-flash` / `deepseek-v4-pro`.
 
@@ -37,7 +39,9 @@ List live catalog: `iomesh models`.
 
 **Pin Google (or any model):** `-m gemini-2.5-flash`, `-m vertex-gemini-2.5-flash`, `/model …`, or `IOMESH_DEFAULT_MODEL=…`. Use Vertex when burning Google Cloud credits or dogfooding GCP OpenAI-compat.
 
-**Custom OpenAI-compatible providers** (OpenAI, Anthropic gateways, local inference): add `[model.<name>]` with `base_url`, `model`, `env_key` in config — same router path as built-ins.
+**Pin local Ollama:** `-m ollama-llama3.2`, `/model ollama-llama3.2`, or `IOMESH_DEFAULT_MODEL=ollama-llama3.2`. Ollama is **not** part of the DeepSeek auto-cascade.
+
+**Custom OpenAI-compatible providers** (OpenAI, Anthropic gateways, other local inference): add `[model.<name>]` with `base_url`, `model`, optional `env_key` in config — same router path as built-ins.
 
 ### Gemini API (AI Studio)
 
@@ -77,6 +81,46 @@ If model ids change, override in `~/.iomesh/config.toml`:
 model = "google/gemini-2.5-flash"
 base_url = "https://us-east4-aiplatform.googleapis.com/v1/projects/${GOOGLE_CLOUD_PROJECT}/locations/us-east4/endpoints/openapi"
 env_key = "VERTEX_API_KEY"
+```
+
+### Ollama (local OpenAI-compatible `/v1`)
+
+**Beta · local only · not platform GPU · not invent GA.** Cost-max path: I/O Mesh cloud (pull egress) ↔ iomesh-tui ↔ local memory MCP ↔ local AI (Ollama). Cloud mesh ≠ local AI. Dual-write remains optional audit (**default OFF**). Hosted Palace is sunset until scale — primary memory is local Palace.
+
+```bash
+# Install + serve (https://ollama.com)
+ollama serve
+ollama pull llama3.2
+
+# Pin built-in catalog entry (no API key required)
+iomesh -m ollama-llama3.2 -p "Reply with ok"
+# or:
+# export IOMESH_DEFAULT_MODEL=ollama-llama3.2
+# /model ollama-llama3.2   (in TUI/REPL)
+```
+
+| Knob | Effect |
+|------|--------|
+| Default base | `http://127.0.0.1:11434/v1` |
+| `OLLAMA_URL` | Full base override (host root → appends `/v1`, e.g. `http://127.0.0.1:11434`) |
+| `OLLAMA_HOST` | Host override (scheme optional; `192.168.1.10:11434` → `http://…/v1`) |
+| Auth | None required; empty `Authorization` is fine |
+
+Native Ollama `/api/generate` is **not** used — OpenAI-compatible `/v1/chat/completions` only.
+
+**Custom Ollama models** (other tags / remote Ollama):
+
+```toml
+[model.ollama-codellama]
+model = "codellama"
+base_url = "http://127.0.0.1:11434/v1"
+# env_key optional — leave unset for local Ollama
+context_window = 128000
+cost_tier = 0
+input_cost_per_m = 0
+output_cost_per_m = 0
+capabilities = ["local", "ollama", "fast", "coding", "tool-calling"]
+priority = 65
 ```
 
 ## Router behavior in this repo

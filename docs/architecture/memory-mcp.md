@@ -28,6 +28,23 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 
 **Cost-max (s650+):** primary Memory UX is **local Palace** (this TUI + `aion-memory-mcp`). Mesh is **pull egress** of ops events; hosted cloud Palace is **sunset until scale**. Dual-write = optional **audit** only (default OFF).
 
+### Local edge stack (s761)
+
+End-to-end **cost-max** path (Beta · local only · not platform GPU · not invent GA):
+
+```text
+I/O Mesh cloud (pull egress)  ↔  iomesh-tui  ↔  local memory MCP (Palace)  ↔  local AI (Ollama pin)
+```
+
+| Layer | Role | Honesty |
+|-------|------|---------|
+| Mesh pull | Ops event egress into local palace (`iomesh memory pull`) | Cloud mesh ≠ local AI |
+| Local MCP Palace | Primary memory UX (`aion-memory-mcp`) | Hosted Palace sunset until scale |
+| Ollama pin | Local LLM (`-m ollama-llama3.2` / `IOMESH_DEFAULT_MODEL`) | OpenAI-compat `/v1` only; $0 catalog tier; not cascade default |
+| Dual-write | Optional mesh audit | **Default OFF** |
+
+See [llm-cascade.md](./llm-cascade.md) for Ollama install (`ollama serve` / `ollama pull llama3.2`) and env overrides (`OLLAMA_URL` / `OLLAMA_HOST`).
+
 **Non-goals:** private monorepo imports in public TUI; embedding Qdrant/Palace in-process; dependency on `iomesh-client-sdk-go`.
 
 ## Public Go SDK

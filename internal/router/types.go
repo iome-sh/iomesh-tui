@@ -12,6 +12,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"strings"
 	"time"
 )
 
@@ -118,8 +120,58 @@ func (m ModelConfig) ResolvedAPIKey() string {
 }
 
 // ResolvedBaseURL expands ${ENV} placeholders in BaseURL (e.g. GOOGLE_CLOUD_PROJECT).
+// For models with capability "ollama", prefers OLLAMA_URL then OLLAMA_HOST over BaseURL
+// (normalizes host-root URLs to OpenAI-compat …/v1).
 func (m ModelConfig) ResolvedBaseURL() string {
+	if hasCapability(m.Capabilities, "ollama") {
+		if v := strings.TrimSpace(getenv("OLLAMA_URL")); v != "" {
+			return normalizeOllamaOpenAIBase(v)
+		}
+		if v := strings.TrimSpace(getenv("OLLAMA_HOST")); v != "" {
+			return normalizeOllamaHost(v)
+		}
+	}
 	return expandEnvPlaceholders(m.BaseURL)
+}
+
+// normalizeOllamaOpenAIBase trims trailing slashes and appends /v1 when the URL
+// looks like a host root (no path), e.g. http://127.0.0.1:11434 → …/v1.
+func normalizeOllamaOpenAIBase(raw string) string {
+	raw = strings.TrimSpace(raw)
+	raw = strings.TrimRight(raw, "/")
+	if raw == "" {
+		return raw
+	}
+	if strings.HasSuffix(raw, "/v1") {
+		return raw
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme == "" {
+		// Best-effort: if it already has a path segment beyond host, leave it.
+		return raw
+	}
+	path := strings.Trim(u.Path, "/")
+	if path == "" {
+		return raw + "/v1"
+	}
+	return raw
+}
+
+// normalizeOllamaHost accepts OLLAMA_HOST forms (host:port or full URL).
+// Prepends http:// when scheme is missing; appends /v1 when missing.
+func normalizeOllamaHost(raw string) string {
+	raw = strings.TrimSpace(raw)
+	raw = strings.TrimRight(raw, "/")
+	if raw == "" {
+		return raw
+	}
+	if !strings.Contains(raw, "://") {
+		raw = "http://" + raw
+	}
+	if strings.HasSuffix(raw, "/v1") {
+		return raw
+	}
+	return raw + "/v1"
 }
 
 func hasCapability(caps []string, want string) bool {

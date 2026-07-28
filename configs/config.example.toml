@@ -18,6 +18,7 @@ max_attempts = 3
 #   deepseek-v4-flash → deepseek-v4-pro → grok-4.5  (default auto-cascade)
 #   gemini-2.5-flash / gemini-2.5-pro                 (Google AI Studio)
 #   vertex-gemini-2.5-flash / vertex-gemini-2.5-pro  (Vertex AI)
+#   ollama-llama3.2                                  (local Ollama; pin-only, not cascade)
 # Override fields per model as needed; pin with -m / IOMESH_DEFAULT_MODEL:
 
 [model.deepseek-v4-flash]
@@ -59,7 +60,23 @@ env_key = "XAI_API_KEY"
 # env_key = "VERTEX_API_KEY"
 # model = "google/gemini-2.5-flash"
 
-# Example custom OpenAI-compatible endpoint:
+# --- Ollama (local OpenAI-compatible /v1) — pin-only; Beta · not platform GPU ---
+# ollama serve && ollama pull llama3.2
+# iomesh -m ollama-llama3.2 -p "hello"
+# Optional base override: OLLAMA_URL=http://127.0.0.1:11434/v1  or  OLLAMA_HOST=127.0.0.1:11434
+# No API key required. Does not replace DeepSeek default cascade.
+# [model.ollama-llama3.2]
+# model = "llama3.2"
+# base_url = "http://127.0.0.1:11434/v1"
+# # env_key = ""   # leave unset
+# context_window = 128000
+# cost_tier = 0
+# input_cost_per_m = 0
+# output_cost_per_m = 0
+# capabilities = ["local", "ollama", "fast", "coding", "tool-calling"]
+# priority = 60
+
+# Example custom OpenAI-compatible endpoint (other Ollama tags, llama.cpp, vLLM, …):
 # [model.local-llama]
 # model = "llama-3"
 # base_url = "http://127.0.0.1:8080/v1"
