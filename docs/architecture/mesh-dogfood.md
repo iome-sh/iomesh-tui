@@ -2,6 +2,17 @@
 
 Operator smoke for **I/O Mesh** integration from the public `iomesh-tui` harness.
 
+Frame dogfood as a **heartbeat probe** on the org pulse plane (docs framing only — same wire paths; **does not** re-claim always-emit product bodies):
+
+| Dogfood step | Org-pulse framing | Wire (unchanged) |
+|--------------|-------------------|------------------|
+| **emit** / **llm_meter** | Org **pulse** probes — signed `dept.*` organizational events | `POST /v1/streams/dept/publish` |
+| **memory_ingest** / **memory_recall** / **memory_retrieve** | Local **vital** path into local-primary store (audit dual-write optional, default OFF) | MEMORY_INGEST / MEMORY_RPC / `/v1/memory/retrieve` |
+| **`iomesh memory pull`** (CLI) | Pull org heartbeats into **local-primary** palace | durable consumer → MCP `memory_ingest_turn` |
+| **streams** / **consumer** | Org event streams / heartbeat discovery + pull | `GET /v1/streams`, durable consumers |
+
+Public lexicon: **heartbeat / pulse** only · not OTel/APM · not medical diagnosis · no wearable brand names. See [org-pulse edge framing (s785)](#org-pulse-edge-framing-s785-pin).
+
 ## Checks
 
 ### Preflight wait (`mesh wait`)
@@ -150,12 +161,14 @@ Optional non-destructive `KVListKeys` after `streams` / `consumer` and before `m
 - **PASS detail**: `bucket=NAME n=N ensure=…`
 - Top-level `kv_bucket` **always emitted** (empty string when unset); `kv_key_count`, `kv_ensured`, `kv_ensure_ms`, and `kv_list_ms` always emitted (`kv_ensured` true only if ensure create attempted and succeeded; `kv_ensure_ms` is ensure-create latency only, `0` when ensure off/unset; `kv_list_ms` is `KVListKeys` latency only, `0` when probe unset / list not run). Empty `kv_bucket` does not invent probe success — pair with counts/flags
 
-### emit + llm_meter (dept streams / remote metering)
+### emit + llm_meter (dept streams / org pulse probes)
 
 When `emit_dept_streams` is on (default) and not `--skip-emit`:
 
-1. **emit** — `dept.agent.dogfood` probe (generic stage event)
-2. **llm_meter** — `dept.agent.llm_call` zero-token probe (same wire as live `RecordLLMCall` for platform remote metering dashboards)
+1. **emit** — `dept.agent.dogfood` probe (generic stage **org pulse** / heartbeat event on `dept.*`)
+2. **llm_meter** — `dept.agent.llm_call` zero-token probe (same wire as live `RecordLLMCall` for platform remote metering dashboards; framed as an agent **pulse** sample on the org heartbeat plane)
+
+Same wire as before — framing only (s785). Not OTel/APM host metrics.
 
 ### pub (soft ephemeral probe)
 
@@ -173,9 +186,9 @@ Optional non-destructive `Pub` after emit/llm_meter (independent of dept emit fl
 
 Both set `session_id={tenant}.mesh-dogfood` for correlation with memory_*. PASS detail appends `org=` / `workspace=` when Client OrgID/WorkspaceID are set (headers `X-IOMesh-Org` / `X-IOMesh-Workspace` on the POST). Soft: transport/HTTP errors → **SKIP**; `--strict` → **FAIL**.
 
-### memory_ingest (dual-write probe)
+### memory_ingest (dual-write probe · local vital path)
 
-Included **by default** when mesh is enabled (not gated on agent `[memory].dual_write`). Calls the same lean path as Phase 2 dual-write (`PublishMemoryIngest`):
+Framed as a **local vital** probe: optional mesh audit publish of a memory turn envelope (not primary palace write). Local-primary store remains MCP palace + mesh **pull** egress. Included **by default** when mesh is enabled (not gated on agent `[memory].dual_write`). Calls the same lean path as Phase 2 dual-write (`PublishMemoryIngest`):
 
 - Subject: `{tenant}.memory.ingest.turn`
 - Envelope: `type=memory_ingest`, `role=tool`, `content=iomesh-tui dual-write dogfood`, `event_time=now`, `session_seq=1`, `session_id={tenant}.mesh-dogfood` (or `mesh-dogfood` when tenant unset)
@@ -345,6 +358,19 @@ make dogfood-unit
 |------|---------|
 | 0 | `RESULT=PASS` or mesh disabled SKIP (offline-first) |
 | 1 | any hard FAIL |
+
+## Org-pulse edge framing (s785 pin)
+
+Wave E / Phase L4 **org-pulse edge framing** for MIT `iomesh-tui` (docs + light test comment peers only — **does not** re-claim always-emit product bodies from s761/s765/s768/s771/s774 or later completeness pins):
+
+| Surface | May frame | Must not claim |
+|---------|-----------|----------------|
+| **MIT TUI** | Local agent on the **org pulse plane** · mesh hooks publish/pull org **heartbeats / pulses** (`dept.*`) | Hosted multi-tenant mesh **control plane** inside free TUI · OTel/APM replacement |
+| **Dogfood emit / llm_meter** | **Heartbeat probe** language on same `dept.*` wire | Invent new always-emit fields · invent GA live pulse strip |
+| **Memory pull / retrieve** | Local **vital** / **local-primary** store (MCP palace + pull egress) | dual_write as primary palace · freemium hosted Palace · Memory Ops Pack = cloud GPU |
+| **Public copy** | **heartbeat / pulse** only | Fitbit/Apple (or other wearable) brand · medical diagnosis · invent GA |
+
+**Honesty locks:** Beta · offline unit ≠ live APPLY · dual_write default OFF · hosted Palace sunset · Memory Ops Pack ≠ hosted GPU · local AI ≠ platform GPU · public heartbeat/pulse only · not OTel/APM · book-demo OFF is a platform claim (not TUI). Peer aion org-pulse narrative **s776** continuum · prior TUI **s774** buyer claim · **s771** naming · **s768** local-primary. Unit pin peers: `TestDefault_DualWriteOff` / `TestDefaultMemoryConfig_DualWriteOff` (s768 body + s771/s774/s785 comment peers).
 
 ## Package
 

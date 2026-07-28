@@ -12,7 +12,7 @@ Official open-source tooling from [IOMesh](https://iome.sh) (**IOMesh Technology
 
 ### Open source / local-primary
 
-MIT OSS **agent harness** + optional mesh client surface — **not** the hosted multi-tenant mesh control plane. Memory is **local-primary** (local Memory Palace via MCP + mesh **pull** egress; not freemium hosted palace). Optional **Ollama** local AI ≠ platform GPU. Platform **$119** language (if any) = **Memory Ops Pack** (pull / retain / audit / support) — not cloud GPU palace. dual_write default OFF · hosted Palace sunset · no invent GA. Buyer claim pin: [memory-mcp.md](docs/architecture/memory-mcp.md#buyer-claim-pin-s774).
+MIT OSS **agent harness** + optional mesh client surface — **not** the hosted multi-tenant mesh control plane. The TUI is a **local agent on the org pulse plane**: optional mesh hooks publish/pull organizational **heartbeats / pulses** (`dept.*` work events — not host/APM metrics · public copy = heartbeat/pulse only). Memory is **local-primary** (local Memory Palace via MCP + mesh **pull** egress; not freemium hosted palace). Optional **Ollama** local AI ≠ platform GPU. Platform **$119** language (if any) = **Memory Ops Pack** (pull / retain / audit / support) — not cloud GPU palace. dual_write default OFF · hosted Palace sunset · no invent GA · Beta. Buyer claim pin: [memory-mcp.md](docs/architecture/memory-mcp.md#buyer-claim-pin-s774) · org-pulse edge framing: [mesh-dogfood.md](docs/architecture/mesh-dogfood.md#org-pulse-edge-framing-s785-pin).
 
 ## Table of contents
 
@@ -34,7 +34,7 @@ MIT OSS **agent harness** + optional mesh client surface — **not** the hosted 
 | Multi-provider agents | Built-in **DeepSeek**, **xAI Grok**, **Gemini**, **Vertex Gemini**, **Ollama** (local pin); pin any logical name or add OpenAI-compatible endpoints |
 | Sustainable defaults | Auto-cascade prefers **DeepSeek V4 Flash → Pro → Grok 4.5** for price/performance (override anytime; Ollama is pin-only) |
 | Integration simplicity | Pure-Go OpenAI-compatible HTTP + SSE (`internal/router`) |
-| Platform fit | Optional I/O Mesh context plane, policy gates, `dept.*` usage streams (`internal/iomesh`) |
+| Platform fit | Optional I/O Mesh context plane, policy gates, `dept.*` org heartbeats / usage streams (`internal/iomesh`) |
 | Familiar agent UX | TUI / headless / ACP, tools, subagents, workspace root, slash commands |
 
 ## Supported models
