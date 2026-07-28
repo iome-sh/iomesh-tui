@@ -289,10 +289,15 @@ func FormatStreamInfoListJSON(list []StreamInfoPrint) string {
 // consumer pull-auth; do not invent identity fields. Wire DeleteStream stays
 // lean (error return only).
 //
-// s726: mold ConsumerDeletePrint s708; peer aion s725 residual. Beta · offline
-// unit ≠ live APPLY · empty name honest · dual_write OFF · not full mesh RBAC
-// GA · does not invent delete success when HTTP failed (call only after
-// DeleteStream returns nil).
+// s726: mold ConsumerDeletePrint s708; peer aion s725 residual.
+// s759: completeness pin — docs + unit tests lock StreamDeletePrint (s726) with
+// StreamMessagesPrint (s720) + StreamMessagePrint (s723) always-emit keys; does
+// not invent new DTO fields or re-claim s720/s723/s726 product bodies. Peer aion
+// s758 residual. DTO ≠ invent stream gone · dual_write OFF · offline unit ≠ live
+// APPLY · not full mesh RBAC GA.
+// Beta · offline unit ≠ live APPLY · empty name honest · dual_write OFF · not
+// full mesh RBAC GA · does not invent delete success when HTTP failed (call only
+// after DeleteStream returns nil).
 type StreamDeletePrint struct {
 	OK   bool   `json:"ok"`
 	Name string `json:"name"`

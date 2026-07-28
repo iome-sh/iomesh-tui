@@ -146,6 +146,11 @@ func decodeStreamMessages(raw []byte) ([]StreamMessage, error) {
 //
 // s723: nested always-emit residual after s720 outer envelope. Mold
 // StreamInfoPrint s699/s702 / KVEntryPrint s714. Peer aion s722 residual.
+// s759: completeness pin — docs + unit tests lock StreamMessagePrint (s723) with
+// StreamMessagesPrint (s720) + StreamDeletePrint (s726) always-emit keys; does not
+// invent new DTO fields or re-claim s720/s723/s726 product bodies. Peer aion
+// s758 residual. item ≠ invent message success · dual_write OFF · offline unit ≠
+// live APPLY · not full mesh RBAC GA · wire StreamMessage lean.
 // Beta · offline unit ≠ live APPLY · empty/0/""/{} honest · dual_write default
 // OFF · not full mesh RBAC GA · does not invent message success from fields alone.
 type StreamMessagePrint struct {
@@ -201,9 +206,14 @@ func streamMessagePrints(msgs []StreamMessage) []StreamMessagePrint {
 // []StreamMessage. Wire StreamMessage stays lean omitempty.
 //
 // s720 outer envelope + s723 nested message always-emit. Mold KVKeysPrint s714 /
-// ConsumerFetchPrint s708. Peer aion s719/s722 residual. Beta · offline unit ≠
-// live APPLY · empty/0/""/{} honest · dual_write default OFF · not full mesh
-// RBAC GA · does not invent message success from knobs alone.
+// ConsumerFetchPrint s708. Peer aion s719/s722 residual.
+// s759: completeness pin — docs + unit tests lock StreamMessagesPrint (s720) with
+// StreamMessagePrint (s723) + StreamDeletePrint (s726) always-emit keys; does not
+// invent new DTO fields or re-claim s720/s723/s726 product bodies. Peer aion
+// s758 residual. envelope ≠ invent message success · dual_write OFF · offline
+// unit ≠ live APPLY · not full mesh RBAC GA · wire StreamMessage lean.
+// Beta · offline unit ≠ live APPLY · empty/0/""/{} honest · dual_write default
+// OFF · not full mesh RBAC GA · does not invent message success from knobs alone.
 type StreamMessagesPrint struct {
 	Stream   string               `json:"stream"`
 	FromSeq  uint64               `json:"from_seq"`

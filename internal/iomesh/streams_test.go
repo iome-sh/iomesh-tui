@@ -1059,3 +1059,181 @@ func TestFormatJSONHelpers_CompletenessPin(t *testing.T) {
 		t.Fatalf("FormatStreamMessagesJSON messages must not be null: %s", msgsJS)
 	}
 }
+
+// s759: streams print JSON completeness pin — locks StreamMessagesPrint (s720) +
+// nested StreamMessagePrint (s723) + StreamDeletePrint (s726) always-emit keys
+// via FormatStreamMessagesJSON / NewStreamMessagesPrint / NewStreamMessagePrint /
+// FormatStreamDeleteJSON / NewStreamDeletePrint (DTO surfaces already always-emit;
+// this serial docs+tests pin completeness, does not invent new fields or re-claim
+// s720/s723/s726 product bodies). Peer aion s758 residual. envelope ≠ invent
+// message success · item ≠ invent message success · DTO ≠ invent stream gone ·
+// wire StreamMessage lean · dual_write OFF · offline unit ≠ live APPLY · not
+// full mesh RBAC GA.
+func TestStreamsPrint_JSONCompletenessPin(t *testing.T) {
+	t.Parallel()
+
+	envelopeKeys := []string{"stream", "from_seq", "to_seq", "limit", "count", "messages"}
+	itemKeys := []string{"stream", "seq", "subject", "partition", "payload", "headers", "timestamp"}
+	deleteKeys := []string{"ok", "name"}
+
+	// Messages envelope empty surface (s720): all keys present; knobs 0; messages [] not null.
+	emptyEnvJS := FormatStreamMessagesJSON(NewStreamMessagesPrint("EVENTS", 0, 0, 0, nil))
+	if !strings.HasSuffix(emptyEnvJS, "\n") {
+		t.Fatal("FormatStreamMessagesJSON: expected trailing newline")
+	}
+	var emptyEnv map[string]any
+	if err := json.Unmarshal([]byte(emptyEnvJS), &emptyEnv); err != nil {
+		t.Fatalf("empty envelope unmarshal: %v\n%s", err, emptyEnvJS)
+	}
+	for _, key := range envelopeKeys {
+		if _, ok := emptyEnv[key]; !ok {
+			t.Fatalf("empty envelope missing StreamMessagesPrint key %q: %s", key, emptyEnvJS)
+		}
+	}
+	if emptyEnv["stream"] != "EVENTS" {
+		t.Fatalf("empty envelope stream: %s", emptyEnvJS)
+	}
+	if emptyEnv["from_seq"].(float64) != 0 || emptyEnv["to_seq"].(float64) != 0 ||
+		emptyEnv["limit"].(float64) != 0 || emptyEnv["count"].(float64) != 0 {
+		t.Fatalf("empty envelope knobs/count 0 honest: %s", emptyEnvJS)
+	}
+	emptyMsgs, ok := emptyEnv["messages"].([]any)
+	if !ok || len(emptyMsgs) != 0 {
+		t.Fatalf("empty envelope messages want [] not null: %s", emptyEnvJS)
+	}
+	if strings.Contains(emptyEnvJS, `"messages": null`) || strings.Contains(emptyEnvJS, `"messages":null`) {
+		t.Fatalf("empty envelope messages must not be null: %s", emptyEnvJS)
+	}
+
+	// Nested StreamMessagePrint empty/sparse (s723): empty/0/""/{} honest.
+	emptyItemJS, err := json.Marshal(NewStreamMessagePrint(StreamMessage{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var emptyItem map[string]any
+	if err := json.Unmarshal(emptyItemJS, &emptyItem); err != nil {
+		t.Fatalf("empty item unmarshal: %v\n%s", err, emptyItemJS)
+	}
+	for _, key := range itemKeys {
+		if _, ok := emptyItem[key]; !ok {
+			t.Fatalf("empty item missing StreamMessagePrint key %q: %s", key, emptyItemJS)
+		}
+	}
+	if emptyItem["stream"] != "" || emptyItem["seq"].(float64) != 0 || emptyItem["subject"] != "" ||
+		emptyItem["partition"].(float64) != 0 || emptyItem["timestamp"] != "" {
+		t.Fatalf("empty item empty/0/\"\" honest: %s", emptyItemJS)
+	}
+	if emptyItem["payload"] != "" {
+		t.Fatalf("empty item payload want \"\": %s", emptyItemJS)
+	}
+	emptyHeaders, ok := emptyItem["headers"].(map[string]any)
+	if !ok || len(emptyHeaders) != 0 {
+		t.Fatalf("empty item headers want {}: %s", emptyItemJS)
+	}
+	if strings.Contains(string(emptyItemJS), `"headers":null`) || strings.Contains(string(emptyItemJS), `"payload":null`) {
+		t.Fatalf("empty item headers/payload must not be null: %s", emptyItemJS)
+	}
+
+	// Populated envelope + nested item: same key sets; no invent fields.
+	ts := time.Date(2026, 7, 1, 12, 0, 0, 0, time.UTC)
+	popEnvJS := FormatStreamMessagesJSON(NewStreamMessagesPrint("EVENTS", 1, 100, 20, []StreamMessage{
+		{
+			Stream: "EVENTS", Seq: 7, Subject: "dept.events.hello", Partition: 2,
+			Payload: []byte("hi"), Headers: map[string]string{"x-trace": "abc"}, Timestamp: ts,
+		},
+	}))
+	var popEnv map[string]any
+	if err := json.Unmarshal([]byte(popEnvJS), &popEnv); err != nil {
+		t.Fatalf("populated envelope unmarshal: %v\n%s", err, popEnvJS)
+	}
+	for _, key := range envelopeKeys {
+		if _, ok := popEnv[key]; !ok {
+			t.Fatalf("populated envelope missing StreamMessagesPrint key %q: %s", key, popEnvJS)
+		}
+	}
+	if popEnv["stream"] != "EVENTS" || popEnv["from_seq"].(float64) != 1 ||
+		popEnv["to_seq"].(float64) != 100 || popEnv["limit"].(float64) != 20 ||
+		popEnv["count"].(float64) != 1 {
+		t.Fatalf("populated envelope values: %s", popEnvJS)
+	}
+	popMsgs, ok := popEnv["messages"].([]any)
+	if !ok || len(popMsgs) != 1 {
+		t.Fatalf("populated messages: %s", popEnvJS)
+	}
+	nested, ok := popMsgs[0].(map[string]any)
+	if !ok {
+		t.Fatalf("nested message not object: %s", popEnvJS)
+	}
+	for _, key := range itemKeys {
+		if _, ok := nested[key]; !ok {
+			t.Fatalf("nested missing StreamMessagePrint key %q: %s", key, popEnvJS)
+		}
+	}
+	if nested["stream"] != "EVENTS" || nested["seq"].(float64) != 7 ||
+		nested["subject"] != "dept.events.hello" || nested["partition"].(float64) != 2 ||
+		nested["timestamp"] != "2026-07-01T12:00:00Z" {
+		t.Fatalf("nested populated values: %s", popEnvJS)
+	}
+	wantB64 := base64.StdEncoding.EncodeToString([]byte("hi"))
+	if nested["payload"] != wantB64 {
+		t.Fatalf("nested payload b64: %s", popEnvJS)
+	}
+	nestedHeaders, ok := nested["headers"].(map[string]any)
+	if !ok || nestedHeaders["x-trace"] != "abc" {
+		t.Fatalf("nested headers: %s", popEnvJS)
+	}
+
+	// Wire StreamMessage stays lean (no envelope knobs; empty optional omitempty).
+	wire, err := json.Marshal(StreamMessage{Seq: 1, Subject: "s"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"from_seq", "to_seq", "limit", "count"} {
+		if strings.Contains(string(wire), key) {
+			t.Fatalf("wire StreamMessage should not carry %q: %s", key, wire)
+		}
+	}
+	if strings.Contains(string(wire), `"stream"`) || strings.Contains(string(wire), `"partition"`) ||
+		strings.Contains(string(wire), `"headers"`) {
+		t.Fatalf("wire StreamMessage should omit empty stream/partition/headers: %s", wire)
+	}
+
+	// StreamDeletePrint empty surface (s726): {ok,name}; no pull_role invent.
+	delEmptyJS := FormatStreamDeleteJSON(NewStreamDeletePrint(""))
+	if !strings.HasSuffix(delEmptyJS, "\n") {
+		t.Fatal("FormatStreamDeleteJSON: expected trailing newline")
+	}
+	var delEmpty map[string]any
+	if err := json.Unmarshal([]byte(delEmptyJS), &delEmpty); err != nil {
+		t.Fatalf("delete empty unmarshal: %v\n%s", err, delEmptyJS)
+	}
+	for _, key := range deleteKeys {
+		if _, ok := delEmpty[key]; !ok {
+			t.Fatalf("delete empty missing StreamDeletePrint key %q: %s", key, delEmptyJS)
+		}
+	}
+	if delEmpty["ok"] != true || delEmpty["name"] != "" {
+		t.Fatalf("delete empty values: %s", delEmptyJS)
+	}
+	if strings.Contains(delEmptyJS, "pull_role") {
+		t.Fatalf("delete must not invent pull_role: %s", delEmptyJS)
+	}
+
+	// Delete populated path still always-emits the same key set.
+	delPopJS := FormatStreamDeleteJSON(NewStreamDeletePrint("TEMP"))
+	var delPop map[string]any
+	if err := json.Unmarshal([]byte(delPopJS), &delPop); err != nil {
+		t.Fatalf("delete populated unmarshal: %v\n%s", err, delPopJS)
+	}
+	for _, key := range deleteKeys {
+		if _, ok := delPop[key]; !ok {
+			t.Fatalf("delete populated missing StreamDeletePrint key %q: %s", key, delPopJS)
+		}
+	}
+	if delPop["ok"] != true || delPop["name"] != "TEMP" {
+		t.Fatalf("delete populated values: %s", delPopJS)
+	}
+	if strings.Contains(delPopJS, "pull_role") {
+		t.Fatalf("delete populated must not invent pull_role: %s", delPopJS)
+	}
+}

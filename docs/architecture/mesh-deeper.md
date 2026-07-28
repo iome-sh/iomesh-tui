@@ -167,10 +167,10 @@ Wire `StreamInfo` stays lean (`omitempty` on optional knobs including `retention
 | `FormatStreamDetail` / get text | Always prints `description`, `retention`, `retention_tier`, `partitions`, `max_msgs`, `max_age_sec`, … (empty/`0` when unset) |
 | `StreamInfoPrint` / get+list `--json` | Same knobs without omitempty gaps; list path maps via `NewStreamInfoPrint` |
 | `FormatStreams` table | Columns include MAX_MSGS, MAX_AGE, RETENTION, **TIER** (empty when broker omits) |
-| `StreamMessagesPrint` / `--messages --json` | Envelope `{stream, from_seq, to_seq, limit, count, messages}` (not bare array; s720; 0 honest); nested `messages[]` are `StreamMessagePrint` (s723) |
-| `StreamMessagePrint` / nested message JSON | Always emits `stream`, `seq`, `subject`, `partition`, `payload`, `headers`, `timestamp` (s723; empty/0/`""`/`{}` honest) |
+| `StreamMessagesPrint` / `--messages --json` | Envelope `{stream, from_seq, to_seq, limit, count, messages}` (not bare array; s720; 0 honest); nested `messages[]` are `StreamMessagePrint` (s723); completeness pin s759 |
+| `StreamMessagePrint` / nested message JSON | Always emits `stream`, `seq`, `subject`, `partition`, `payload`, `headers`, `timestamp` (s723; empty/0/`""`/`{}` honest; completeness pin s759) |
 | `FormatStreamMessagesPrint` / `--messages` text | Header includes knobs + count; table of messages (empty → `(no messages)`) |
-| `StreamDeletePrint` / `--delete --json` | Always emits `{ok,name}` on success only (s726; empty name honest); FAIL stays stderr; no pull_role invent |
+| `StreamDeletePrint` / `--delete --json` | Always emits `{ok,name}` on success only (s726; empty name honest; completeness pin s759); FAIL stays stderr; no pull_role invent |
 | `FormatStreamDelete` / `--delete` text | PASS + always-emit `name:` line (s726) |
 
 `retention_tier` is decoded from the broker wire only (hot\|temp\|extended\|archive when present). **Never invent** tier from `max_age_sec` alone — empty string is honest when the broker omits. Beta · offline unit ≠ live APPLY · peer aion s701.
@@ -181,6 +181,8 @@ Wire `StreamInfo` stays lean (`omitempty` on optional knobs including `retention
 
 **s726 stream delete print always-emit** (mold ConsumerDeletePrint s708; peer aion s725 residual): `--delete --name N --yes [--json]` prints `StreamDeletePrint` always-emitting `{ok,name}` (empty name honest). Success path only — FAIL stays stderr. Wire `DeleteStream` stays lean (error return only). No `pull_role` invent (stream delete ≠ consumer pull-auth). Beta · offline unit ≠ live APPLY · dual_write default OFF · not full mesh RBAC GA · DTO ≠ invent delete success when HTTP failed.
 
+**s759 (Beta · completeness pin):** streams print JSON **complete** — messages envelope `StreamMessagesPrint` (s720) + nested item `StreamMessagePrint` (s723) + delete `StreamDeletePrint` (s726) locked by docs + unit tests (always-emit keys: messages envelope `{stream,from_seq,to_seq,limit,count,messages}` with nested item `{stream,seq,subject,partition,payload,headers,timestamp}` empty/0/`""`/`{}` honest; delete `{ok,name}`). Completeness pin **s759** · peer aion **s758**. Completeness pin **does not** invent new DTO fields · **does not** re-claim s720/s723/s726 product bodies · envelope ≠ invent message success · item ≠ invent message success · DTO ≠ invent stream gone · dual_write OFF · not full mesh RBAC GA · offline unit ≠ live APPLY · wire StreamMessage lean.
+
 ```bash
 iomesh mesh streams                  # table of all streams
 iomesh mesh streams --name EVENTS    # multi-line detail
@@ -189,10 +191,10 @@ iomesh mesh streams --name EVENTS --json
 # Message inspection (requires --name; default --limit 20; not dogfood):
 iomesh mesh streams --messages --name EVENTS
 iomesh mesh streams --messages --name EVENTS --from-seq 1 --to-seq 100 --limit 50
-iomesh mesh streams --messages --name EVENTS --json   # StreamMessagesPrint envelope (s720)
+iomesh mesh streams --messages --name EVENTS --json   # StreamMessagesPrint envelope (s720; completeness pin s759)
 # DESTRUCTIVE — requires both --name and --yes (incompatible with --messages):
 iomesh mesh streams --delete --name TEMP --yes
-iomesh mesh streams --delete --name TEMP --yes --json   # StreamDeletePrint {ok,name} (s726)
+iomesh mesh streams --delete --name TEMP --yes --json   # StreamDeletePrint {ok,name} (s726; completeness pin s759)
 ```
 
 Mesh disabled / empty endpoint → error `mesh disabled` (non-zero CLI exit). Dogfood probes list only (`streams` step + `streams_count` / `streams_names`); delete and message list are CLI-only. Message list does not enable broker replay flags and is not auto-probed by dogfood.
@@ -317,8 +319,8 @@ Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 alread
 - `internal/iomesh/policy.go` — EvaluatePolicy
 - `internal/iomesh/meter.go` — UsageMeter / FormatUsage / NewUsagePrint / FormatUsageJSON (UsagePrint always-emit s738; completeness pin s756)
 - `internal/iomesh/catalog.go` — ListCatalog / GetCatalogProduct / FormatCatalog / NewCatalogPrint / FormatCatalogJSON / NewCatalogProductPrint / FormatCatalogProductJSON / FormatProductDetail / CatalogSnippet (CatalogPrint s735 + CatalogProductPrint s744; completeness pin s753)
-- `internal/iomesh/streams.go` — ListStreams / GetStream / DeleteStream / FormatStreams / NewStreamInfoPrint / FormatStreamInfoJSON / FormatStreamInfoListJSON / NewStreamDeletePrint / FormatStreamDelete / FormatStreamDeleteJSON
-- `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages / NewStreamMessagePrint / NewStreamMessagesPrint / FormatStreamMessagesPrint / FormatStreamMessagesJSON
+- `internal/iomesh/streams.go` — ListStreams / GetStream / DeleteStream / FormatStreams / NewStreamInfoPrint / FormatStreamInfoJSON / FormatStreamInfoListJSON / NewStreamDeletePrint / FormatStreamDelete / FormatStreamDeleteJSON (StreamDeletePrint s726; completeness pin s759)
+- `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages / NewStreamMessagePrint / NewStreamMessagesPrint / FormatStreamMessagesPrint / FormatStreamMessagesJSON (StreamMessagesPrint s720 + StreamMessagePrint s723; completeness pin s759)
 - `internal/iomesh/consumers.go` — CreateConsumer / ConsumerFetch / ConsumerAck / ConsumerNack / DeleteConsumer / FormatConsumerInfo / FormatConsumerInfoWithAuth / NewConsumerInfoPrint / FormatConsumerInfoJSON / NewConsumerFetchPrint / FormatConsumerFetch / FormatConsumerFetchJSON / NewConsumerAckPrint / FormatConsumerAck / NewConsumerDeletePrint / FormatConsumerDelete
 - `internal/iomesh/kv.go` — KVGet / KVListKeys / KVPut / KVDelete / KVCreateBucket / FormatKVEntry / FormatKVKeys / FormatKVBucketInfo / NewKVBucketInfoPrint / FormatKVBucketInfoJSON / NewKVEntryPrint / FormatKVEntryJSON / NewKVKeysPrint / FormatKVKeysJSON / NewKVPutPrint / FormatKVPut / FormatKVPutJSON / NewKVDeletePrint / FormatKVDelete / FormatKVDeleteJSON (KVPutPrint/KVDeletePrint s729; completeness pin s756)
 - `internal/iomesh/pub.go` — Pub / NewPubPrint / FormatPub / FormatPubJSON (ephemeral `POST /v1/pub`; PubPrint always-emit s732; completeness pin s756)
@@ -331,3 +333,5 @@ Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 alread
 **s753 (Beta · completeness pin):** catalog print JSON **complete** — list CatalogPrint (s735) + product CatalogProductPrint (s744) + nested DataProductPrint locked by docs + unit tests. Completeness pin **s753** · peer aion **s752**. Completeness pin **does not** invent new DTO fields · **does not** re-claim s735/s744 product bodies · DTO ≠ invent catalog/product success · `found=false` honest · dual_write OFF · not full mesh RBAC GA · offline unit ≠ live APPLY · Beta catalog.
 
 **s756 (Beta · completeness pin):** mutate/print JSON **complete** — usage UsagePrint (s738) + pub PubPrint (s732) + kv put/delete KVPutPrint/KVDeletePrint (s729) locked by docs + unit tests. Completeness pin **s756** · peer aion **s755**. Completeness pin **does not** invent new DTO fields · **does not** re-claim s729/s732/s738 product bodies · DTO ≠ invent usage/pub/kv success · local process meter ≠ remote dashboard · ephemeral pub ≠ durable stream publish · s714 ≠ mutate residual · dual_write OFF · not full mesh RBAC GA · offline unit ≠ live APPLY.
+
+**s759 (Beta · completeness pin):** streams print JSON **complete** — messages envelope StreamMessagesPrint (s720) + nested StreamMessagePrint (s723) + delete StreamDeletePrint (s726) locked by docs + unit tests. Completeness pin **s759** · peer aion **s758**. Completeness pin **does not** invent new DTO fields · **does not** re-claim s720/s723/s726 product bodies · envelope ≠ invent message success · item ≠ invent message success · DTO ≠ invent stream gone · dual_write OFF · not full mesh RBAC GA · offline unit ≠ live APPLY · wire StreamMessage lean.
