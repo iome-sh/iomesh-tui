@@ -216,6 +216,77 @@ func TestUsagePrint_JSONAlwaysEmitPopulated(t *testing.T) {
 	}
 }
 
+// s756: mutate/print JSON completeness pin — locks UsagePrint (s738) always-emit
+// keys via FormatUsageJSON / NewUsagePrint (DTO surface already always-emit; this
+// serial docs+tests pin completeness, does not invent new fields or re-claim
+// s738 product body). Peer aion s755 residual. Zero-time "" never 0001-01-01 ·
+// by_model [] not null · local process meter ≠ remote dashboard · DTO ≠ invent
+// usage success · dual_write OFF · offline unit ≠ live APPLY · not full mesh RBAC GA.
+func TestUsagePrint_JSONCompletenessPin(t *testing.T) {
+	t.Parallel()
+
+	usageKeys := []string{"started", "as_of", "calls", "errors", "tokens", "est_usd", "by_model"}
+
+	// Empty surface: all keys present; started/as_of ""; by_model [] not null.
+	emptyJS := FormatUsageJSON(UsageSnapshot{})
+	if !strings.HasSuffix(emptyJS, "\n") {
+		t.Fatal("FormatUsageJSON: expected trailing newline")
+	}
+	var emptyObj map[string]any
+	if err := json.Unmarshal([]byte(emptyJS), &emptyObj); err != nil {
+		t.Fatalf("empty unmarshal: %v\n%s", err, emptyJS)
+	}
+	for _, key := range usageKeys {
+		if _, ok := emptyObj[key]; !ok {
+			t.Fatalf("empty missing UsagePrint key %q: %s", key, emptyJS)
+		}
+	}
+	if emptyObj["started"] != "" || emptyObj["as_of"] != "" {
+		t.Fatalf("zero time must be \"\" not zero-value date: %s", emptyJS)
+	}
+	if strings.Contains(emptyJS, "0001-01-01") {
+		t.Fatalf("must not emit 0001-01-01 zero time: %s", emptyJS)
+	}
+	byModel, ok := emptyObj["by_model"].([]any)
+	if !ok {
+		t.Fatalf("by_model want array not null: %s", emptyJS)
+	}
+	if len(byModel) != 0 {
+		t.Fatalf("by_model want []; got %v\n%s", byModel, emptyJS)
+	}
+	if strings.Contains(emptyJS, `"by_model": null`) || strings.Contains(emptyJS, `"by_model":null`) {
+		t.Fatalf("by_model must not be null: %s", emptyJS)
+	}
+
+	// Populated path still always-emits the same key set (no invent fields).
+	pop := time.Date(2026, 7, 27, 12, 0, 0, 0, time.UTC)
+	popJS := FormatUsageJSON(UsageSnapshot{
+		Started: pop,
+		AsOf:    pop,
+		Calls:   2,
+		Errors:  1,
+		Tokens:  42,
+		EstUSD:  0.01,
+		ByModel: []ModelUsage{{Model: "grok-4.5", Calls: 2, TotalTokens: 42}},
+	})
+	var popObj map[string]any
+	if err := json.Unmarshal([]byte(popJS), &popObj); err != nil {
+		t.Fatalf("populated unmarshal: %v\n%s", err, popJS)
+	}
+	for _, key := range usageKeys {
+		if _, ok := popObj[key]; !ok {
+			t.Fatalf("populated missing UsagePrint key %q: %s", key, popJS)
+		}
+	}
+	if strings.Contains(popJS, "0001-01-01") {
+		t.Fatalf("populated must not emit 0001-01-01: %s", popJS)
+	}
+	rows, ok := popObj["by_model"].([]any)
+	if !ok || len(rows) != 1 {
+		t.Fatalf("populated by_model: %s", popJS)
+	}
+}
+
 type assertErr struct{}
 
 func (assertErr) Error() string { return "boom" }

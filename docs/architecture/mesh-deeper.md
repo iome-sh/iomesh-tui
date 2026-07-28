@@ -59,9 +59,11 @@ Agent order: **mesh policy → interactive approval → execute**.
 
 **Honesty:** Beta · offline unit ≠ live APPLY · dual_write default OFF · not full mesh RBAC GA · empty/`0`/`[]` honest · zero time → empty string · **local process meter ≠ remote dashboard** · DTO ≠ invent usage/meter success · peer aion s737 residual · no invent GA.
 
+**s756 (Beta · completeness pin):** mutate/print JSON **complete** — usage `UsagePrint` (s738) + pub `PubPrint` (s732) + kv put/delete `KVPutPrint`/`KVDeletePrint` (s729) locked by docs + unit tests (always-emit keys: usage `{started,as_of,calls,errors,tokens,est_usd,by_model}` with zero-time `""` and `by_model []`; pub `{ok,subject,bytes}` no payload; put `{ok,bucket,key,revision}`; delete `{ok,bucket,key}`). Completeness pin **s756** · peer aion **s755**. Completeness pin **does not** invent new DTO fields · **does not** re-claim s729/s732/s738 product bodies · DTO ≠ invent usage/pub/kv success · local process meter ≠ remote dashboard · ephemeral pub ≠ durable stream publish · s714 ≠ mutate residual · dual_write OFF · not full mesh RBAC GA · offline unit ≠ live APPLY.
+
 ```bash
 iomesh mesh usage              # text table (process lifetime; often empty in fresh CLI)
-iomesh mesh usage --json       # UsagePrint always-emit (s738; empty-time honest)
+iomesh mesh usage --json       # UsagePrint always-emit (s738; completeness pin s756)
 ```
 
 ## Remote metering path (platform dashboards)
@@ -223,6 +225,8 @@ Wire `KVBucketInfo` / `KVEntry` stay lean (`omitempty` on optional knobs). CLI p
 
 **s729 kv put/delete print always-emit** (mold StreamDeletePrint s726 + s714 read DTOs; peer aion s728 residual): closes s714 mutate half-gap. `--put … --yes [--json]` / `--delete … --yes [--json]` print DTOs on success only — FAIL stays stderr. Wire `KVPut` / `KVDelete` stay lean. No `pull_role` invent and no value echo on put JSON. Beta · offline unit ≠ live APPLY · empty/0 honest · dual_write default OFF · not full mesh RBAC GA · DTO ≠ invent mutate success when HTTP failed.
 
+**s756 (Beta · completeness pin):** mutate/print JSON **complete** — includes kv put/delete `KVPutPrint`/`KVDeletePrint` (s729) with usage `UsagePrint` (s738) + pub `PubPrint` (s732). Completeness pin **s756** · peer aion **s755**. Completeness pin **does not** invent new DTO fields · **does not** re-claim s729 product body · DTO ≠ invent mutate success · s714 ≠ mutate residual · dual_write OFF · not full mesh RBAC GA · offline unit ≠ live APPLY.
+
 Beta · offline unit ≠ live APPLY · empty/0 honest · dual_write default OFF · peer aion s713/s728 · does not invent KV success from knobs alone.
 
 ```bash
@@ -233,10 +237,10 @@ iomesh mesh kv --bucket config --list --json
 iomesh mesh kv --bucket config --get app.json --json
 # Mutating — requires --yes:
 iomesh mesh kv --bucket config --put app.json --value '{"ok":true}' --yes
-iomesh mesh kv --bucket config --put app.json --value '{"ok":true}' --yes --json   # KVPutPrint {ok,bucket,key,revision} (s729)
+iomesh mesh kv --bucket config --put app.json --value '{"ok":true}' --yes --json   # KVPutPrint {ok,bucket,key,revision} (s729; completeness pin s756)
 iomesh mesh kv --bucket config --put app.json --value-file ./app.json --yes
 iomesh mesh kv --bucket config --delete tmp.key --yes
-iomesh mesh kv --bucket config --delete tmp.key --yes --json   # KVDeletePrint {ok,bucket,key} (s729)
+iomesh mesh kv --bucket config --delete tmp.key --yes --json   # KVDeletePrint {ok,bucket,key} (s729; completeness pin s756)
 iomesh mesh kv --bucket config --create-bucket --yes
 iomesh mesh kv --bucket config --create-bucket --yes --json
 ```
@@ -260,13 +264,15 @@ Wire `Pub` stays lean (error return only). CLI print surfaces always-emit for sc
 
 **s732 pub print always-emit** (mold StreamDeletePrint s726 + KVPutPrint s729; peer aion s731 residual): `--subject S --payload STR|--payload-file F --yes [--json]` prints `PubPrint` always-emitting `{ok,subject,bytes}` (empty/0 honest). Success path only — FAIL stays stderr. Wire `Pub` stays lean (error return only). No `pull_role` invent and no payload echo. Ephemeral `POST /v1/pub` ≠ durable stream publish. Beta · offline unit ≠ live APPLY · dual_write default OFF · not full mesh RBAC GA · DTO ≠ invent pub success when HTTP failed.
 
+**s756 (Beta · completeness pin):** mutate/print JSON **complete** — includes pub `PubPrint` (s732) with usage `UsagePrint` (s738) + kv put/delete `KVPutPrint`/`KVDeletePrint` (s729). Completeness pin **s756** · peer aion **s755**. Completeness pin **does not** invent new DTO fields · **does not** re-claim s732 product body · DTO ≠ invent pub success · ephemeral pub ≠ durable stream publish · dual_write OFF · not full mesh RBAC GA · offline unit ≠ live APPLY.
+
 ```bash
 iomesh mesh pub --subject dept.agent.ping --payload '{"ok":true}' --yes
 iomesh mesh pub --subject dept.agent.ping --payload-file ./evt.json --yes
-iomesh mesh pub --subject dept.agent.ping --payload hello --yes --json   # PubPrint {ok,subject,bytes} (s732)
+iomesh mesh pub --subject dept.agent.ping --payload hello --yes --json   # PubPrint {ok,subject,bytes} (s732; completeness pin s756)
 ```
 
-Requires `--subject` and `--payload` or `--payload-file` and **`--yes`**. Success prints `PubPrint` always-emit text/JSON `{ok,subject,bytes}` (s732; empty/0 honest). Distinct from stream `POST /v1/streams/{name}/publish` (dept emit / memory ingest use that path).
+Requires `--subject` and `--payload` or `--payload-file` and **`--yes`**. Success prints `PubPrint` always-emit text/JSON `{ok,subject,bytes}` (s732; empty/0 honest; completeness pin s756). Distinct from stream `POST /v1/streams/{name}/publish` (dept emit / memory ingest use that path).
 
 Dogfood soft-probes the same path when `--pub-subject` / `DogfoodOptions.PubSubject` is set (fixed payload `{"source":"iomesh-tui-dogfood"}`; soft SKIP on error unless `--strict`).
 
@@ -309,13 +315,13 @@ Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 alread
 
 - `internal/iomesh/client.go` — QueryContext, lineage format, meter hook
 - `internal/iomesh/policy.go` — EvaluatePolicy
-- `internal/iomesh/meter.go` — UsageMeter / FormatUsage / NewUsagePrint / FormatUsageJSON (UsagePrint always-emit s738)
+- `internal/iomesh/meter.go` — UsageMeter / FormatUsage / NewUsagePrint / FormatUsageJSON (UsagePrint always-emit s738; completeness pin s756)
 - `internal/iomesh/catalog.go` — ListCatalog / GetCatalogProduct / FormatCatalog / NewCatalogPrint / FormatCatalogJSON / NewCatalogProductPrint / FormatCatalogProductJSON / FormatProductDetail / CatalogSnippet (CatalogPrint s735 + CatalogProductPrint s744; completeness pin s753)
 - `internal/iomesh/streams.go` — ListStreams / GetStream / DeleteStream / FormatStreams / NewStreamInfoPrint / FormatStreamInfoJSON / FormatStreamInfoListJSON / NewStreamDeletePrint / FormatStreamDelete / FormatStreamDeleteJSON
 - `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages / NewStreamMessagePrint / NewStreamMessagesPrint / FormatStreamMessagesPrint / FormatStreamMessagesJSON
 - `internal/iomesh/consumers.go` — CreateConsumer / ConsumerFetch / ConsumerAck / ConsumerNack / DeleteConsumer / FormatConsumerInfo / FormatConsumerInfoWithAuth / NewConsumerInfoPrint / FormatConsumerInfoJSON / NewConsumerFetchPrint / FormatConsumerFetch / FormatConsumerFetchJSON / NewConsumerAckPrint / FormatConsumerAck / NewConsumerDeletePrint / FormatConsumerDelete
-- `internal/iomesh/kv.go` — KVGet / KVListKeys / KVPut / KVDelete / KVCreateBucket / FormatKVEntry / FormatKVKeys / FormatKVBucketInfo / NewKVBucketInfoPrint / FormatKVBucketInfoJSON / NewKVEntryPrint / FormatKVEntryJSON / NewKVKeysPrint / FormatKVKeysJSON / NewKVPutPrint / FormatKVPut / FormatKVPutJSON / NewKVDeletePrint / FormatKVDelete / FormatKVDeleteJSON
-- `internal/iomesh/pub.go` — Pub / NewPubPrint / FormatPub / FormatPubJSON (ephemeral `POST /v1/pub`; PubPrint always-emit s732)
+- `internal/iomesh/kv.go` — KVGet / KVListKeys / KVPut / KVDelete / KVCreateBucket / FormatKVEntry / FormatKVKeys / FormatKVBucketInfo / NewKVBucketInfoPrint / FormatKVBucketInfoJSON / NewKVEntryPrint / FormatKVEntryJSON / NewKVKeysPrint / FormatKVKeysJSON / NewKVPutPrint / FormatKVPut / FormatKVPutJSON / NewKVDeletePrint / FormatKVDelete / FormatKVDeleteJSON (KVPutPrint/KVDeletePrint s729; completeness pin s756)
+- `internal/iomesh/pub.go` — Pub / NewPubPrint / FormatPub / FormatPubJSON (ephemeral `POST /v1/pub`; PubPrint always-emit s732; completeness pin s756)
 - `internal/agent` — policy before tool execute; mesh catalog tools; `EventMeshPolicy`
 
 **s741 Format\*JSON helper completeness** (peer aion s740 residual): CLI `--json` success paths prefer package `Format*JSON` helpers over ad-hoc `json.MarshalIndent`. Helpers share mold (MarshalIndent + trailing newline + marshal-error fallback). Print DTOs already always-emit from prior serials (s714/s696/s699/s702/s720/…); this serial does **not** invent new DTO fields or re-claim product always-emit bodies — helper surface + CLI wire only. `FormatStreamInfoListJSON(nil)` emits `[]` not null. Beta · offline unit ≠ live APPLY · dual_write default OFF · empty/0/`[]` honest · not full mesh RBAC GA.
@@ -323,3 +329,5 @@ Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 alread
 **s750 (Beta · completeness pin):** Format\*JSON helper completeness **complete** — prior always-emit Format\*JSON continuum + **s741 residual helpers** (`FormatStreamMessagesJSON` · `FormatStreamInfoJSON` · `FormatStreamInfoListJSON` · `FormatConsumerInfoJSON` · `FormatKVBucketInfoJSON` · `FormatKVEntryJSON` · `FormatKVKeysJSON`) locked by docs + unit tests (keys present · trailing newline · nil list → `[]` not null). Completeness pin **s750** · peer aion **s749**. Completeness pin **does not** invent new DTO fields · **does not** re-claim s741 product body · CLI prefer Format\*JSON · dual_write OFF · not full mesh RBAC GA · offline unit ≠ live APPLY · helper completeness ≠ invent new DTO fields.
 
 **s753 (Beta · completeness pin):** catalog print JSON **complete** — list CatalogPrint (s735) + product CatalogProductPrint (s744) + nested DataProductPrint locked by docs + unit tests. Completeness pin **s753** · peer aion **s752**. Completeness pin **does not** invent new DTO fields · **does not** re-claim s735/s744 product bodies · DTO ≠ invent catalog/product success · `found=false` honest · dual_write OFF · not full mesh RBAC GA · offline unit ≠ live APPLY · Beta catalog.
+
+**s756 (Beta · completeness pin):** mutate/print JSON **complete** — usage UsagePrint (s738) + pub PubPrint (s732) + kv put/delete KVPutPrint/KVDeletePrint (s729) locked by docs + unit tests. Completeness pin **s756** · peer aion **s755**. Completeness pin **does not** invent new DTO fields · **does not** re-claim s729/s732/s738 product bodies · DTO ≠ invent usage/pub/kv success · local process meter ≠ remote dashboard · ephemeral pub ≠ durable stream publish · s714 ≠ mutate residual · dual_write OFF · not full mesh RBAC GA · offline unit ≠ live APPLY.

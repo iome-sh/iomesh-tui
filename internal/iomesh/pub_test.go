@@ -235,3 +235,58 @@ func TestFormatPub_AlwaysEmit(t *testing.T) {
 		t.Fatalf("text must not invent pull_role:\n%s", pop)
 	}
 }
+
+// s756: mutate/print JSON completeness pin — locks PubPrint (s732) always-emit
+// keys via FormatPubJSON / NewPubPrint (DTO surface already always-emit; this
+// serial docs+tests pin completeness, does not invent new fields or re-claim
+// s732 product body). Peer aion s755 residual. No payload echo · ephemeral pub ≠
+// durable stream publish · DTO ≠ invent pub success · dual_write OFF · offline
+// unit ≠ live APPLY · not full mesh RBAC GA.
+func TestPubPrint_JSONCompletenessPin(t *testing.T) {
+	t.Parallel()
+
+	pubKeys := []string{"ok", "subject", "bytes"}
+
+	// Empty surface: all keys present; bytes 0 honest; no payload invent.
+	emptyJS := FormatPubJSON(NewPubPrint("", 0))
+	if !strings.HasSuffix(emptyJS, "\n") {
+		t.Fatal("FormatPubJSON: expected trailing newline")
+	}
+	var emptyObj map[string]any
+	if err := json.Unmarshal([]byte(emptyJS), &emptyObj); err != nil {
+		t.Fatalf("empty unmarshal: %v\n%s", err, emptyJS)
+	}
+	for _, key := range pubKeys {
+		if _, ok := emptyObj[key]; !ok {
+			t.Fatalf("empty missing PubPrint key %q: %s", key, emptyJS)
+		}
+	}
+	if emptyObj["ok"] != true {
+		t.Fatalf("ok want true: %s", emptyJS)
+	}
+	if emptyObj["subject"] != "" || emptyObj["bytes"].(float64) != 0 {
+		t.Fatalf("empty subject/bytes honest: %s", emptyJS)
+	}
+	if strings.Contains(emptyJS, `"payload"`) || strings.Contains(emptyJS, "pull_role") {
+		t.Fatalf("must not invent payload/pull_role: %s", emptyJS)
+	}
+
+	// Populated path still always-emits the same key set (no invent fields).
+	popJS := FormatPubJSON(NewPubPrint("dept.agent.ping", 11))
+	var popObj map[string]any
+	if err := json.Unmarshal([]byte(popJS), &popObj); err != nil {
+		t.Fatalf("populated unmarshal: %v\n%s", err, popJS)
+	}
+	for _, key := range pubKeys {
+		if _, ok := popObj[key]; !ok {
+			t.Fatalf("populated missing PubPrint key %q: %s", key, popJS)
+		}
+	}
+	if popObj["ok"] != true || popObj["subject"] != "dept.agent.ping" ||
+		popObj["bytes"].(float64) != 11 {
+		t.Fatalf("populated values: %s", popJS)
+	}
+	if strings.Contains(popJS, `"payload"`) || strings.Contains(popJS, "pull_role") {
+		t.Fatalf("populated must not invent payload/pull_role: %s", popJS)
+	}
+}
