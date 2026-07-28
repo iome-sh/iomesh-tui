@@ -78,6 +78,21 @@ Docs **naming honesty** residual after aion **s770** usage-rates Ops Pack honest
 
 Peer aion **s770** usage-rates Ops Pack residual · prior TUI **s768** local-primary LT honesty. dual_write OFF · Palace sunset · no invent GA · offline unit ≠ live APPLY · Beta.
 
+#### Buyer claim pin (s774)
+
+OSS / buyer-claim boundary pin peer aion **s773** cost-max claim suite expand (this serial is docs/tests only — **does not** re-claim s761 Ollama product, s765 local-edge completeness, s768 local-primary LT, or s771 naming honesty bodies):
+
+| Surface | May claim | Must not claim |
+|---------|-----------|----------------|
+| **Public MIT `iomesh-tui`** | OSS agent harness + optional mesh **client** surface (SDK elsewhere) | Hosted multi-tenant mesh **control plane** shipped inside free TUI |
+| **Memory** | Local palace via MCP (`aion-memory-mcp`); mesh **pull** into local store | Multi-tenant hosted / freemium cloud palace included with free TUI |
+| **$119 / platform SKU** (if mentioned) | **Memory Ops Pack** (pull / retain / audit / support) | Cloud GPU / hosted Palace fleet as the $119 product |
+| **Local AI** | Customer-edge Ollama pin | Platform GPU from Ollama pin |
+| **dual_write** | Optional mesh audit · **default OFF** | dual_write as primary palace path |
+| **Hosted Palace** | Sunset until scale | Invent GA · freemium unlimited palace · full mesh RBAC GA |
+
+Peer aion **s773** cost-max claim suite expand · prior TUI **s771** naming · **s768** local-primary. dual_write OFF · Palace sunset · local AI ≠ platform GPU · no invent GA · offline unit ≠ live APPLY · Beta. Unit pin peer: `TestDefault_DualWriteOff` / `TestDefaultMemoryConfig_DualWriteOff` (s768 body + s771/s774 comment peers).
+
 **Non-goals:** private monorepo imports in public TUI; embedding Qdrant/Palace in-process; dependency on `iomesh-client-sdk-go`.
 
 ## Public Go SDK

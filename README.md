@@ -10,6 +10,10 @@ Official open-source tooling from [IOMesh](https://iome.sh) (**IOMesh Technology
 
 > **Status:** public open-source **v0.28.x** (pre-1.0). Agent loop, subagents, full-screen TUI, permissions, ACP, skills, MCP, local Memory Palace (MCP + mesh pull; dual-write optional audit default OFF · not hosted cloud GPU palace) + sync retrieve / sidecar auto-recall, stage mesh dogfood, deeper mesh (lineage · policy · catalog · metering), multi-model catalog (DeepSeek · Grok · Gemini · Vertex · Ollama local). Not a multi-tenant remote sandbox — see [SECURITY.md](SECURITY.md).
 
+### Open source / local-primary
+
+MIT OSS **agent harness** + optional mesh client surface — **not** the hosted multi-tenant mesh control plane. Memory is **local-primary** (local Memory Palace via MCP + mesh **pull** egress; not freemium hosted palace). Optional **Ollama** local AI ≠ platform GPU. Platform **$119** language (if any) = **Memory Ops Pack** (pull / retain / audit / support) — not cloud GPU palace. dual_write default OFF · hosted Palace sunset · no invent GA. Buyer claim pin: [memory-mcp.md](docs/architecture/memory-mcp.md#buyer-claim-pin-s774).
+
 ## Table of contents
 
 - [Why this project](#why-this-project)
