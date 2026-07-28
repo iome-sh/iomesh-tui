@@ -214,14 +214,15 @@ func TestDefaultMemoryConfig(t *testing.T) {
 	}
 }
 
-// TestDefaultMemoryConfig_DualWriteOff pins s768 local-primary honesty (+ s771 naming peer):
+// TestDefaultMemoryConfig_DualWriteOff pins s768 local-primary honesty (+ s771 naming · s774 buyer-claim peers):
 // dual_write is optional mesh audit only and defaults OFF (not primary cloud palace).
 // s771: "Memory Palace" / $119 = local MCP + Memory Ops Pack naming honesty, not hosted GPU.
+// s774: MIT OSS TUI agent harness ≠ hosted multi-tenant mesh CP; local-primary buyer claim pin.
 func TestDefaultMemoryConfig_DualWriteOff(t *testing.T) {
-	// s768: dual_write default OFF (local-primary honesty); s771 peer naming pin
+	// s768: dual_write default OFF (local-primary honesty); s771 naming + s774 buyer-claim peers
 	d := DefaultMemoryConfig()
 	if d.DualWrite {
-		t.Fatalf("s768/s771 honesty: DualWrite must default false, got %+v", d)
+		t.Fatalf("s768/s771/s774 honesty: DualWrite must default false, got %+v", d)
 	}
 }
 
