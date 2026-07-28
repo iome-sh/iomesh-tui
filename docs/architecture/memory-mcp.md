@@ -28,7 +28,7 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 
 **Cost-max (s650+):** primary Memory UX is **local Palace** (this TUI + `aion-memory-mcp`). Mesh is **pull egress** of ops events; hosted cloud Palace is **sunset until scale**. Dual-write = optional **audit** only (default OFF).
 
-### Local edge stack (s761)
+### Local edge stack (s761 product · s765 completeness pin)
 
 End-to-end **cost-max** path (Beta · local only · not platform GPU · not invent GA):
 
@@ -44,6 +44,8 @@ I/O Mesh cloud (pull egress)  ↔  iomesh-tui  ↔  local memory MCP (Palace)  �
 | Dual-write | Optional mesh audit | **Default OFF** |
 
 See [llm-cascade.md](./llm-cascade.md) for Ollama install (`ollama serve` / `ollama pull llama3.2`) and env overrides (`OLLAMA_URL` / `OLLAMA_HOST`).
+
+**s765 (Beta · completeness pin):** local edge stack **complete** after s761 first-class Ollama product Shipped — inventory (mesh pull egress ↔ TUI ↔ local memory MCP ↔ Ollama pin) locked by docs + unit tests (`TestDefaultModels_OllamaLocalEdgeCompletenessPin`: catalog name `ollama-llama3.2`, model id `llama3.2`, cost 0, caps `local`+`ollama`, priority after DeepSeek cascade / Premium). Completeness pin **does not** invent new catalog models and **does not** re-claim s761 product body. Peer aion **s764** heartbeat-local-edge-path residual. Local AI ≠ platform GPU · dual_write OFF · Palace sunset · offline unit ≠ live Ollama green · catalog pin ≠ cascade default · not full mesh RBAC GA · no invent GA.
 
 **Non-goals:** private monorepo imports in public TUI; embedding Qdrant/Palace in-process; dependency on `iomesh-client-sdk-go`.
 

@@ -357,6 +357,68 @@ func TestDefaultModels_OllamaCatalog(t *testing.T) {
 	}
 }
 
+// TestDefaultModels_OllamaLocalEdgeCompletenessPin is the s765 completeness pin
+// after s761 first-class Ollama product. It locks local-edge catalog inventory
+// needles without re-implementing product or inventing new models:
+// name ollama-llama3.2, model id llama3.2, cost 0, caps local+ollama,
+// priority after DeepSeek cascade / Premium (priority > 30). Cascade default
+// remains deepseek-v4-flash. Completeness pin only — does not re-claim s761.
+func TestDefaultModels_OllamaLocalEdgeCompletenessPin(t *testing.T) {
+	// Cascade default unchanged (catalog pin ≠ cascade default).
+	if DefaultModelName != "deepseek-v4-flash" {
+		t.Fatalf("DefaultModelName=%q want deepseek-v4-flash (cascade unchanged)", DefaultModelName)
+	}
+
+	var ollama *ModelConfig
+	var premium *ModelConfig
+	for i := range DefaultModels() {
+		m := DefaultModels()[i]
+		switch m.Name {
+		case OllamaLlama32ModelName:
+			cp := m
+			ollama = &cp
+		case PremiumModelName:
+			cp := m
+			premium = &cp
+		}
+	}
+	if ollama == nil {
+		t.Fatal("s765 completeness inventory missing ollama-llama3.2 in DefaultModels")
+	}
+
+	// Inventory needles: name, model id, $0 costs, local+ollama caps.
+	if ollama.Name != "ollama-llama3.2" {
+		t.Fatalf("Name=%q want ollama-llama3.2", ollama.Name)
+	}
+	if ollama.ModelID != "llama3.2" {
+		t.Fatalf("ModelID=%q want llama3.2", ollama.ModelID)
+	}
+	if ollama.CostTier != 0 || ollama.InputCostPerM != 0 || ollama.OutputCostPerM != 0 {
+		t.Fatalf("want cost 0 local tier, got tier=%v in=%v out=%v",
+			ollama.CostTier, ollama.InputCostPerM, ollama.OutputCostPerM)
+	}
+	if !hasCapability(ollama.Capabilities, "local") || !hasCapability(ollama.Capabilities, "ollama") {
+		t.Fatalf("capabilities=%v want local+ollama", ollama.Capabilities)
+	}
+
+	// Priority after DeepSeek cascade / Premium (Premium priority is 30).
+	if ollama.Priority <= 30 {
+		t.Fatalf("priority=%d want > 30 (after Premium / DeepSeek cascade)", ollama.Priority)
+	}
+	if premium != nil && ollama.Priority <= premium.Priority {
+		t.Fatalf("ollama priority=%d want > Premium priority=%d", ollama.Priority, premium.Priority)
+	}
+
+	// Router still defaults to DeepSeek Flash — Ollama remains pin-only.
+	r, err := New(DefaultModels(), DefaultModelName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.DefaultModel() != DefaultModelName {
+		t.Fatalf("router default=%q want %q", r.DefaultModel(), DefaultModelName)
+	}
+}
+
 func TestResolvedBaseURL_OllamaEnvOverrides(t *testing.T) {
 	m := ModelConfig{
 		Name:         OllamaLlama32ModelName,
