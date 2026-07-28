@@ -9,7 +9,7 @@ Go rewrite of [xAI Grok Build](https://github.com/xai-org/grok-build) with a **m
 | Cost-efficient coding agent | Default **DeepSeek V4 Flash**; step-up **V4 Pro**; premium **Grok 4.5** |
 | OpenAI-compatible, pure Go | `net/http` + JSON SSE; no vendor SDKs in the hot path |
 | Grok Build parity (incremental) | TUI / headless / ACP modes; tools; workspace; subagents (later) |
-| I/O Mesh integration | Context plane injection + `dept.*` usage streams (fail-open) |
+| I/O Mesh integration | Context plane injection + `dept.*` usage / **org event streams (heartbeats / pulses)** (fail-open) · TUI as local agent on the org pulse plane |
 
 ## Package map (Grok Build → Go)
 
@@ -95,7 +95,7 @@ CLI / TUI / ACP
 14. ~~Deeper I/O Mesh: lineage-aware context, Rego policy gates, local metering~~ **done** — see [mesh-deeper.md](mesh-deeper.md)
 15. ~~Mesh catalog composition + TUI cost/mesh slash cmds~~ **done** — see [mesh-deeper.md](mesh-deeper.md)
 16. ~~Portal catalog federation + dogfood JSON~~ **done** — see [mesh-deeper.md](mesh-deeper.md)
-17. ~~Memory Palace MCP Phase 0–1~~ **done** — local-primary MCP palace path (not hosted cloud GPU); see [memory-mcp.md](memory-mcp.md) (stdio attach, auto-recall, `/memory`, opt-in ingest · [naming honesty s771](memory-mcp.md#naming-honesty-s771-pin) · [buyer claim pin s774](memory-mcp.md#buyer-claim-pin-s774) — MIT TUI ≠ hosted mesh CP)
+17. ~~Memory Palace MCP Phase 0–1~~ **done** — local-primary MCP palace path (not hosted cloud GPU); see [memory-mcp.md](memory-mcp.md) (stdio attach, auto-recall, `/memory`, opt-in ingest · [naming honesty s771](memory-mcp.md#naming-honesty-s771-pin) · [buyer claim pin s774](memory-mcp.md#buyer-claim-pin-s774) — MIT TUI ≠ hosted mesh CP · [org-pulse edge framing s785](mesh-dogfood.md#org-pulse-edge-framing-s785-pin))
 18. ~~Memory Phase 2~~ **done** — HTTP MCP path + optional dual-write `MEMORY_INGEST` (default OFF; v0.3.0); see [memory-mcp.md](memory-mcp.md)
 19. ~~Dogfood async MEMORY_RPC recall (session correlation)~~ **done** — see [mesh-dogfood.md](mesh-dogfood.md)
 20. ~~Sync HTTP memory retrieve + dogfood `memory_retrieve`~~ **done** — see [mesh-dogfood.md](mesh-dogfood.md) / [memory-mcp.md](memory-mcp.md)

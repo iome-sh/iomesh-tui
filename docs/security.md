@@ -95,9 +95,9 @@ This document describes the security posture of **iomesh-tui** for operators and
 | MCP OAuth client_credentials | Secret must stay in env; token cached in process memory only |
 | No multi-tenant remote sandbox | Single-user local tool |
 
-### Buyer claim pin (s774)
+### Buyer claim pin (s774) · org-pulse edge (s785)
 
-MIT OSS TUI is an **agent harness** + optional mesh **client** — not the hosted multi-tenant mesh control plane. Memory = **local-primary** (MCP palace + pull); $119 = **Memory Ops Pack** (not cloud GPU); dual_write default OFF; hosted Palace sunset; local Ollama ≠ platform GPU; no invent GA. Full table: [architecture/memory-mcp.md](architecture/memory-mcp.md#buyer-claim-pin-s774).
+MIT OSS TUI is an **agent harness** + optional mesh **client** — not the hosted multi-tenant mesh control plane. Local agent on the **org pulse plane** (publish/pull `dept.*` heartbeats / pulses — not OTel/APM). Memory = **local-primary** (MCP palace + pull); $119 = **Memory Ops Pack** (not cloud GPU); dual_write default OFF; hosted Palace sunset; local Ollama ≠ platform GPU; no invent GA. Full table: [architecture/memory-mcp.md](architecture/memory-mcp.md#buyer-claim-pin-s774) · [mesh-dogfood.md org-pulse s785](architecture/mesh-dogfood.md#org-pulse-edge-framing-s785-pin).
 
 ## Operator recommendations
 
