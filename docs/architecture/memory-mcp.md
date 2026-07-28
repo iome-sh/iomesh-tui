@@ -63,6 +63,21 @@ Honesty pin so TUI surfaces agree with the **cost-max local-primary** charter af
 
 Peer aion **s767** bi-heartbeats local-primary honesty continuum. Unit pin: `TestDefaultMemoryConfig` / config `Default().Memory.DualWrite == false` (s768). Offline unit ≠ live APPLY · Beta · no invent GA.
 
+#### Naming honesty (s771 pin)
+
+Docs **naming honesty** residual after aion **s770** usage-rates Ops Pack honesty (this serial is docs/tests only — **does not** re-claim s761 Ollama product, s765 local-edge completeness, or s768 local-primary LT pin bodies):
+
+| Name / phrase | Honest meaning in this TUI |
+|---------------|----------------------------|
+| **“Memory Palace”** | **Local-primary customer-edge palace** — MCP (`aion-memory-mcp`) + mesh **pull** into local store. **Not** multi-tenant hosted cloud GPU / Qdrant Palace fleet. |
+| **$119 / platform SKU** (if mentioned) | **Memory Ops Pack** — pull / Extended retain / audit / support entitlement. **Not** hosted GPU palace fleet. |
+| **dual_write** | Optional mesh audit only · **default OFF**. |
+| **Hosted Palace** | **Sunset** until scale. |
+| **Local AI** | Customer-edge Ollama · **≠ platform GPU**. |
+| **Does not invent** | GA · freemium unlimited palace · platform GPU · full mesh RBAC GA. |
+
+Peer aion **s770** usage-rates Ops Pack residual · prior TUI **s768** local-primary LT honesty. dual_write OFF · Palace sunset · no invent GA · offline unit ≠ live APPLY · Beta.
+
 **Non-goals:** private monorepo imports in public TUI; embedding Qdrant/Palace in-process; dependency on `iomesh-client-sdk-go`.
 
 ## Public Go SDK
