@@ -204,6 +204,7 @@ func run(args []string) int {
 			RecallSince:      cfg.Memory.RecallSince,
 			RecallUntil:      cfg.Memory.RecallUntil,
 			RecallSessionSeq: cfg.Memory.RecallSessionSeq,
+			RecallCacheTTLMS: cfg.Memory.RecallCacheTTLMS,
 		})
 	}
 

@@ -189,6 +189,9 @@ type MemorySection struct {
 	// RecallSessionSeq optional session_seq filter for temporal recall; 0 omits. s1068.
 	// Env: IOMESH_MEMORY_RECALL_SESSION_SEQ
 	RecallSessionSeq int `toml:"recall_session_seq"`
+	// RecallCacheTTLMS short-TTL client-side sync RetrieveMemory reuse (s1069).
+	// Default 3000; 0 disables. Env: IOMESH_MEMORY_RECALL_CACHE_TTL_MS
+	RecallCacheTTLMS int `toml:"recall_cache_ttl_ms"`
 	// Pull* configure `iomesh memory pull` (mesh durable consumer → local MCP palace). s652 M1.
 	// Primary product path under cost-max local-memory charter (dual_write remains optional audit).
 	PullStream    string `toml:"pull_stream"`      // e.g. EVENTS or MEMORY_INGEST
@@ -262,13 +265,14 @@ func Default() *Config {
 			Enabled: false, // opt-in: no servers until configured
 		},
 		Memory: MemorySection{
-			Enabled:         false,
-			Server:          "memory",
-			AutoRecall:      true,  // when enabled
-			AutoIngest:      false, // opt-in write path
-			DualWrite:       false, // s768: dual_write default OFF (local-primary honesty)
-			Limit:           8,
-			MaxSnippetBytes: 6000,
+			Enabled:          false,
+			Server:           "memory",
+			AutoRecall:       true,  // when enabled
+			AutoIngest:       false, // opt-in write path
+			DualWrite:        false, // s768: dual_write default OFF (local-primary honesty)
+			Limit:            8,
+			MaxSnippetBytes:  6000,
+			RecallCacheTTLMS: 3000, // s1069
 		},
 		Catalog: router.DefaultModels(),
 	}

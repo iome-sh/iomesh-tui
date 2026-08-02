@@ -33,19 +33,24 @@ type MemoryConfig struct {
 	RecallUntil string
 	// RecallSessionSeq optional session_seq lower-bound filter for temporal recall; 0 omits.
 	RecallSessionSeq int
+	// RecallCacheTTLMS short-TTL client-side sync RetrieveMemory reuse (s1069).
+	// Default 3000; 0 disables. Fail-open process-local only — not product Memory GA.
+	// Key includes tenant + session + query + limit + since/until.
+	RecallCacheTTLMS int
 }
 
 // DefaultMemoryConfig returns fail-open off defaults.
 // s768: dual_write default OFF (local-primary honesty — optional mesh audit only).
 func DefaultMemoryConfig() MemoryConfig {
 	return MemoryConfig{
-		Enabled:         false,
-		Server:          "memory",
-		AutoRecall:      true,
-		AutoIngest:      false,
-		DualWrite:       false, // s768: dual_write default OFF (local-primary honesty)
-		Limit:           8,
-		MaxSnippetBytes: 6000,
+		Enabled:          false,
+		Server:           "memory",
+		AutoRecall:       true,
+		AutoIngest:       false,
+		DualWrite:        false, // s768: dual_write default OFF (local-primary honesty)
+		Limit:            8,
+		MaxSnippetBytes:  6000,
+		RecallCacheTTLMS: DefaultRecallCacheTTLMS,
 	}
 }
 
@@ -65,13 +70,41 @@ func (rt *Runtime) AttachMemory(cfg MemoryConfig) {
 	if cfg.MaxSnippetBytes <= 0 {
 		cfg.MaxSnippetBytes = 6000
 	}
+	if cfg.RecallCacheTTLMS < 0 {
+		cfg.RecallCacheTTLMS = DefaultRecallCacheTTLMS
+	}
 	rt.memory = cfg
+	rt.initMemoryRecallCache()
 	if cfg.Enabled {
 		rt.appendSystemNote("memory", fmt.Sprintf(
-			"Memory: server=%q tenant=%q auto_recall=%v auto_ingest=%v dual_write=%v. Auto-recall prefers sync POST /v1/memory/retrieve when mesh enabled, else MCP mcp__%s__memory_*. Fail-open when unavailable.",
-			cfg.Server, emptyDash(cfg.Tenant), cfg.AutoRecall, cfg.AutoIngest, cfg.DualWrite, cfg.Server,
+			"Memory: server=%q tenant=%q auto_recall=%v auto_ingest=%v dual_write=%v recall_cache_ttl_ms=%d. Auto-recall prefers sync POST /v1/memory/retrieve when mesh enabled, else MCP mcp__%s__memory_*. Fail-open when unavailable.",
+			cfg.Server, emptyDash(cfg.Tenant), cfg.AutoRecall, cfg.AutoIngest, cfg.DualWrite, cfg.RecallCacheTTLMS, cfg.Server,
 		))
 	}
+}
+
+// initMemoryRecallCache rebuilds the short-TTL sync retrieve cache from config (s1069).
+func (rt *Runtime) initMemoryRecallCache() {
+	if rt == nil {
+		return
+	}
+	rt.memoryCache = newMemoryRecallCache(rt.memory.RecallCacheTTLMS)
+}
+
+// LastMemoryRetrieveMS returns latency of the most recent sync/MCP retrieve attempt in ms (s1069).
+func (rt *Runtime) LastMemoryRetrieveMS() int {
+	if rt == nil {
+		return 0
+	}
+	return int(rt.lastMemoryRetrieveMS.Load())
+}
+
+// LastMemoryRetrieveCacheHit reports whether the last sync retrieve used the TTL cache (s1069).
+func (rt *Runtime) LastMemoryRetrieveCacheHit() bool {
+	if rt == nil {
+		return false
+	}
+	return rt.lastMemoryRetrieveCacheHit.Load()
 }
 
 // Memory returns the memory hook config.
@@ -187,6 +220,10 @@ func (rt *Runtime) MemoryRecallWithOpts(ctx context.Context, query string, opts 
 	if limit <= 0 {
 		limit = 8
 	}
+	maxBytes := rt.memory.MaxSnippetBytes
+	if maxBytes <= 0 {
+		maxBytes = 6000
+	}
 
 	since := strings.TrimSpace(opts.Since)
 	if since == "" {
@@ -203,6 +240,24 @@ func (rt *Runtime) MemoryRecallWithOpts(ctx context.Context, query string, opts 
 
 	// Prefer sync request/response against memory sidecar HTTP when mesh client is live.
 	if rt.syncMemoryReady() {
+		key := memoryRecallCacheKey{
+			Tenant:  rt.memoryTenant(),
+			Session: rt.memorySessionID(),
+			Query:   q,
+			Limit:   limit,
+			Since:   since,
+			Until:   until,
+		}
+		if hits, latMS, ok := rt.memoryCache.get(key); ok {
+			rt.lastMemoryRetrieveMS.Store(int64(latMS))
+			rt.lastMemoryRetrieveCacheHit.Store(true)
+			if rt.logger != nil {
+				rt.logger.Debug("memory sync retrieve cache hit", "tenant", key.Tenant, "query", q, "orig_ms", latMS)
+			}
+			return formatMemoryHits(hits, maxBytes), nil
+		}
+
+		start := time.Now()
 		res, err := rt.mesh.RetrieveMemoryWithOptions(ctx, rt.memoryTenant(), iomesh.MemoryRetrieveOptions{
 			Query:      q,
 			Limit:      limit,
@@ -211,11 +266,21 @@ func (rt *Runtime) MemoryRecallWithOpts(ctx context.Context, query string, opts 
 			Since:      since,
 			Until:      until,
 		})
+		latMS := int(time.Since(start).Milliseconds())
 		if err == nil {
-			return formatMemoryHits(res.Memories), nil
+			rt.lastMemoryRetrieveMS.Store(int64(latMS))
+			rt.lastMemoryRetrieveCacheHit.Store(false)
+			hits := res.Memories
+			if hits == nil {
+				hits = []iomesh.MemoryHit{}
+			}
+			rt.memoryCache.put(key, hits, latMS)
+			return formatMemoryHits(hits, maxBytes), nil
 		}
+		rt.lastMemoryRetrieveMS.Store(int64(latMS))
+		rt.lastMemoryRetrieveCacheHit.Store(false)
 		if rt.logger != nil {
-			rt.logger.Debug("memory sync retrieve failed; trying MCP fallback", "err", err)
+			rt.logger.Debug("memory sync retrieve failed; trying MCP fallback", "err", err, "ms", latMS)
 		}
 		// Fall through to MCP when sidecar path is missing (e.g. broker-only endpoint).
 	}
@@ -246,11 +311,20 @@ func (rt *Runtime) MemoryRecallWithOpts(ctx context.Context, query string, opts 
 	if until != "" {
 		args["until"] = until
 	}
-	return c.CallTool(ctx, "memory_retrieve", args)
+	start := time.Now()
+	out, err := c.CallTool(ctx, "memory_retrieve", args)
+	latMS := int(time.Since(start).Milliseconds())
+	rt.lastMemoryRetrieveMS.Store(int64(latMS))
+	rt.lastMemoryRetrieveCacheHit.Store(false)
+	if err != nil {
+		return "", err
+	}
+	return truncateBytes(out, maxBytes), nil
 }
 
 // formatMemoryHits turns sync RetrieveMemory hits into a compact recall snippet.
-func formatMemoryHits(hits []iomesh.MemoryHit) string {
+// When maxBytes > 0, stops once the budget is reached without formatting remaining hits (s1069).
+func formatMemoryHits(hits []iomesh.MemoryHit, maxBytes int) string {
 	if len(hits) == 0 {
 		return ""
 	}
@@ -264,14 +338,24 @@ func formatMemoryHits(hits []iomesh.MemoryHit) string {
 		if text == "" {
 			continue
 		}
-		if n > 0 {
-			b.WriteString("\n---\n")
-		}
+		var piece string
 		if h.Score > 0 {
-			fmt.Fprintf(&b, "[%.2f] %s", h.Score, text)
+			piece = fmt.Sprintf("[%.2f] %s", h.Score, text)
 		} else {
-			b.WriteString(text)
+			piece = text
 		}
+		sep := ""
+		if n > 0 {
+			sep = "\n---\n"
+		}
+		if maxBytes > 0 && b.Len()+len(sep)+len(piece) > maxBytes {
+			if b.Len() == 0 {
+				return truncateBytes(piece, maxBytes)
+			}
+			break
+		}
+		b.WriteString(sep)
+		b.WriteString(piece)
 		n++
 	}
 	return b.String()
@@ -391,7 +475,19 @@ func (rt *Runtime) maybeInjectMemoryRecall(ctx context.Context, userText string,
 		return
 	}
 	rt.messages = append(rt.messages, routerMessageSystem("<memory-context>\n"+snippet+"\n</memory-context>"))
-	onEvent(Event{Type: EventMemoryRecall, Text: fmt.Sprintf("injected memory recall (%d bytes)", len(snippet))})
+	ms := rt.LastMemoryRetrieveMS()
+	if ms < 0 {
+		ms = 0
+	}
+	latNote := fmt.Sprintf("%dms", ms)
+	if rt.LastMemoryRetrieveCacheHit() {
+		latNote = fmt.Sprintf("%dms cache", ms)
+	}
+	onEvent(Event{
+		Type:     EventMemoryRecall,
+		Text:     fmt.Sprintf("injected memory recall (%d bytes, %s)", len(snippet), latNote),
+		Duration: time.Duration(ms) * time.Millisecond,
+	})
 }
 
 // maybeAutoIngest writes user + assistant turns after a successful final answer (fail-open).

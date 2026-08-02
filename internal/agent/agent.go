@@ -72,6 +72,11 @@ type Runtime struct {
 	// sessionSeq is a monotonic counter for dual-write memory_ingest envelopes.
 	sessionSeq atomic.Int64
 
+	// s1069 short-TTL sync retrieve cache + last latency (fail-open, not Memory GA).
+	memoryCache                *memoryRecallCache
+	lastMemoryRetrieveMS       atomic.Int64
+	lastMemoryRetrieveCacheHit atomic.Bool
+
 	// Permission / approval for mutating tools (subagent apply, shell, write, …).
 	mu           sync.Mutex
 	approver     Approver
