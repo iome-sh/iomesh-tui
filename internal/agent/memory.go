@@ -43,12 +43,12 @@ type MemoryConfig struct {
 // s768: dual_write default OFF (local-primary honesty — optional mesh audit only).
 func DefaultMemoryConfig() MemoryConfig {
 	return MemoryConfig{
-		Enabled:         false,
-		Server:          "memory",
-		AutoRecall:      true,
-		AutoIngest:      false,
-		DualWrite:       false, // s768: dual_write default OFF (local-primary honesty)
-		Limit:           8,
+		Enabled:          false,
+		Server:           "memory",
+		AutoRecall:       true,
+		AutoIngest:       false,
+		DualWrite:        false, // s768: dual_write default OFF (local-primary honesty)
+		Limit:            8,
 		MaxSnippetBytes:  6000,
 		RecallCacheTTLMS: DefaultRecallCacheTTLMS,
 	}

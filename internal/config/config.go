@@ -265,12 +265,12 @@ func Default() *Config {
 			Enabled: false, // opt-in: no servers until configured
 		},
 		Memory: MemorySection{
-			Enabled:         false,
-			Server:          "memory",
-			AutoRecall:      true,  // when enabled
-			AutoIngest:      false, // opt-in write path
-			DualWrite:       false, // s768: dual_write default OFF (local-primary honesty)
-			Limit:           8,
+			Enabled:          false,
+			Server:           "memory",
+			AutoRecall:       true,  // when enabled
+			AutoIngest:       false, // opt-in write path
+			DualWrite:        false, // s768: dual_write default OFF (local-primary honesty)
+			Limit:            8,
 			MaxSnippetBytes:  6000,
 			RecallCacheTTLMS: 3000, // s1069
 		},

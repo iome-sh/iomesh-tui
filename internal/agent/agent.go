@@ -73,9 +73,9 @@ type Runtime struct {
 	sessionSeq atomic.Int64
 
 	// s1069 short-TTL sync retrieve cache + last latency (fail-open, not Memory GA).
-	memoryCache                 *memoryRecallCache
-	lastMemoryRetrieveMS        atomic.Int64
-	lastMemoryRetrieveCacheHit  atomic.Bool
+	memoryCache                *memoryRecallCache
+	lastMemoryRetrieveMS       atomic.Int64
+	lastMemoryRetrieveCacheHit atomic.Bool
 
 	// Permission / approval for mutating tools (subagent apply, shell, write, …).
 	mu           sync.Mutex
