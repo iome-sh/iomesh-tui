@@ -394,3 +394,8 @@ See [mesh-dogfood.md](mesh-dogfood.md) for soft vs strict matrix. Unit coverage:
 - Dual-write is **best-effort** stream publish; it does not guarantee Palace persistence by itself.
 - “Native Vertex” / G4S claims are separate (see marketing claim matrix); memory is **Palace via MCP and/or lean HTTP sidecar**, not Vertex.
 - Do not claim temporal pipeline is live unless stage/prod embedding + temporal flags are on.
+
+
+## s1069 recall efficiency
+
+Client-side short-TTL cache for sync `RetrieveMemory` (`[memory] recall_cache_ttl_ms`, default 3000; `0` disables). Keyed by tenant+session+query+limit+since/until. Fail-open process-local only — not product Memory GA. Snippet early-stop at `max_snippet_bytes`. Auto-recall events always emit retrieve latency (`Nms` / `Nms cache`).

@@ -200,7 +200,8 @@ enabled = false
 # max_snippet_bytes = 6000
 # recall_since = ""          # optional RFC3339 auto-recall lower bound (s1068 temporal retrieve)
 # recall_until = ""          # optional RFC3339 auto-recall upper bound
-# recall_session_seq = 0     # optional session_seq filter; 0 omits from body
+# recall_session_seq
+# recall_cache_ttl_ms = 3000  # s1069 short-TTL sync cache; 0 disables = 0     # optional session_seq filter; 0 omits from body
 # IOMESH_MEMORY=1 · IOMESH_MEMORY_TENANT · IOMESH_MEMORY_ENDPOINT · MEMORY_SIDECAR_URL
 # IOMESH_MEMORY_AUTO_RECALL · IOMESH_MEMORY_AUTO_INGEST · IOMESH_MEMORY_DUAL_WRITE
 # IOMESH_MEMORY_RECALL_SINCE · IOMESH_MEMORY_RECALL_UNTIL · IOMESH_MEMORY_RECALL_SESSION_SEQ

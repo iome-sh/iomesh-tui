@@ -476,6 +476,7 @@ func (s *Server) newRuntime(cwd string) (*agent.Runtime, *session.Store, error) 
 			RecallSince:      cfg.Memory.RecallSince,
 			RecallUntil:      cfg.Memory.RecallUntil,
 			RecallSessionSeq: cfg.Memory.RecallSessionSeq,
+			RecallCacheTTLMS: cfg.Memory.RecallCacheTTLMS,
 		})
 	}
 	store, err := session.Open(abs)

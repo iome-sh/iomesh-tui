@@ -246,14 +246,14 @@ func TestMemoryStatusLine_SyncHTTP(t *testing.T) {
 }
 
 func TestFormatMemoryHits(t *testing.T) {
-	if got := formatMemoryHits(nil); got != "" {
+	if got := formatMemoryHits(nil, 0); got != "" {
 		t.Fatalf("nil=%q", got)
 	}
 	got := formatMemoryHits([]iomesh.MemoryHit{
 		{Summary: "a", Score: 0.5},
 		{Full: "b only"},
 		{Summary: "  "}, // skipped
-	})
+	}, 0)
 	if !strings.Contains(got, "[0.50] a") || !strings.Contains(got, "b only") || !strings.Contains(got, "---") {
 		t.Fatalf("got=%q", got)
 	}
