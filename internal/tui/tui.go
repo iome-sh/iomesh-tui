@@ -271,7 +271,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 	case "/memory", "/mem":
 		if len(parts) < 2 {
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
-			fmt.Fprintln(out, "usage: /memory [recall [query] | ingest <text>]")
+			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | ingest <text>]")
 			return false, nil
 		}
 		sub := strings.ToLower(parts[1])
@@ -279,11 +279,11 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		case "status", "st":
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
 		case "recall", "r":
-			q := strings.Join(parts[2:], " ")
+			q, ropts := parseMemoryRecallArgs(parts[2:])
 			if strings.TrimSpace(q) == "" {
 				q = "*"
 			}
-			text, err := rt.rt.MemoryRecall(context.Background(), q)
+			text, err := rt.rt.MemoryRecallWithOpts(context.Background(), q, ropts)
 			if err != nil {
 				fmt.Fprintf(out, "memory recall: %v\n", err)
 				return false, nil
@@ -307,8 +307,9 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			fmt.Fprintln(out, text)
 		default:
 			// Treat remainder as recall query: /memory what did we decide
-			q := strings.Join(parts[1:], " ")
-			text, err := rt.rt.MemoryRecall(context.Background(), q)
+			// (also accepts --since/--until when first token is not status|recall|ingest)
+			q, ropts := parseMemoryRecallArgs(parts[1:])
+			text, err := rt.rt.MemoryRecallWithOpts(context.Background(), q, ropts)
 			if err != nil {
 				fmt.Fprintf(out, "memory: %v (try /memory status|recall|ingest)\n", err)
 				return false, nil
@@ -427,7 +428,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /cost                session usage meter + sample estimate
   /mesh                I/O Mesh status + usage
   /catalog [query]     list mesh data products (catalog plane)
-  /memory [recall|ingest|status]  Memory Palace (sync HTTP + MCP; see memory-mcp.md)
+  /memory [recall|ingest|status]  Memory Palace (sync HTTP + MCP; temporal since/until)
   /quit                exit
 
 Fullscreen keys: enter send · ctrl+j newline · pgup/pgdn scroll
@@ -438,6 +439,61 @@ On mutating tools (write_file, run_shell, apply_worktree, …) you will be promp
 		fmt.Fprintf(out, "unknown command %s (try /help)\n", cmd)
 	}
 	return false, nil
+}
+
+// parseMemoryRecallArgs extracts optional temporal flags and the free-text query.
+// Supports: --since RFC3339, --until RFC3339, --session-seq N (also --session_seq).
+// Forms: --since=VALUE or --since VALUE. Remaining tokens join as the query (s1068).
+func parseMemoryRecallArgs(args []string) (query string, opts agent.MemoryRecallOpts) {
+	var qParts []string
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		key, val, hasEq := splitFlagKV(a)
+		switch key {
+		case "--since":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.Since = strings.TrimSpace(val)
+		case "--until":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.Until = strings.TrimSpace(val)
+		case "--session-seq", "--session_seq":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			if n, err := strconv.Atoi(strings.TrimSpace(val)); err == nil {
+				opts.SessionSeq = n
+				opts.SessionSeqSet = true
+			}
+		default:
+			qParts = append(qParts, a)
+		}
+	}
+	return strings.Join(qParts, " "), opts
+}
+
+// splitFlagKV returns key and value for --flag=value forms; hasEq true when '=' present.
+// For bare --flag, key is the token and val/hasEq are empty/false.
+func splitFlagKV(tok string) (key, val string, hasEq bool) {
+	if !strings.HasPrefix(tok, "--") {
+		return tok, "", false
+	}
+	if i := strings.IndexByte(tok, '='); i > 0 {
+		return tok[:i], tok[i+1:], true
+	}
+	return tok, "", false
 }
 
 func printModelPicker(out io.Writer, r *router.Router) {

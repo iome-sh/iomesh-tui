@@ -125,6 +125,58 @@ func TestMemoryRecall_PrefersSyncHTTP(t *testing.T) {
 	}
 }
 
+// s1068: config RecallSince/Until/SessionSeq flow into sync retrieve body.
+func TestMemoryRecall_TemporalConfigOptions(t *testing.T) {
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"memories": []map[string]any{{"summary": "in window"}},
+		})
+	}))
+	defer srv.Close()
+
+	mesh := iomesh.New(iomesh.Config{Enabled: true, Endpoint: srv.URL, Tenant: "dept.x"}, nil)
+	rt := &Runtime{
+		mesh: mesh,
+		memory: MemoryConfig{
+			Enabled: true, Tenant: "dept.x", Server: "memory", Limit: 4,
+			SessionID: "s1", RecallSince: "2026-07-01T00:00:00Z",
+			RecallUntil: "2026-07-31T23:59:59Z", RecallSessionSeq: 7,
+		},
+	}
+	out, err := rt.MemoryRecall(context.Background(), "window query")
+	if err != nil {
+		t.Fatalf("MemoryRecall: %v", err)
+	}
+	if !strings.Contains(out, "in window") {
+		t.Fatalf("out=%q", out)
+	}
+	if gotBody["since"] != "2026-07-01T00:00:00Z" || gotBody["until"] != "2026-07-31T23:59:59Z" {
+		t.Fatalf("temporal body=%v", gotBody)
+	}
+	if gotBody["session_seq"] != float64(7) {
+		t.Fatalf("session_seq=%v", gotBody["session_seq"])
+	}
+
+	// Per-call opts override config.
+	gotBody = nil
+	out, err = rt.MemoryRecallWithOpts(context.Background(), "override", MemoryRecallOpts{
+		Since: "2026-08-01T00:00:00Z", Until: "2026-08-02T00:00:00Z",
+		SessionSeq: 1, SessionSeqSet: true,
+	})
+	if err != nil {
+		t.Fatalf("MemoryRecallWithOpts: %v", err)
+	}
+	if gotBody["since"] != "2026-08-01T00:00:00Z" || gotBody["until"] != "2026-08-02T00:00:00Z" {
+		t.Fatalf("override body=%v", gotBody)
+	}
+	if gotBody["session_seq"] != float64(1) {
+		t.Fatalf("override session_seq=%v", gotBody["session_seq"])
+	}
+	_ = out
+}
+
 func TestMaybeInjectMemoryRecall_SyncHTTP(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/v1/memory/retrieve" {

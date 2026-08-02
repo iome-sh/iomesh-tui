@@ -213,11 +213,36 @@ type MemoryRetrieveResult struct {
 	Path string `json:"-"`
 }
 
+// MemoryRetrieveOptions are request fields for sync POST /v1|/v5/memory/retrieve.
+// Temporal filters (Since/Until/SessionSeq) map to platform sidecar → kernel
+// SearchMemoryWithOptions when non-empty. RFC3339 strings for Since/Until.
+// Parity with iomesh-client-sdk-go MemoryRetrieveRequest (s1068).
+type MemoryRetrieveOptions struct {
+	Query      string
+	Limit      int
+	SessionID  string
+	SessionSeq int    // query session order for temporal recall; omit when 0
+	Since      string // RFC3339 inclusive lower bound
+	Until      string // RFC3339 inclusive upper bound
+}
+
 // RetrieveMemory performs request/response hybrid recall against the memory sidecar HTTP API.
+// Thin wrapper around RetrieveMemoryWithOptions (query/limit/session_id only).
 // Tries POST /v1/memory/retrieve then /v5/memory/retrieve (same handler on the broker / platform).
 // Base URL: cfg.MemoryEndpoint when set (stage warm sidecar), else mesh Endpoint.
 // This is NOT MEMORY_RPC fire-and-forget — empty hits are a successful 200 with memories=[].
 func (c *Client) RetrieveMemory(ctx context.Context, tenantID, query string, limit int, sessionID string) (*MemoryRetrieveResult, error) {
+	return c.RetrieveMemoryWithOptions(ctx, tenantID, MemoryRetrieveOptions{
+		Query:     query,
+		Limit:     limit,
+		SessionID: sessionID,
+	})
+}
+
+// RetrieveMemoryWithOptions is sync hybrid recall with optional temporal filters
+// (since/until/session_seq). Non-empty temporal fields are included in the JSON body
+// so the platform sidecar can narrow hits (efficiency + time-windowed auto-recall).
+func (c *Client) RetrieveMemoryWithOptions(ctx context.Context, tenantID string, opts MemoryRetrieveOptions) (*MemoryRetrieveResult, error) {
 	if c == nil || !c.SyncMemoryReady() {
 		return nil, fmt.Errorf("iomesh: sync memory not configured (mesh endpoint or memory sidecar)")
 	}
@@ -229,11 +254,12 @@ func (c *Client) RetrieveMemory(ctx context.Context, tenantID, query string, lim
 	if tenantID == "" {
 		return nil, fmt.Errorf("iomesh: tenant_id required for memory retrieve")
 	}
-	query = strings.TrimSpace(query)
-	sessionID = strings.TrimSpace(sessionID)
+	query := strings.TrimSpace(opts.Query)
+	sessionID := strings.TrimSpace(opts.SessionID)
 	if query == "" && sessionID == "" {
 		return nil, fmt.Errorf("iomesh: query or session_id required for memory retrieve")
 	}
+	limit := opts.Limit
 	if limit <= 0 {
 		limit = 10
 	}
@@ -245,6 +271,15 @@ func (c *Client) RetrieveMemory(ctx context.Context, tenantID, query string, lim
 	}
 	if sessionID != "" {
 		bodyMap["session_id"] = sessionID
+	}
+	if opts.SessionSeq != 0 {
+		bodyMap["session_seq"] = opts.SessionSeq
+	}
+	if since := strings.TrimSpace(opts.Since); since != "" {
+		bodyMap["since"] = since
+	}
+	if until := strings.TrimSpace(opts.Until); until != "" {
+		bodyMap["until"] = until
 	}
 	raw, err := json.Marshal(bodyMap)
 	if err != nil {

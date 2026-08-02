@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/iome-sh/iomesh-tui/internal/router"
@@ -180,6 +181,14 @@ type MemorySection struct {
 	DualWrite       bool `toml:"dual_write"`
 	Limit           int  `toml:"limit"`
 	MaxSnippetBytes int  `toml:"max_snippet_bytes"`
+	// RecallSince / RecallUntil optional RFC3339 bounds for auto-recall + default /memory recall
+	// (s1068 temporal retrieve → platform since/until). Empty = no time filter.
+	// Env: IOMESH_MEMORY_RECALL_SINCE / IOMESH_MEMORY_RECALL_UNTIL
+	RecallSince string `toml:"recall_since"`
+	RecallUntil string `toml:"recall_until"`
+	// RecallSessionSeq optional session_seq filter for temporal recall; 0 omits. s1068.
+	// Env: IOMESH_MEMORY_RECALL_SESSION_SEQ
+	RecallSessionSeq int `toml:"recall_session_seq"`
 	// Pull* configure `iomesh memory pull` (mesh durable consumer → local MCP palace). s652 M1.
 	// Primary product path under cost-max local-memory charter (dual_write remains optional audit).
 	PullStream    string `toml:"pull_stream"`      // e.g. EVENTS or MEMORY_INGEST
@@ -556,6 +565,18 @@ func (c *Config) applyEnvOverrides() {
 		c.Memory.Endpoint = v
 	} else if v := os.Getenv("MEMORY_SIDECAR_URL"); v != "" && c.Memory.Endpoint == "" {
 		c.Memory.Endpoint = v
+	}
+	// s1068 temporal auto-recall window (RFC3339).
+	if v := os.Getenv("IOMESH_MEMORY_RECALL_SINCE"); v != "" {
+		c.Memory.RecallSince = v
+	}
+	if v := os.Getenv("IOMESH_MEMORY_RECALL_UNTIL"); v != "" {
+		c.Memory.RecallUntil = v
+	}
+	if v := os.Getenv("IOMESH_MEMORY_RECALL_SESSION_SEQ"); v != "" {
+		if n, err := strconv.Atoi(strings.TrimSpace(v)); err == nil {
+			c.Memory.RecallSessionSeq = n
+		}
 	}
 	if c.Memory.Server == "" {
 		c.Memory.Server = "memory"

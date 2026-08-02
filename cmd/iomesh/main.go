@@ -193,14 +193,17 @@ func run(args []string) int {
 	// Memory Palace hooks (MCP server and/or dual-write MEMORY_INGEST).
 	if cfg.Memory.Enabled {
 		rt.AttachMemory(agent.MemoryConfig{
-			Enabled:         true,
-			Server:          cfg.Memory.Server,
-			Tenant:          cfg.Memory.Tenant,
-			AutoRecall:      cfg.Memory.AutoRecall,
-			AutoIngest:      cfg.Memory.AutoIngest,
-			DualWrite:       cfg.Memory.DualWrite,
-			Limit:           cfg.Memory.Limit,
-			MaxSnippetBytes: cfg.Memory.MaxSnippetBytes,
+			Enabled:          true,
+			Server:           cfg.Memory.Server,
+			Tenant:           cfg.Memory.Tenant,
+			AutoRecall:       cfg.Memory.AutoRecall,
+			AutoIngest:       cfg.Memory.AutoIngest,
+			DualWrite:        cfg.Memory.DualWrite,
+			Limit:            cfg.Memory.Limit,
+			MaxSnippetBytes:  cfg.Memory.MaxSnippetBytes,
+			RecallSince:      cfg.Memory.RecallSince,
+			RecallUntil:      cfg.Memory.RecallUntil,
+			RecallSessionSeq: cfg.Memory.RecallSessionSeq,
 		})
 	}
 

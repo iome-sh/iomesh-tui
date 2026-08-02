@@ -27,6 +27,12 @@ type MemoryConfig struct {
 	MaxSnippetBytes int // cap injected context (default 6000)
 	// SessionID overrides Runtime.sessionID when non-empty.
 	SessionID string
+	// RecallSince / RecallUntil optional RFC3339 time-window filters for auto-recall
+	// and default /memory recall (s1068 temporal retrieve options). Empty = no bound.
+	RecallSince string
+	RecallUntil string
+	// RecallSessionSeq optional session_seq lower-bound filter for temporal recall; 0 omits.
+	RecallSessionSeq int
 }
 
 // DefaultMemoryConfig returns fail-open off defaults.
@@ -148,10 +154,28 @@ func (rt *Runtime) MemoryStatusLine() string {
 		cfg.Server, connected, rt.syncMemoryReady(), emptyDash(cfg.Tenant), cfg.AutoRecall, cfg.AutoIngest, cfg.DualWrite, emptyDash(rt.memorySessionID()))
 }
 
+// MemoryRecallOpts overrides config temporal filters for one recall call.
+// Empty/zero fields fall back to MemoryConfig.RecallSince/Until/SessionSeq.
+type MemoryRecallOpts struct {
+	Since      string
+	Until      string
+	SessionSeq int
+	// SessionSeqSet is true when SessionSeq was explicitly provided (including 0 to clear).
+	// When false, config RecallSessionSeq is used.
+	SessionSeqSet bool
+}
+
 // MemoryRecall retrieves context for injection or /memory recall.
 // Prefers sync HTTP RetrieveMemory when mesh is enabled (Phase 3+); falls back to MCP
 // memory_retrieve when sync fails or mesh is unavailable.
+// Uses MemoryConfig temporal filters (RecallSince/Until/SessionSeq) when set (s1068).
 func (rt *Runtime) MemoryRecall(ctx context.Context, query string) (string, error) {
+	return rt.MemoryRecallWithOpts(ctx, query, MemoryRecallOpts{})
+}
+
+// MemoryRecallWithOpts is MemoryRecall with optional per-call temporal overrides
+// (slash /memory recall --since/--until/--session-seq).
+func (rt *Runtime) MemoryRecallWithOpts(ctx context.Context, query string, opts MemoryRecallOpts) (string, error) {
 	if rt == nil || !rt.memory.Enabled {
 		return "", fmt.Errorf("memory hooks disabled")
 	}
@@ -164,9 +188,29 @@ func (rt *Runtime) MemoryRecall(ctx context.Context, query string) (string, erro
 		limit = 8
 	}
 
+	since := strings.TrimSpace(opts.Since)
+	if since == "" {
+		since = strings.TrimSpace(rt.memory.RecallSince)
+	}
+	until := strings.TrimSpace(opts.Until)
+	if until == "" {
+		until = strings.TrimSpace(rt.memory.RecallUntil)
+	}
+	sessionSeq := rt.memory.RecallSessionSeq
+	if opts.SessionSeqSet {
+		sessionSeq = opts.SessionSeq
+	}
+
 	// Prefer sync request/response against memory sidecar HTTP when mesh client is live.
 	if rt.syncMemoryReady() {
-		res, err := rt.mesh.RetrieveMemory(ctx, rt.memoryTenant(), q, limit, rt.memorySessionID())
+		res, err := rt.mesh.RetrieveMemoryWithOptions(ctx, rt.memoryTenant(), iomesh.MemoryRetrieveOptions{
+			Query:      q,
+			Limit:      limit,
+			SessionID:  rt.memorySessionID(),
+			SessionSeq: sessionSeq,
+			Since:      since,
+			Until:      until,
+		})
 		if err == nil {
 			return formatMemoryHits(res.Memories), nil
 		}
@@ -192,6 +236,15 @@ func (rt *Runtime) MemoryRecall(ctx context.Context, query string) (string, erro
 	}
 	if sid := rt.memorySessionID(); sid != "" {
 		args["session_id"] = sid
+	}
+	if sessionSeq != 0 {
+		args["session_seq"] = sessionSeq
+	}
+	if since != "" {
+		args["since"] = since
+	}
+	if until != "" {
+		args["until"] = until
 	}
 	return c.CallTool(ctx, "memory_retrieve", args)
 }

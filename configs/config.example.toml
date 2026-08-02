@@ -198,6 +198,10 @@ enabled = false
 # pull_allow_suffix = ""   # optional X-IOMesh-Pull-Allow-Suffix (role=custom comma tokens; s678 single-token default filter)
 # limit = 8
 # max_snippet_bytes = 6000
+# recall_since = ""          # optional RFC3339 auto-recall lower bound (s1068 temporal retrieve)
+# recall_until = ""          # optional RFC3339 auto-recall upper bound
+# recall_session_seq = 0     # optional session_seq filter; 0 omits from body
 # IOMESH_MEMORY=1 · IOMESH_MEMORY_TENANT · IOMESH_MEMORY_ENDPOINT · MEMORY_SIDECAR_URL
 # IOMESH_MEMORY_AUTO_RECALL · IOMESH_MEMORY_AUTO_INGEST · IOMESH_MEMORY_DUAL_WRITE
+# IOMESH_MEMORY_RECALL_SINCE · IOMESH_MEMORY_RECALL_UNTIL · IOMESH_MEMORY_RECALL_SESSION_SEQ
 # IOMESH_MEMORY_PULL_ROLE · IOMESH_MEMORY_PULL_ALLOW_SUFFIX
