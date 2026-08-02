@@ -486,3 +486,82 @@ func TestRetrieveMemory_SidecarOnlyWithoutMeshEndpoint(t *testing.T) {
 		t.Fatal("expected empty slice")
 	}
 }
+
+// s1068: temporal since/until/session_seq must appear in the JSON body when set.
+func TestRetrieveMemoryWithOptions_TemporalFiltersInBody(t *testing.T) {
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/memory/retrieve" {
+			http.NotFound(w, r)
+			return
+		}
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_ = json.NewEncoder(w).Encode(map[string]any{"memories": []any{}})
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "dept.x"}, nil)
+	res, err := c.RetrieveMemoryWithOptions(context.Background(), "dept.x", MemoryRetrieveOptions{
+		Query:      "windowed",
+		Limit:      5,
+		SessionID:  "sess-1",
+		SessionSeq: 3,
+		Since:      "2026-07-01T00:00:00Z",
+		Until:      "2026-07-31T23:59:59Z",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res == nil || res.Path != "/v1/memory/retrieve" {
+		t.Fatalf("res=%+v", res)
+	}
+	if gotBody["tenant_id"] != "dept.x" || gotBody["query"] != "windowed" {
+		t.Fatalf("body base=%v", gotBody)
+	}
+	if gotBody["session_id"] != "sess-1" {
+		t.Fatalf("session_id=%v", gotBody["session_id"])
+	}
+	if gotBody["session_seq"] != float64(3) {
+		t.Fatalf("session_seq=%v", gotBody["session_seq"])
+	}
+	if gotBody["since"] != "2026-07-01T00:00:00Z" {
+		t.Fatalf("since=%v", gotBody["since"])
+	}
+	if gotBody["until"] != "2026-07-31T23:59:59Z" {
+		t.Fatalf("until=%v", gotBody["until"])
+	}
+	if gotBody["type"] != "memory_recall" {
+		t.Fatalf("type=%v", gotBody["type"])
+	}
+	if gotBody["limit"] != float64(5) {
+		t.Fatalf("limit=%v", gotBody["limit"])
+	}
+}
+
+// s1068: empty temporal fields must not appear in the JSON body (omitempty parity).
+func TestRetrieveMemoryWithOptions_OmitsEmptyTemporal(t *testing.T) {
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_ = json.NewEncoder(w).Encode(map[string]any{"memories": []any{}})
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "t"}, nil)
+	_, err := c.RetrieveMemoryWithOptions(context.Background(), "t", MemoryRetrieveOptions{
+		Query: "q", Limit: 1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, k := range []string{"since", "until", "session_seq"} {
+		if _, ok := gotBody[k]; ok {
+			t.Fatalf("unexpected key %q in body: %v", k, gotBody)
+		}
+	}
+	// Thin wrapper still works.
+	_, err = c.RetrieveMemory(context.Background(), "t", "q2", 2, "sid")
+	if err != nil {
+		t.Fatal(err)
+	}
+}

@@ -24,6 +24,7 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 | **3 partial** | **done (dogfood)** | Async `MEMORY_RPC` recall probe (`PublishMemoryRecall`) |
 | **3** | **done (v0.4.0 dogfood)** | Sync `RetrieveMemory` → `POST /v1/memory/retrieve` (+ `/v5` fallback) + dogfood `memory_retrieve` step |
 | **3+** | **done (v0.4.0 agent)** | Agent auto-recall + `/memory recall` prefer sync HTTP when mesh **or** `[memory].endpoint` sidecar is set; MCP fallback |
+| **3 temporal (s1068)** | **done** | Sync retrieve options: `since`/`until`/`session_seq` on lean HTTP + auto-recall config + `/memory recall` flags |
 | **4 pull (s652)** | **done (M1)** | `iomesh memory pull` — durable mesh consumer → local MCP `memory_ingest_turn` (cost-max local palace; dual_write remains optional audit) |
 
 **Cost-max (s650+):** primary Memory UX is **local Palace** (this TUI + `aion-memory-mcp`). Mesh is **pull egress** of ops events; hosted cloud Palace is **sunset until scale**. Dual-write = optional **audit** only (default OFF).
@@ -143,7 +144,24 @@ auto_ingest = false        # opt-in: write user+assistant turns after success
 # pull_allow_suffix = ""   # optional X-IOMesh-Pull-Allow-Suffix for role=custom
 # limit = 8
 # max_snippet_bytes = 6000
+# Optional time-window for auto-recall + default /memory recall (s1068; RFC3339):
+# recall_since = "2026-07-01T00:00:00Z"
+# recall_until = "2026-07-31T23:59:59Z"
+# recall_session_seq = 0   # omit when 0; maps to body session_seq
 ```
+
+### Temporal retrieve options (s1068)
+
+Platform sidecar accepts `since` / `until` / `session_seq` on `POST /v1/memory/retrieve` (and `/v5`) and maps them to kernel `SearchMemoryWithOptions`. TUI lean client and agent auto-recall wire those fields so time-windowed recall drops irrelevant hits:
+
+| Surface | How |
+|---------|-----|
+| Lean HTTP | `iomesh.MemoryRetrieveOptions` → `RetrieveMemoryWithOptions` (body includes non-empty `since`/`until`/`session_seq`); `RetrieveMemory` remains a thin wrapper |
+| Config | `[memory] recall_since` / `recall_until` / `recall_session_seq` (env `IOMESH_MEMORY_RECALL_SINCE` / `_UNTIL` / `_SESSION_SEQ`) applied on auto-recall and default `/memory recall` |
+| Slash | `/memory recall --since RFC3339 --until RFC3339 --session-seq N [query]` (overrides config for that call) |
+| MCP fallback | Same keys forwarded on `memory_retrieve` tool args when set |
+
+Fail-open unchanged; dual_write remains optional audit (**default OFF**); does not invent temporal pipeline GA.
 
 ### Mesh pull → local palace (s652 M1)
 
@@ -241,6 +259,8 @@ Agent tools also appear as `mcp__memory__memory_retrieve` (etc.) when MCP is att
 | `IOMESH_MEMORY_AUTO_INGEST=1` | Enable post-turn ingest (MCP and/or dual-write) |
 | `IOMESH_MEMORY_DUAL_WRITE=1` | Also publish async `MEMORY_INGEST` when mesh enabled |
 | `IOMESH_MEMORY_ENDPOINT` / `MEMORY_SIDECAR_URL` | Sync retrieve base (memory sidecar); overrides mesh endpoint for `RetrieveMemory` only |
+| `IOMESH_MEMORY_RECALL_SINCE` / `IOMESH_MEMORY_RECALL_UNTIL` | Optional RFC3339 auto-recall window (s1068) |
+| `IOMESH_MEMORY_RECALL_SESSION_SEQ` | Optional session_seq filter for temporal recall (s1068; 0 omits) |
 | `IOMESH_MCP=1` | Enable MCP section |
 
 ## Phase 1 — runtime loop
@@ -344,6 +364,7 @@ See [mesh-dogfood.md](mesh-dogfood.md) for soft vs strict matrix. Unit coverage:
 |---------|----------|
 | `/memory` | Status: enabled, `mcp=`, `sync_http=`, flags (incl. `dual_write`), tenant |
 | `/memory recall [query]` | Sync HTTP retrieve when mesh enabled, else MCP (default query = last user text or `"*"`) |
+| `/memory recall --since|--until|--session-seq … [query]` | Same + per-call temporal filters (s1068; override config) |
 | `/memory ingest <text>` | Ingest a user turn (MCP and/or dual-write) |
 
 ## Platform gaps
@@ -361,8 +382,8 @@ See [mesh-dogfood.md](mesh-dogfood.md) for soft vs strict matrix. Unit coverage:
 | Path | Role |
 |------|------|
 | `internal/config` | `[memory]` section + env (`dual_write`) |
-| `internal/iomesh/memory.go` | `PublishMemoryIngest`, `PublishMemoryRecall`, `RetrieveMemory` lean HTTP (no SDK dep) |
-| `internal/agent/memory.go` | Recall (sync prefer → MCP) / ingest / dual-write helpers |
+| `internal/iomesh/memory.go` | `PublishMemoryIngest`, `PublishMemoryRecall`, `RetrieveMemory` / `RetrieveMemoryWithOptions` lean HTTP (no SDK dep; s1068 temporal fields) |
+| `internal/agent/memory.go` | Recall (sync prefer → MCP; config + opts temporal filters) / ingest / dual-write helpers |
 | `internal/agent/agent.go` | `RunTurn` hooks |
 | `internal/tui/tui.go` | `/memory` slash |
 | `configs/config.example.toml` | Copy-paste wire-up |

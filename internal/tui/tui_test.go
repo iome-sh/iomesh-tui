@@ -111,6 +111,29 @@ func TestRunREPL_Quit(t *testing.T) {
 	}
 }
 
+// s1068: /memory recall flag parser for temporal since/until/session_seq.
+func TestParseMemoryRecallArgs(t *testing.T) {
+	q, o := parseMemoryRecallArgs([]string{
+		"--since", "2026-07-01T00:00:00Z",
+		"--until=2026-07-31T23:59:59Z",
+		"--session-seq", "3",
+		"what", "did", "we", "decide",
+	})
+	if q != "what did we decide" {
+		t.Fatalf("query=%q", q)
+	}
+	if o.Since != "2026-07-01T00:00:00Z" || o.Until != "2026-07-31T23:59:59Z" {
+		t.Fatalf("opts=%+v", o)
+	}
+	if !o.SessionSeqSet || o.SessionSeq != 3 {
+		t.Fatalf("session_seq=%+v", o)
+	}
+	q2, o2 := parseMemoryRecallArgs([]string{"plain", "query"})
+	if q2 != "plain query" || o2.Since != "" || o2.SessionSeqSet {
+		t.Fatalf("plain q=%q opts=%+v", q2, o2)
+	}
+}
+
 func TestModelPickerNumber(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
