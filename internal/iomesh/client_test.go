@@ -565,3 +565,122 @@ func TestRetrieveMemoryWithOptions_OmitsEmptyTemporal(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// s1135: multi-hop related posts to /v1/memory/related with seed/query/max_hops and parses hop_distance.
+func TestRetrieveMemoryRelated_SyncHitsAndBody(t *testing.T) {
+	var gotPath string
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		if r.URL.Path != "/v1/memory/related" {
+			http.NotFound(w, r)
+			return
+		}
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"memories": []map[string]any{
+				{"id": "h1", "summary": "hop1 fact", "score": 0.9, "hop_distance": 1},
+				{"id": "h2", "summary": "hop2 fact", "hop_distance": 2},
+			},
+		})
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "dept.x"}, nil)
+	res, err := c.RetrieveMemoryRelated(context.Background(), "dept.x", MemoryRelatedOptions{
+		SeedEntity: "person:alice",
+		Query:      "related notes",
+		MaxHops:    2,
+		Limit:      5,
+		SessionID:  "sess-rel",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotPath != "/v1/memory/related" || res.Path != "/v1/memory/related" {
+		t.Fatalf("path got=%q res=%q", gotPath, res.Path)
+	}
+	if gotBody["tenant_id"] != "dept.x" || gotBody["seed_entity"] != "person:alice" {
+		t.Fatalf("body=%v", gotBody)
+	}
+	if gotBody["query"] != "related notes" || gotBody["max_hops"] != float64(2) {
+		t.Fatalf("body hops/query=%v", gotBody)
+	}
+	if gotBody["session_id"] != "sess-rel" || gotBody["type"] != "memory_related" {
+		t.Fatalf("body session/type=%v", gotBody)
+	}
+	if len(res.Memories) != 2 {
+		t.Fatalf("hits=%+v", res.Memories)
+	}
+	if res.Memories[0].HopDistance != 1 || res.Memories[1].HopDistance != 2 {
+		t.Fatalf("hop_distance=%+v", res.Memories)
+	}
+	if res.Memories[0].Summary != "hop1 fact" {
+		t.Fatalf("summary=%q", res.Memories[0].Summary)
+	}
+}
+
+// s1135: 404 on v1 falls back to v5/memory/related.
+func TestRetrieveMemoryRelated_V5Fallback(t *testing.T) {
+	var paths []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		if r.URL.Path == "/v1/memory/related" {
+			w.WriteHeader(404)
+			return
+		}
+		if r.URL.Path == "/v5/memory/related" {
+			_ = json.NewEncoder(w).Encode(map[string]any{"memories": []any{}})
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "t"}, nil)
+	res, err := c.RetrieveMemoryRelated(context.Background(), "t", MemoryRelatedOptions{
+		SeedEntity: "person:bob",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Path != "/v5/memory/related" || res.Memories == nil {
+		t.Fatalf("%+v paths=%v", res, paths)
+	}
+}
+
+// s1135: requires seed_entity or query.
+func TestRetrieveMemoryRelated_RequiresSeedOrQuery(t *testing.T) {
+	c := New(Config{Enabled: true, Endpoint: "http://127.0.0.1:9", Tenant: "t"}, nil)
+	_, err := c.RetrieveMemoryRelated(context.Background(), "t", MemoryRelatedOptions{})
+	if err == nil || !strings.Contains(err.Error(), "seed_entity or query") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+// s1135: default max_hops=2 and limit=10 when unset.
+func TestRetrieveMemoryRelated_DefaultHopsAndLimit(t *testing.T) {
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_ = json.NewEncoder(w).Encode(map[string]any{"memories": []any{}})
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "t"}, nil)
+	_, err := c.RetrieveMemoryRelated(context.Background(), "t", MemoryRelatedOptions{
+		Query: "seed from query only",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotBody["max_hops"] != float64(2) {
+		t.Fatalf("max_hops=%v", gotBody["max_hops"])
+	}
+	if gotBody["limit"] != float64(10) {
+		t.Fatalf("limit=%v", gotBody["limit"])
+	}
+	if _, ok := gotBody["seed_entity"]; ok {
+		t.Fatalf("unexpected seed_entity: %v", gotBody)
+	}
+}

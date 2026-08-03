@@ -134,6 +134,40 @@ func TestParseMemoryRecallArgs(t *testing.T) {
 	}
 }
 
+// s1135: /memory related flag parser for seed / query / max-hops.
+func TestParseMemoryRelatedArgs(t *testing.T) {
+	seed, q, o, errMsg := parseMemoryRelatedArgs([]string{
+		"--seed", "person:alice",
+		"--query", "teammate notes",
+		"--max-hops", "2",
+		"--limit=5",
+	})
+	if errMsg != "" {
+		t.Fatalf("errMsg=%q", errMsg)
+	}
+	if seed != "person:alice" || q != "teammate notes" {
+		t.Fatalf("seed=%q q=%q", seed, q)
+	}
+	if o.MaxHops != 2 || o.Limit != 5 {
+		t.Fatalf("opts=%+v", o)
+	}
+	// --seed= form + free tokens as query.
+	seed2, q2, o2, errMsg2 := parseMemoryRelatedArgs([]string{
+		"--seed-entity=org:acme",
+		"free", "query", "words",
+	})
+	if errMsg2 != "" || seed2 != "org:acme" || q2 != "free query words" {
+		t.Fatalf("seed=%q q=%q err=%q", seed2, q2, errMsg2)
+	}
+	if o2.MaxHops != 0 {
+		t.Fatalf("opts=%+v", o2)
+	}
+	_, _, _, bad := parseMemoryRelatedArgs([]string{"--max-hops", "nope"})
+	if bad == "" {
+		t.Fatal("expected invalid --max-hops")
+	}
+}
+
 func TestModelPickerNumber(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer

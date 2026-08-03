@@ -271,7 +271,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 	case "/memory", "/mem":
 		if len(parts) < 2 {
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
-			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | ingest <text>]")
+			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] | ingest <text>]")
 			return false, nil
 		}
 		sub := strings.ToLower(parts[1])
@@ -293,6 +293,28 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 				return false, nil
 			}
 			fmt.Fprintln(out, text)
+		case "related", "rel":
+			// s1135: opt-in multi-hop lite related recall (HTTP + MCP fallback).
+			// Does not change default auto-recall. Not full graph RAG; not Memory GA.
+			seed, q, ropts, perr := parseMemoryRelatedArgs(parts[2:])
+			if perr != "" {
+				fmt.Fprintf(out, "memory related: %s\nusage: /memory related --seed person:alice [--query ...] [--max-hops 2]\n", perr)
+				return false, nil
+			}
+			if seed == "" && q == "" {
+				fmt.Fprintln(out, "usage: /memory related --seed person:alice [--query ...] [--max-hops 2]\n  multi-hop lite related recall (opt-in; not auto-recall; not full graph RAG)")
+				return false, nil
+			}
+			text, err := rt.rt.MemoryRelated(context.Background(), seed, q, ropts)
+			if err != nil {
+				fmt.Fprintf(out, "memory related: %v\n", err)
+				return false, nil
+			}
+			if strings.TrimSpace(text) == "" {
+				fmt.Fprintln(out, "(no related memories)")
+				return false, nil
+			}
+			fmt.Fprintln(out, text)
 		case "ingest", "i":
 			content := strings.Join(parts[2:], " ")
 			if strings.TrimSpace(content) == "" {
@@ -307,11 +329,11 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			fmt.Fprintln(out, text)
 		default:
 			// Treat remainder as recall query: /memory what did we decide
-			// (also accepts --since/--until when first token is not status|recall|ingest)
+			// (also accepts --since/--until when first token is not status|recall|related|ingest)
 			q, ropts := parseMemoryRecallArgs(parts[1:])
 			text, err := rt.rt.MemoryRecallWithOpts(context.Background(), q, ropts)
 			if err != nil {
-				fmt.Fprintf(out, "memory: %v (try /memory status|recall|ingest)\n", err)
+				fmt.Fprintf(out, "memory: %v (try /memory status|recall|related|ingest)\n", err)
 				return false, nil
 			}
 			if strings.TrimSpace(text) == "" {
@@ -428,7 +450,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /cost                session usage meter + sample estimate
   /mesh                I/O Mesh status + usage
   /catalog [query]     list mesh data products (catalog plane)
-  /memory [recall|ingest|status]  Memory Palace (sync HTTP + MCP; temporal since/until)
+  /memory [recall|related|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop lite opt-in)
   /quit                exit
 
 Fullscreen keys: enter send · ctrl+j newline · pgup/pgdn scroll
@@ -484,12 +506,71 @@ func parseMemoryRecallArgs(args []string) (query string, opts agent.MemoryRecall
 	return strings.Join(qParts, " "), opts
 }
 
+// parseMemoryRelatedArgs extracts multi-hop related flags (s1135).
+// Supports: --seed / --seed-entity, --query, --max-hops / --max_hops.
+// Remaining free tokens append to query. Returns errMsg when a flag is malformed.
+func parseMemoryRelatedArgs(args []string) (seed, query string, opts agent.MemoryRelatedOpts, errMsg string) {
+	var qParts []string
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		key, val, hasEq := splitFlagKV(a)
+		switch key {
+		case "--seed", "--seed-entity", "--seed_entity":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			seed = strings.TrimSpace(val)
+		case "--query", "-q":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			if v := strings.TrimSpace(val); v != "" {
+				qParts = append(qParts, v)
+			}
+		case "--max-hops", "--max_hops":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			n, err := strconv.Atoi(strings.TrimSpace(val))
+			if err != nil || n < 0 {
+				return "", "", opts, "invalid --max-hops"
+			}
+			opts.MaxHops = n
+		case "--limit":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			n, err := strconv.Atoi(strings.TrimSpace(val))
+			if err != nil || n < 0 {
+				return "", "", opts, "invalid --limit"
+			}
+			opts.Limit = n
+		default:
+			qParts = append(qParts, a)
+		}
+	}
+	return seed, strings.Join(qParts, " "), opts, ""
+}
+
 // splitFlagKV returns key and value for --flag=value forms; hasEq true when '=' present.
 // For bare --flag, key is the token and val/hasEq are empty/false.
 func splitFlagKV(tok string) (key, val string, hasEq bool) {
-	if !strings.HasPrefix(tok, "--") {
+	if !strings.HasPrefix(tok, "--") && !strings.HasPrefix(tok, "-") {
 		return tok, "", false
 	}
+	// Keep short -q as key for related parser; long flags use --.
 	if i := strings.IndexByte(tok, '='); i > 0 {
 		return tok[:i], tok[i+1:], true
 	}
