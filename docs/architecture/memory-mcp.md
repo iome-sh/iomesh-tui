@@ -8,6 +8,7 @@ Platform ships `aion-memory-mcp` (stdio **and** streamable HTTP) with tools:
 |------|---------|
 | `memory_ingest_turn` | Persist a conversation turn (tiered Palace) |
 | `memory_retrieve` | Query memories (optional `session_id`, `since`/`until`, `session_seq`) |
+| `memory_related` | Multi-hop lite related recall (`seed_entity` / `query` / `max_hops`; s1135 opt-in) |
 | `memory_timeline` | Temporal timeline slice |
 | `memory_search_semantic` | Semantic facts |
 | patterns / anomalies / compact | Ops helpers |
@@ -25,6 +26,7 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 | **3** | **done (v0.4.0 dogfood)** | Sync `RetrieveMemory` → `POST /v1/memory/retrieve` (+ `/v5` fallback) + dogfood `memory_retrieve` step |
 | **3+** | **done (v0.4.0 agent)** | Agent auto-recall + `/memory recall` prefer sync HTTP when mesh **or** `[memory].endpoint` sidecar is set; MCP fallback |
 | **3 temporal (s1068)** | **done** | Sync retrieve options: `since`/`until`/`session_seq` on lean HTTP + auto-recall config + `/memory recall` flags |
+| **3 related multi-hop (s1135)** | **done (opt-in)** | Sync `POST /v1|/v5/memory/related` + MCP `memory_related` fallback; `/memory related`; default auto-recall stays single-hop |
 | **4 pull (s652)** | **done (M1)** | `iomesh memory pull` — durable mesh consumer → local MCP `memory_ingest_turn` (cost-max local palace; dual_write remains optional audit) |
 
 **Cost-max (s650+):** primary Memory UX is **local Palace** (this TUI + `aion-memory-mcp`). Mesh is **pull egress** of ops events; hosted cloud Palace is **sunset until scale**. Dual-write = optional **audit** only (default OFF).
@@ -365,7 +367,21 @@ See [mesh-dogfood.md](mesh-dogfood.md) for soft vs strict matrix. Unit coverage:
 | `/memory` | Status: enabled, `mcp=`, `sync_http=`, flags (incl. `dual_write`), tenant |
 | `/memory recall [query]` | Sync HTTP retrieve when mesh enabled, else MCP (default query = last user text or `"*"`) |
 | `/memory recall --since|--until|--session-seq … [query]` | Same + per-call temporal filters (s1068; override config) |
+| `/memory related --seed <entity> [--query …] [--max-hops N]` | Opt-in multi-hop lite related recall (s1135; HTTP + MCP `memory_related`; not auto-recall) |
 | `/memory ingest <text>` | Ingest a user turn (MCP and/or dual-write) |
+
+## Multi-hop related recall (s1135 · opt-in)
+
+Operators can run **multi-hop lite** related recall without changing default auto-recall (still single-hop `RetrieveMemory` / `memory_retrieve`):
+
+| Surface | Path |
+|---------|------|
+| Lean HTTP | `iomesh.RetrieveMemoryRelated` → `POST /v1/memory/related` (+ `/v5` fallback); body: `seed_entity` / `query` / `max_hops` / `limit` / `session_id` |
+| MCP fallback | `memory_related` tool args (`seed_entity`, `query`, `max_hops`, `limit`, `session_id`, `tenant`) when sync fails |
+| Slash | `/memory related --seed person:alice --query "…" --max-hops 2` |
+| Hits | Optional `hop_distance` on `MemoryHit` (hop ranking lite · s1067 kernel); formatted as `[hop=N]` |
+
+**Honesty:** multi-hop lite opt-in · hop ranking lite · **not** full graph RAG · **not** product Memory GA · dual_write default OFF · fail-open.
 
 ## Platform gaps
 
@@ -382,8 +398,8 @@ See [mesh-dogfood.md](mesh-dogfood.md) for soft vs strict matrix. Unit coverage:
 | Path | Role |
 |------|------|
 | `internal/config` | `[memory]` section + env (`dual_write`) |
-| `internal/iomesh/memory.go` | `PublishMemoryIngest`, `PublishMemoryRecall`, `RetrieveMemory` / `RetrieveMemoryWithOptions` lean HTTP (no SDK dep; s1068 temporal fields) |
-| `internal/agent/memory.go` | Recall (sync prefer → MCP; config + opts temporal filters) / ingest / dual-write helpers |
+| `internal/iomesh/memory.go` | `PublishMemoryIngest`, `PublishMemoryRecall`, `RetrieveMemory` / `RetrieveMemoryWithOptions`, `RetrieveMemoryRelated` lean HTTP (no SDK dep; s1068 temporal + s1135 related) |
+| `internal/agent/memory.go` | Recall (sync prefer → MCP; config + opts temporal filters) / related multi-hop opt-in / ingest / dual-write helpers |
 | `internal/agent/agent.go` | `RunTurn` hooks |
 | `internal/tui/tui.go` | `/memory` slash |
 | `configs/config.example.toml` | Copy-paste wire-up |

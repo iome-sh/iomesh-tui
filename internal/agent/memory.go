@@ -37,6 +37,12 @@ type MemoryConfig struct {
 	// Default 3000; 0 disables. Fail-open process-local only — not product Memory GA.
 	// Key includes tenant + session + query + limit + since/until.
 	RecallCacheTTLMS int
+	// RelatedMaxHops default BFS hops for opt-in multi-hop related recall (s1135).
+	// Default 2. Used by MemoryRelated / /memory related only — does NOT change
+	// default auto-recall (still single-hop RetrieveMemory / memory_retrieve).
+	// 0 disables the related path when callers gate on it; MemoryRelated still
+	// defaults hops to 2 when MaxHops is unset for operator convenience.
+	RelatedMaxHops int
 }
 
 // DefaultMemoryConfig returns fail-open off defaults.
@@ -51,6 +57,7 @@ func DefaultMemoryConfig() MemoryConfig {
 		Limit:            8,
 		MaxSnippetBytes:  6000,
 		RecallCacheTTLMS: DefaultRecallCacheTTLMS,
+		RelatedMaxHops:   2, // s1135 multi-hop lite opt-in default (not auto-recall)
 	}
 }
 
@@ -73,12 +80,15 @@ func (rt *Runtime) AttachMemory(cfg MemoryConfig) {
 	if cfg.RecallCacheTTLMS < 0 {
 		cfg.RecallCacheTTLMS = DefaultRecallCacheTTLMS
 	}
+	if cfg.RelatedMaxHops < 0 {
+		cfg.RelatedMaxHops = 2
+	}
 	rt.memory = cfg
 	rt.initMemoryRecallCache()
 	if cfg.Enabled {
 		rt.appendSystemNote("memory", fmt.Sprintf(
-			"Memory: server=%q tenant=%q auto_recall=%v auto_ingest=%v dual_write=%v recall_cache_ttl_ms=%d. Auto-recall prefers sync POST /v1/memory/retrieve when mesh enabled, else MCP mcp__%s__memory_*. Fail-open when unavailable.",
-			cfg.Server, emptyDash(cfg.Tenant), cfg.AutoRecall, cfg.AutoIngest, cfg.DualWrite, cfg.RecallCacheTTLMS, cfg.Server,
+			"Memory: server=%q tenant=%q auto_recall=%v auto_ingest=%v dual_write=%v recall_cache_ttl_ms=%d related_max_hops=%d. Auto-recall prefers sync POST /v1/memory/retrieve when mesh enabled, else MCP mcp__%s__memory_* (single-hop; multi-hop related is opt-in via /memory related). Fail-open when unavailable.",
+			cfg.Server, emptyDash(cfg.Tenant), cfg.AutoRecall, cfg.AutoIngest, cfg.DualWrite, cfg.RecallCacheTTLMS, cfg.RelatedMaxHops, cfg.Server,
 		))
 	}
 }
@@ -322,8 +332,116 @@ func (rt *Runtime) MemoryRecallWithOpts(ctx context.Context, query string, opts 
 	return truncateBytes(out, maxBytes), nil
 }
 
-// formatMemoryHits turns sync RetrieveMemory hits into a compact recall snippet.
+// MemoryRelatedOpts overrides config for one opt-in multi-hop related call (s1135).
+// Zero MaxHops falls back to MemoryConfig.RelatedMaxHops (default 2); when that is
+// also 0, hops default to 2 for operator convenience. Zero Limit uses config Limit.
+type MemoryRelatedOpts struct {
+	MaxHops int
+	Limit   int
+}
+
+// MemoryRelated performs opt-in multi-hop lite related recall (s1135).
+// Prefers sync HTTP RetrieveMemoryRelated (POST /v1|/v5/memory/related); falls back
+// to MCP memory_related when sync fails or mesh is unavailable.
+// At least one of seedEntity or query is required.
+// Does NOT run on default auto-recall (honesty: multi-hop lite is slash/CLI opt-in).
+// Not full graph RAG; not product Memory GA; dual_write OFF by default.
+func (rt *Runtime) MemoryRelated(ctx context.Context, seedEntity, query string, opts ...MemoryRelatedOpts) (string, error) {
+	if rt == nil || !rt.memory.Enabled {
+		return "", fmt.Errorf("memory hooks disabled")
+	}
+	seedEntity = strings.TrimSpace(seedEntity)
+	query = strings.TrimSpace(query)
+	if seedEntity == "" && query == "" {
+		return "", fmt.Errorf("seed_entity or query required for memory related")
+	}
+
+	var call MemoryRelatedOpts
+	if len(opts) > 0 {
+		call = opts[0]
+	}
+	maxHops := call.MaxHops
+	if maxHops <= 0 {
+		maxHops = rt.memory.RelatedMaxHops
+	}
+	if maxHops <= 0 {
+		maxHops = 2
+	}
+	limit := call.Limit
+	if limit <= 0 {
+		limit = rt.memory.Limit
+	}
+	if limit <= 0 {
+		limit = 8
+	}
+	maxBytes := rt.memory.MaxSnippetBytes
+	if maxBytes <= 0 {
+		maxBytes = 6000
+	}
+
+	// Prefer sync multi-hop related against memory sidecar HTTP when mesh client is live.
+	if rt.syncMemoryReady() {
+		start := time.Now()
+		res, err := rt.mesh.RetrieveMemoryRelated(ctx, rt.memoryTenant(), iomesh.MemoryRelatedOptions{
+			SeedEntity: seedEntity,
+			Query:      query,
+			MaxHops:    maxHops,
+			Limit:      limit,
+			SessionID:  rt.memorySessionID(),
+		})
+		latMS := int(time.Since(start).Milliseconds())
+		rt.lastMemoryRetrieveMS.Store(int64(latMS))
+		rt.lastMemoryRetrieveCacheHit.Store(false)
+		if err == nil {
+			hits := res.Memories
+			if hits == nil {
+				hits = []iomesh.MemoryHit{}
+			}
+			return formatMemoryHits(hits, maxBytes), nil
+		}
+		if rt.logger != nil {
+			rt.logger.Debug("memory related sync failed; trying MCP fallback", "err", err, "ms", latMS)
+		}
+		// Fall through to MCP when sidecar path is missing (e.g. broker-only endpoint).
+	}
+
+	if !rt.mcpMemoryReady() {
+		if rt.syncMemoryReady() {
+			return "", fmt.Errorf("memory related sync failed and mcp server %q not connected", rt.memory.Server)
+		}
+		return "", fmt.Errorf("mcp server %q not connected (and mesh sync unavailable)", rt.memory.Server)
+	}
+	c := rt.mcp.ClientByName(rt.memory.Server)
+	args := map[string]any{
+		"max_hops": maxHops,
+		"limit":    limit,
+	}
+	if seedEntity != "" {
+		args["seed_entity"] = seedEntity
+	}
+	if query != "" {
+		args["query"] = query
+	}
+	if t := rt.memoryTenant(); t != "" {
+		args["tenant"] = t
+	}
+	if sid := rt.memorySessionID(); sid != "" {
+		args["session_id"] = sid
+	}
+	start := time.Now()
+	out, err := c.CallTool(ctx, "memory_related", args)
+	latMS := int(time.Since(start).Milliseconds())
+	rt.lastMemoryRetrieveMS.Store(int64(latMS))
+	rt.lastMemoryRetrieveCacheHit.Store(false)
+	if err != nil {
+		return "", err
+	}
+	return truncateBytes(out, maxBytes), nil
+}
+
+// formatMemoryHits turns sync RetrieveMemory / related hits into a compact recall snippet.
 // When maxBytes > 0, stops once the budget is reached without formatting remaining hits (s1069).
+// Optional hop_distance is shown as hop=N when non-zero (s1135 multi-hop related).
 func formatMemoryHits(hits []iomesh.MemoryHit, maxBytes int) string {
 	if len(hits) == 0 {
 		return ""
@@ -339,9 +457,14 @@ func formatMemoryHits(hits []iomesh.MemoryHit, maxBytes int) string {
 			continue
 		}
 		var piece string
-		if h.Score > 0 {
+		switch {
+		case h.HopDistance > 0 && h.Score > 0:
+			piece = fmt.Sprintf("[hop=%d] [%.2f] %s", h.HopDistance, h.Score, text)
+		case h.HopDistance > 0:
+			piece = fmt.Sprintf("[hop=%d] %s", h.HopDistance, text)
+		case h.Score > 0:
 			piece = fmt.Sprintf("[%.2f] %s", h.Score, text)
-		} else {
+		default:
 			piece = text
 		}
 		sep := ""

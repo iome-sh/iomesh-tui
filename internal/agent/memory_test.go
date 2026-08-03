@@ -259,6 +259,17 @@ func TestFormatMemoryHits(t *testing.T) {
 	}
 }
 
+// s1135: hop_distance rendered when present.
+func TestFormatMemoryHits_HopDistance(t *testing.T) {
+	got := formatMemoryHits([]iomesh.MemoryHit{
+		{Summary: "near", HopDistance: 1, Score: 0.8},
+		{Summary: "far", HopDistance: 2},
+	}, 0)
+	if !strings.Contains(got, "[hop=1] [0.80] near") || !strings.Contains(got, "[hop=2] far") {
+		t.Fatalf("got=%q", got)
+	}
+}
+
 func TestDefaultMemoryConfig(t *testing.T) {
 	d := DefaultMemoryConfig()
 	if d.Enabled || d.Server != "memory" || !d.AutoRecall || d.AutoIngest || d.DualWrite {
@@ -416,5 +427,123 @@ func TestAttachMemorySystemNote_DualWrite(t *testing.T) {
 	msgs := rt.Messages()
 	if len(msgs) == 0 || !strings.Contains(msgs[0].Content, "dual_write=true") {
 		t.Fatalf("expected dual_write in system note: %+v", msgs)
+	}
+}
+
+// s1135: MemoryRelated prefers sync HTTP POST /v1/memory/related.
+func TestMemoryRelated_PrefersSyncHTTP(t *testing.T) {
+	var gotPath string
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"memories": []map[string]any{
+				{"id": "1", "summary": "alice teammate note", "score": 0.88, "hop_distance": 1},
+				{"id": "2", "summary": "two hops out", "hop_distance": 2},
+			},
+		})
+	}))
+	defer srv.Close()
+
+	mesh := iomesh.New(iomesh.Config{Enabled: true, Endpoint: srv.URL, Tenant: "dept.research"}, nil)
+	rt := &Runtime{
+		mesh: mesh,
+		memory: MemoryConfig{
+			Enabled: true, Tenant: "dept.research", Server: "memory",
+			Limit: 5, SessionID: "sess-rel", RelatedMaxHops: 2,
+		},
+	}
+	out, err := rt.MemoryRelated(context.Background(), "person:alice", "teammate")
+	if err != nil {
+		t.Fatalf("MemoryRelated: %v", err)
+	}
+	if gotPath != "/v1/memory/related" {
+		t.Fatalf("path=%q", gotPath)
+	}
+	if gotBody["seed_entity"] != "person:alice" || gotBody["query"] != "teammate" {
+		t.Fatalf("body=%v", gotBody)
+	}
+	if gotBody["max_hops"] != float64(2) || gotBody["session_id"] != "sess-rel" {
+		t.Fatalf("body hops/session=%v", gotBody)
+	}
+	if !strings.Contains(out, "alice teammate") || !strings.Contains(out, "[hop=1]") {
+		t.Fatalf("out=%q", out)
+	}
+	if !strings.Contains(out, "[hop=2]") {
+		t.Fatalf("expected hop2: %q", out)
+	}
+}
+
+// s1135: per-call MaxHops overrides config RelatedMaxHops.
+func TestMemoryRelated_MaxHopsOverride(t *testing.T) {
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_ = json.NewEncoder(w).Encode(map[string]any{"memories": []any{}})
+	}))
+	defer srv.Close()
+
+	mesh := iomesh.New(iomesh.Config{Enabled: true, Endpoint: srv.URL, Tenant: "t"}, nil)
+	rt := &Runtime{
+		mesh: mesh,
+		memory: MemoryConfig{
+			Enabled: true, Tenant: "t", Server: "memory", RelatedMaxHops: 2,
+		},
+	}
+	_, err := rt.MemoryRelated(context.Background(), "person:bob", "", MemoryRelatedOpts{MaxHops: 1, Limit: 3})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotBody["max_hops"] != float64(1) || gotBody["limit"] != float64(3) {
+		t.Fatalf("body=%v", gotBody)
+	}
+}
+
+// s1135: sync 404 + no MCP → error (MCP fallback path when unavailable).
+func TestMemoryRelated_SyncFailsMCPUnavailable(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	mesh := iomesh.New(iomesh.Config{Enabled: true, Endpoint: srv.URL, Tenant: "t"}, nil)
+	rt := &Runtime{
+		mesh:   mesh,
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "t"},
+		mcp:    mcp.NewManagerEmpty(nil),
+	}
+	_, err := rt.MemoryRelated(context.Background(), "person:alice", "")
+	if err == nil {
+		t.Fatal("expected error when sync 404 and MCP missing")
+	}
+	if !strings.Contains(err.Error(), "not connected") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+// s1135: requires seed or query; hooks disabled error.
+func TestMemoryRelated_RequiresSeedOrQuery(t *testing.T) {
+	rt := &Runtime{memory: MemoryConfig{Enabled: true, Server: "memory"}}
+	_, err := rt.MemoryRelated(context.Background(), "", "")
+	if err == nil || !strings.Contains(err.Error(), "seed_entity or query") {
+		t.Fatalf("err=%v", err)
+	}
+	rt2 := &Runtime{memory: DefaultMemoryConfig()}
+	_, err = rt2.MemoryRelated(context.Background(), "person:alice", "")
+	if err == nil || !strings.Contains(err.Error(), "disabled") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+// s1135: default RelatedMaxHops=2; auto-recall path unchanged (MemoryRecall still used).
+func TestDefaultMemoryConfig_RelatedMaxHops(t *testing.T) {
+	d := DefaultMemoryConfig()
+	if d.RelatedMaxHops != 2 {
+		t.Fatalf("RelatedMaxHops=%d want 2", d.RelatedMaxHops)
+	}
+	// Honesty pin: multi-hop is opt-in — RelatedMaxHops does not enable auto multi-hop.
+	if !d.AutoRecall {
+		t.Fatal("AutoRecall still default true (single-hop MemoryRecall)")
 	}
 }
