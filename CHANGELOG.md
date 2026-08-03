@@ -38,6 +38,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **`iomesh mesh consumer create` role + default filter (s681)** — `--role` / `--pull-allow-suffix` (config fallbacks `[memory].pull_role` / `pull_allow_suffix`) set client auth headers; empty `--filter` uses role-aware `DefaultMemoryPullFilterForRole` (same as memory pull s678). Beta; fail-open without role; not full mesh RBAC GA
 - **`iomesh memory pull` (s652 cost-max M1)** — durable mesh consumer → map envelopes → local MCP `memory_ingest_turn` (optional `--dry-run` / `--once`); config `[memory] pull_*`; dual_write remains optional audit default OFF; hosted Palace sunset until scale ([docs/architecture/memory-mcp.md](docs/architecture/memory-mcp.md))
 
+## [0.71.0] — 2026-08-03
+
+Minor release: multi-hop related memory recall + temporal retrieve options + short-TTL recall cache.
+
+### Added
+
+- **Multi-hop related memory recall (s1135)** — opt-in multi-hop lite related recall via lean HTTP `POST /v1|/v5/memory/related` (`RetrieveMemoryRelated`) with MCP `memory_related` fallback; slash/CLI `/memory related --seed … [--query …] [--max-hops N]`. Default auto-recall remains single-hop. **Honesty:** multi-hop lite ≠ full graph RAG · not product Memory GA · dual_write default OFF · hop ranking lite · fail-open
+- **Memory recall short-TTL cache + efficiency (s1069)** — process-local fail-open short-TTL cache for sync `RetrieveMemory` (`[memory] recall_cache_ttl_ms`, default 3000; `0` disables), keyed by tenant+session+query+limit+since/until; snippet early-stop at `max_snippet_bytes`; auto-recall always-emits retrieve latency (`Nms` / `Nms cache`). Not product Memory GA · dual_write default OFF
+- **Temporal retrieve since/until/session_seq (s1068)** — wire platform sidecar temporal filters on `POST /v1/memory/retrieve` via `MemoryRetrieveOptions` / `RetrieveMemoryWithOptions`; `[memory] recall_since` / `recall_until` / `recall_session_seq` + env overrides; `/memory recall --since/--until/--session-seq` flags; MCP fallback forwards the same keys. Fail-open unchanged · dual_write default OFF · does not invent temporal pipeline GA
+
 ## [0.70.0] — 2026-07-22
 
 Minor release: FormatProductDetail always-emit for optional knobs.
