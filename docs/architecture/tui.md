@@ -63,4 +63,4 @@ iomesh> /theme high-contrast
 - `internal/tui/theme.go` — named palettes
 - `internal/tui/tui.go` — classic REPL + shared slash helpers (`/memory`, `/integrations`, …)
 
-**s1238:** `/integrations` (`list` / `plan` / `status`) — connector catalog + setup plan via MCP; residual-honest fail-open. See [agent-integrations-setup.md](./agent-integrations-setup.md).
+**s1238/s1242/s1243:** `/integrations` (`list` / `plan` / `signing` / `status`) — connector catalog + setup plan + signing header discovery via MCP (v178 wire parity); residual-honest fail-open. See [agent-integrations-setup.md](./agent-integrations-setup.md).

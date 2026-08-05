@@ -7,11 +7,13 @@ import (
 	"strings"
 )
 
-// MCP tool names for residual-honest agent connector setup (s1238 TUI · peer aion s1237).
-// Not install CRUD · not OAuth complete · not checklist/API-key mint.
+// MCP tool names for residual-honest agent connector setup
+// (s1238 TUI · peer aion s1237 v178 · s1242 wire parity · s1243 signing).
+// Not install CRUD · not OAuth complete · not checklist/API-key mint · not secret mint/rotate.
 const (
-	mcpToolListConnectorCatalog = "list_connector_catalog"
-	mcpToolPlanConnectorSetup   = "plan_connector_setup"
+	mcpToolListConnectorCatalog     = "list_connector_catalog"
+	mcpToolPlanConnectorSetup       = "plan_connector_setup"
+	mcpToolGetWebhookSigningHeaders = "get_webhook_signing_headers"
 )
 
 // Integrations offline / residual honesty copy (fail-open when MCP or tools missing).
@@ -27,7 +29,7 @@ const (
 func IntegrationsOfflineMessage() string {
 	return strings.TrimSpace(`integrations: MCP connector tools unavailable (fail-open).
   portal HITL: ` + integrationsPortalURL + `
-  aion MCP tools list_connector_catalog / plan_connector_setup ship in s1237 (concurrent with this TUI path).
+  aion MCP tools list_connector_catalog / plan_connector_setup (v178/s1237) · get_webhook_signing_headers (v30) · TUI wire parity s1242/s1243.
   ` + IntegrationsHonestyOneLiner)
 }
 
@@ -35,14 +37,17 @@ func IntegrationsOfflineMessage() string {
 func IntegrationsToolMissingMessage(tool string) string {
 	return fmt.Sprintf(strings.TrimSpace(`integrations: MCP tool %q not found on any connected server (fail-open).
   portal HITL: %s
-  aion MCP tools list_connector_catalog / plan_connector_setup ship in s1237.
+  aion MCP tools list_connector_catalog / plan_connector_setup (v178) · get_webhook_signing_headers (v30).
   %s`), tool, integrationsPortalURL, IntegrationsHonestyOneLiner)
 }
 
-// IntegrationsCatalog lists connector catalog via MCP list_connector_catalog (s1238).
+// IntegrationsCatalog lists connector catalog via MCP list_connector_catalog (s1238/s1242).
 // meshLayer optional filter: operational|knowledge|analytical (empty = all).
 // Fail-open: when MCP/tool unavailable returns residual-honest offline guidance (nil error).
 // Never invents install green; catalog status is display-only honesty (Beta/planned/available).
+//
+// aion v178 wire: {"count":N,"entries":[{id,label,status,mesh_layer,ingress_type,
+// webhook_path,summary,oauth_install_supported,portal_path}]}.
 func (rt *Runtime) IntegrationsCatalog(ctx context.Context, meshLayer string) (string, error) {
 	layer := strings.ToLower(strings.TrimSpace(meshLayer))
 	switch layer {
@@ -82,9 +87,12 @@ func (rt *Runtime) IntegrationsCatalog(ctx context.Context, meshLayer string) (s
 	return out + "\n" + catalogHonestyFooter(), nil
 }
 
-// IntegrationsPlan plans connector setup via MCP plan_connector_setup (s1238).
-// Prints portal_url + next_steps + honesty from the tool; never invents install green.
-// Fail-open when MCP/tool unavailable.
+// IntegrationsPlan plans connector setup via MCP plan_connector_setup (s1238/s1242).
+// Surfaces portal_url, oauth_mode_hint, signing_headers_tool, next_steps, honesty.notes.
+// Never invents install green. Fail-open when MCP/tool unavailable.
+//
+// aion v178 wire: {connector_id, org_id, connector, portal_url, oauth_install_supported,
+// oauth_mode_hint, signing_headers_tool, next_steps, honesty:{…, notes:[]}}.
 func (rt *Runtime) IntegrationsPlan(ctx context.Context, connectorID string) (string, error) {
 	id := strings.TrimSpace(connectorID)
 	if id == "" {
@@ -111,6 +119,46 @@ func (rt *Runtime) IntegrationsPlan(ctx context.Context, connectorID string) (st
 		return fmt.Sprintf("integrations plan %s: (empty)\n%s", id, planHonestyFooter()), nil
 	}
 	return out + "\n" + planHonestyFooter(), nil
+}
+
+// IntegrationsSigning discovers webhook signing header parity via MCP
+// get_webhook_signing_headers (s1243 · aion v30).
+//
+// meshLayerOrConnector: optional mesh_layer (operational|knowledge|analytical) or a
+// connector id for client-side filter. Empty = full catalog.
+// Discovery only — does not mint or rotate secrets. Fail-open offline.
+func (rt *Runtime) IntegrationsSigning(ctx context.Context, meshLayerOrConnector string) (string, error) {
+	hint := strings.ToLower(strings.TrimSpace(meshLayerOrConnector))
+	args := map[string]any{}
+	clientFilterID := ""
+	switch hint {
+	case "", "all":
+		// full catalog
+	case "operational", "knowledge", "analytical":
+		args["mesh_layer"] = hint
+	default:
+		// Treat as connector_id hint — aion input is mesh_layer only; filter client-side.
+		clientFilterID = hint
+	}
+
+	raw, err := rt.callMCPToolByName(ctx, mcpToolGetWebhookSigningHeaders, args)
+	if err != nil {
+		if isMCPUnavailable(err) {
+			return IntegrationsOfflineMessage(), nil
+		}
+		if isMCPToolMissing(err) {
+			return IntegrationsToolMissingMessage(mcpToolGetWebhookSigningHeaders), nil
+		}
+		return fmt.Sprintf("%s\n  detail: %v", IntegrationsOfflineMessage(), err), nil
+	}
+	if formatted := formatWebhookSigning(raw, hint, clientFilterID); formatted != "" {
+		return formatted, nil
+	}
+	out := strings.TrimSpace(raw)
+	if out == "" {
+		return "integrations signing: (empty)\n" + signingHonestyFooter(), nil
+	}
+	return out + "\n" + signingHonestyFooter(), nil
 }
 
 // callMCPToolByName finds a bare MCP tool name across connected servers and invokes it.
@@ -156,24 +204,32 @@ func isMCPToolMissing(err error) bool {
 
 // --- formatting (JSON fail-open → compact table / plan block) ---
 
+// connectorCatalogItem matches aion v178 ConnectorCatalogEntry (+ legacy aliases).
 type connectorCatalogItem struct {
 	ID        string `json:"id"`
 	Label     string `json:"label"`
 	Status    string `json:"status"`
 	MeshLayer string `json:"mesh_layer"`
-	// OAuth may arrive as bool or string depending on server wire shape.
+	// OAuthInstallSupported is aion v178 wire (bool). Pointer distinguishes absent vs false.
+	OAuthInstallSupported *bool `json:"oauth_install_supported"`
+	// OAuth is a legacy any-shaped field (bool or string) for pre-v178 servers.
 	OAuth any `json:"oauth"`
 	// IngressType / ingress_type when oauth bool absent.
 	IngressType string `json:"ingress_type"`
+	WebhookPath string `json:"webhook_path"`
+	Summary     string `json:"summary"`
+	PortalPath  string `json:"portal_path"`
 }
 
+// connectorCatalogPayload accepts aion v178 {count,entries} and legacy keys.
 type connectorCatalogPayload struct {
+	Count      int                    `json:"count"`
+	Entries    []connectorCatalogItem `json:"entries"` // aion v178
 	Connectors []connectorCatalogItem `json:"connectors"`
-	// Some servers nest under "items" or "catalog".
-	Items   []connectorCatalogItem `json:"items"`
-	Catalog []connectorCatalogItem `json:"catalog"`
-	Honesty any                    `json:"honesty"`
-	Note    string                 `json:"note"`
+	Items      []connectorCatalogItem `json:"items"`
+	Catalog    []connectorCatalogItem `json:"catalog"`
+	Honesty    any                    `json:"honesty"`
+	Note       string                 `json:"note"`
 }
 
 func formatConnectorCatalog(raw, layerFilter string) string {
@@ -191,7 +247,11 @@ func formatConnectorCatalog(raw, layerFilter string) string {
 		if err := json.Unmarshal([]byte(raw), &p); err != nil {
 			return ""
 		}
-		items = p.Connectors
+		// Prefer aion v178 "entries", then legacy keys.
+		items = p.Entries
+		if len(items) == 0 {
+			items = p.Connectors
+		}
 		if len(items) == 0 {
 			items = p.Items
 		}
@@ -232,7 +292,7 @@ func formatConnectorCatalog(raw, layerFilter string) string {
 		if layer == "" {
 			layer = "-"
 		}
-		oauth := oauthYesNo(it.OAuth, it.IngressType)
+		oauth := oauthYesNoFromItem(it)
 		fmt.Fprintf(&b, "%-20s %-12s %-14s %s\n",
 			truncateRunes(id, 20), truncateRunes(status, 12), truncateRunes(layer, 14), oauth)
 		shown++
@@ -246,6 +306,16 @@ func formatConnectorCatalog(raw, layerFilter string) string {
 	}
 	b.WriteString(catalogHonestyFooter())
 	return b.String()
+}
+
+func oauthYesNoFromItem(it connectorCatalogItem) string {
+	if it.OAuthInstallSupported != nil {
+		if *it.OAuthInstallSupported {
+			return "yes"
+		}
+		return "no"
+	}
+	return oauthYesNo(it.OAuth, it.IngressType)
 }
 
 func oauthYesNo(oauth any, ingressType string) string {
@@ -274,17 +344,23 @@ func oauthYesNo(oauth any, ingressType string) string {
 	return "-"
 }
 
+// connectorPlanPayload matches aion v178 plan_connector_setup (+ legacy aliases).
 type connectorPlanPayload struct {
-	ConnectorID  string   `json:"connector_id"`
-	ID           string   `json:"id"`
-	PortalURL    string   `json:"portal_url"`
-	URL          string   `json:"url"`
-	NextSteps    []string `json:"next_steps"`
-	Steps        []string `json:"steps"`
-	Honesty      any      `json:"honesty"`
-	HonestyNotes []string `json:"honesty_notes"`
-	Note         string   `json:"note"`
-	Status       string   `json:"status"`
+	ConnectorID           string                `json:"connector_id"`
+	ID                    string                `json:"id"`
+	OrgID                 string                `json:"org_id"`
+	Connector             *connectorCatalogItem `json:"connector"`
+	PortalURL             string                `json:"portal_url"`
+	URL                   string                `json:"url"`
+	OAuthInstallSupported *bool                 `json:"oauth_install_supported"`
+	OAuthModeHint         string                `json:"oauth_mode_hint"`
+	SigningHeadersTool    string                `json:"signing_headers_tool"`
+	NextSteps             []string              `json:"next_steps"`
+	Steps                 []string              `json:"steps"`
+	Honesty               any                   `json:"honesty"`
+	HonestyNotes          []string              `json:"honesty_notes"`
+	Note                  string                `json:"note"`
+	Status                string                `json:"status"`
 }
 
 func formatConnectorPlan(raw, requestedID string) string {
@@ -297,6 +373,11 @@ func formatConnectorPlan(raw, requestedID string) string {
 		return ""
 	}
 	id := firstNonEmpty(p.ConnectorID, p.ID, requestedID)
+	if p.Connector != nil && strings.TrimSpace(p.Connector.ID) != "" {
+		if id == "" || id == requestedID {
+			id = firstNonEmpty(p.Connector.ID, id)
+		}
+	}
 	portal := firstNonEmpty(p.PortalURL, p.URL)
 	if portal == "" {
 		// Residual default: portal detail deep-link (HITL; not install green).
@@ -307,12 +388,27 @@ func formatConnectorPlan(raw, requestedID string) string {
 		steps = p.Steps
 	}
 
+	// Status from nested connector when top-level absent (display-only; not install green).
+	status := strings.TrimSpace(p.Status)
+	if status == "" && p.Connector != nil {
+		status = strings.TrimSpace(p.Connector.Status)
+	}
+
 	var b strings.Builder
 	fmt.Fprintf(&b, "integrations plan connector=%s\n", id)
-	if st := strings.TrimSpace(p.Status); st != "" {
-		fmt.Fprintf(&b, "status:     %s  (catalog honesty — not install green)\n", st)
+	if status != "" {
+		fmt.Fprintf(&b, "status:     %s  (catalog honesty — not install green)\n", status)
 	}
 	fmt.Fprintf(&b, "portal_url: %s\n", portal)
+	if p.OAuthInstallSupported != nil {
+		fmt.Fprintf(&b, "oauth_install_supported: %v\n", *p.OAuthInstallSupported)
+	}
+	if hint := strings.TrimSpace(p.OAuthModeHint); hint != "" {
+		fmt.Fprintf(&b, "oauth_mode_hint: %s  (stub ≠ live · do not invent install green)\n", hint)
+	}
+	if tool := strings.TrimSpace(p.SigningHeadersTool); tool != "" {
+		fmt.Fprintf(&b, "signing_headers_tool: %s  (discovery only · /integrations signing)\n", tool)
+	}
 	b.WriteString("next_steps:\n")
 	if len(steps) == 0 {
 		b.WriteString("  - Open portal_url and complete setup in browser (OAuth / webhook HITL)\n")
@@ -375,14 +471,162 @@ func honestyNotes(honesty any, notes []string, note string) []string {
 			}
 		}
 	case map[string]any:
-		// Flatten common honesty object fields into short notes.
-		for _, k := range []string{"note", "summary", "browser_hitl", "oauth", "dual_write", "never_invent_ga", "stub"} {
-			if val, ok := v[k]; ok {
-				out = append(out, fmt.Sprintf("%s=%v", k, val))
+		// aion v178: honesty.notes []string (+ residual bool flags).
+		if notesRaw, ok := v["notes"]; ok {
+			switch ns := notesRaw.(type) {
+			case []any:
+				for _, x := range ns {
+					if s, ok := x.(string); ok {
+						if s = strings.TrimSpace(s); s != "" {
+							out = append(out, s)
+						}
+					}
+				}
+			case []string:
+				for _, s := range ns {
+					if s = strings.TrimSpace(s); s != "" {
+						out = append(out, s)
+					}
+				}
+			}
+		}
+		// Compact residual flags when notes empty or as short summary of key truths.
+		// Prefer named notes; only flatten flags if no notes were extracted from honesty.
+		notesFromHonesty := len(out) > 0
+		if !notesFromHonesty {
+			for _, k := range []string{
+				"browser_hitl_required_for_oauth_complete",
+				"stub_oauth_not_live",
+				"pass_not_invent_install_green",
+				"dual_write_off",
+				"book_demo_off",
+				"no_invent_ga",
+				"agent_mcp_cannot_write_installs",
+				"session_portal_owns_install_crud",
+				"note", "summary", "browser_hitl", "oauth", "dual_write", "never_invent_ga", "stub",
+			} {
+				if val, ok := v[k]; ok {
+					out = append(out, fmt.Sprintf("%s=%v", k, val))
+				}
 			}
 		}
 	}
 	return out
+}
+
+// webhookSigningPayload matches aion v30 get_webhook_signing_headers output.
+type webhookSigningPayload struct {
+	FleetEnabled bool                  `json:"fleet_enabled"`
+	FleetEnvVar  string                `json:"fleet_env_var"`
+	Count        int                   `json:"count"`
+	Entries      []webhookSigningEntry `json:"entries"`
+	// legacy aliases
+	Items []webhookSigningEntry `json:"items"`
+}
+
+type webhookSigningEntry struct {
+	ConnectorID      string   `json:"connector_id"`
+	ID               string   `json:"id"`
+	Label            string   `json:"label"`
+	MeshLayer        string   `json:"mesh_layer"`
+	Scheme           string   `json:"scheme"`
+	PrimaryHeader    string   `json:"primary_header"`
+	AuxiliaryHeaders []string `json:"auxiliary_headers"`
+	// SecretEnvVar is server-side env name for operator docs — discovery only, not a secret value.
+	SecretEnvVar       string `json:"secret_env_var"`
+	SignaturePrefix    string `json:"signature_prefix"`
+	DocsURL            string `json:"docs_url"`
+	VendorNativeVerify string `json:"vendor_native_verify"`
+}
+
+func formatWebhookSigning(raw, layerFilter, clientFilterID string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || (raw[0] != '{' && raw[0] != '[') {
+		return ""
+	}
+	var entries []webhookSigningEntry
+	var fleetEnabled bool
+	var fleetEnv string
+	if raw[0] == '[' {
+		if err := json.Unmarshal([]byte(raw), &entries); err != nil {
+			return ""
+		}
+	} else {
+		var p webhookSigningPayload
+		if err := json.Unmarshal([]byte(raw), &p); err != nil {
+			return ""
+		}
+		entries = p.Entries
+		if len(entries) == 0 {
+			entries = p.Items
+		}
+		fleetEnabled = p.FleetEnabled
+		fleetEnv = strings.TrimSpace(p.FleetEnvVar)
+	}
+
+	// Client-side connector_id filter when hint was not a mesh layer.
+	if clientFilterID != "" {
+		var filtered []webhookSigningEntry
+		for _, e := range entries {
+			id := strings.ToLower(firstNonEmpty(e.ConnectorID, e.ID))
+			if id == clientFilterID {
+				filtered = append(filtered, e)
+			}
+		}
+		entries = filtered
+	}
+
+	var b strings.Builder
+	fmt.Fprintf(&b, "integrations signing")
+	if layerFilter != "" {
+		fmt.Fprintf(&b, " filter=%s", layerFilter)
+	}
+	b.WriteByte('\n')
+	if fleetEnv != "" {
+		fmt.Fprintf(&b, "fleet_env_var: %s  fleet_enabled: %v  (discovery only — not secret mint)\n", fleetEnv, fleetEnabled)
+	}
+	if len(entries) == 0 {
+		b.WriteString("(no signing header entries)\n")
+		b.WriteString(signingHonestyFooter())
+		return b.String()
+	}
+	fmt.Fprintf(&b, "%-16s %-12s %-18s %-28s %s\n", "CONNECTOR", "LAYER", "SCHEME", "PRIMARY_HEADER", "PREFIX")
+	shown := 0
+	for _, e := range entries {
+		id := firstNonEmpty(e.ConnectorID, e.ID, e.Label)
+		if id == "" {
+			continue
+		}
+		layer := strings.TrimSpace(e.MeshLayer)
+		if layer == "" {
+			layer = "-"
+		}
+		scheme := strings.TrimSpace(e.Scheme)
+		if scheme == "" {
+			scheme = "-"
+		}
+		header := strings.TrimSpace(e.PrimaryHeader)
+		if header == "" {
+			header = "-"
+		}
+		prefix := strings.TrimSpace(e.SignaturePrefix)
+		if prefix == "" {
+			prefix = "-"
+		}
+		fmt.Fprintf(&b, "%-16s %-12s %-18s %-28s %s\n",
+			truncateRunes(id, 16), truncateRunes(layer, 12), truncateRunes(scheme, 18),
+			truncateRunes(header, 28), truncateRunes(prefix, 12))
+		shown++
+		if shown >= 80 {
+			fmt.Fprintf(&b, "… (%d more not shown)\n", len(entries)-shown)
+			break
+		}
+	}
+	if shown == 0 {
+		b.WriteString("(no signing header entries match filter)\n")
+	}
+	b.WriteString(signingHonestyFooter())
+	return b.String()
 }
 
 func catalogHonestyFooter() string {
@@ -391,6 +635,10 @@ func catalogHonestyFooter() string {
 
 func planHonestyFooter() string {
 	return "Browser HITL for OAuth complete · stub ≠ live · dual_write OFF · no invent GA · never invent install green · " + IntegrationsHonestyOneLiner
+}
+
+func signingHonestyFooter() string {
+	return "honesty: discovery only · do not invent secrets mint/rotate · dual_write OFF · book-demo OFF · never invent install green · " + IntegrationsHonestyOneLiner
 }
 
 func firstNonEmpty(vals ...string) string {

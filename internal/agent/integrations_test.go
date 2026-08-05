@@ -53,12 +53,35 @@ func TestIntegrationsPlan_OfflineFailOpen(t *testing.T) {
 	}
 }
 
-func TestFormatConnectorCatalog_Table(t *testing.T) {
+func TestIntegrationsSigning_OfflineFailOpen(t *testing.T) {
+	rt := &Runtime{}
+	out, err := rt.IntegrationsSigning(context.Background(), "operational")
+	if err != nil {
+		t.Fatalf("err=%v", err)
+	}
+	if !strings.Contains(out, "fail-open") {
+		t.Fatalf("want fail-open: %s", out)
+	}
+	if !strings.Contains(out, "console.iome.sh/integrations") {
+		t.Fatalf("want portal: %s", out)
+	}
+	// must not invent signing secrets offline
+	if strings.Contains(out, "PRIMARY_HEADER") && strings.Contains(out, "X-Hub-Signature") {
+		t.Fatalf("must not invent signing rows offline: %s", out)
+	}
+}
+
+// s1242: aion v178 wire shape uses entries + oauth_install_supported (not connectors/oauth).
+func TestFormatConnectorCatalog_V178Entries(t *testing.T) {
 	raw := `{
-		"connectors": [
-			{"id":"github","status":"available","mesh_layer":"operational","oauth":true},
-			{"id":"notion","status":"beta","mesh_layer":"knowledge","ingress_type":"oauth"},
-			{"id":"embeddings","status":"beta","mesh_layer":"analytical","oauth":false}
+		"count": 3,
+		"entries": [
+			{"id":"github","label":"GitHub","status":"available","mesh_layer":"operational",
+			 "ingress_type":"webhook","oauth_install_supported":false,"portal_path":"/integrations/github"},
+			{"id":"notion","label":"Notion","status":"beta","mesh_layer":"knowledge",
+			 "ingress_type":"oauth","oauth_install_supported":true,"portal_path":"/integrations/notion"},
+			{"id":"embeddings","label":"Embeddings","status":"beta","mesh_layer":"analytical",
+			 "ingress_type":"api","oauth_install_supported":false,"portal_path":"/integrations/embeddings"}
 		]
 	}`
 	out := formatConnectorCatalog(raw, "")
@@ -67,6 +90,23 @@ func TestFormatConnectorCatalog_Table(t *testing.T) {
 	}
 	if !strings.Contains(out, "ID") || !strings.Contains(out, "STATUS") {
 		t.Fatalf("missing header: %s", out)
+	}
+	// oauth_install_supported bool → yes/no
+	if !strings.Contains(out, "notion") {
+		t.Fatalf("notion missing: %s", out)
+	}
+	// notion row should show oauth yes
+	for _, line := range strings.Split(out, "\n") {
+		if strings.Contains(line, "notion") {
+			if !strings.Contains(line, "yes") {
+				t.Fatalf("notion oauth want yes: %s", line)
+			}
+		}
+		if strings.Contains(line, "github") {
+			if !strings.Contains(line, "no") {
+				t.Fatalf("github oauth want no: %s", line)
+			}
+		}
 	}
 	if !strings.Contains(out, "honesty:") {
 		t.Fatalf("missing honesty: %s", out)
@@ -81,12 +121,49 @@ func TestFormatConnectorCatalog_Table(t *testing.T) {
 	}
 }
 
-func TestFormatConnectorPlan_PortalAndHonesty(t *testing.T) {
+// Legacy connectors/oauth shape still parses (fail-open compat).
+func TestFormatConnectorCatalog_LegacyConnectors(t *testing.T) {
+	raw := `{
+		"connectors": [
+			{"id":"github","status":"available","mesh_layer":"operational","oauth":true},
+			{"id":"notion","status":"beta","mesh_layer":"knowledge","ingress_type":"oauth"}
+		]
+	}`
+	out := formatConnectorCatalog(raw, "")
+	if !strings.Contains(out, "github") || !strings.Contains(out, "notion") {
+		t.Fatalf("%s", out)
+	}
+}
+
+// s1242: plan fixture with aion v178 honesty object + portal_url + oauth_mode_hint + signing_headers_tool.
+func TestFormatConnectorPlan_V178HonestyObject(t *testing.T) {
 	raw := `{
 		"connector_id": "github",
+		"org_id": "",
+		"connector": {
+			"id":"github","label":"GitHub","status":"available","mesh_layer":"operational",
+			"ingress_type":"webhook","oauth_install_supported":false,"portal_path":"/integrations/github"
+		},
 		"portal_url": "https://console.iome.sh/integrations/github",
+		"oauth_install_supported": false,
+		"oauth_mode_hint": "",
+		"signing_headers_tool": "get_webhook_signing_headers",
 		"next_steps": ["Open portal", "Complete OAuth in browser"],
-		"honesty_notes": ["Browser HITL for OAuth", "stub ≠ live"]
+		"honesty": {
+			"browser_hitl_required_for_oauth_complete": true,
+			"stub_oauth_not_live": true,
+			"pass_not_invent_install_green": true,
+			"dual_write_off": true,
+			"book_demo_off": true,
+			"no_invent_ga": true,
+			"agent_mcp_cannot_write_installs": true,
+			"session_portal_owns_install_crud": true,
+			"notes": [
+				"Browser HITL required for OAuth complete",
+				"Stub OAuth ≠ live provider token exchange",
+				"PASS ≠ invent install green · dual_write OFF · book-demo OFF"
+			]
+		}
 	}`
 	out := formatConnectorPlan(raw, "github")
 	if !strings.Contains(out, "portal_url:") || !strings.Contains(out, "console.iome.sh/integrations/github") {
@@ -96,10 +173,42 @@ func TestFormatConnectorPlan_PortalAndHonesty(t *testing.T) {
 		t.Fatalf("next_steps: %s", out)
 	}
 	if !strings.Contains(out, "Browser HITL") {
-		t.Fatalf("honesty: %s", out)
+		t.Fatalf("honesty notes: %s", out)
+	}
+	if !strings.Contains(out, "signing_headers_tool:") || !strings.Contains(out, "get_webhook_signing_headers") {
+		t.Fatalf("signing_headers_tool: %s", out)
 	}
 	if !strings.Contains(out, "never invent install green") && !strings.Contains(out, IntegrationsHonestyOneLiner) {
 		t.Fatalf("residual honesty: %s", out)
+	}
+	// status from nested connector (display-only)
+	if !strings.Contains(out, "available") {
+		t.Fatalf("status from connector: %s", out)
+	}
+	// must not invent Connected green
+	if strings.Contains(out, "Connected") {
+		t.Fatalf("must not invent Connected: %s", out)
+	}
+}
+
+func TestFormatConnectorPlan_OAuthModeHint(t *testing.T) {
+	raw := `{
+		"connector_id": "notion",
+		"portal_url": "https://console.iome.sh/integrations/notion",
+		"oauth_install_supported": true,
+		"oauth_mode_hint": "stub",
+		"next_steps": ["Open portal"],
+		"honesty": {"notes": ["stub ≠ live"]}
+	}`
+	out := formatConnectorPlan(raw, "notion")
+	if !strings.Contains(out, "oauth_mode_hint: stub") {
+		t.Fatalf("%s", out)
+	}
+	if !strings.Contains(out, "oauth_install_supported: true") {
+		t.Fatalf("%s", out)
+	}
+	if !strings.Contains(out, "stub ≠ live") {
+		t.Fatalf("%s", out)
 	}
 }
 
@@ -108,5 +217,52 @@ func TestFormatConnectorPlan_DefaultPortal(t *testing.T) {
 	out := formatConnectorPlan(raw, "slack")
 	if !strings.Contains(out, integrationsPortalURL+"/slack") {
 		t.Fatalf("default portal: %s", out)
+	}
+}
+
+// s1243: signing header table from aion v30 wire.
+func TestFormatWebhookSigning_V30Entries(t *testing.T) {
+	raw := `{
+		"fleet_enabled": false,
+		"fleet_env_var": "IOMESH_WEBHOOK_SIGN_FLEET",
+		"count": 2,
+		"entries": [
+			{"connector_id":"github","label":"GitHub","mesh_layer":"operational",
+			 "scheme":"hmac_sha256","primary_header":"X-Hub-Signature-256",
+			 "signature_prefix":"sha256=","secret_env_var":"GITHUB_WEBHOOK_SECRET",
+			 "vendor_native_verify":"yes"},
+			{"connector_id":"notion","label":"Notion","mesh_layer":"knowledge",
+			 "scheme":"hmac_sha256","primary_header":"X-Notion-Signature",
+			 "signature_prefix":"","secret_env_var":"NOTION_WEBHOOK_SECRET",
+			 "vendor_native_verify":"partial"}
+		]
+	}`
+	out := formatWebhookSigning(raw, "", "")
+	if !strings.Contains(out, "github") || !strings.Contains(out, "X-Hub-Signature-256") {
+		t.Fatalf("%s", out)
+	}
+	if !strings.Contains(out, "fleet_env_var:") {
+		t.Fatalf("fleet: %s", out)
+	}
+	if !strings.Contains(out, "discovery only") {
+		t.Fatalf("honesty: %s", out)
+	}
+	// client-side connector filter
+	gh := formatWebhookSigning(raw, "github", "github")
+	if !strings.Contains(gh, "github") {
+		t.Fatalf("filter github: %s", gh)
+	}
+	if strings.Contains(gh, "notion") {
+		t.Fatalf("filter should drop notion: %s", gh)
+	}
+}
+
+func TestFormatWebhookSigning_Empty(t *testing.T) {
+	out := formatWebhookSigning(`{"count":0,"entries":[]}`, "knowledge", "")
+	if !strings.Contains(out, "no signing header entries") {
+		t.Fatalf("%s", out)
+	}
+	if !strings.Contains(out, "discovery only") {
+		t.Fatalf("%s", out)
 	}
 }

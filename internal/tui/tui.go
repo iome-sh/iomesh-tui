@@ -361,11 +361,12 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			fmt.Fprintln(out, text)
 		}
 	case "/integrations", "/integration", "/connectors":
-		// s1238: agent/TUI path for connector integrations setup via MCP tools
-		// list_connector_catalog / plan_connector_setup (peer aion s1237).
+		// s1238/s1242/s1243: agent/TUI path for connector integrations setup via MCP tools
+		// list_connector_catalog / plan_connector_setup (aion v178) · get_webhook_signing_headers (v30).
 		// Residual honesty: browser HITL OAuth · stub ≠ live · dual_write OFF ·
 		// no invent GA · catalog Beta honesty · fail-open when MCP unavailable ·
-		// never invent install green. Not full install CRUD.
+		// never invent install green · signing = discovery only (no secret mint).
+		// Not full install CRUD.
 		if len(parts) < 2 {
 			fmt.Fprintln(out, integrationsHelp())
 			return false, nil
@@ -399,6 +400,19 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			text, err := rt.rt.IntegrationsPlan(context.Background(), id)
 			if err != nil {
 				fmt.Fprintf(out, "integrations plan: %v\n", err)
+				return false, nil
+			}
+			fmt.Fprintln(out, text)
+		case "signing", "headers", "signing-headers", "signing_headers":
+			// s1243: discovery-only webhook signing header parity (MCP get_webhook_signing_headers).
+			hint, perr := parseIntegrationsSigningArgs(parts[2:])
+			if perr != "" {
+				fmt.Fprintf(out, "integrations signing: %s\nusage: /integrations signing [operational|knowledge|analytical|<connector_id>]\n", perr)
+				return false, nil
+			}
+			text, err := rt.rt.IntegrationsSigning(context.Background(), hint)
+			if err != nil {
+				fmt.Fprintf(out, "integrations signing: %v\n", err)
 				return false, nil
 			}
 			fmt.Fprintln(out, text)
@@ -514,7 +528,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /mesh                I/O Mesh status + usage
   /catalog [query]     list mesh data products (catalog plane)
   /memory [recall|related|digest|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse opt-in)
-  /integrations [list|plan|status]  connector setup via MCP (catalog+plan+portal HITL; not install CRUD)
+  /integrations [list|plan|signing|status]  connector setup via MCP (catalog+plan+signing discovery+portal HITL; not install CRUD)
   /quit                exit
 
 Fullscreen keys: enter send · ctrl+j newline · pgup/pgdn scroll
@@ -527,15 +541,16 @@ On mutating tools (write_file, run_shell, apply_worktree, …) you will be promp
 	return false, nil
 }
 
-// integrationsHelp is bare /integrations and status copy (s1238 residual honesty).
+// integrationsHelp is bare /integrations and status copy (s1238/s1242/s1243 residual honesty).
 func integrationsHelp() string {
-	return strings.TrimSpace(`usage: /integrations [list [--layer operational|knowledge|analytical] | plan <connector_id> | status]
-  list   MCP list_connector_catalog → id · status · mesh_layer · oauth?
-  plan   MCP plan_connector_setup → portal_url · next_steps · honesty
-  status this help
+	return strings.TrimSpace(`usage: /integrations [list [--layer operational|knowledge|analytical] | plan <connector_id> | signing [layer|id] | status]
+  list     MCP list_connector_catalog (v178 entries) → id · status · mesh_layer · oauth?
+  plan     MCP plan_connector_setup → portal_url · oauth_mode_hint · signing_headers_tool · next_steps · honesty
+  signing  MCP get_webhook_signing_headers → header parity (discovery only · not secret mint)
+  status   this help
 honesty: ` + agent.IntegrationsHonestyOneLiner + `
   fail-open when MCP unavailable → portal HITL https://console.iome.sh/integrations
-  aion MCP tools ship in s1237 · browser HITL for OAuth · never invent install green`)
+  aion MCP v178 list/plan + v30 signing · browser HITL for OAuth · never invent install green`)
 }
 
 // parseIntegrationsListArgs extracts optional --layer for /integrations list (s1238).
@@ -604,6 +619,51 @@ func parseIntegrationsPlanArgs(args []string) (connectorID string, errMsg string
 		}
 	}
 	return connectorID, ""
+}
+
+// parseIntegrationsSigningArgs extracts optional mesh_layer or connector_id for
+// /integrations signing (s1243). Accepts bare token, --layer, --id, --connector-id.
+// Empty hint = full catalog. Layer values map to aion mesh_layer; other tokens are
+// treated as connector_id client-side filters.
+func parseIntegrationsSigningArgs(args []string) (hint string, errMsg string) {
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		key, val, hasEq := splitFlagKV(a)
+		switch key {
+		case "--layer", "--mesh-layer", "--mesh_layer", "-l":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			v := strings.ToLower(strings.TrimSpace(val))
+			switch v {
+			case "operational", "knowledge", "analytical", "all", "":
+				hint = v
+			default:
+				return "", "invalid --layer (operational|knowledge|analytical)"
+			}
+		case "--id", "--connector-id", "--connector_id":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			hint = strings.TrimSpace(val)
+		default:
+			if strings.HasPrefix(a, "-") {
+				return "", "unknown flag " + a
+			}
+			if hint == "" {
+				hint = strings.TrimSpace(a)
+			} else {
+				return "", "unexpected argument " + a
+			}
+		}
+	}
+	return hint, ""
 }
 
 // parseMemoryRecallArgs extracts optional temporal flags and the free-text query.
