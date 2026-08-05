@@ -271,7 +271,7 @@ func TestFormatWebhookSigning_Empty(t *testing.T) {
 	}
 }
 
-// s1247: /integrations status offline fail-open — residual pulse, no invent counts.
+// s1247: offline Runtime (no MCP) → residual-honest status pulse, no invent counts.
 func TestIntegrationsStatus_OfflineFailOpen(t *testing.T) {
 	rt := &Runtime{} // no MCP
 	out, err := rt.IntegrationsStatus(context.Background())
@@ -297,19 +297,19 @@ func TestIntegrationsStatus_OfflineFailOpen(t *testing.T) {
 			t.Fatalf("want tool %s: %s", tool, out)
 		}
 	}
-	if !strings.Contains(out, "offline") {
-		t.Fatalf("want offline tool states: %s", out)
-	}
 	// catalog pulse skipped — no invent counts
 	if !strings.Contains(out, "skipped") || !strings.Contains(out, "no invent counts") {
 		t.Fatalf("want skipped catalog pulse: %s", out)
 	}
-	if strings.Contains(out, "count: 3") || strings.Contains(out, "MESH_LAYER") {
+	if strings.Contains(out, "total catalog entries:") || strings.Contains(out, "MESH_LAYER") {
 		t.Fatalf("must not invent catalog counts offline: %s", out)
 	}
 	// honesty footer always
 	if !strings.Contains(out, "never invent install green") {
 		t.Fatalf("honesty footer: %s", out)
+	}
+	if !strings.Contains(out, "catalog ≠ installs") && !strings.Contains(out, "catalog count ≠ install") {
+		t.Fatalf("catalog ≠ install honesty: %s", out)
 	}
 	if !strings.Contains(out, "browser HITL") {
 		t.Fatalf("browser HITL: %s", out)
@@ -320,11 +320,8 @@ func TestIntegrationsStatus_OfflineFailOpen(t *testing.T) {
 	if !strings.Contains(out, "console.iome.sh/integrations") {
 		t.Fatalf("portal: %s", out)
 	}
-	if !strings.Contains(out, "catalog count ≠ install Connected") || !strings.Contains(out, "install Connected") {
-		t.Fatalf("catalog ≠ install honesty: %s", out)
-	}
 	// must not invent install green / Connected success
-	if strings.Contains(out, "INSTALL_STORE green") && strings.Contains(out, "Connected: yes") {
+	if strings.Contains(out, "Connected: yes") {
 		t.Fatalf("must not invent install green: %s", out)
 	}
 }
@@ -351,7 +348,7 @@ func TestIntegrationsStatus_EmptyManager(t *testing.T) {
 	}
 }
 
-// s1247: formatCatalogPulse from aion v178 entries — count only, never install green.
+// s1247: formatCatalogPulse from aion v178 entries — catalog honesty only, never install green.
 func TestFormatCatalogPulse_V178Entries(t *testing.T) {
 	raw := `{
 		"count": 3,
@@ -360,33 +357,48 @@ func TestFormatCatalogPulse_V178Entries(t *testing.T) {
 			 "ingress_type":"webhook","oauth_install_supported":false},
 			{"id":"notion","label":"Notion","status":"beta","mesh_layer":"knowledge",
 			 "ingress_type":"oauth","oauth_install_supported":true},
-			{"id":"embeddings","label":"Embeddings","status":"beta","mesh_layer":"analytical",
+			{"id":"embeddings","label":"Embeddings","status":"planned","mesh_layer":"analytical",
 			 "ingress_type":"api","oauth_install_supported":false}
 		]
 	}`
 	out := formatCatalogPulse(raw)
-	if !strings.Contains(out, "count: 3") {
+	if out == "" {
+		t.Fatal("expected non-empty pulse")
+	}
+	if !strings.Contains(out, "total catalog entries: 3") {
 		t.Fatalf("count: %s", out)
 	}
 	if !strings.Contains(out, "catalog honesty") || !strings.Contains(out, "NOT install Connected") {
 		t.Fatalf("catalog honesty label: %s", out)
 	}
+	if !strings.Contains(out, "NOT INSTALL_STORE green") {
+		t.Fatalf("INSTALL_STORE residual: %s", out)
+	}
+	if !strings.Contains(out, "by mesh_layer:") {
+		t.Fatalf("mesh_layer line: %s", out)
+	}
 	if !strings.Contains(out, "operational=1") || !strings.Contains(out, "knowledge=1") || !strings.Contains(out, "analytical=1") {
 		t.Fatalf("by mesh_layer: %s", out)
 	}
+	if !strings.Contains(out, "by catalog status:") {
+		t.Fatalf("status line: %s", out)
+	}
+	if !strings.Contains(out, "available=1") || !strings.Contains(out, "beta=1") || !strings.Contains(out, "planned=1") {
+		t.Fatalf("status counts: %s", out)
+	}
 	// must not claim install Connected / INSTALL_STORE green as success
-	if strings.Contains(out, "Connected: yes") || strings.Contains(out, "install green") {
+	if strings.Contains(out, "Connected: yes") {
 		t.Fatalf("must not claim install green: %s", out)
 	}
 	// status chips are honesty only
-	if !strings.Contains(out, "Beta/available/planned") {
+	if !strings.Contains(out, "available/beta/planned") {
 		t.Fatalf("status honesty note: %s", out)
 	}
 }
 
 func TestFormatCatalogPulse_Empty(t *testing.T) {
 	out := formatCatalogPulse(`{"count":0,"entries":[]}`)
-	if !strings.Contains(out, "count: 0") {
+	if !strings.Contains(out, "total catalog entries: 0") {
 		t.Fatalf("%s", out)
 	}
 	if !strings.Contains(out, "catalog honesty") {
@@ -400,6 +412,43 @@ func TestFormatCatalogPulse_NonJSON(t *testing.T) {
 	}
 	if formatCatalogPulse("") != "" {
 		t.Fatal("want empty for empty")
+	}
+	if formatCatalogPulse("plain text catalog") != "" {
+		t.Fatal("want empty for plain text")
+	}
+}
+
+func TestFormatCatalogPulse_LegacyConnectors(t *testing.T) {
+	raw := `{
+		"connectors": [
+			{"id":"github","status":"available","mesh_layer":"operational"},
+			{"id":"notion","status":"beta","mesh_layer":"knowledge"}
+		]
+	}`
+	out := formatCatalogPulse(raw)
+	if !strings.Contains(out, "total catalog entries: 2") {
+		t.Fatalf("%s", out)
+	}
+	if !strings.Contains(out, "operational=1") || !strings.Contains(out, "knowledge=1") {
+		t.Fatalf("layers: %s", out)
+	}
+}
+
+func TestStatusHonestyFooter(t *testing.T) {
+	out := statusHonestyFooter()
+	for _, want := range []string{
+		"never invent install green",
+		"catalog ≠ installs",
+		"browser HITL",
+		"stub ≠ live",
+		"dual_write OFF",
+		"book-demo OFF",
+		"signing discovery only",
+		"console.iome.sh/integrations",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("missing %q in: %s", want, out)
+		}
 	}
 }
 
@@ -434,11 +483,14 @@ func TestIntegrationsStatus_MockCatalogPresent(t *testing.T) {
 	if !strings.Contains(out, "plan_connector_setup") {
 		t.Fatalf("plan tool line: %s", out)
 	}
-	if !strings.Contains(out, "count: 3") {
+	if !strings.Contains(out, "total catalog entries: 3") {
 		t.Fatalf("catalog count from fixture: %s", out)
 	}
 	if !strings.Contains(out, "operational=1") {
 		t.Fatalf("layer counts: %s", out)
+	}
+	if !strings.Contains(out, "by catalog status:") {
+		t.Fatalf("status counts: %s", out)
 	}
 	if !strings.Contains(out, "catalog honesty") || !strings.Contains(out, "NOT install Connected") {
 		t.Fatalf("catalog honesty: %s", out)
