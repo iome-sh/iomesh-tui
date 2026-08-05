@@ -186,7 +186,7 @@ func run(args []string) int {
 	if cfg.MCP.Enabled && cfg.Features.MCP && len(cfg.MCP.Servers) > 0 {
 		var servers []mcp.ServerConfig
 		for _, s := range cfg.MCP.Servers {
-			servers = append(servers, mcpServerFromTOML(s))
+			servers = append(servers, mcpServerFromTOML(s, cfg))
 		}
 		mgr := mcp.NewManager(ctx, servers, logger)
 		rt.AttachMCP(mgr)
@@ -405,7 +405,7 @@ func cmdMCP(args []string) int {
 	}
 	var servers []mcp.ServerConfig
 	for _, s := range cfg.MCP.Servers {
-		servers = append(servers, mcpServerFromTOML(s))
+		servers = append(servers, mcpServerFromTOML(s, cfg))
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
@@ -421,25 +421,12 @@ func cmdMCP(args []string) int {
 	return 0
 }
 
-func mcpServerFromTOML(s config.MCPServerTOML) mcp.ServerConfig {
-	sc := mcp.ServerConfig{
-		Name: s.Name, Command: s.Command, Args: s.Args, Env: s.Env,
-		URL: s.URL, Headers: s.Headers, AllowLoopback: s.AllowLoopback,
-		Enabled: s.Enabled, Mutating: s.Mutating,
-		StartupTimeoutSec: s.StartupTimeoutSec, ToolTimeoutSec: s.ToolTimeoutSec,
-		AccessTokenEnv: s.OAuthTokenEnv,
+// mcpServerFromTOML maps config TOML to mcp.ServerConfig (s1267 inject via BuildMCPServerConfig).
+func mcpServerFromTOML(s config.MCPServerTOML, cfg *config.Config) mcp.ServerConfig {
+	if cfg == nil {
+		cfg = &config.Config{}
 	}
-	if s.OAuth != nil {
-		sc.OAuth = &mcp.OAuthConfig{
-			TokenURL:        s.OAuth.TokenURL,
-			ClientID:        s.OAuth.ClientID,
-			ClientSecretEnv: s.OAuth.ClientSecretEnv,
-			Scopes:          s.OAuth.Scopes,
-			AccessTokenEnv:  s.OAuth.AccessTokenEnv,
-			AllowLoopback:   s.OAuth.AllowLoopback,
-		}
-	}
-	return sc
+	return cfg.BuildMCPServerConfig(s)
 }
 
 func cmdModels(args []string) int {
@@ -2243,7 +2230,7 @@ func cmdMemoryPull(args []string) int {
 		}
 		var servers []mcp.ServerConfig
 		for _, s := range cfg.MCP.Servers {
-			servers = append(servers, mcpServerFromTOML(s))
+			servers = append(servers, mcpServerFromTOML(s, cfg))
 		}
 		mgr := mcp.NewManager(ctx, servers, logger)
 		defer func() { _ = mgr.Close() }()
