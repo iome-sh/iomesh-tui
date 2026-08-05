@@ -306,7 +306,7 @@ func TestParseIntegrationsSigningArgs(t *testing.T) {
 	}
 }
 
-// s1238: /integrations slash routing — bare/status help + list/plan fail-open offline (no live MCP).
+// s1238/s1247: /integrations slash routing — bare/help + status pulse + list/plan fail-open offline.
 func TestHandleSlash_Integrations(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -327,14 +327,45 @@ func TestHandleSlash_Integrations(t *testing.T) {
 	if !strings.Contains(s, "not full install CRUD") {
 		t.Fatalf("not install CRUD: %s", s)
 	}
+	// help describes status as operator pulse (s1247), not "this help"
+	if !strings.Contains(s, "operator pulse") {
+		t.Fatalf("status help line: %s", s)
+	}
 
-	// aliases
-	for _, cmd := range []string{"/integration status", "/connectors help"} {
-		out.Reset()
-		_, _ = handleSlash(&out, adapter, cmd)
-		if !strings.Contains(out.String(), "usage: /integrations") {
-			t.Fatalf("%s: %s", cmd, out.String())
-		}
+	// help/? still pure help
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/connectors help")
+	if !strings.Contains(out.String(), "usage: /integrations") {
+		t.Fatalf("help alias: %s", out.String())
+	}
+
+	// s1247: status ≠ pure help only — residual-honest operator pulse (offline fail-open)
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/integration status")
+	statusOut := out.String()
+	if strings.Contains(statusOut, "usage: /integrations") && !strings.Contains(statusOut, "operator pulse") {
+		t.Fatalf("status must not be pure help only: %s", statusOut)
+	}
+	if !strings.Contains(statusOut, "s1247") || !strings.Contains(statusOut, "operator pulse") {
+		t.Fatalf("status pulse: %s", statusOut)
+	}
+	if !strings.Contains(statusOut, "MCP path:") {
+		t.Fatalf("status MCP path: %s", statusOut)
+	}
+	if !strings.Contains(statusOut, "list_connector_catalog") {
+		t.Fatalf("status tools: %s", statusOut)
+	}
+	if !strings.Contains(statusOut, "fail-open") || !strings.Contains(statusOut, "offline") {
+		t.Fatalf("status offline residual: %s", statusOut)
+	}
+	if !strings.Contains(statusOut, "never invent install green") {
+		t.Fatalf("status honesty: %s", statusOut)
+	}
+	// st alias
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/integrations st")
+	if !strings.Contains(out.String(), "operator pulse") {
+		t.Fatalf("st alias: %s", out.String())
 	}
 
 	// list without MCP → residual-honest offline (fail-open, no invent green)

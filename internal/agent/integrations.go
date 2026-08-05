@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -159,6 +160,129 @@ func (rt *Runtime) IntegrationsSigning(ctx context.Context, meshLayerOrConnector
 		return "integrations signing: (empty)\n" + signingHonestyFooter(), nil
 	}
 	return out + "\n" + signingHonestyFooter(), nil
+}
+
+// IntegrationsStatus is the residual-honest operator pulse for /integrations status (s1247).
+//
+// Reports MCP path availability, presence of list/plan/signing tools (lightweight probe —
+// same discovery as callMCPToolByName, no invent), optional catalog count + per-mesh_layer
+// counts when list_connector_catalog works, and always an honesty footer.
+//
+// Hard residual rules:
+//   - NEVER invent org install Connected / INSTALL_STORE green / GA
+//   - Catalog count ≠ install count (label as catalog honesty only)
+//   - Offline fail-open preserved
+//   - dual_write OFF · book-demo OFF · stub ≠ live · browser HITL · signing discovery only
+func (rt *Runtime) IntegrationsStatus(ctx context.Context) (string, error) {
+	var b strings.Builder
+	b.WriteString("integrations status (s1247 residual-honest operator pulse)\n")
+
+	// 1) MCP path
+	pathState, nServers := rt.mcpPathState()
+	switch pathState {
+	case "available":
+		fmt.Fprintf(&b, "MCP path:     available (%d server(s))\n", nServers)
+	case "empty":
+		b.WriteString("MCP path:     connected-empty (manager present, 0 servers) · fail-open\n")
+	default:
+		b.WriteString("MCP path:     offline (no MCP manager/clients) · fail-open\n")
+	}
+
+	// 2) Tools present (probe carefully — list bindings/tools only; do not invent)
+	tools := []string{
+		mcpToolListConnectorCatalog,
+		mcpToolPlanConnectorSetup,
+		mcpToolGetWebhookSigningHeaders,
+	}
+	b.WriteString("tools:\n")
+	listState := ""
+	for _, tool := range tools {
+		st := rt.mcpToolPresence(tool)
+		if tool == mcpToolListConnectorCatalog {
+			listState = st
+		}
+		fmt.Fprintf(&b, "  %-30s %s\n", tool+":", st)
+	}
+
+	// 3) Catalog pulse only when list tool is present (call + parse; honesty labeled)
+	b.WriteString("catalog pulse:\n")
+	if listState != "present" {
+		fmt.Fprintf(&b, "  (skipped — list_connector_catalog is %s; no invent counts)\n", listState)
+		b.WriteString("  note: catalog status Beta/available/planned is NOT install Connected\n")
+	} else {
+		raw, err := rt.callMCPToolByName(ctx, mcpToolListConnectorCatalog, map[string]any{})
+		if err != nil {
+			// Soft fail-open: do not invent counts on call error.
+			fmt.Fprintf(&b, "  (list call failed — no invent counts) detail: %v\n", err)
+			b.WriteString("  note: catalog status Beta/available/planned is NOT install Connected\n")
+		} else if pulse := formatCatalogPulse(raw); pulse != "" {
+			b.WriteString(pulse)
+		} else {
+			b.WriteString("  (list returned non-JSON/empty — no invent counts)\n")
+			b.WriteString("  note: catalog status Beta/available/planned is NOT install Connected\n")
+		}
+	}
+
+	// 4) Honesty footer always
+	b.WriteString(statusHonestyFooter())
+	return strings.TrimSpace(b.String()), nil
+}
+
+// mcpPathState reports whether the MCP call path is usable.
+// available | empty | offline
+func (rt *Runtime) mcpPathState() (state string, nServers int) {
+	if rt == nil || rt.mcp == nil {
+		return "offline", 0
+	}
+	n := rt.mcp.Len()
+	if n == 0 {
+		return "empty", 0
+	}
+	return "available", n
+}
+
+// mcpToolPresence returns present | missing | offline for a bare MCP tool name.
+// Uses the same discovery as callMCPToolByName (bindings, then each client's Tools list).
+// Does not invoke the tool.
+func (rt *Runtime) mcpToolPresence(tool string) string {
+	if rt == nil || rt.mcp == nil || rt.mcp.Len() == 0 {
+		return "offline"
+	}
+	tool = strings.TrimSpace(tool)
+	if tool == "" {
+		return "missing"
+	}
+	if rt.hasMCPTool(tool) {
+		return "present"
+	}
+	return "missing"
+}
+
+// hasMCPTool reports whether a bare tool name is bound or listed on any connected client.
+func (rt *Runtime) hasMCPTool(tool string) bool {
+	if rt == nil || rt.mcp == nil {
+		return false
+	}
+	tool = strings.TrimSpace(tool)
+	if tool == "" {
+		return false
+	}
+	for _, b := range rt.mcp.Bindings() {
+		if b.Tool == tool && b.Client != nil {
+			return true
+		}
+	}
+	for _, c := range rt.mcp.Clients() {
+		if c == nil {
+			continue
+		}
+		for _, t := range c.Tools() {
+			if t.Name == tool {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // callMCPToolByName finds a bare MCP tool name across connected servers and invokes it.
@@ -639,6 +763,106 @@ func planHonestyFooter() string {
 
 func signingHonestyFooter() string {
 	return "honesty: discovery only · do not invent secrets mint/rotate · dual_write OFF · book-demo OFF · never invent install green · " + IntegrationsHonestyOneLiner
+}
+
+// statusHonestyFooter is always appended to /integrations status (s1247).
+func statusHonestyFooter() string {
+	return strings.TrimSpace(`honesty:
+  never invent install green · browser HITL for OAuth complete · stub ≠ live
+  dual_write OFF · book-demo OFF · signing discovery only · no invent GA
+  catalog count ≠ install Connected · portal HITL ` + integrationsPortalURL + `
+  ` + IntegrationsHonestyOneLiner)
+}
+
+// formatCatalogPulse summarizes list_connector_catalog for the status pulse (s1247).
+// Labels clearly as catalog honesty — status chips are NOT install Connected.
+// Returns empty string when raw is not parseable JSON catalog shape.
+func formatCatalogPulse(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || (raw[0] != '{' && raw[0] != '[') {
+		return ""
+	}
+	var items []connectorCatalogItem
+	wireCount := -1
+	if raw[0] == '[' {
+		if err := json.Unmarshal([]byte(raw), &items); err != nil {
+			return ""
+		}
+	} else {
+		var p connectorCatalogPayload
+		if err := json.Unmarshal([]byte(raw), &p); err != nil {
+			return ""
+		}
+		// Prefer aion v178 "entries", then legacy keys (same order as formatConnectorCatalog).
+		items = p.Entries
+		if len(items) == 0 {
+			items = p.Connectors
+		}
+		if len(items) == 0 {
+			items = p.Items
+		}
+		if len(items) == 0 {
+			items = p.Catalog
+		}
+		if p.Count > 0 {
+			wireCount = p.Count
+		}
+	}
+
+	// Count entries that have an id (or label fallback); tally mesh_layer.
+	layerCounts := map[string]int{}
+	n := 0
+	for _, it := range items {
+		id := strings.TrimSpace(it.ID)
+		if id == "" {
+			id = strings.TrimSpace(it.Label)
+		}
+		if id == "" {
+			continue
+		}
+		n++
+		layer := strings.ToLower(strings.TrimSpace(it.MeshLayer))
+		if layer == "" {
+			layer = "(unset)"
+		}
+		layerCounts[layer]++
+	}
+	// Prefer parsed entry count; fall back to wire count only when entries empty but count set.
+	count := n
+	if count == 0 && wireCount > 0 {
+		count = wireCount
+	}
+
+	var b strings.Builder
+	// Hard residual: catalog count is honesty inventory, never install Connected.
+	fmt.Fprintf(&b, "  count: %d  (catalog honesty — NOT install Connected / INSTALL_STORE green)\n", count)
+	if n > 0 {
+		// Stable layer order for operator readability + deterministic tests.
+		order := []string{"operational", "knowledge", "analytical"}
+		seen := map[string]bool{}
+		var parts []string
+		for _, l := range order {
+			if c, ok := layerCounts[l]; ok {
+				parts = append(parts, fmt.Sprintf("%s=%d", l, c))
+				seen[l] = true
+			}
+		}
+		var extras []string
+		for l := range layerCounts {
+			if !seen[l] {
+				extras = append(extras, l)
+			}
+		}
+		sort.Strings(extras)
+		for _, l := range extras {
+			parts = append(parts, fmt.Sprintf("%s=%d", l, layerCounts[l]))
+		}
+		if len(parts) > 0 {
+			fmt.Fprintf(&b, "  by mesh_layer: %s\n", strings.Join(parts, " "))
+		}
+	}
+	b.WriteString("  note: catalog status Beta/available/planned is display honesty only — not Connected\n")
+	return b.String()
 }
 
 func firstNonEmpty(vals ...string) string {
