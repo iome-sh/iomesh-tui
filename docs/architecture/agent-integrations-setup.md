@@ -1,6 +1,6 @@
 # Agent integrations setup (MCP · residual-honest)
 
-**Pin:** free eng **s1242** (TUI v178 wire parity) + **s1243** (signing surface) · prior **s1238** slash · concurrent aion **s1237** (MCP v178 tools) · residual docs **s1239**.
+**Pin:** free eng **s1247** (status pulse) · **s1242** (TUI v178 wire parity) + **s1243** (signing surface) · prior **s1238** slash · concurrent aion **s1237** (MCP v178 tools) · residual docs **s1239**.
 
 Agent/TUI path for **connector integrations setup** via MCP tools — not full install CRUD, not OAuth complete, not checklist/API-key mint, not webhook secret mint/rotate.
 
@@ -10,14 +10,15 @@ Agent/TUI path for **connector integrations setup** via MCP tools — not full i
 /integrations [list [--layer operational|knowledge|analytical] | plan <connector_id> | signing [layer|id] | status]
 ```
 
-Aliases: `/integration`, `/connectors`. Signing aliases: `signing` · `headers` · `signing-headers`.
+Aliases: `/integration`, `/connectors`. Signing aliases: `signing` · `headers` · `signing-headers`. Status alias: `st`. Help: `help` · `?` (bare `/integrations` is help).
 
 | Subcommand | MCP tool | Output |
 |------------|----------|--------|
 | `list` | `list_connector_catalog` | Compact table: id · status · mesh_layer · oauth? |
 | `plan <id>` | `plan_connector_setup` | `portal_url` · `oauth_mode_hint` · `signing_headers_tool` · `next_steps` · honesty notes |
 | `signing [layer\|id]` | `get_webhook_signing_headers` | Header parity table (discovery only) |
-| `status` / bare | — | Help + honesty one-liner |
+| `status` / `st` | probe + optional list | Residual-honest **operator pulse** (s1247) — not pure help |
+| bare / `help` / `?` | — | Usage + honesty one-liner |
 
 ## Runtime helpers
 
@@ -26,8 +27,20 @@ Aliases: `/integration`, `/connectors`. Signing aliases: `signing` · `headers` 
 - `IntegrationsCatalog(ctx, meshLayer)` — MCP `CallTool` `list_connector_catalog`
 - `IntegrationsPlan(ctx, connectorID)` — MCP `CallTool` `plan_connector_setup`
 - `IntegrationsSigning(ctx, meshLayerOrConnector)` — MCP `CallTool` `get_webhook_signing_headers` (s1243)
+- `IntegrationsStatus(ctx)` — s1247 residual-honest operator pulse (MCP path · tools · catalog honesty)
 
 All scan connected MCP servers for the bare tool name (same fail-open spirit as memory digest MCP fallback). Prefer Manager bindings; fall back to each client's tool list.
+
+## Status pulse (s1247)
+
+`/integrations status` reports an **operator pulse**, not help text:
+
+1. **MCP path** — available (N servers) · connected-empty · offline fail-open
+2. **Tools present** — for each of `list_connector_catalog`, `plan_connector_setup`, `get_webhook_signing_headers`: `present` / `missing` / `offline` (lightweight discovery only; same binding/Tools scan as `callMCPToolByName`, no invent)
+3. **Catalog pulse** — only when `list_connector_catalog` is present and the call succeeds: `count` + optional `by mesh_layer` from v178 `entries` (legacy keys still accepted). Labeled **catalog honesty** — status Beta/available/planned is **NOT** install Connected; **catalog count ≠ install count**
+4. **Honesty footer always** — never invent install green · browser HITL · stub ≠ live · dual_write OFF · book-demo OFF · signing discovery only · portal HITL URL
+
+Offline / empty MCP → residual message, **no invented counts**. Never invents org install Connected / INSTALL_STORE green / GA.
 
 ## aion v178 / v30 wire (TUI parse parity · s1242)
 
@@ -115,6 +128,7 @@ When the signing hint is a connector id (not a mesh layer), TUI calls without `m
 | fail-open when MCP unavailable | Offline message → `https://console.iome.sh/integrations` |
 | never invent install green | Plan output always carries honesty notes; no fake “Connected” |
 | signing = discovery only | Header parity table only; no secret mint/rotate |
+| catalog count ≠ install count | Status pulse catalog inventory is honesty only, not Connected installs |
 
 **Agent setup = catalog + plan + signing discovery + portal HITL · not full install CRUD.**
 
@@ -145,9 +159,10 @@ No invented catalog rows. No invented plan success. No invented signing secrets.
 | s1237 | aion | MCP tools `list_connector_catalog` / `plan_connector_setup` (v178) |
 | s1238 | iomesh-tui | Slash `/integrations` list/plan/status |
 | s1239 | aion | Residual docs / living surfaces |
-| **s1242** | **iomesh-tui** | **v178 wire parse/format parity (`entries`, `oauth_install_supported`, honesty object)** |
-| **s1243** | **iomesh-tui** | **`/integrations signing` + `IntegrationsSigning` → `get_webhook_signing_headers`** |
+| s1242 | iomesh-tui | v178 wire parse/format parity (`entries`, `oauth_install_supported`, honesty object) |
+| s1243 | iomesh-tui | `/integrations signing` + `IntegrationsSigning` → `get_webhook_signing_headers` |
 | s1244 | aion | Plan deeplink residual (separate) |
+| **s1247** | **iomesh-tui** | **`/integrations status` residual-honest operator pulse (`IntegrationsStatus`)** |
 
 ## Config
 

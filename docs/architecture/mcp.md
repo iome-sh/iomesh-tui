@@ -30,7 +30,7 @@ Session header `Mcp-Session-Id` is stored on HTTP; `DELETE` on close is best-eff
 | `list_mcp_prompts` | no | Prompt templates |
 | `get_mcp_prompt` | no | Expand prompt + args |
 
-**Agent integrations setup (s1238/s1242/s1243):** slash `/integrations` calls bare MCP tools `list_connector_catalog` / `plan_connector_setup` (aion v178) and `get_webhook_signing_headers` (v30) when present on any connected server. TUI parses v178 `entries` + `oauth_install_supported` + honesty object. Fail-open offline → portal HITL. Residual-honest path only — not install CRUD / not OAuth complete / not secret mint. See [agent-integrations-setup.md](./agent-integrations-setup.md).
+**Agent integrations setup (s1238/s1242/s1243/s1247):** slash `/integrations` calls bare MCP tools `list_connector_catalog` / `plan_connector_setup` (aion v178) and `get_webhook_signing_headers` (v30) when present on any connected server. TUI parses v178 `entries` + `oauth_install_supported` + honesty object. `/integrations status` (s1247) is a residual-honest operator pulse (MCP path · tools present · catalog honesty counts ≠ install green). Fail-open offline → portal HITL. Residual-honest path only — not install CRUD / not OAuth complete / not secret mint. See [agent-integrations-setup.md](./agent-integrations-setup.md).
 
 ## OAuth helpers
 

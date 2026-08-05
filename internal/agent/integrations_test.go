@@ -2,8 +2,12 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
+	"io"
 	"strings"
 	"testing"
+
+	"github.com/iome-sh/iomesh-tui/internal/mcp"
 )
 
 func TestIntegrationsCatalog_OfflineFailOpen(t *testing.T) {
@@ -264,5 +268,240 @@ func TestFormatWebhookSigning_Empty(t *testing.T) {
 	}
 	if !strings.Contains(out, "discovery only") {
 		t.Fatalf("%s", out)
+	}
+}
+
+// s1247: /integrations status offline fail-open — residual pulse, no invent counts.
+func TestIntegrationsStatus_OfflineFailOpen(t *testing.T) {
+	rt := &Runtime{} // no MCP
+	out, err := rt.IntegrationsStatus(context.Background())
+	if err != nil {
+		t.Fatalf("err=%v", err)
+	}
+	if !strings.Contains(out, "s1247") {
+		t.Fatalf("want s1247 pulse: %s", out)
+	}
+	if !strings.Contains(out, "MCP path:") || !strings.Contains(out, "offline") {
+		t.Fatalf("want MCP offline: %s", out)
+	}
+	if !strings.Contains(out, "fail-open") {
+		t.Fatalf("want fail-open: %s", out)
+	}
+	// each expected tool marked offline
+	for _, tool := range []string{
+		"list_connector_catalog",
+		"plan_connector_setup",
+		"get_webhook_signing_headers",
+	} {
+		if !strings.Contains(out, tool) {
+			t.Fatalf("want tool %s: %s", tool, out)
+		}
+	}
+	if !strings.Contains(out, "offline") {
+		t.Fatalf("want offline tool states: %s", out)
+	}
+	// catalog pulse skipped — no invent counts
+	if !strings.Contains(out, "skipped") || !strings.Contains(out, "no invent counts") {
+		t.Fatalf("want skipped catalog pulse: %s", out)
+	}
+	if strings.Contains(out, "count: 3") || strings.Contains(out, "MESH_LAYER") {
+		t.Fatalf("must not invent catalog counts offline: %s", out)
+	}
+	// honesty footer always
+	if !strings.Contains(out, "never invent install green") {
+		t.Fatalf("honesty footer: %s", out)
+	}
+	if !strings.Contains(out, "browser HITL") {
+		t.Fatalf("browser HITL: %s", out)
+	}
+	if !strings.Contains(out, "dual_write OFF") {
+		t.Fatalf("dual_write OFF: %s", out)
+	}
+	if !strings.Contains(out, "console.iome.sh/integrations") {
+		t.Fatalf("portal: %s", out)
+	}
+	if !strings.Contains(out, "catalog count ≠ install Connected") || !strings.Contains(out, "install Connected") {
+		t.Fatalf("catalog ≠ install honesty: %s", out)
+	}
+	// must not invent install green / Connected success
+	if strings.Contains(out, "INSTALL_STORE green") && strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent install green: %s", out)
+	}
+}
+
+// s1247: empty MCP manager (Len=0) is residual offline/empty, not invent.
+func TestIntegrationsStatus_EmptyManager(t *testing.T) {
+	rt := &Runtime{mcp: mcp.NewManagerEmpty(nil)}
+	out, err := rt.IntegrationsStatus(context.Background())
+	if err != nil {
+		t.Fatalf("err=%v", err)
+	}
+	// empty manager → empty or offline path; tools offline; no invent counts
+	if !strings.Contains(out, "fail-open") && !strings.Contains(out, "empty") && !strings.Contains(out, "offline") {
+		t.Fatalf("want empty/offline residual: %s", out)
+	}
+	if strings.Contains(out, "count: ") && !strings.Contains(out, "skipped") {
+		// only fail if we invented a real pulse count without list tool
+		if strings.Contains(out, "by mesh_layer") {
+			t.Fatalf("must not invent layer counts: %s", out)
+		}
+	}
+	if !strings.Contains(out, "never invent install green") {
+		t.Fatalf("honesty: %s", out)
+	}
+}
+
+// s1247: formatCatalogPulse from aion v178 entries — count only, never install green.
+func TestFormatCatalogPulse_V178Entries(t *testing.T) {
+	raw := `{
+		"count": 3,
+		"entries": [
+			{"id":"github","label":"GitHub","status":"available","mesh_layer":"operational",
+			 "ingress_type":"webhook","oauth_install_supported":false},
+			{"id":"notion","label":"Notion","status":"beta","mesh_layer":"knowledge",
+			 "ingress_type":"oauth","oauth_install_supported":true},
+			{"id":"embeddings","label":"Embeddings","status":"beta","mesh_layer":"analytical",
+			 "ingress_type":"api","oauth_install_supported":false}
+		]
+	}`
+	out := formatCatalogPulse(raw)
+	if !strings.Contains(out, "count: 3") {
+		t.Fatalf("count: %s", out)
+	}
+	if !strings.Contains(out, "catalog honesty") || !strings.Contains(out, "NOT install Connected") {
+		t.Fatalf("catalog honesty label: %s", out)
+	}
+	if !strings.Contains(out, "operational=1") || !strings.Contains(out, "knowledge=1") || !strings.Contains(out, "analytical=1") {
+		t.Fatalf("by mesh_layer: %s", out)
+	}
+	// must not claim install Connected / INSTALL_STORE green as success
+	if strings.Contains(out, "Connected: yes") || strings.Contains(out, "install green") {
+		t.Fatalf("must not claim install green: %s", out)
+	}
+	// status chips are honesty only
+	if !strings.Contains(out, "Beta/available/planned") {
+		t.Fatalf("status honesty note: %s", out)
+	}
+}
+
+func TestFormatCatalogPulse_Empty(t *testing.T) {
+	out := formatCatalogPulse(`{"count":0,"entries":[]}`)
+	if !strings.Contains(out, "count: 0") {
+		t.Fatalf("%s", out)
+	}
+	if !strings.Contains(out, "catalog honesty") {
+		t.Fatalf("%s", out)
+	}
+}
+
+func TestFormatCatalogPulse_NonJSON(t *testing.T) {
+	if formatCatalogPulse("not json") != "" {
+		t.Fatal("want empty for non-json")
+	}
+	if formatCatalogPulse("") != "" {
+		t.Fatal("want empty for empty")
+	}
+}
+
+// s1247: mock MCP with list_connector_catalog → status shows count, never install green.
+func TestIntegrationsStatus_MockCatalogPresent(t *testing.T) {
+	cInR, cInW := io.Pipe()
+	cOutR, cOutW := io.Pipe()
+	go mockIntegrationsMCP(cOutW, cInR)
+
+	mut := false
+	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "aion-scenario", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
+	defer cl.Close()
+	if err := cl.InitForTest(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	mgr := mcp.NewManagerEmpty(nil)
+	mgr.Attach(cl)
+	rt := &Runtime{mcp: mgr}
+
+	out, err := rt.IntegrationsStatus(context.Background())
+	if err != nil {
+		t.Fatalf("err=%v", err)
+	}
+	if !strings.Contains(out, "MCP path:") || !strings.Contains(out, "available") {
+		t.Fatalf("MCP available: %s", out)
+	}
+	if !strings.Contains(out, "list_connector_catalog") || !strings.Contains(out, "present") {
+		t.Fatalf("list tool present: %s", out)
+	}
+	// plan/signing listed as missing (only list is on mock) — residual-honest
+	if !strings.Contains(out, "plan_connector_setup") {
+		t.Fatalf("plan tool line: %s", out)
+	}
+	if !strings.Contains(out, "count: 3") {
+		t.Fatalf("catalog count from fixture: %s", out)
+	}
+	if !strings.Contains(out, "operational=1") {
+		t.Fatalf("layer counts: %s", out)
+	}
+	if !strings.Contains(out, "catalog honesty") || !strings.Contains(out, "NOT install Connected") {
+		t.Fatalf("catalog honesty: %s", out)
+	}
+	if strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent install Connected: %s", out)
+	}
+	if !strings.Contains(out, "never invent install green") {
+		t.Fatalf("honesty footer: %s", out)
+	}
+	if !strings.Contains(out, "dual_write OFF") {
+		t.Fatalf("dual_write: %s", out)
+	}
+}
+
+// mockIntegrationsMCP serves tools/list + list_connector_catalog with aion v178 entries.
+func mockIntegrationsMCP(w io.WriteCloser, r io.Reader) {
+	defer w.Close()
+	dec := json.NewDecoder(r)
+	catalog := `{
+		"count": 3,
+		"entries": [
+			{"id":"github","label":"GitHub","status":"available","mesh_layer":"operational",
+			 "ingress_type":"webhook","oauth_install_supported":false,"portal_path":"/integrations/github"},
+			{"id":"notion","label":"Notion","status":"beta","mesh_layer":"knowledge",
+			 "ingress_type":"oauth","oauth_install_supported":true,"portal_path":"/integrations/notion"},
+			{"id":"embeddings","label":"Embeddings","status":"beta","mesh_layer":"analytical",
+			 "ingress_type":"api","oauth_install_supported":false,"portal_path":"/integrations/embeddings"}
+		]
+	}`
+	for {
+		var req map[string]any
+		if err := dec.Decode(&req); err != nil {
+			return
+		}
+		id := req["id"]
+		method, _ := req["method"].(string)
+		if method == "notifications/initialized" || id == nil {
+			continue
+		}
+		var result any
+		switch method {
+		case "initialize":
+			result = map[string]any{"protocolVersion": "2024-11-05", "serverInfo": map[string]string{"name": "aion", "version": "1"}}
+		case "tools/list":
+			result = map[string]any{"tools": []map[string]any{{
+				"name": "list_connector_catalog", "description": "Catalog (v178)", "inputSchema": map[string]any{
+					"type": "object", "properties": map[string]any{},
+				},
+			}}}
+		case "tools/call":
+			name := ""
+			if params, ok := req["params"].(map[string]any); ok {
+				name, _ = params["name"].(string)
+			}
+			text := "unknown tool"
+			if name == "list_connector_catalog" {
+				text = catalog
+			}
+			result = map[string]any{"content": []map[string]any{{"type": "text", "text": text}}}
+		default:
+			result = map[string]any{}
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"jsonrpc": "2.0", "id": id, "result": result})
 	}
 }

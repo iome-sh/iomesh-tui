@@ -361,11 +361,12 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			fmt.Fprintln(out, text)
 		}
 	case "/integrations", "/integration", "/connectors":
-		// s1238/s1242/s1243: agent/TUI path for connector integrations setup via MCP tools
+		// s1238/s1242/s1243/s1247: agent/TUI path for connector integrations setup via MCP tools
 		// list_connector_catalog / plan_connector_setup (aion v178) · get_webhook_signing_headers (v30).
 		// Residual honesty: browser HITL OAuth · stub ≠ live · dual_write OFF ·
 		// no invent GA · catalog Beta honesty · fail-open when MCP unavailable ·
 		// never invent install green · signing = discovery only (no secret mint).
+		// status (s1247) = residual-honest operator pulse (MCP path · tools · catalog honesty).
 		// Not full install CRUD.
 		if len(parts) < 2 {
 			fmt.Fprintln(out, integrationsHelp())
@@ -373,8 +374,16 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		}
 		sub := strings.ToLower(parts[1])
 		switch sub {
-		case "status", "st", "help", "?":
+		case "help", "?":
 			fmt.Fprintln(out, integrationsHelp())
+		case "status", "st":
+			// s1247: residual-honest operator pulse (not pure help text).
+			text, err := rt.rt.IntegrationsStatus(context.Background())
+			if err != nil {
+				fmt.Fprintf(out, "integrations status: %v\n", err)
+				return false, nil
+			}
+			fmt.Fprintln(out, text)
 		case "list", "ls", "catalog":
 			layer, perr := parseIntegrationsListArgs(parts[2:])
 			if perr != "" {
@@ -541,13 +550,14 @@ On mutating tools (write_file, run_shell, apply_worktree, …) you will be promp
 	return false, nil
 }
 
-// integrationsHelp is bare /integrations and status copy (s1238/s1242/s1243 residual honesty).
+// integrationsHelp is bare /integrations and help/? copy (s1238/s1242/s1243/s1247 residual honesty).
+// status is a separate operator pulse (IntegrationsStatus), not this help text.
 func integrationsHelp() string {
 	return strings.TrimSpace(`usage: /integrations [list [--layer operational|knowledge|analytical] | plan <connector_id> | signing [layer|id] | status]
   list     MCP list_connector_catalog (v178 entries) → id · status · mesh_layer · oauth?
   plan     MCP plan_connector_setup → portal_url · oauth_mode_hint · signing_headers_tool · next_steps · honesty
   signing  MCP get_webhook_signing_headers → header parity (discovery only · not secret mint)
-  status   this help
+  status   residual-honest operator pulse: MCP path · tools present · catalog honesty counts (≠ install green)
 honesty: ` + agent.IntegrationsHonestyOneLiner + `
   fail-open when MCP unavailable → portal HITL https://console.iome.sh/integrations
   aion MCP v178 list/plan + v30 signing · browser HITL for OAuth · never invent install green`)
