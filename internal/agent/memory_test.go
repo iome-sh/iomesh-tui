@@ -430,6 +430,133 @@ func TestAttachMemorySystemNote_DualWrite(t *testing.T) {
 	}
 }
 
+// s1200: MemoryOpsDigest prefers sync HTTP POST /v1/memory/ops_digest and formats patterns+receipts+honesty.
+func TestMemoryOpsDigest_PrefersSyncHTTP(t *testing.T) {
+	var gotPath string
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"window":  "day",
+			"horizon": "ops",
+			"as_of":   "2026-08-04T12:00:00Z",
+			"since":   "2026-08-03T12:00:00Z",
+			"honesty": map[string]any{
+				"ops_pulse":          "ga_path",
+				"knowledge":          "beta",
+				"analytical":         "beta",
+				"never_invent_ga":    true,
+				"dual_write_default": "off",
+				"book_demo":          "off",
+				"note":               "Ops digests synthesize live pulse",
+			},
+			"patterns": []map[string]any{
+				{"id": "p1", "kind": "burst", "subject": "dept.ops", "summary": "spike in deploys", "score": 0.9},
+			},
+			"receipts": []map[string]any{
+				{"id": "r1", "event_time": "2026-08-04T10:00:00Z", "summary": "deploy finished"},
+			},
+			"decision_stub": map[string]any{"pattern": "dept.ops"},
+		})
+	}))
+	defer srv.Close()
+
+	mesh := iomesh.New(iomesh.Config{Enabled: true, Endpoint: srv.URL, Tenant: "dept.research"}, nil)
+	rt := &Runtime{
+		mesh: mesh,
+		memory: MemoryConfig{
+			Enabled: true, Tenant: "dept.research", Server: "memory",
+			Limit: 5, SessionID: "sess-digest",
+		},
+	}
+	out, err := rt.MemoryOpsDigest(context.Background())
+	if err != nil {
+		t.Fatalf("MemoryOpsDigest: %v", err)
+	}
+	if gotPath != "/v1/memory/ops_digest" {
+		t.Fatalf("path=%q", gotPath)
+	}
+	if gotBody["window"] != "day" || gotBody["horizon"] != "ops" || gotBody["tenant_id"] != "dept.research" {
+		t.Fatalf("body=%v", gotBody)
+	}
+	if !strings.Contains(out, "spike in deploys") || !strings.Contains(out, "deploy finished") {
+		t.Fatalf("out=%q", out)
+	}
+	if !strings.Contains(out, "honesty:") || !strings.Contains(out, "ga_path") || !strings.Contains(out, "never_invent_ga=true") {
+		t.Fatalf("honesty missing: %q", out)
+	}
+	if !strings.Contains(out, "not Memory GA") {
+		t.Fatalf("honesty pin missing: %q", out)
+	}
+}
+
+// s1200: per-call Window/Horizon/Limit override defaults.
+func TestMemoryOpsDigest_OptsOverride(t *testing.T) {
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"window": "week", "horizon": "knowledge", "as_of": "now",
+			"honesty":  map[string]any{"ops_pulse": "ga_path", "knowledge": "beta", "analytical": "beta", "never_invent_ga": true, "dual_write_default": "off"},
+			"patterns": []any{}, "receipts": []any{},
+		})
+	}))
+	defer srv.Close()
+
+	mesh := iomesh.New(iomesh.Config{Enabled: true, Endpoint: srv.URL, Tenant: "t"}, nil)
+	rt := &Runtime{
+		mesh:   mesh,
+		memory: MemoryConfig{Enabled: true, Tenant: "t", Server: "memory"},
+	}
+	out, err := rt.MemoryOpsDigest(context.Background(), MemoryOpsDigestOpts{
+		Window: "week", Horizon: "knowledge", Limit: 3,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotBody["window"] != "week" || gotBody["horizon"] != "knowledge" || gotBody["limit"] != float64(3) {
+		t.Fatalf("body=%v", gotBody)
+	}
+	if !strings.Contains(out, "window=week") || !strings.Contains(out, "horizon=knowledge") {
+		t.Fatalf("out=%q", out)
+	}
+	if !strings.Contains(out, "patterns: (none)") || !strings.Contains(out, "receipts: (none)") {
+		t.Fatalf("empty sections: %q", out)
+	}
+}
+
+// s1200: sync 404 + no MCP → error.
+func TestMemoryOpsDigest_SyncFailsMCPUnavailable(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	mesh := iomesh.New(iomesh.Config{Enabled: true, Endpoint: srv.URL, Tenant: "t"}, nil)
+	rt := &Runtime{
+		mesh:   mesh,
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "t"},
+		mcp:    mcp.NewManagerEmpty(nil),
+	}
+	_, err := rt.MemoryOpsDigest(context.Background())
+	if err == nil {
+		t.Fatal("expected error when sync 404 and MCP missing")
+	}
+	if !strings.Contains(err.Error(), "not connected") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+// s1200: hooks disabled error.
+func TestMemoryOpsDigest_Disabled(t *testing.T) {
+	rt := &Runtime{memory: DefaultMemoryConfig()}
+	_, err := rt.MemoryOpsDigest(context.Background())
+	if err == nil || !strings.Contains(err.Error(), "disabled") {
+		t.Fatalf("err=%v", err)
+	}
+}
+
 // s1135: MemoryRelated prefers sync HTTP POST /v1/memory/related.
 func TestMemoryRelated_PrefersSyncHTTP(t *testing.T) {
 	var gotPath string

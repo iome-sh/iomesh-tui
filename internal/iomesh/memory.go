@@ -453,6 +453,176 @@ func (c *Client) RetrieveMemoryRelated(ctx context.Context, tenantID string, opt
 	return nil, lastErr
 }
 
+// MemoryOpsDigestOptions are request fields for sync POST /v1|/v5/memory/ops_digest (s1200).
+// Parity with aion s1198 HTTP / MCP ops_digest_export (s1197) and peer SDK ExportOpsDigest (s1199).
+// Window defaults to day; Horizon defaults to ops when empty.
+// Honesty: ops GA-path framing · knowledge/analytical Beta · never invent GA ·
+// dual_write OFF · book-demo OFF · not product Memory GA · not full graph RAG.
+type MemoryOpsDigestOptions struct {
+	Window  string // day|week (default day)
+	Horizon string // ops|knowledge|analytical|all (default ops)
+	Limit   int    // max patterns and receipts each (platform default 20, max 50)
+	AsOf    string // optional RFC3339 upper bound
+}
+
+// MemoryOpsDigestHonesty is residual-honest framing on the ops digest export.
+type MemoryOpsDigestHonesty struct {
+	OpsPulse         string `json:"ops_pulse"`
+	Knowledge        string `json:"knowledge"`
+	Analytical       string `json:"analytical"`
+	NeverInventGA    bool   `json:"never_invent_ga"`
+	DualWriteDefault string `json:"dual_write_default"`
+	BookDemo         string `json:"book_demo"`
+	Note             string `json:"note,omitempty"`
+}
+
+// MemoryOpsDigestPattern is one pattern signal in an ops digest (aion PatternSignal wire shape).
+type MemoryOpsDigestPattern struct {
+	ID        string  `json:"id,omitempty"`
+	Kind      string  `json:"kind,omitempty"`
+	Subject   string  `json:"subject,omitempty"`
+	Count     int     `json:"count,omitempty"`
+	Window    string  `json:"window,omitempty"`
+	Score     float64 `json:"score,omitempty"`
+	Summary   string  `json:"summary,omitempty"`
+	FirstSeen string  `json:"first_seen,omitempty"`
+	LastSeen  string  `json:"last_seen,omitempty"`
+}
+
+// MemoryOpsDigestReceipt is one timeline receipt in an ops digest pack.
+type MemoryOpsDigestReceipt struct {
+	ID         string `json:"id,omitempty"`
+	EventTime  string `json:"event_time,omitempty"`
+	Summary    string `json:"summary,omitempty"`
+	SourceHint string `json:"source_hint,omitempty"`
+}
+
+// MemoryOpsDigestDecisionStub is a human-owned decision scaffold (not auto-apply).
+type MemoryOpsDigestDecisionStub struct {
+	Pattern                string   `json:"pattern,omitempty"`
+	ReceiptsRef            []string `json:"receipts_ref,omitempty"`
+	ProductOrGTMHypothesis string   `json:"product_or_gtm_hypothesis,omitempty"`
+}
+
+// MemoryOpsDigestResult is the ops digest export from POST /v1|/v5/memory/ops_digest.
+type MemoryOpsDigestResult struct {
+	Window       string                      `json:"window"`
+	Horizon      string                      `json:"horizon"`
+	AsOf         string                      `json:"as_of"`
+	Since        string                      `json:"since,omitempty"`
+	Honesty      MemoryOpsDigestHonesty      `json:"honesty"`
+	Patterns     []MemoryOpsDigestPattern    `json:"patterns"`
+	Receipts     []MemoryOpsDigestReceipt    `json:"receipts"`
+	DecisionStub MemoryOpsDigestDecisionStub `json:"decision_stub"`
+	// Path is the successful API path (v1 or v5 fallback).
+	Path string `json:"-"`
+}
+
+// ExportOpsDigest is sync ops heartbeat digest export (s1200).
+// Tries POST /v1/memory/ops_digest then /v5/memory/ops_digest (same handler on the sidecar / platform).
+// Base URL: cfg.MemoryEndpoint when set (stage warm sidecar), else mesh Endpoint.
+// Empty patterns/receipts are a successful 200 with [].
+// Fail-open callers treat transport/404 as fallback to MCP ops_digest_export.
+// Honesty: ops GA-path · knowledge/analytical Beta · never invent GA · dual_write OFF ·
+// not product Memory GA · not full graph RAG. Human owns irreversible decisions.
+func (c *Client) ExportOpsDigest(ctx context.Context, tenantID string, opts MemoryOpsDigestOptions) (*MemoryOpsDigestResult, error) {
+	if c == nil || !c.SyncMemoryReady() {
+		return nil, fmt.Errorf("iomesh: sync memory not configured (mesh endpoint or memory sidecar)")
+	}
+	base := c.MemoryBaseURL()
+	tenantID = strings.TrimSpace(tenantID)
+	if tenantID == "" {
+		tenantID = strings.TrimSpace(c.cfg.Tenant)
+	}
+	if tenantID == "" {
+		return nil, fmt.Errorf("iomesh: tenant_id required for memory ops_digest")
+	}
+	window := strings.ToLower(strings.TrimSpace(opts.Window))
+	if window == "" {
+		window = "day"
+	}
+	if window != "day" && window != "week" {
+		return nil, fmt.Errorf("iomesh: window must be day or week")
+	}
+	horizon := strings.ToLower(strings.TrimSpace(opts.Horizon))
+	if horizon == "" {
+		horizon = "ops"
+	}
+	switch horizon {
+	case "ops", "knowledge", "analytical", "all":
+	default:
+		return nil, fmt.Errorf("iomesh: horizon must be ops|knowledge|analytical|all")
+	}
+	bodyMap := map[string]any{
+		"tenant_id": tenantID,
+		"window":    window,
+		"horizon":   horizon,
+	}
+	if opts.Limit > 0 {
+		bodyMap["limit"] = opts.Limit
+	}
+	if asOf := strings.TrimSpace(opts.AsOf); asOf != "" {
+		bodyMap["as_of"] = asOf
+	}
+	raw, err := json.Marshal(bodyMap)
+	if err != nil {
+		return nil, err
+	}
+
+	var lastErr error
+	for _, path := range []string{"/v1/memory/ops_digest", "/v5/memory/ops_digest"} {
+		url := base + path
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(raw))
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		c.auth(req)
+		req.Header.Set("Content-Type", "application/json")
+		c.applyEntitlementHeaders(req)
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			if c.logger != nil {
+				c.logger.Debug("iomesh memory ops_digest failed (fail-open)", "err", err, "path", path)
+			}
+			lastErr = err
+			continue
+		}
+		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 256<<10))
+		_ = resp.Body.Close()
+		if resp.StatusCode == http.StatusNotFound {
+			lastErr = fmt.Errorf("iomesh memory ops_digest: http 404 path=%s", path)
+			continue
+		}
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			lastErr = fmt.Errorf("iomesh memory ops_digest: http %d path=%s", resp.StatusCode, path)
+			if c.logger != nil {
+				c.logger.Debug("iomesh memory ops_digest non-OK (fail-open)", "status", resp.StatusCode, "path", path)
+			}
+			continue
+		}
+		var out MemoryOpsDigestResult
+		if len(respBody) > 0 {
+			if err := json.Unmarshal(respBody, &out); err != nil {
+				lastErr = fmt.Errorf("iomesh memory ops_digest decode: %w", err)
+				continue
+			}
+		}
+		if out.Patterns == nil {
+			out.Patterns = []MemoryOpsDigestPattern{}
+		}
+		if out.Receipts == nil {
+			out.Receipts = []MemoryOpsDigestReceipt{}
+		}
+		out.Path = path
+		return &out, nil
+	}
+	if lastErr == nil {
+		lastErr = fmt.Errorf("iomesh memory ops_digest: no path succeeded")
+	}
+	return nil, lastErr
+}
+
 // dogfoodSessionID returns a stable session id for memory dogfood probes.
 func dogfoodSessionID(tenant string) string {
 	tenant = strings.TrimSpace(tenant)

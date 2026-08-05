@@ -168,6 +168,46 @@ func TestParseMemoryRelatedArgs(t *testing.T) {
 	}
 }
 
+// s1200: /memory digest flag parser for window / horizon / limit.
+func TestParseMemoryDigestArgs(t *testing.T) {
+	o, errMsg := parseMemoryDigestArgs([]string{
+		"--window", "week",
+		"--horizon=knowledge",
+		"--limit", "7",
+		"--as-of", "2026-08-04T00:00:00Z",
+	})
+	if errMsg != "" {
+		t.Fatalf("errMsg=%q", errMsg)
+	}
+	if o.Window != "week" || o.Horizon != "knowledge" || o.Limit != 7 {
+		t.Fatalf("opts=%+v", o)
+	}
+	if o.AsOf != "2026-08-04T00:00:00Z" {
+		t.Fatalf("as_of=%q", o.AsOf)
+	}
+	// defaults when empty.
+	o2, errMsg2 := parseMemoryDigestArgs(nil)
+	if errMsg2 != "" || o2.Window != "" || o2.Horizon != "" || o2.Limit != 0 {
+		t.Fatalf("empty opts=%+v err=%q", o2, errMsg2)
+	}
+	_, badWin := parseMemoryDigestArgs([]string{"--window", "month"})
+	if badWin == "" {
+		t.Fatal("expected invalid --window")
+	}
+	_, badHor := parseMemoryDigestArgs([]string{"--horizon", "gtm"})
+	if badHor == "" {
+		t.Fatal("expected invalid --horizon")
+	}
+	_, badLim := parseMemoryDigestArgs([]string{"--limit", "nope"})
+	if badLim == "" {
+		t.Fatal("expected invalid --limit")
+	}
+	_, badFlag := parseMemoryDigestArgs([]string{"--unknown"})
+	if badFlag == "" {
+		t.Fatal("expected unknown flag")
+	}
+}
+
 func TestModelPickerNumber(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer

@@ -271,7 +271,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 	case "/memory", "/mem":
 		if len(parts) < 2 {
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
-			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] | ingest <text>]")
+			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] | ingest <text>]")
 			return false, nil
 		}
 		sub := strings.ToLower(parts[1])
@@ -315,6 +315,24 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 				return false, nil
 			}
 			fmt.Fprintln(out, text)
+		case "digest", "dig":
+			// s1200: opt-in ops heartbeat digest export (HTTP + MCP ops_digest_export fallback).
+			// ops GA-path · knowledge/analytical Beta · never invent GA · dual_write OFF · not Memory GA.
+			dopts, perr := parseMemoryDigestArgs(parts[2:])
+			if perr != "" {
+				fmt.Fprintf(out, "memory digest: %s\nusage: /memory digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N]\n", perr)
+				return false, nil
+			}
+			text, err := rt.rt.MemoryOpsDigest(context.Background(), dopts)
+			if err != nil {
+				fmt.Fprintf(out, "memory digest: %v\n", err)
+				return false, nil
+			}
+			if strings.TrimSpace(text) == "" {
+				fmt.Fprintln(out, "(empty digest)")
+				return false, nil
+			}
+			fmt.Fprintln(out, text)
 		case "ingest", "i":
 			content := strings.Join(parts[2:], " ")
 			if strings.TrimSpace(content) == "" {
@@ -329,11 +347,11 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			fmt.Fprintln(out, text)
 		default:
 			// Treat remainder as recall query: /memory what did we decide
-			// (also accepts --since/--until when first token is not status|recall|related|ingest)
+			// (also accepts --since/--until when first token is not status|recall|related|digest|ingest)
 			q, ropts := parseMemoryRecallArgs(parts[1:])
 			text, err := rt.rt.MemoryRecallWithOpts(context.Background(), q, ropts)
 			if err != nil {
-				fmt.Fprintf(out, "memory: %v (try /memory status|recall|related|ingest)\n", err)
+				fmt.Fprintf(out, "memory: %v (try /memory status|recall|related|digest|ingest)\n", err)
 				return false, nil
 			}
 			if strings.TrimSpace(text) == "" {
@@ -450,7 +468,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /cost                session usage meter + sample estimate
   /mesh                I/O Mesh status + usage
   /catalog [query]     list mesh data products (catalog plane)
-  /memory [recall|related|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop lite opt-in)
+  /memory [recall|related|digest|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse opt-in)
   /quit                exit
 
 Fullscreen keys: enter send · ctrl+j newline · pgup/pgdn scroll
@@ -504,6 +522,70 @@ func parseMemoryRecallArgs(args []string) (query string, opts agent.MemoryRecall
 		}
 	}
 	return strings.Join(qParts, " "), opts
+}
+
+// parseMemoryDigestArgs extracts ops digest flags (s1200).
+// Supports: --window day|week, --horizon ops|knowledge|analytical|all, --limit N, --as-of RFC3339.
+// Returns errMsg when a flag is malformed or values are invalid.
+func parseMemoryDigestArgs(args []string) (opts agent.MemoryOpsDigestOpts, errMsg string) {
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		key, val, hasEq := splitFlagKV(a)
+		switch key {
+		case "--window", "-w":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			v := strings.ToLower(strings.TrimSpace(val))
+			if v != "day" && v != "week" {
+				return opts, "invalid --window (day|week)"
+			}
+			opts.Window = v
+		case "--horizon", "-h":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			v := strings.ToLower(strings.TrimSpace(val))
+			switch v {
+			case "ops", "knowledge", "analytical", "all":
+				opts.Horizon = v
+			default:
+				return opts, "invalid --horizon (ops|knowledge|analytical|all)"
+			}
+		case "--limit":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			n, err := strconv.Atoi(strings.TrimSpace(val))
+			if err != nil || n < 0 {
+				return opts, "invalid --limit"
+			}
+			opts.Limit = n
+		case "--as-of", "--as_of":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.AsOf = strings.TrimSpace(val)
+		default:
+			if strings.HasPrefix(a, "-") {
+				return opts, "unknown flag " + a
+			}
+			return opts, "unexpected argument " + a
+		}
+	}
+	return opts, ""
 }
 
 // parseMemoryRelatedArgs extracts multi-hop related flags (s1135).
