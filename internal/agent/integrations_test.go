@@ -346,6 +346,8 @@ func TestIntegrationsStatus_OfflineFailOpen(t *testing.T) {
 	if strings.Contains(out, "Connected: yes") {
 		t.Fatalf("must not invent install green: %s", out)
 	}
+	// s1263: org installs residual honesty always (offline too)
+	assertStatusOrgInstallsHonesty(t, out)
 }
 
 // s1247: empty MCP manager (Len=0) is residual offline/empty, not invent.
@@ -368,6 +370,8 @@ func TestIntegrationsStatus_EmptyManager(t *testing.T) {
 	if !strings.Contains(out, "never invent install green") {
 		t.Fatalf("honesty: %s", out)
 	}
+	// s1263: org installs residual still present on empty manager
+	assertStatusOrgInstallsHonesty(t, out)
 }
 
 // s1247: formatCatalogPulse from aion v178 entries — catalog honesty only, never install green.
@@ -525,6 +529,87 @@ func TestIntegrationsStatus_MockCatalogPresent(t *testing.T) {
 	}
 	if !strings.Contains(out, "dual_write OFF") {
 		t.Fatalf("dual_write: %s", out)
+	}
+	// s1263: org installs residual honesty always (online catalog path too)
+	assertStatusOrgInstallsHonesty(t, out)
+}
+
+// assertStatusOrgInstallsHonesty checks s1263 residual-honest org install snapshot needles.
+// Always required on IntegrationsStatus (offline and online) — never invent Connected / empty-as-none.
+func assertStatusOrgInstallsHonesty(t *testing.T, out string) {
+	t.Helper()
+	if !strings.Contains(out, "org installs") {
+		t.Fatalf("s1263 want org installs: %s", out)
+	}
+	if !strings.Contains(out, "unavailable") {
+		t.Fatalf("s1263 want unavailable via agent MCP: %s", out)
+	}
+	if !strings.Contains(out, statusOrgInstallsUnavailableLine) {
+		t.Fatalf("s1263 want constant unavailable line: %s", out)
+	}
+	if !strings.Contains(out, "candidacy open") {
+		t.Fatalf("s1263 want dual-auth candidacy open: %s", out)
+	}
+	if !strings.Contains(out, "never invent Connected") {
+		t.Fatalf("s1263 want never invent Connected: %s", out)
+	}
+	if !strings.Contains(out, "empty-as-none") {
+		t.Fatalf("s1263 want empty-as-none residual: %s", out)
+	}
+	if !strings.Contains(out, "portal session HITL") {
+		t.Fatalf("s1263 want portal session HITL: %s", out)
+	}
+	if !strings.Contains(out, "console.iome.sh/integrations") {
+		t.Fatalf("s1263 want portal URL: %s", out)
+	}
+	// must never invent install rows / Connected green from missing snapshot
+	if strings.Contains(out, "Connected: yes") {
+		t.Fatalf("s1263 must not invent install green: %s", out)
+	}
+	if strings.Contains(out, "installs: 0") || strings.Contains(out, "org installs: 0") {
+		t.Fatalf("s1263 must not invent empty-as-none installs: %s", out)
+	}
+	if strings.Contains(out, "dual-auth shipped") || strings.Contains(out, "dual-auth: live") {
+		t.Fatalf("s1263 must not claim dual-auth shipped: %s", out)
+	}
+}
+
+// s1263: offline status always reports org installs unavailable (portal HITL only).
+func TestIntegrationsStatus_S1263OrgInstallsOffline(t *testing.T) {
+	rt := &Runtime{}
+	out, err := rt.IntegrationsStatus(context.Background())
+	if err != nil {
+		t.Fatalf("err=%v", err)
+	}
+	assertStatusOrgInstallsHonesty(t, out)
+	// still residual — no invent install green / catalog counts offline
+	if strings.Contains(out, "total catalog entries:") {
+		t.Fatalf("must not invent catalog counts offline: %s", out)
+	}
+	if !strings.Contains(out, "never invent install green") {
+		t.Fatalf("honesty footer: %s", out)
+	}
+}
+
+// s1263: statusOrgInstallsSection is residual-honest and stable for unit needles.
+func TestStatusOrgInstallsSection(t *testing.T) {
+	out := statusOrgInstallsSection()
+	for _, want := range []string{
+		statusOrgInstallsUnavailableLine,
+		statusOrgInstallsDualAuthLine,
+		"portal: " + integrationsPortalURL,
+		"org installs",
+		"unavailable",
+		"candidacy open",
+		"never invent Connected",
+		"empty-as-none",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("missing %q in: %s", want, out)
+		}
+	}
+	if strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent install green: %s", out)
 	}
 }
 

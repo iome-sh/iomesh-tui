@@ -24,6 +24,13 @@ const (
 	integrationsPortalURL = "https://console.iome.sh/integrations"
 	// IntegrationsHonestyOneLiner is the bare /integrations status line.
 	IntegrationsHonestyOneLiner = "agent setup = catalog + plan + portal HITL · not full install CRUD · stub ≠ live · dual_write OFF · catalog Beta honesty · never invent install green"
+
+	// s1263: residual-honest org install snapshot lines for /integrations status.
+	// Always shown (online and offline). Agent MCP has no list-installs tool;
+	// portal session HITL only; dual-auth candidacy open (peer aion s1261) — not shipped.
+	// Never invent Connected / empty-as-none installs.
+	statusOrgInstallsUnavailableLine = "org installs: unavailable via agent MCP (portal session HITL only)"
+	statusOrgInstallsDualAuthLine    = "dual-auth read snapshot: candidacy open · never invent Connected / empty-as-none"
 )
 
 // IntegrationsAgentGuidanceNote is the residual-honest system note injected on AttachMCP
@@ -181,17 +188,22 @@ func (rt *Runtime) IntegrationsSigning(ctx context.Context, meshLayerOrConnector
 	return out + "\n" + signingHonestyFooter(), nil
 }
 
-// IntegrationsStatus is the residual-honest operator pulse for /integrations status (s1247).
+// IntegrationsStatus is the residual-honest operator pulse for /integrations status
+// (s1247 catalog pulse · s1263 org-installs residual honesty).
 //
 // Reports MCP path availability, presence of list/plan/signing tools (lightweight probe —
 // same discovery as callMCPToolByName, no invent), optional catalog count + per-mesh_layer
-// counts when list_connector_catalog works, and always an honesty footer.
+// counts when list_connector_catalog works, always an org-installs residual section
+// (s1263 — unavailable via agent MCP; portal HITL only; dual-auth candidacy open),
+// and always an honesty footer.
 //
 // Hard residual rules:
 //   - NEVER invent org install Connected / INSTALL_STORE green / GA
+//   - NEVER treat empty/unavailable install snapshot as "no installs"
 //   - Catalog count ≠ install count (label as catalog honesty only)
 //   - Offline fail-open preserved
 //   - dual_write OFF · book-demo OFF · stub ≠ live · browser HITL · signing discovery only
+//   - Do NOT call any install MCP tool (none exists on agent path)
 func (rt *Runtime) IntegrationsStatus(ctx context.Context) (string, error) {
 	var b strings.Builder
 	b.WriteString("integrations status (s1247 residual-honest operator pulse)\n")
@@ -242,9 +254,22 @@ func (rt *Runtime) IntegrationsStatus(ctx context.Context) (string, error) {
 		}
 	}
 
-	// 4) Honesty footer always
+	// 4) Org installs residual honesty (s1263) — always, online and offline.
+	// No install MCP tool exists; never invent Connected / empty-as-none.
+	b.WriteString(statusOrgInstallsSection())
+
+	// 5) Honesty footer always
 	b.WriteString(statusHonestyFooter())
 	return strings.TrimSpace(b.String()), nil
+}
+
+// statusOrgInstallsSection is the s1263 residual-honest org install snapshot block.
+// Always emitted: agent MCP cannot list org installs; portal session HITL only;
+// dual-auth read snapshot is candidacy open (peer aion s1261) — not claimed shipped.
+func statusOrgInstallsSection() string {
+	return statusOrgInstallsUnavailableLine + "\n" +
+		"  " + statusOrgInstallsDualAuthLine + "\n" +
+		"  portal: " + integrationsPortalURL + "\n"
 }
 
 // mcpPathState reports whether the MCP call path is usable.

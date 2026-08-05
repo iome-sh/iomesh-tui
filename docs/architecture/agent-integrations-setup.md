@@ -56,11 +56,11 @@ Aliases: `/integration`, `/connectors`. Signing aliases: `signing` · `headers` 
 - `IntegrationsCatalog(ctx, meshLayer)` — MCP `CallTool` `list_connector_catalog`
 - `IntegrationsPlan(ctx, connectorID)` — MCP `CallTool` `plan_connector_setup`
 - `IntegrationsSigning(ctx, meshLayerOrConnector)` — MCP `CallTool` `get_webhook_signing_headers` (s1243)
-- `IntegrationsStatus(ctx)` — s1247 residual-honest operator pulse (MCP path · tools · catalog honesty)
+- `IntegrationsStatus(ctx)` — s1247 residual-honest operator pulse (MCP path · tools · catalog honesty) + s1263 org-installs residual honesty
 
 All scan connected MCP servers for the bare tool name (same fail-open spirit as memory digest MCP fallback). Prefer Manager bindings; fall back to each client's tool list.
 
-## Status pulse (s1247)
+## Status pulse (s1247 · s1263)
 
 `/integrations status` reports an **operator pulse**, not help text:
 
@@ -71,9 +71,14 @@ All scan connected MCP servers for the bare tool name (same fail-open spirit as 
    - `by mesh_layer: operational=A knowledge=B analytical=C`
    - `by catalog status: available=X beta=Y planned=Z`
    - Catalog status chips are display honesty only — **not** Connected/installed; **catalog count ≠ install count**
-4. **Honesty footer always** (`statusHonestyFooter`) — never invent install green · catalog ≠ installs · browser HITL · stub ≠ live · dual_write OFF · book-demo OFF · signing discovery only · portal `https://console.iome.sh/integrations`
+4. **Org installs residual honesty (s1263)** — always (online and offline); no install MCP tool exists on agent path:
+   - `org installs: unavailable via agent MCP (portal session HITL only)`
+   - `dual-auth read snapshot: candidacy open · never invent Connected / empty-as-none`
+   - `portal: https://console.iome.sh/integrations`
+   - Does **not** call any install MCP tool · does **not** invent install rows · does **not** claim dual-auth shipped (peer aion s1261 candidacy only)
+5. **Honesty footer always** (`statusHonestyFooter`) — never invent install green · catalog ≠ installs · browser HITL · stub ≠ live · dual_write OFF · book-demo OFF · signing discovery only · portal `https://console.iome.sh/integrations`
 
-Offline / empty MCP → residual message, **no invented counts**. Never invents org install Connected / INSTALL_STORE green / GA.
+Offline / empty MCP → residual message, **no invented counts**. Never invents org install Connected / INSTALL_STORE green / GA / empty-as-none installs.
 
 ## aion v178 / v30 wire (TUI parse parity · s1242)
 
@@ -202,6 +207,9 @@ No invented catalog rows. No invented plan success. No invented signing secrets.
 | **s1251** | **iomesh-tui** | **Agent skill + `<integrations>` system note (`IntegrationsAgentGuidanceNote` · builtin `connector-integrations-setup`)** |
 | **s1252** | **iomesh-tui** | **Golden fixtures + plan deep_links display parity** |
 | **s1257** | **iomesh-tui** | **Deep-link parity dogfood + skill residual-honest tests (template= · portal_add_url · guidance↔skill needles)** |
+| **s1259** | free-floor peer | free-floor continuum peer (not dual-auth ship) |
+| **s1261** | aion | dual-auth org install read snapshot **candidacy** only (not claimed shipped in TUI) |
+| **s1263** | **iomesh-tui** | **Status org-installs residual honesty (`statusOrgInstallsSection` · always unavailable via agent MCP · portal HITL · never invent Connected / empty-as-none)** · free eng concurrent s1261+ |
 
 ## Config
 
