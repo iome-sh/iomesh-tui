@@ -37,8 +37,12 @@ All scan connected MCP servers for the bare tool name (same fail-open spirit as 
 
 1. **MCP path** — available (N servers) · connected-empty · offline fail-open
 2. **Tools present** — for each of `list_connector_catalog`, `plan_connector_setup`, `get_webhook_signing_headers`: `present` / `missing` / `offline` (lightweight discovery only; same binding/Tools scan as `callMCPToolByName`, no invent)
-3. **Catalog pulse** — only when `list_connector_catalog` is present and the call succeeds: `count` + optional `by mesh_layer` from v178 `entries` (legacy keys still accepted). Labeled **catalog honesty** — status Beta/available/planned is **NOT** install Connected; **catalog count ≠ install count**
-4. **Honesty footer always** — never invent install green · browser HITL · stub ≠ live · dual_write OFF · book-demo OFF · signing discovery only · portal HITL URL
+3. **Catalog pulse** (`formatCatalogPulse`) — only when `list_connector_catalog` is present and the call returns parseable JSON (v178 `entries`; legacy keys still accepted):
+   - `total catalog entries: N  (catalog honesty — NOT install Connected / NOT INSTALL_STORE green)`
+   - `by mesh_layer: operational=A knowledge=B analytical=C`
+   - `by catalog status: available=X beta=Y planned=Z`
+   - Catalog status chips are display honesty only — **not** Connected/installed; **catalog count ≠ install count**
+4. **Honesty footer always** (`statusHonestyFooter`) — never invent install green · catalog ≠ installs · browser HITL · stub ≠ live · dual_write OFF · book-demo OFF · signing discovery only · portal `https://console.iome.sh/integrations`
 
 Offline / empty MCP → residual message, **no invented counts**. Never invents org install Connected / INSTALL_STORE green / GA.
 
@@ -126,11 +130,12 @@ When the signing hint is a connector id (not a mesh layer), TUI calls without `m
 | no invent GA | Catalog status chips stay honest (available / beta / planned) |
 | catalog Beta honesty | Knowledge / analytical layers remain Beta where applicable |
 | fail-open when MCP unavailable | Offline message → `https://console.iome.sh/integrations` |
-| never invent install green | Plan output always carries honesty notes; no fake “Connected” |
+| never invent install green | Plan/status output always carries honesty notes; no fake “Connected” |
 | signing = discovery only | Header parity table only; no secret mint/rotate |
 | catalog count ≠ install count | Status pulse catalog inventory is honesty only, not Connected installs |
+| status = operator pulse | MCP path + tool presence + catalog honesty; not pure help (s1247) |
 
-**Agent setup = catalog + plan + signing discovery + portal HITL · not full install CRUD.**
+**Agent setup = catalog + plan + signing discovery + status pulse + portal HITL · not full install CRUD.**
 
 ## Fail-open offline copy
 
@@ -162,7 +167,7 @@ No invented catalog rows. No invented plan success. No invented signing secrets.
 | s1242 | iomesh-tui | v178 wire parse/format parity (`entries`, `oauth_install_supported`, honesty object) |
 | s1243 | iomesh-tui | `/integrations signing` + `IntegrationsSigning` → `get_webhook_signing_headers` |
 | s1244 | aion | Plan deeplink residual (separate) |
-| **s1247** | **iomesh-tui** | **`/integrations status` residual-honest operator pulse (`IntegrationsStatus`)** |
+| **s1247** | **iomesh-tui** | **`/integrations status` residual-honest operator pulse (`IntegrationsStatus` · `formatCatalogPulse`)** |
 
 ## Config
 
