@@ -30,6 +30,8 @@ Session header `Mcp-Session-Id` is stored on HTTP; `DELETE` on close is best-eff
 | `list_mcp_prompts` | no | Prompt templates |
 | `get_mcp_prompt` | no | Expand prompt + args |
 
+**Agent integrations setup (s1238):** slash `/integrations` calls bare MCP tools `list_connector_catalog` / `plan_connector_setup` when present on any connected server (peer aion s1237). Fail-open offline → portal HITL. Residual-honest path only — not install CRUD / not OAuth complete. See [agent-integrations-setup.md](./agent-integrations-setup.md).
+
 ## OAuth helpers
 
 For HTTP servers:
