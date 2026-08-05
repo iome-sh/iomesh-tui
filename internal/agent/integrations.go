@@ -766,9 +766,11 @@ func signingHonestyFooter() string {
 }
 
 // statusHonestyFooter is always appended to /integrations status (s1247).
+// Always residual: never invent install green · catalog ≠ installs · browser HITL ·
+// stub ≠ live · dual_write OFF · book-demo OFF · signing discovery only · portal HITL.
 func statusHonestyFooter() string {
 	return strings.TrimSpace(`honesty:
-  never invent install green · browser HITL for OAuth complete · stub ≠ live
+  never invent install green · catalog ≠ installs · browser HITL for OAuth complete · stub ≠ live
   dual_write OFF · book-demo OFF · signing discovery only · no invent GA
   catalog count ≠ install Connected · portal HITL ` + integrationsPortalURL + `
   ` + IntegrationsHonestyOneLiner)
@@ -777,6 +779,12 @@ func statusHonestyFooter() string {
 // formatCatalogPulse summarizes list_connector_catalog for the status pulse (s1247).
 // Labels clearly as catalog honesty — status chips are NOT install Connected.
 // Returns empty string when raw is not parseable JSON catalog shape.
+//
+// Example residual-honest lines:
+//
+//	total catalog entries: N  (catalog honesty — NOT install Connected / NOT INSTALL_STORE green)
+//	by mesh_layer: operational=A knowledge=B analytical=C
+//	by catalog status: available=X beta=Y planned=Z
 func formatCatalogPulse(raw string) string {
 	raw = strings.TrimSpace(raw)
 	if raw == "" || (raw[0] != '{' && raw[0] != '[') {
@@ -809,8 +817,9 @@ func formatCatalogPulse(raw string) string {
 		}
 	}
 
-	// Count entries that have an id (or label fallback); tally mesh_layer.
+	// Count entries that have an id (or label fallback); tally mesh_layer + catalog status.
 	layerCounts := map[string]int{}
+	statusCounts := map[string]int{}
 	n := 0
 	for _, it := range items {
 		id := strings.TrimSpace(it.ID)
@@ -826,6 +835,11 @@ func formatCatalogPulse(raw string) string {
 			layer = "(unset)"
 		}
 		layerCounts[layer]++
+		st := strings.ToLower(strings.TrimSpace(it.Status))
+		if st == "" {
+			st = "(unset)"
+		}
+		statusCounts[st]++
 	}
 	// Prefer parsed entry count; fall back to wire count only when entries empty but count set.
 	count := n
@@ -835,34 +849,40 @@ func formatCatalogPulse(raw string) string {
 
 	var b strings.Builder
 	// Hard residual: catalog count is honesty inventory, never install Connected.
-	fmt.Fprintf(&b, "  count: %d  (catalog honesty — NOT install Connected / INSTALL_STORE green)\n", count)
+	fmt.Fprintf(&b, "  total catalog entries: %d  (catalog honesty — NOT install Connected / NOT INSTALL_STORE green)\n", count)
 	if n > 0 {
-		// Stable layer order for operator readability + deterministic tests.
-		order := []string{"operational", "knowledge", "analytical"}
-		seen := map[string]bool{}
-		var parts []string
-		for _, l := range order {
-			if c, ok := layerCounts[l]; ok {
-				parts = append(parts, fmt.Sprintf("%s=%d", l, c))
-				seen[l] = true
-			}
-		}
-		var extras []string
-		for l := range layerCounts {
-			if !seen[l] {
-				extras = append(extras, l)
-			}
-		}
-		sort.Strings(extras)
-		for _, l := range extras {
-			parts = append(parts, fmt.Sprintf("%s=%d", l, layerCounts[l]))
-		}
-		if len(parts) > 0 {
+		if parts := stableCountParts(layerCounts, []string{"operational", "knowledge", "analytical"}); len(parts) > 0 {
 			fmt.Fprintf(&b, "  by mesh_layer: %s\n", strings.Join(parts, " "))
 		}
+		if parts := stableCountParts(statusCounts, []string{"available", "beta", "planned"}); len(parts) > 0 {
+			fmt.Fprintf(&b, "  by catalog status: %s\n", strings.Join(parts, " "))
+		}
 	}
-	b.WriteString("  note: catalog status Beta/available/planned is display honesty only — not Connected\n")
+	b.WriteString("  note: catalog status available/beta/planned is display honesty only — not Connected/installed\n")
 	return b.String()
+}
+
+// stableCountParts formats map counts with preferred key order first, then sorted extras.
+func stableCountParts(counts map[string]int, preferred []string) []string {
+	seen := map[string]bool{}
+	var parts []string
+	for _, k := range preferred {
+		if c, ok := counts[k]; ok {
+			parts = append(parts, fmt.Sprintf("%s=%d", k, c))
+			seen[k] = true
+		}
+	}
+	var extras []string
+	for k := range counts {
+		if !seen[k] {
+			extras = append(extras, k)
+		}
+	}
+	sort.Strings(extras)
+	for _, k := range extras {
+		parts = append(parts, fmt.Sprintf("%s=%d", k, counts[k]))
+	}
+	return parts
 }
 
 func firstNonEmpty(vals ...string) string {
