@@ -269,6 +269,43 @@ func TestParseIntegrationsPlanArgs(t *testing.T) {
 	}
 }
 
+// s1243: /integrations signing arg parser for mesh_layer or connector_id.
+func TestParseIntegrationsSigningArgs(t *testing.T) {
+	hint, errMsg := parseIntegrationsSigningArgs([]string{"knowledge"})
+	if errMsg != "" || hint != "knowledge" {
+		t.Fatalf("hint=%q err=%q", hint, errMsg)
+	}
+	hint2, errMsg2 := parseIntegrationsSigningArgs([]string{"--layer", "operational"})
+	if errMsg2 != "" || hint2 != "operational" {
+		t.Fatalf("hint=%q err=%q", hint2, errMsg2)
+	}
+	hint3, errMsg3 := parseIntegrationsSigningArgs([]string{"--id=github"})
+	if errMsg3 != "" || hint3 != "github" {
+		t.Fatalf("hint=%q err=%q", hint3, errMsg3)
+	}
+	// bare connector id (not a mesh layer)
+	hint4, errMsg4 := parseIntegrationsSigningArgs([]string{"slack"})
+	if errMsg4 != "" || hint4 != "slack" {
+		t.Fatalf("hint=%q err=%q", hint4, errMsg4)
+	}
+	hint5, errMsg5 := parseIntegrationsSigningArgs(nil)
+	if errMsg5 != "" || hint5 != "" {
+		t.Fatalf("empty hint=%q err=%q", hint5, errMsg5)
+	}
+	_, bad := parseIntegrationsSigningArgs([]string{"--layer", "gtm"})
+	if bad == "" {
+		t.Fatal("expected invalid layer")
+	}
+	_, badFlag := parseIntegrationsSigningArgs([]string{"--unknown"})
+	if badFlag == "" {
+		t.Fatal("expected unknown flag")
+	}
+	_, multi := parseIntegrationsSigningArgs([]string{"github", "extra"})
+	if multi == "" {
+		t.Fatal("expected unexpected argument")
+	}
+}
+
 // s1238: /integrations slash routing — bare/status help + list/plan fail-open offline (no live MCP).
 func TestHandleSlash_Integrations(t *testing.T) {
 	rt := testRuntime(t)
@@ -331,6 +368,23 @@ func TestHandleSlash_Integrations(t *testing.T) {
 	_, _ = handleSlash(&out, adapter, "/integrations plan")
 	if !strings.Contains(out.String(), "usage: /integrations plan") {
 		t.Fatalf("plan usage: %s", out.String())
+	}
+
+	// s1243: signing without MCP → fail-open offline (discovery only; no invent secrets)
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/integrations signing knowledge")
+	signOut := out.String()
+	if !strings.Contains(signOut, "fail-open") {
+		t.Fatalf("signing offline: %s", signOut)
+	}
+	if !strings.Contains(signOut, "console.iome.sh/integrations") {
+		t.Fatalf("signing portal: %s", signOut)
+	}
+	// alias headers
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/integrations headers github")
+	if !strings.Contains(out.String(), "fail-open") {
+		t.Fatalf("headers alias: %s", out.String())
 	}
 
 	// bad list layer
