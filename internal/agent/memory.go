@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -338,6 +339,214 @@ func (rt *Runtime) MemoryRecallWithOpts(ctx context.Context, query string, opts 
 type MemoryRelatedOpts struct {
 	MaxHops int
 	Limit   int
+}
+
+// MemoryOpsDigestOpts overrides defaults for one opt-in ops digest export (s1200).
+// Zero/empty fields use defaults: Window=day, Horizon=ops, Limit=20.
+type MemoryOpsDigestOpts struct {
+	Window  string // day|week
+	Horizon string // ops|knowledge|analytical|all
+	Limit   int
+	AsOf    string // optional RFC3339
+}
+
+// MemoryOpsDigest exports an ops heartbeat digest pack (s1200).
+// Prefers sync HTTP ExportOpsDigest (POST /v1|/v5/memory/ops_digest); falls back
+// to MCP ops_digest_export when sync fails or mesh is unavailable.
+// Returns human-readable text (patterns + receipts + honesty line).
+// Does NOT run on default auto-recall (slash/CLI opt-in only).
+// Honesty: ops GA-path · knowledge/analytical Beta · never invent GA · dual_write OFF ·
+// not product Memory GA · not full graph RAG. Human owns irreversible decisions.
+func (rt *Runtime) MemoryOpsDigest(ctx context.Context, opts ...MemoryOpsDigestOpts) (string, error) {
+	if rt == nil || !rt.memory.Enabled {
+		return "", fmt.Errorf("memory hooks disabled")
+	}
+
+	var call MemoryOpsDigestOpts
+	if len(opts) > 0 {
+		call = opts[0]
+	}
+	window := strings.ToLower(strings.TrimSpace(call.Window))
+	if window == "" {
+		window = "day"
+	}
+	horizon := strings.ToLower(strings.TrimSpace(call.Horizon))
+	if horizon == "" {
+		horizon = "ops"
+	}
+	limit := call.Limit
+	if limit <= 0 {
+		limit = 20
+	}
+	maxBytes := rt.memory.MaxSnippetBytes
+	if maxBytes <= 0 {
+		maxBytes = 6000
+	}
+
+	// Prefer sync ops digest against memory sidecar HTTP when mesh client is live.
+	if rt.syncMemoryReady() {
+		start := time.Now()
+		res, err := rt.mesh.ExportOpsDigest(ctx, rt.memoryTenant(), iomesh.MemoryOpsDigestOptions{
+			Window:  window,
+			Horizon: horizon,
+			Limit:   limit,
+			AsOf:    strings.TrimSpace(call.AsOf),
+		})
+		latMS := int(time.Since(start).Milliseconds())
+		rt.lastMemoryRetrieveMS.Store(int64(latMS))
+		rt.lastMemoryRetrieveCacheHit.Store(false)
+		if err == nil {
+			return formatOpsDigest(res, maxBytes), nil
+		}
+		if rt.logger != nil {
+			rt.logger.Debug("memory ops_digest sync failed; trying MCP fallback", "err", err, "ms", latMS)
+		}
+		// Fall through to MCP when sidecar path is missing (e.g. broker-only endpoint).
+	}
+
+	if !rt.mcpMemoryReady() {
+		if rt.syncMemoryReady() {
+			return "", fmt.Errorf("memory ops_digest sync failed and mcp server %q not connected", rt.memory.Server)
+		}
+		return "", fmt.Errorf("mcp server %q not connected (and mesh sync unavailable)", rt.memory.Server)
+	}
+	c := rt.mcp.ClientByName(rt.memory.Server)
+	args := map[string]any{
+		"window":  window,
+		"horizon": horizon,
+		"limit":   limit,
+	}
+	if t := rt.memoryTenant(); t != "" {
+		args["tenant"] = t
+	}
+	if asOf := strings.TrimSpace(call.AsOf); asOf != "" {
+		args["as_of"] = asOf
+	}
+	start := time.Now()
+	out, err := c.CallTool(ctx, "ops_digest_export", args)
+	latMS := int(time.Since(start).Milliseconds())
+	rt.lastMemoryRetrieveMS.Store(int64(latMS))
+	rt.lastMemoryRetrieveCacheHit.Store(false)
+	if err != nil {
+		return "", err
+	}
+	// MCP returns JSON text; try to re-format for operator readability, else pass through.
+	if formatted := formatOpsDigestJSON(out, maxBytes); formatted != "" {
+		return formatted, nil
+	}
+	return truncateBytes(out, maxBytes), nil
+}
+
+// formatOpsDigest turns a sync ExportOpsDigest result into a compact human-readable pack.
+// Sections: header · patterns · receipts · honesty (residual-honest framing).
+func formatOpsDigest(res *iomesh.MemoryOpsDigestResult, maxBytes int) string {
+	if res == nil {
+		return ""
+	}
+	var b strings.Builder
+	window := res.Window
+	if window == "" {
+		window = "day"
+	}
+	horizon := res.Horizon
+	if horizon == "" {
+		horizon = "ops"
+	}
+	fmt.Fprintf(&b, "ops digest window=%s horizon=%s", window, horizon)
+	if res.Since != "" || res.AsOf != "" {
+		fmt.Fprintf(&b, " since=%s as_of=%s", emptyDash(res.Since), emptyDash(res.AsOf))
+	}
+	b.WriteByte('\n')
+
+	if len(res.Patterns) == 0 {
+		b.WriteString("patterns: (none)\n")
+	} else {
+		fmt.Fprintf(&b, "patterns (%d):\n", len(res.Patterns))
+		for i, p := range res.Patterns {
+			line := strings.TrimSpace(p.Summary)
+			if line == "" {
+				line = strings.TrimSpace(p.Subject)
+			}
+			if line == "" {
+				line = strings.TrimSpace(p.Kind)
+			}
+			if line == "" {
+				line = p.ID
+			}
+			prefix := ""
+			if p.Score > 0 {
+				prefix = fmt.Sprintf("[%.2f] ", p.Score)
+			}
+			kind := ""
+			if k := strings.TrimSpace(p.Kind); k != "" {
+				kind = k + " "
+			}
+			fmt.Fprintf(&b, "  %d. %s%s%s\n", i+1, prefix, kind, line)
+		}
+	}
+
+	if len(res.Receipts) == 0 {
+		b.WriteString("receipts: (none)\n")
+	} else {
+		fmt.Fprintf(&b, "receipts (%d):\n", len(res.Receipts))
+		for i, r := range res.Receipts {
+			sum := strings.TrimSpace(r.Summary)
+			if sum == "" {
+				sum = r.ID
+			}
+			when := strings.TrimSpace(r.EventTime)
+			if when != "" {
+				fmt.Fprintf(&b, "  %d. [%s] %s\n", i+1, when, sum)
+			} else {
+				fmt.Fprintf(&b, "  %d. %s\n", i+1, sum)
+			}
+		}
+	}
+
+	// Honesty line — residual framing pin (never invent GA).
+	h := res.Honesty
+	opsPulse := h.OpsPulse
+	if opsPulse == "" {
+		opsPulse = "ga_path"
+	}
+	know := h.Knowledge
+	if know == "" {
+		know = "beta"
+	}
+	anal := h.Analytical
+	if anal == "" {
+		anal = "beta"
+	}
+	dw := h.DualWriteDefault
+	if dw == "" {
+		dw = "off"
+	}
+	// never_invent_ga defaults true in residual framing when the field is absent from older payloads.
+	neverInvent := h.NeverInventGA
+	if !neverInvent && h.OpsPulse == "" && h.Knowledge == "" {
+		neverInvent = true
+	}
+	fmt.Fprintf(&b, "honesty: ops=%s knowledge=%s analytical=%s never_invent_ga=%v dual_write=%s · not Memory GA · not full graph RAG",
+		opsPulse, know, anal, neverInvent, dw)
+	if note := strings.TrimSpace(h.Note); note != "" {
+		fmt.Fprintf(&b, "\n  note: %s", note)
+	}
+	out := b.String()
+	return truncateBytes(out, maxBytes)
+}
+
+// formatOpsDigestJSON attempts to parse MCP ops_digest_export JSON into the same
+// human-readable layout as formatOpsDigest. Returns empty when parse fails.
+func formatOpsDigestJSON(raw string, maxBytes int) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw[0] != '{' {
+		return ""
+	}
+	var res iomesh.MemoryOpsDigestResult
+	if err := json.Unmarshal([]byte(raw), &res); err != nil {
+		return ""
+	}
+	return formatOpsDigest(&res, maxBytes)
 }
 
 // MemoryRelated performs opt-in multi-hop lite related recall (s1135).

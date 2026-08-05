@@ -38,6 +38,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **`iomesh mesh consumer create` role + default filter (s681)** — `--role` / `--pull-allow-suffix` (config fallbacks `[memory].pull_role` / `pull_allow_suffix`) set client auth headers; empty `--filter` uses role-aware `DefaultMemoryPullFilterForRole` (same as memory pull s678). Beta; fail-open without role; not full mesh RBAC GA
 - **`iomesh memory pull` (s652 cost-max M1)** — durable mesh consumer → map envelopes → local MCP `memory_ingest_turn` (optional `--dry-run` / `--once`); config `[memory] pull_*`; dual_write remains optional audit default OFF; hosted Palace sunset until scale ([docs/architecture/memory-mcp.md](docs/architecture/memory-mcp.md))
 
+## Unreleased
+
+### Added
+
+- **Ops heartbeat digest export (s1200)** — opt-in ops digest via lean HTTP `POST /v1|/v5/memory/ops_digest` (`ExportOpsDigest`) with MCP `ops_digest_export` fallback; slash `/memory digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N]`. Human-readable patterns + receipts + honesty line. **Honesty:** ops GA-path · knowledge/analytical Beta · never invent GA · dual_write default OFF · not product Memory GA · not full graph RAG · fail-open
+
 ## [0.71.0] — 2026-08-03
 
 Minor release: multi-hop related memory recall + temporal retrieve options + short-TTL recall cache.

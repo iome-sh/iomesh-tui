@@ -684,3 +684,149 @@ func TestRetrieveMemoryRelated_DefaultHopsAndLimit(t *testing.T) {
 		t.Fatalf("unexpected seed_entity: %v", gotBody)
 	}
 }
+
+// s1200: ops digest posts to /v1/memory/ops_digest with window/horizon/limit and parses patterns+receipts+honesty.
+func TestExportOpsDigest_SyncHitsAndBody(t *testing.T) {
+	var gotPath string
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		if r.URL.Path != "/v1/memory/ops_digest" {
+			http.NotFound(w, r)
+			return
+		}
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"window":  "day",
+			"horizon": "ops",
+			"as_of":   "2026-08-04T12:00:00Z",
+			"since":   "2026-08-03T12:00:00Z",
+			"honesty": map[string]any{
+				"ops_pulse":          "ga_path",
+				"knowledge":          "beta",
+				"analytical":         "beta",
+				"never_invent_ga":    true,
+				"dual_write_default": "off",
+				"book_demo":          "off",
+				"note":               "Ops digests synthesize live pulse",
+			},
+			"patterns": []map[string]any{
+				{"id": "p1", "kind": "burst", "subject": "dept.ops", "summary": "spike in deploys", "score": 0.9, "count": 5},
+			},
+			"receipts": []map[string]any{
+				{"id": "r1", "event_time": "2026-08-04T10:00:00Z", "summary": "deploy finished", "source_hint": "palace_timeline"},
+			},
+			"decision_stub": map[string]any{
+				"pattern":      "dept.ops",
+				"receipts_ref": []string{"r1"},
+			},
+		})
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "dept.x"}, nil)
+	res, err := c.ExportOpsDigest(context.Background(), "dept.x", MemoryOpsDigestOptions{
+		Window:  "day",
+		Horizon: "ops",
+		Limit:   5,
+		AsOf:    "2026-08-04T12:00:00Z",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotPath != "/v1/memory/ops_digest" || res.Path != "/v1/memory/ops_digest" {
+		t.Fatalf("path got=%q res=%q", gotPath, res.Path)
+	}
+	if gotBody["tenant_id"] != "dept.x" || gotBody["window"] != "day" || gotBody["horizon"] != "ops" {
+		t.Fatalf("body=%v", gotBody)
+	}
+	if gotBody["limit"] != float64(5) || gotBody["as_of"] != "2026-08-04T12:00:00Z" {
+		t.Fatalf("body limit/as_of=%v", gotBody)
+	}
+	if len(res.Patterns) != 1 || res.Patterns[0].Summary != "spike in deploys" {
+		t.Fatalf("patterns=%+v", res.Patterns)
+	}
+	if len(res.Receipts) != 1 || res.Receipts[0].ID != "r1" {
+		t.Fatalf("receipts=%+v", res.Receipts)
+	}
+	if !res.Honesty.NeverInventGA || res.Honesty.OpsPulse != "ga_path" || res.Honesty.Knowledge != "beta" {
+		t.Fatalf("honesty=%+v", res.Honesty)
+	}
+	if res.DecisionStub.Pattern != "dept.ops" {
+		t.Fatalf("stub=%+v", res.DecisionStub)
+	}
+}
+
+// s1200: 404 on v1 falls back to v5/memory/ops_digest.
+func TestExportOpsDigest_V5Fallback(t *testing.T) {
+	var paths []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		if r.URL.Path == "/v1/memory/ops_digest" {
+			w.WriteHeader(404)
+			return
+		}
+		if r.URL.Path == "/v5/memory/ops_digest" {
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"window": "week", "horizon": "ops", "as_of": "now",
+				"honesty":  map[string]any{"ops_pulse": "ga_path", "knowledge": "beta", "analytical": "beta", "never_invent_ga": true, "dual_write_default": "off", "book_demo": "off"},
+				"patterns": []any{}, "receipts": []any{},
+			})
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "t"}, nil)
+	res, err := c.ExportOpsDigest(context.Background(), "t", MemoryOpsDigestOptions{Window: "week"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Path != "/v5/memory/ops_digest" || res.Patterns == nil || res.Receipts == nil {
+		t.Fatalf("%+v paths=%v", res, paths)
+	}
+}
+
+// s1200: defaults window=day horizon=ops; validates window/horizon; tenant required.
+func TestExportOpsDigest_DefaultsAndValidation(t *testing.T) {
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"window": "day", "horizon": "ops", "as_of": "now",
+			"honesty":  map[string]any{"ops_pulse": "ga_path"},
+			"patterns": []any{}, "receipts": []any{},
+		})
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "dept.defaults"}, nil)
+	res, err := c.ExportOpsDigest(context.Background(), "dept.defaults", MemoryOpsDigestOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotBody["window"] != "day" || gotBody["horizon"] != "ops" {
+		t.Fatalf("defaults body=%v", gotBody)
+	}
+	if _, ok := gotBody["limit"]; ok {
+		t.Fatalf("limit should omit when 0: %v", gotBody)
+	}
+	if res.Window != "day" {
+		t.Fatalf("res=%+v", res)
+	}
+
+	_, err = c.ExportOpsDigest(context.Background(), "t", MemoryOpsDigestOptions{Window: "month"})
+	if err == nil || !strings.Contains(err.Error(), "window") {
+		t.Fatalf("window err=%v", err)
+	}
+	_, err = c.ExportOpsDigest(context.Background(), "t", MemoryOpsDigestOptions{Horizon: "gtm"})
+	if err == nil || !strings.Contains(err.Error(), "horizon") {
+		t.Fatalf("horizon err=%v", err)
+	}
+	c2 := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	_, err = c2.ExportOpsDigest(context.Background(), "", MemoryOpsDigestOptions{})
+	if err == nil || !strings.Contains(err.Error(), "tenant_id") {
+		t.Fatalf("tenant err=%v", err)
+	}
+}
