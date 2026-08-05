@@ -31,6 +31,8 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 | **3 ops digest (s1200)** | **done (opt-in)** | Sync `POST /v1|/v5/memory/ops_digest` + MCP `ops_digest_export` fallback; `/memory digest`; ops GA-path · knowledge/analytical Beta |
 | **4 pull (s652)** | **done (M1)** | `iomesh memory pull` — durable mesh consumer → local MCP `memory_ingest_turn` (cost-max local palace; dual_write remains optional audit) |
 
+**Related (not Memory Palace):** agent connector setup slash `/integrations` (s1238) uses MCP `list_connector_catalog` / `plan_connector_setup` (aion s1237) with residual honesty — see [agent-integrations-setup.md](./agent-integrations-setup.md).
+
 **Cost-max (s650+):** primary Memory UX is **local Palace** (this TUI + `aion-memory-mcp`). Mesh is **pull egress** of ops events; hosted cloud Palace is **sunset until scale**. Dual-write = optional **audit** only (default OFF).
 
 ### Local edge stack (s761 product · s765 completeness pin)

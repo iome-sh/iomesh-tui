@@ -61,4 +61,6 @@ iomesh> /theme high-contrast
 
 - `internal/tui/fullscreen.go` — Bubble Tea model + textarea input
 - `internal/tui/theme.go` — named palettes
-- `internal/tui/tui.go` — classic REPL + shared slash helpers
+- `internal/tui/tui.go` — classic REPL + shared slash helpers (`/memory`, `/integrations`, …)
+
+**s1238:** `/integrations` (`list` / `plan` / `status`) — connector catalog + setup plan via MCP; residual-honest fail-open. See [agent-integrations-setup.md](./agent-integrations-setup.md).

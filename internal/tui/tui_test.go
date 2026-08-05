@@ -91,6 +91,9 @@ func TestHandleSlash_ModelsAndCost(t *testing.T) {
 	if !strings.Contains(out.String(), "/memory") {
 		t.Fatalf("help missing /memory: %s", out.String())
 	}
+	if !strings.Contains(out.String(), "/integrations") {
+		t.Fatalf("help missing /integrations: %s", out.String())
+	}
 	out.Reset()
 	_, _ = handleSlash(&out, adapter, "/memory")
 	if !strings.Contains(out.String(), "memory:") {
@@ -205,6 +208,143 @@ func TestParseMemoryDigestArgs(t *testing.T) {
 	_, badFlag := parseMemoryDigestArgs([]string{"--unknown"})
 	if badFlag == "" {
 		t.Fatal("expected unknown flag")
+	}
+}
+
+// s1238: /integrations list flag parser for --layer mesh_layer filter.
+func TestParseIntegrationsListArgs(t *testing.T) {
+	layer, errMsg := parseIntegrationsListArgs([]string{"--layer", "knowledge"})
+	if errMsg != "" || layer != "knowledge" {
+		t.Fatalf("layer=%q err=%q", layer, errMsg)
+	}
+	layer2, errMsg2 := parseIntegrationsListArgs([]string{"--mesh-layer=analytical"})
+	if errMsg2 != "" || layer2 != "analytical" {
+		t.Fatalf("layer=%q err=%q", layer2, errMsg2)
+	}
+	// bare token form
+	layer3, errMsg3 := parseIntegrationsListArgs([]string{"operational"})
+	if errMsg3 != "" || layer3 != "operational" {
+		t.Fatalf("layer=%q err=%q", layer3, errMsg3)
+	}
+	// empty defaults
+	layer4, errMsg4 := parseIntegrationsListArgs(nil)
+	if errMsg4 != "" || layer4 != "" {
+		t.Fatalf("empty layer=%q err=%q", layer4, errMsg4)
+	}
+	_, bad := parseIntegrationsListArgs([]string{"--layer", "gtm"})
+	if bad == "" {
+		t.Fatal("expected invalid layer")
+	}
+	_, badFlag := parseIntegrationsListArgs([]string{"--unknown"})
+	if badFlag == "" {
+		t.Fatal("expected unknown flag")
+	}
+}
+
+// s1238: /integrations plan arg parser for connector_id.
+func TestParseIntegrationsPlanArgs(t *testing.T) {
+	id, errMsg := parseIntegrationsPlanArgs([]string{"github"})
+	if errMsg != "" || id != "github" {
+		t.Fatalf("id=%q err=%q", id, errMsg)
+	}
+	id2, errMsg2 := parseIntegrationsPlanArgs([]string{"--id", "slack"})
+	if errMsg2 != "" || id2 != "slack" {
+		t.Fatalf("id=%q err=%q", id2, errMsg2)
+	}
+	id3, errMsg3 := parseIntegrationsPlanArgs([]string{"--connector-id=notion"})
+	if errMsg3 != "" || id3 != "notion" {
+		t.Fatalf("id=%q err=%q", id3, errMsg3)
+	}
+	id4, errMsg4 := parseIntegrationsPlanArgs(nil)
+	if errMsg4 != "" || id4 != "" {
+		t.Fatalf("empty id=%q err=%q", id4, errMsg4)
+	}
+	_, bad := parseIntegrationsPlanArgs([]string{"--nope"})
+	if bad == "" {
+		t.Fatal("expected unknown flag")
+	}
+	_, multi := parseIntegrationsPlanArgs([]string{"github", "extra"})
+	if multi == "" {
+		t.Fatal("expected unexpected argument")
+	}
+}
+
+// s1238: /integrations slash routing — bare/status help + list/plan fail-open offline (no live MCP).
+func TestHandleSlash_Integrations(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	// bare → help + honesty one-liner
+	_, err := handleSlash(&out, adapter, "/integrations")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := out.String()
+	if !strings.Contains(s, "usage: /integrations") {
+		t.Fatalf("help: %s", s)
+	}
+	if !strings.Contains(s, "catalog + plan + portal HITL") {
+		t.Fatalf("honesty: %s", s)
+	}
+	if !strings.Contains(s, "not full install CRUD") {
+		t.Fatalf("not install CRUD: %s", s)
+	}
+
+	// aliases
+	for _, cmd := range []string{"/integration status", "/connectors help"} {
+		out.Reset()
+		_, _ = handleSlash(&out, adapter, cmd)
+		if !strings.Contains(out.String(), "usage: /integrations") {
+			t.Fatalf("%s: %s", cmd, out.String())
+		}
+	}
+
+	// list without MCP → residual-honest offline (fail-open, no invent green)
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/integrations list --layer knowledge")
+	listOut := out.String()
+	if !strings.Contains(listOut, "fail-open") {
+		t.Fatalf("list offline: %s", listOut)
+	}
+	if !strings.Contains(listOut, "console.iome.sh/integrations") {
+		t.Fatalf("list portal: %s", listOut)
+	}
+	if !strings.Contains(listOut, "s1237") {
+		t.Fatalf("list s1237: %s", listOut)
+	}
+	// must not invent a catalog table of live connectors offline
+	if strings.Contains(listOut, "MESH_LAYER") && strings.Contains(listOut, "github") {
+		t.Fatalf("must not invent catalog rows: %s", listOut)
+	}
+
+	// plan without MCP → same fail-open path
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/integrations plan github")
+	planOut := out.String()
+	if !strings.Contains(planOut, "fail-open") || !strings.Contains(planOut, "s1237") {
+		t.Fatalf("plan offline: %s", planOut)
+	}
+
+	// plan missing id
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/integrations plan")
+	if !strings.Contains(out.String(), "usage: /integrations plan") {
+		t.Fatalf("plan usage: %s", out.String())
+	}
+
+	// bad list layer
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/integrations list --layer gtm")
+	if !strings.Contains(out.String(), "invalid") {
+		t.Fatalf("bad layer: %s", out.String())
+	}
+
+	// unknown subcommand
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/integrations install github")
+	if !strings.Contains(out.String(), "unknown subcommand") {
+		t.Fatalf("unknown sub: %s", out.String())
 	}
 }
 

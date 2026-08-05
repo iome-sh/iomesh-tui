@@ -126,7 +126,7 @@ func runREPL(ctx context.Context, rt *agent.Runtime, store *session.Store, in io
 	if sid := rt.SessionID(); sid != "" {
 		fmt.Fprintf(out, "session: %s\n", sid)
 	}
-	fmt.Fprintf(out, "model: %s  |  /model /models /subagents /save /sessions /permissions /cost /mesh /catalog /memory /quit\n", displayModel(rt.Router()))
+	fmt.Fprintf(out, "model: %s  |  /model /models /subagents /save /sessions /permissions /cost /mesh /catalog /memory /integrations /quit\n", displayModel(rt.Router()))
 	fmt.Fprintln(out, "mutating tools (write/shell/apply_worktree/…) prompt for approval unless --yolo")
 
 	for {
@@ -360,6 +360,51 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			}
 			fmt.Fprintln(out, text)
 		}
+	case "/integrations", "/integration", "/connectors":
+		// s1238: agent/TUI path for connector integrations setup via MCP tools
+		// list_connector_catalog / plan_connector_setup (peer aion s1237).
+		// Residual honesty: browser HITL OAuth · stub ≠ live · dual_write OFF ·
+		// no invent GA · catalog Beta honesty · fail-open when MCP unavailable ·
+		// never invent install green. Not full install CRUD.
+		if len(parts) < 2 {
+			fmt.Fprintln(out, integrationsHelp())
+			return false, nil
+		}
+		sub := strings.ToLower(parts[1])
+		switch sub {
+		case "status", "st", "help", "?":
+			fmt.Fprintln(out, integrationsHelp())
+		case "list", "ls", "catalog":
+			layer, perr := parseIntegrationsListArgs(parts[2:])
+			if perr != "" {
+				fmt.Fprintf(out, "integrations list: %s\nusage: /integrations list [--layer operational|knowledge|analytical]\n", perr)
+				return false, nil
+			}
+			text, err := rt.rt.IntegrationsCatalog(context.Background(), layer)
+			if err != nil {
+				fmt.Fprintf(out, "integrations list: %v\n", err)
+				return false, nil
+			}
+			fmt.Fprintln(out, text)
+		case "plan":
+			id, perr := parseIntegrationsPlanArgs(parts[2:])
+			if perr != "" {
+				fmt.Fprintf(out, "integrations plan: %s\nusage: /integrations plan <connector_id>\n", perr)
+				return false, nil
+			}
+			if id == "" {
+				fmt.Fprintln(out, "usage: /integrations plan <connector_id>\n  residual-honest setup plan via MCP plan_connector_setup (portal HITL; not install green)")
+				return false, nil
+			}
+			text, err := rt.rt.IntegrationsPlan(context.Background(), id)
+			if err != nil {
+				fmt.Fprintf(out, "integrations plan: %v\n", err)
+				return false, nil
+			}
+			fmt.Fprintln(out, text)
+		default:
+			fmt.Fprintf(out, "integrations: unknown subcommand %q\n%s\n", parts[1], integrationsHelp())
+		}
 	case "/subagents", "/sa":
 		mgr := rt.rt.Subagents()
 		if mgr == nil || !mgr.Enabled() {
@@ -469,6 +514,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /mesh                I/O Mesh status + usage
   /catalog [query]     list mesh data products (catalog plane)
   /memory [recall|related|digest|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse opt-in)
+  /integrations [list|plan|status]  connector setup via MCP (catalog+plan+portal HITL; not install CRUD)
   /quit                exit
 
 Fullscreen keys: enter send · ctrl+j newline · pgup/pgdn scroll
@@ -479,6 +525,85 @@ On mutating tools (write_file, run_shell, apply_worktree, …) you will be promp
 		fmt.Fprintf(out, "unknown command %s (try /help)\n", cmd)
 	}
 	return false, nil
+}
+
+// integrationsHelp is bare /integrations and status copy (s1238 residual honesty).
+func integrationsHelp() string {
+	return strings.TrimSpace(`usage: /integrations [list [--layer operational|knowledge|analytical] | plan <connector_id> | status]
+  list   MCP list_connector_catalog → id · status · mesh_layer · oauth?
+  plan   MCP plan_connector_setup → portal_url · next_steps · honesty
+  status this help
+honesty: ` + agent.IntegrationsHonestyOneLiner + `
+  fail-open when MCP unavailable → portal HITL https://console.iome.sh/integrations
+  aion MCP tools ship in s1237 · browser HITL for OAuth · never invent install green`)
+}
+
+// parseIntegrationsListArgs extracts optional --layer for /integrations list (s1238).
+// Supports: --layer operational|knowledge|analytical|all (also --mesh-layer / --mesh_layer).
+// Returns errMsg when a flag is malformed or the layer value is invalid.
+func parseIntegrationsListArgs(args []string) (layer string, errMsg string) {
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		key, val, hasEq := splitFlagKV(a)
+		switch key {
+		case "--layer", "--mesh-layer", "--mesh_layer", "-l":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			v := strings.ToLower(strings.TrimSpace(val))
+			switch v {
+			case "operational", "knowledge", "analytical", "all", "":
+				layer = v
+			default:
+				return "", "invalid --layer (operational|knowledge|analytical)"
+			}
+		default:
+			if strings.HasPrefix(a, "-") {
+				return "", "unknown flag " + a
+			}
+			// bare layer token: /integrations list knowledge
+			v := strings.ToLower(strings.TrimSpace(a))
+			switch v {
+			case "operational", "knowledge", "analytical", "all":
+				layer = v
+			default:
+				return "", "unexpected argument " + a
+			}
+		}
+	}
+	return layer, ""
+}
+
+// parseIntegrationsPlanArgs extracts connector_id for /integrations plan (s1238).
+// Accepts: plan github | plan --id github | plan --connector-id=github
+func parseIntegrationsPlanArgs(args []string) (connectorID string, errMsg string) {
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		key, val, hasEq := splitFlagKV(a)
+		switch key {
+		case "--id", "--connector-id", "--connector_id":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			connectorID = strings.TrimSpace(val)
+		default:
+			if strings.HasPrefix(a, "-") {
+				return "", "unknown flag " + a
+			}
+			if connectorID == "" {
+				connectorID = strings.TrimSpace(a)
+			} else {
+				return "", "unexpected argument " + a
+			}
+		}
+	}
+	return connectorID, ""
 }
 
 // parseMemoryRecallArgs extracts optional temporal flags and the free-text query.
