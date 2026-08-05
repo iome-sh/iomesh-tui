@@ -1,8 +1,20 @@
 # Agent integrations setup (MCP · residual-honest)
 
-**Pin:** free eng **s1247** (status pulse) · **s1242** (TUI v178 wire parity) + **s1243** (signing surface) · prior **s1238** slash · concurrent aion **s1237** (MCP v178 tools) · residual docs **s1239**.
+**Pin:** free eng **s1251** (agent skill + system note) · **s1252** (golden fixtures / s1244 deep links) · **s1247** (status pulse) · **s1242** (TUI v178 wire parity) + **s1243** (signing surface) · prior **s1238** slash · concurrent aion **s1237** (MCP v178 tools) · residual docs **s1239**.
 
 Agent/TUI path for **connector integrations setup** via MCP tools — not full install CRUD, not OAuth complete, not checklist/API-key mint, not webhook secret mint/rotate.
+
+## Agent skill + system note (s1251)
+
+When MCP is attached (`AttachMCP`), the runtime also injects an **`<integrations>`** system note from `IntegrationsAgentGuidanceNote()`:
+
+1. Discover — `list_connector_catalog` (catalog status ≠ install Connected)
+2. Plan — `plan_connector_setup` (portal deep links + honesty notes)
+3. Optional — `get_webhook_signing_headers` (discovery only)
+4. Complete install/OAuth in **browser portal HITL** at https://console.iome.sh/integrations — agent MCP cannot write installs
+5. Operator pulse — slash `/integrations status|list|plan|signing`
+
+**Builtin skill** `connector-integrations-setup` ships via `go:embed` under `internal/skills/builtin/` and is always merged when skills are enabled (`skills.LoadWithBuiltin`), even if user/workspace skill dirs are empty. Agent discovers it via `list_skills` / `read_skill`.
 
 ## Slash command
 
@@ -95,7 +107,9 @@ TUI parser prefers `entries` (aion v178); still accepts legacy `connectors` / `i
 }
 ```
 
-Plan formatter surfaces `portal_url`, `oauth_mode_hint`, `signing_headers_tool`, `next_steps`, and `honesty.notes`.
+Plan formatter surfaces `portal_url`, `portal_add_url`, `deep_links` (s1244 proven console routes), `oauth_mode_hint`, `signing_headers_tool`, `next_steps`, and `honesty.notes`. Deep links are **browser HITL only** — never invent `focus=` fantasy query params or install APPLY green.
+
+Golden fixtures (s1252): `internal/agent/testdata/v178_catalog_entries.json`, `v178_plan_github.json`, `v178_plan_notion.json`.
 
 **`get_webhook_signing_headers`** (aion v30) input: optional `mesh_layer`. Output:
 
@@ -166,8 +180,10 @@ No invented catalog rows. No invented plan success. No invented signing secrets.
 | s1239 | aion | Residual docs / living surfaces |
 | s1242 | iomesh-tui | v178 wire parse/format parity (`entries`, `oauth_install_supported`, honesty object) |
 | s1243 | iomesh-tui | `/integrations signing` + `IntegrationsSigning` → `get_webhook_signing_headers` |
-| s1244 | aion | Plan deeplink residual (separate) |
+| s1244 | aion | Plan deeplink residual (`portal_add_url` · `deep_links`) |
 | **s1247** | **iomesh-tui** | **`/integrations status` residual-honest operator pulse (`IntegrationsStatus` · `formatCatalogPulse`)** |
+| **s1251** | **iomesh-tui** | **Agent skill + `<integrations>` system note (`IntegrationsAgentGuidanceNote` · builtin `connector-integrations-setup`)** |
+| **s1252** | **iomesh-tui** | **Golden fixtures + plan deep_links display parity** |
 
 ## Config
 

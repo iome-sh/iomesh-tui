@@ -8,11 +8,18 @@ When `[skills] enabled = true` (default):
 
 | Path | Role |
 |------|------|
+| **Builtin** (`go:embed` `internal/skills/builtin/`) | Shipped skills (always merged) |
 | `<workspace>/.iomesh/skills/<name>/SKILL.md` | Project skills |
 | `~/.iomesh/skills/<name>/SKILL.md` | User skills |
 | `[skills].dirs` | Extra roots |
 
-Load is fail-open: missing directories are skipped.
+Load uses `skills.LoadWithBuiltin(dirs...)`: **builtin first**, then workspace/user dirs (user overrides builtin on name collision). Missing directories are skipped. Builtin skills appear even when all dirs are empty.
+
+### Builtin: `connector-integrations-setup` (s1251)
+
+Residual-honest agent path for connector integrations via MCP (`list_connector_catalog` → `plan_connector_setup` → optional `get_webhook_signing_headers` → **browser portal HITL**). Explicit non-goals: no invent install green / Connected / INSTALL_STORE APPLY / GA · stub ≠ live · dual_write OFF · book-demo OFF · agent MCP cannot write installs.
+
+Paired with the `<integrations>` system note injected on `AttachMCP` (`IntegrationsAgentGuidanceNote`).
 
 ## Format
 

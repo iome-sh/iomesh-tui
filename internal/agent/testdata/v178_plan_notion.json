@@ -1,0 +1,47 @@
+{
+  "connector_id": "notion",
+  "org_id": "",
+  "connector": {
+    "id": "notion",
+    "label": "Notion",
+    "status": "beta",
+    "mesh_layer": "knowledge",
+    "ingress_type": "oauth",
+    "oauth_install_supported": true,
+    "portal_path": "/integrations/notion"
+  },
+  "portal_url": "https://console.iome.sh/integrations/notion",
+  "portal_detail_url": "https://console.iome.sh/integrations/notion",
+  "portal_add_url": "https://console.iome.sh/integrations/add?template=notion",
+  "deep_links": {
+    "detail": "https://console.iome.sh/integrations/notion",
+    "add_wizard": "https://console.iome.sh/integrations/add?template=notion",
+    "catalog": "https://console.iome.sh/integrations",
+    "portal_url": "https://console.iome.sh/integrations/notion",
+    "portal_detail_url": "https://console.iome.sh/integrations/notion",
+    "portal_add_url": "https://console.iome.sh/integrations/add?template=notion"
+  },
+  "oauth_install_supported": true,
+  "oauth_mode_hint": "stub",
+  "signing_headers_tool": "get_webhook_signing_headers",
+  "next_steps": [
+    "Open portal detail: https://console.iome.sh/integrations/notion",
+    "Complete OAuth in browser HITL (stub ≠ live)",
+    "Do not claim Connected from this plan"
+  ],
+  "honesty": {
+    "browser_hitl_required_for_oauth_complete": true,
+    "stub_oauth_not_live": true,
+    "pass_not_invent_install_green": true,
+    "dual_write_off": true,
+    "book_demo_off": true,
+    "no_invent_ga": true,
+    "agent_mcp_cannot_write_installs": true,
+    "session_portal_owns_install_crud": true,
+    "notes": [
+      "Browser HITL required for OAuth complete",
+      "stub ≠ live",
+      "never invent install green · dual_write OFF · book-demo OFF"
+    ]
+  }
+}

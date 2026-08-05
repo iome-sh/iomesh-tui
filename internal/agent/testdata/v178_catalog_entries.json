@@ -1,0 +1,37 @@
+{
+  "count": 3,
+  "entries": [
+    {
+      "id": "github",
+      "label": "GitHub",
+      "status": "available",
+      "mesh_layer": "operational",
+      "ingress_type": "webhook",
+      "webhook_path": "/webhooks/github",
+      "summary": "GitHub webhook ingress (operational)",
+      "oauth_install_supported": false,
+      "portal_path": "/integrations/github"
+    },
+    {
+      "id": "notion",
+      "label": "Notion",
+      "status": "beta",
+      "mesh_layer": "knowledge",
+      "ingress_type": "oauth",
+      "webhook_path": "/webhooks/notion",
+      "summary": "Notion OAuth + webhook (knowledge · Beta)",
+      "oauth_install_supported": true,
+      "portal_path": "/integrations/notion"
+    },
+    {
+      "id": "embeddings",
+      "label": "Embeddings",
+      "status": "planned",
+      "mesh_layer": "analytical",
+      "ingress_type": "api",
+      "summary": "Embeddings analytical plane (planned honesty)",
+      "oauth_install_supported": false,
+      "portal_path": "/integrations/embeddings"
+    }
+  ]
+}

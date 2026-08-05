@@ -26,6 +26,25 @@ const (
 	IntegrationsHonestyOneLiner = "agent setup = catalog + plan + portal HITL · not full install CRUD · stub ≠ live · dual_write OFF · catalog Beta honesty · never invent install green"
 )
 
+// IntegrationsAgentGuidanceNote is the residual-honest system note injected on AttachMCP
+// (s1251). Steers the LLM: list → plan → optional signing discovery → browser portal HITL.
+// Unit-tested for honesty needles. Does not invent install green / Connected / GA.
+func IntegrationsAgentGuidanceNote() string {
+	return strings.TrimSpace(`integrations setup (residual-honest agent path · s1251):
+1. Discover: MCP list_connector_catalog (v178 entries) — catalog status ≠ install Connected
+2. Plan: MCP plan_connector_setup for a connector_id — portal deep links + honesty notes
+3. Optional discovery: get_webhook_signing_headers — discovery only, no secret mint
+4. Complete install/OAuth in browser portal HITL at ` + integrationsPortalURL + ` (session cookie) — agent MCP cannot write installs
+5. Operator pulse: slash /integrations status|list|plan|signing mirrors the same honesty
+
+Locks (never violate):
+- never invent install green / Connected / INSTALL_STORE APPLY / GA
+- stub OAuth ≠ live · browser HITL for OAuth complete
+- dual_write OFF · book-demo OFF
+- catalog Beta/available/planned is display honesty only
+- agent setup = catalog + plan + signing discovery + portal HITL · not full install CRUD`)
+}
+
 // IntegrationsOfflineMessage is printed when MCP manager is missing or tools are not connected.
 func IntegrationsOfflineMessage() string {
 	return strings.TrimSpace(`integrations: MCP connector tools unavailable (fail-open).
@@ -468,14 +487,17 @@ func oauthYesNo(oauth any, ingressType string) string {
 	return "-"
 }
 
-// connectorPlanPayload matches aion v178 plan_connector_setup (+ legacy aliases).
+// connectorPlanPayload matches aion v178 plan_connector_setup (+ s1244 deep links + legacy aliases).
 type connectorPlanPayload struct {
 	ConnectorID           string                `json:"connector_id"`
 	ID                    string                `json:"id"`
 	OrgID                 string                `json:"org_id"`
 	Connector             *connectorCatalogItem `json:"connector"`
 	PortalURL             string                `json:"portal_url"`
+	PortalDetailURL       string                `json:"portal_detail_url"` // s1244 alias of detail deep link
+	PortalAddURL          string                `json:"portal_add_url"`    // s1244 add wizard deep link
 	URL                   string                `json:"url"`
+	DeepLinks             map[string]string     `json:"deep_links"` // s1244 proven console routes only
 	OAuthInstallSupported *bool                 `json:"oauth_install_supported"`
 	OAuthModeHint         string                `json:"oauth_mode_hint"`
 	SigningHeadersTool    string                `json:"signing_headers_tool"`
@@ -502,10 +524,18 @@ func formatConnectorPlan(raw, requestedID string) string {
 			id = firstNonEmpty(p.Connector.ID, id)
 		}
 	}
-	portal := firstNonEmpty(p.PortalURL, p.URL)
+	// s1244: prefer portal_url, then portal_detail_url, then deep_links.detail / portal_url keys.
+	portal := firstNonEmpty(p.PortalURL, p.PortalDetailURL, p.URL)
+	if portal == "" && p.DeepLinks != nil {
+		portal = firstNonEmpty(p.DeepLinks["detail"], p.DeepLinks["portal_url"], p.DeepLinks["portal_detail_url"])
+	}
 	if portal == "" {
 		// Residual default: portal detail deep-link (HITL; not install green).
 		portal = integrationsPortalURL + "/" + id
+	}
+	portalAdd := strings.TrimSpace(p.PortalAddURL)
+	if portalAdd == "" && p.DeepLinks != nil {
+		portalAdd = firstNonEmpty(p.DeepLinks["add_wizard"], p.DeepLinks["portal_add_url"])
 	}
 	steps := p.NextSteps
 	if len(steps) == 0 {
@@ -524,6 +554,34 @@ func formatConnectorPlan(raw, requestedID string) string {
 		fmt.Fprintf(&b, "status:     %s  (catalog honesty — not install green)\n", status)
 	}
 	fmt.Fprintf(&b, "portal_url: %s\n", portal)
+	if portalAdd != "" {
+		fmt.Fprintf(&b, "portal_add_url: %s  (browser HITL add wizard · not install APPLY)\n", portalAdd)
+	}
+	// s1244 residual-honest deep links (proven console routes only; never invent focus=).
+	if len(p.DeepLinks) > 0 {
+		b.WriteString("deep_links:  (browser HITL only · not install green)\n")
+		// Stable preferred order then extras sorted.
+		preferred := []string{"detail", "add_wizard", "catalog", "portal_url", "portal_detail_url", "portal_add_url"}
+		seen := map[string]bool{}
+		for _, k := range preferred {
+			if v := strings.TrimSpace(p.DeepLinks[k]); v != "" {
+				fmt.Fprintf(&b, "  %s: %s\n", k, v)
+				seen[k] = true
+			}
+		}
+		var extras []string
+		for k := range p.DeepLinks {
+			if !seen[k] {
+				extras = append(extras, k)
+			}
+		}
+		sort.Strings(extras)
+		for _, k := range extras {
+			if v := strings.TrimSpace(p.DeepLinks[k]); v != "" {
+				fmt.Fprintf(&b, "  %s: %s\n", k, v)
+			}
+		}
+	}
 	if p.OAuthInstallSupported != nil {
 		fmt.Fprintf(&b, "oauth_install_supported: %v\n", *p.OAuthInstallSupported)
 	}

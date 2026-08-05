@@ -168,11 +168,13 @@ func run(args []string) int {
 	// Mesh catalog tools (list_mesh_catalog / mesh_status) when catalog plane on.
 	rt.AttachMeshTools()
 
-	// Skills: workspace + user dirs (+ config extras). Fail-open on load errors.
+	// Skills: builtin (s1251 connector-integrations-setup) + workspace + user dirs.
+	// Builtin always present when skills enabled so residual-honest connector setup
+	// guidance appears even if user/workspace skill dirs are empty.
 	if cfg.Skills.Enabled && cfg.Features.Skills {
 		dirs := skills.DefaultDirs(rt.Workspace().Root())
 		dirs = append(dirs, cfg.Skills.Dirs...)
-		if cat, err := skills.LoadDirs(dirs...); err != nil {
+		if cat, err := skills.LoadWithBuiltin(dirs...); err != nil {
 			logger.Warn("skills load", "err", err)
 		} else if cat.Len() > 0 {
 			rt.AttachSkills(cat)
@@ -340,14 +342,15 @@ func cmdSkills(args []string) int {
 	}
 	dirs := skills.DefaultDirs(ws)
 	dirs = append(dirs, cfg.Skills.Dirs...)
-	cat, err := skills.LoadDirs(dirs...)
+	// Include builtin skills (s1251 connector-integrations-setup) so CLI mirrors agent.
+	cat, err := skills.LoadWithBuiltin(dirs...)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "skills: %v\n", err)
 		return 1
 	}
 	if cat.Len() == 0 {
 		fmt.Println("no skills found")
-		fmt.Fprintf(os.Stderr, "searched: %s\n", strings.Join(dirs, ", "))
+		fmt.Fprintf(os.Stderr, "searched: builtin + %s\n", strings.Join(dirs, ", "))
 		return 0
 	}
 	fmt.Printf("%-24s  %s\n", "NAME", "DESCRIPTION")

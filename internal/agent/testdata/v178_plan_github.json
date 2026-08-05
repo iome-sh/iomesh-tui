@@ -1,0 +1,51 @@
+{
+  "connector_id": "github",
+  "org_id": "",
+  "connector": {
+    "id": "github",
+    "label": "GitHub",
+    "status": "available",
+    "mesh_layer": "operational",
+    "ingress_type": "webhook",
+    "webhook_path": "/webhooks/github",
+    "summary": "GitHub webhook ingress (operational)",
+    "oauth_install_supported": false,
+    "portal_path": "/integrations/github"
+  },
+  "portal_url": "https://console.iome.sh/integrations/github",
+  "portal_detail_url": "https://console.iome.sh/integrations/github",
+  "portal_add_url": "https://console.iome.sh/integrations/add?template=github",
+  "deep_links": {
+    "detail": "https://console.iome.sh/integrations/github",
+    "add_wizard": "https://console.iome.sh/integrations/add?template=github",
+    "catalog": "https://console.iome.sh/integrations",
+    "portal_url": "https://console.iome.sh/integrations/github",
+    "portal_detail_url": "https://console.iome.sh/integrations/github",
+    "portal_add_url": "https://console.iome.sh/integrations/add?template=github"
+  },
+  "oauth_install_supported": false,
+  "oauth_mode_hint": "",
+  "signing_headers_tool": "get_webhook_signing_headers",
+  "next_steps": [
+    "Open portal detail: https://console.iome.sh/integrations/github",
+    "Or start Add wizard: https://console.iome.sh/integrations/add?template=github",
+    "Complete webhook / OAuth setup in browser (session cookie HITL)",
+    "Do not claim install APPLY green from this plan — deep_links are browser HITL only"
+  ],
+  "honesty": {
+    "browser_hitl_required_for_oauth_complete": true,
+    "stub_oauth_not_live": true,
+    "pass_not_invent_install_green": true,
+    "dual_write_off": true,
+    "book_demo_off": true,
+    "no_invent_ga": true,
+    "agent_mcp_cannot_write_installs": true,
+    "session_portal_owns_install_crud": true,
+    "notes": [
+      "Browser HITL required for OAuth complete",
+      "Stub OAuth ≠ live provider token exchange",
+      "PASS ≠ invent install green · dual_write OFF · book-demo OFF",
+      "deep_links are browser HITL only — not install APPLY success"
+    ]
+  }
+}
