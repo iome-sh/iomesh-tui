@@ -199,3 +199,90 @@ func TestCatalogMerge_NilSafe(t *testing.T) {
 		t.Fatalf("merge from nil: %d vs %d", out2.Len(), builtin.Len())
 	}
 }
+
+// --- s1257: builtin skill dogfood (residual-honest connector setup) ---
+
+// TestLoadWithBuiltin_S1257ConnectorSkillDogfood proves LoadWithBuiltin always
+// surfaces connector-integrations-setup with residual-honest body + description.
+func TestLoadWithBuiltin_S1257ConnectorSkillDogfood(t *testing.T) {
+	cat, err := LoadWithBuiltin() // no dirs — pure builtin
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk, ok := cat.Get("connector-integrations-setup")
+	if !ok {
+		t.Fatalf("skill missing; names=%v", cat.Names())
+	}
+	if sk.Name != "connector-integrations-setup" {
+		t.Fatalf("name=%q", sk.Name)
+	}
+	// Description residual-honest (frontmatter).
+	desc := strings.ToLower(sk.Description)
+	for _, want := range []string{
+		"residual",
+		"portal",
+		"hitl",
+	} {
+		if !strings.Contains(desc, want) {
+			t.Fatalf("description missing residual needle %q: %q", want, sk.Description)
+		}
+	}
+	// Description must not invent install APPLY / Connected success claims.
+	if strings.Contains(sk.Description, "Connected: yes") || strings.Contains(desc, "install apply green") {
+		t.Fatalf("description invents install green: %q", sk.Description)
+	}
+	// Body must mention core MCP workflow + honesty locks.
+	body := sk.Body
+	for _, want := range []string{
+		"list_connector_catalog",
+		"plan_connector_setup",
+		"get_webhook_signing_headers",
+		"portal HITL",
+		"browser HITL",
+		"never invent install green",
+		"dual_write OFF",
+		"book-demo OFF",
+		"portal_add_url",
+		"deep_links",
+		"stub",
+		"INSTALL_STORE",
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("skill body missing %q:\n%s", want, body)
+		}
+	}
+	// Must not invent install success language as a claim.
+	if strings.Contains(body, "Connected: yes") {
+		t.Fatalf("body invents install green claim")
+	}
+	// Builtin source marker.
+	if sk.SourceDir != "builtin" && !strings.Contains(sk.Path, "builtin") {
+		t.Fatalf("source not builtin: path=%q source=%q", sk.Path, sk.SourceDir)
+	}
+}
+
+// TestS1257SkillDescriptionResidualHonest pins description frontmatter honesty.
+func TestS1257SkillDescriptionResidualHonest(t *testing.T) {
+	cat, err := LoadBuiltin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk, ok := cat.Get("connector-integrations-setup")
+	if !ok {
+		t.Fatal("missing skill")
+	}
+	// Description says residual-honest + not install APPLY.
+	if !strings.Contains(sk.Description, "Residual-honest") && !strings.Contains(sk.Description, "residual-honest") {
+		t.Fatalf("description not residual-honest: %q", sk.Description)
+	}
+	if !strings.Contains(sk.Description, "portal") && !strings.Contains(sk.Description, "HITL") {
+		t.Fatalf("description missing portal HITL: %q", sk.Description)
+	}
+	// Explicit non-install-APPLY framing.
+	if !strings.Contains(sk.Description, "not install") && !strings.Contains(sk.Description, "not install APPLY") {
+		// Accept either phrasing from SKILL.md frontmatter.
+		if !strings.Contains(strings.ToLower(sk.Description), "not install") {
+			t.Fatalf("description should say not install APPLY: %q", sk.Description)
+		}
+	}
+}

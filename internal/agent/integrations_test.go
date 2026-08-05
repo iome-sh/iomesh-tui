@@ -790,3 +790,317 @@ func TestIntegrationsStatus_OfflineNoGoldenInvent(t *testing.T) {
 		t.Fatalf("residual locks: %s", out)
 	}
 }
+
+// --- s1257: deep-link parity + residual-honest dogfood ---
+
+// TestFormatConnectorPlan_S1257DeepLinkParityGithub asserts aion s1244 field round-trip
+// for github golden fixture: portal_url / portal_detail_url / portal_add_url
+// (template={id}) / deep_links map, and honesty footer never invents install green.
+func TestFormatConnectorPlan_S1257DeepLinkParityGithub(t *testing.T) {
+	raw := readTestdata(t, "v178_plan_github.json")
+
+	// Fixture itself carries s1244 shape (JSON round-trip dogfood).
+	var p map[string]any
+	if err := json.Unmarshal([]byte(raw), &p); err != nil {
+		t.Fatalf("fixture JSON: %v", err)
+	}
+	for _, key := range []string{"portal_url", "portal_detail_url", "portal_add_url", "deep_links"} {
+		if _, ok := p[key]; !ok {
+			t.Fatalf("fixture missing s1244 field %q", key)
+		}
+	}
+	addURL, _ := p["portal_add_url"].(string)
+	if !strings.Contains(addURL, "/integrations/add?template=github") {
+		t.Fatalf("portal_add_url template= shape: %q", addURL)
+	}
+	dl, ok := p["deep_links"].(map[string]any)
+	if !ok || len(dl) == 0 {
+		t.Fatalf("deep_links map: %#v", p["deep_links"])
+	}
+	for _, k := range []string{"detail", "add_wizard", "catalog", "portal_add_url"} {
+		v, _ := dl[k].(string)
+		if strings.TrimSpace(v) == "" {
+			t.Fatalf("deep_links[%q] empty: %#v", k, dl)
+		}
+	}
+	addWizard, _ := dl["add_wizard"].(string)
+	if !strings.Contains(addWizard, "template=github") {
+		t.Fatalf("add_wizard template=: %q", addWizard)
+	}
+
+	out := formatConnectorPlan(raw, "github")
+	// Formatter surfaces portal_add_url + deep_links with residual labels.
+	for _, want := range []string{
+		"portal_url:",
+		"https://console.iome.sh/integrations/github",
+		"portal_add_url:",
+		"/integrations/add?template=github",
+		"template=github",
+		"browser HITL add wizard",
+		"not install APPLY",
+		"deep_links:",
+		"browser HITL only",
+		"not install green",
+		"detail:",
+		"add_wizard:",
+		"catalog:",
+		"portal_detail_url:",
+		"signing_headers_tool:",
+		"get_webhook_signing_headers",
+		"Browser HITL",
+		"never invent install green",
+		"available", // catalog status honesty only
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("plan missing %q:\n%s", want, out)
+		}
+	}
+	// Honesty residual locks — never invent install green / Connected success.
+	// Note: residual copy may say "not install APPLY success" — that is honest.
+	// Only fail on affirmative invent claims.
+	for _, bad := range []string{"Connected: yes", "INSTALL_STORE: green", "install APPLY: success"} {
+		if strings.Contains(out, bad) {
+			t.Fatalf("must not invent %q:\n%s", bad, out)
+		}
+	}
+	// Must not claim APPLY success without the residual "not" framing.
+	if strings.Contains(out, "install APPLY success") && !strings.Contains(out, "not install APPLY") {
+		t.Fatalf("must not invent install APPLY success:\n%s", out)
+	}
+	// Proven console routes only — never invent focus= fantasy.
+	if strings.Contains(out, "focus=") {
+		t.Fatalf("must not invent focus= deep links:\n%s", out)
+	}
+	// template= is deep-link shape, not install APPLY claim.
+	if !strings.Contains(out, "template=github") {
+		t.Fatalf("template=github deep-link shape:\n%s", out)
+	}
+}
+
+// TestFormatConnectorPlan_S1257DeepLinkParityNotion same parity for notion
+// (stub oauth · template=notion · honesty residual).
+func TestFormatConnectorPlan_S1257DeepLinkParityNotion(t *testing.T) {
+	raw := readTestdata(t, "v178_plan_notion.json")
+
+	var p map[string]any
+	if err := json.Unmarshal([]byte(raw), &p); err != nil {
+		t.Fatalf("fixture JSON: %v", err)
+	}
+	addURL, _ := p["portal_add_url"].(string)
+	if !strings.Contains(addURL, "/integrations/add?template=notion") {
+		t.Fatalf("portal_add_url template= shape: %q", addURL)
+	}
+
+	out := formatConnectorPlan(raw, "notion")
+	for _, want := range []string{
+		"portal_url:",
+		"console.iome.sh/integrations/notion",
+		"portal_add_url:",
+		"template=notion",
+		"deep_links:",
+		"add_wizard:",
+		"oauth_mode_hint: stub",
+		"oauth_install_supported: true",
+		"stub ≠ live",
+		"never invent install green",
+		"browser HITL",
+		"not install APPLY",
+	} {
+		if !strings.Contains(out, want) {
+			// case: "browser HITL" may appear as "Browser HITL" — tolerate either
+			if want == "browser HITL" && strings.Contains(strings.ToLower(out), "browser hitl") {
+				continue
+			}
+			t.Fatalf("notion plan missing %q:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent install green:\n%s", out)
+	}
+	if strings.Contains(out, "focus=") {
+		t.Fatalf("must not invent focus=:\n%s", out)
+	}
+	// template=notion deep-link ≠ install APPLY
+	if !strings.Contains(out, "template=notion") {
+		t.Fatalf("template=notion:\n%s", out)
+	}
+}
+
+// TestFormatConnectorPlan_S1257DeepLinksFromMapOnly: when only deep_links is set
+// (no top-level portal_url / portal_add_url), formatter still surfaces routes.
+func TestFormatConnectorPlan_S1257DeepLinksFromMapOnly(t *testing.T) {
+	raw := `{
+		"connector_id": "github",
+		"connector": {"id":"github","status":"available","mesh_layer":"operational"},
+		"deep_links": {
+			"detail": "https://console.iome.sh/integrations/github",
+			"add_wizard": "https://console.iome.sh/integrations/add?template=github",
+			"catalog": "https://console.iome.sh/integrations"
+		},
+		"next_steps": ["Open portal"],
+		"honesty": {"notes": ["Browser HITL required for OAuth complete", "never invent install green"]}
+	}`
+	out := formatConnectorPlan(raw, "github")
+	if !strings.Contains(out, "portal_url:") || !strings.Contains(out, "console.iome.sh/integrations/github") {
+		t.Fatalf("portal from deep_links.detail: %s", out)
+	}
+	if !strings.Contains(out, "portal_add_url:") || !strings.Contains(out, "template=github") {
+		t.Fatalf("portal_add from deep_links.add_wizard: %s", out)
+	}
+	if !strings.Contains(out, "deep_links:") || !strings.Contains(out, "add_wizard:") {
+		t.Fatalf("deep_links block: %s", out)
+	}
+	if !strings.Contains(out, "never invent install green") {
+		t.Fatalf("honesty: %s", out)
+	}
+	if strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent Connected: %s", out)
+	}
+}
+
+// TestFormatCatalogPulse_S1257PortalPathOnly: catalog entries with portal_path only
+// still residual-honest — count/layer honesty, never install green.
+func TestFormatCatalogPulse_S1257PortalPathOnly(t *testing.T) {
+	raw := `{
+		"count": 2,
+		"entries": [
+			{"id":"github","label":"GitHub","status":"available","mesh_layer":"operational",
+			 "portal_path":"/integrations/github"},
+			{"id":"notion","label":"Notion","status":"beta","mesh_layer":"knowledge",
+			 "portal_path":"/integrations/notion"}
+		]
+	}`
+	out := formatCatalogPulse(raw)
+	if out == "" {
+		t.Fatal("expected non-empty pulse")
+	}
+	if !strings.Contains(out, "total catalog entries: 2") {
+		t.Fatalf("count: %s", out)
+	}
+	if !strings.Contains(out, "operational=1") || !strings.Contains(out, "knowledge=1") {
+		t.Fatalf("layers: %s", out)
+	}
+	if !strings.Contains(out, "catalog honesty") || !strings.Contains(out, "NOT install Connected") {
+		t.Fatalf("catalog honesty: %s", out)
+	}
+	if strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent install green: %s", out)
+	}
+	// portal_path is catalog field only — pulse must not invent install APPLY
+	if strings.Contains(out, "INSTALL_STORE APPLY") || strings.Contains(out, "install green: yes") {
+		t.Fatalf("must not invent install APPLY: %s", out)
+	}
+}
+
+// TestFormatConnectorCatalog_S1257PortalPathHonesty: catalog table with portal_path
+// entries still carries honesty footer (portal_path is not install Connected).
+func TestFormatConnectorCatalog_S1257PortalPathHonesty(t *testing.T) {
+	raw := readTestdata(t, "v178_catalog_entries.json")
+	out := formatConnectorCatalog(raw, "")
+	if !strings.Contains(out, "github") || !strings.Contains(out, "notion") {
+		t.Fatalf("%s", out)
+	}
+	if !strings.Contains(out, "honesty:") {
+		t.Fatalf("honesty footer: %s", out)
+	}
+	if !strings.Contains(out, "never invent install green") {
+		t.Fatalf("honesty needle: %s", out)
+	}
+	if strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent install green: %s", out)
+	}
+}
+
+// TestS1257PlanHonestyFooterNeverInventInstallGreen pins residual footer copy
+// on plan formatter when honesty notes are sparse.
+func TestS1257PlanHonestyFooterNeverInventInstallGreen(t *testing.T) {
+	raw := `{"connector_id":"github","portal_url":"https://console.iome.sh/integrations/github"}`
+	out := formatConnectorPlan(raw, "github")
+	if !strings.Contains(out, "never invent install green") && !strings.Contains(out, IntegrationsHonestyOneLiner) {
+		t.Fatalf("residual honesty footer: %s", out)
+	}
+	if strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent Connected: %s", out)
+	}
+	// default portal is HITL deep-link shape, not APPLY
+	if !strings.Contains(out, "portal_url:") {
+		t.Fatalf("portal_url: %s", out)
+	}
+}
+
+// --- s1257: guidance note ↔ builtin skill honesty consistency (lightweight) ---
+
+// TestS1257GuidanceNoteSkillHonestyConsistency loads the embedded skill body and
+// asserts IntegrationsAgentGuidanceNote() shares core honesty needles.
+// Keeps system note and skill from drifting on residual locks.
+func TestS1257GuidanceNoteSkillHonestyConsistency(t *testing.T) {
+	// Load skill the same way AttachSkills does (LoadWithBuiltin / LoadBuiltin).
+	// Avoid import cycle: re-parse fixture-equivalent needles from guidance +
+	// require the skill file content via relative path under internal/skills.
+	//
+	// We read the embedded skill markdown from disk (source of go:embed) so this
+	// package does not import internal/skills (agent may already be depended on
+	// by skills/tui — keep agent self-contained).
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller failed")
+	}
+	skillPath := filepath.Join(filepath.Dir(file), "..", "skills", "builtin", "connector-integrations-setup", "SKILL.md")
+	skillBytes, err := os.ReadFile(skillPath)
+	if err != nil {
+		t.Fatalf("read skill: %v", err)
+	}
+	skillText := string(skillBytes)
+	guidance := IntegrationsAgentGuidanceNote()
+
+	// Core honesty needles that BOTH must carry (s1257 residual lock set).
+	needles := []string{
+		"list_connector_catalog",
+		"plan_connector_setup",
+		"portal",
+		"never invent install green",
+	}
+	// At least one of dual_write OFF / browser HITL must appear in each.
+	softNeedles := []string{
+		"dual_write OFF",
+		"browser HITL",
+	}
+
+	for _, n := range needles {
+		if !strings.Contains(guidance, n) {
+			t.Fatalf("guidance missing %q:\n%s", n, guidance)
+		}
+		if !strings.Contains(skillText, n) {
+			t.Fatalf("skill missing %q:\n%s", n, skillText)
+		}
+	}
+	// Soft: each source must have at least one residual soft needle.
+	guidanceSoft := false
+	skillSoft := false
+	for _, n := range softNeedles {
+		if strings.Contains(guidance, n) {
+			guidanceSoft = true
+		}
+		if strings.Contains(skillText, n) {
+			skillSoft = true
+		}
+	}
+	if !guidanceSoft {
+		t.Fatalf("guidance missing dual_write OFF / browser HITL:\n%s", guidance)
+	}
+	if !skillSoft {
+		t.Fatalf("skill missing dual_write OFF / browser HITL:\n%s", skillText)
+	}
+	// Neither invents install green claims.
+	for _, src := range []struct {
+		name string
+		text string
+	}{
+		{"guidance", guidance},
+		{"skill", skillText},
+	} {
+		if strings.Contains(src.text, "Connected: yes") {
+			t.Fatalf("%s invents install green", src.name)
+		}
+	}
+}
