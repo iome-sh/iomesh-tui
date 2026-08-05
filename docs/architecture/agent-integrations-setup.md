@@ -1,6 +1,6 @@
 # Agent integrations setup (MCP · residual-honest)
 
-**Pin:** free eng **s1257** (deep-link parity + skill dogfood) · **s1251** (agent skill + system note) · **s1252** (golden fixtures / s1244 deep links) · **s1247** (status pulse) · **s1242** (TUI v178 wire parity) + **s1243** (signing surface) · prior **s1238** slash · concurrent aion **s1237** (MCP v178 tools) · residual docs **s1239** · free eng concurrent **s1256+** / free-floor peer **s1254**.
+**Pin:** free eng **s1267** (opt-in MCP iomesh context headers) · **s1263** (status org-installs honesty) · **s1257** (deep-link parity + skill dogfood) · **s1251** (agent skill + system note) · **s1252** (golden fixtures / s1244 deep links) · **s1247** (status pulse) · **s1242** (TUI v178 wire parity) + **s1243** (signing surface) · prior **s1238** slash · concurrent aion **s1237** (MCP v178 tools) · residual docs **s1239** · free eng concurrent **s1256+** / free-floor peer **s1254**.
 
 Agent/TUI path for **connector integrations setup** via MCP tools — not full install CRUD, not OAuth complete, not checklist/API-key mint, not webhook secret mint/rotate.
 
@@ -210,9 +210,12 @@ No invented catalog rows. No invented plan success. No invented signing secrets.
 | **s1259** | free-floor peer | free-floor continuum peer (not dual-auth ship) |
 | **s1261** | aion | dual-auth org install read snapshot **candidacy** only (not claimed shipped in TUI) |
 | **s1263** | **iomesh-tui** | **Status org-installs residual honesty (`statusOrgInstallsSection` · always unavailable via agent MCP · portal HITL · never invent Connected / empty-as-none)** · free eng concurrent s1261+ |
+| **s1267** | **iomesh-tui** | **Opt-in MCP HTTP inject of `X-IOMesh-Tenant`/`Org`/`Workspace` from `[iomesh]`/`[memory]` (`inject_iomesh_context` · never overwrite explicit headers · stdio N/A)** · residual: inject ≠ install green · ≠ dual-auth ship |
 
 ## Config
 
 Uses whatever MCP servers are already attached via `[mcp]` (e.g. platform portal/scenario MCP once s1237 tools land). No new TUI config keys required for the fail-open path.
+
+**s1267 (optional multi-tenant context on HTTP MCP):** set `[mcp] inject_iomesh_context = true` (or per `[[mcp.servers]]`) so agent/scenario MCP calls can carry `X-IOMesh-Tenant` / `X-IOMesh-Org` / `X-IOMesh-Workspace` when configured. Default **false**. Does **not** invent install Connected, dual-auth install list, dual_write, or book-demo. Empty values are not sent. Stdio MCP has no HTTP headers. See [mcp.md](./mcp.md#multi-tenant-context-headers-s1267).
 
 See also: [mcp.md](./mcp.md) · [memory-mcp.md](./memory-mcp.md) · [mesh-deeper.md](./mesh-deeper.md).

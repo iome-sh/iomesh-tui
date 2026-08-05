@@ -281,3 +281,122 @@ func TestLoad_InvalidTOML(t *testing.T) {
 		t.Fatal("expected parse error")
 	}
 }
+
+// s1267: inject_iomesh_context config parse + WantsInject / IOMeshMCPContext helpers.
+func TestLoad_MCPInjectIOMeshContext(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.toml")
+	content := `
+[mcp]
+enabled = true
+inject_iomesh_context = true
+
+[[mcp.servers]]
+name = "http-a"
+url = "http://127.0.0.1:8080/mcp"
+headers = { "X-IOMesh-Org" = "org_explicit" }
+
+[[mcp.servers]]
+name = "http-b"
+url = "http://127.0.0.1:8081/mcp"
+inject_iomesh_context = false
+
+[[mcp.servers]]
+name = "stdio"
+command = "echo"
+inject_iomesh_context = true
+
+[iomesh]
+tenant = "acme"
+org = "org_from_iomesh"
+workspace = "ws_alpha"
+
+[memory]
+tenant = "memory_only_fallback"
+`
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.MCP.InjectIOMeshContext {
+		t.Fatalf("global inject default parse: %+v", cfg.MCP)
+	}
+	if len(cfg.MCP.Servers) != 3 {
+		t.Fatalf("servers=%d", len(cfg.MCP.Servers))
+	}
+	// Server A inherits global true
+	if !cfg.MCP.WantsInjectIOMeshContext(cfg.MCP.Servers[0]) {
+		t.Fatal("server A should inherit global inject=true")
+	}
+	// Server B explicit false
+	if cfg.MCP.WantsInjectIOMeshContext(cfg.MCP.Servers[1]) {
+		t.Fatal("server B inject_iomesh_context=false must win")
+	}
+	// Server C explicit true
+	if !cfg.MCP.WantsInjectIOMeshContext(cfg.MCP.Servers[2]) {
+		t.Fatal("server C inject_iomesh_context=true")
+	}
+	if cfg.MCP.Servers[0].Headers["X-IOMesh-Org"] != "org_explicit" {
+		t.Fatalf("headers parse: %v", cfg.MCP.Servers[0].Headers)
+	}
+	tenant, org, ws := cfg.IOMeshMCPContext()
+	if tenant != "acme" || org != "org_from_iomesh" || ws != "ws_alpha" {
+		t.Fatalf("IOMeshMCPContext=%q %q %q", tenant, org, ws)
+	}
+}
+
+func TestDefault_MCPInjectIOMeshContextOff(t *testing.T) {
+	cfg := Default()
+	if cfg.MCP.InjectIOMeshContext {
+		t.Fatal("s1267 honesty: inject_iomesh_context must default false")
+	}
+	s := MCPServerTOML{Name: "x"}
+	if cfg.MCP.WantsInjectIOMeshContext(s) {
+		t.Fatal("default wants inject false")
+	}
+}
+
+func TestIOMeshMCPContext_MemoryTenantFallback(t *testing.T) {
+	cfg := Default()
+	cfg.Memory.Tenant = "dept.research"
+	tenant, org, ws := cfg.IOMeshMCPContext()
+	if tenant != "dept.research" {
+		t.Fatalf("memory tenant fallback=%q", tenant)
+	}
+	if org != "" || ws != "" {
+		t.Fatalf("empty org/ws expected, got %q %q", org, ws)
+	}
+	cfg.IOMesh.Tenant = "iomesh_wins"
+	tenant, _, _ = cfg.IOMeshMCPContext()
+	if tenant != "iomesh_wins" {
+		t.Fatalf("iomesh tenant preferred=%q", tenant)
+	}
+}
+
+func TestLoad_MCPInjectIOMeshContext_DefaultFalse(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.toml")
+	content := `
+[mcp]
+enabled = true
+[[mcp.servers]]
+name = "remote"
+url = "https://mcp.example.com/mcp"
+`
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.MCP.InjectIOMeshContext {
+		t.Fatal("unset inject must parse as false")
+	}
+	if cfg.MCP.WantsInjectIOMeshContext(cfg.MCP.Servers[0]) {
+		t.Fatal("default inject off for servers")
+	}
+}

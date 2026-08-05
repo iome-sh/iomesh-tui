@@ -59,6 +59,7 @@ oauth_token_env = "MCP_TOKEN"   # simplest: static Bearer
 ```toml
 [mcp]
 enabled = true
+# inject_iomesh_context = false   # s1267 opt-in; default false
 
 [[mcp.servers]]
 name = "everything"
@@ -70,10 +71,51 @@ name = "remote"
 url = "https://mcp.example.com/mcp"
 oauth_token_env = "MCP_TOKEN"
 mutating = false
+# inject_iomesh_context = true    # per-server override of [mcp] flag
 ```
 
 - **Fail-open**: bad servers skipped; missing resources/prompts soft-empty.
 - **Output**: redacted + truncated (default 20k).
+
+## Multi-tenant context headers (s1267)
+
+Opt-in inject of iomesh multi-tenant context into **HTTP** MCP request headers at `ServerConfig` build time (`config.BuildMCPServerConfig` · `mcp.ApplyIOMeshContextHeaders`). Dial path already sends `cfg.Headers` on each POST.
+
+| Header | Source |
+|--------|--------|
+| `X-IOMesh-Tenant` | `[iomesh].tenant`, else `[memory].tenant` |
+| `X-IOMesh-Org` | `[iomesh].org` |
+| `X-IOMesh-Workspace` | `[iomesh].workspace` |
+
+```toml
+[iomesh]
+tenant = "acme"
+org = "org_dev-org"
+workspace = "ws_alpha"
+
+[mcp]
+enabled = true
+inject_iomesh_context = true   # global default for all servers
+
+[[mcp.servers]]
+name = "aion-scenario"
+url = "https://mcp.example.com/mcp"
+# inject_iomesh_context = false  # per-server opt-out
+# headers = { "X-IOMesh-Org" = "org_explicit" }  # explicit wins; inject never overwrites
+```
+
+**Residual honesty**
+
+| Claim | Truth |
+|-------|--------|
+| inject ≠ install APPLY / Connected / INSTALL_STORE green | Headers only; no install CRUD |
+| inject ≠ dual-auth install list shipped | Peer candidacy only; not claimed here |
+| empty values not sent | Never invent tenant/org/workspace |
+| default `inject_iomesh_context = false` | Avoids surprising auth/context changes |
+| stdio servers | No HTTP headers — inject is a no-op for command transport |
+| dual_write / book-demo / GA | OFF · OFF · not invented |
+
+Wire points: agent AttachMCP (`cmd/iomesh`), `iomesh mcp --connect`, memory pull MCP path, ACP session build — all via `BuildMCPServerConfig` / `mcpServerFromTOML`.
 
 ## CLI
 
@@ -86,5 +128,7 @@ iomesh mcp --connect    # connect + tools/list (+ resource/prompt counts)
 
 - `internal/mcp/client.go` — stdio + resources/prompts APIs  
 - `internal/mcp/http.go` — streamable HTTP + SSE  
+- `internal/mcp/context_headers.go` — s1267 `ApplyIOMeshContextHeaders`  
 - `internal/mcp/oauth.go` — bearer / client_credentials / PKCE  
+- `internal/config/mcp_server.go` — `BuildMCPServerConfig` (inject wire)  
 - `internal/agent/mcp_tools.go` — agent registration  

@@ -443,24 +443,8 @@ func (s *Server) newRuntime(cwd string) (*agent.Runtime, *session.Store, error) 
 		}
 	}
 	if cfg.MCP.Enabled && cfg.Features.MCP && len(cfg.MCP.Servers) > 0 {
-		var servers []mcp.ServerConfig
-		for _, s := range cfg.MCP.Servers {
-			sc := mcp.ServerConfig{
-				Name: s.Name, Command: s.Command, Args: s.Args, Env: s.Env,
-				URL: s.URL, Headers: s.Headers, AllowLoopback: s.AllowLoopback,
-				Enabled: s.Enabled, Mutating: s.Mutating,
-				StartupTimeoutSec: s.StartupTimeoutSec, ToolTimeoutSec: s.ToolTimeoutSec,
-				AccessTokenEnv: s.OAuthTokenEnv,
-			}
-			if s.OAuth != nil {
-				sc.OAuth = &mcp.OAuthConfig{
-					TokenURL: s.OAuth.TokenURL, ClientID: s.OAuth.ClientID,
-					ClientSecretEnv: s.OAuth.ClientSecretEnv, Scopes: s.OAuth.Scopes,
-					AccessTokenEnv: s.OAuth.AccessTokenEnv, AllowLoopback: s.OAuth.AllowLoopback,
-				}
-			}
-			servers = append(servers, sc)
-		}
+		// BuildMCPServerConfig applies s1267 inject_iomesh_context (opt-in HTTP headers).
+		servers := cfg.BuildMCPServerConfigs()
 		mgr := mcp.NewManager(context.Background(), servers, s.logger)
 		rt.AttachMCP(mgr)
 	}

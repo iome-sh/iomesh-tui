@@ -143,6 +143,10 @@ type MCPServerTOML struct {
 	OAuthTokenEnv string `toml:"oauth_token_env"`
 	// Nested oauth table for client_credentials.
 	OAuth *MCPOAuthTOML `toml:"oauth"`
+	// InjectIOMeshContext overrides [mcp].inject_iomesh_context for this server.
+	// nil = inherit global (default false). s1267 residual-honest opt-in only.
+	// Applies to HTTP URL servers (stdio has no request headers).
+	InjectIOMeshContext *bool `toml:"inject_iomesh_context"`
 }
 
 // MCPOAuthTOML is optional OAuth2 client_credentials for HTTP MCP.
@@ -160,6 +164,36 @@ type MCPSection struct {
 	Enabled        bool            `toml:"enabled"`
 	MaxOutputBytes int             `toml:"max_output_bytes"`
 	Servers        []MCPServerTOML `toml:"servers"`
+	// InjectIOMeshContext (s1267) opt-in: when true, merge X-IOMesh-Tenant/Org/Workspace
+	// into each server's HTTP Headers at ServerConfig build time (non-empty only;
+	// never overwrite explicit headers). Default false — not install green / not dual-auth.
+	// Per-server inject_iomesh_context overrides this. Stdio servers ignore headers.
+	InjectIOMeshContext bool `toml:"inject_iomesh_context"`
+}
+
+// WantsInjectIOMeshContext reports whether multi-tenant context headers should be
+// merged for this server (s1267). Per-server pointer wins; else global default false.
+func (m MCPSection) WantsInjectIOMeshContext(s MCPServerTOML) bool {
+	if s.InjectIOMeshContext != nil {
+		return *s.InjectIOMeshContext
+	}
+	return m.InjectIOMeshContext
+}
+
+// IOMeshMCPContext returns tenant/org/workspace for MCP header inject (s1267).
+// Tenant: [iomesh].tenant, else [memory].tenant. Org/workspace from [iomesh] only.
+// Empty strings mean "do not send" — never invent values.
+func (c *Config) IOMeshMCPContext() (tenant, org, workspace string) {
+	if c == nil {
+		return "", "", ""
+	}
+	tenant = strings.TrimSpace(c.IOMesh.Tenant)
+	if tenant == "" {
+		tenant = strings.TrimSpace(c.Memory.Tenant)
+	}
+	org = strings.TrimSpace(c.IOMesh.Org)
+	workspace = strings.TrimSpace(c.IOMesh.Workspace)
+	return tenant, org, workspace
 }
 
 // MemorySection configures Memory Palace hooks (auto-recall / auto-ingest).

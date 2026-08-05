@@ -137,6 +137,11 @@ enabled = true
 [mcp]
 enabled = false
 # max_output_bytes = 20000
+# s1267: opt-in inject X-IOMesh-Tenant/Org/Workspace on HTTP MCP (default false).
+# From [iomesh] tenant/org/workspace (tenant falls back to [memory].tenant).
+# Empty values not sent; never overwrites explicit headers; stdio N/A.
+# inject ≠ install green · ≠ dual-auth · dual_write OFF · book-demo OFF
+# inject_iomesh_context = false
 
 # Stdio transport:
 # [[mcp.servers]]
@@ -154,6 +159,7 @@ enabled = false
 # name = "remote"
 # url = "https://mcp.example.com/mcp"
 # # headers = { "Authorization" = "Bearer …" }
+# # inject_iomesh_context = true   # per-server override of [mcp] flag (s1267)
 # # oauth_token_env = "MCP_TOKEN"   # static Bearer from env
 # # [mcp.servers.oauth]            # or client_credentials:
 # # token_url = "https://auth.example/oauth/token"
