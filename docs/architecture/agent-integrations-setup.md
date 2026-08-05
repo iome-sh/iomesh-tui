@@ -1,8 +1,25 @@
 # Agent integrations setup (MCP · residual-honest)
 
-**Pin:** free eng **s1251** (agent skill + system note) · **s1252** (golden fixtures / s1244 deep links) · **s1247** (status pulse) · **s1242** (TUI v178 wire parity) + **s1243** (signing surface) · prior **s1238** slash · concurrent aion **s1237** (MCP v178 tools) · residual docs **s1239**.
+**Pin:** free eng **s1257** (deep-link parity + skill dogfood) · **s1251** (agent skill + system note) · **s1252** (golden fixtures / s1244 deep links) · **s1247** (status pulse) · **s1242** (TUI v178 wire parity) + **s1243** (signing surface) · prior **s1238** slash · concurrent aion **s1237** (MCP v178 tools) · residual docs **s1239** · free eng concurrent **s1256+** / free-floor peer **s1254**.
 
 Agent/TUI path for **connector integrations setup** via MCP tools — not full install CRUD, not OAuth complete, not checklist/API-key mint, not webhook secret mint/rotate.
+
+## Deep-link parity + skill dogfood (s1257)
+
+Residual-honest **round-trip dogfood** for plan deep links and the builtin skill (no live install green claim):
+
+1. **Plan deep-link parity** — golden fixtures (`v178_plan_github.json`, `v178_plan_notion.json`) carry aion **s1244** fields:
+   - `portal_url` / `portal_detail_url`
+   - `portal_add_url` = `https://console.iome.sh/integrations/add?template={id}`
+   - `deep_links` map (`detail`, `add_wizard`, `catalog`, …)
+   - `formatConnectorPlan` surfaces `portal_add_url` + `deep_links` with residual labels: **browser HITL only · not install APPLY**
+   - `template=` is deep-link shape only — **≠ install APPLY** success
+   - Honesty footer always: never invent install green · no `focus=` fantasy params
+2. **Builtin skill dogfood** — `LoadWithBuiltin` / `LoadBuiltin` always yields `connector-integrations-setup`; body mentions `list_connector_catalog`, `plan_connector_setup`, portal HITL, browser HITL, never invent install green; description is residual-honest (not install APPLY).
+3. **Guidance ↔ skill consistency** — `IntegrationsAgentGuidanceNote()` and skill body share core honesty needles (`list_connector_catalog`, `plan_connector_setup`, portal, never invent install green, dual_write OFF / browser HITL).
+4. **Catalog portal_path only** — status pulse / catalog table remain residual-honest when entries carry `portal_path` only (catalog honesty ≠ install Connected).
+
+**Honesty locks (s1257):** deep_links = browser HITL only · template= ≠ install APPLY · skill ≠ invent Connected · dual_write OFF · book-demo OFF · no invent GA.
 
 ## Agent skill + system note (s1251)
 
@@ -184,6 +201,7 @@ No invented catalog rows. No invented plan success. No invented signing secrets.
 | **s1247** | **iomesh-tui** | **`/integrations status` residual-honest operator pulse (`IntegrationsStatus` · `formatCatalogPulse`)** |
 | **s1251** | **iomesh-tui** | **Agent skill + `<integrations>` system note (`IntegrationsAgentGuidanceNote` · builtin `connector-integrations-setup`)** |
 | **s1252** | **iomesh-tui** | **Golden fixtures + plan deep_links display parity** |
+| **s1257** | **iomesh-tui** | **Deep-link parity dogfood + skill residual-honest tests (template= · portal_add_url · guidance↔skill needles)** |
 
 ## Config
 
