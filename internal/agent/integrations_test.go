@@ -4,11 +4,33 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/iome-sh/iomesh-tui/internal/mcp"
 )
+
+// testdataPath resolves internal/agent/testdata relative to this source file.
+func testdataPath(t *testing.T, name string) string {
+	t.Helper()
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller failed")
+	}
+	return filepath.Join(filepath.Dir(file), "testdata", name)
+}
+
+func readTestdata(t *testing.T, name string) string {
+	t.Helper()
+	b, err := os.ReadFile(testdataPath(t, name))
+	if err != nil {
+		t.Fatalf("read testdata %s: %v", name, err)
+	}
+	return string(b)
+}
 
 func TestIntegrationsCatalog_OfflineFailOpen(t *testing.T) {
 	rt := &Runtime{} // no MCP
@@ -555,5 +577,216 @@ func mockIntegrationsMCP(w io.WriteCloser, r io.Reader) {
 			result = map[string]any{}
 		}
 		_ = json.NewEncoder(w).Encode(map[string]any{"jsonrpc": "2.0", "id": id, "result": result})
+	}
+}
+
+// --- s1251: agent guidance note ---
+
+func TestIntegrationsAgentGuidanceNote_HonestyNeedles(t *testing.T) {
+	out := IntegrationsAgentGuidanceNote()
+	if out == "" {
+		t.Fatal("empty guidance note")
+	}
+	for _, want := range []string{
+		"list_connector_catalog",
+		"plan_connector_setup",
+		"get_webhook_signing_headers",
+		"console.iome.sh/integrations",
+		"browser HITL",
+		"never invent install green",
+		"Connected",
+		"INSTALL_STORE",
+		"stub OAuth",
+		"dual_write OFF",
+		"book-demo OFF",
+		"catalog Beta",
+		"agent MCP cannot write installs",
+		"/integrations status",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("guidance missing %q in:\n%s", want, out)
+		}
+	}
+	// Must not invent install success language as a claim
+	if strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent install green claim: %s", out)
+	}
+}
+
+// s1251: AttachMCP injects <integrations> system note when MCP manager is present.
+func TestAttachMCP_InjectsIntegrationsGuidance(t *testing.T) {
+	cInR, cInW := io.Pipe()
+	cOutR, cOutW := io.Pipe()
+	go mockIntegrationsMCP(cOutW, cInR)
+
+	mut := false
+	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "aion-scenario", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
+	defer cl.Close()
+	if err := cl.InitForTest(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	mgr := mcp.NewManagerEmpty(nil)
+	mgr.Attach(cl)
+	rt := testRT(t, t.TempDir())
+	rt.AttachMCP(mgr)
+
+	sys := rt.Messages()[0].Content
+	if !strings.Contains(sys, "<integrations>") {
+		t.Fatalf("want <integrations> system note: %s", sys)
+	}
+	if !strings.Contains(sys, "</integrations>") {
+		t.Fatalf("want closed integrations tag: %s", sys)
+	}
+	// Same needles as the guidance note
+	for _, want := range []string{
+		"list_connector_catalog",
+		"plan_connector_setup",
+		"never invent install green",
+		"browser HITL",
+		"dual_write OFF",
+		"book-demo OFF",
+	} {
+		if !strings.Contains(sys, want) {
+			t.Fatalf("integrations note missing %q: %s", want, sys)
+		}
+	}
+	// MCP note still present
+	if !strings.Contains(sys, "<mcp>") {
+		t.Fatalf("want <mcp> note too: %s", sys)
+	}
+}
+
+// --- s1252: golden fixtures expansion ---
+
+func TestFormatConnectorCatalog_GoldenFixture(t *testing.T) {
+	raw := readTestdata(t, "v178_catalog_entries.json")
+	out := formatConnectorCatalog(raw, "")
+	if out == "" {
+		t.Fatal("empty catalog format")
+	}
+	// Round-trip: table includes oauth_install_supported → yes/no
+	for _, want := range []string{"github", "notion", "embeddings", "ID", "STATUS", "MESH_LAYER", "OAUTH"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("missing %q: %s", want, out)
+		}
+	}
+	for _, line := range strings.Split(out, "\n") {
+		if strings.Contains(line, "notion") {
+			if !strings.Contains(line, "yes") {
+				t.Fatalf("notion oauth want yes: %s", line)
+			}
+		}
+		if strings.Contains(line, "github") {
+			if !strings.Contains(line, "no") {
+				t.Fatalf("github oauth want no: %s", line)
+			}
+		}
+	}
+	if !strings.Contains(out, "honesty:") {
+		t.Fatalf("honesty footer: %s", out)
+	}
+	if strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent install green: %s", out)
+	}
+	// layer filter round-trip
+	know := formatConnectorCatalog(raw, "knowledge")
+	if !strings.Contains(know, "notion") || strings.Contains(know, "github") {
+		t.Fatalf("knowledge filter: %s", know)
+	}
+}
+
+func TestFormatConnectorPlan_GoldenFixtureDeepLinks(t *testing.T) {
+	raw := readTestdata(t, "v178_plan_github.json")
+	out := formatConnectorPlan(raw, "github")
+	if out == "" {
+		t.Fatal("empty plan format")
+	}
+	// portal_url + honesty notes + deep links (s1244)
+	for _, want := range []string{
+		"portal_url:",
+		"console.iome.sh/integrations/github",
+		"portal_add_url:",
+		"template=github",
+		"deep_links:",
+		"add_wizard:",
+		"catalog:",
+		"signing_headers_tool:",
+		"get_webhook_signing_headers",
+		"Browser HITL",
+		"never invent install green",
+		"available", // catalog status honesty
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("plan missing %q:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent Connected: %s", out)
+	}
+	// never invent focus= fantasy
+	if strings.Contains(out, "focus=") {
+		t.Fatalf("must not invent focus= deep links: %s", out)
+	}
+}
+
+func TestFormatConnectorPlan_GoldenFixtureNotionStub(t *testing.T) {
+	raw := readTestdata(t, "v178_plan_notion.json")
+	out := formatConnectorPlan(raw, "notion")
+	if !strings.Contains(out, "oauth_mode_hint: stub") {
+		t.Fatalf("stub hint: %s", out)
+	}
+	if !strings.Contains(out, "portal_add_url:") || !strings.Contains(out, "template=notion") {
+		t.Fatalf("portal_add_url: %s", out)
+	}
+	if !strings.Contains(out, "deep_links:") {
+		t.Fatalf("deep_links: %s", out)
+	}
+	if !strings.Contains(out, "stub ≠ live") {
+		t.Fatalf("honesty: %s", out)
+	}
+	if !strings.Contains(out, "oauth_install_supported: true") {
+		t.Fatalf("oauth_install_supported: %s", out)
+	}
+	if strings.Contains(out, "Connected") && strings.Contains(out, "yes") {
+		// status "beta" is ok; invent Connected green is not
+		if strings.Contains(out, "Connected: yes") {
+			t.Fatalf("must not invent install green: %s", out)
+		}
+	}
+}
+
+func TestFormatCatalogPulse_GoldenFixture(t *testing.T) {
+	raw := readTestdata(t, "v178_catalog_entries.json")
+	out := formatCatalogPulse(raw)
+	if !strings.Contains(out, "total catalog entries: 3") {
+		t.Fatalf("count: %s", out)
+	}
+	if !strings.Contains(out, "operational=1") || !strings.Contains(out, "knowledge=1") || !strings.Contains(out, "analytical=1") {
+		t.Fatalf("layers: %s", out)
+	}
+	if !strings.Contains(out, "available=1") || !strings.Contains(out, "beta=1") || !strings.Contains(out, "planned=1") {
+		t.Fatalf("status: %s", out)
+	}
+	if !strings.Contains(out, "catalog honesty") || !strings.Contains(out, "NOT install Connected") {
+		t.Fatalf("honesty: %s", out)
+	}
+}
+
+// s1252: IntegrationsStatus offline still residual; golden catalog not invented offline.
+func TestIntegrationsStatus_OfflineNoGoldenInvent(t *testing.T) {
+	rt := &Runtime{}
+	out, err := rt.IntegrationsStatus(context.Background())
+	if err != nil {
+		t.Fatalf("err=%v", err)
+	}
+	if strings.Contains(out, "total catalog entries: 3") {
+		t.Fatalf("must not invent golden catalog counts offline: %s", out)
+	}
+	if !strings.Contains(out, "never invent install green") {
+		t.Fatalf("honesty: %s", out)
+	}
+	if !strings.Contains(out, "dual_write OFF") || !strings.Contains(out, "book-demo OFF") {
+		t.Fatalf("residual locks: %s", out)
 	}
 }

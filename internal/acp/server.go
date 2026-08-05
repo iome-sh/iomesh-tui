@@ -437,7 +437,8 @@ func (s *Server) newRuntime(cwd string) (*agent.Runtime, *session.Store, error) 
 	if cfg.Skills.Enabled && cfg.Features.Skills {
 		dirs := skills.DefaultDirs(abs)
 		dirs = append(dirs, cfg.Skills.Dirs...)
-		if cat, err := skills.LoadDirs(dirs...); err == nil && cat.Len() > 0 {
+		// Builtin always merged (s1251 connector-integrations-setup).
+		if cat, err := skills.LoadWithBuiltin(dirs...); err == nil && cat.Len() > 0 {
 			rt.AttachSkills(cat)
 		}
 	}
