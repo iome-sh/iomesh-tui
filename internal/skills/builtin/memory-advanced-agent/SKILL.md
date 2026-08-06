@@ -1,6 +1,6 @@
 ---
 name: memory-advanced-agent
-description: Residual-honest agent path for advanced memory surfaces (related hops · supersede HITL · facts-as-of · digest · patterns/anomalies · timeline · compact-status · semantic · ingest-event) — not Memory GA · dual_write OFF
+description: Residual-honest agent path for advanced memory surfaces (related hops · supersede HITL · facts-as-of · digest · patterns/anomalies · timeline · compact-status · trigger-compact HITL · semantic · ingest-event · status inventory) — not Memory GA · dual_write OFF
 ---
 
 # Memory advanced agent (residual-honest)
@@ -19,9 +19,11 @@ Agent path for **advanced Memory Palace surfaces** already wired in iomesh-tui (
 | **digest** (s1200) | Ops heartbeat day/week pattern + receipts pack | Claiming knowledge/analytical digests as GA |
 | **patterns / anomalies** (shipped s1287) | MCP ops pulse Beta list of patterns or anomalies | Medical diagnosis; inventing GA window engine |
 | **timeline** (s1296) | Temporal event-ordered palace slice (`since`/`until`/`query`/`limit`) | Auto-recall; inventing lean HTTP timeline; claiming Memory GA |
-| **compact-status** (s1296 · read-only) | Palace tier counts + last compaction residual | Auto-compact product claims; inventing compaction green; `memory_trigger_compact` without HITL |
+| **compact-status** (s1296 · read-only) | Palace tier counts + last compaction residual | Auto-compact product claims; inventing compaction green |
+| **trigger-compact** (s1311 · HITL) | Human-confirmed RecMem compaction advisory (`memory.compact.trigger`) | Silent auto-trigger; inventing compaction green; calling without HITL |
 | **semantic** (s1301) | Tier-4 semantic facts search (`query` / `limit`) | Auto-recall; inventing lean HTTP semantic; inventing empty-as-success |
 | **ingest-event** (s1301) | Ops/telemetry event ingest (`subject` + `content`; s138 T1) | Conversation turns (use `/memory ingest` / `memory_ingest_turn`); inventing memory_id offline |
+| **status** (s1311 advanced inventory) | Residual-honest advanced MCP tool presence pulse | Inventing product green from tool presence |
 
 ## Slash ↔ MCP mapping
 
@@ -35,11 +37,14 @@ Agent path for **advanced Memory Palace surfaces** already wired in iomesh-tui (
 | `/memory anomalies` (shipped s1287) | `memory_anomalies_list` | MCP ops pulse Beta — shipped; no invent lean HTTP |
 | `/memory timeline [--since\|--until\|--session-id\|--query\|--limit]` (s1296) | `memory_timeline` | **MCP-first only** — no lean HTTP timeline invent |
 | `/memory compact-status` (s1296 · read-only) | `memory_compact_status` | **MCP-first only** — read-only tier counts residual; no invent lean HTTP |
+| `/memory trigger-compact --i-confirm` (s1311 · HITL) | `memory_trigger_compact` | **MCP-first only** — mutating RecMem advisory; HITL required; no invent lean HTTP |
 | `/memory semantic\|search-semantic\|sem [query\|--query …] [--limit N]` (s1301) | `memory_search_semantic` | **MCP-first only** — tier-4 semantic facts residual; empty ≠ invent |
 | `/memory ingest-event\|event --subject <id> --content <text> […]` (s1301) | `memory_ingest_event` | **MCP-first only** — s138 T1 temporal event telemetry; not conversation turn |
+| `/memory status` (s1311 advanced inventory) | (presence probe only) | Residual inventory of advanced MCP tools · dual_write OFF · not Memory GA |
 
 Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conversation turns via `/memory ingest`) — see architecture docs.
-**Non-goal:** `memory_trigger_compact` (mutating advisory) — **not** wired without HITL.
+
+**s1311 HITL shipped:** `memory_trigger_compact` is wired as `/memory trigger-compact --i-confirm` (aliases `--confirm` / `--yes`). Without HITL → residual-honest refuse (no MCP call).
 
 ## Workflow (agent)
 
@@ -71,13 +76,19 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conver
 
 9. **Compact-status (s1296 · MCP-first · read-only)** — call `memory_compact_status` with optional `tenant`.
    - Palace tier counts residual · last_compaction from wire only · not auto-compact product · never invent compaction green.
-   - Do **not** call `memory_trigger_compact` without explicit HITL (s1296 non-goal).
 
-10. **Semantic (s1301 · MCP-first · opt-in)** — call `memory_search_semantic` with required `query`, optional `limit`, `tenant`.
+10. **Trigger-compact (s1311 · MCP-first · HITL mutating)** — call `memory_trigger_compact` only after **explicit human confirm**.
+    - Slash requires `--i-confirm` (aliases `--confirm` / `--yes`). Agent must refuse residual-honestly without HITL.
+    - Mutating RecMem advisory: publishes `memory.compact.trigger` · **not** invent compaction green · **not** auto-compact product · dual_write OFF · not Memory GA.
+    - Never invent `triggered` / `cluster_size` offline.
+
+11. **Semantic (s1301 · MCP-first · opt-in)** — call `memory_search_semantic` with required `query`, optional `limit`, `tenant`.
     - Tier-4 semantic facts residual · empty facts ≠ invent memories · not Memory GA · dual_write OFF.
 
-11. **Ingest-event (s1301 · MCP-first · opt-in)** — call `memory_ingest_event` with required `subject` + `content`, optional `event_time` / `session_id` / `session_seq` / `severity` / `source_stream` / `tenant`.
+12. **Ingest-event (s1301 · MCP-first · opt-in)** — call `memory_ingest_event` with required `subject` + `content`, optional `event_time` / `session_id` / `session_seq` / `severity` / `source_stream` / `tenant`.
     - s138 T1 temporal event telemetry · **not** conversation turn (use `memory_ingest_turn` / `/memory ingest`) · never invent memory_id offline · dual_write OFF.
+
+13. **Status inventory (s1311)** — `/memory status` prints `MemoryStatusLine` + `MemoryAdvancedStatus` residual tool presence (present/missing/offline). Presence ≠ product green.
 
 ## Residual honesty table
 
@@ -92,11 +103,11 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conver
 | dual_write OFF | Default dual-write audit OFF; local-primary palace honesty |
 | not Memory GA | Advanced surfaces are residual/Beta/lite — do not invent product Memory GA |
 | no invent GA | No invent GA window engine, lean HTTP for supersede/facts-as-of/patterns/timeline/compact, or empty-as-success |
-| opt-in only | Never auto multi-hop on default recall; never auto-mutate supersede |
+| opt-in only | Never auto multi-hop on default recall; never auto-mutate supersede / trigger-compact |
 | fail-open | Offline / missing tool → residual status, not invented payloads |
 | empty ≠ invent | Empty facts / zero superseded_count / empty digest / empty timeline / empty semantic = honest empty |
-| compact-status read-only | Tier counts residual only — not auto-compact product · no invent compaction green |
-| trigger_compact needs HITL | `memory_trigger_compact` is mutating advisory — not wired without HITL (s1296 non-goal) |
+| compact-status read-only | Tier counts residual only — not auto-compact product · not invent compaction green |
+| trigger_compact requires HITL (s1311) | `memory_trigger_compact` is mutating RecMem advisory — **HITL shipped** via `/memory trigger-compact --i-confirm` · not invent compaction green |
 | semantic tier-4 residual | `memory_search_semantic` · not Memory GA · empty ≠ invent (s1301) |
 | ingest-event ≠ turn | s138 T1 telemetry event · not conversation turn · never invent memory_id (s1301) |
 
@@ -104,14 +115,15 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conver
 
 - Do **not** auto-run multi-hop related on default auto-recall.
 - Do **not** silent supersede (always HITL / `--i-confirm`).
-- Do **not** invent lean HTTP for supersede, facts-as-of, patterns/anomalies, timeline, compact-status, semantic, or ingest-event.
+- Do **not** silent trigger-compact (always HITL / `--i-confirm`; s1311).
+- Do **not** invent lean HTTP for supersede, facts-as-of, patterns/anomalies, timeline, compact-status, trigger-compact, semantic, or ingest-event.
 - Do **not** invent Memory GA, full graph RAG, dual-clock Graphiti, or medical diagnosis.
 - Do **not** claim dual_write ON or book-demo ON by default.
 - Do **not** invent GA window engine from digest / patterns / anomalies Beta surfaces.
 - Do **not** treat knowledge/analytical digest horizons as ops GA-path.
-- Do **not** invent memories, superseded_count, digests, timeline entries, semantic facts, memory_id, or compaction green when offline / empty.
-- Do **not** call `memory_trigger_compact` without explicit HITL (s1296 non-goal).
+- Do **not** invent memories, superseded_count, digests, timeline entries, semantic facts, memory_id, triggered/cluster_size, or compaction green when offline / empty.
 - Do **not** treat `memory_ingest_event` / `/memory ingest-event` as conversation turn ingest (use `memory_ingest_turn` / `/memory ingest`).
+- Do **not** treat advanced tool presence as product Memory GA green.
 
 ## Related
 
@@ -119,6 +131,7 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conver
 - System note inject on `AttachMCP`: `<memory-advanced>` via `MemoryAdvancedAgentGuidanceNote` (s1291).
 - Architecture SSOT: `docs/architecture/memory-mcp.md`.
 - Shipped s1287: `/memory patterns|anomalies` MCP ops pulse Beta.
-- Shipped s1296: `/memory timeline|compact-status` MCP-first (read-only compact-status; no trigger_compact without HITL).
-- Shipped s1301: `/memory semantic|ingest-event` MCP-first (tier-4 semantic · s138 T1 event telemetry; no trigger_compact without HITL).
-- Serials: s1135 related · s1281 prefer_shorter_hops · s1282 supersede · s1276 facts-as-of · s1200 digest · s1287 patterns/anomalies · s1288 skill · s1291 system note · s1296 timeline+compact-status · s1301 semantic+ingest-event · aion s1277 / s640 A3 lite / K4 lite / s138 T1.
+- Shipped s1296: `/memory timeline|compact-status` MCP-first (read-only compact-status).
+- Shipped s1301: `/memory semantic|ingest-event` MCP-first (tier-4 semantic · s138 T1 event telemetry).
+- Shipped s1311: `/memory trigger-compact --i-confirm` HITL + `/memory status` advanced inventory pulse.
+- Serials: s1135 related · s1281 prefer_shorter_hops · s1282 supersede · s1276 facts-as-of · s1200 digest · s1287 patterns/anomalies · s1288 skill · s1291 system note · s1296 timeline+compact-status · s1301 semantic+ingest-event · s1311 trigger-compact HITL + advanced status · aion s1277 / s640 A3 lite / K4 lite / s138 T1.

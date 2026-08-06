@@ -369,7 +369,9 @@ func TestLoadBuiltin_S1288MemoryAdvancedSkillDogfood(t *testing.T) {
 		"memory_ingest_event",    // s1301
 		"/memory semantic",       // s1301 slash
 		"/memory ingest-event",   // s1301 slash
-		"memory_trigger_compact", // s1296 non-goal HITL lock
+		"memory_trigger_compact", // s1311 HITL
+		"/memory trigger-compact", // s1311 slash
+		"--i-confirm",
 		"multi-hop lite",
 		"graph RAG",
 		"A3 lite",
@@ -387,8 +389,10 @@ func TestLoadBuiltin_S1288MemoryAdvancedSkillDogfood(t *testing.T) {
 		"s1291",
 		"s1296",
 		"s1301",
+		"s1311",
 		"not conversation turn",
 		"tier-4 semantic",
+		"not invent compaction green",
 	} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("skill body missing %q:\n%s", want, body)

@@ -18,7 +18,7 @@ Platform ships `aion-memory-mcp` (stdio **and** streamable HTTP) with tools:
 | `memory_compact_status` | Palace tier counts + last compaction (s1296 slash: `/memory compact-status`; **read-only**) |
 | `memory_search_semantic` | Tier-4 semantic facts (s1301 slash: `/memory semantic`; MCP-first) |
 | `memory_ingest_event` | Ops/telemetry event ingest (s1301 slash: `/memory ingest-event`; s138 T1; **not** conversation turn) |
-| `memory_trigger_compact` | Mutating compaction advisory — **not wired** in TUI without HITL (s1296/s1301 non-goal) |
+| `memory_trigger_compact` | Mutating RecMem compaction advisory — **HITL wired** (s1311 slash: `/memory trigger-compact --i-confirm`) |
 | compact / other ops helpers | Residual ops helpers (not product Memory GA) |
 
 Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
@@ -42,9 +42,10 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 | **3 patterns/anomalies (s1287)** | **done (opt-in · MCP ops pulse Beta)** | `/memory patterns|anomalies` + MCP `memory_patterns_list` / `memory_anomalies_list` when present; ops pulse Beta · not medical · no invent GA window engine · no lean HTTP invent |
 | **3 advanced agent skill (s1288)** | **done (docs + builtin skill)** | Builtin skill `memory-advanced-agent` residual-honest playbook for advanced surfaces; docs inventory lock; skill-only (no product path invent) |
 | **3 advanced agent system note (s1291)** | **done (AttachMCP inject)** | Residual-honest `<memory-advanced>` system note (`MemoryAdvancedAgentGuidanceNote`) injected on `AttachMCP` (mirror integrations s1251); steers opt-in advanced memory locks |
-| **3 timeline + compact-status (s1296)** | **done (opt-in · MCP-first · read-only compact)** | `/memory timeline` → MCP `memory_timeline`; `/memory compact-status` → MCP `memory_compact_status`; temporal timeline · filters before limit · Palace tier counts residual · not Memory GA · dual_write OFF · **no** `memory_trigger_compact` without HITL · no lean HTTP invent |
-| **3 semantic + ingest-event (s1301)** | **done (opt-in · MCP-first)** | `/memory semantic` → MCP `memory_search_semantic` (tier-4 semantic facts residual · empty ≠ invent); `/memory ingest-event` → MCP `memory_ingest_event` (s138 T1 temporal event telemetry · not conversation turn · never invent memory_id); not Memory GA · dual_write OFF · **no** `memory_trigger_compact` without HITL · no lean HTTP invent |
+| **3 timeline + compact-status (s1296)** | **done (opt-in · MCP-first · read-only compact)** | `/memory timeline` → MCP `memory_timeline`; `/memory compact-status` → MCP `memory_compact_status`; temporal timeline · filters before limit · Palace tier counts residual · not Memory GA · dual_write OFF · mutating compact deferred to s1311 HITL · no lean HTTP invent |
+| **3 semantic + ingest-event (s1301)** | **done (opt-in · MCP-first)** | `/memory semantic` → MCP `memory_search_semantic` (tier-4 semantic facts residual · empty ≠ invent); `/memory ingest-event` → MCP `memory_ingest_event` (s138 T1 temporal event telemetry · not conversation turn · never invent memory_id); not Memory GA · dual_write OFF · no lean HTTP invent |
 | **3 local-edge Docker attach docs (s1308)** | **done (docs only)** | Operator/agent docs for attaching **local-edge Docker** `aion-memory-mcp` streamable HTTP (peer aion **s1306** compose + residual **s1307**); TUI `[[mcp.servers]]` URL attach · dual_write OFF · local-primary · hosted Palace sunset · **not** Memory GA · docker edge ≠ invent GA · no public registry tag claim |
+| **3 trigger-compact HITL + advanced status (s1311)** | **done (opt-in · MCP-first · HITL)** | `/memory trigger-compact --i-confirm` → MCP `memory_trigger_compact` (RecMem advisory · mutating HITL · refuse without confirm); `/memory status` prints `MemoryStatusLine` + `MemoryAdvancedStatus` residual inventory (related · facts-as-of · supersede · timeline · compact-status · semantic · ingest-event · patterns · anomalies · digest · trigger-compact); dual_write OFF · not Memory GA · not invent compaction green · no lean HTTP invent |
 | **4 pull (s652)** | **done (M1)** | `iomesh memory pull` — durable mesh consumer → local MCP `memory_ingest_turn` (cost-max local palace; dual_write remains optional audit) |
 
 **Related (not Memory Palace):** agent connector setup slash `/integrations` (s1238/s1242/s1243) uses MCP `list_connector_catalog` / `plan_connector_setup` (aion v178) + `get_webhook_signing_headers` (v30) with residual honesty — see [agent-integrations-setup.md](./agent-integrations-setup.md).
@@ -472,12 +473,18 @@ See [mesh-dogfood.md](mesh-dogfood.md) for soft vs strict matrix. Unit coverage:
 | Command | Behavior |
 |---------|----------|
 | `/memory` | Status: enabled, `mcp=`, `sync_http=`, flags (incl. `dual_write`), tenant |
+| `/memory status\|st` | Base status line + s1311 advanced MCP inventory pulse (`MemoryAdvancedStatus`) |
 | `/memory recall [query]` | Sync HTTP retrieve when mesh enabled, else MCP (default query = last user text or `"*"`) |
 | `/memory recall --since|--until|--session-seq … [query]` | Same + per-call temporal filters (s1068; override config) |
 | `/memory related --seed <entity> [--query …] [--max-hops N] [--prefer-shorter-hops\|--legacy-sort]` | Opt-in multi-hop lite related recall (s1135 + s1281; HTTP + MCP `memory_related`; PreferShorterHops omit=true; not auto-recall) |
 | `/memory digest [--window day\|week] [--horizon ops\|knowledge\|analytical\|all] [--limit N]` | Opt-in ops heartbeat digest export (s1200; HTTP + MCP `ops_digest_export`) |
 | `/memory facts-as-of\|facts\|as-of --as-of <RFC3339> [--entity …] [--query …] [--limit N]` | Opt-in bi-temporal lite validity listing (s1276; MCP `memory_facts_as_of`; MCP-first) |
 | `/memory supersede\|super --entity <key> [--as-of RFC3339] --i-confirm` | Opt-in HITL A3 lite supersede (s1282; MCP `memory_supersede_entity`; MCP-first; mutating) |
+| `/memory timeline\|tl […]` | Opt-in temporal timeline (s1296; MCP `memory_timeline`; MCP-first) |
+| `/memory compact-status\|compact` | Opt-in Palace tier counts residual (s1296; MCP `memory_compact_status`; read-only) |
+| `/memory trigger-compact\|tcompact --i-confirm` | Opt-in HITL RecMem compact advisory (s1311; MCP `memory_trigger_compact`; mutating) |
+| `/memory semantic\|sem [query]` | Opt-in tier-4 semantic facts (s1301; MCP `memory_search_semantic`) |
+| `/memory ingest-event\|event --subject … --content …` | Opt-in s138 T1 event telemetry (s1301; MCP `memory_ingest_event`; not conversation turn) |
 | `/memory patterns` / `/memory anomalies` | Opt-in MCP ops pulse Beta lists (shipped s1287; `memory_patterns_list` / `memory_anomalies_list`; when present) |
 | `/memory ingest <text>` | Ingest a user turn (MCP and/or dual-write) |
 
@@ -571,7 +578,9 @@ Builtin skill **`memory-advanced-agent`** (`internal/skills/builtin/memory-advan
 | digest | `/memory digest …` | `ops_digest_export` |
 | patterns / anomalies (shipped s1287) | `/memory patterns\|anomalies` | `memory_patterns_list` / `memory_anomalies_list` |
 | timeline (s1296) | `/memory timeline …` | `memory_timeline` (MCP-first) |
-| compact-status (s1296 · read-only) | `/memory compact-status` | `memory_compact_status` (MCP-first; **not** `memory_trigger_compact`) |
+| compact-status (s1296 · read-only) | `/memory compact-status` | `memory_compact_status` (MCP-first; read-only) |
+| trigger-compact HITL (s1311) | `/memory trigger-compact --i-confirm` | `memory_trigger_compact` (MCP-first; mutating RecMem advisory; HITL) |
+| advanced status inventory (s1311) | `/memory status` | presence probe (`MemoryAdvancedStatus`) — no invent green |
 
 ## Timeline + compact-status (s1296 · MCP-first)
 
@@ -583,9 +592,24 @@ Opt-in residual-honest advanced surfaces (not auto-recall):
 | MCP | `memory_timeline` · `memory_compact_status` when platform exposes them |
 | Slash | `/memory timeline [--since\|--until\|--session-id\|--query\|--limit]` · `/memory compact-status` |
 | Output | timeline entries (id/summary/event_time) + honesty footer; compact tiers + `last_compaction` from wire only |
-| Non-goal | `memory_trigger_compact` mutating advisory — **not** wired without HITL |
+| Mutating compact | s1311 HITL: `/memory trigger-compact --i-confirm` → `memory_trigger_compact` (not auto from compact-status) |
 
 **Honesty hard locks:** opt-in only · temporal timeline ≠ Memory GA · filters before limit · compact status ≠ invent compaction green · not auto-compact product · dual_write OFF · MCP-first (no lean HTTP invent) · fail-open · empty entries honest.
+
+## Trigger-compact HITL + advanced status (s1311 · MCP-first)
+
+Opt-in residual-honest mutating compact advisory + operator inventory pulse:
+
+| Surface | Path |
+|---------|------|
+| Lean HTTP | **None invent** — do not invent `/memory/trigger_compact` lean route |
+| MCP | `memory_trigger_compact` when platform exposes it (`{triggered, cluster_size}`) |
+| Slash | `/memory trigger-compact\|compact-trigger\|tcompact --i-confirm` (aliases `--confirm` / `--yes`) |
+| HITL | Without `--i-confirm` residual refuse (no MCP call) — mirror supersede |
+| Output | `triggered` + `cluster_size` from wire + honesty footer (RecMem advisory · not invent green) |
+| Status | `/memory status` → `MemoryStatusLine` + `MemoryAdvancedStatus` (present/missing/offline inventory) |
+
+**Honesty hard locks:** HITL required · RecMem advisory ≠ invent compaction green · dual_write OFF · not Memory GA · presence ≠ product green · MCP-first · fail-open · never invent triggered/cluster_size offline.
 
 ## Platform gaps
 
@@ -603,10 +627,10 @@ Opt-in residual-honest advanced surfaces (not auto-recall):
 |------|------|
 | `internal/config` | `[memory]` section + env (`dual_write`) |
 | `internal/iomesh/memory.go` | `PublishMemoryIngest`, `PublishMemoryRecall`, `RetrieveMemory` / `RetrieveMemoryWithOptions`, `RetrieveMemoryRelated` (+ PreferShorterHops s1281), `ExportOpsDigest` lean HTTP (no SDK dep; s1068 temporal + s1135 related + s1200 digest; **no** facts_as_of / supersede / patterns HTTP invent) |
-| `internal/agent/memory.go` | Recall (sync prefer → MCP; config + opts temporal filters) / related multi-hop + prefer_shorter_hops (s1135/s1281) / ops digest (s1200) / facts-as-of MCP-first (s1276) / supersede HITL MCP-first (s1282) / patterns+anomalies (s1287) / timeline+compact-status MCP-first (s1296) / ingest / dual-write helpers |
-| `internal/agent/memory_guidance.go` | s1291 `MemoryAdvancedAgentGuidanceNote` residual-honest system note (AttachMCP inject; s1296 timeline+compact-status) |
+| `internal/agent/memory.go` | Recall (sync prefer → MCP; config + opts temporal filters) / related multi-hop + prefer_shorter_hops (s1135/s1281) / ops digest (s1200) / facts-as-of MCP-first (s1276) / supersede HITL MCP-first (s1282) / patterns+anomalies (s1287) / timeline+compact-status MCP-first (s1296) / trigger-compact HITL + advanced status inventory (s1311) / semantic+ingest-event (s1301) / ingest / dual-write helpers |
+| `internal/agent/memory_guidance.go` | s1291 `MemoryAdvancedAgentGuidanceNote` residual-honest system note (AttachMCP inject; s1296 timeline+compact-status · s1311 trigger-compact HITL) |
 | `internal/agent/agent.go` | `RunTurn` hooks · `AttachMCP` injects integrations (s1251) + memory-advanced (s1291) notes |
-| `internal/tui/tui.go` | `/memory` slash (related · digest · facts-as-of · timeline · compact-status · supersede · patterns · anomalies · …) |
+| `internal/tui/tui.go` | `/memory` slash (related · digest · facts-as-of · timeline · compact-status · trigger-compact · status advanced · supersede · patterns · anomalies · …) |
 | `internal/skills/builtin/memory-advanced-agent/` | s1288 residual-honest advanced memory agent skill |
 | `configs/config.example.toml` | Copy-paste wire-up |
 

@@ -29,15 +29,17 @@ func TestMemoryAdvancedAgentGuidanceNote_HonestyNeedles(t *testing.T) {
 		"facts-as-of",
 		"supersede",
 		"/memory related",
-		"|patterns|anomalies|timeline|compact-status|semantic|ingest-event", // slash mirrors (s1296+s1301)
+		"|patterns|anomalies|timeline|compact-status|semantic|ingest-event|trigger-compact|status", // slash mirrors (s1296+s1301+s1311)
 		"timeline",
 		"compact-status",
 		"semantic",
 		"ingest-event",
+		"trigger-compact",
 		"tier-4 semantic",
 		"s138 T1",
 		"not conversation turn",
-		"memory_trigger_compact", // non-goal lock
+		"memory_trigger_compact", // s1311 HITL lock
+		"not invent compaction green",
 		"memory-advanced-agent",
 		"memory_retrieve",
 		"K4 lite",
