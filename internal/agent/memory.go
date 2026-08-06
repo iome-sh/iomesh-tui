@@ -549,6 +549,185 @@ func formatOpsDigestJSON(raw string, maxBytes int) string {
 	return formatOpsDigest(&res, maxBytes)
 }
 
+// MemoryFactsAsOfOpts for opt-in bi-temporal lite validity listing (s1276 / aion Beta K4 lite).
+// AsOf is required (RFC3339). Entity, Query, SessionID, Limit are optional.
+// Does NOT run on default auto-recall (slash/CLI opt-in only).
+//
+// MCP-first: platform ships MCP tool memory_facts_as_of; there is no lean HTTP
+// POST /v1|/v5/memory/facts_as_of route today — do not invent one.
+// Honesty: bi-temporal lite · not full dual-clock Graphiti · not Memory GA · dual_write OFF.
+type MemoryFactsAsOfOpts struct {
+	AsOf      string // required RFC3339 validity instant
+	Entity    string // optional entity filter
+	Query     string // optional content substring filter
+	SessionID string // optional; empty uses Runtime session
+	Limit     int    // zero → config Limit (default 8)
+}
+
+// factsAsOfHonestyFooter is the residual-honest pin for facts-as-of output.
+// Locked: bi-temporal lite · not full dual-clock Graphiti · not Memory GA · dual_write OFF.
+const factsAsOfHonestyFooter = "honesty: bi-temporal lite · not full dual-clock Graphiti · not Memory GA · dual_write OFF"
+
+// memoryFactsAsOfResult is the aion MCP memory_facts_as_of JSON wire shape.
+type memoryFactsAsOfResult struct {
+	AsOf  string             `json:"as_of"`
+	Facts []iomesh.MemoryHit `json:"facts"`
+}
+
+// MemoryFactsAsOf lists palace entries valid at as_of (s1276 · aion Beta K4 lite).
+// Prefers MCP tool memory_facts_as_of on the configured memory server (MCP-first;
+// no lean HTTP facts_as_of route on platform today).
+// Returns human-readable facts + honesty footer. Empty facts is honest empty
+// (facts: (none)) — never invents memories. Offline / tool failure is residual-honest
+// fail-open messaging (not silent empty-as-success).
+// Opt-in only — does not run on auto-recall.
+func (rt *Runtime) MemoryFactsAsOf(ctx context.Context, opts MemoryFactsAsOfOpts) (string, error) {
+	if rt == nil || !rt.memory.Enabled {
+		return "", fmt.Errorf("memory hooks disabled")
+	}
+	asOf := strings.TrimSpace(opts.AsOf)
+	if asOf == "" {
+		return "", fmt.Errorf("as_of required (RFC3339)")
+	}
+	// Soft-validate RFC3339 / RFC3339Nano; aion parseRFC3339Flexible is the authority at the tool.
+	if _, err := time.Parse(time.RFC3339, asOf); err != nil {
+		if _, err2 := time.Parse(time.RFC3339Nano, asOf); err2 != nil {
+			return "", fmt.Errorf("as_of must be RFC3339: %w", err)
+		}
+	}
+	limit := opts.Limit
+	if limit <= 0 {
+		limit = rt.memory.Limit
+	}
+	if limit <= 0 {
+		limit = 8
+	}
+	maxBytes := rt.memory.MaxSnippetBytes
+	if maxBytes <= 0 {
+		maxBytes = 6000
+	}
+
+	// MCP-first — no lean HTTP /memory/facts_as_of on platform (document, do not invent).
+	if !rt.mcpMemoryReady() {
+		return formatFactsAsOfOffline(rt.memory.Server, asOf), nil
+	}
+	c := rt.mcp.ClientByName(rt.memory.Server)
+	args := map[string]any{
+		"as_of": asOf,
+		"limit": limit,
+	}
+	if t := rt.memoryTenant(); t != "" {
+		args["tenant"] = t
+	}
+	if e := strings.TrimSpace(opts.Entity); e != "" {
+		args["entity"] = e
+	}
+	if q := strings.TrimSpace(opts.Query); q != "" {
+		args["query"] = q
+	}
+	sid := strings.TrimSpace(opts.SessionID)
+	if sid == "" {
+		sid = rt.memorySessionID()
+	}
+	if sid != "" {
+		args["session_id"] = sid
+	}
+	start := time.Now()
+	out, err := c.CallTool(ctx, "memory_facts_as_of", args)
+	latMS := int(time.Since(start).Milliseconds())
+	rt.lastMemoryRetrieveMS.Store(int64(latMS))
+	rt.lastMemoryRetrieveCacheHit.Store(false)
+	if err != nil {
+		// Fail-open residual-honest call failure — do not invent facts.
+		return formatFactsAsOfCallFailed(asOf, err), nil
+	}
+	if formatted := formatFactsAsOfJSON(out, maxBytes); formatted != "" {
+		return formatted, nil
+	}
+	// Unknown payload — pass through with honesty footer (never invent structure).
+	raw := strings.TrimSpace(out)
+	if raw == "" {
+		return formatFactsAsOf(asOf, nil, maxBytes), nil
+	}
+	return truncateBytes(raw+"\n"+factsAsOfHonestyFooter, maxBytes), nil
+}
+
+// formatFactsAsOfOffline is residual-honest fail-open when MCP memory server is unavailable.
+// Explicitly not empty-facts success (empty ≠ invent memories).
+func formatFactsAsOfOffline(server, asOf string) string {
+	if server == "" {
+		server = "memory"
+	}
+	return fmt.Sprintf(
+		"facts-as-of as_of=%s\nstatus: unavailable · mcp server %q not connected · MCP-first (no lean HTTP /memory/facts_as_of)\n%s · fail-open (empty ≠ invent memories)",
+		emptyDash(asOf), server, factsAsOfHonestyFooter,
+	)
+}
+
+// formatFactsAsOfCallFailed is residual-honest fail-open when MCP tool call errors.
+func formatFactsAsOfCallFailed(asOf string, err error) string {
+	msg := "error"
+	if err != nil {
+		msg = err.Error()
+	}
+	return fmt.Sprintf(
+		"facts-as-of as_of=%s\nstatus: unavailable · mcp call failed: %s\n%s · fail-open (empty ≠ invent memories)",
+		emptyDash(asOf), msg, factsAsOfHonestyFooter,
+	)
+}
+
+// formatFactsAsOf turns as_of + fact hits into a compact residual-honest listing.
+// Empty facts → "facts: (none)" + honesty footer (never invent memories).
+func formatFactsAsOf(asOf string, facts []iomesh.MemoryHit, maxBytes int) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "facts-as-of as_of=%s\n", emptyDash(asOf))
+	if len(facts) == 0 {
+		b.WriteString("facts: (none)\n")
+	} else {
+		fmt.Fprintf(&b, "facts (%d):\n", len(facts))
+		for i, f := range facts {
+			text := strings.TrimSpace(f.Summary)
+			if text == "" {
+				text = strings.TrimSpace(f.Full)
+			}
+			if text == "" {
+				text = strings.TrimSpace(f.ID)
+			}
+			if text == "" {
+				text = "(empty)"
+			}
+			prefix := ""
+			if f.Score > 0 {
+				prefix = fmt.Sprintf("[%.2f] ", f.Score)
+			}
+			line := fmt.Sprintf("  %d. %s%s\n", i+1, prefix, text)
+			if maxBytes > 0 && b.Len()+len(line)+len(factsAsOfHonestyFooter) > maxBytes {
+				break
+			}
+			b.WriteString(line)
+		}
+	}
+	b.WriteString(factsAsOfHonestyFooter)
+	return truncateBytes(b.String(), maxBytes)
+}
+
+// formatFactsAsOfJSON parses MCP memory_facts_as_of JSON {as_of, facts:[...]} into
+// the same human-readable layout as formatFactsAsOf. Returns empty when parse fails.
+func formatFactsAsOfJSON(raw string, maxBytes int) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw[0] != '{' {
+		return ""
+	}
+	var res memoryFactsAsOfResult
+	if err := json.Unmarshal([]byte(raw), &res); err != nil {
+		return ""
+	}
+	// Require as_of or facts key presence-ish: accept empty facts with as_of; if both
+	// absent after unmarshal of unrelated {}, still format honestly with empty.
+	asOf := strings.TrimSpace(res.AsOf)
+	return formatFactsAsOf(asOf, res.Facts, maxBytes)
+}
+
 // MemoryRelated performs opt-in multi-hop lite related recall (s1135).
 // Prefers sync HTTP RetrieveMemoryRelated (POST /v1|/v5/memory/related); falls back
 // to MCP memory_related when sync fails or mesh is unavailable.

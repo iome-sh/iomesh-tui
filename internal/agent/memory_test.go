@@ -674,3 +674,104 @@ func TestDefaultMemoryConfig_RelatedMaxHops(t *testing.T) {
 		t.Fatal("AutoRecall still default true (single-hop MemoryRecall)")
 	}
 }
+
+// s1276: formatFactsAsOfJSON residual-honest fixture {as_of, facts:[{summary,score,...}]}.
+func TestFormatFactsAsOfJSON_Fixture(t *testing.T) {
+	raw := `{
+		"as_of": "2026-08-04T12:00:00Z",
+		"facts": [
+			{"id": "f1", "summary": "alice role was engineer", "score": 0.91},
+			{"id": "f2", "summary": "project alpha active", "full": "longer", "score": 0.7}
+		]
+	}`
+	out := formatFactsAsOfJSON(raw, 6000)
+	if out == "" {
+		t.Fatal("expected formatted output")
+	}
+	if !strings.Contains(out, "facts-as-of as_of=2026-08-04T12:00:00Z") {
+		t.Fatalf("header: %q", out)
+	}
+	if !strings.Contains(out, "alice role was engineer") || !strings.Contains(out, "[0.91]") {
+		t.Fatalf("fact1: %q", out)
+	}
+	if !strings.Contains(out, "project alpha active") {
+		t.Fatalf("fact2: %q", out)
+	}
+	if !strings.Contains(out, "bi-temporal lite") || !strings.Contains(out, "not full dual-clock Graphiti") {
+		t.Fatalf("honesty pin missing: %q", out)
+	}
+	if !strings.Contains(out, "not Memory GA") || !strings.Contains(out, "dual_write OFF") {
+		t.Fatalf("Memory GA / dual_write pin missing: %q", out)
+	}
+}
+
+// s1276: empty facts is residual-honest empty — never invent memories.
+func TestFormatFactsAsOf_EmptyHonest(t *testing.T) {
+	out := formatFactsAsOf("2026-01-01T00:00:00Z", nil, 6000)
+	if !strings.Contains(out, "facts: (none)") {
+		t.Fatalf("empty: %q", out)
+	}
+	if !strings.Contains(out, factsAsOfHonestyFooter) {
+		t.Fatalf("honesty: %q", out)
+	}
+	// Empty facts array from JSON.
+	out2 := formatFactsAsOfJSON(`{"as_of":"2026-06-01T00:00:00Z","facts":[]}`, 6000)
+	if !strings.Contains(out2, "facts: (none)") || !strings.Contains(out2, "as_of=2026-06-01T00:00:00Z") {
+		t.Fatalf("empty json: %q", out2)
+	}
+}
+
+// s1276: offline MCP → residual-honest fail-open message (not invent empty success).
+func TestMemoryFactsAsOf_OfflineFailOpen(t *testing.T) {
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "dept.research"},
+		mcp:    mcp.NewManagerEmpty(nil),
+	}
+	out, err := rt.MemoryFactsAsOf(context.Background(), MemoryFactsAsOfOpts{
+		AsOf: "2026-08-04T12:00:00Z",
+	})
+	if err != nil {
+		t.Fatalf("expected fail-open nil err, got %v", err)
+	}
+	if !strings.Contains(out, "unavailable") || !strings.Contains(out, "not connected") {
+		t.Fatalf("offline: %q", out)
+	}
+	if !strings.Contains(out, "MCP-first") || !strings.Contains(out, "bi-temporal lite") {
+		t.Fatalf("honesty offline: %q", out)
+	}
+	if !strings.Contains(out, "empty ≠ invent memories") {
+		t.Fatalf("empty≠invent pin: %q", out)
+	}
+	// Must not look like successful empty listing alone.
+	if strings.Contains(out, "facts: (none)") && !strings.Contains(out, "unavailable") {
+		t.Fatalf("must not invent empty-success: %q", out)
+	}
+}
+
+// s1276: requires as_of; hooks disabled error; bad RFC3339 rejected.
+func TestMemoryFactsAsOf_Validation(t *testing.T) {
+	rt := &Runtime{memory: MemoryConfig{Enabled: true, Server: "memory"}}
+	_, err := rt.MemoryFactsAsOf(context.Background(), MemoryFactsAsOfOpts{})
+	if err == nil || !strings.Contains(err.Error(), "as_of required") {
+		t.Fatalf("err=%v", err)
+	}
+	_, err = rt.MemoryFactsAsOf(context.Background(), MemoryFactsAsOfOpts{AsOf: "not-a-time"})
+	if err == nil || !strings.Contains(err.Error(), "RFC3339") {
+		t.Fatalf("bad as_of err=%v", err)
+	}
+	rt2 := &Runtime{memory: DefaultMemoryConfig()}
+	_, err = rt2.MemoryFactsAsOf(context.Background(), MemoryFactsAsOfOpts{AsOf: "2026-08-04T12:00:00Z"})
+	if err == nil || !strings.Contains(err.Error(), "disabled") {
+		t.Fatalf("disabled err=%v", err)
+	}
+}
+
+// s1276: formatFactsAsOfJSON returns empty on non-JSON (caller may pass through).
+func TestFormatFactsAsOfJSON_NonJSON(t *testing.T) {
+	if got := formatFactsAsOfJSON("not json", 100); got != "" {
+		t.Fatalf("got %q", got)
+	}
+	if got := formatFactsAsOfJSON("", 100); got != "" {
+		t.Fatalf("got %q", got)
+	}
+}
