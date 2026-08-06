@@ -373,10 +373,17 @@ func TestLoadBuiltin_S1288MemoryAdvancedSkillDogfood(t *testing.T) {
 		"/memory supersede",
 		"/memory facts-as-of",
 		"/memory digest",
+		"shipped s1287",                   // s1291 polish: not peer concurrent
+		"MemoryAdvancedAgentGuidanceNote", // s1291 system note
+		"s1291",
 	} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("skill body missing %q:\n%s", want, body)
 		}
+	}
+	// Must not still claim s1287 as peer concurrent.
+	if strings.Contains(body, "peer concurrent") {
+		t.Fatalf("skill still says peer concurrent (s1291 marks s1287 shipped):\n%s", body)
 	}
 }
 

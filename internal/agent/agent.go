@@ -190,7 +190,8 @@ func (rt *Runtime) AttachSkills(cat *skills.Catalog) {
 
 // AttachMCP registers mcp__* tools from connected servers.
 // Also injects residual-honest integrations guidance (s1251) so the agent uses
-// list → plan → portal HITL without inventing install green.
+// list → plan → portal HITL without inventing install green, and advanced
+// memory guidance (s1291) so multi-hop / HITL supersede / ops pulse stay opt-in.
 func (rt *Runtime) AttachMCP(mgr *mcp.Manager) {
 	if rt == nil || mgr == nil || mgr.Len() == 0 {
 		return
@@ -204,6 +205,8 @@ func (rt *Runtime) AttachMCP(mgr *mcp.Manager) {
 	rt.appendSystemNote("mcp", fmt.Sprintf("MCP: %d server(s), %d tool(s) available as mcp__<server>__<tool> (mutating tools require approval).", mgr.Len(), n))
 	// s1251: residual-honest connector integrations workflow for the agent.
 	rt.appendSystemNote("integrations", IntegrationsAgentGuidanceNote())
+	// s1291: residual-honest advanced memory agent path (opt-in surfaces only).
+	rt.appendSystemNote("memory-advanced", MemoryAdvancedAgentGuidanceNote())
 }
 
 // Close releases MCP subprocesses and other runtime resources.
