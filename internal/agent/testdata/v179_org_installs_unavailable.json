@@ -1,0 +1,25 @@
+{
+  "org_id": "org_test_s1271",
+  "available": false,
+  "status": "unavailable",
+  "reason": "dual_auth_candidacy_open · agent MCP has no portal session cookie · portal session owns install index",
+  "portal_url": "https://console.iome.sh/integrations",
+  "installs": null,
+  "honesty": {
+    "never_invent_empty_as_none": true,
+    "never_invent_connected": true,
+    "agent_mcp_cannot_write_installs": true,
+    "dual_auth_candidacy_open": true,
+    "dual_write_off": true,
+    "book_demo_off": true,
+    "no_invent_ga": true,
+    "notes": [
+      "dual_auth_candidacy_open — dual-auth read path for org installs is residual candidacy, not product dual-auth green",
+      "agent MCP has no portal session cookie — portal GET …/organizations/{org_id}/integrations/installs is session-cookie + org membership only",
+      "portal session owns install index — agent MCP cannot write installs · read-only residual tool only",
+      "never invent empty-as-none — when unavailable, installs is null (not [] meaning none connected)",
+      "never invent Connected / INSTALL_STORE green — PASS ≠ invent dual-auth live green · PASS ≠ invent install Connected",
+      "dual_write OFF · book-demo OFF · no invent GA · browser HITL for portal installs · leave ON_SIGNAL unset"
+    ]
+  }
+}

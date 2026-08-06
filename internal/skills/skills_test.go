@@ -231,12 +231,14 @@ func TestLoadWithBuiltin_S1257ConnectorSkillDogfood(t *testing.T) {
 	if strings.Contains(sk.Description, "Connected: yes") || strings.Contains(desc, "install apply green") {
 		t.Fatalf("description invents install green: %q", sk.Description)
 	}
-	// Body must mention core MCP workflow + honesty locks.
+	// Body must mention core MCP workflow + honesty locks (s1257 · s1273 org installs).
 	body := sk.Body
 	for _, want := range []string{
 		"list_connector_catalog",
 		"plan_connector_setup",
 		"get_webhook_signing_headers",
+		"list_org_connector_installs",
+		"never invent empty-as-none",
 		"portal HITL",
 		"browser HITL",
 		"never invent install green",
