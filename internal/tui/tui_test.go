@@ -334,6 +334,77 @@ func TestParseMemorySupersedeArgs(t *testing.T) {
 	}
 }
 
+// s1287: /memory patterns flag parser for --limit.
+func TestParseMemoryPatternsArgs(t *testing.T) {
+	o, errMsg := parseMemoryPatternsArgs([]string{"--limit", "5"})
+	if errMsg != "" {
+		t.Fatalf("errMsg=%q", errMsg)
+	}
+	if o.Limit != 5 {
+		t.Fatalf("opts=%+v", o)
+	}
+	// --limit= form.
+	o2, errMsg2 := parseMemoryPatternsArgs([]string{"--limit=12"})
+	if errMsg2 != "" || o2.Limit != 12 {
+		t.Fatalf("opts=%+v err=%q", o2, errMsg2)
+	}
+	// Empty args: Limit 0 (caller uses config default).
+	o3, errMsg3 := parseMemoryPatternsArgs(nil)
+	if errMsg3 != "" || o3.Limit != 0 {
+		t.Fatalf("empty opts=%+v err=%q", o3, errMsg3)
+	}
+	// Invalid limit.
+	_, badLim := parseMemoryPatternsArgs([]string{"--limit", "nope"})
+	if badLim == "" {
+		t.Fatal("expected invalid --limit")
+	}
+	_, badNeg := parseMemoryPatternsArgs([]string{"--limit", "-1"})
+	if badNeg == "" {
+		t.Fatal("expected invalid --limit for negative")
+	}
+	// Unknown flag rejected.
+	_, badFlag := parseMemoryPatternsArgs([]string{"--unknown"})
+	if badFlag == "" {
+		t.Fatal("expected unknown flag")
+	}
+	// Bare arg rejected.
+	_, badArg := parseMemoryPatternsArgs([]string{"bare"})
+	if badArg == "" {
+		t.Fatal("expected unexpected argument")
+	}
+}
+
+// s1287: /memory anomalies flag parser for --limit.
+func TestParseMemoryAnomaliesArgs(t *testing.T) {
+	o, errMsg := parseMemoryAnomaliesArgs([]string{"--limit", "3"})
+	if errMsg != "" {
+		t.Fatalf("errMsg=%q", errMsg)
+	}
+	if o.Limit != 3 {
+		t.Fatalf("opts=%+v", o)
+	}
+	o2, errMsg2 := parseMemoryAnomaliesArgs([]string{"--limit=8"})
+	if errMsg2 != "" || o2.Limit != 8 {
+		t.Fatalf("opts=%+v err=%q", o2, errMsg2)
+	}
+	o3, errMsg3 := parseMemoryAnomaliesArgs(nil)
+	if errMsg3 != "" || o3.Limit != 0 {
+		t.Fatalf("empty opts=%+v err=%q", o3, errMsg3)
+	}
+	_, badLim := parseMemoryAnomaliesArgs([]string{"--limit", "nope"})
+	if badLim == "" {
+		t.Fatal("expected invalid --limit")
+	}
+	_, badFlag := parseMemoryAnomaliesArgs([]string{"--window", "day"})
+	if badFlag == "" {
+		t.Fatal("expected unknown flag")
+	}
+	_, badArg := parseMemoryAnomaliesArgs([]string{"extra"})
+	if badArg == "" {
+		t.Fatal("expected unexpected argument")
+	}
+}
+
 // s1276: /memory facts-as-of flag parser for --as-of / --entity / --query / --limit.
 func TestParseMemoryFactsAsOfArgs(t *testing.T) {
 	o, errMsg := parseMemoryFactsAsOfArgs([]string{

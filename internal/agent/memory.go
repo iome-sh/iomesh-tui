@@ -891,6 +891,320 @@ func formatSupersedeJSON(raw string) string {
 	return formatSupersede(entity, asOf, res.SupersededCount)
 }
 
+// MemoryPatternsOpts for opt-in ops-pulse pattern listing (s1287 / aion s138 T2 · s789 Beta).
+// Limit optional (zero → config Limit, default 8). Does NOT run on default auto-recall.
+//
+// MCP-first: platform ships MCP tool memory_patterns_list; do not invent lean HTTP patterns routes.
+// Honesty: ops pulse Beta · suggestive only · not medical diagnosis · not OTel host metrics ·
+// not invent GA window engine · dual_write OFF · not Memory GA · book-demo OFF.
+type MemoryPatternsOpts struct {
+	Limit int
+}
+
+// MemoryAnomaliesOpts for opt-in ops-pulse anomaly listing (s1287 / aion s138 T2 · s789 Beta).
+// Limit optional (zero → config Limit, default 8). Does NOT run on default auto-recall.
+//
+// MCP-first: platform ships MCP tool memory_anomalies_list; do not invent lean HTTP anomalies routes.
+// Honesty: ops pulse Beta · suggestive only · not medical diagnosis · not OTel host metrics ·
+// not invent GA window engine · dual_write OFF · not Memory GA · book-demo OFF.
+type MemoryAnomaliesOpts struct {
+	Limit int
+}
+
+// pulseHonestyFooter is the residual-honest pin for patterns/anomalies ops-pulse output (s1287).
+// Locked: ops pulse Beta · suggestive only · not medical diagnosis · not OTel host metrics ·
+// not invent GA window engine · dual_write OFF · not Memory GA.
+// (s138 T2 · s789 Beta framing; offline analysis; empty ≠ invent patterns/anomalies.)
+const pulseHonestyFooter = "honesty: ops pulse Beta · suggestive only · not medical diagnosis · not OTel host metrics · not invent GA window engine · dual_write OFF · not Memory GA"
+
+// pulseSignal is a defensive wire shape for aion PatternSignal / AnomalySignal.
+// Typical fields: subject, kind, count, score, summary/note, window — all optional for residual-honest parse.
+type pulseSignal struct {
+	ID      string  `json:"id"`
+	Kind    string  `json:"kind"`
+	Subject string  `json:"subject"`
+	Count   int     `json:"count"`
+	Score   float64 `json:"score"`
+	Summary string  `json:"summary"`
+	Note    string  `json:"note"` // alternate text field some emitters may use
+	Window  string  `json:"window"`
+}
+
+type memoryPatternsResult struct {
+	Patterns []pulseSignal `json:"patterns"`
+}
+
+type memoryAnomaliesResult struct {
+	Anomalies []pulseSignal `json:"anomalies"`
+}
+
+// MemoryPatterns lists recurring subject/keyphrase ops-pulse signals (s1287 · aion s138 T2).
+// Prefers MCP tool memory_patterns_list on the configured memory server (MCP-first;
+// no lean HTTP patterns invent). Returns human-readable lines + honesty footer.
+// Empty list is honest empty (patterns: (none)) — never invents signals.
+// Offline / tool failure is residual-honest fail-open messaging. Opt-in only — not auto-recall.
+// Suggestive ops pulse only: not medical diagnosis · not OTel host metrics · Beta offline analysis.
+func (rt *Runtime) MemoryPatterns(ctx context.Context, opts MemoryPatternsOpts) (string, error) {
+	if rt == nil || !rt.memory.Enabled {
+		return "", fmt.Errorf("memory hooks disabled")
+	}
+	limit := opts.Limit
+	if limit <= 0 {
+		limit = rt.memory.Limit
+	}
+	if limit <= 0 {
+		limit = 8
+	}
+	maxBytes := rt.memory.MaxSnippetBytes
+	if maxBytes <= 0 {
+		maxBytes = 6000
+	}
+
+	// MCP-first — no lean HTTP /memory/patterns on platform (document, do not invent).
+	if !rt.mcpMemoryReady() {
+		return formatPatternsOffline(rt.memory.Server), nil
+	}
+	c := rt.mcp.ClientByName(rt.memory.Server)
+	args := map[string]any{
+		"limit": limit,
+	}
+	if t := rt.memoryTenant(); t != "" {
+		args["tenant"] = t
+	}
+	start := time.Now()
+	out, err := c.CallTool(ctx, "memory_patterns_list", args)
+	latMS := int(time.Since(start).Milliseconds())
+	rt.lastMemoryRetrieveMS.Store(int64(latMS))
+	rt.lastMemoryRetrieveCacheHit.Store(false)
+	if err != nil {
+		// Fail-open residual-honest call failure — do not invent patterns.
+		return formatPatternsCallFailed(err), nil
+	}
+	if formatted := formatPatternsJSON(out, maxBytes); formatted != "" {
+		return formatted, nil
+	}
+	// Unknown payload — pass through with honesty footer (never invent structure).
+	raw := strings.TrimSpace(out)
+	if raw == "" {
+		return formatPatterns(nil, maxBytes), nil
+	}
+	return truncateBytes(raw+"\n"+pulseHonestyFooter, maxBytes), nil
+}
+
+// MemoryAnomalies lists rate/burst ops-pulse signals (s1287 · aion s138 T2).
+// Prefers MCP tool memory_anomalies_list on the configured memory server (MCP-first;
+// no lean HTTP anomalies invent). Returns human-readable lines + honesty footer.
+// Empty list is honest empty (anomalies: (none)) — never invents signals.
+// Offline / tool failure is residual-honest fail-open messaging. Opt-in only — not auto-recall.
+// Suggestive ops pulse only: not medical diagnosis · not OTel host metrics · Beta offline analysis.
+func (rt *Runtime) MemoryAnomalies(ctx context.Context, opts MemoryAnomaliesOpts) (string, error) {
+	if rt == nil || !rt.memory.Enabled {
+		return "", fmt.Errorf("memory hooks disabled")
+	}
+	limit := opts.Limit
+	if limit <= 0 {
+		limit = rt.memory.Limit
+	}
+	if limit <= 0 {
+		limit = 8
+	}
+	maxBytes := rt.memory.MaxSnippetBytes
+	if maxBytes <= 0 {
+		maxBytes = 6000
+	}
+
+	// MCP-first — no lean HTTP /memory/anomalies on platform (document, do not invent).
+	if !rt.mcpMemoryReady() {
+		return formatAnomaliesOffline(rt.memory.Server), nil
+	}
+	c := rt.mcp.ClientByName(rt.memory.Server)
+	args := map[string]any{
+		"limit": limit,
+	}
+	if t := rt.memoryTenant(); t != "" {
+		args["tenant"] = t
+	}
+	start := time.Now()
+	out, err := c.CallTool(ctx, "memory_anomalies_list", args)
+	latMS := int(time.Since(start).Milliseconds())
+	rt.lastMemoryRetrieveMS.Store(int64(latMS))
+	rt.lastMemoryRetrieveCacheHit.Store(false)
+	if err != nil {
+		// Fail-open residual-honest call failure — do not invent anomalies.
+		return formatAnomaliesCallFailed(err), nil
+	}
+	if formatted := formatAnomaliesJSON(out, maxBytes); formatted != "" {
+		return formatted, nil
+	}
+	// Unknown payload — pass through with honesty footer (never invent structure).
+	raw := strings.TrimSpace(out)
+	if raw == "" {
+		return formatAnomalies(nil, maxBytes), nil
+	}
+	return truncateBytes(raw+"\n"+pulseHonestyFooter, maxBytes), nil
+}
+
+// formatPatternsOffline is residual-honest fail-open when MCP memory server is unavailable.
+// Explicitly not empty-patterns success (empty ≠ invent patterns).
+func formatPatternsOffline(server string) string {
+	if server == "" {
+		server = "memory"
+	}
+	return fmt.Sprintf(
+		"patterns\nstatus: unavailable · mcp server %q not connected · MCP-first (no lean HTTP patterns invent)\n%s · fail-open (empty ≠ invent patterns)",
+		server, pulseHonestyFooter,
+	)
+}
+
+// formatAnomaliesOffline is residual-honest fail-open when MCP memory server is unavailable.
+// Explicitly not empty-anomalies success (empty ≠ invent anomalies).
+func formatAnomaliesOffline(server string) string {
+	if server == "" {
+		server = "memory"
+	}
+	return fmt.Sprintf(
+		"anomalies\nstatus: unavailable · mcp server %q not connected · MCP-first (no lean HTTP anomalies invent)\n%s · fail-open (empty ≠ invent anomalies)",
+		server, pulseHonestyFooter,
+	)
+}
+
+// formatPatternsCallFailed is residual-honest fail-open when MCP tool call errors.
+func formatPatternsCallFailed(err error) string {
+	msg := "error"
+	if err != nil {
+		msg = err.Error()
+	}
+	return fmt.Sprintf(
+		"patterns\nstatus: unavailable · mcp call failed: %s\n%s · fail-open (empty ≠ invent patterns)",
+		msg, pulseHonestyFooter,
+	)
+}
+
+// formatAnomaliesCallFailed is residual-honest fail-open when MCP tool call errors.
+func formatAnomaliesCallFailed(err error) string {
+	msg := "error"
+	if err != nil {
+		msg = err.Error()
+	}
+	return fmt.Sprintf(
+		"anomalies\nstatus: unavailable · mcp call failed: %s\n%s · fail-open (empty ≠ invent anomalies)",
+		msg, pulseHonestyFooter,
+	)
+}
+
+// formatPulseSignalLine builds one compact human line from a defensive pulse signal.
+// Prefers subject/kind/score/count/summary; falls back to id or "(empty)".
+func formatPulseSignalLine(i int, s pulseSignal) string {
+	text := strings.TrimSpace(s.Summary)
+	if text == "" {
+		text = strings.TrimSpace(s.Note)
+	}
+	var parts []string
+	if subj := strings.TrimSpace(s.Subject); subj != "" {
+		parts = append(parts, "subject="+subj)
+	}
+	if kind := strings.TrimSpace(s.Kind); kind != "" {
+		parts = append(parts, "kind="+kind)
+	}
+	if s.Count > 0 {
+		parts = append(parts, fmt.Sprintf("count=%d", s.Count))
+	}
+	if s.Score > 0 {
+		parts = append(parts, fmt.Sprintf("score=%.2f", s.Score))
+	}
+	if win := strings.TrimSpace(s.Window); win != "" {
+		parts = append(parts, "window="+win)
+	}
+	body := strings.Join(parts, " ")
+	if body == "" {
+		if id := strings.TrimSpace(s.ID); id != "" {
+			body = id
+		} else if text != "" {
+			body = text
+			text = ""
+		} else {
+			body = "(empty)"
+		}
+	}
+	if text != "" {
+		return fmt.Sprintf("  %d. %s — %s\n", i+1, body, text)
+	}
+	return fmt.Sprintf("  %d. %s\n", i+1, body)
+}
+
+// formatPatterns turns pattern signals into a compact residual-honest listing.
+// Empty → "patterns: (none)" + honesty footer (never invent signals).
+func formatPatterns(patterns []pulseSignal, maxBytes int) string {
+	var b strings.Builder
+	b.WriteString("patterns\n")
+	if len(patterns) == 0 {
+		b.WriteString("patterns: (none)\n")
+	} else {
+		fmt.Fprintf(&b, "patterns (%d):\n", len(patterns))
+		for i, p := range patterns {
+			line := formatPulseSignalLine(i, p)
+			if maxBytes > 0 && b.Len()+len(line)+len(pulseHonestyFooter) > maxBytes {
+				break
+			}
+			b.WriteString(line)
+		}
+	}
+	b.WriteString(pulseHonestyFooter)
+	return truncateBytes(b.String(), maxBytes)
+}
+
+// formatAnomalies turns anomaly signals into a compact residual-honest listing.
+// Empty → "anomalies: (none)" + honesty footer (never invent signals).
+func formatAnomalies(anomalies []pulseSignal, maxBytes int) string {
+	var b strings.Builder
+	b.WriteString("anomalies\n")
+	if len(anomalies) == 0 {
+		b.WriteString("anomalies: (none)\n")
+	} else {
+		fmt.Fprintf(&b, "anomalies (%d):\n", len(anomalies))
+		for i, a := range anomalies {
+			line := formatPulseSignalLine(i, a)
+			if maxBytes > 0 && b.Len()+len(line)+len(pulseHonestyFooter) > maxBytes {
+				break
+			}
+			b.WriteString(line)
+		}
+	}
+	b.WriteString(pulseHonestyFooter)
+	return truncateBytes(b.String(), maxBytes)
+}
+
+// formatPatternsJSON parses MCP memory_patterns_list JSON {patterns:[...]} into
+// the same human-readable layout as formatPatterns. Returns empty when parse fails.
+// Defensive: accepts partial signal objects (subject/kind/score optional).
+func formatPatternsJSON(raw string, maxBytes int) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw[0] != '{' {
+		return ""
+	}
+	var res memoryPatternsResult
+	if err := json.Unmarshal([]byte(raw), &res); err != nil {
+		return ""
+	}
+	// Require patterns key presence-ish: empty array is honest empty; unrelated {} also formats empty.
+	return formatPatterns(res.Patterns, maxBytes)
+}
+
+// formatAnomaliesJSON parses MCP memory_anomalies_list JSON {anomalies:[...]} into
+// the same human-readable layout as formatAnomalies. Returns empty when parse fails.
+// Defensive: accepts partial signal objects (subject/kind/score optional).
+func formatAnomaliesJSON(raw string, maxBytes int) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw[0] != '{' {
+		return ""
+	}
+	var res memoryAnomaliesResult
+	if err := json.Unmarshal([]byte(raw), &res); err != nil {
+		return ""
+	}
+	return formatAnomalies(res.Anomalies, maxBytes)
+}
+
 // MemoryRelated performs opt-in multi-hop lite related recall (s1135).
 // Prefers sync HTTP RetrieveMemoryRelated (POST /v1|/v5/memory/related); falls back
 // to MCP memory_related when sync fails or mesh is unavailable.

@@ -271,7 +271,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 	case "/memory", "/mem":
 		if len(parts) < 2 {
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
-			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | ingest <text>]")
+			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | ingest <text>]")
 			return false, nil
 		}
 		sub := strings.ToLower(parts[1])
@@ -358,6 +358,50 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 				return false, nil
 			}
 			fmt.Fprintln(out, text)
+		case "patterns", "pattern", "pat":
+			// s1287: opt-in ops-pulse pattern listing via MCP memory_patterns_list
+			// (aion s138 T2 · s789 Beta). MCP-first — no lean HTTP patterns invent.
+			// Suggestive ops pulse only · not medical diagnosis · not OTel host metrics ·
+			// not invent GA window engine · dual_write OFF · not Memory GA · book-demo OFF.
+			// Empty ≠ invent patterns; offline fail-open residual-honest.
+			popts, perr := parseMemoryPatternsArgs(parts[2:])
+			if perr != "" {
+				fmt.Fprintf(out, "memory patterns: %s\nusage: /memory patterns [--limit N]\n", perr)
+				return false, nil
+			}
+			text, err := rt.rt.MemoryPatterns(context.Background(), popts)
+			if err != nil {
+				fmt.Fprintf(out, "memory patterns: %v\n", err)
+				return false, nil
+			}
+			if strings.TrimSpace(text) == "" {
+				// Residual-honest empty — formatter normally always emits honesty footer.
+				fmt.Fprintln(out, "(no patterns · empty ≠ invent patterns · ops pulse Beta)")
+				return false, nil
+			}
+			fmt.Fprintln(out, text)
+		case "anomalies", "anomaly", "anom":
+			// s1287: opt-in ops-pulse anomaly listing via MCP memory_anomalies_list
+			// (aion s138 T2 · s789 Beta). MCP-first — no lean HTTP anomalies invent.
+			// Suggestive ops pulse only · not medical diagnosis · not OTel host metrics ·
+			// not invent GA window engine · dual_write OFF · not Memory GA · book-demo OFF.
+			// Empty ≠ invent anomalies; offline fail-open residual-honest.
+			aopts, perr := parseMemoryAnomaliesArgs(parts[2:])
+			if perr != "" {
+				fmt.Fprintf(out, "memory anomalies: %s\nusage: /memory anomalies [--limit N]\n", perr)
+				return false, nil
+			}
+			text, err := rt.rt.MemoryAnomalies(context.Background(), aopts)
+			if err != nil {
+				fmt.Fprintf(out, "memory anomalies: %v\n", err)
+				return false, nil
+			}
+			if strings.TrimSpace(text) == "" {
+				// Residual-honest empty — formatter normally always emits honesty footer.
+				fmt.Fprintln(out, "(no anomalies · empty ≠ invent anomalies · ops pulse Beta)")
+				return false, nil
+			}
+			fmt.Fprintln(out, text)
 		case "supersede", "super":
 			// s1282: opt-in HITL A3 lite entity supersession via MCP memory_supersede_entity
 			// (aion s640). Mutating: closes open valid_until windows. MCP-first only.
@@ -401,7 +445,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			q, ropts := parseMemoryRecallArgs(parts[1:])
 			text, err := rt.rt.MemoryRecallWithOpts(context.Background(), q, ropts)
 			if err != nil {
-				fmt.Fprintf(out, "memory: %v (try /memory status|recall|related|digest|facts-as-of|supersede|ingest)\n", err)
+				fmt.Fprintf(out, "memory: %v (try /memory status|recall|related|digest|facts-as-of|patterns|anomalies|supersede|ingest)\n", err)
 				return false, nil
 			}
 			if strings.TrimSpace(text) == "" {
@@ -586,7 +630,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /cost                session usage meter + sample estimate
   /mesh                I/O Mesh status + usage
   /catalog [query]     list mesh data products (catalog plane)
-  /memory [recall|related|digest|facts-as-of|supersede|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · supersede A3 lite HITL)
+  /memory [recall|related|digest|facts-as-of|patterns|anomalies|supersede|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · patterns/anomalies ops pulse Beta · supersede A3 lite HITL)
   /integrations [list|plan|signing|status]  connector setup via MCP (catalog+plan+signing discovery+portal HITL; not install CRUD)
   /quit                exit
 
@@ -823,6 +867,64 @@ func parseMemoryDigestArgs(args []string) (opts agent.MemoryOpsDigestOpts, errMs
 				}
 			}
 			opts.AsOf = strings.TrimSpace(val)
+		default:
+			if strings.HasPrefix(a, "-") {
+				return opts, "unknown flag " + a
+			}
+			return opts, "unexpected argument " + a
+		}
+	}
+	return opts, ""
+}
+
+// parseMemoryPatternsArgs extracts ops-pulse patterns flags (s1287).
+// Supports: --limit N. Rejects unknown flags / bare args.
+func parseMemoryPatternsArgs(args []string) (opts agent.MemoryPatternsOpts, errMsg string) {
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		key, val, hasEq := splitFlagKV(a)
+		switch key {
+		case "--limit":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			n, err := strconv.Atoi(strings.TrimSpace(val))
+			if err != nil || n < 0 {
+				return opts, "invalid --limit"
+			}
+			opts.Limit = n
+		default:
+			if strings.HasPrefix(a, "-") {
+				return opts, "unknown flag " + a
+			}
+			return opts, "unexpected argument " + a
+		}
+	}
+	return opts, ""
+}
+
+// parseMemoryAnomaliesArgs extracts ops-pulse anomalies flags (s1287).
+// Supports: --limit N. Rejects unknown flags / bare args.
+func parseMemoryAnomaliesArgs(args []string) (opts agent.MemoryAnomaliesOpts, errMsg string) {
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		key, val, hasEq := splitFlagKV(a)
+		switch key {
+		case "--limit":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			n, err := strconv.Atoi(strings.TrimSpace(val))
+			if err != nil || n < 0 {
+				return opts, "invalid --limit"
+			}
+			opts.Limit = n
 		default:
 			if strings.HasPrefix(a, "-") {
 				return opts, "unknown flag " + a
