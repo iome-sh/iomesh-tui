@@ -8,12 +8,15 @@ Platform ships `aion-memory-mcp` (stdio **and** streamable HTTP) with tools:
 |------|---------|
 | `memory_ingest_turn` | Persist a conversation turn (tiered Palace) |
 | `memory_retrieve` | Query memories (optional `session_id`, `since`/`until`, `session_seq`) |
-| `memory_related` | Multi-hop lite related recall (`seed_entity` / `query` / `max_hops`; s1135 opt-in) |
+| `memory_related` | Multi-hop lite related recall (`seed_entity` / `query` / `max_hops`; optional `prefer_shorter_hops` omit=true · s1135 + s1281 / aion s1277) |
 | `ops_digest_export` | Ops heartbeat digest export (`window` / `horizon` / `limit`; s1200 opt-in; MCP + HTTP) |
-| `memory_facts_as_of` | Bi-temporal lite validity listing (`as_of` required RFC3339; optional `entity` / `query` / `session_id` / `limit`; s1276 opt-in; **MCP-first**) |
+| `memory_facts_as_of` | Bi-temporal lite validity listing (`as_of` required RFC3339; optional `entity` / `query` / `session_id` / `limit`; s1276 opt-in; **MCP-first** — no lean HTTP invent) |
+| `memory_supersede_entity` | A3 lite entity supersession (`entity` required; optional `as_of`; **HITL** · s1282 / aion s640; **MCP-first** — no lean HTTP invent) |
+| `memory_patterns_list` | Ops pulse Beta pattern list (s1287 peer · MCP; no lean HTTP invent) |
+| `memory_anomalies_list` | Ops pulse Beta anomaly list (s1287 peer · MCP; no lean HTTP invent) |
 | `memory_timeline` | Temporal timeline slice |
 | `memory_search_semantic` | Semantic facts |
-| patterns / anomalies / compact | Ops helpers |
+| compact / other ops helpers | Residual ops helpers (not product Memory GA) |
 
 Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 
@@ -29,8 +32,12 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 | **3+** | **done (v0.4.0 agent)** | Agent auto-recall + `/memory recall` prefer sync HTTP when mesh **or** `[memory].endpoint` sidecar is set; MCP fallback |
 | **3 temporal (s1068)** | **done** | Sync retrieve options: `since`/`until`/`session_seq` on lean HTTP + auto-recall config + `/memory recall` flags |
 | **3 related multi-hop (s1135)** | **done (opt-in)** | Sync `POST /v1|/v5/memory/related` + MCP `memory_related` fallback; `/memory related`; default auto-recall stays single-hop |
+| **3 related hop ranking (s1281)** | **done (opt-in)** | `prefer_shorter_hops` on HTTP + MCP `memory_related` (omit = kernel default **true**; `--legacy-sort` → false); aion s1277 parity; hop ranking path-aware lite · multi-hop lite ≠ graph RAG |
 | **3 ops digest (s1200)** | **done (opt-in)** | Sync `POST /v1|/v5/memory/ops_digest` + MCP `ops_digest_export` fallback; `/memory digest`; ops GA-path · knowledge/analytical Beta |
 | **3 facts-as-of (s1276)** | **done (opt-in · MCP-first)** | MCP `memory_facts_as_of` (aion Beta K4 lite); `/memory facts-as-of`; bi-temporal lite · not full dual-clock Graphiti · no lean HTTP route today |
+| **3 supersede HITL (s1282)** | **done (opt-in · MCP-first · HITL)** | MCP `memory_supersede_entity` (aion A3 lite / s640); `/memory supersede --entity … --i-confirm`; mutating closes `valid_until`; not NLP contradiction · no lean HTTP invent |
+| **3 patterns/anomalies (s1287 peer)** | **peer concurrent (MCP ops pulse Beta)** | `/memory patterns|anomalies` + MCP `memory_patterns_list` / `memory_anomalies_list` when present; ops pulse Beta · not medical · no invent GA window engine · no lean HTTP invent |
+| **3 advanced agent skill (s1288)** | **done (docs + builtin skill)** | Builtin skill `memory-advanced-agent` residual-honest playbook for advanced surfaces; docs inventory lock; skill-only (no product path invent) |
 | **4 pull (s652)** | **done (M1)** | `iomesh memory pull` — durable mesh consumer → local MCP `memory_ingest_turn` (cost-max local palace; dual_write remains optional audit) |
 
 **Related (not Memory Palace):** agent connector setup slash `/integrations` (s1238/s1242/s1243) uses MCP `list_connector_catalog` / `plan_connector_setup` (aion v178) + `get_webhook_signing_headers` (v30) with residual honesty — see [agent-integrations-setup.md](./agent-integrations-setup.md).
@@ -373,9 +380,11 @@ See [mesh-dogfood.md](mesh-dogfood.md) for soft vs strict matrix. Unit coverage:
 | `/memory` | Status: enabled, `mcp=`, `sync_http=`, flags (incl. `dual_write`), tenant |
 | `/memory recall [query]` | Sync HTTP retrieve when mesh enabled, else MCP (default query = last user text or `"*"`) |
 | `/memory recall --since|--until|--session-seq … [query]` | Same + per-call temporal filters (s1068; override config) |
-| `/memory related --seed <entity> [--query …] [--max-hops N]` | Opt-in multi-hop lite related recall (s1135; HTTP + MCP `memory_related`; not auto-recall) |
+| `/memory related --seed <entity> [--query …] [--max-hops N] [--prefer-shorter-hops\|--legacy-sort]` | Opt-in multi-hop lite related recall (s1135 + s1281; HTTP + MCP `memory_related`; PreferShorterHops omit=true; not auto-recall) |
 | `/memory digest [--window day\|week] [--horizon ops\|knowledge\|analytical\|all] [--limit N]` | Opt-in ops heartbeat digest export (s1200; HTTP + MCP `ops_digest_export`) |
 | `/memory facts-as-of\|facts\|as-of --as-of <RFC3339> [--entity …] [--query …] [--limit N]` | Opt-in bi-temporal lite validity listing (s1276; MCP `memory_facts_as_of`; MCP-first) |
+| `/memory supersede\|super --entity <key> [--as-of RFC3339] --i-confirm` | Opt-in HITL A3 lite supersede (s1282; MCP `memory_supersede_entity`; MCP-first; mutating) |
+| `/memory patterns` / `/memory anomalies` | Opt-in MCP ops pulse Beta lists (s1287 peer; `memory_patterns_list` / `memory_anomalies_list`; when present) |
 | `/memory ingest <text>` | Ingest a user turn (MCP and/or dual-write) |
 
 ## Ops heartbeat digest (s1200 · opt-in)
@@ -391,18 +400,28 @@ Operators can export a **day/week pattern + receipts pack** without changing def
 
 **Honesty:** ops pulse **GA-path** · knowledge/analytical digests **Beta** · **never invent GA** · dual_write default OFF · **not** product Memory GA · **not** full graph RAG · human owns irreversible decisions.
 
-## Multi-hop related recall (s1135 · opt-in)
+## Multi-hop related recall (s1135 · opt-in · s1281 hop ranking)
 
 Operators can run **multi-hop lite** related recall without changing default auto-recall (still single-hop `RetrieveMemory` / `memory_retrieve`):
 
 | Surface | Path |
 |---------|------|
-| Lean HTTP | `iomesh.RetrieveMemoryRelated` → `POST /v1/memory/related` (+ `/v5` fallback); body: `seed_entity` / `query` / `max_hops` / `limit` / `session_id` |
-| MCP fallback | `memory_related` tool args (`seed_entity`, `query`, `max_hops`, `limit`, `session_id`, `tenant`) when sync fails |
-| Slash | `/memory related --seed person:alice --query "…" --max-hops 2` |
+| Lean HTTP | `iomesh.RetrieveMemoryRelated` → `POST /v1/memory/related` (+ `/v5` fallback); body: `seed_entity` / `query` / `max_hops` / `limit` / `session_id` / optional `prefer_shorter_hops` |
+| MCP fallback | `memory_related` tool args (`seed_entity`, `query`, `max_hops`, `limit`, `session_id`, `tenant`, optional `prefer_shorter_hops`) when sync fails |
+| Slash | `/memory related --seed person:alice --query "…" --max-hops 2 [--prefer-shorter-hops\|--legacy-sort]` |
 | Hits | Optional `hop_distance` on `MemoryHit` (hop ranking lite · s1067 kernel); formatted as `[hop=N]` |
 
-**Honesty:** multi-hop lite opt-in · hop ranking lite · **not** full graph RAG · **not** product Memory GA · dual_write default OFF · fail-open.
+### prefer_shorter_hops (s1281 · aion s1277)
+
+| Rule | Behavior |
+|------|----------|
+| Omit / nil | Kernel default **true** (path-aware hop ranking: shorter BFS hops then event time) |
+| `true` | Explicit shorter-hops ranking |
+| `false` | Legacy seed-first sort (`--legacy-sort` / `--no-prefer-shorter-hops`) |
+| HTTP body | Field **omitted** when nil (do not send false invent); sent only when set |
+| MCP args | Same omit-when-nil pattern |
+
+**Honesty:** multi-hop lite opt-in · hop ranking path-aware lite · PreferShorterHops default true · **not** full graph RAG · **not** product Memory GA · dual_write default OFF · fail-open.
 
 ## Bi-temporal lite facts-as-of (s1276 · opt-in · MCP-first)
 
@@ -419,6 +438,43 @@ Operators can list palace entries **valid at a point in time** without changing 
 
 **Honesty hard locks:** opt-in only (not auto-recall) · K4 bi-temporal **lite** · **not** full dual-clock Graphiti KG · **not** Memory GA · dual_write OFF · book-demo OFF · empty facts ≠ invent memories · fail-open.
 
+## A3 lite supersede HITL (s1282 · opt-in · MCP-first · mutating)
+
+Operators can **close open validity windows** for entity-tagged facts only with explicit human confirmation:
+
+| Surface | Path |
+|---------|------|
+| Lean HTTP | **None today** — do not invent `POST /v1\|/v5/memory/supersede` |
+| MCP (primary) | `memory_supersede_entity` args (`entity` required; optional `as_of` RFC3339, `tenant`) |
+| Slash | `/memory supersede --entity person:alice [--as-of 2026-08-04T12:00:00Z] --i-confirm` |
+| HITL | `--i-confirm` / `--confirm` / `--yes` required; without it residual refuse (no MCP call) |
+| Output | `superseded_count` from wire only · honesty footer; offline / empty → never invent count |
+
+**Honesty hard locks:** opt-in only · **HITL required** · A3 lite · closes `valid_until` · **not** NLP contradiction · **not** full dual-clock Graphiti · **not** Memory GA · dual_write OFF · book-demo OFF · MCP-first (no lean HTTP invent) · fail-open · empty/zero count honest when wire says so.
+
+## Patterns / anomalies ops pulse (s1287 peer · MCP Beta)
+
+Concurrent peer surface for **ops pulse Beta** lists (document even when merge order trails product PRs):
+
+| Surface | Path |
+|---------|------|
+| Lean HTTP | **None invent** — do not invent `/memory/patterns` or `/memory/anomalies` lean routes |
+| MCP | `memory_patterns_list` / `memory_anomalies_list` when platform exposes them |
+| Slash | `/memory patterns` · `/memory anomalies` (when wired) |
+| Honesty | ops pulse **Beta** · **not** medical · **not** invent GA window engine · dual_write OFF · **not** Memory GA · fail-open |
+
+## Advanced agent skill (s1288)
+
+Builtin skill **`memory-advanced-agent`** (`internal/skills/builtin/memory-advanced-agent/SKILL.md`) is residual-honest agent guidance for the advanced surfaces above. Loaded via `skills.LoadBuiltin` / `LoadWithBuiltin` whenever skills are enabled (same mold as s1251 `connector-integrations-setup`). Skill-only — does not change product slash/agent paths.
+
+| Skill maps | Slash | MCP |
+|------------|-------|-----|
+| related + prefer_shorter_hops | `/memory related …` | `memory_related` |
+| supersede HITL | `/memory supersede … --i-confirm` | `memory_supersede_entity` |
+| facts-as-of | `/memory facts-as-of …` | `memory_facts_as_of` |
+| digest | `/memory digest …` | `ops_digest_export` |
+| patterns / anomalies (peer) | `/memory patterns\|anomalies` | `memory_patterns_list` / `memory_anomalies_list` |
+
 ## Platform gaps
 
 | ID | Gap |
@@ -434,10 +490,11 @@ Operators can list palace entries **valid at a point in time** without changing 
 | Path | Role |
 |------|------|
 | `internal/config` | `[memory]` section + env (`dual_write`) |
-| `internal/iomesh/memory.go` | `PublishMemoryIngest`, `PublishMemoryRecall`, `RetrieveMemory` / `RetrieveMemoryWithOptions`, `RetrieveMemoryRelated`, `ExportOpsDigest` lean HTTP (no SDK dep; s1068 temporal + s1135 related + s1200 digest; no facts_as_of HTTP) |
-| `internal/agent/memory.go` | Recall (sync prefer → MCP; config + opts temporal filters) / related multi-hop opt-in / ops digest opt-in / facts-as-of MCP-first opt-in (s1276) / ingest / dual-write helpers |
+| `internal/iomesh/memory.go` | `PublishMemoryIngest`, `PublishMemoryRecall`, `RetrieveMemory` / `RetrieveMemoryWithOptions`, `RetrieveMemoryRelated` (+ PreferShorterHops s1281), `ExportOpsDigest` lean HTTP (no SDK dep; s1068 temporal + s1135 related + s1200 digest; **no** facts_as_of / supersede / patterns HTTP invent) |
+| `internal/agent/memory.go` | Recall (sync prefer → MCP; config + opts temporal filters) / related multi-hop + prefer_shorter_hops (s1135/s1281) / ops digest (s1200) / facts-as-of MCP-first (s1276) / supersede HITL MCP-first (s1282) / ingest / dual-write helpers |
 | `internal/agent/agent.go` | `RunTurn` hooks |
-| `internal/tui/tui.go` | `/memory` slash |
+| `internal/tui/tui.go` | `/memory` slash (related · digest · facts-as-of · supersede · …) |
+| `internal/skills/builtin/memory-advanced-agent/` | s1288 residual-honest advanced memory agent skill |
 | `configs/config.example.toml` | Copy-paste wire-up |
 
 ## Honesty

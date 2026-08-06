@@ -288,3 +288,115 @@ func TestS1257SkillDescriptionResidualHonest(t *testing.T) {
 		}
 	}
 }
+
+// --- s1288: builtin memory-advanced-agent skill (residual-honest advanced memory) ---
+
+// TestLoadBuiltin_MemoryAdvancedAgent proves go:embed loads memory-advanced-agent.
+func TestLoadBuiltin_MemoryAdvancedAgent(t *testing.T) {
+	cat, err := LoadBuiltin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk, ok := cat.Get("memory-advanced-agent")
+	if !ok {
+		t.Fatalf("missing memory-advanced-agent; names=%v", cat.Names())
+	}
+	if sk.Name != "memory-advanced-agent" {
+		t.Fatalf("name=%q", sk.Name)
+	}
+	if strings.TrimSpace(sk.Description) == "" {
+		t.Fatal("description empty")
+	}
+	// Builtin source marker.
+	if !strings.Contains(sk.Path, "builtin") && sk.SourceDir != "builtin" {
+		t.Fatalf("path/source not builtin: path=%q source=%q", sk.Path, sk.SourceDir)
+	}
+}
+
+// TestLoadWithBuiltin_MemoryAdvancedAgentAlwaysPresent: skill present even with empty dirs.
+func TestLoadWithBuiltin_MemoryAdvancedAgentAlwaysPresent(t *testing.T) {
+	cat, err := LoadWithBuiltin(filepath.Join(t.TempDir(), "nope"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := cat.Get("memory-advanced-agent"); !ok {
+		t.Fatalf("memory-advanced-agent missing when dirs empty; names=%v", cat.Names())
+	}
+	// Still keep connector skill.
+	if _, ok := cat.Get("connector-integrations-setup"); !ok {
+		t.Fatalf("connector-integrations-setup missing; names=%v", cat.Names())
+	}
+}
+
+// TestLoadBuiltin_S1288MemoryAdvancedSkillDogfood pins residual-honest body needles.
+func TestLoadBuiltin_S1288MemoryAdvancedSkillDogfood(t *testing.T) {
+	cat, err := LoadBuiltin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk, ok := cat.Get("memory-advanced-agent")
+	if !ok {
+		t.Fatalf("skill missing; names=%v", cat.Names())
+	}
+	desc := strings.ToLower(sk.Description)
+	for _, want := range []string{
+		"residual",
+		"memory",
+	} {
+		if !strings.Contains(desc, want) {
+			t.Fatalf("description missing residual needle %q: %q", want, sk.Description)
+		}
+	}
+	// Description must not invent Memory GA product green.
+	if strings.Contains(desc, "memory ga green") || strings.Contains(sk.Description, "Memory GA product") {
+		t.Fatalf("description invents Memory GA: %q", sk.Description)
+	}
+	body := sk.Body
+	for _, want := range []string{
+		"memory_related",
+		"prefer_shorter_hops",
+		"memory_supersede_entity",
+		"--i-confirm",
+		"memory_facts_as_of",
+		"ops_digest_export",
+		"memory_patterns_list",
+		"memory_anomalies_list",
+		"multi-hop lite",
+		"graph RAG",
+		"A3 lite",
+		"HITL",
+		"K4",
+		"dual_write OFF",
+		"not Memory GA",
+		"no invent",
+		"/memory related",
+		"/memory supersede",
+		"/memory facts-as-of",
+		"/memory digest",
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("skill body missing %q:\n%s", want, body)
+		}
+	}
+}
+
+// TestS1288SkillDescriptionResidualHonest pins frontmatter honesty.
+func TestS1288SkillDescriptionResidualHonest(t *testing.T) {
+	cat, err := LoadBuiltin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk, ok := cat.Get("memory-advanced-agent")
+	if !ok {
+		t.Fatal("missing skill")
+	}
+	if !strings.Contains(sk.Description, "Residual-honest") && !strings.Contains(sk.Description, "residual-honest") {
+		t.Fatalf("description not residual-honest: %q", sk.Description)
+	}
+	if !strings.Contains(sk.Description, "not Memory GA") && !strings.Contains(strings.ToLower(sk.Description), "not memory ga") {
+		t.Fatalf("description should say not Memory GA: %q", sk.Description)
+	}
+	if !strings.Contains(sk.Description, "dual_write OFF") && !strings.Contains(strings.ToLower(sk.Description), "dual_write") {
+		t.Fatalf("description should mention dual_write OFF: %q", sk.Description)
+	}
+}

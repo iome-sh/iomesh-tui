@@ -8,10 +8,12 @@ import (
 	"strings"
 )
 
-// Builtin skills shipped with the binary (s1251 connector-integrations-setup).
+// Builtin skills shipped with the binary:
+//   - s1251 connector-integrations-setup
+//   - s1288 memory-advanced-agent
+//
 // Layout: builtin/<name>/SKILL.md — always merged when skills are enabled so
-// residual-honest connector setup guidance is available even if user/workspace
-// skill dirs are empty.
+// residual-honest guidance is available even if user/workspace skill dirs are empty.
 //
 //go:embed builtin/*/SKILL.md
 var builtinFS embed.FS
@@ -104,8 +106,8 @@ func (c *Catalog) Merge(other *Catalog) *Catalog {
 
 // LoadWithBuiltin loads builtin skills first, then overlays dirs (user/workspace
 // win on name collision). Missing dirs are ignored. Always returns builtin skills
-// even when all dirs are empty — so connector-integrations-setup always appears
-// when skills are enabled (s1251).
+// even when all dirs are empty — so connector-integrations-setup (s1251) and
+// memory-advanced-agent (s1288) always appear when skills are enabled.
 func LoadWithBuiltin(dirs ...string) (*Catalog, error) {
 	cat, err := LoadBuiltin()
 	if err != nil {
