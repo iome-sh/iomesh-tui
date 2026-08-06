@@ -14,8 +14,10 @@ Platform ships `aion-memory-mcp` (stdio **and** streamable HTTP) with tools:
 | `memory_supersede_entity` | A3 lite entity supersession (`entity` required; optional `as_of`; **HITL** · s1282 / aion s640; **MCP-first** — no lean HTTP invent) |
 | `memory_patterns_list` | Ops pulse Beta pattern list (shipped s1287 · MCP; no lean HTTP invent) |
 | `memory_anomalies_list` | Ops pulse Beta anomaly list (shipped s1287 · MCP; no lean HTTP invent) |
-| `memory_timeline` | Temporal timeline slice |
+| `memory_timeline` | Temporal timeline slice (s1296 slash: `/memory timeline`; MCP-first) |
+| `memory_compact_status` | Palace tier counts + last compaction (s1296 slash: `/memory compact-status`; **read-only**) |
 | `memory_search_semantic` | Semantic facts |
+| `memory_trigger_compact` | Mutating compaction advisory — **not wired** in TUI without HITL (s1296 non-goal) |
 | compact / other ops helpers | Residual ops helpers (not product Memory GA) |
 
 Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
@@ -39,6 +41,7 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 | **3 patterns/anomalies (s1287)** | **done (opt-in · MCP ops pulse Beta)** | `/memory patterns|anomalies` + MCP `memory_patterns_list` / `memory_anomalies_list` when present; ops pulse Beta · not medical · no invent GA window engine · no lean HTTP invent |
 | **3 advanced agent skill (s1288)** | **done (docs + builtin skill)** | Builtin skill `memory-advanced-agent` residual-honest playbook for advanced surfaces; docs inventory lock; skill-only (no product path invent) |
 | **3 advanced agent system note (s1291)** | **done (AttachMCP inject)** | Residual-honest `<memory-advanced>` system note (`MemoryAdvancedAgentGuidanceNote`) injected on `AttachMCP` (mirror integrations s1251); steers opt-in advanced memory locks |
+| **3 timeline + compact-status (s1296)** | **done (opt-in · MCP-first · read-only compact)** | `/memory timeline` → MCP `memory_timeline`; `/memory compact-status` → MCP `memory_compact_status`; temporal timeline · filters before limit · Palace tier counts residual · not Memory GA · dual_write OFF · **no** `memory_trigger_compact` without HITL · no lean HTTP invent |
 | **4 pull (s652)** | **done (M1)** | `iomesh memory pull` — durable mesh consumer → local MCP `memory_ingest_turn` (cost-max local palace; dual_write remains optional audit) |
 
 **Related (not Memory Palace):** agent connector setup slash `/integrations` (s1238/s1242/s1243) uses MCP `list_connector_catalog` / `plan_connector_setup` (aion v178) + `get_webhook_signing_headers` (v30) with residual honesty — see [agent-integrations-setup.md](./agent-integrations-setup.md).
@@ -477,6 +480,22 @@ Builtin skill **`memory-advanced-agent`** (`internal/skills/builtin/memory-advan
 | facts-as-of | `/memory facts-as-of …` | `memory_facts_as_of` |
 | digest | `/memory digest …` | `ops_digest_export` |
 | patterns / anomalies (shipped s1287) | `/memory patterns\|anomalies` | `memory_patterns_list` / `memory_anomalies_list` |
+| timeline (s1296) | `/memory timeline …` | `memory_timeline` (MCP-first) |
+| compact-status (s1296 · read-only) | `/memory compact-status` | `memory_compact_status` (MCP-first; **not** `memory_trigger_compact`) |
+
+## Timeline + compact-status (s1296 · MCP-first)
+
+Opt-in residual-honest advanced surfaces (not auto-recall):
+
+| Surface | Path |
+|---------|------|
+| Lean HTTP | **None invent** — do not invent `/memory/timeline` or `/memory/compact_status` lean routes |
+| MCP | `memory_timeline` · `memory_compact_status` when platform exposes them |
+| Slash | `/memory timeline [--since\|--until\|--session-id\|--query\|--limit]` · `/memory compact-status` |
+| Output | timeline entries (id/summary/event_time) + honesty footer; compact tiers + `last_compaction` from wire only |
+| Non-goal | `memory_trigger_compact` mutating advisory — **not** wired without HITL |
+
+**Honesty hard locks:** opt-in only · temporal timeline ≠ Memory GA · filters before limit · compact status ≠ invent compaction green · not auto-compact product · dual_write OFF · MCP-first (no lean HTTP invent) · fail-open · empty entries honest.
 
 ## Platform gaps
 
@@ -494,10 +513,10 @@ Builtin skill **`memory-advanced-agent`** (`internal/skills/builtin/memory-advan
 |------|------|
 | `internal/config` | `[memory]` section + env (`dual_write`) |
 | `internal/iomesh/memory.go` | `PublishMemoryIngest`, `PublishMemoryRecall`, `RetrieveMemory` / `RetrieveMemoryWithOptions`, `RetrieveMemoryRelated` (+ PreferShorterHops s1281), `ExportOpsDigest` lean HTTP (no SDK dep; s1068 temporal + s1135 related + s1200 digest; **no** facts_as_of / supersede / patterns HTTP invent) |
-| `internal/agent/memory.go` | Recall (sync prefer → MCP; config + opts temporal filters) / related multi-hop + prefer_shorter_hops (s1135/s1281) / ops digest (s1200) / facts-as-of MCP-first (s1276) / supersede HITL MCP-first (s1282) / patterns+anomalies (s1287) / ingest / dual-write helpers |
-| `internal/agent/memory_guidance.go` | s1291 `MemoryAdvancedAgentGuidanceNote` residual-honest system note (AttachMCP inject) |
+| `internal/agent/memory.go` | Recall (sync prefer → MCP; config + opts temporal filters) / related multi-hop + prefer_shorter_hops (s1135/s1281) / ops digest (s1200) / facts-as-of MCP-first (s1276) / supersede HITL MCP-first (s1282) / patterns+anomalies (s1287) / timeline+compact-status MCP-first (s1296) / ingest / dual-write helpers |
+| `internal/agent/memory_guidance.go` | s1291 `MemoryAdvancedAgentGuidanceNote` residual-honest system note (AttachMCP inject; s1296 timeline+compact-status) |
 | `internal/agent/agent.go` | `RunTurn` hooks · `AttachMCP` injects integrations (s1251) + memory-advanced (s1291) notes |
-| `internal/tui/tui.go` | `/memory` slash (related · digest · facts-as-of · supersede · patterns · anomalies · …) |
+| `internal/tui/tui.go` | `/memory` slash (related · digest · facts-as-of · timeline · compact-status · supersede · patterns · anomalies · …) |
 | `internal/skills/builtin/memory-advanced-agent/` | s1288 residual-honest advanced memory agent skill |
 | `configs/config.example.toml` | Copy-paste wire-up |
 

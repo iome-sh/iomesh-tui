@@ -1202,3 +1202,192 @@ func TestFormatPatternsAnomaliesJSON_NonJSON(t *testing.T) {
 		t.Fatalf("anomalies empty got %q", got)
 	}
 }
+
+// s1296: formatTimelineJSON residual-honest fixture {entries:[{id,summary,event_time|timestamp,...}]}.
+func TestFormatTimelineJSON_Fixture(t *testing.T) {
+	raw := `{
+		"entries": [
+			{"id": "e1", "summary": "deploy finished", "event_time": "2026-08-04T10:00:00Z", "score": 0.9},
+			{"id": "e2", "summary": "incident opened", "timestamp": "2026-08-04T09:00:00Z"}
+		]
+	}`
+	out := formatTimelineJSON(raw, 6000)
+	if out == "" {
+		t.Fatal("expected formatted output")
+	}
+	if !strings.Contains(out, "timeline") {
+		t.Fatalf("header: %q", out)
+	}
+	if !strings.Contains(out, "deploy finished") || !strings.Contains(out, "2026-08-04T10:00:00Z") {
+		t.Fatalf("entry1: %q", out)
+	}
+	if !strings.Contains(out, "incident opened") || !strings.Contains(out, "2026-08-04T09:00:00Z") {
+		t.Fatalf("entry2: %q", out)
+	}
+	if !strings.Contains(out, "[0.90]") && !strings.Contains(out, "[0.9]") {
+		// Score formatting uses %.2f → [0.90]
+		if !strings.Contains(out, "0.9") {
+			t.Fatalf("score: %q", out)
+		}
+	}
+	if !strings.Contains(out, "temporal timeline") || !strings.Contains(out, "filters before limit") {
+		t.Fatalf("honesty pin missing: %q", out)
+	}
+	if !strings.Contains(out, "not Memory GA") || !strings.Contains(out, "dual_write OFF") {
+		t.Fatalf("Memory GA / dual_write pin missing: %q", out)
+	}
+	if !strings.Contains(out, "MCP-first") {
+		t.Fatalf("MCP-first pin missing: %q", out)
+	}
+}
+
+// s1296: empty timeline is residual-honest empty — never invent entries.
+func TestFormatTimeline_EmptyHonest(t *testing.T) {
+	out := formatTimeline(nil, 6000)
+	if !strings.Contains(out, "entries: (none)") {
+		t.Fatalf("empty: %q", out)
+	}
+	if !strings.Contains(out, timelineHonestyFooter) {
+		t.Fatalf("honesty: %q", out)
+	}
+	out2 := formatTimelineJSON(`{"entries":[]}`, 6000)
+	if !strings.Contains(out2, "entries: (none)") {
+		t.Fatalf("empty json: %q", out2)
+	}
+}
+
+// s1296: offline MCP timeline → residual-honest fail-open (not invent empty success).
+func TestMemoryTimeline_OfflineFailOpen(t *testing.T) {
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "dept.research"},
+		mcp:    mcp.NewManagerEmpty(nil),
+	}
+	out, err := rt.MemoryTimeline(context.Background(), MemoryTimelineOpts{Limit: 5})
+	if err != nil {
+		t.Fatalf("expected fail-open nil err, got %v", err)
+	}
+	if !strings.Contains(out, "unavailable") || !strings.Contains(out, "not connected") {
+		t.Fatalf("offline: %q", out)
+	}
+	if !strings.Contains(out, "MCP-first") || !strings.Contains(out, "temporal timeline") {
+		t.Fatalf("honesty offline: %q", out)
+	}
+	if !strings.Contains(out, "empty ≠ invent memories") {
+		t.Fatalf("empty≠invent pin: %q", out)
+	}
+	if strings.Contains(out, "entries: (none)") && !strings.Contains(out, "unavailable") {
+		t.Fatalf("must not invent empty-success: %q", out)
+	}
+}
+
+// s1296: hooks disabled error for timeline.
+func TestMemoryTimeline_Disabled(t *testing.T) {
+	rt := &Runtime{memory: DefaultMemoryConfig()}
+	_, err := rt.MemoryTimeline(context.Background(), MemoryTimelineOpts{})
+	if err == nil || !strings.Contains(err.Error(), "disabled") {
+		t.Fatalf("timeline disabled err=%v", err)
+	}
+}
+
+// s1296: non-JSON timeline returns empty (caller may pass through).
+func TestFormatTimelineJSON_NonJSON(t *testing.T) {
+	if got := formatTimelineJSON("not json", 100); got != "" {
+		t.Fatalf("got %q", got)
+	}
+	if got := formatTimelineJSON("", 100); got != "" {
+		t.Fatalf("got %q", got)
+	}
+}
+
+// s1296: formatCompactStatusJSON residual-honest fixture (PascalCase stats + last_compaction).
+func TestFormatCompactStatusJSON_Fixture(t *testing.T) {
+	// aion wire: palace.MemoryStats has no json tags → PascalCase nested fields.
+	raw := `{
+		"stats": {
+			"WorkingCount": 2,
+			"ContextualCount": 5,
+			"ArchivalCount": 1,
+			"SemanticCount": 3,
+			"TotalEntries": 11,
+			"LastCompaction": "0001-01-01T00:00:00Z"
+		},
+		"last_compaction": "2026-08-01T12:00:00Z"
+	}`
+	out := formatCompactStatusJSON(raw, 6000)
+	if out == "" {
+		t.Fatal("expected formatted output")
+	}
+	if !strings.Contains(out, "compact-status") {
+		t.Fatalf("header: %q", out)
+	}
+	if !strings.Contains(out, "working=2") || !strings.Contains(out, "contextual=5") {
+		t.Fatalf("tiers: %q", out)
+	}
+	if !strings.Contains(out, "archival=1") || !strings.Contains(out, "semantic=3") {
+		t.Fatalf("tiers2: %q", out)
+	}
+	if !strings.Contains(out, "total=11") {
+		t.Fatalf("total: %q", out)
+	}
+	if !strings.Contains(out, "last_compaction: 2026-08-01T12:00:00Z") {
+		t.Fatalf("last_compaction: %q", out)
+	}
+	if !strings.Contains(out, "Palace tier counts residual") || !strings.Contains(out, "not auto-compact product") {
+		t.Fatalf("honesty pin missing: %q", out)
+	}
+	if !strings.Contains(out, "not Memory GA") || !strings.Contains(out, "dual_write OFF") {
+		t.Fatalf("Memory GA / dual_write pin missing: %q", out)
+	}
+	// snake_case nested stats also accepted.
+	out2 := formatCompactStatusJSON(`{"stats":{"working_count":1,"semantic_count":4},"last_compaction":""}`, 6000)
+	if !strings.Contains(out2, "working=1") || !strings.Contains(out2, "semantic=4") {
+		t.Fatalf("snake: %q", out2)
+	}
+	if !strings.Contains(out2, "last_compaction: (none)") {
+		t.Fatalf("empty last: %q", out2)
+	}
+}
+
+// s1296: offline MCP compact-status → residual-honest fail-open (not invent green).
+func TestMemoryCompactStatus_OfflineFailOpen(t *testing.T) {
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "dept.research"},
+		mcp:    mcp.NewManagerEmpty(nil),
+	}
+	out, err := rt.MemoryCompactStatus(context.Background(), MemoryCompactStatusOpts{})
+	if err != nil {
+		t.Fatalf("expected fail-open nil err, got %v", err)
+	}
+	if !strings.Contains(out, "unavailable") || !strings.Contains(out, "not connected") {
+		t.Fatalf("offline: %q", out)
+	}
+	if !strings.Contains(out, "MCP-first") || !strings.Contains(out, "Palace tier counts residual") {
+		t.Fatalf("honesty offline: %q", out)
+	}
+	if !strings.Contains(out, "empty ≠ invent compaction green") {
+		t.Fatalf("empty≠invent pin: %q", out)
+	}
+	// Must not look like successful tier listing alone.
+	if strings.Contains(out, "working=") && !strings.Contains(out, "unavailable") {
+		t.Fatalf("must not invent tier success: %q", out)
+	}
+}
+
+// s1296: hooks disabled error for compact-status.
+func TestMemoryCompactStatus_Disabled(t *testing.T) {
+	rt := &Runtime{memory: DefaultMemoryConfig()}
+	_, err := rt.MemoryCompactStatus(context.Background(), MemoryCompactStatusOpts{})
+	if err == nil || !strings.Contains(err.Error(), "disabled") {
+		t.Fatalf("compact-status disabled err=%v", err)
+	}
+}
+
+// s1296: non-JSON compact status returns empty (caller may pass through).
+func TestFormatCompactStatusJSON_NonJSON(t *testing.T) {
+	if got := formatCompactStatusJSON("not json", 100); got != "" {
+		t.Fatalf("got %q", got)
+	}
+	if got := formatCompactStatusJSON("", 100); got != "" {
+		t.Fatalf("got %q", got)
+	}
+}

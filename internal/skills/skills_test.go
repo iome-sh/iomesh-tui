@@ -361,6 +361,11 @@ func TestLoadBuiltin_S1288MemoryAdvancedSkillDogfood(t *testing.T) {
 		"ops_digest_export",
 		"memory_patterns_list",
 		"memory_anomalies_list",
+		"memory_timeline",        // s1296
+		"memory_compact_status",  // s1296
+		"/memory timeline",       // s1296 slash
+		"/memory compact-status", // s1296 slash
+		"memory_trigger_compact", // s1296 non-goal HITL lock
 		"multi-hop lite",
 		"graph RAG",
 		"A3 lite",
@@ -376,6 +381,7 @@ func TestLoadBuiltin_S1288MemoryAdvancedSkillDogfood(t *testing.T) {
 		"shipped s1287",                   // s1291 polish: not peer concurrent
 		"MemoryAdvancedAgentGuidanceNote", // s1291 system note
 		"s1291",
+		"s1296",
 	} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("skill body missing %q:\n%s", want, body)

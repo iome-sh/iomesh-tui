@@ -1205,6 +1205,428 @@ func formatAnomaliesJSON(raw string, maxBytes int) string {
 	return formatAnomalies(res.Anomalies, maxBytes)
 }
 
+// MemoryTimelineOpts for opt-in temporal timeline listing (s1296 / aion memory_timeline).
+// Since, Until, Query, SessionID, Limit optional. Does NOT run on default auto-recall.
+//
+// MCP-first: platform ships MCP tool memory_timeline; there is no lean HTTP
+// POST /v1|/v5/memory/timeline route today — do not invent one.
+// Honesty: temporal timeline · filters before limit · not Memory GA · dual_write OFF.
+// Non-goal: memory_trigger_compact (mutating advisory) — not wired without HITL.
+type MemoryTimelineOpts struct {
+	Since     string // optional RFC3339 inclusive lower bound
+	Until     string // optional RFC3339 inclusive upper bound
+	Query     string // optional content substring filter
+	SessionID string // optional; empty uses Runtime session when set
+	Limit     int    // zero → config Limit (default 8)
+}
+
+// MemoryCompactStatusOpts for opt-in Palace tier counts / last compaction (s1296).
+// Tenant is taken from Runtime memory config — no caller override today.
+// Read-only; does NOT run on default auto-recall.
+//
+// MCP-first: platform ships MCP tool memory_compact_status; do not invent lean HTTP.
+// Honesty: Palace tier counts residual · not Memory GA · not auto-compact product · dual_write OFF.
+// Non-goal: memory_trigger_compact (mutating advisory) — not wired without HITL.
+type MemoryCompactStatusOpts struct{}
+
+// timelineHonestyFooter is the residual-honest pin for timeline output (s1296).
+// Locked: temporal timeline · filters before limit · not Memory GA · dual_write OFF · MCP-first.
+const timelineHonestyFooter = "honesty: temporal timeline · filters before limit · not Memory GA · dual_write OFF · MCP-first (no lean HTTP timeline invent)"
+
+// compactStatusHonestyFooter is the residual-honest pin for compact-status output (s1296).
+// Locked: Palace tier counts residual · not Memory GA · not auto-compact product · dual_write OFF.
+const compactStatusHonestyFooter = "honesty: Palace tier counts residual · not Memory GA · not auto-compact product · dual_write OFF · MCP-first (no lean HTTP invent)"
+
+// timelineEntry is a defensive wire shape for aion memory_timeline entries (memoryHit-like).
+// Accepts id/summary/full/score + timestamp or event_time when present.
+type timelineEntry struct {
+	ID        string  `json:"id"`
+	Summary   string  `json:"summary"`
+	Full      string  `json:"full"`
+	Score     float64 `json:"score"`
+	Timestamp string  `json:"timestamp"`
+	EventTime string  `json:"event_time"`
+}
+
+type memoryTimelineResult struct {
+	Entries []timelineEntry `json:"entries"`
+}
+
+// memoryCompactStatusResult is the aion MCP memory_compact_status JSON wire shape.
+// stats may be PascalCase (palace.MemoryStats has no json tags) or snake_case —
+// parse defensively via raw map + helper fields.
+type memoryCompactStatusResult struct {
+	Stats          json.RawMessage `json:"stats"`
+	LastCompaction string          `json:"last_compaction"`
+	// Flat alternate keys some emitters may use (resource URI shape).
+	WorkingCount    *int `json:"working_count"`
+	ContextualCount *int `json:"contextual_count"`
+	ArchivalCount   *int `json:"archival_count"`
+	SemanticCount   *int `json:"semantic_count"`
+	TotalEntries    *int `json:"total_entries"`
+}
+
+// MemoryTimeline lists palace entries ordered by event time (s1296 · aion memory_timeline).
+// Prefers MCP tool memory_timeline on the configured memory server (MCP-first;
+// no lean HTTP timeline route on platform today). Returns human-readable entries + honesty footer.
+// Empty list is honest empty (entries: (none)) — never invents memories.
+// Offline / tool failure is residual-honest fail-open messaging. Opt-in only — not auto-recall.
+// Filters (since/until/query) are applied before limit on the server side.
+func (rt *Runtime) MemoryTimeline(ctx context.Context, opts MemoryTimelineOpts) (string, error) {
+	if rt == nil || !rt.memory.Enabled {
+		return "", fmt.Errorf("memory hooks disabled")
+	}
+	limit := opts.Limit
+	if limit <= 0 {
+		limit = rt.memory.Limit
+	}
+	if limit <= 0 {
+		limit = 8
+	}
+	maxBytes := rt.memory.MaxSnippetBytes
+	if maxBytes <= 0 {
+		maxBytes = 6000
+	}
+
+	// MCP-first — no lean HTTP /memory/timeline on platform (document, do not invent).
+	if !rt.mcpMemoryReady() {
+		return formatTimelineOffline(rt.memory.Server), nil
+	}
+	c := rt.mcp.ClientByName(rt.memory.Server)
+	args := map[string]any{
+		"limit": limit,
+	}
+	if t := rt.memoryTenant(); t != "" {
+		args["tenant"] = t
+	}
+	if s := strings.TrimSpace(opts.Since); s != "" {
+		args["since"] = s
+	}
+	if u := strings.TrimSpace(opts.Until); u != "" {
+		args["until"] = u
+	}
+	if q := strings.TrimSpace(opts.Query); q != "" {
+		args["query"] = q
+	}
+	sid := strings.TrimSpace(opts.SessionID)
+	if sid == "" {
+		sid = rt.memorySessionID()
+	}
+	if sid != "" {
+		// Pass-through when set; aion timeline may ignore unknown session_id today.
+		args["session_id"] = sid
+	}
+	start := time.Now()
+	out, err := c.CallTool(ctx, "memory_timeline", args)
+	latMS := int(time.Since(start).Milliseconds())
+	rt.lastMemoryRetrieveMS.Store(int64(latMS))
+	rt.lastMemoryRetrieveCacheHit.Store(false)
+	if err != nil {
+		// Fail-open residual-honest call failure — do not invent entries.
+		return formatTimelineCallFailed(err), nil
+	}
+	if formatted := formatTimelineJSON(out, maxBytes); formatted != "" {
+		return formatted, nil
+	}
+	// Unknown payload — pass through with honesty footer (never invent structure).
+	raw := strings.TrimSpace(out)
+	if raw == "" {
+		return formatTimeline(nil, maxBytes), nil
+	}
+	return truncateBytes(raw+"\n"+timelineHonestyFooter, maxBytes), nil
+}
+
+// MemoryCompactStatus returns Palace tier counts + last_compaction (s1296 · aion memory_compact_status).
+// Prefers MCP tool memory_compact_status on the configured memory server (MCP-first;
+// no lean HTTP invent). Read-only residual — not auto-compact product · not Memory GA.
+// Offline / tool failure is residual-honest fail-open messaging. Opt-in only — not auto-recall.
+// Does NOT call memory_trigger_compact (mutating advisory; HITL non-goal for s1296).
+func (rt *Runtime) MemoryCompactStatus(ctx context.Context, _ MemoryCompactStatusOpts) (string, error) {
+	if rt == nil || !rt.memory.Enabled {
+		return "", fmt.Errorf("memory hooks disabled")
+	}
+	maxBytes := rt.memory.MaxSnippetBytes
+	if maxBytes <= 0 {
+		maxBytes = 6000
+	}
+
+	// MCP-first — no lean HTTP /memory/compact_status invent.
+	if !rt.mcpMemoryReady() {
+		return formatCompactStatusOffline(rt.memory.Server), nil
+	}
+	c := rt.mcp.ClientByName(rt.memory.Server)
+	args := map[string]any{}
+	if t := rt.memoryTenant(); t != "" {
+		args["tenant"] = t
+	}
+	start := time.Now()
+	out, err := c.CallTool(ctx, "memory_compact_status", args)
+	latMS := int(time.Since(start).Milliseconds())
+	rt.lastMemoryRetrieveMS.Store(int64(latMS))
+	rt.lastMemoryRetrieveCacheHit.Store(false)
+	if err != nil {
+		// Fail-open residual-honest call failure — do not invent tier counts.
+		return formatCompactStatusCallFailed(err), nil
+	}
+	if formatted := formatCompactStatusJSON(out, maxBytes); formatted != "" {
+		return formatted, nil
+	}
+	// Unknown payload — pass through with honesty footer (never invent structure).
+	raw := strings.TrimSpace(out)
+	if raw == "" {
+		return formatCompactStatus(compactStatusView{}, maxBytes), nil
+	}
+	return truncateBytes(raw+"\n"+compactStatusHonestyFooter, maxBytes), nil
+}
+
+// formatTimelineOffline is residual-honest fail-open when MCP memory server is unavailable.
+// Explicitly not empty-entries success (empty ≠ invent memories).
+func formatTimelineOffline(server string) string {
+	if server == "" {
+		server = "memory"
+	}
+	return fmt.Sprintf(
+		"timeline\nstatus: unavailable · mcp server %q not connected · MCP-first (no lean HTTP timeline invent)\n%s · fail-open (empty ≠ invent memories)",
+		server, timelineHonestyFooter,
+	)
+}
+
+// formatTimelineCallFailed is residual-honest fail-open when MCP tool call errors.
+func formatTimelineCallFailed(err error) string {
+	msg := "error"
+	if err != nil {
+		msg = err.Error()
+	}
+	return fmt.Sprintf(
+		"timeline\nstatus: unavailable · mcp call failed: %s\n%s · fail-open (empty ≠ invent memories)",
+		msg, timelineHonestyFooter,
+	)
+}
+
+// formatTimeline turns timeline entries into a compact residual-honest listing.
+// Empty → "entries: (none)" + honesty footer (never invent memories).
+// Lines prefer summary/full/id; event_time or timestamp when present.
+func formatTimeline(entries []timelineEntry, maxBytes int) string {
+	var b strings.Builder
+	b.WriteString("timeline\n")
+	if len(entries) == 0 {
+		b.WriteString("entries: (none)\n")
+	} else {
+		fmt.Fprintf(&b, "entries (%d):\n", len(entries))
+		for i, e := range entries {
+			text := strings.TrimSpace(e.Summary)
+			if text == "" {
+				text = strings.TrimSpace(e.Full)
+			}
+			if text == "" {
+				text = strings.TrimSpace(e.ID)
+			}
+			if text == "" {
+				text = "(empty)"
+			}
+			when := strings.TrimSpace(e.EventTime)
+			if when == "" {
+				when = strings.TrimSpace(e.Timestamp)
+			}
+			prefix := ""
+			if e.Score > 0 {
+				prefix = fmt.Sprintf("[%.2f] ", e.Score)
+			}
+			var line string
+			if when != "" {
+				line = fmt.Sprintf("  %d. %s[%s] %s\n", i+1, prefix, when, text)
+			} else {
+				line = fmt.Sprintf("  %d. %s%s\n", i+1, prefix, text)
+			}
+			if maxBytes > 0 && b.Len()+len(line)+len(timelineHonestyFooter) > maxBytes {
+				break
+			}
+			b.WriteString(line)
+		}
+	}
+	b.WriteString(timelineHonestyFooter)
+	return truncateBytes(b.String(), maxBytes)
+}
+
+// formatTimelineJSON parses MCP memory_timeline JSON {entries:[...]} into
+// the same human-readable layout as formatTimeline. Returns empty when parse fails.
+func formatTimelineJSON(raw string, maxBytes int) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw[0] != '{' {
+		return ""
+	}
+	var res memoryTimelineResult
+	if err := json.Unmarshal([]byte(raw), &res); err != nil {
+		return ""
+	}
+	// Empty array is honest empty; unrelated {} also formats empty entries.
+	return formatTimeline(res.Entries, maxBytes)
+}
+
+// compactStatusView is a residual-honest view of tier counts + last compaction.
+type compactStatusView struct {
+	WorkingCount    int
+	ContextualCount int
+	ArchivalCount   int
+	SemanticCount   int
+	TotalEntries    int
+	LastCompaction  string
+	HasWorking      bool
+	HasContextual   bool
+	HasArchival     bool
+	HasSemantic     bool
+	HasTotal        bool
+}
+
+// formatCompactStatusOffline is residual-honest fail-open when MCP memory server is unavailable.
+// Explicitly not inventing green compaction / zero tier success.
+func formatCompactStatusOffline(server string) string {
+	if server == "" {
+		server = "memory"
+	}
+	return fmt.Sprintf(
+		"compact-status\nstatus: unavailable · mcp server %q not connected · MCP-first (no lean HTTP invent)\n%s · fail-open (empty ≠ invent compaction green)",
+		server, compactStatusHonestyFooter,
+	)
+}
+
+// formatCompactStatusCallFailed is residual-honest fail-open when MCP tool call errors.
+func formatCompactStatusCallFailed(err error) string {
+	msg := "error"
+	if err != nil {
+		msg = err.Error()
+	}
+	return fmt.Sprintf(
+		"compact-status\nstatus: unavailable · mcp call failed: %s\n%s · fail-open (empty ≠ invent compaction green)",
+		msg, compactStatusHonestyFooter,
+	)
+}
+
+// formatCompactStatus turns tier counts + last_compaction into residual-honest lines.
+func formatCompactStatus(v compactStatusView, maxBytes int) string {
+	var b strings.Builder
+	b.WriteString("compact-status\n")
+	// Always emit tier lines when any count field was present; otherwise residual unknown.
+	if v.HasWorking || v.HasContextual || v.HasArchival || v.HasSemantic || v.HasTotal {
+		fmt.Fprintf(&b, "tiers: working=%d contextual=%d archival=%d semantic=%d",
+			v.WorkingCount, v.ContextualCount, v.ArchivalCount, v.SemanticCount)
+		if v.HasTotal {
+			fmt.Fprintf(&b, " total=%d", v.TotalEntries)
+		}
+		b.WriteString("\n")
+	} else {
+		b.WriteString("tiers: (unavailable from wire)\n")
+	}
+	last := strings.TrimSpace(v.LastCompaction)
+	// Zero-value last compaction is honest residual, not invent green.
+	if last == "" || last == "0001-01-01T00:00:00Z" {
+		b.WriteString("last_compaction: (none)\n")
+	} else {
+		fmt.Fprintf(&b, "last_compaction: %s\n", last)
+	}
+	b.WriteString(compactStatusHonestyFooter)
+	return truncateBytes(b.String(), maxBytes)
+}
+
+// formatCompactStatusJSON parses MCP memory_compact_status JSON into human layout.
+// Defensive: accepts nested stats (PascalCase MemoryStats or snake_case) + top-level last_compaction.
+// Returns empty when parse fails (caller may pass through raw).
+func formatCompactStatusJSON(raw string, maxBytes int) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw[0] != '{' {
+		return ""
+	}
+	var res memoryCompactStatusResult
+	if err := json.Unmarshal([]byte(raw), &res); err != nil {
+		return ""
+	}
+	v := compactStatusView{}
+	// Prefer nested stats object when present.
+	if len(res.Stats) > 0 && string(res.Stats) != "null" {
+		// Try as generic map for PascalCase + snake_case keys.
+		var m map[string]any
+		if err := json.Unmarshal(res.Stats, &m); err == nil {
+			v.WorkingCount, v.HasWorking = compactStatusInt(m, "WorkingCount", "working_count")
+			v.ContextualCount, v.HasContextual = compactStatusInt(m, "ContextualCount", "contextual_count")
+			v.ArchivalCount, v.HasArchival = compactStatusInt(m, "ArchivalCount", "archival_count")
+			v.SemanticCount, v.HasSemantic = compactStatusInt(m, "SemanticCount", "semantic_count")
+			v.TotalEntries, v.HasTotal = compactStatusInt(m, "TotalEntries", "total_entries")
+			if lc, ok := compactStatusString(m, "LastCompaction", "last_compaction"); ok {
+				v.LastCompaction = lc
+			}
+		}
+	}
+	// Flat top-level snake_case fallbacks (resource URI shape / partial payloads).
+	if res.WorkingCount != nil {
+		v.WorkingCount = *res.WorkingCount
+		v.HasWorking = true
+	}
+	if res.ContextualCount != nil {
+		v.ContextualCount = *res.ContextualCount
+		v.HasContextual = true
+	}
+	if res.ArchivalCount != nil {
+		v.ArchivalCount = *res.ArchivalCount
+		v.HasArchival = true
+	}
+	if res.SemanticCount != nil {
+		v.SemanticCount = *res.SemanticCount
+		v.HasSemantic = true
+	}
+	if res.TotalEntries != nil {
+		v.TotalEntries = *res.TotalEntries
+		v.HasTotal = true
+	}
+	if lc := strings.TrimSpace(res.LastCompaction); lc != "" {
+		v.LastCompaction = lc
+	}
+	// Require at least some signal that this is compact-status shaped; empty {}
+	// still formats residual (tiers unavailable) so callers get honesty footer.
+	return formatCompactStatus(v, maxBytes)
+}
+
+// compactStatusInt extracts an int from a defensive stats map under alternate keys.
+func compactStatusInt(m map[string]any, keys ...string) (int, bool) {
+	for _, k := range keys {
+		v, ok := m[k]
+		if !ok || v == nil {
+			continue
+		}
+		switch n := v.(type) {
+		case float64:
+			return int(n), true
+		case int:
+			return n, true
+		case int64:
+			return int(n), true
+		case json.Number:
+			i, err := n.Int64()
+			if err == nil {
+				return int(i), true
+			}
+		}
+	}
+	return 0, false
+}
+
+// compactStatusString extracts a string (or RFC3339 time) under alternate keys.
+func compactStatusString(m map[string]any, keys ...string) (string, bool) {
+	for _, k := range keys {
+		v, ok := m[k]
+		if !ok || v == nil {
+			continue
+		}
+		switch s := v.(type) {
+		case string:
+			s = strings.TrimSpace(s)
+			if s != "" {
+				return s, true
+			}
+		}
+	}
+	return "", false
+}
+
 // MemoryRelated performs opt-in multi-hop lite related recall (s1135).
 // Prefers sync HTTP RetrieveMemoryRelated (POST /v1|/v5/memory/related); falls back
 // to MCP memory_related when sync fails or mesh is unavailable.

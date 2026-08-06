@@ -271,7 +271,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 	case "/memory", "/mem":
 		if len(parts) < 2 {
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
-			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | ingest <text>]")
+			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | ingest <text>]")
 			return false, nil
 		}
 		sub := strings.ToLower(parts[1])
@@ -355,6 +355,43 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			if strings.TrimSpace(text) == "" {
 				// Residual-honest empty — formatter normally always emits honesty footer.
 				fmt.Fprintln(out, "(no facts at as_of · empty ≠ invent memories)")
+				return false, nil
+			}
+			fmt.Fprintln(out, text)
+		case "timeline", "tl":
+			// s1296: opt-in temporal timeline via MCP memory_timeline.
+			// MCP-first — no lean HTTP timeline invent. Filters before limit.
+			// Not auto-recall · not Memory GA · dual_write OFF.
+			// Empty ≠ invent memories; offline fail-open residual-honest.
+			// Non-goal: memory_trigger_compact (mutating) without HITL.
+			topts, perr := parseMemoryTimelineArgs(parts[2:])
+			if perr != "" {
+				fmt.Fprintf(out, "memory timeline: %s\nusage: /memory timeline [--since RFC3339] [--until RFC3339] [--session-id id] [--query ...] [--limit N]\n", perr)
+				return false, nil
+			}
+			text, err := rt.rt.MemoryTimeline(context.Background(), topts)
+			if err != nil {
+				fmt.Fprintf(out, "memory timeline: %v\n", err)
+				return false, nil
+			}
+			if strings.TrimSpace(text) == "" {
+				// Residual-honest empty — formatter normally always emits honesty footer.
+				fmt.Fprintln(out, "(no timeline entries · empty ≠ invent memories · temporal timeline)")
+				return false, nil
+			}
+			fmt.Fprintln(out, text)
+		case "compact-status", "compact", "compactstatus", "cstatus":
+			// s1296: opt-in read-only Palace tier counts via MCP memory_compact_status.
+			// MCP-first — no lean HTTP invent. Not auto-compact product · not Memory GA.
+			// dual_write OFF. Offline fail-open residual-honest (empty ≠ invent green).
+			// Non-goal: memory_trigger_compact (mutating advisory) without HITL.
+			text, err := rt.rt.MemoryCompactStatus(context.Background(), agent.MemoryCompactStatusOpts{})
+			if err != nil {
+				fmt.Fprintf(out, "memory compact-status: %v\n", err)
+				return false, nil
+			}
+			if strings.TrimSpace(text) == "" {
+				fmt.Fprintln(out, "(compact-status empty · empty ≠ invent compaction green)")
 				return false, nil
 			}
 			fmt.Fprintln(out, text)
@@ -445,7 +482,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			q, ropts := parseMemoryRecallArgs(parts[1:])
 			text, err := rt.rt.MemoryRecallWithOpts(context.Background(), q, ropts)
 			if err != nil {
-				fmt.Fprintf(out, "memory: %v (try /memory status|recall|related|digest|facts-as-of|patterns|anomalies|supersede|ingest)\n", err)
+				fmt.Fprintf(out, "memory: %v (try /memory status|recall|related|digest|facts-as-of|timeline|compact-status|patterns|anomalies|supersede|ingest)\n", err)
 				return false, nil
 			}
 			if strings.TrimSpace(text) == "" {
@@ -872,6 +909,79 @@ func parseMemoryDigestArgs(args []string) (opts agent.MemoryOpsDigestOpts, errMs
 				return opts, "unknown flag " + a
 			}
 			return opts, "unexpected argument " + a
+		}
+	}
+	return opts, ""
+}
+
+// parseMemoryTimelineArgs extracts temporal timeline flags (s1296).
+// Supports: --since, --until, --session-id / --session_id, --query / -q, --limit.
+// Remaining free tokens append to query. Returns errMsg when a flag is malformed.
+func parseMemoryTimelineArgs(args []string) (opts agent.MemoryTimelineOpts, errMsg string) {
+	var qParts []string
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		key, val, hasEq := splitFlagKV(a)
+		switch key {
+		case "--since":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.Since = strings.TrimSpace(val)
+		case "--until":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.Until = strings.TrimSpace(val)
+		case "--session-id", "--session_id":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.SessionID = strings.TrimSpace(val)
+		case "--query", "-q":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			if v := strings.TrimSpace(val); v != "" {
+				qParts = append(qParts, v)
+			}
+		case "--limit":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			n, err := strconv.Atoi(strings.TrimSpace(val))
+			if err != nil || n < 0 {
+				return opts, "invalid --limit"
+			}
+			opts.Limit = n
+		default:
+			if strings.HasPrefix(a, "-") {
+				return opts, "unknown flag " + a
+			}
+			qParts = append(qParts, a)
+		}
+	}
+	if len(qParts) > 0 {
+		joined := strings.Join(qParts, " ")
+		if opts.Query != "" {
+			opts.Query = strings.TrimSpace(opts.Query + " " + joined)
+		} else {
+			opts.Query = joined
 		}
 	}
 	return opts, ""
