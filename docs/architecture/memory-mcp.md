@@ -12,8 +12,8 @@ Platform ships `aion-memory-mcp` (stdio **and** streamable HTTP) with tools:
 | `ops_digest_export` | Ops heartbeat digest export (`window` / `horizon` / `limit`; s1200 opt-in; MCP + HTTP) |
 | `memory_facts_as_of` | Bi-temporal lite validity listing (`as_of` required RFC3339; optional `entity` / `query` / `session_id` / `limit`; s1276 opt-in; **MCP-first** — no lean HTTP invent) |
 | `memory_supersede_entity` | A3 lite entity supersession (`entity` required; optional `as_of`; **HITL** · s1282 / aion s640; **MCP-first** — no lean HTTP invent) |
-| `memory_patterns_list` | Ops pulse Beta pattern list (s1287 peer · MCP; no lean HTTP invent) |
-| `memory_anomalies_list` | Ops pulse Beta anomaly list (s1287 peer · MCP; no lean HTTP invent) |
+| `memory_patterns_list` | Ops pulse Beta pattern list (shipped s1287 · MCP; no lean HTTP invent) |
+| `memory_anomalies_list` | Ops pulse Beta anomaly list (shipped s1287 · MCP; no lean HTTP invent) |
 | `memory_timeline` | Temporal timeline slice |
 | `memory_search_semantic` | Semantic facts |
 | compact / other ops helpers | Residual ops helpers (not product Memory GA) |
@@ -36,8 +36,9 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 | **3 ops digest (s1200)** | **done (opt-in)** | Sync `POST /v1|/v5/memory/ops_digest` + MCP `ops_digest_export` fallback; `/memory digest`; ops GA-path · knowledge/analytical Beta |
 | **3 facts-as-of (s1276)** | **done (opt-in · MCP-first)** | MCP `memory_facts_as_of` (aion Beta K4 lite); `/memory facts-as-of`; bi-temporal lite · not full dual-clock Graphiti · no lean HTTP route today |
 | **3 supersede HITL (s1282)** | **done (opt-in · MCP-first · HITL)** | MCP `memory_supersede_entity` (aion A3 lite / s640); `/memory supersede --entity … --i-confirm`; mutating closes `valid_until`; not NLP contradiction · no lean HTTP invent |
-| **3 patterns/anomalies (s1287 peer)** | **peer concurrent (MCP ops pulse Beta)** | `/memory patterns|anomalies` + MCP `memory_patterns_list` / `memory_anomalies_list` when present; ops pulse Beta · not medical · no invent GA window engine · no lean HTTP invent |
+| **3 patterns/anomalies (s1287)** | **done (opt-in · MCP ops pulse Beta)** | `/memory patterns|anomalies` + MCP `memory_patterns_list` / `memory_anomalies_list` when present; ops pulse Beta · not medical · no invent GA window engine · no lean HTTP invent |
 | **3 advanced agent skill (s1288)** | **done (docs + builtin skill)** | Builtin skill `memory-advanced-agent` residual-honest playbook for advanced surfaces; docs inventory lock; skill-only (no product path invent) |
+| **3 advanced agent system note (s1291)** | **done (AttachMCP inject)** | Residual-honest `<memory-advanced>` system note (`MemoryAdvancedAgentGuidanceNote`) injected on `AttachMCP` (mirror integrations s1251); steers opt-in advanced memory locks |
 | **4 pull (s652)** | **done (M1)** | `iomesh memory pull` — durable mesh consumer → local MCP `memory_ingest_turn` (cost-max local palace; dual_write remains optional audit) |
 
 **Related (not Memory Palace):** agent connector setup slash `/integrations` (s1238/s1242/s1243) uses MCP `list_connector_catalog` / `plan_connector_setup` (aion v178) + `get_webhook_signing_headers` (v30) with residual honesty — see [agent-integrations-setup.md](./agent-integrations-setup.md).
@@ -384,7 +385,7 @@ See [mesh-dogfood.md](mesh-dogfood.md) for soft vs strict matrix. Unit coverage:
 | `/memory digest [--window day\|week] [--horizon ops\|knowledge\|analytical\|all] [--limit N]` | Opt-in ops heartbeat digest export (s1200; HTTP + MCP `ops_digest_export`) |
 | `/memory facts-as-of\|facts\|as-of --as-of <RFC3339> [--entity …] [--query …] [--limit N]` | Opt-in bi-temporal lite validity listing (s1276; MCP `memory_facts_as_of`; MCP-first) |
 | `/memory supersede\|super --entity <key> [--as-of RFC3339] --i-confirm` | Opt-in HITL A3 lite supersede (s1282; MCP `memory_supersede_entity`; MCP-first; mutating) |
-| `/memory patterns` / `/memory anomalies` | Opt-in MCP ops pulse Beta lists (s1287 peer; `memory_patterns_list` / `memory_anomalies_list`; when present) |
+| `/memory patterns` / `/memory anomalies` | Opt-in MCP ops pulse Beta lists (shipped s1287; `memory_patterns_list` / `memory_anomalies_list`; when present) |
 | `/memory ingest <text>` | Ingest a user turn (MCP and/or dual-write) |
 
 ## Ops heartbeat digest (s1200 · opt-in)
@@ -452,9 +453,9 @@ Operators can **close open validity windows** for entity-tagged facts only with 
 
 **Honesty hard locks:** opt-in only · **HITL required** · A3 lite · closes `valid_until` · **not** NLP contradiction · **not** full dual-clock Graphiti · **not** Memory GA · dual_write OFF · book-demo OFF · MCP-first (no lean HTTP invent) · fail-open · empty/zero count honest when wire says so.
 
-## Patterns / anomalies ops pulse (s1287 peer · MCP Beta)
+## Patterns / anomalies ops pulse (shipped s1287 · MCP Beta)
 
-Concurrent peer surface for **ops pulse Beta** lists (document even when merge order trails product PRs):
+Shipped **ops pulse Beta** lists (MCP-first; no lean HTTP invent):
 
 | Surface | Path |
 |---------|------|
@@ -463,9 +464,11 @@ Concurrent peer surface for **ops pulse Beta** lists (document even when merge o
 | Slash | `/memory patterns` · `/memory anomalies` (when wired) |
 | Honesty | ops pulse **Beta** · **not** medical · **not** invent GA window engine · dual_write OFF · **not** Memory GA · fail-open |
 
-## Advanced agent skill (s1288)
+## Advanced agent skill (s1288) + system note (s1291)
 
 Builtin skill **`memory-advanced-agent`** (`internal/skills/builtin/memory-advanced-agent/SKILL.md`) is residual-honest agent guidance for the advanced surfaces above. Loaded via `skills.LoadBuiltin` / `LoadWithBuiltin` whenever skills are enabled (same mold as s1251 `connector-integrations-setup`). Skill-only — does not change product slash/agent paths.
+
+**s1291:** on `AttachMCP`, runtime injects residual-honest `<memory-advanced>` system note from `MemoryAdvancedAgentGuidanceNote()` (mirror integrations s1251). Opt-in advanced locks only; does not invent Memory GA / silent supersede / auto multi-hop.
 
 | Skill maps | Slash | MCP |
 |------------|-------|-----|
@@ -473,7 +476,7 @@ Builtin skill **`memory-advanced-agent`** (`internal/skills/builtin/memory-advan
 | supersede HITL | `/memory supersede … --i-confirm` | `memory_supersede_entity` |
 | facts-as-of | `/memory facts-as-of …` | `memory_facts_as_of` |
 | digest | `/memory digest …` | `ops_digest_export` |
-| patterns / anomalies (peer) | `/memory patterns\|anomalies` | `memory_patterns_list` / `memory_anomalies_list` |
+| patterns / anomalies (shipped s1287) | `/memory patterns\|anomalies` | `memory_patterns_list` / `memory_anomalies_list` |
 
 ## Platform gaps
 
@@ -491,9 +494,10 @@ Builtin skill **`memory-advanced-agent`** (`internal/skills/builtin/memory-advan
 |------|------|
 | `internal/config` | `[memory]` section + env (`dual_write`) |
 | `internal/iomesh/memory.go` | `PublishMemoryIngest`, `PublishMemoryRecall`, `RetrieveMemory` / `RetrieveMemoryWithOptions`, `RetrieveMemoryRelated` (+ PreferShorterHops s1281), `ExportOpsDigest` lean HTTP (no SDK dep; s1068 temporal + s1135 related + s1200 digest; **no** facts_as_of / supersede / patterns HTTP invent) |
-| `internal/agent/memory.go` | Recall (sync prefer → MCP; config + opts temporal filters) / related multi-hop + prefer_shorter_hops (s1135/s1281) / ops digest (s1200) / facts-as-of MCP-first (s1276) / supersede HITL MCP-first (s1282) / ingest / dual-write helpers |
-| `internal/agent/agent.go` | `RunTurn` hooks |
-| `internal/tui/tui.go` | `/memory` slash (related · digest · facts-as-of · supersede · …) |
+| `internal/agent/memory.go` | Recall (sync prefer → MCP; config + opts temporal filters) / related multi-hop + prefer_shorter_hops (s1135/s1281) / ops digest (s1200) / facts-as-of MCP-first (s1276) / supersede HITL MCP-first (s1282) / patterns+anomalies (s1287) / ingest / dual-write helpers |
+| `internal/agent/memory_guidance.go` | s1291 `MemoryAdvancedAgentGuidanceNote` residual-honest system note (AttachMCP inject) |
+| `internal/agent/agent.go` | `RunTurn` hooks · `AttachMCP` injects integrations (s1251) + memory-advanced (s1291) notes |
+| `internal/tui/tui.go` | `/memory` slash (related · digest · facts-as-of · supersede · patterns · anomalies · …) |
 | `internal/skills/builtin/memory-advanced-agent/` | s1288 residual-honest advanced memory agent skill |
 | `configs/config.example.toml` | Copy-paste wire-up |
 

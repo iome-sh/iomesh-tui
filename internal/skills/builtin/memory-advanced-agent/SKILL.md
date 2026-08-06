@@ -1,11 +1,13 @@
 ---
 name: memory-advanced-agent
-description: Residual-honest agent path for advanced memory surfaces (related hops · supersede HITL · facts-as-of · digest · patterns/anomalies peer) — not Memory GA · dual_write OFF
+description: Residual-honest agent path for advanced memory surfaces (related hops · supersede HITL · facts-as-of · digest · patterns/anomalies shipped s1287) — not Memory GA · dual_write OFF
 ---
 
 # Memory advanced agent (residual-honest)
 
 Agent path for **advanced Memory Palace surfaces** already wired in iomesh-tui (slash + MCP). Default auto-recall stays **single-hop** `memory_retrieve` / sync retrieve. These surfaces are **opt-in** only — never invent Memory GA, full graph RAG, dual-clock Graphiti, or silent mutates.
+
+**System note (s1291):** when MCP is attached (`AttachMCP`), runtime also injects a residual-honest `<memory-advanced>` system note (`MemoryAdvancedAgentGuidanceNote`) that steers the same locks below. Skill + note stay consistent; skill is the full playbook.
 
 ## When to use each surface
 
@@ -15,7 +17,7 @@ Agent path for **advanced Memory Palace surfaces** already wired in iomesh-tui (
 | **supersede** (s1282) | Human-confirmed close of open `valid_until` for an entity tag (mutating) | Silent auto-supersede; NLP contradiction detection |
 | **facts-as-of** (s1276) | List facts valid at a point in time (`as_of` RFC3339) | Auto-recall; inventing lean HTTP route; dual-clock KG |
 | **digest** (s1200) | Ops heartbeat day/week pattern + receipts pack | Claiming knowledge/analytical digests as GA |
-| **patterns / anomalies** (s1287 peer) | MCP ops pulse Beta list of patterns or anomalies | Medical diagnosis; inventing GA window engine |
+| **patterns / anomalies** (shipped s1287) | MCP ops pulse Beta list of patterns or anomalies | Medical diagnosis; inventing GA window engine |
 
 ## Slash ↔ MCP mapping
 
@@ -25,8 +27,8 @@ Agent path for **advanced Memory Palace surfaces** already wired in iomesh-tui (
 | `/memory supersede --entity <key> [--as-of RFC3339] --i-confirm` | `memory_supersede_entity` | **MCP-first only** — no lean HTTP supersede invent |
 | `/memory facts-as-of\|facts\|as-of --as-of <RFC3339> […]` | `memory_facts_as_of` | **MCP-first only** — no lean HTTP facts_as_of invent |
 | `/memory digest [--window day\|week] [--horizon …] [--limit N]` | `ops_digest_export` | Lean HTTP `POST /v1\|/v5/memory/ops_digest` prefer → MCP fallback |
-| `/memory patterns` (s1287 peer) | `memory_patterns_list` | MCP ops pulse Beta — peer concurrent; no invent lean HTTP |
-| `/memory anomalies` (s1287 peer) | `memory_anomalies_list` | MCP ops pulse Beta — peer concurrent; no invent lean HTTP |
+| `/memory patterns` (shipped s1287) | `memory_patterns_list` | MCP ops pulse Beta — shipped; no invent lean HTTP |
+| `/memory anomalies` (shipped s1287) | `memory_anomalies_list` | MCP ops pulse Beta — shipped; no invent lean HTTP |
 
 Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn`, `memory_timeline`, `memory_search_semantic` — see architecture docs; not the focus of this skill.
 
@@ -52,7 +54,7 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn`, `memor
    - Mutating A3 lite: closes open `valid_until` windows for entity tags · **not** NLP contradiction · **not** silent.
    - Never invent `superseded_count` offline.
 
-7. **Patterns / anomalies (s1287 peer · MCP ops pulse Beta)** — when tools present, list via `memory_patterns_list` / `memory_anomalies_list`.
+7. **Patterns / anomalies (shipped s1287 · MCP ops pulse Beta)** — when tools present, list via `memory_patterns_list` / `memory_anomalies_list`.
    - Ops pulse Beta · not medical · not invent GA window engine · dual_write OFF.
 
 ## Residual honesty table
@@ -86,6 +88,7 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn`, `memor
 ## Related
 
 - Builtin skill always available when skills enabled (s1288 · mold s1251 connector skill).
+- System note inject on `AttachMCP`: `<memory-advanced>` via `MemoryAdvancedAgentGuidanceNote` (s1291).
 - Architecture SSOT: `docs/architecture/memory-mcp.md`.
-- Peer s1287: `/memory patterns|anomalies` MCP ops pulse Beta (document concurrent even if merge order varies).
-- Serials: s1135 related · s1281 prefer_shorter_hops · s1282 supersede · s1276 facts-as-of · s1200 digest · aion s1277 / s640 A3 lite / K4 lite.
+- Shipped s1287: `/memory patterns|anomalies` MCP ops pulse Beta.
+- Serials: s1135 related · s1281 prefer_shorter_hops · s1282 supersede · s1276 facts-as-of · s1200 digest · s1287 patterns/anomalies · s1288 skill · s1291 system note · aion s1277 / s640 A3 lite / K4 lite.

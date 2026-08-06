@@ -1,0 +1,94 @@
+package agent
+
+import (
+	"context"
+	"io"
+	"strings"
+	"testing"
+
+	"github.com/iome-sh/iomesh-tui/internal/mcp"
+)
+
+// s1291: MemoryAdvancedAgentGuidanceNote residual-honest needles.
+func TestMemoryAdvancedAgentGuidanceNote_HonestyNeedles(t *testing.T) {
+	out := MemoryAdvancedAgentGuidanceNote()
+	if out == "" {
+		t.Fatal("empty guidance note")
+	}
+	for _, want := range []string{
+		"prefer_shorter_hops",
+		"HITL",
+		"--i-confirm",
+		"not medical",
+		"dual_write OFF",
+		"multi-hop lite",
+		"not Memory GA",
+		"patterns/anomalies",
+		"not OTel",
+		"not invent GA window engine",
+		"facts-as-of",
+		"supersede",
+		"/memory related",
+		"|patterns|anomalies", // slash mirrors pipe form
+		"memory-advanced-agent",
+		"memory_retrieve",
+		"K4 lite",
+		"A3 lite",
+		"opt-in",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("guidance missing %q in:\n%s", want, out)
+		}
+	}
+	// Must not invent Memory GA product success language.
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "Memory GA green") {
+		t.Fatalf("must not invent Memory GA claim: %s", out)
+	}
+}
+
+// s1291: AttachMCP injects <memory-advanced> system note when MCP manager is present.
+func TestAttachMCP_InjectsMemoryAdvancedGuidance(t *testing.T) {
+	cInR, cInW := io.Pipe()
+	cOutR, cOutW := io.Pipe()
+	go mockIntegrationsMCP(cOutW, cInR)
+
+	mut := false
+	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "aion-scenario", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
+	defer cl.Close()
+	if err := cl.InitForTest(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	mgr := mcp.NewManagerEmpty(nil)
+	mgr.Attach(cl)
+	rt := testRT(t, t.TempDir())
+	rt.AttachMCP(mgr)
+
+	sys := rt.Messages()[0].Content
+	if !strings.Contains(sys, "<memory-advanced>") {
+		t.Fatalf("want <memory-advanced> system note: %s", sys)
+	}
+	if !strings.Contains(sys, "</memory-advanced>") {
+		t.Fatalf("want closed memory-advanced tag: %s", sys)
+	}
+	for _, want := range []string{
+		"prefer_shorter_hops",
+		"HITL",
+		"not medical",
+		"dual_write OFF",
+		"multi-hop lite",
+		"not Memory GA",
+		"patterns/anomalies",
+	} {
+		if !strings.Contains(sys, want) {
+			t.Fatalf("memory-advanced note missing %q: %s", want, sys)
+		}
+	}
+	// Integrations note still present (s1251 + s1291 co-inject).
+	if !strings.Contains(sys, "<integrations>") {
+		t.Fatalf("want <integrations> note too: %s", sys)
+	}
+	if !strings.Contains(sys, "<mcp>") {
+		t.Fatalf("want <mcp> note too: %s", sys)
+	}
+}
