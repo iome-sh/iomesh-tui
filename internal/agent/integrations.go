@@ -9,12 +9,15 @@ import (
 )
 
 // MCP tool names for residual-honest agent connector setup
-// (s1238 TUI · peer aion s1237 v178 · s1242 wire parity · s1243 signing).
+// (s1238 TUI · peer aion s1237 v178 · s1242 wire parity · s1243 signing ·
+// s1271 list_org_connector_installs residual / aion s1268 v179).
 // Not install CRUD · not OAuth complete · not checklist/API-key mint · not secret mint/rotate.
+// list_org_connector_installs is read-only residual-honest (default available=false / installs=null).
 const (
 	mcpToolListConnectorCatalog     = "list_connector_catalog"
 	mcpToolPlanConnectorSetup       = "plan_connector_setup"
 	mcpToolGetWebhookSigningHeaders = "get_webhook_signing_headers"
+	mcpToolListOrgConnectorInstalls = "list_org_connector_installs"
 )
 
 // Integrations offline / residual honesty copy (fail-open when MCP or tools missing).
@@ -25,31 +28,37 @@ const (
 	// IntegrationsHonestyOneLiner is the bare /integrations status line.
 	IntegrationsHonestyOneLiner = "agent setup = catalog + plan + portal HITL · not full install CRUD · stub ≠ live · dual_write OFF · catalog Beta honesty · never invent install green"
 
-	// s1263: residual-honest org install snapshot lines for /integrations status.
-	// Always shown (online and offline). Agent MCP has no list-installs tool;
-	// portal session HITL only; dual-auth candidacy open (peer aion s1261) — not shipped.
-	// Never invent Connected / empty-as-none installs.
+	// s1263/s1271: residual-honest org install snapshot lines for /integrations status.
+	// When list_org_connector_installs is missing/offline: static residual (portal HITL).
+	// When present: call with org_id (if configured) and format aion v179 fail-open wire —
+	// available=false / installs=null is residual honesty, NOT "no installs".
+	// Never invent Connected / empty-as-none / INSTALL_STORE green.
 	statusOrgInstallsUnavailableLine = "org installs: unavailable via agent MCP (portal session HITL only)"
 	statusOrgInstallsDualAuthLine    = "dual-auth read snapshot: candidacy open · never invent Connected / empty-as-none"
+	statusOrgInstallsNoOrgIDLine     = "org installs: list_org_connector_installs present · org_id not configured — skip call"
+	statusOrgInstallsEmptyAsNoneNote = "available=false is residual honesty not \"no installs\" · never invent empty-as-none"
 )
 
 // IntegrationsAgentGuidanceNote is the residual-honest system note injected on AttachMCP
-// (s1251). Steers the LLM: list → plan → optional signing discovery → browser portal HITL.
+// (s1251 · s1273). Steers the LLM: list → plan → optional signing discovery →
+// residual-honest org installs snapshot → browser portal HITL.
 // Unit-tested for honesty needles. Does not invent install green / Connected / GA.
 func IntegrationsAgentGuidanceNote() string {
-	return strings.TrimSpace(`integrations setup (residual-honest agent path · s1251):
+	return strings.TrimSpace(`integrations setup (residual-honest agent path · s1251/s1273):
 1. Discover: MCP list_connector_catalog (v178 entries) — catalog status ≠ install Connected
 2. Plan: MCP plan_connector_setup for a connector_id — portal deep links + honesty notes
 3. Optional discovery: get_webhook_signing_headers — discovery only, no secret mint
-4. Complete install/OAuth in browser portal HITL at ` + integrationsPortalURL + ` (session cookie) — agent MCP cannot write installs
-5. Operator pulse: slash /integrations status|list|plan|signing mirrors the same honesty
+4. Org installs residual: MCP list_org_connector_installs (v179/s1268) — residual-honest fail-open (available=false · status=unavailable · installs=null) · never invent empty-as-none · dual_auth candidacy open · not Connected
+5. Complete install/OAuth in browser portal HITL at ` + integrationsPortalURL + ` (session cookie) — agent MCP cannot write installs
+6. Operator pulse: slash /integrations status|list|plan|signing mirrors the same honesty
 
 Locks (never violate):
 - never invent install green / Connected / INSTALL_STORE APPLY / GA
+- never invent empty-as-none installs from unavailable / installs=null
 - stub OAuth ≠ live · browser HITL for OAuth complete
 - dual_write OFF · book-demo OFF
 - catalog Beta/available/planned is display honesty only
-- agent setup = catalog + plan + signing discovery + portal HITL · not full install CRUD`)
+- agent setup = catalog + plan + signing discovery + residual installs snapshot + portal HITL · not full install CRUD`)
 }
 
 // IntegrationsOfflineMessage is printed when MCP manager is missing or tools are not connected.
@@ -189,21 +198,23 @@ func (rt *Runtime) IntegrationsSigning(ctx context.Context, meshLayerOrConnector
 }
 
 // IntegrationsStatus is the residual-honest operator pulse for /integrations status
-// (s1247 catalog pulse · s1263 org-installs residual honesty).
+// (s1247 catalog pulse · s1263 org-installs residual honesty · s1271 list_org_connector_installs).
 //
-// Reports MCP path availability, presence of list/plan/signing tools (lightweight probe —
-// same discovery as callMCPToolByName, no invent), optional catalog count + per-mesh_layer
-// counts when list_connector_catalog works, always an org-installs residual section
-// (s1263 — unavailable via agent MCP; portal HITL only; dual-auth candidacy open),
+// Reports MCP path availability, presence of list/plan/signing/org-installs tools
+// (lightweight probe — same discovery as callMCPToolByName, no invent), optional catalog
+// count + per-mesh_layer counts when list_connector_catalog works, always an org-installs
+// residual section (s1263/s1271 — call residual-honest list tool when present; fail-open
+// unavailable is residual honesty not "no installs"; portal HITL; dual-auth candidacy open),
 // and always an honesty footer.
 //
 // Hard residual rules:
 //   - NEVER invent org install Connected / INSTALL_STORE green / GA
-//   - NEVER treat empty/unavailable install snapshot as "no installs"
+//   - NEVER treat empty/unavailable install snapshot as "no installs" (empty-as-none)
+//   - available=false / installs=null is residual honesty, not Connected none
 //   - Catalog count ≠ install count (label as catalog honesty only)
 //   - Offline fail-open preserved
 //   - dual_write OFF · book-demo OFF · stub ≠ live · browser HITL · signing discovery only
-//   - Do NOT call any install MCP tool (none exists on agent path)
+//   - list_org_connector_installs is residual-honest read-only (aion s1268 v179) — not install CRUD
 func (rt *Runtime) IntegrationsStatus(ctx context.Context) (string, error) {
 	var b strings.Builder
 	b.WriteString("integrations status (s1247 residual-honest operator pulse)\n")
@@ -224,15 +235,20 @@ func (rt *Runtime) IntegrationsStatus(ctx context.Context) (string, error) {
 		mcpToolListConnectorCatalog,
 		mcpToolPlanConnectorSetup,
 		mcpToolGetWebhookSigningHeaders,
+		mcpToolListOrgConnectorInstalls,
 	}
 	b.WriteString("tools:\n")
 	listState := ""
+	orgInstallsState := ""
 	for _, tool := range tools {
 		st := rt.mcpToolPresence(tool)
 		if tool == mcpToolListConnectorCatalog {
 			listState = st
 		}
-		fmt.Fprintf(&b, "  %-30s %s\n", tool+":", st)
+		if tool == mcpToolListOrgConnectorInstalls {
+			orgInstallsState = st
+		}
+		fmt.Fprintf(&b, "  %-32s %s\n", tool+":", st)
 	}
 
 	// 3) Catalog pulse only when list tool is present (call + parse; honesty labeled)
@@ -254,22 +270,80 @@ func (rt *Runtime) IntegrationsStatus(ctx context.Context) (string, error) {
 		}
 	}
 
-	// 4) Org installs residual honesty (s1263) — always, online and offline.
-	// No install MCP tool exists; never invent Connected / empty-as-none.
-	b.WriteString(statusOrgInstallsSection())
+	// 4) Org installs residual honesty (s1263/s1271) — always, online and offline.
+	// When list_org_connector_installs present + org_id: call residual-honest tool.
+	// Never invent Connected / empty-as-none; available=false is residual honesty.
+	b.WriteString(rt.statusOrgInstallsSection(ctx, orgInstallsState))
 
 	// 5) Honesty footer always
 	b.WriteString(statusHonestyFooter())
 	return strings.TrimSpace(b.String()), nil
 }
 
-// statusOrgInstallsSection is the s1263 residual-honest org install snapshot block.
-// Always emitted: agent MCP cannot list org installs; portal session HITL only;
-// dual-auth read snapshot is candidacy open (peer aion s1261) — not claimed shipped.
+// statusOrgInstallsSection is the s1263/s1271 residual-honest org install snapshot block.
+// Always emitted. When list_org_connector_installs is offline/missing: static residual
+// (portal HITL · dual-auth candidacy open). When present: optional call with mesh org_id;
+// aion v179 default returns available=false / installs=null (never invent empty-as-none).
+func (rt *Runtime) statusOrgInstallsSection(ctx context.Context, toolState string) string {
+	if toolState == "" {
+		toolState = rt.mcpToolPresence(mcpToolListOrgConnectorInstalls)
+	}
+	switch toolState {
+	case "present":
+		orgID := rt.meshOrgID()
+		if orgID == "" {
+			// Tool present but no org_id — skip call; residual honesty, no invent.
+			return statusOrgInstallsNoOrgIDLine + "\n" +
+				"  " + statusOrgInstallsDualAuthLine + "\n" +
+				"  note: " + statusOrgInstallsEmptyAsNoneNote + "\n" +
+				"  portal: " + integrationsPortalURL + "\n"
+		}
+		raw, err := rt.callMCPToolByName(ctx, mcpToolListOrgConnectorInstalls, map[string]any{
+			"org_id": orgID,
+		})
+		if err != nil {
+			// Soft fail-open: do not invent installs on call error.
+			return fmt.Sprintf("org installs: list_org_connector_installs call failed · fail-open residual\n"+
+				"  org_id: %s\n"+
+				"  %s\n"+
+				"  note: %s\n"+
+				"  detail: %v\n"+
+				"  portal: %s\n",
+				orgID, statusOrgInstallsDualAuthLine, statusOrgInstallsEmptyAsNoneNote, err, integrationsPortalURL)
+		}
+		if formatted := formatOrgInstallsSnapshot(raw); formatted != "" {
+			return formatted
+		}
+		// Non-JSON / unparseable — fail-open residual, do not invent.
+		return fmt.Sprintf("org installs: list_org_connector_installs returned non-JSON/empty · fail-open residual\n"+
+			"  org_id: %s\n"+
+			"  %s\n"+
+			"  note: %s\n"+
+			"  portal: %s\n",
+			orgID, statusOrgInstallsDualAuthLine, statusOrgInstallsEmptyAsNoneNote, integrationsPortalURL)
+	default:
+		// offline | missing — s1263 static residual; tool not on path.
+		return statusOrgInstallsUnavailableLine + "\n" +
+			"  " + statusOrgInstallsDualAuthLine + "\n" +
+			"  portal: " + integrationsPortalURL + "\n"
+	}
+}
+
+// statusOrgInstallsSection residual fallback for unit tests of the static block
+// (tool offline/missing path). Prefer Runtime.statusOrgInstallsSection in production.
 func statusOrgInstallsSection() string {
 	return statusOrgInstallsUnavailableLine + "\n" +
 		"  " + statusOrgInstallsDualAuthLine + "\n" +
 		"  portal: " + integrationsPortalURL + "\n"
+}
+
+// meshOrgID returns configured iomesh org id when present (may be empty).
+// Empty → skip list_org_connector_installs call with residual note (never invent).
+func (rt *Runtime) meshOrgID() string {
+	if rt == nil || rt.mesh == nil {
+		return ""
+	}
+	return strings.TrimSpace(rt.mesh.OrgID())
 }
 
 // mcpPathState reports whether the MCP call path is usable.
@@ -857,6 +931,120 @@ func statusHonestyFooter() string {
   dual_write OFF · book-demo OFF · signing discovery only · no invent GA
   catalog count ≠ install Connected · portal HITL ` + integrationsPortalURL + `
   ` + IntegrationsHonestyOneLiner)
+}
+
+// orgInstallsSnapshotPayload matches aion v179 list_org_connector_installs residual wire.
+// Default path: available=false, status=unavailable, installs=null (never invent empty-as-none).
+type orgInstallsSnapshotPayload struct {
+	OrgID     string `json:"org_id"`
+	Available *bool  `json:"available"` // pointer: distinguish absent vs false
+	Status    string `json:"status"`
+	Reason    string `json:"reason"`
+	PortalURL string `json:"portal_url"`
+	// Installs is null when unavailable — never [] meaning "none connected".
+	// Use json.RawMessage so we can detect null vs array vs absent.
+	Installs json.RawMessage `json:"installs"`
+	Honesty  any             `json:"honesty"`
+}
+
+// formatOrgInstallsSnapshot formats aion v179 list_org_connector_installs residual wire
+// for the status pulse (s1271). Hard locks:
+//   - available=false / status=unavailable is residual honesty, NOT "no installs"
+//   - installs=null never rendered as empty Connected / installs: 0
+//   - never invent Connected / INSTALL_STORE green
+//
+// Returns empty string when raw is not parseable JSON of this shape.
+func formatOrgInstallsSnapshot(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw[0] != '{' {
+		return ""
+	}
+	var p orgInstallsSnapshotPayload
+	if err := json.Unmarshal([]byte(raw), &p); err != nil {
+		return ""
+	}
+	// Require residual wire markers (status and/or available field) so random JSON
+	// is not mis-formatted as an installs snapshot.
+	status := strings.ToLower(strings.TrimSpace(p.Status))
+	availableSet := p.Available != nil
+	if status == "" && !availableSet && len(p.Installs) == 0 && strings.TrimSpace(p.Reason) == "" {
+		return ""
+	}
+
+	available := false
+	if p.Available != nil {
+		available = *p.Available
+	}
+	orgID := strings.TrimSpace(p.OrgID)
+	portal := firstNonEmpty(p.PortalURL, integrationsPortalURL)
+	reason := strings.TrimSpace(p.Reason)
+
+	var b strings.Builder
+	// Header: always residual-honest about availability.
+	if !available || status == "unavailable" {
+		fmt.Fprintf(&b, "org installs: list_org_connector_installs · available=false · status=%s\n",
+			firstNonEmpty(status, "unavailable"))
+	} else {
+		// Live dual-auth path (not default aion v179) — still residual: no invent Connected.
+		fmt.Fprintf(&b, "org installs: list_org_connector_installs · available=true · status=%s\n",
+			firstNonEmpty(status, "available"))
+	}
+	if orgID != "" {
+		fmt.Fprintf(&b, "  org_id: %s\n", orgID)
+	}
+	if reason != "" {
+		fmt.Fprintf(&b, "  reason: %s\n", reason)
+	}
+
+	// Installs wire honesty: null ≠ empty-as-none; never invent Connected rows.
+	installsRaw := strings.TrimSpace(string(p.Installs))
+	switch {
+	case installsRaw == "" || installsRaw == "null":
+		b.WriteString("  installs: null  (never invent empty-as-none · not \"none connected\")\n")
+	case installsRaw == "[]":
+		// Explicit empty array from server — still residual-cautious: do not invent Connected none.
+		b.WriteString("  installs: []  (server empty list · not invent Connected; dual_auth candidacy open if unexpected)\n")
+	default:
+		// Try to count real rows only; never invent Connected labels.
+		var rows []map[string]any
+		if err := json.Unmarshal(p.Installs, &rows); err != nil {
+			b.WriteString("  installs: (unparseable — fail-open residual · no invent)\n")
+		} else {
+			fmt.Fprintf(&b, "  installs: %d row(s)  (live dual-auth rows only · catalog ≠ installs · never invent Connected)\n", len(rows))
+			shown := 0
+			for _, row := range rows {
+				if shown >= 20 {
+					fmt.Fprintf(&b, "  … +%d more\n", len(rows)-20)
+					break
+				}
+				id := firstNonEmpty(fmt.Sprint(row["connector_id"]), fmt.Sprint(row["install_id"]))
+				if id == "" || id == "<nil>" {
+					continue
+				}
+				st := strings.TrimSpace(fmt.Sprint(row["status"]))
+				if st == "" || st == "<nil>" {
+					st = "-"
+				}
+				// Never upgrade status language to invent Connected green claims.
+				fmt.Fprintf(&b, "    - %s status=%s\n", id, st)
+				shown++
+			}
+		}
+	}
+
+	b.WriteString("  " + statusOrgInstallsDualAuthLine + "\n")
+	b.WriteString("  note: " + statusOrgInstallsEmptyAsNoneNote + "\n")
+	// Surface honesty notes from wire when present (do not invent).
+	notes := honestyNotes(p.Honesty, nil, "")
+	for i, n := range notes {
+		if i >= 6 {
+			fmt.Fprintf(&b, "  honesty: … +%d more notes\n", len(notes)-6)
+			break
+		}
+		fmt.Fprintf(&b, "  honesty: %s\n", n)
+	}
+	fmt.Fprintf(&b, "  portal: %s\n", portal)
+	return b.String()
 }
 
 // formatCatalogPulse summarizes list_connector_catalog for the status pulse (s1247).

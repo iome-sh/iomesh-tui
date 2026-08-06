@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iome-sh/iomesh-tui/internal/iomesh"
 	"github.com/iome-sh/iomesh-tui/internal/mcp"
 )
 
@@ -309,11 +310,12 @@ func TestIntegrationsStatus_OfflineFailOpen(t *testing.T) {
 	if !strings.Contains(out, "fail-open") {
 		t.Fatalf("want fail-open: %s", out)
 	}
-	// each expected tool marked offline
+	// each expected tool marked offline (s1271 includes list_org_connector_installs)
 	for _, tool := range []string{
 		"list_connector_catalog",
 		"plan_connector_setup",
 		"get_webhook_signing_headers",
+		"list_org_connector_installs",
 	} {
 		if !strings.Contains(out, tool) {
 			t.Fatalf("want tool %s: %s", tool, out)
@@ -534,43 +536,49 @@ func TestIntegrationsStatus_MockCatalogPresent(t *testing.T) {
 	assertStatusOrgInstallsHonesty(t, out)
 }
 
-// assertStatusOrgInstallsHonesty checks s1263 residual-honest org install snapshot needles.
+// assertStatusOrgInstallsHonesty checks s1263/s1271 residual-honest org install snapshot needles.
 // Always required on IntegrationsStatus (offline and online) — never invent Connected / empty-as-none.
+// Offline/missing tool path still uses statusOrgInstallsUnavailableLine; present+call path
+// uses formatOrgInstallsSnapshot residual (available=false · installs=null).
 func assertStatusOrgInstallsHonesty(t *testing.T, out string) {
 	t.Helper()
 	if !strings.Contains(out, "org installs") {
-		t.Fatalf("s1263 want org installs: %s", out)
+		t.Fatalf("s1263/s1271 want org installs: %s", out)
 	}
-	if !strings.Contains(out, "unavailable") {
-		t.Fatalf("s1263 want unavailable via agent MCP: %s", out)
+	if !strings.Contains(out, "unavailable") && !strings.Contains(out, "available=false") {
+		t.Fatalf("s1263/s1271 want unavailable or available=false residual: %s", out)
 	}
-	if !strings.Contains(out, statusOrgInstallsUnavailableLine) {
-		t.Fatalf("s1263 want constant unavailable line: %s", out)
+	// Offline/missing static line OR present residual (skip-call / snapshot / fail-open).
+	hasStatic := strings.Contains(out, statusOrgInstallsUnavailableLine)
+	hasPresentResidual := strings.Contains(out, "list_org_connector_installs") &&
+		(strings.Contains(out, "available=false") ||
+			strings.Contains(out, "org_id not configured") ||
+			strings.Contains(out, "fail-open residual") ||
+			strings.Contains(out, "skip call"))
+	if !hasStatic && !hasPresentResidual {
+		t.Fatalf("s1263/s1271 want static unavailable or present residual: %s", out)
 	}
 	if !strings.Contains(out, "candidacy open") {
-		t.Fatalf("s1263 want dual-auth candidacy open: %s", out)
+		t.Fatalf("s1263/s1271 want dual-auth candidacy open: %s", out)
 	}
 	if !strings.Contains(out, "never invent Connected") {
-		t.Fatalf("s1263 want never invent Connected: %s", out)
+		t.Fatalf("s1263/s1271 want never invent Connected: %s", out)
 	}
 	if !strings.Contains(out, "empty-as-none") {
-		t.Fatalf("s1263 want empty-as-none residual: %s", out)
-	}
-	if !strings.Contains(out, "portal session HITL") {
-		t.Fatalf("s1263 want portal session HITL: %s", out)
+		t.Fatalf("s1263/s1271 want empty-as-none residual: %s", out)
 	}
 	if !strings.Contains(out, "console.iome.sh/integrations") {
-		t.Fatalf("s1263 want portal URL: %s", out)
+		t.Fatalf("s1263/s1271 want portal URL: %s", out)
 	}
 	// must never invent install rows / Connected green from missing snapshot
 	if strings.Contains(out, "Connected: yes") {
-		t.Fatalf("s1263 must not invent install green: %s", out)
+		t.Fatalf("s1263/s1271 must not invent install green: %s", out)
 	}
 	if strings.Contains(out, "installs: 0") || strings.Contains(out, "org installs: 0") {
-		t.Fatalf("s1263 must not invent empty-as-none installs: %s", out)
+		t.Fatalf("s1263/s1271 must not invent empty-as-none installs: %s", out)
 	}
 	if strings.Contains(out, "dual-auth shipped") || strings.Contains(out, "dual-auth: live") {
-		t.Fatalf("s1263 must not claim dual-auth shipped: %s", out)
+		t.Fatalf("s1263/s1271 must not claim dual-auth shipped: %s", out)
 	}
 }
 
@@ -610,6 +618,213 @@ func TestStatusOrgInstallsSection(t *testing.T) {
 	}
 	if strings.Contains(out, "Connected: yes") {
 		t.Fatalf("must not invent install green: %s", out)
+	}
+}
+
+// --- s1271: list_org_connector_installs residual status wire ---
+
+// TestFormatOrgInstallsSnapshot_V179Unavailable formats aion v179 fail-open fixture.
+func TestFormatOrgInstallsSnapshot_V179Unavailable(t *testing.T) {
+	raw := readTestdata(t, "v179_org_installs_unavailable.json")
+	out := formatOrgInstallsSnapshot(raw)
+	if out == "" {
+		t.Fatal("formatOrgInstallsSnapshot returned empty for valid fixture")
+	}
+	for _, want := range []string{
+		"list_org_connector_installs",
+		"available=false",
+		"status=unavailable",
+		"org_id: org_test_s1271",
+		"dual_auth_candidacy_open",
+		"installs: null",
+		"never invent empty-as-none",
+		"candidacy open",
+		"never invent Connected",
+		"console.iome.sh/integrations",
+		statusOrgInstallsEmptyAsNoneNote,
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("missing %q in:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent install green: %s", out)
+	}
+	if strings.Contains(out, "installs: 0") {
+		t.Fatalf("must not invent empty-as-none: %s", out)
+	}
+}
+
+// TestFormatOrgInstallsSnapshot_EmptyRaw returns empty (fail-open to static residual).
+func TestFormatOrgInstallsSnapshot_EmptyRaw(t *testing.T) {
+	if got := formatOrgInstallsSnapshot(""); got != "" {
+		t.Fatalf("want empty, got %q", got)
+	}
+	if got := formatOrgInstallsSnapshot("not-json"); got != "" {
+		t.Fatalf("want empty non-json, got %q", got)
+	}
+	if got := formatOrgInstallsSnapshot(`{"foo":1}`); got != "" {
+		t.Fatalf("want empty for unrelated JSON, got %q", got)
+	}
+}
+
+// TestFormatOrgInstallsSnapshot_NeverInventEmptyArrayAsNone — installs:[] is residual-cautious.
+func TestFormatOrgInstallsSnapshot_EmptyArrayResidual(t *testing.T) {
+	raw := `{"org_id":"o1","available":false,"status":"unavailable","installs":[],"portal_url":"https://console.iome.sh/integrations","reason":"test"}`
+	out := formatOrgInstallsSnapshot(raw)
+	if !strings.Contains(out, "available=false") {
+		t.Fatalf("available=false: %s", out)
+	}
+	if strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent Connected: %s", out)
+	}
+	if strings.Contains(out, "installs: 0") {
+		t.Fatalf("must not invent installs: 0: %s", out)
+	}
+}
+
+// s1271: tool present but no org_id → skip call residual, never invent empty-as-none.
+func TestIntegrationsStatus_S1271OrgInstallsPresentNoOrgID(t *testing.T) {
+	cInR, cInW := io.Pipe()
+	cOutR, cOutW := io.Pipe()
+	go mockOrgInstallsMCP(cOutW, cInR, "")
+
+	mut := false
+	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "aion-scenario", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
+	defer cl.Close()
+	if err := cl.InitForTest(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	mgr := mcp.NewManagerEmpty(nil)
+	mgr.Attach(cl)
+	rt := &Runtime{mcp: mgr} // mesh nil → no org_id
+
+	out, err := rt.IntegrationsStatus(context.Background())
+	if err != nil {
+		t.Fatalf("err=%v", err)
+	}
+	if !strings.Contains(out, "list_org_connector_installs") {
+		t.Fatalf("want tool in probe: %s", out)
+	}
+	if !strings.Contains(out, "present") {
+		t.Fatalf("want present: %s", out)
+	}
+	if !strings.Contains(out, statusOrgInstallsNoOrgIDLine) && !strings.Contains(out, "org_id not configured") {
+		t.Fatalf("want org_id not configured residual: %s", out)
+	}
+	if !strings.Contains(out, "skip call") {
+		t.Fatalf("want skip call: %s", out)
+	}
+	assertStatusOrgInstallsHonesty(t, out)
+	// Must not have called and invented empty installs.
+	if strings.Contains(out, "installs: 0") || strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent installs: %s", out)
+	}
+}
+
+// s1271: tool present + org_id + v179 unavailable fixture → residual-honest block.
+func TestIntegrationsStatus_S1271OrgInstallsUnavailableFixture(t *testing.T) {
+	fixture := readTestdata(t, "v179_org_installs_unavailable.json")
+	cInR, cInW := io.Pipe()
+	cOutR, cOutW := io.Pipe()
+	go mockOrgInstallsMCP(cOutW, cInR, fixture)
+
+	mut := false
+	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "aion-scenario", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
+	defer cl.Close()
+	if err := cl.InitForTest(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	mgr := mcp.NewManagerEmpty(nil)
+	mgr.Attach(cl)
+
+	// mesh with org_id so status issues the call.
+	mesh := iomesh.New(iomesh.Config{Enabled: true, Endpoint: "http://127.0.0.1:9", OrgID: "org_test_s1271"}, nil)
+	rt := &Runtime{mcp: mgr, mesh: mesh}
+
+	out, err := rt.IntegrationsStatus(context.Background())
+	if err != nil {
+		t.Fatalf("err=%v", err)
+	}
+	if !strings.Contains(out, "list_org_connector_installs") || !strings.Contains(out, "present") {
+		t.Fatalf("tool present: %s", out)
+	}
+	if !strings.Contains(out, "available=false") {
+		t.Fatalf("want available=false residual: %s", out)
+	}
+	if !strings.Contains(out, "installs: null") {
+		t.Fatalf("want installs: null residual: %s", out)
+	}
+	if !strings.Contains(out, "org_id: org_test_s1271") {
+		t.Fatalf("want org_id: %s", out)
+	}
+	assertStatusOrgInstallsHonesty(t, out)
+	if strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent Connected: %s", out)
+	}
+	if strings.Contains(out, "installs: 0") {
+		t.Fatalf("must not invent empty-as-none: %s", out)
+	}
+}
+
+// mockOrgInstallsMCP serves tools/list with list_org_connector_installs (+ optional catalog)
+// and returns installFixture on tools/call for list_org_connector_installs.
+func mockOrgInstallsMCP(w io.WriteCloser, r io.Reader, installFixture string) {
+	defer w.Close()
+	dec := json.NewDecoder(r)
+	for {
+		var req map[string]any
+		if err := dec.Decode(&req); err != nil {
+			return
+		}
+		id := req["id"]
+		method, _ := req["method"].(string)
+		if method == "notifications/initialized" || id == nil {
+			continue
+		}
+		var result any
+		switch method {
+		case "initialize":
+			result = map[string]any{"protocolVersion": "2024-11-05", "serverInfo": map[string]string{"name": "aion", "version": "1"}}
+		case "tools/list":
+			result = map[string]any{"tools": []map[string]any{
+				{
+					"name": "list_connector_catalog", "description": "Catalog (v178)", "inputSchema": map[string]any{
+						"type": "object", "properties": map[string]any{},
+					},
+				},
+				{
+					"name": "list_org_connector_installs", "description": "Org installs residual (v179)", "inputSchema": map[string]any{
+						"type": "object", "properties": map[string]any{
+							"org_id": map[string]any{"type": "string"},
+						},
+						"required": []string{"org_id"},
+					},
+				},
+			}}
+		case "tools/call":
+			name := ""
+			if params, ok := req["params"].(map[string]any); ok {
+				name, _ = params["name"].(string)
+			}
+			text := "unknown tool"
+			switch name {
+			case "list_connector_catalog":
+				text = `{"count":0,"entries":[]}`
+			case "list_org_connector_installs":
+				if installFixture != "" {
+					text = installFixture
+				} else {
+					text = `{"org_id":"x","available":false,"status":"unavailable","installs":null,"portal_url":"https://console.iome.sh/integrations","reason":"dual_auth_candidacy_open"}`
+				}
+			}
+			result = map[string]any{"content": []map[string]any{{"type": "text", "text": text}}}
+		default:
+			result = map[string]any{}
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"jsonrpc": "2.0", "id": id, "result": result})
 	}
 }
 
@@ -676,6 +891,9 @@ func TestIntegrationsAgentGuidanceNote_HonestyNeedles(t *testing.T) {
 		"list_connector_catalog",
 		"plan_connector_setup",
 		"get_webhook_signing_headers",
+		"list_org_connector_installs", // s1273
+		"never invent empty-as-none",  // s1273
+		"dual_auth candidacy open",    // s1273
 		"console.iome.sh/integrations",
 		"browser HITL",
 		"never invent install green",
@@ -1138,10 +1356,12 @@ func TestS1257GuidanceNoteSkillHonestyConsistency(t *testing.T) {
 	skillText := string(skillBytes)
 	guidance := IntegrationsAgentGuidanceNote()
 
-	// Core honesty needles that BOTH must carry (s1257 residual lock set).
+	// Core honesty needles that BOTH must carry (s1257 residual lock set · s1273 org installs).
 	needles := []string{
 		"list_connector_catalog",
 		"plan_connector_setup",
+		"list_org_connector_installs",
+		"never invent empty-as-none",
 		"portal",
 		"never invent install green",
 	}

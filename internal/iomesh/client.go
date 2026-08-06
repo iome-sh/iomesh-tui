@@ -410,6 +410,16 @@ func (c *Client) Tenant() string {
 	return c.cfg.Tenant
 }
 
+// OrgID returns the configured org id for PlanGate / multi-tenant headers (may be empty).
+// Used by agent IntegrationsStatus for residual-honest list_org_connector_installs (s1271).
+// Empty means skip the MCP call with residual note — never invent empty-as-none installs.
+func (c *Client) OrgID() string {
+	if c == nil {
+		return ""
+	}
+	return strings.TrimSpace(c.cfg.OrgID)
+}
+
 // StatusLine is a one-line operator summary for TUI /mesh.
 func (c *Client) StatusLine() string {
 	if c == nil || !c.Enabled() {
