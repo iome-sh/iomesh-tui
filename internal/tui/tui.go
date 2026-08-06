@@ -271,7 +271,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 	case "/memory", "/mem":
 		if len(parts) < 2 {
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
-			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | ingest <text>]")
+			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | ingest <text>]")
 			return false, nil
 		}
 		sub := strings.ToLower(parts[1])
@@ -358,6 +358,31 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 				return false, nil
 			}
 			fmt.Fprintln(out, text)
+		case "supersede", "super":
+			// s1282: opt-in HITL A3 lite entity supersession via MCP memory_supersede_entity
+			// (aion s640). Mutating: closes open valid_until windows. MCP-first only.
+			// Require --i-confirm (HITL) — MemorySupersede refuses residual-honestly without it.
+			// Not NLP contradiction · not full dual-clock Graphiti · not Memory GA · dual_write OFF.
+			sopts, perr := parseMemorySupersedeArgs(parts[2:])
+			if perr != "" {
+				fmt.Fprintf(out, "memory supersede: %s\nusage: /memory supersede --entity <key> [--as-of RFC3339] --i-confirm\n", perr)
+				return false, nil
+			}
+			if strings.TrimSpace(sopts.Entity) == "" {
+				fmt.Fprintln(out, "usage: /memory supersede --entity <key> [--as-of RFC3339] --i-confirm\n  A3 lite supersede (HITL mutating; closes valid_until; not NLP contradiction; not Memory GA)")
+				return false, nil
+			}
+			text, err := rt.rt.MemorySupersede(context.Background(), sopts)
+			if err != nil {
+				fmt.Fprintf(out, "memory supersede: %v\n", err)
+				return false, nil
+			}
+			if strings.TrimSpace(text) == "" {
+				// Residual-honest empty — formatter normally always emits honesty footer.
+				fmt.Fprintln(out, "(supersede empty · not inventing superseded_count)")
+				return false, nil
+			}
+			fmt.Fprintln(out, text)
 		case "ingest", "i":
 			content := strings.Join(parts[2:], " ")
 			if strings.TrimSpace(content) == "" {
@@ -376,7 +401,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			q, ropts := parseMemoryRecallArgs(parts[1:])
 			text, err := rt.rt.MemoryRecallWithOpts(context.Background(), q, ropts)
 			if err != nil {
-				fmt.Fprintf(out, "memory: %v (try /memory status|recall|related|digest|facts-as-of|ingest)\n", err)
+				fmt.Fprintf(out, "memory: %v (try /memory status|recall|related|digest|facts-as-of|supersede|ingest)\n", err)
 				return false, nil
 			}
 			if strings.TrimSpace(text) == "" {
@@ -561,7 +586,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /cost                session usage meter + sample estimate
   /mesh                I/O Mesh status + usage
   /catalog [query]     list mesh data products (catalog plane)
-  /memory [recall|related|digest|facts-as-of|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite opt-in)
+  /memory [recall|related|digest|facts-as-of|supersede|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · supersede A3 lite HITL)
   /integrations [list|plan|signing|status]  connector setup via MCP (catalog+plan+signing discovery+portal HITL; not install CRUD)
   /quit                exit
 
@@ -798,6 +823,44 @@ func parseMemoryDigestArgs(args []string) (opts agent.MemoryOpsDigestOpts, errMs
 				}
 			}
 			opts.AsOf = strings.TrimSpace(val)
+		default:
+			if strings.HasPrefix(a, "-") {
+				return opts, "unknown flag " + a
+			}
+			return opts, "unexpected argument " + a
+		}
+	}
+	return opts, ""
+}
+
+// parseMemorySupersedeArgs extracts A3 lite supersede HITL flags (s1282).
+// Supports: --entity / -e (required by caller), --as-of / --as_of (optional RFC3339),
+// --i-confirm / --confirm / --yes → Confirm=true. Rejects unknown flags.
+// Missing confirm parses cleanly with Confirm=false (MemorySupersede refuses residual-honestly).
+func parseMemorySupersedeArgs(args []string) (opts agent.MemorySupersedeOpts, errMsg string) {
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		key, val, hasEq := splitFlagKV(a)
+		switch key {
+		case "--entity", "-e":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.Entity = strings.TrimSpace(val)
+		case "--as-of", "--as_of":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.AsOf = strings.TrimSpace(val)
+		case "--i-confirm", "--confirm", "--yes":
+			// Boolean HITL flags — value optional (=true form accepted, ignored).
+			opts.Confirm = true
 		default:
 			if strings.HasPrefix(a, "-") {
 				return opts, "unknown flag " + a

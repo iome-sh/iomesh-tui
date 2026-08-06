@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -828,5 +829,206 @@ func TestFormatFactsAsOfJSON_NonJSON(t *testing.T) {
 	}
 	if got := formatFactsAsOfJSON("", 100); got != "" {
 		t.Fatalf("got %q", got)
+	}
+}
+
+// s1282: formatSupersedeJSON residual-honest fixture {entity, as_of, superseded_count}.
+func TestFormatSupersedeJSON_Fixture(t *testing.T) {
+	raw := `{"entity":"person:alice","as_of":"2026-08-04T12:00:00Z","superseded_count":3}`
+	out := formatSupersedeJSON(raw)
+	if out == "" {
+		t.Fatal("expected formatted output")
+	}
+	if !strings.Contains(out, "supersede entity=person:alice") {
+		t.Fatalf("entity: %q", out)
+	}
+	if !strings.Contains(out, "as_of=2026-08-04T12:00:00Z") {
+		t.Fatalf("as_of: %q", out)
+	}
+	if !strings.Contains(out, "superseded_count: 3") {
+		t.Fatalf("count: %q", out)
+	}
+	if !strings.Contains(out, "A3 lite supersede") || !strings.Contains(out, "not NLP contradiction") {
+		t.Fatalf("honesty pin missing: %q", out)
+	}
+	if !strings.Contains(out, "not full dual-clock Graphiti") || !strings.Contains(out, "not Memory GA") {
+		t.Fatalf("Graphiti/GA pin missing: %q", out)
+	}
+	if !strings.Contains(out, "dual_write OFF") || !strings.Contains(out, "mutating") {
+		t.Fatalf("dual_write/mutating pin missing: %q", out)
+	}
+	// Zero count is honest (real wire), not invent offline.
+	out0 := formatSupersedeJSON(`{"entity":"org:acme","as_of":"2026-01-01T00:00:00Z","superseded_count":0}`)
+	if !strings.Contains(out0, "superseded_count: 0") || !strings.Contains(out0, "org:acme") {
+		t.Fatalf("zero count: %q", out0)
+	}
+}
+
+// s1282: formatSupersedeJSON returns empty on non-JSON (caller may pass through).
+func TestFormatSupersedeJSON_NonJSON(t *testing.T) {
+	if got := formatSupersedeJSON("not json"); got != "" {
+		t.Fatalf("got %q", got)
+	}
+	if got := formatSupersedeJSON(""); got != "" {
+		t.Fatalf("got %q", got)
+	}
+}
+
+// s1282: without Confirm → residual-honest refusal string; must NOT require MCP (no call).
+func TestMemorySupersede_RefuseWithoutConfirm(t *testing.T) {
+	// Empty MCP manager: if Confirm were true we'd go offline-fail-open; without Confirm
+	// we must refuse before any MCP readiness check path mutates or invents count.
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "dept.research"},
+		mcp:    mcp.NewManagerEmpty(nil),
+	}
+	out, err := rt.MemorySupersede(context.Background(), MemorySupersedeOpts{
+		Entity:  "person:alice",
+		AsOf:    "2026-08-04T12:00:00Z",
+		Confirm: false,
+	})
+	if err != nil {
+		t.Fatalf("expected residual-honest refusal nil err, got %v", err)
+	}
+	if !strings.Contains(out, "refused") || !strings.Contains(out, "HITL") {
+		t.Fatalf("refusal: %q", out)
+	}
+	if !strings.Contains(out, "--i-confirm") {
+		t.Fatalf("must mention --i-confirm: %q", out)
+	}
+	if !strings.Contains(out, "person:alice") {
+		t.Fatalf("entity: %q", out)
+	}
+	if !strings.Contains(out, supersedeHonestyFooter) && !strings.Contains(out, "A3 lite supersede") {
+		t.Fatalf("honesty: %q", out)
+	}
+	// Must not look like success with a count.
+	if strings.Contains(out, "superseded_count:") {
+		t.Fatalf("must not invent superseded_count on refuse: %q", out)
+	}
+	if strings.Contains(out, "unavailable") {
+		// Refuse must short-circuit before offline messaging.
+		t.Fatalf("must not reach offline path without Confirm: %q", out)
+	}
+}
+
+// s1282: Confirm + offline MCP → residual-honest fail-open (not invent count).
+func TestMemorySupersede_OfflineFailOpen(t *testing.T) {
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "dept.research"},
+		mcp:    mcp.NewManagerEmpty(nil),
+	}
+	out, err := rt.MemorySupersede(context.Background(), MemorySupersedeOpts{
+		Entity:  "person:alice",
+		AsOf:    "2026-08-04T12:00:00Z",
+		Confirm: true,
+	})
+	if err != nil {
+		t.Fatalf("expected fail-open nil err, got %v", err)
+	}
+	if !strings.Contains(out, "unavailable") || !strings.Contains(out, "not connected") {
+		t.Fatalf("offline: %q", out)
+	}
+	if !strings.Contains(out, "MCP-first") || !strings.Contains(out, "A3 lite supersede") {
+		t.Fatalf("honesty offline: %q", out)
+	}
+	if !strings.Contains(out, "not inventing superseded_count") {
+		t.Fatalf("not-invent pin: %q", out)
+	}
+	// Must not look like successful supersede with a count.
+	if strings.Contains(out, "superseded_count:") {
+		t.Fatalf("must not invent supersede success offline: %q", out)
+	}
+}
+
+// s1282: requires entity; hooks disabled; bad as_of rejected; Confirm gate is string not error.
+func TestMemorySupersede_Validation(t *testing.T) {
+	rt := &Runtime{memory: MemoryConfig{Enabled: true, Server: "memory"}}
+	_, err := rt.MemorySupersede(context.Background(), MemorySupersedeOpts{Confirm: true})
+	if err == nil || !strings.Contains(err.Error(), "entity required") {
+		t.Fatalf("err=%v", err)
+	}
+	_, err = rt.MemorySupersede(context.Background(), MemorySupersedeOpts{
+		Entity: "person:alice", AsOf: "not-a-time", Confirm: true,
+	})
+	if err == nil || !strings.Contains(err.Error(), "RFC3339") {
+		t.Fatalf("bad as_of err=%v", err)
+	}
+	rt2 := &Runtime{memory: DefaultMemoryConfig()}
+	_, err = rt2.MemorySupersede(context.Background(), MemorySupersedeOpts{
+		Entity: "person:alice", Confirm: true,
+	})
+	if err == nil || !strings.Contains(err.Error(), "disabled") {
+		t.Fatalf("disabled err=%v", err)
+	}
+}
+
+// s1282: Confirm + mock MCP success formats superseded_count (full path).
+func TestMemorySupersede_MockMCPSuccess(t *testing.T) {
+	// Lightweight stdio mock that answers tools/call memory_supersede_entity.
+	// Mirrors skills_mcp_test mock pattern.
+	cInR, cInW := io.Pipe()
+	cOutR, cOutW := io.Pipe()
+	go mockMCPSupersede(cOutW, cInR)
+
+	mut := true // supersede is mutating
+	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "memory", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
+	defer cl.Close()
+	if err := cl.InitForTest(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	mgr := mcp.NewManagerEmpty(nil)
+	mgr.Attach(cl)
+
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "dept.research"},
+		mcp:    mgr,
+	}
+	out, err := rt.MemorySupersede(context.Background(), MemorySupersedeOpts{
+		Entity:  "person:alice",
+		AsOf:    "2026-08-04T12:00:00Z",
+		Confirm: true,
+	})
+	if err != nil {
+		t.Fatalf("err=%v", err)
+	}
+	if !strings.Contains(out, "superseded_count: 2") {
+		t.Fatalf("count: %q", out)
+	}
+	if !strings.Contains(out, "person:alice") || !strings.Contains(out, "A3 lite supersede") {
+		t.Fatalf("format: %q", out)
+	}
+}
+
+// mockMCPSupersede is a minimal MCP server for memory_supersede_entity success fixture.
+func mockMCPSupersede(w io.WriteCloser, r io.Reader) {
+	defer w.Close()
+	dec := json.NewDecoder(r)
+	for {
+		var req map[string]any
+		if err := dec.Decode(&req); err != nil {
+			return
+		}
+		id := req["id"]
+		method, _ := req["method"].(string)
+		if method == "notifications/initialized" || id == nil {
+			continue
+		}
+		var result any
+		switch method {
+		case "initialize":
+			result = map[string]any{"protocolVersion": "2024-11-05", "serverInfo": map[string]string{"name": "memory", "version": "1"}}
+		case "tools/list":
+			result = map[string]any{"tools": []map[string]any{{
+				"name": "memory_supersede_entity", "description": "A3 lite supersede",
+				"inputSchema": map[string]any{"type": "object"},
+			}}}
+		case "tools/call":
+			// Always return residual-honest success wire for supersede.
+			payload := `{"entity":"person:alice","as_of":"2026-08-04T12:00:00Z","superseded_count":2}`
+			result = map[string]any{"content": []map[string]any{{"type": "text", "text": payload}}}
+		}
+		line, _ := json.Marshal(map[string]any{"jsonrpc": "2.0", "id": id, "result": result})
+		_, _ = w.Write(append(line, '\n'))
 	}
 }
