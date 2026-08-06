@@ -1032,3 +1032,173 @@ func mockMCPSupersede(w io.WriteCloser, r io.Reader) {
 		_, _ = w.Write(append(line, '\n'))
 	}
 }
+
+// s1287: formatPatternsJSON residual-honest fixture {patterns:[{subject,kind,count,score,summary}]}.
+func TestFormatPatternsJSON_Fixture(t *testing.T) {
+	raw := `{
+		"patterns": [
+			{"id": "p1", "kind": "recurrence", "subject": "deploy", "count": 5, "score": 0.82, "summary": "deploy recurs in window", "window": "24h"},
+			{"id": "p2", "kind": "recurrence", "subject": "oncall", "count": 3, "score": 0.6}
+		]
+	}`
+	out := formatPatternsJSON(raw, 6000)
+	if out == "" {
+		t.Fatal("expected formatted output")
+	}
+	if !strings.Contains(out, "patterns (2):") {
+		t.Fatalf("header: %q", out)
+	}
+	if !strings.Contains(out, "subject=deploy") || !strings.Contains(out, "kind=recurrence") {
+		t.Fatalf("pattern1 fields: %q", out)
+	}
+	if !strings.Contains(out, "score=0.82") || !strings.Contains(out, "count=5") {
+		t.Fatalf("pattern1 score/count: %q", out)
+	}
+	if !strings.Contains(out, "deploy recurs in window") {
+		t.Fatalf("summary: %q", out)
+	}
+	if !strings.Contains(out, "subject=oncall") {
+		t.Fatalf("pattern2: %q", out)
+	}
+	if !strings.Contains(out, "ops pulse Beta") || !strings.Contains(out, "not medical diagnosis") {
+		t.Fatalf("honesty pin missing: %q", out)
+	}
+	if !strings.Contains(out, "not OTel host metrics") || !strings.Contains(out, "not invent GA window engine") {
+		t.Fatalf("OTel/GA pin missing: %q", out)
+	}
+	if !strings.Contains(out, "dual_write OFF") || !strings.Contains(out, "not Memory GA") {
+		t.Fatalf("dual_write/Memory GA pin missing: %q", out)
+	}
+}
+
+// s1287: formatAnomaliesJSON residual-honest fixture {anomalies:[...]}.
+func TestFormatAnomaliesJSON_Fixture(t *testing.T) {
+	raw := `{
+		"anomalies": [
+			{"id": "a1", "kind": "burst", "subject": "error.rate", "count": 12, "score": 0.95, "summary": "burst vs baseline", "window": "15m"}
+		]
+	}`
+	out := formatAnomaliesJSON(raw, 6000)
+	if out == "" {
+		t.Fatal("expected formatted output")
+	}
+	if !strings.Contains(out, "anomalies (1):") {
+		t.Fatalf("header: %q", out)
+	}
+	if !strings.Contains(out, "subject=error.rate") || !strings.Contains(out, "kind=burst") {
+		t.Fatalf("anomaly fields: %q", out)
+	}
+	if !strings.Contains(out, "score=0.95") || !strings.Contains(out, "burst vs baseline") {
+		t.Fatalf("score/summary: %q", out)
+	}
+	if !strings.Contains(out, "ops pulse Beta") || !strings.Contains(out, "suggestive only") {
+		t.Fatalf("honesty pin: %q", out)
+	}
+	if !strings.Contains(out, "not medical diagnosis") || !strings.Contains(out, "not Memory GA") {
+		t.Fatalf("medical/Memory GA pin: %q", out)
+	}
+}
+
+// s1287: empty patterns/anomalies is residual-honest empty — never invent signals.
+func TestFormatPatternsAnomalies_EmptyHonest(t *testing.T) {
+	out := formatPatterns(nil, 6000)
+	if !strings.Contains(out, "patterns: (none)") {
+		t.Fatalf("empty patterns: %q", out)
+	}
+	if !strings.Contains(out, pulseHonestyFooter) {
+		t.Fatalf("honesty: %q", out)
+	}
+	out2 := formatPatternsJSON(`{"patterns":[]}`, 6000)
+	if !strings.Contains(out2, "patterns: (none)") {
+		t.Fatalf("empty json patterns: %q", out2)
+	}
+	outA := formatAnomalies(nil, 6000)
+	if !strings.Contains(outA, "anomalies: (none)") {
+		t.Fatalf("empty anomalies: %q", outA)
+	}
+	if !strings.Contains(outA, pulseHonestyFooter) {
+		t.Fatalf("honesty anomalies: %q", outA)
+	}
+	outA2 := formatAnomaliesJSON(`{"anomalies":[]}`, 6000)
+	if !strings.Contains(outA2, "anomalies: (none)") {
+		t.Fatalf("empty json anomalies: %q", outA2)
+	}
+}
+
+// s1287: offline MCP → residual-honest fail-open (not invent empty success).
+func TestMemoryPatterns_OfflineFailOpen(t *testing.T) {
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "dept.research"},
+		mcp:    mcp.NewManagerEmpty(nil),
+	}
+	out, err := rt.MemoryPatterns(context.Background(), MemoryPatternsOpts{Limit: 5})
+	if err != nil {
+		t.Fatalf("expected fail-open nil err, got %v", err)
+	}
+	if !strings.Contains(out, "unavailable") || !strings.Contains(out, "not connected") {
+		t.Fatalf("offline: %q", out)
+	}
+	if !strings.Contains(out, "MCP-first") || !strings.Contains(out, "ops pulse Beta") {
+		t.Fatalf("honesty offline: %q", out)
+	}
+	if !strings.Contains(out, "empty ≠ invent patterns") {
+		t.Fatalf("empty≠invent pin: %q", out)
+	}
+	// Must not look like successful empty listing alone.
+	if strings.Contains(out, "patterns: (none)") && !strings.Contains(out, "unavailable") {
+		t.Fatalf("must not invent empty-success: %q", out)
+	}
+}
+
+// s1287: offline MCP anomalies fail-open.
+func TestMemoryAnomalies_OfflineFailOpen(t *testing.T) {
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "dept.research"},
+		mcp:    mcp.NewManagerEmpty(nil),
+	}
+	out, err := rt.MemoryAnomalies(context.Background(), MemoryAnomaliesOpts{})
+	if err != nil {
+		t.Fatalf("expected fail-open nil err, got %v", err)
+	}
+	if !strings.Contains(out, "unavailable") || !strings.Contains(out, "not connected") {
+		t.Fatalf("offline: %q", out)
+	}
+	if !strings.Contains(out, "MCP-first") || !strings.Contains(out, "ops pulse Beta") {
+		t.Fatalf("honesty offline: %q", out)
+	}
+	if !strings.Contains(out, "empty ≠ invent anomalies") {
+		t.Fatalf("empty≠invent pin: %q", out)
+	}
+	if strings.Contains(out, "anomalies: (none)") && !strings.Contains(out, "unavailable") {
+		t.Fatalf("must not invent empty-success: %q", out)
+	}
+}
+
+// s1287: hooks disabled error for patterns/anomalies.
+func TestMemoryPatternsAnomalies_Disabled(t *testing.T) {
+	rt := &Runtime{memory: DefaultMemoryConfig()}
+	_, err := rt.MemoryPatterns(context.Background(), MemoryPatternsOpts{})
+	if err == nil || !strings.Contains(err.Error(), "disabled") {
+		t.Fatalf("patterns disabled err=%v", err)
+	}
+	_, err = rt.MemoryAnomalies(context.Background(), MemoryAnomaliesOpts{})
+	if err == nil || !strings.Contains(err.Error(), "disabled") {
+		t.Fatalf("anomalies disabled err=%v", err)
+	}
+}
+
+// s1287: non-JSON returns empty (caller may pass through).
+func TestFormatPatternsAnomaliesJSON_NonJSON(t *testing.T) {
+	if got := formatPatternsJSON("not json", 100); got != "" {
+		t.Fatalf("patterns got %q", got)
+	}
+	if got := formatPatternsJSON("", 100); got != "" {
+		t.Fatalf("patterns empty got %q", got)
+	}
+	if got := formatAnomaliesJSON("not json", 100); got != "" {
+		t.Fatalf("anomalies got %q", got)
+	}
+	if got := formatAnomaliesJSON("", 100); got != "" {
+		t.Fatalf("anomalies empty got %q", got)
+	}
+}
