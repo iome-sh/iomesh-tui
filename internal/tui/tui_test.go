@@ -211,6 +211,54 @@ func TestParseMemoryDigestArgs(t *testing.T) {
 	}
 }
 
+// s1276: /memory facts-as-of flag parser for --as-of / --entity / --query / --limit.
+func TestParseMemoryFactsAsOfArgs(t *testing.T) {
+	o, errMsg := parseMemoryFactsAsOfArgs([]string{
+		"--as-of", "2026-08-04T12:00:00Z",
+		"--entity", "person:alice",
+		"--query", "role",
+		"--limit", "5",
+		"--session-id=sess-1",
+	})
+	if errMsg != "" {
+		t.Fatalf("errMsg=%q", errMsg)
+	}
+	if o.AsOf != "2026-08-04T12:00:00Z" || o.Entity != "person:alice" {
+		t.Fatalf("opts=%+v", o)
+	}
+	if o.Query != "role" || o.Limit != 5 || o.SessionID != "sess-1" {
+		t.Fatalf("opts=%+v", o)
+	}
+	// --as_of= form + free tokens as query.
+	o2, errMsg2 := parseMemoryFactsAsOfArgs([]string{
+		"--as_of=2026-01-01T00:00:00Z",
+		"--entity=org:acme",
+		"free", "query", "words",
+	})
+	if errMsg2 != "" {
+		t.Fatalf("errMsg=%q", errMsg2)
+	}
+	if o2.AsOf != "2026-01-01T00:00:00Z" || o2.Entity != "org:acme" {
+		t.Fatalf("opts=%+v", o2)
+	}
+	if o2.Query != "free query words" {
+		t.Fatalf("query=%q", o2.Query)
+	}
+	_, badLim := parseMemoryFactsAsOfArgs([]string{"--as-of", "2026-08-04T12:00:00Z", "--limit", "nope"})
+	if badLim == "" {
+		t.Fatal("expected invalid --limit")
+	}
+	_, badFlag := parseMemoryFactsAsOfArgs([]string{"--as-of", "2026-08-04T12:00:00Z", "--unknown"})
+	if badFlag == "" {
+		t.Fatal("expected unknown flag")
+	}
+	// Empty args: AsOf empty (caller enforces required).
+	o3, errMsg3 := parseMemoryFactsAsOfArgs(nil)
+	if errMsg3 != "" || o3.AsOf != "" {
+		t.Fatalf("empty opts=%+v err=%q", o3, errMsg3)
+	}
+}
+
 // s1238: /integrations list flag parser for --layer mesh_layer filter.
 func TestParseIntegrationsListArgs(t *testing.T) {
 	layer, errMsg := parseIntegrationsListArgs([]string{"--layer", "knowledge"})

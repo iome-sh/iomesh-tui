@@ -10,6 +10,7 @@ Platform ships `aion-memory-mcp` (stdio **and** streamable HTTP) with tools:
 | `memory_retrieve` | Query memories (optional `session_id`, `since`/`until`, `session_seq`) |
 | `memory_related` | Multi-hop lite related recall (`seed_entity` / `query` / `max_hops`; s1135 opt-in) |
 | `ops_digest_export` | Ops heartbeat digest export (`window` / `horizon` / `limit`; s1200 opt-in; MCP + HTTP) |
+| `memory_facts_as_of` | Bi-temporal lite validity listing (`as_of` required RFC3339; optional `entity` / `query` / `session_id` / `limit`; s1276 opt-in; **MCP-first**) |
 | `memory_timeline` | Temporal timeline slice |
 | `memory_search_semantic` | Semantic facts |
 | patterns / anomalies / compact | Ops helpers |
@@ -29,6 +30,7 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 | **3 temporal (s1068)** | **done** | Sync retrieve options: `since`/`until`/`session_seq` on lean HTTP + auto-recall config + `/memory recall` flags |
 | **3 related multi-hop (s1135)** | **done (opt-in)** | Sync `POST /v1|/v5/memory/related` + MCP `memory_related` fallback; `/memory related`; default auto-recall stays single-hop |
 | **3 ops digest (s1200)** | **done (opt-in)** | Sync `POST /v1|/v5/memory/ops_digest` + MCP `ops_digest_export` fallback; `/memory digest`; ops GA-path · knowledge/analytical Beta |
+| **3 facts-as-of (s1276)** | **done (opt-in · MCP-first)** | MCP `memory_facts_as_of` (aion Beta K4 lite); `/memory facts-as-of`; bi-temporal lite · not full dual-clock Graphiti · no lean HTTP route today |
 | **4 pull (s652)** | **done (M1)** | `iomesh memory pull` — durable mesh consumer → local MCP `memory_ingest_turn` (cost-max local palace; dual_write remains optional audit) |
 
 **Related (not Memory Palace):** agent connector setup slash `/integrations` (s1238/s1242/s1243) uses MCP `list_connector_catalog` / `plan_connector_setup` (aion v178) + `get_webhook_signing_headers` (v30) with residual honesty — see [agent-integrations-setup.md](./agent-integrations-setup.md).
@@ -373,6 +375,7 @@ See [mesh-dogfood.md](mesh-dogfood.md) for soft vs strict matrix. Unit coverage:
 | `/memory recall --since|--until|--session-seq … [query]` | Same + per-call temporal filters (s1068; override config) |
 | `/memory related --seed <entity> [--query …] [--max-hops N]` | Opt-in multi-hop lite related recall (s1135; HTTP + MCP `memory_related`; not auto-recall) |
 | `/memory digest [--window day\|week] [--horizon ops\|knowledge\|analytical\|all] [--limit N]` | Opt-in ops heartbeat digest export (s1200; HTTP + MCP `ops_digest_export`) |
+| `/memory facts-as-of\|facts\|as-of --as-of <RFC3339> [--entity …] [--query …] [--limit N]` | Opt-in bi-temporal lite validity listing (s1276; MCP `memory_facts_as_of`; MCP-first) |
 | `/memory ingest <text>` | Ingest a user turn (MCP and/or dual-write) |
 
 ## Ops heartbeat digest (s1200 · opt-in)
@@ -401,6 +404,21 @@ Operators can run **multi-hop lite** related recall without changing default aut
 
 **Honesty:** multi-hop lite opt-in · hop ranking lite · **not** full graph RAG · **not** product Memory GA · dual_write default OFF · fail-open.
 
+## Bi-temporal lite facts-as-of (s1276 · opt-in · MCP-first)
+
+Operators can list palace entries **valid at a point in time** without changing default auto-recall:
+
+| Surface | Path |
+|---------|------|
+| Lean HTTP | **None today** — platform does not expose `POST /v1\|/v5/memory/facts_as_of`; do not invent |
+| MCP (primary) | `memory_facts_as_of` tool args (`tenant`, `as_of` required RFC3339; optional `entity`, `query`, `session_id`, `limit`) |
+| Slash | `/memory facts-as-of --as-of 2026-08-04T12:00:00Z [--entity person:alice] [--query …] [--limit N]` |
+| Aliases | `facts`, `as-of` |
+| Output | Human-readable facts + honesty footer; empty → `facts: (none)` (never invent memories) |
+| Offline | Residual-honest fail-open message (status: unavailable · MCP-first · empty ≠ invent) |
+
+**Honesty hard locks:** opt-in only (not auto-recall) · K4 bi-temporal **lite** · **not** full dual-clock Graphiti KG · **not** Memory GA · dual_write OFF · book-demo OFF · empty facts ≠ invent memories · fail-open.
+
 ## Platform gaps
 
 | ID | Gap |
@@ -416,8 +434,8 @@ Operators can run **multi-hop lite** related recall without changing default aut
 | Path | Role |
 |------|------|
 | `internal/config` | `[memory]` section + env (`dual_write`) |
-| `internal/iomesh/memory.go` | `PublishMemoryIngest`, `PublishMemoryRecall`, `RetrieveMemory` / `RetrieveMemoryWithOptions`, `RetrieveMemoryRelated`, `ExportOpsDigest` lean HTTP (no SDK dep; s1068 temporal + s1135 related + s1200 digest) |
-| `internal/agent/memory.go` | Recall (sync prefer → MCP; config + opts temporal filters) / related multi-hop opt-in / ops digest opt-in / ingest / dual-write helpers |
+| `internal/iomesh/memory.go` | `PublishMemoryIngest`, `PublishMemoryRecall`, `RetrieveMemory` / `RetrieveMemoryWithOptions`, `RetrieveMemoryRelated`, `ExportOpsDigest` lean HTTP (no SDK dep; s1068 temporal + s1135 related + s1200 digest; no facts_as_of HTTP) |
+| `internal/agent/memory.go` | Recall (sync prefer → MCP; config + opts temporal filters) / related multi-hop opt-in / ops digest opt-in / facts-as-of MCP-first opt-in (s1276) / ingest / dual-write helpers |
 | `internal/agent/agent.go` | `RunTurn` hooks |
 | `internal/tui/tui.go` | `/memory` slash |
 | `configs/config.example.toml` | Copy-paste wire-up |

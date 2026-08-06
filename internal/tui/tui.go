@@ -271,7 +271,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 	case "/memory", "/mem":
 		if len(parts) < 2 {
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
-			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] | ingest <text>]")
+			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | ingest <text>]")
 			return false, nil
 		}
 		sub := strings.ToLower(parts[1])
@@ -333,6 +333,30 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 				return false, nil
 			}
 			fmt.Fprintln(out, text)
+		case "facts-as-of", "facts", "as-of", "asof":
+			// s1276: opt-in bi-temporal lite validity listing via MCP memory_facts_as_of
+			// (aion Beta K4 lite). MCP-first — no lean HTTP facts_as_of route today.
+			// Not auto-recall · not full dual-clock Graphiti · not Memory GA · dual_write OFF.
+			fopts, perr := parseMemoryFactsAsOfArgs(parts[2:])
+			if perr != "" {
+				fmt.Fprintf(out, "memory facts-as-of: %s\nusage: /memory facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N]\n", perr)
+				return false, nil
+			}
+			if strings.TrimSpace(fopts.AsOf) == "" {
+				fmt.Fprintln(out, "usage: /memory facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N]\n  bi-temporal lite validity listing (opt-in; not auto-recall; not full dual-clock Graphiti; not Memory GA)")
+				return false, nil
+			}
+			text, err := rt.rt.MemoryFactsAsOf(context.Background(), fopts)
+			if err != nil {
+				fmt.Fprintf(out, "memory facts-as-of: %v\n", err)
+				return false, nil
+			}
+			if strings.TrimSpace(text) == "" {
+				// Residual-honest empty — formatter normally always emits honesty footer.
+				fmt.Fprintln(out, "(no facts at as_of · empty ≠ invent memories)")
+				return false, nil
+			}
+			fmt.Fprintln(out, text)
 		case "ingest", "i":
 			content := strings.Join(parts[2:], " ")
 			if strings.TrimSpace(content) == "" {
@@ -347,11 +371,11 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			fmt.Fprintln(out, text)
 		default:
 			// Treat remainder as recall query: /memory what did we decide
-			// (also accepts --since/--until when first token is not status|recall|related|digest|ingest)
+			// (also accepts --since/--until when first token is not a known subcommand)
 			q, ropts := parseMemoryRecallArgs(parts[1:])
 			text, err := rt.rt.MemoryRecallWithOpts(context.Background(), q, ropts)
 			if err != nil {
-				fmt.Fprintf(out, "memory: %v (try /memory status|recall|related|digest|ingest)\n", err)
+				fmt.Fprintf(out, "memory: %v (try /memory status|recall|related|digest|facts-as-of|ingest)\n", err)
 				return false, nil
 			}
 			if strings.TrimSpace(text) == "" {
@@ -536,7 +560,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /cost                session usage meter + sample estimate
   /mesh                I/O Mesh status + usage
   /catalog [query]     list mesh data products (catalog plane)
-  /memory [recall|related|digest|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse opt-in)
+  /memory [recall|related|digest|facts-as-of|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite opt-in)
   /integrations [list|plan|signing|status]  connector setup via MCP (catalog+plan+signing discovery+portal HITL; not install CRUD)
   /quit                exit
 
@@ -778,6 +802,79 @@ func parseMemoryDigestArgs(args []string) (opts agent.MemoryOpsDigestOpts, errMs
 				return opts, "unknown flag " + a
 			}
 			return opts, "unexpected argument " + a
+		}
+	}
+	return opts, ""
+}
+
+// parseMemoryFactsAsOfArgs extracts bi-temporal lite validity flags (s1276).
+// Supports: --as-of / --as_of (required), --entity, --query / -q, --limit, --session-id / --session_id.
+// Remaining free tokens append to query. Returns errMsg when a flag is malformed.
+func parseMemoryFactsAsOfArgs(args []string) (opts agent.MemoryFactsAsOfOpts, errMsg string) {
+	var qParts []string
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		key, val, hasEq := splitFlagKV(a)
+		switch key {
+		case "--as-of", "--as_of":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.AsOf = strings.TrimSpace(val)
+		case "--entity", "-e":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.Entity = strings.TrimSpace(val)
+		case "--query", "-q":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			if v := strings.TrimSpace(val); v != "" {
+				qParts = append(qParts, v)
+			}
+		case "--limit":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			n, err := strconv.Atoi(strings.TrimSpace(val))
+			if err != nil || n < 0 {
+				return opts, "invalid --limit"
+			}
+			opts.Limit = n
+		case "--session-id", "--session_id":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.SessionID = strings.TrimSpace(val)
+		default:
+			if strings.HasPrefix(a, "-") {
+				return opts, "unknown flag " + a
+			}
+			qParts = append(qParts, a)
+		}
+	}
+	if len(qParts) > 0 {
+		joined := strings.Join(qParts, " ")
+		if opts.Query != "" {
+			opts.Query = strings.TrimSpace(opts.Query + " " + joined)
+		} else {
+			opts.Query = joined
 		}
 	}
 	return opts, ""
