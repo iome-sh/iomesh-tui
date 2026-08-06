@@ -1627,6 +1627,352 @@ func compactStatusString(m map[string]any, keys ...string) (string, bool) {
 	return "", false
 }
 
+// MemorySemanticOpts for opt-in tier-4 semantic facts search (s1301 / aion memory_search_semantic).
+// Query required. Limit optional (zero → config Limit). Does NOT run on default auto-recall.
+//
+// MCP-first: platform ships MCP tool memory_search_semantic; there is no lean HTTP
+// semantic-search invent. Honesty: tier-4 semantic facts residual · not Memory GA · dual_write OFF.
+// Empty facts ≠ invent memories.
+type MemorySemanticOpts struct {
+	Query string
+	Limit int
+}
+
+// MemoryIngestEventOpts for opt-in ops/telemetry event ingest (s1301 / aion memory_ingest_event).
+// Subject + Content required. Optional EventTime, SessionID, SessionSeq, Severity, SourceStream.
+// This is **not** a conversation turn (use MemoryIngestTurn / /memory ingest for turns).
+//
+// MCP-first: platform ships MCP tool memory_ingest_event (s138 T1 temporal event telemetry).
+// Honesty: s138 T1 temporal event telemetry · not conversation turn · not Memory GA · dual_write OFF.
+// Never invent memory_id when offline / call failed.
+type MemoryIngestEventOpts struct {
+	Subject      string
+	Content      string
+	EventTime    string
+	SessionID    string
+	Severity     string
+	SourceStream string
+	SessionSeq   int
+}
+
+// semanticHonestyFooter is the residual-honest pin for semantic search output (s1301).
+// Locked: tier-4 semantic facts residual · not Memory GA · dual_write OFF · MCP-first.
+const semanticHonestyFooter = "honesty: tier-4 semantic facts residual · not Memory GA · dual_write OFF · MCP-first (no lean HTTP invent) · empty ≠ invent"
+
+// ingestEventHonestyFooter is the residual-honest pin for ingest-event output (s1301).
+// Locked: s138 T1 temporal event telemetry · not conversation turn · not Memory GA · dual_write OFF · MCP-first.
+const ingestEventHonestyFooter = "honesty: s138 T1 temporal event telemetry · not conversation turn · not Memory GA · dual_write OFF · MCP-first"
+
+// semanticFact is a defensive wire shape for aion memory_search_semantic facts.
+// Accepts id/summary/full/score when present (memoryHit-like).
+type semanticFact struct {
+	ID      string  `json:"id"`
+	Summary string  `json:"summary"`
+	Full    string  `json:"full"`
+	Score   float64 `json:"score"`
+}
+
+type memorySemanticResult struct {
+	Facts []semanticFact `json:"facts"`
+}
+
+// memoryIngestEventResult is the aion MCP memory_ingest_event JSON wire shape.
+// Only fields present on the wire are shown — never invent memory_id.
+type memoryIngestEventResult struct {
+	MemoryID  string `json:"memory_id"`
+	Tier      *int   `json:"tier"`
+	EventTime string `json:"event_time"`
+	Audited   *bool  `json:"audited"`
+}
+
+// MemorySearchSemantic lists tier-4 semantic facts for a query (s1301 · aion memory_search_semantic).
+// Prefers MCP tool memory_search_semantic on the configured memory server (MCP-first;
+// no lean HTTP invent). Returns human-readable facts + honesty footer.
+// Empty list is honest empty (facts: (none)) — never invents memories.
+// Offline / tool failure is residual-honest fail-open messaging. Opt-in only — not auto-recall.
+func (rt *Runtime) MemorySearchSemantic(ctx context.Context, opts MemorySemanticOpts) (string, error) {
+	if rt == nil || !rt.memory.Enabled {
+		return "", fmt.Errorf("memory hooks disabled")
+	}
+	query := strings.TrimSpace(opts.Query)
+	if query == "" {
+		return "", fmt.Errorf("query required for memory semantic search")
+	}
+	limit := opts.Limit
+	if limit <= 0 {
+		limit = rt.memory.Limit
+	}
+	if limit <= 0 {
+		limit = 8
+	}
+	maxBytes := rt.memory.MaxSnippetBytes
+	if maxBytes <= 0 {
+		maxBytes = 6000
+	}
+
+	// MCP-first — no lean HTTP /memory/search_semantic invent.
+	if !rt.mcpMemoryReady() {
+		return formatSemanticOffline(rt.memory.Server, query), nil
+	}
+	c := rt.mcp.ClientByName(rt.memory.Server)
+	args := map[string]any{
+		"query": query,
+		"limit": limit,
+	}
+	if t := rt.memoryTenant(); t != "" {
+		args["tenant"] = t
+	}
+	start := time.Now()
+	out, err := c.CallTool(ctx, "memory_search_semantic", args)
+	latMS := int(time.Since(start).Milliseconds())
+	rt.lastMemoryRetrieveMS.Store(int64(latMS))
+	rt.lastMemoryRetrieveCacheHit.Store(false)
+	if err != nil {
+		// Fail-open residual-honest call failure — do not invent facts.
+		return formatSemanticCallFailed(query, err), nil
+	}
+	if formatted := formatSemanticJSON(out, query, maxBytes); formatted != "" {
+		return formatted, nil
+	}
+	// Unknown payload — pass through with honesty footer (never invent structure).
+	raw := strings.TrimSpace(out)
+	if raw == "" {
+		return formatSemantic(query, nil, maxBytes), nil
+	}
+	return truncateBytes(raw+"\n"+semanticHonestyFooter, maxBytes), nil
+}
+
+// MemoryIngestEvent ingests an ops/telemetry event (s1301 · aion memory_ingest_event · s138 T1).
+// Prefers MCP tool memory_ingest_event on the configured memory server (MCP-first).
+// Subject + Content required. This is **not** a conversation turn — use MemoryIngestTurn for turns.
+// dual_write is intentionally not invoked (MCP-first residual; dual_write OFF for this surface).
+// Offline / tool failure is residual-honest fail-open messaging — never invent memory_id.
+// Opt-in only — not auto-ingest.
+func (rt *Runtime) MemoryIngestEvent(ctx context.Context, opts MemoryIngestEventOpts) (string, error) {
+	if rt == nil || !rt.memory.Enabled {
+		return "", fmt.Errorf("memory hooks disabled")
+	}
+	subject := strings.TrimSpace(opts.Subject)
+	content := strings.TrimSpace(opts.Content)
+	if subject == "" {
+		return "", fmt.Errorf("subject required for memory ingest-event")
+	}
+	if content == "" {
+		return "", fmt.Errorf("content required for memory ingest-event")
+	}
+	maxBytes := rt.memory.MaxSnippetBytes
+	if maxBytes <= 0 {
+		maxBytes = 6000
+	}
+
+	// MCP-first — no lean HTTP invent; dual_write OFF for this surface.
+	if !rt.mcpMemoryReady() {
+		return formatIngestEventOffline(rt.memory.Server, subject), nil
+	}
+	c := rt.mcp.ClientByName(rt.memory.Server)
+	args := map[string]any{
+		"subject": subject,
+		"content": content,
+	}
+	if t := rt.memoryTenant(); t != "" {
+		args["tenant"] = t
+	}
+	if et := strings.TrimSpace(opts.EventTime); et != "" {
+		args["event_time"] = et
+	}
+	sid := strings.TrimSpace(opts.SessionID)
+	if sid == "" {
+		sid = rt.memorySessionID()
+	}
+	if sid != "" {
+		args["session_id"] = sid
+	}
+	if opts.SessionSeq != 0 {
+		args["session_seq"] = opts.SessionSeq
+	}
+	if sev := strings.TrimSpace(opts.Severity); sev != "" {
+		args["severity"] = sev
+	}
+	if ss := strings.TrimSpace(opts.SourceStream); ss != "" {
+		args["source_stream"] = ss
+	}
+	start := time.Now()
+	out, err := c.CallTool(ctx, "memory_ingest_event", args)
+	latMS := int(time.Since(start).Milliseconds())
+	rt.lastMemoryRetrieveMS.Store(int64(latMS))
+	rt.lastMemoryRetrieveCacheHit.Store(false)
+	if err != nil {
+		// Fail-open residual-honest call failure — do not invent memory_id.
+		return formatIngestEventCallFailed(subject, err), nil
+	}
+	if formatted := formatIngestEventJSON(out, subject, maxBytes); formatted != "" {
+		return formatted, nil
+	}
+	// Unknown payload — pass through with honesty footer (never invent memory_id).
+	raw := strings.TrimSpace(out)
+	if raw == "" {
+		return formatIngestEvent(subject, memoryIngestEventResult{}, maxBytes), nil
+	}
+	return truncateBytes(raw+"\n"+ingestEventHonestyFooter, maxBytes), nil
+}
+
+// formatSemanticOffline is residual-honest fail-open when MCP memory server is unavailable.
+// Explicitly not empty-facts success (empty ≠ invent memories).
+func formatSemanticOffline(server, query string) string {
+	if server == "" {
+		server = "memory"
+	}
+	return fmt.Sprintf(
+		"semantic query=%s\nstatus: unavailable · mcp server %q not connected · MCP-first (no lean HTTP invent)\n%s · fail-open (empty ≠ invent memories)",
+		emptyDash(query), server, semanticHonestyFooter,
+	)
+}
+
+// formatSemanticCallFailed is residual-honest fail-open when MCP tool call errors.
+func formatSemanticCallFailed(query string, err error) string {
+	msg := "error"
+	if err != nil {
+		msg = err.Error()
+	}
+	return fmt.Sprintf(
+		"semantic query=%s\nstatus: unavailable · mcp call failed: %s\n%s · fail-open (empty ≠ invent memories)",
+		emptyDash(query), msg, semanticHonestyFooter,
+	)
+}
+
+// formatSemantic turns semantic facts into a compact residual-honest listing.
+// Empty → "facts: (none)" + honesty footer (never invent memories).
+// Lines prefer id + summary/full truncated.
+func formatSemantic(query string, facts []semanticFact, maxBytes int) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "semantic query=%s\n", emptyDash(query))
+	if len(facts) == 0 {
+		b.WriteString("facts: (none)\n")
+	} else {
+		fmt.Fprintf(&b, "facts (%d):\n", len(facts))
+		for i, f := range facts {
+			id := strings.TrimSpace(f.ID)
+			text := strings.TrimSpace(f.Summary)
+			if text == "" {
+				text = strings.TrimSpace(f.Full)
+			}
+			if text == "" && id != "" {
+				text = id
+			}
+			if text == "" {
+				text = "(empty)"
+			}
+			// Truncate long full/summary for display residual.
+			const maxFactText = 240
+			if utf8.RuneCountInString(text) > maxFactText {
+				runes := []rune(text)
+				text = string(runes[:maxFactText]) + "…"
+			}
+			prefix := ""
+			if f.Score > 0 {
+				prefix = fmt.Sprintf("[%.2f] ", f.Score)
+			}
+			var line string
+			if id != "" && id != text {
+				line = fmt.Sprintf("  %d. %s%s · %s\n", i+1, prefix, id, text)
+			} else {
+				line = fmt.Sprintf("  %d. %s%s\n", i+1, prefix, text)
+			}
+			if maxBytes > 0 && b.Len()+len(line)+len(semanticHonestyFooter) > maxBytes {
+				break
+			}
+			b.WriteString(line)
+		}
+	}
+	b.WriteString(semanticHonestyFooter)
+	return truncateBytes(b.String(), maxBytes)
+}
+
+// formatSemanticJSON parses MCP memory_search_semantic JSON {facts:[...]} into
+// the same human-readable layout as formatSemantic. Returns empty when parse fails.
+func formatSemanticJSON(raw, query string, maxBytes int) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw[0] != '{' {
+		return ""
+	}
+	var res memorySemanticResult
+	if err := json.Unmarshal([]byte(raw), &res); err != nil {
+		return ""
+	}
+	// Empty array is honest empty; unrelated {} also formats empty facts.
+	return formatSemantic(query, res.Facts, maxBytes)
+}
+
+// formatIngestEventOffline is residual-honest fail-open when MCP memory server is unavailable.
+// Explicitly never invents memory_id.
+func formatIngestEventOffline(server, subject string) string {
+	if server == "" {
+		server = "memory"
+	}
+	return fmt.Sprintf(
+		"ingest-event subject=%s\nstatus: unavailable · mcp server %q not connected · MCP-first (no lean HTTP invent)\n%s · fail-open (never invent memory_id)",
+		emptyDash(subject), server, ingestEventHonestyFooter,
+	)
+}
+
+// formatIngestEventCallFailed is residual-honest fail-open when MCP tool call errors.
+func formatIngestEventCallFailed(subject string, err error) string {
+	msg := "error"
+	if err != nil {
+		msg = err.Error()
+	}
+	return fmt.Sprintf(
+		"ingest-event subject=%s\nstatus: unavailable · mcp call failed: %s\n%s · fail-open (never invent memory_id)",
+		emptyDash(subject), msg, ingestEventHonestyFooter,
+	)
+}
+
+// formatIngestEvent turns wire fields into residual-honest lines.
+// Only emits memory_id / tier / event_time / audited when present on wire — never invents ids.
+func formatIngestEvent(subject string, res memoryIngestEventResult, maxBytes int) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "ingest-event subject=%s\n", emptyDash(subject))
+	id := strings.TrimSpace(res.MemoryID)
+	if id != "" {
+		fmt.Fprintf(&b, "memory_id: %s\n", id)
+	} else {
+		b.WriteString("memory_id: (none from wire)\n")
+	}
+	if res.Tier != nil {
+		fmt.Fprintf(&b, "tier: %d\n", *res.Tier)
+	} else {
+		b.WriteString("tier: (unavailable from wire)\n")
+	}
+	et := strings.TrimSpace(res.EventTime)
+	if et != "" {
+		fmt.Fprintf(&b, "event_time: %s\n", et)
+	} else {
+		b.WriteString("event_time: (none from wire)\n")
+	}
+	if res.Audited != nil {
+		fmt.Fprintf(&b, "audited: %t\n", *res.Audited)
+	} else {
+		b.WriteString("audited: (unavailable from wire)\n")
+	}
+	b.WriteString(ingestEventHonestyFooter)
+	return truncateBytes(b.String(), maxBytes)
+}
+
+// formatIngestEventJSON parses MCP memory_ingest_event JSON into human layout.
+// Returns empty when parse fails (caller may pass through raw).
+func formatIngestEventJSON(raw, subject string, maxBytes int) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw[0] != '{' {
+		return ""
+	}
+	var res memoryIngestEventResult
+	if err := json.Unmarshal([]byte(raw), &res); err != nil {
+		return ""
+	}
+	// Empty {} still formats residual (memory_id none) so callers get honesty footer.
+	return formatIngestEvent(subject, res, maxBytes)
+}
+
 // MemoryRelated performs opt-in multi-hop lite related recall (s1135).
 // Prefers sync HTTP RetrieveMemoryRelated (POST /v1|/v5/memory/related); falls back
 // to MCP memory_related when sync fails or mesh is unavailable.

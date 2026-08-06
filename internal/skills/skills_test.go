@@ -365,6 +365,10 @@ func TestLoadBuiltin_S1288MemoryAdvancedSkillDogfood(t *testing.T) {
 		"memory_compact_status",  // s1296
 		"/memory timeline",       // s1296 slash
 		"/memory compact-status", // s1296 slash
+		"memory_search_semantic", // s1301
+		"memory_ingest_event",    // s1301
+		"/memory semantic",       // s1301 slash
+		"/memory ingest-event",   // s1301 slash
 		"memory_trigger_compact", // s1296 non-goal HITL lock
 		"multi-hop lite",
 		"graph RAG",
@@ -382,6 +386,9 @@ func TestLoadBuiltin_S1288MemoryAdvancedSkillDogfood(t *testing.T) {
 		"MemoryAdvancedAgentGuidanceNote", // s1291 system note
 		"s1291",
 		"s1296",
+		"s1301",
+		"not conversation turn",
+		"tier-4 semantic",
 	} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("skill body missing %q:\n%s", want, body)

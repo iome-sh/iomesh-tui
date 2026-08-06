@@ -2,7 +2,7 @@ package agent
 
 import "strings"
 
-// MemoryAdvancedAgentGuidanceNote residual-honest system note (s1291 + s1296).
+// MemoryAdvancedAgentGuidanceNote residual-honest system note (s1291 + s1296 + s1301).
 // Injected on AttachMCP. Does not invent Memory GA / silent supersede / auto multi-hop.
 func MemoryAdvancedAgentGuidanceNote() string {
 	return strings.TrimSpace(`memory advanced (residual-honest agent path · s1291):
@@ -14,8 +14,10 @@ Opt-in advanced memory only — default auto-recall stays single-hop memory_retr
 5. patterns/anomalies: ops pulse Beta · not medical · not OTel · not invent GA window engine
 6. timeline: MCP-first temporal timeline · filters before limit · read-only (s1296)
 7. compact-status: MCP-first Palace tier counts residual · read-only · not auto-compact product (s1296)
+8. semantic: MCP-first tier-4 semantic facts residual · empty ≠ invent (s1301)
+9. ingest-event: MCP-first s138 T1 temporal event telemetry · not conversation turn (s1301)
 
-Slash mirrors: /memory related|facts-as-of|supersede|digest|patterns|anomalies|timeline|compact-status
+Slash mirrors: /memory related|facts-as-of|supersede|digest|patterns|anomalies|timeline|compact-status|semantic|ingest-event
 Skill: read_skill memory-advanced-agent when available
 
 Locks (never violate):
@@ -24,5 +26,6 @@ Locks (never violate):
 - supersede requires HITL / --i-confirm · never silent mutate
 - patterns/anomalies not medical · not OTel · no invent GA window engine
 - timeline/compact-status read-only · no memory_trigger_compact without HITL
+- semantic empty ≠ invent · ingest-event never invent memory_id · not conversation turn
 - opt-in only · never auto multi-hop on default recall · fail-open`)
 }

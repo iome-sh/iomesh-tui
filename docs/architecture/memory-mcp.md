@@ -16,8 +16,9 @@ Platform ships `aion-memory-mcp` (stdio **and** streamable HTTP) with tools:
 | `memory_anomalies_list` | Ops pulse Beta anomaly list (shipped s1287 · MCP; no lean HTTP invent) |
 | `memory_timeline` | Temporal timeline slice (s1296 slash: `/memory timeline`; MCP-first) |
 | `memory_compact_status` | Palace tier counts + last compaction (s1296 slash: `/memory compact-status`; **read-only**) |
-| `memory_search_semantic` | Semantic facts |
-| `memory_trigger_compact` | Mutating compaction advisory — **not wired** in TUI without HITL (s1296 non-goal) |
+| `memory_search_semantic` | Tier-4 semantic facts (s1301 slash: `/memory semantic`; MCP-first) |
+| `memory_ingest_event` | Ops/telemetry event ingest (s1301 slash: `/memory ingest-event`; s138 T1; **not** conversation turn) |
+| `memory_trigger_compact` | Mutating compaction advisory — **not wired** in TUI without HITL (s1296/s1301 non-goal) |
 | compact / other ops helpers | Residual ops helpers (not product Memory GA) |
 
 Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
@@ -42,6 +43,7 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 | **3 advanced agent skill (s1288)** | **done (docs + builtin skill)** | Builtin skill `memory-advanced-agent` residual-honest playbook for advanced surfaces; docs inventory lock; skill-only (no product path invent) |
 | **3 advanced agent system note (s1291)** | **done (AttachMCP inject)** | Residual-honest `<memory-advanced>` system note (`MemoryAdvancedAgentGuidanceNote`) injected on `AttachMCP` (mirror integrations s1251); steers opt-in advanced memory locks |
 | **3 timeline + compact-status (s1296)** | **done (opt-in · MCP-first · read-only compact)** | `/memory timeline` → MCP `memory_timeline`; `/memory compact-status` → MCP `memory_compact_status`; temporal timeline · filters before limit · Palace tier counts residual · not Memory GA · dual_write OFF · **no** `memory_trigger_compact` without HITL · no lean HTTP invent |
+| **3 semantic + ingest-event (s1301)** | **done (opt-in · MCP-first)** | `/memory semantic` → MCP `memory_search_semantic` (tier-4 semantic facts residual · empty ≠ invent); `/memory ingest-event` → MCP `memory_ingest_event` (s138 T1 temporal event telemetry · not conversation turn · never invent memory_id); not Memory GA · dual_write OFF · **no** `memory_trigger_compact` without HITL · no lean HTTP invent |
 | **4 pull (s652)** | **done (M1)** | `iomesh memory pull` — durable mesh consumer → local MCP `memory_ingest_turn` (cost-max local palace; dual_write remains optional audit) |
 
 **Related (not Memory Palace):** agent connector setup slash `/integrations` (s1238/s1242/s1243) uses MCP `list_connector_catalog` / `plan_connector_setup` (aion v178) + `get_webhook_signing_headers` (v30) with residual honesty — see [agent-integrations-setup.md](./agent-integrations-setup.md).

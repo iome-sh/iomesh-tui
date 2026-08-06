@@ -271,7 +271,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 	case "/memory", "/mem":
 		if len(parts) < 2 {
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
-			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | ingest <text>]")
+			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | semantic [query|--query ...] [--limit N] | ingest-event --subject <id> --content <text> [--event-time|--session-id|--session-seq|--severity|--source-stream] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | ingest <text>]")
 			return false, nil
 		}
 		sub := strings.ToLower(parts[1])
@@ -395,6 +395,53 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 				return false, nil
 			}
 			fmt.Fprintln(out, text)
+		case "semantic", "search-semantic", "sem":
+			// s1301: opt-in tier-4 semantic facts via MCP memory_search_semantic.
+			// MCP-first — no lean HTTP invent. Not Memory GA · dual_write OFF.
+			// Empty ≠ invent memories; offline fail-open residual-honest.
+			sopts, perr := parseMemorySemanticArgs(parts[2:])
+			if perr != "" {
+				fmt.Fprintf(out, "memory semantic: %s\nusage: /memory semantic [--query ...] [--limit N] [query words…]\n", perr)
+				return false, nil
+			}
+			if strings.TrimSpace(sopts.Query) == "" {
+				fmt.Fprintln(out, "usage: /memory semantic [--query ...] [--limit N] [query words…]\n  tier-4 semantic facts residual (opt-in; not auto-recall; not Memory GA; dual_write OFF)")
+				return false, nil
+			}
+			text, err := rt.rt.MemorySearchSemantic(context.Background(), sopts)
+			if err != nil {
+				fmt.Fprintf(out, "memory semantic: %v\n", err)
+				return false, nil
+			}
+			if strings.TrimSpace(text) == "" {
+				fmt.Fprintln(out, "(no semantic facts · empty ≠ invent memories · tier-4 residual)")
+				return false, nil
+			}
+			fmt.Fprintln(out, text)
+		case "ingest-event", "event", "ingest_event":
+			// s1301: opt-in ops/telemetry event ingest via MCP memory_ingest_event (s138 T1).
+			// MCP-first — not a conversation turn (use /memory ingest for turns).
+			// Not Memory GA · dual_write OFF. Offline fail-open residual-honest (never invent memory_id).
+			// Non-goal: memory_trigger_compact without HITL.
+			eopts, perr := parseMemoryIngestEventArgs(parts[2:])
+			if perr != "" {
+				fmt.Fprintf(out, "memory ingest-event: %s\nusage: /memory ingest-event --subject <id> --content <text> [--event-time RFC3339] [--session-id id] [--session-seq N] [--severity info|warning|error|critical] [--source-stream name]\n", perr)
+				return false, nil
+			}
+			if strings.TrimSpace(eopts.Subject) == "" || strings.TrimSpace(eopts.Content) == "" {
+				fmt.Fprintln(out, "usage: /memory ingest-event --subject <id> --content <text> [--event-time RFC3339] [--session-id id] [--session-seq N] [--severity info|warning|error|critical] [--source-stream name]\n  s138 T1 temporal event telemetry (opt-in; not conversation turn; not Memory GA; dual_write OFF)")
+				return false, nil
+			}
+			text, err := rt.rt.MemoryIngestEvent(context.Background(), eopts)
+			if err != nil {
+				fmt.Fprintf(out, "memory ingest-event: %v\n", err)
+				return false, nil
+			}
+			if strings.TrimSpace(text) == "" {
+				fmt.Fprintln(out, "(ingest-event empty · never invent memory_id · s138 T1)")
+				return false, nil
+			}
+			fmt.Fprintln(out, text)
 		case "patterns", "pattern", "pat":
 			// s1287: opt-in ops-pulse pattern listing via MCP memory_patterns_list
 			// (aion s138 T2 · s789 Beta). MCP-first — no lean HTTP patterns invent.
@@ -482,7 +529,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			q, ropts := parseMemoryRecallArgs(parts[1:])
 			text, err := rt.rt.MemoryRecallWithOpts(context.Background(), q, ropts)
 			if err != nil {
-				fmt.Fprintf(out, "memory: %v (try /memory status|recall|related|digest|facts-as-of|timeline|compact-status|patterns|anomalies|supersede|ingest)\n", err)
+				fmt.Fprintf(out, "memory: %v (try /memory status|recall|related|digest|facts-as-of|timeline|compact-status|semantic|ingest-event|patterns|anomalies|supersede|ingest)\n", err)
 				return false, nil
 			}
 			if strings.TrimSpace(text) == "" {
@@ -667,7 +714,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /cost                session usage meter + sample estimate
   /mesh                I/O Mesh status + usage
   /catalog [query]     list mesh data products (catalog plane)
-  /memory [recall|related|digest|facts-as-of|patterns|anomalies|supersede|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · patterns/anomalies ops pulse Beta · supersede A3 lite HITL)
+  /memory [recall|related|digest|facts-as-of|timeline|compact-status|semantic|ingest-event|patterns|anomalies|supersede|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL)
   /integrations [list|plan|signing|status]  connector setup via MCP (catalog+plan+signing discovery+portal HITL; not install CRUD)
   /quit                exit
 
@@ -904,6 +951,130 @@ func parseMemoryDigestArgs(args []string) (opts agent.MemoryOpsDigestOpts, errMs
 				}
 			}
 			opts.AsOf = strings.TrimSpace(val)
+		default:
+			if strings.HasPrefix(a, "-") {
+				return opts, "unknown flag " + a
+			}
+			return opts, "unexpected argument " + a
+		}
+	}
+	return opts, ""
+}
+
+// parseMemorySemanticArgs extracts tier-4 semantic search flags (s1301).
+// Supports: --query / -q, --limit. Remaining free tokens append to query.
+// Returns errMsg when a flag is malformed.
+func parseMemorySemanticArgs(args []string) (opts agent.MemorySemanticOpts, errMsg string) {
+	var qParts []string
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		key, val, hasEq := splitFlagKV(a)
+		switch key {
+		case "--query", "-q":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			if v := strings.TrimSpace(val); v != "" {
+				qParts = append(qParts, v)
+			}
+		case "--limit":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			n, err := strconv.Atoi(strings.TrimSpace(val))
+			if err != nil || n < 0 {
+				return opts, "invalid --limit"
+			}
+			opts.Limit = n
+		default:
+			if strings.HasPrefix(a, "-") {
+				return opts, "unknown flag " + a
+			}
+			qParts = append(qParts, a)
+		}
+	}
+	if len(qParts) > 0 {
+		opts.Query = strings.Join(qParts, " ")
+	}
+	return opts, ""
+}
+
+// parseMemoryIngestEventArgs extracts ops/telemetry event ingest flags (s1301).
+// Supports: --subject / -s (required by caller), --content / -c (required by caller),
+// --event-time / --event_time, --session-id / --session_id, --session-seq / --session_seq,
+// --severity, --source-stream / --source_stream.
+// Rejects unknown flags / bare free tokens (no free-form content without --content).
+func parseMemoryIngestEventArgs(args []string) (opts agent.MemoryIngestEventOpts, errMsg string) {
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		key, val, hasEq := splitFlagKV(a)
+		switch key {
+		case "--subject", "-s":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.Subject = strings.TrimSpace(val)
+		case "--content", "-c":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.Content = strings.TrimSpace(val)
+		case "--event-time", "--event_time":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.EventTime = strings.TrimSpace(val)
+		case "--session-id", "--session_id":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.SessionID = strings.TrimSpace(val)
+		case "--session-seq", "--session_seq":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			n, err := strconv.Atoi(strings.TrimSpace(val))
+			if err != nil {
+				return opts, "invalid --session-seq"
+			}
+			opts.SessionSeq = n
+		case "--severity":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.Severity = strings.TrimSpace(val)
+		case "--source-stream", "--source_stream":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.SourceStream = strings.TrimSpace(val)
 		default:
 			if strings.HasPrefix(a, "-") {
 				return opts, "unknown flag " + a
