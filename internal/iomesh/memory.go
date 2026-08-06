@@ -230,13 +230,17 @@ type MemoryRetrieveOptions struct {
 // MemoryRelatedOptions are request fields for sync POST /v1|/v5/memory/related (s1135).
 // Multi-hop lite associative recall over entity graph + entry entity tags.
 // At least one of SeedEntity or Query is required. Not full graph RAG; not Memory GA.
-// Parity with peer SDK RetrieveMemoryRelated / platform MCP memory_related.
+// Hop ranking is path-aware lite (PreferShorterHops); dual_write OFF by default.
+// Parity with peer SDK RetrieveMemoryRelated / platform MCP memory_related (aion s1277).
 type MemoryRelatedOptions struct {
 	SeedEntity string // e.g. person:alice
 	Query      string // optional seed query (derive entities from top hits)
 	MaxHops    int    // BFS hops (default 2; platform typically clamps 1..4)
 	Limit      int
 	SessionID  string
+	// PreferShorterHops: omit/nil = kernel default true (s1067/s1277); false = legacy seed-first.
+	// When non-nil, sent as prefer_shorter_hops on the HTTP body; nil omits the field.
+	PreferShorterHops *bool
 }
 
 // RetrieveMemory performs request/response hybrid recall against the memory sidecar HTTP API.
@@ -357,6 +361,7 @@ func (c *Client) RetrieveMemoryWithOptions(ctx context.Context, tenantID string,
 // Empty hits are a successful 200 with memories=[]. Optional hop_distance on each hit.
 // Fail-open callers treat transport/404 as fallback to MCP memory_related.
 // Not full graph RAG; not product Memory GA; dual_write independent/OFF by default.
+// Hop ranking path-aware lite: PreferShorterHops omit/nil = platform default true (s1067/s1277).
 func (c *Client) RetrieveMemoryRelated(ctx context.Context, tenantID string, opts MemoryRelatedOptions) (*MemoryRetrieveResult, error) {
 	if c == nil || !c.SyncMemoryReady() {
 		return nil, fmt.Errorf("iomesh: sync memory not configured (mesh endpoint or memory sidecar)")
@@ -396,6 +401,10 @@ func (c *Client) RetrieveMemoryRelated(ctx context.Context, tenantID string, opt
 	}
 	if sid := strings.TrimSpace(opts.SessionID); sid != "" {
 		bodyMap["session_id"] = sid
+	}
+	// s1281 / aion s1277: only send prefer_shorter_hops when explicitly set (omit = kernel default true).
+	if opts.PreferShorterHops != nil {
+		bodyMap["prefer_shorter_hops"] = *opts.PreferShorterHops
 	}
 	raw, err := json.Marshal(bodyMap)
 	if err != nil {

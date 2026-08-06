@@ -627,6 +627,61 @@ func TestMemoryRelated_MaxHopsOverride(t *testing.T) {
 	}
 }
 
+// s1281: PreferShorterHops pass-through — false/true sent; nil omits (kernel default true).
+func TestMemoryRelated_PreferShorterHopsBody(t *testing.T) {
+	run := func(t *testing.T, opts MemoryRelatedOpts) map[string]any {
+		t.Helper()
+		var gotBody map[string]any
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_ = json.NewDecoder(r.Body).Decode(&gotBody)
+			_ = json.NewEncoder(w).Encode(map[string]any{"memories": []any{}})
+		}))
+		t.Cleanup(srv.Close)
+
+		mesh := iomesh.New(iomesh.Config{Enabled: true, Endpoint: srv.URL, Tenant: "t"}, nil)
+		rt := &Runtime{
+			mesh: mesh,
+			memory: MemoryConfig{
+				Enabled: true, Tenant: "t", Server: "memory", RelatedMaxHops: 2,
+			},
+		}
+		_, err := rt.MemoryRelated(context.Background(), "person:alice", "", opts)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return gotBody
+	}
+
+	t.Run("false_legacy_seed_first", func(t *testing.T) {
+		b := false
+		body := run(t, MemoryRelatedOpts{PreferShorterHops: &b})
+		v, ok := body["prefer_shorter_hops"]
+		if !ok {
+			t.Fatalf("expected prefer_shorter_hops in body: %v", body)
+		}
+		if v != false {
+			t.Fatalf("prefer_shorter_hops=%v want false", v)
+		}
+	})
+	t.Run("true_explicit", func(t *testing.T) {
+		b := true
+		body := run(t, MemoryRelatedOpts{PreferShorterHops: &b})
+		v, ok := body["prefer_shorter_hops"]
+		if !ok {
+			t.Fatalf("expected prefer_shorter_hops in body: %v", body)
+		}
+		if v != true {
+			t.Fatalf("prefer_shorter_hops=%v want true", v)
+		}
+	})
+	t.Run("nil_omitted_kernel_default", func(t *testing.T) {
+		body := run(t, MemoryRelatedOpts{})
+		if _, ok := body["prefer_shorter_hops"]; ok {
+			t.Fatalf("prefer_shorter_hops must be omitted when nil: %v", body)
+		}
+	})
+}
+
 // s1135: sync 404 + no MCP → error (MCP fallback path when unavailable).
 func TestMemoryRelated_SyncFailsMCPUnavailable(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

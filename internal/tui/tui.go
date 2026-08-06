@@ -271,7 +271,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 	case "/memory", "/mem":
 		if len(parts) < 2 {
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
-			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | ingest <text>]")
+			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | ingest <text>]")
 			return false, nil
 		}
 		sub := strings.ToLower(parts[1])
@@ -296,13 +296,14 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		case "related", "rel":
 			// s1135: opt-in multi-hop lite related recall (HTTP + MCP fallback).
 			// Does not change default auto-recall. Not full graph RAG; not Memory GA.
+			// s1281: hop ranking path-aware lite — PreferShorterHops default true (nil = true).
 			seed, q, ropts, perr := parseMemoryRelatedArgs(parts[2:])
 			if perr != "" {
-				fmt.Fprintf(out, "memory related: %s\nusage: /memory related --seed person:alice [--query ...] [--max-hops 2]\n", perr)
+				fmt.Fprintf(out, "memory related: %s\nusage: /memory related --seed person:alice [--query ...] [--max-hops 2] [--prefer-shorter-hops|--legacy-sort]\n", perr)
 				return false, nil
 			}
 			if seed == "" && q == "" {
-				fmt.Fprintln(out, "usage: /memory related --seed person:alice [--query ...] [--max-hops 2]\n  multi-hop lite related recall (opt-in; not auto-recall; not full graph RAG)")
+				fmt.Fprintln(out, "usage: /memory related --seed person:alice [--query ...] [--max-hops 2] [--prefer-shorter-hops|--legacy-sort]\n  multi-hop lite related recall (opt-in; not auto-recall; not full graph RAG; hop ranking path-aware lite)")
 				return false, nil
 			}
 			text, err := rt.rt.MemoryRelated(context.Background(), seed, q, ropts)
@@ -880,9 +881,13 @@ func parseMemoryFactsAsOfArgs(args []string) (opts agent.MemoryFactsAsOfOpts, er
 	return opts, ""
 }
 
-// parseMemoryRelatedArgs extracts multi-hop related flags (s1135).
-// Supports: --seed / --seed-entity, --query, --max-hops / --max_hops.
+// parseMemoryRelatedArgs extracts multi-hop related flags (s1135 + s1281).
+// Supports: --seed / --seed-entity, --query, --max-hops / --max_hops, --limit,
+// --prefer-shorter-hops / --prefer_shorter_hops (optional true/false; bare = true),
+// --no-prefer-shorter-hops / --legacy-sort → PreferShorterHops=false (legacy seed-first).
 // Remaining free tokens append to query. Returns errMsg when a flag is malformed.
+// Honesty: multi-hop lite ≠ full graph RAG · not Memory GA · dual_write OFF ·
+// hop ranking path-aware lite · PreferShorterHops default true (nil = true).
 func parseMemoryRelatedArgs(args []string) (seed, query string, opts agent.MemoryRelatedOpts, errMsg string) {
 	var qParts []string
 	for i := 0; i < len(args); i++ {
@@ -931,6 +936,33 @@ func parseMemoryRelatedArgs(args []string) (seed, query string, opts agent.Memor
 				return "", "", opts, "invalid --limit"
 			}
 			opts.Limit = n
+		case "--prefer-shorter-hops", "--prefer_shorter_hops":
+			// Optional value true/false; bare flag = true (s1281 / aion s1277).
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					// Only consume next token when it looks like a bool value.
+					next := strings.ToLower(strings.TrimSpace(args[i+1]))
+					if next == "true" || next == "false" || next == "1" || next == "0" {
+						i++
+						val = args[i]
+						hasEq = true // treat as provided value below
+					}
+				}
+			}
+			if strings.TrimSpace(val) == "" {
+				b := true
+				opts.PreferShorterHops = &b
+			} else {
+				parsed, err := strconv.ParseBool(strings.TrimSpace(val))
+				if err != nil {
+					return "", "", opts, "invalid --prefer-shorter-hops (want true|false)"
+				}
+				opts.PreferShorterHops = &parsed
+			}
+		case "--no-prefer-shorter-hops", "--legacy-sort":
+			// Legacy seed-first sort (PreferShorterHops=false).
+			b := false
+			opts.PreferShorterHops = &b
 		default:
 			qParts = append(qParts, a)
 		}

@@ -336,9 +336,12 @@ func (rt *Runtime) MemoryRecallWithOpts(ctx context.Context, query string, opts 
 // MemoryRelatedOpts overrides config for one opt-in multi-hop related call (s1135).
 // Zero MaxHops falls back to MemoryConfig.RelatedMaxHops (default 2); when that is
 // also 0, hops default to 2 for operator convenience. Zero Limit uses config Limit.
+// PreferShorterHops: omit/nil = kernel default true (s1067/s1277); false = legacy seed-first.
+// Multi-hop lite ≠ full graph RAG · not Memory GA · dual_write OFF · hop ranking path-aware lite.
 type MemoryRelatedOpts struct {
-	MaxHops int
-	Limit   int
+	MaxHops           int
+	Limit             int
+	PreferShorterHops *bool // nil omits field (platform default true); false = legacy seed-first
 }
 
 // MemoryOpsDigestOpts overrides defaults for one opt-in ops digest export (s1200).
@@ -734,6 +737,7 @@ func formatFactsAsOfJSON(raw string, maxBytes int) string {
 // At least one of seedEntity or query is required.
 // Does NOT run on default auto-recall (honesty: multi-hop lite is slash/CLI opt-in).
 // Not full graph RAG; not product Memory GA; dual_write OFF by default.
+// Hop ranking path-aware lite: PreferShorterHops nil = kernel default true (s1067/s1277/s1281).
 func (rt *Runtime) MemoryRelated(ctx context.Context, seedEntity, query string, opts ...MemoryRelatedOpts) (string, error) {
 	if rt == nil || !rt.memory.Enabled {
 		return "", fmt.Errorf("memory hooks disabled")
@@ -771,11 +775,12 @@ func (rt *Runtime) MemoryRelated(ctx context.Context, seedEntity, query string, 
 	if rt.syncMemoryReady() {
 		start := time.Now()
 		res, err := rt.mesh.RetrieveMemoryRelated(ctx, rt.memoryTenant(), iomesh.MemoryRelatedOptions{
-			SeedEntity: seedEntity,
-			Query:      query,
-			MaxHops:    maxHops,
-			Limit:      limit,
-			SessionID:  rt.memorySessionID(),
+			SeedEntity:        seedEntity,
+			Query:             query,
+			MaxHops:           maxHops,
+			Limit:             limit,
+			SessionID:         rt.memorySessionID(),
+			PreferShorterHops: call.PreferShorterHops,
 		})
 		latMS := int(time.Since(start).Milliseconds())
 		rt.lastMemoryRetrieveMS.Store(int64(latMS))
@@ -815,6 +820,10 @@ func (rt *Runtime) MemoryRelated(ctx context.Context, seedEntity, query string, 
 	}
 	if sid := rt.memorySessionID(); sid != "" {
 		args["session_id"] = sid
+	}
+	// s1281: omit prefer_shorter_hops when nil (platform default true); send only when set.
+	if call.PreferShorterHops != nil {
+		args["prefer_shorter_hops"] = *call.PreferShorterHops
 	}
 	start := time.Now()
 	out, err := c.CallTool(ctx, "memory_related", args)
