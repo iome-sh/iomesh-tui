@@ -11,6 +11,7 @@ import (
 // Builtin skills shipped with the binary:
 //   - s1251 connector-integrations-setup
 //   - s1288 memory-advanced-agent
+//
 // Layout: builtin/<name>/SKILL.md — always merged when skills are enabled so
 // residual-honest guidance is available even if user/workspace skill dirs are empty.
 //

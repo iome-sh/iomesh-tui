@@ -378,10 +378,6 @@ func TestLoadBuiltin_S1288MemoryAdvancedSkillDogfood(t *testing.T) {
 			t.Fatalf("skill body missing %q:\n%s", want, body)
 		}
 	}
-	// Must not claim silent supersede or auto multi-hop as default.
-	if strings.Contains(body, "auto multi-hop on default") && !strings.Contains(body, "Do **not** auto-run multi-hop") {
-		// Accept as long as non-goals block forbids it — already checked needles above.
-	}
 }
 
 // TestS1288SkillDescriptionResidualHonest pins frontmatter honesty.
