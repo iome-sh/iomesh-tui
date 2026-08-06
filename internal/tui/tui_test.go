@@ -279,6 +279,61 @@ func TestParseMemoryDigestArgs(t *testing.T) {
 	}
 }
 
+// s1282: /memory supersede flag parser for --entity / --as-of / --i-confirm HITL.
+func TestParseMemorySupersedeArgs(t *testing.T) {
+	o, errMsg := parseMemorySupersedeArgs([]string{
+		"--entity", "person:alice",
+		"--as-of", "2026-08-04T12:00:00Z",
+		"--i-confirm",
+	})
+	if errMsg != "" {
+		t.Fatalf("errMsg=%q", errMsg)
+	}
+	if o.Entity != "person:alice" || o.AsOf != "2026-08-04T12:00:00Z" || !o.Confirm {
+		t.Fatalf("opts=%+v", o)
+	}
+	// --entity= / --as_of= / --confirm aliases.
+	o2, errMsg2 := parseMemorySupersedeArgs([]string{
+		"--entity=org:acme",
+		"--as_of=2026-01-01T00:00:00Z",
+		"--confirm",
+	})
+	if errMsg2 != "" {
+		t.Fatalf("errMsg=%q", errMsg2)
+	}
+	if o2.Entity != "org:acme" || o2.AsOf != "2026-01-01T00:00:00Z" || !o2.Confirm {
+		t.Fatalf("opts=%+v", o2)
+	}
+	// --yes alias.
+	oYes, errYes := parseMemorySupersedeArgs([]string{"-e", "x", "--yes"})
+	if errYes != "" || !oYes.Confirm || oYes.Entity != "x" {
+		t.Fatalf("yes opts=%+v err=%q", oYes, errYes)
+	}
+	// Missing confirm still parses cleanly with Confirm=false (HITL gate is MemorySupersede).
+	o3, errMsg3 := parseMemorySupersedeArgs([]string{"--entity", "person:bob"})
+	if errMsg3 != "" {
+		t.Fatalf("errMsg=%q", errMsg3)
+	}
+	if o3.Entity != "person:bob" || o3.Confirm {
+		t.Fatalf("missing confirm must parse Confirm=false: %+v", o3)
+	}
+	// Empty args.
+	o4, errMsg4 := parseMemorySupersedeArgs(nil)
+	if errMsg4 != "" || o4.Entity != "" || o4.Confirm {
+		t.Fatalf("empty opts=%+v err=%q", o4, errMsg4)
+	}
+	// Unknown flag rejected.
+	_, badFlag := parseMemorySupersedeArgs([]string{"--entity", "x", "--unknown"})
+	if badFlag == "" {
+		t.Fatal("expected unknown flag")
+	}
+	// Unexpected bare argument rejected.
+	_, badArg := parseMemorySupersedeArgs([]string{"bare-entity"})
+	if badArg == "" {
+		t.Fatal("expected unexpected argument")
+	}
+}
+
 // s1276: /memory facts-as-of flag parser for --as-of / --entity / --query / --limit.
 func TestParseMemoryFactsAsOfArgs(t *testing.T) {
 	o, errMsg := parseMemoryFactsAsOfArgs([]string{

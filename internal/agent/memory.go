@@ -731,6 +731,166 @@ func formatFactsAsOfJSON(raw string, maxBytes int) string {
 	return formatFactsAsOf(asOf, res.Facts, maxBytes)
 }
 
+// MemorySupersedeOpts for opt-in HITL A3 lite entity supersession (s1282 / aion s640).
+// Entity is required. AsOf is optional RFC3339 (empty → server default now).
+// Confirm must be true to call MCP — accidental mutation is refused residual-honestly.
+//
+// MCP-first: platform ships MCP tool memory_supersede_entity; do not invent lean HTTP supersede.
+// Honesty: A3 lite · closes valid_until · not NLP contradiction · not full dual-clock Graphiti ·
+// not Memory GA · dual_write OFF · mutating (valid_until close).
+type MemorySupersedeOpts struct {
+	Entity  string
+	AsOf    string // optional RFC3339; empty = server default now
+	Confirm bool   // must be true to call MCP
+}
+
+// supersedeHonestyFooter is the residual-honest pin for supersede output (s1282).
+// Locked: A3 lite · not NLP contradiction · not full dual-clock Graphiti · not Memory GA ·
+// dual_write OFF · mutating (valid_until close).
+const supersedeHonestyFooter = "honesty: A3 lite supersede · not NLP contradiction · not full dual-clock Graphiti · not Memory GA · dual_write OFF · mutating (valid_until close)"
+
+// memorySupersedeResult is the aion MCP memory_supersede_entity JSON wire shape (s640).
+// Output: { entity, as_of, superseded_count }.
+type memorySupersedeResult struct {
+	Entity          string `json:"entity"`
+	AsOf            string `json:"as_of"`
+	SupersededCount int    `json:"superseded_count"`
+}
+
+// MemorySupersede closes open validity windows for entity tags (s1282 · aion A3 lite / s640).
+// Prefers MCP tool memory_supersede_entity on the configured memory server (MCP-first;
+// no lean HTTP supersede invent). Mutating: sets valid_until=as_of for open facts tagged
+// with the entity — NOT NLP contradiction detection; NOT full dual-clock Graphiti; NOT Memory GA.
+//
+// HITL gate: Confirm must be true or the call is refused residual-honestly (string, not error)
+// without invoking MCP. Offline / tool failure is residual-honest fail-open messaging
+// (never invents superseded_count as success). Opt-in only — never auto-mutate.
+func (rt *Runtime) MemorySupersede(ctx context.Context, opts MemorySupersedeOpts) (string, error) {
+	if rt == nil || !rt.memory.Enabled {
+		return "", fmt.Errorf("memory hooks disabled")
+	}
+	entity := strings.TrimSpace(opts.Entity)
+	if entity == "" {
+		return "", fmt.Errorf("entity required")
+	}
+	asOf := strings.TrimSpace(opts.AsOf)
+	if asOf != "" {
+		// Soft-validate RFC3339 / RFC3339Nano; aion is the authority at the tool.
+		if _, err := time.Parse(time.RFC3339, asOf); err != nil {
+			if _, err2 := time.Parse(time.RFC3339Nano, asOf); err2 != nil {
+				return "", fmt.Errorf("as_of must be RFC3339: %w", err)
+			}
+		}
+	}
+
+	// HITL residual-honest refusal — do NOT call MCP without explicit confirm.
+	if !opts.Confirm {
+		return formatSupersedeRefuseConfirm(entity, asOf), nil
+	}
+
+	// MCP-first — no lean HTTP supersede invent on platform (document, do not invent).
+	if !rt.mcpMemoryReady() {
+		return formatSupersedeOffline(rt.memory.Server, entity, asOf), nil
+	}
+	c := rt.mcp.ClientByName(rt.memory.Server)
+	args := map[string]any{
+		"entity": entity,
+	}
+	if t := rt.memoryTenant(); t != "" {
+		args["tenant"] = t
+	}
+	if asOf != "" {
+		args["as_of"] = asOf
+	}
+	start := time.Now()
+	out, err := c.CallTool(ctx, "memory_supersede_entity", args)
+	latMS := int(time.Since(start).Milliseconds())
+	rt.lastMemoryRetrieveMS.Store(int64(latMS))
+	rt.lastMemoryRetrieveCacheHit.Store(false)
+	if err != nil {
+		// Fail-open residual-honest call failure — do not invent superseded_count.
+		return formatSupersedeCallFailed(entity, asOf, err), nil
+	}
+	if formatted := formatSupersedeJSON(out); formatted != "" {
+		return formatted, nil
+	}
+	// Unknown payload — pass through with honesty footer (never invent count).
+	raw := strings.TrimSpace(out)
+	if raw == "" {
+		return formatSupersedeEmptyPayload(entity, asOf), nil
+	}
+	return raw + "\n" + supersedeHonestyFooter, nil
+}
+
+// formatSupersedeRefuseConfirm is residual-honest HITL refusal when Confirm is false.
+// Does not call MCP; does not invent supersede success.
+func formatSupersedeRefuseConfirm(entity, asOf string) string {
+	return fmt.Sprintf(
+		"supersede entity=%s as_of=%s\nstatus: refused · HITL confirmation required\n  mutating A3 lite closes open valid_until windows — pass --i-confirm to proceed\n  (not accidental; not NLP contradiction)\n%s",
+		emptyDash(entity), emptyDash(asOf), supersedeHonestyFooter,
+	)
+}
+
+// formatSupersedeOffline is residual-honest fail-open when MCP memory server is unavailable.
+// Explicitly not inventing superseded_count success.
+func formatSupersedeOffline(server, entity, asOf string) string {
+	if server == "" {
+		server = "memory"
+	}
+	return fmt.Sprintf(
+		"supersede entity=%s as_of=%s\nstatus: unavailable · mcp server %q not connected · MCP-first (no lean HTTP supersede invent)\n%s · fail-open (not inventing superseded_count)",
+		emptyDash(entity), emptyDash(asOf), server, supersedeHonestyFooter,
+	)
+}
+
+// formatSupersedeCallFailed is residual-honest fail-open when MCP tool call errors.
+func formatSupersedeCallFailed(entity, asOf string, err error) string {
+	msg := "error"
+	if err != nil {
+		msg = err.Error()
+	}
+	return fmt.Sprintf(
+		"supersede entity=%s as_of=%s\nstatus: unavailable · mcp call failed: %s\n%s · fail-open (not inventing superseded_count)",
+		emptyDash(entity), emptyDash(asOf), msg, supersedeHonestyFooter,
+	)
+}
+
+// formatSupersedeEmptyPayload is residual-honest when MCP returns empty body after call.
+// Never invents a superseded_count.
+func formatSupersedeEmptyPayload(entity, asOf string) string {
+	return fmt.Sprintf(
+		"supersede entity=%s as_of=%s\nstatus: ok · empty payload (not inventing superseded_count)\n%s",
+		emptyDash(entity), emptyDash(asOf), supersedeHonestyFooter,
+	)
+}
+
+// formatSupersede turns entity + as_of + count into a compact residual-honest result.
+// Call only when MCP returned a parseable count — never invent success counts offline.
+func formatSupersede(entity, asOf string, count int) string {
+	return fmt.Sprintf(
+		"supersede entity=%s as_of=%s\nsuperseded_count: %d\n%s",
+		emptyDash(entity), emptyDash(asOf), count, supersedeHonestyFooter,
+	)
+}
+
+// formatSupersedeJSON parses MCP memory_supersede_entity JSON
+// {entity, as_of, superseded_count} into the same human-readable layout as formatSupersede.
+// Returns empty when parse fails (caller may pass through raw).
+func formatSupersedeJSON(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw[0] != '{' {
+		return ""
+	}
+	var res memorySupersedeResult
+	if err := json.Unmarshal([]byte(raw), &res); err != nil {
+		return ""
+	}
+	// Accept zero count (honest empty supersede) when JSON parsed — that is real wire, not invent.
+	entity := strings.TrimSpace(res.Entity)
+	asOf := strings.TrimSpace(res.AsOf)
+	return formatSupersede(entity, asOf, res.SupersededCount)
+}
+
 // MemoryRelated performs opt-in multi-hop lite related recall (s1135).
 // Prefers sync HTTP RetrieveMemoryRelated (POST /v1|/v5/memory/related); falls back
 // to MCP memory_related when sync fails or mesh is unavailable.
