@@ -405,6 +405,111 @@ func TestParseMemoryAnomaliesArgs(t *testing.T) {
 	}
 }
 
+// s1301: /memory semantic flag parser for --query/--limit + free tokens.
+func TestParseMemorySemanticArgs(t *testing.T) {
+	o, errMsg := parseMemorySemanticArgs([]string{"--query", "alice role", "--limit", "5"})
+	if errMsg != "" {
+		t.Fatalf("errMsg=%q", errMsg)
+	}
+	if o.Query != "alice role" || o.Limit != 5 {
+		t.Fatalf("opts=%+v", o)
+	}
+	// Free tokens + --limit= form.
+	o2, errMsg2 := parseMemorySemanticArgs([]string{"--limit=12", "deploy", "window"})
+	if errMsg2 != "" {
+		t.Fatalf("errMsg=%q", errMsg2)
+	}
+	if o2.Query != "deploy window" || o2.Limit != 12 {
+		t.Fatalf("opts=%+v", o2)
+	}
+	// -q alias.
+	o3, errMsg3 := parseMemorySemanticArgs([]string{"-q", "sem"})
+	if errMsg3 != "" || o3.Query != "sem" {
+		t.Fatalf("opts=%+v err=%q", o3, errMsg3)
+	}
+	// Empty args: zero query (caller shows usage).
+	o4, errMsg4 := parseMemorySemanticArgs(nil)
+	if errMsg4 != "" || o4.Query != "" || o4.Limit != 0 {
+		t.Fatalf("empty opts=%+v err=%q", o4, errMsg4)
+	}
+	// Invalid limit.
+	_, badLim := parseMemorySemanticArgs([]string{"--limit", "nope"})
+	if badLim == "" {
+		t.Fatal("expected invalid --limit")
+	}
+	_, badNeg := parseMemorySemanticArgs([]string{"--limit", "-1"})
+	if badNeg == "" {
+		t.Fatal("expected invalid --limit for negative")
+	}
+	// Unknown flag rejected.
+	_, badFlag := parseMemorySemanticArgs([]string{"--unknown"})
+	if badFlag == "" {
+		t.Fatal("expected unknown flag")
+	}
+}
+
+// s1301: /memory ingest-event flag parser for subject/content + optional event flags.
+func TestParseMemoryIngestEventArgs(t *testing.T) {
+	o, errMsg := parseMemoryIngestEventArgs([]string{
+		"--subject", "dept.research.events.github.pr_opened",
+		"--content", "PR #12 opened",
+		"--event-time", "2026-08-06T02:00:00Z",
+		"--session-id", "sess-1",
+		"--session-seq", "3",
+		"--severity", "info",
+		"--source-stream", "github",
+	})
+	if errMsg != "" {
+		t.Fatalf("errMsg=%q", errMsg)
+	}
+	if o.Subject != "dept.research.events.github.pr_opened" || o.Content != "PR #12 opened" {
+		t.Fatalf("opts=%+v", o)
+	}
+	if o.EventTime != "2026-08-06T02:00:00Z" || o.SessionID != "sess-1" || o.SessionSeq != 3 {
+		t.Fatalf("opts=%+v", o)
+	}
+	if o.Severity != "info" || o.SourceStream != "github" {
+		t.Fatalf("opts=%+v", o)
+	}
+	// = forms + short aliases.
+	o2, errMsg2 := parseMemoryIngestEventArgs([]string{
+		"-s=subj.x",
+		"-c=hello",
+		"--event_time=2026-01-01T00:00:00Z",
+		"--session_id=s2",
+		"--session_seq=9",
+		"--source_stream=mesh",
+	})
+	if errMsg2 != "" {
+		t.Fatalf("errMsg=%q", errMsg2)
+	}
+	if o2.Subject != "subj.x" || o2.Content != "hello" || o2.EventTime != "2026-01-01T00:00:00Z" {
+		t.Fatalf("opts=%+v", o2)
+	}
+	if o2.SessionID != "s2" || o2.SessionSeq != 9 || o2.SourceStream != "mesh" {
+		t.Fatalf("opts=%+v", o2)
+	}
+	// Empty args: zeros (caller shows usage for missing subject/content).
+	o3, errMsg3 := parseMemoryIngestEventArgs(nil)
+	if errMsg3 != "" || o3.Subject != "" || o3.Content != "" {
+		t.Fatalf("empty opts=%+v err=%q", o3, errMsg3)
+	}
+	// Invalid session-seq.
+	_, badSeq := parseMemoryIngestEventArgs([]string{"--session-seq", "nope"})
+	if badSeq == "" {
+		t.Fatal("expected invalid --session-seq")
+	}
+	// Unknown flag / bare arg rejected.
+	_, badFlag := parseMemoryIngestEventArgs([]string{"--unknown"})
+	if badFlag == "" {
+		t.Fatal("expected unknown flag")
+	}
+	_, badArg := parseMemoryIngestEventArgs([]string{"bare"})
+	if badArg == "" {
+		t.Fatal("expected unexpected argument")
+	}
+}
+
 // s1296: /memory timeline flag parser for --since/--until/--session-id/--query/--limit.
 func TestParseMemoryTimelineArgs(t *testing.T) {
 	o, errMsg := parseMemoryTimelineArgs([]string{

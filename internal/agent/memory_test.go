@@ -1391,3 +1391,202 @@ func TestFormatCompactStatusJSON_NonJSON(t *testing.T) {
 		t.Fatalf("got %q", got)
 	}
 }
+
+// s1301: formatSemanticJSON residual-honest fixture {facts:[{id,summary,full,score}]}.
+func TestFormatSemanticJSON_Fixture(t *testing.T) {
+	raw := `{
+		"facts": [
+			{"id": "f1", "summary": "alice is engineer", "score": 0.91},
+			{"id": "f2", "full": "deploy window is Tuesday"}
+		]
+	}`
+	out := formatSemanticJSON(raw, "alice role", 6000)
+	if out == "" {
+		t.Fatal("expected formatted output")
+	}
+	if !strings.Contains(out, "semantic query=alice role") {
+		t.Fatalf("header: %q", out)
+	}
+	if !strings.Contains(out, "alice is engineer") || !strings.Contains(out, "f1") {
+		t.Fatalf("fact1: %q", out)
+	}
+	if !strings.Contains(out, "deploy window is Tuesday") || !strings.Contains(out, "f2") {
+		t.Fatalf("fact2: %q", out)
+	}
+	if !strings.Contains(out, "tier-4 semantic facts residual") {
+		t.Fatalf("honesty pin missing: %q", out)
+	}
+	if !strings.Contains(out, "not Memory GA") || !strings.Contains(out, "dual_write OFF") {
+		t.Fatalf("Memory GA / dual_write pin missing: %q", out)
+	}
+	if !strings.Contains(out, "MCP-first") || !strings.Contains(out, "empty ≠ invent") {
+		t.Fatalf("MCP-first / empty pin missing: %q", out)
+	}
+}
+
+// s1301: empty semantic is residual-honest empty — never invent facts.
+func TestFormatSemantic_EmptyHonest(t *testing.T) {
+	out := formatSemantic("q", nil, 6000)
+	if !strings.Contains(out, "facts: (none)") {
+		t.Fatalf("empty: %q", out)
+	}
+	if !strings.Contains(out, semanticHonestyFooter) {
+		t.Fatalf("honesty: %q", out)
+	}
+	out2 := formatSemanticJSON(`{"facts":[]}`, "q", 6000)
+	if !strings.Contains(out2, "facts: (none)") {
+		t.Fatalf("empty json: %q", out2)
+	}
+}
+
+// s1301: offline MCP semantic → residual-honest fail-open (not invent empty success).
+func TestMemorySearchSemantic_OfflineFailOpen(t *testing.T) {
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "dept.research"},
+		mcp:    mcp.NewManagerEmpty(nil),
+	}
+	out, err := rt.MemorySearchSemantic(context.Background(), MemorySemanticOpts{Query: "alice", Limit: 5})
+	if err != nil {
+		t.Fatalf("expected fail-open nil err, got %v", err)
+	}
+	if !strings.Contains(out, "unavailable") || !strings.Contains(out, "not connected") {
+		t.Fatalf("offline: %q", out)
+	}
+	if !strings.Contains(out, "MCP-first") || !strings.Contains(out, "tier-4 semantic facts residual") {
+		t.Fatalf("honesty offline: %q", out)
+	}
+	if !strings.Contains(out, "empty ≠ invent memories") {
+		t.Fatalf("empty≠invent pin: %q", out)
+	}
+	if strings.Contains(out, "facts: (none)") && !strings.Contains(out, "unavailable") {
+		t.Fatalf("must not invent empty-success: %q", out)
+	}
+}
+
+// s1301: hooks disabled + missing query for semantic.
+func TestMemorySearchSemantic_DisabledAndQueryRequired(t *testing.T) {
+	rt := &Runtime{memory: DefaultMemoryConfig()}
+	_, err := rt.MemorySearchSemantic(context.Background(), MemorySemanticOpts{Query: "x"})
+	if err == nil || !strings.Contains(err.Error(), "disabled") {
+		t.Fatalf("semantic disabled err=%v", err)
+	}
+	rt2 := &Runtime{memory: MemoryConfig{Enabled: true, Server: "memory"}}
+	_, err2 := rt2.MemorySearchSemantic(context.Background(), MemorySemanticOpts{})
+	if err2 == nil || !strings.Contains(err2.Error(), "query required") {
+		t.Fatalf("query required err=%v", err2)
+	}
+}
+
+// s1301: non-JSON semantic returns empty (caller may pass through).
+func TestFormatSemanticJSON_NonJSON(t *testing.T) {
+	if got := formatSemanticJSON("not json", "q", 100); got != "" {
+		t.Fatalf("got %q", got)
+	}
+	if got := formatSemanticJSON("", "q", 100); got != "" {
+		t.Fatalf("got %q", got)
+	}
+}
+
+// s1301: formatIngestEventJSON residual-honest fixture {memory_id,tier,event_time,audited}.
+func TestFormatIngestEventJSON_Fixture(t *testing.T) {
+	raw := `{
+		"memory_id": "pz5rzwg3ugzt5fbmsyibinvm",
+		"tier": 1,
+		"event_time": "2026-08-06T02:30:28Z",
+		"audited": true
+	}`
+	out := formatIngestEventJSON(raw, "dept.research.events.test", 6000)
+	if out == "" {
+		t.Fatal("expected formatted output")
+	}
+	if !strings.Contains(out, "ingest-event subject=dept.research.events.test") {
+		t.Fatalf("header: %q", out)
+	}
+	if !strings.Contains(out, "memory_id: pz5rzwg3ugzt5fbmsyibinvm") {
+		t.Fatalf("memory_id: %q", out)
+	}
+	if !strings.Contains(out, "tier: 1") {
+		t.Fatalf("tier: %q", out)
+	}
+	if !strings.Contains(out, "event_time: 2026-08-06T02:30:28Z") {
+		t.Fatalf("event_time: %q", out)
+	}
+	if !strings.Contains(out, "audited: true") {
+		t.Fatalf("audited: %q", out)
+	}
+	if !strings.Contains(out, "s138 T1 temporal event telemetry") {
+		t.Fatalf("honesty pin missing: %q", out)
+	}
+	if !strings.Contains(out, "not conversation turn") || !strings.Contains(out, "not Memory GA") {
+		t.Fatalf("turn / Memory GA pin missing: %q", out)
+	}
+	if !strings.Contains(out, "dual_write OFF") || !strings.Contains(out, "MCP-first") {
+		t.Fatalf("dual_write / MCP-first pin missing: %q", out)
+	}
+	// Empty wire still residual — never invent memory_id.
+	out2 := formatIngestEventJSON(`{}`, "subj", 6000)
+	if !strings.Contains(out2, "memory_id: (none from wire)") {
+		t.Fatalf("empty wire memory_id: %q", out2)
+	}
+	if !strings.Contains(out2, ingestEventHonestyFooter) {
+		t.Fatalf("empty wire honesty: %q", out2)
+	}
+}
+
+// s1301: offline MCP ingest-event → residual-honest fail-open (never invent memory_id).
+func TestMemoryIngestEvent_OfflineFailOpen(t *testing.T) {
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "dept.research"},
+		mcp:    mcp.NewManagerEmpty(nil),
+	}
+	out, err := rt.MemoryIngestEvent(context.Background(), MemoryIngestEventOpts{
+		Subject: "dept.research.events.probe",
+		Content: "hello event",
+	})
+	if err != nil {
+		t.Fatalf("expected fail-open nil err, got %v", err)
+	}
+	if !strings.Contains(out, "unavailable") || !strings.Contains(out, "not connected") {
+		t.Fatalf("offline: %q", out)
+	}
+	if !strings.Contains(out, "MCP-first") || !strings.Contains(out, "s138 T1 temporal event telemetry") {
+		t.Fatalf("honesty offline: %q", out)
+	}
+	if !strings.Contains(out, "never invent memory_id") {
+		t.Fatalf("never invent pin: %q", out)
+	}
+	if strings.Contains(out, "memory_id: ") && !strings.Contains(out, "unavailable") {
+		// offline path must not invent a successful memory_id line without unavailable.
+		if strings.Contains(out, "memory_id: pz") || strings.Contains(out, "memory_id: mem") {
+			t.Fatalf("must not invent memory_id: %q", out)
+		}
+	}
+}
+
+// s1301: hooks disabled + subject/content required for ingest-event.
+func TestMemoryIngestEvent_DisabledAndRequired(t *testing.T) {
+	rt := &Runtime{memory: DefaultMemoryConfig()}
+	_, err := rt.MemoryIngestEvent(context.Background(), MemoryIngestEventOpts{Subject: "s", Content: "c"})
+	if err == nil || !strings.Contains(err.Error(), "disabled") {
+		t.Fatalf("ingest-event disabled err=%v", err)
+	}
+	rt2 := &Runtime{memory: MemoryConfig{Enabled: true, Server: "memory"}}
+	_, err2 := rt2.MemoryIngestEvent(context.Background(), MemoryIngestEventOpts{Content: "c"})
+	if err2 == nil || !strings.Contains(err2.Error(), "subject required") {
+		t.Fatalf("subject required err=%v", err2)
+	}
+	_, err3 := rt2.MemoryIngestEvent(context.Background(), MemoryIngestEventOpts{Subject: "s"})
+	if err3 == nil || !strings.Contains(err3.Error(), "content required") {
+		t.Fatalf("content required err=%v", err3)
+	}
+}
+
+// s1301: non-JSON ingest-event returns empty (caller may pass through).
+func TestFormatIngestEventJSON_NonJSON(t *testing.T) {
+	if got := formatIngestEventJSON("not json", "s", 100); got != "" {
+		t.Fatalf("got %q", got)
+	}
+	if got := formatIngestEventJSON("", "s", 100); got != "" {
+		t.Fatalf("got %q", got)
+	}
+}
