@@ -44,6 +44,7 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 | **3 advanced agent system note (s1291)** | **done (AttachMCP inject)** | Residual-honest `<memory-advanced>` system note (`MemoryAdvancedAgentGuidanceNote`) injected on `AttachMCP` (mirror integrations s1251); steers opt-in advanced memory locks |
 | **3 timeline + compact-status (s1296)** | **done (opt-in · MCP-first · read-only compact)** | `/memory timeline` → MCP `memory_timeline`; `/memory compact-status` → MCP `memory_compact_status`; temporal timeline · filters before limit · Palace tier counts residual · not Memory GA · dual_write OFF · **no** `memory_trigger_compact` without HITL · no lean HTTP invent |
 | **3 semantic + ingest-event (s1301)** | **done (opt-in · MCP-first)** | `/memory semantic` → MCP `memory_search_semantic` (tier-4 semantic facts residual · empty ≠ invent); `/memory ingest-event` → MCP `memory_ingest_event` (s138 T1 temporal event telemetry · not conversation turn · never invent memory_id); not Memory GA · dual_write OFF · **no** `memory_trigger_compact` without HITL · no lean HTTP invent |
+| **3 local-edge Docker attach docs (s1308)** | **done (docs only)** | Operator/agent docs for attaching **local-edge Docker** `aion-memory-mcp` streamable HTTP (peer aion **s1306** compose + residual **s1307**); TUI `[[mcp.servers]]` URL attach · dual_write OFF · local-primary · hosted Palace sunset · **not** Memory GA · docker edge ≠ invent GA · no public registry tag claim |
 | **4 pull (s652)** | **done (M1)** | `iomesh memory pull` — durable mesh consumer → local MCP `memory_ingest_turn` (cost-max local palace; dual_write remains optional audit) |
 
 **Related (not Memory Palace):** agent connector setup slash `/integrations` (s1238/s1242/s1243) uses MCP `list_connector_catalog` / `plan_connector_setup` (aion v178) + `get_webhook_signing_headers` (v30) with residual honesty — see [agent-integrations-setup.md](./agent-integrations-setup.md).
@@ -170,6 +171,93 @@ auto_ingest = false        # opt-in: write user+assistant turns after success
 # recall_until = "2026-07-31T23:59:59Z"
 # recall_session_seq = 0   # omit when 0; maps to body session_seq
 ```
+
+### Local-edge Docker Memory MCP (s1308 · peer aion s1306)
+
+**Product local-primary** path when you prefer a containerized palace over a host binary: run lean `aion-memory-mcp` via Docker (FS palace + streamable HTTP), then attach this TUI over the same MCP URL as Phase 0–1 preferred HTTP.
+
+**Peer:** aion **s1306** ships the compose/image in the **aion monorepo** (not in this TUI tree). Peer residual **s1307** keeps honesty locks (local-primary · dual_write OFF · Palace sunset · not Memory GA). This serial (**s1308**) is **TUI operator/agent docs only** — no Docker packaging inside `iomesh-tui`, no public registry tag invent.
+
+#### 1. Start Docker edge (aion monorepo)
+
+From a checkout of **aion** (requires host `go mod vendor` / `GOPRIVATE=github.com/iome-sh/*` before build — private memory module):
+
+```bash
+docker compose -f deploy/foundation/docker-compose.local-memory-edge.yml up -d --build
+# MCP streamable HTTP: http://127.0.0.1:8080/mcp  healthz: /healthz
+```
+
+| Artifact (aion) | Notes |
+|-----------------|--------|
+| Compose | `deploy/foundation/docker-compose.local-memory-edge.yml` |
+| Image (local build only) | `aion-local-memory-mcp:latest` — **not** a public Docker Hub / GHCR pull tag until published |
+| Host bind | `8080:8080` → MCP path `/mcp`, health `GET /healthz` |
+| Palace volume | `/data/memory-palaces` (`local-memory-palace-data`) |
+| Optional env | `MEMORY_TENANT` (container); same family as host binary (`MEMORY_MCP_HTTP_ADDR` / `MEMORY_MCP_HTTP_PATH`) |
+
+Contrast (aion): kickoff `docker-compose.memory.yml` (sidecar + Qdrant) remains **dev residual** — product edge is lean Memory MCP above, not invent hosted GPU palace.
+
+#### 2. Attach TUI (streamable HTTP MCP)
+
+Same keys as preferred HTTP / `configs/config.example.toml` — URL transport wins over `command`:
+
+```toml
+[mcp]
+enabled = true
+# inject_iomesh_context = false   # s1267 opt-in multi-tenant headers; default false
+
+[[mcp.servers]]
+name = "memory"
+url = "http://127.0.0.1:8080/mcp"   # Docker edge MCP (streamable HTTP)
+allow_loopback = true
+mutating = true
+
+[memory]
+enabled = true
+server = "memory"          # must match [[mcp.servers]].name
+tenant = "dept.research"   # or MEMORY_TENANT / IOMESH_MEMORY_TENANT
+auto_recall = true
+auto_ingest = false
+# dual_write = false       # optional mesh audit only · default OFF · not primary palace
+```
+
+Env helpers (optional; same as binary path):
+
+| Env | Effect |
+|-----|--------|
+| `IOMESH_MCP=1` | Enable `[mcp]` section |
+| `IOMESH_MEMORY=1` | Enable `[memory]` hooks |
+| `IOMESH_MEMORY_TENANT` / `MEMORY_TENANT` | Default tenant |
+| `IOMESH_MEMORY_DUAL_WRITE=1` | Opt-in mesh audit only — **leave unset** for local-primary |
+
+There is **no** separate `MEMORY_MCP_URL` config key in the TUI — point `[[mcp.servers]].url` at the edge. (aion Grok wire scripts may use `MEMORY_MCP_URL` / `AION_MEMORY_MCP_URL` for other hosts; TUI uses TOML `url`.)
+
+#### 3. Verify
+
+```bash
+curl -fsS http://127.0.0.1:8080/healthz
+iomesh mcp --connect
+# expect memory_* tools under server "memory"
+
+iomesh
+# /memory                 → status (mcp=true when attached)
+# /memory recall <query>  → MCP memory_retrieve when no sync HTTP sidecar
+```
+
+#### Honesty (s1308 hard locks)
+
+| Claim | Truth |
+|-------|--------|
+| **dual_write** | **OFF** by default — optional mesh audit only; not primary palace |
+| **local-primary** | Customer-edge FS palace via local Docker MCP — primary Memory UX |
+| **hosted Palace** | **Sunset** until scale — Docker edge is **not** freemium hosted Qdrant fleet |
+| **not Memory GA** | Local MCP attach ≠ product Memory GA · multi-tenant cloud palace · full graph RAG |
+| **docker edge ≠ invent GA** | Containerizing `aion-memory-mcp` does **not** invent hosted Memory GA, platform GPU, or public registry GA |
+| **image tag** | `aion-local-memory-mcp:latest` is a **local build** name — do not claim public Hub/GHCR pull |
+| **TUI tree** | Does **not** vendor aion compose/Dockerfiles — operators use aion monorepo for `docker compose` |
+| **Peer residual** | aion **s1306** compose body · aion residual **s1307** · TUI docs **s1308** |
+
+See also [Local edge stack (s761/s765)](#local-edge-stack-s761-product--s765-completeness-pin) · [Local-primary LT honesty (s768)](#local-primary-lt-honesty-s768-pin) · [mcp.md](./mcp.md) streamable HTTP.
 
 ### Temporal retrieve options (s1068)
 
@@ -528,6 +616,7 @@ Opt-in residual-honest advanced surfaces (not auto-recall):
 - Dual-write is **best-effort** stream publish; it does not guarantee Palace persistence by itself.
 - “Native Vertex” / G4S claims are separate (see marketing claim matrix); memory is **Palace via MCP and/or lean HTTP sidecar**, not Vertex.
 - Do not claim temporal pipeline is live unless stage/prod embedding + temporal flags are on.
+- **s1308:** local-edge Docker MCP attach (peer aion s1306) is customer-edge FS palace only — dual_write OFF · hosted Palace sunset · **not** Memory GA · docker edge ≠ invent GA · local image tag ≠ public registry claim.
 
 
 ## s1069 recall efficiency

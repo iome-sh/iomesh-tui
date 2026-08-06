@@ -56,6 +56,8 @@ Any other **OpenAI-compatible** chat endpoint can be added under `[model.<name>]
 
 **Local AI (Beta):** `ollama serve` + `ollama pull llama3.2`, then `iomesh -m ollama-llama3.2`. Local only — not platform GPU / not invent GA. Cost-max stack: mesh pull egress + local memory MCP (primary LT palace) + Ollama pin; dual_write optional audit default OFF; hosted Palace sunset. Local-edge stack complete (completeness pin; catalog pin ≠ cascade default). See [memory-mcp.md](docs/architecture/memory-mcp.md#local-primary-lt-honesty-s768-pin).
 
+**Local Docker MCP edge (s1308 · peer aion s1306):** run lean Memory Palace MCP via aion compose (`docker compose -f deploy/foundation/docker-compose.local-memory-edge.yml up -d --build` → `http://127.0.0.1:8080/mcp`), attach TUI with `[[mcp.servers]]` URL + `[memory]`. Local build image `aion-local-memory-mcp:latest` · dual_write OFF · not Memory GA · docker edge ≠ invent GA. Docs: [memory-mcp.md Local-edge Docker](docs/architecture/memory-mcp.md#local-edge-docker-memory-mcp-s1308--peer-aion-s1306).
+
 ## Quick start
 
 **Requirements:** Go version in [go.mod](go.mod) (CI uses that toolchain).
