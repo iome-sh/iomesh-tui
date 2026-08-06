@@ -25,6 +25,8 @@ Paired with the `<integrations>` system note injected on `AttachMCP` (`Integrati
 
 Residual-honest agent path for **advanced memory** surfaces already on main: `/memory related` + `prefer_shorter_hops` (s1281) · `/memory supersede --i-confirm` HITL (s1282) · `/memory facts-as-of` (s1276) · `/memory digest` (s1200) · peer s1287 `/memory patterns|anomalies`. MCP inventory: `memory_related`, `memory_supersede_entity`, `memory_facts_as_of`, `ops_digest_export`, `memory_patterns_list`, `memory_anomalies_list`. Honesty locks: multi-hop lite ≠ graph RAG · PreferShorterHops default true · A3 lite ≠ NLP · supersede HITL · K4 lite ≠ dual-clock · patterns/anomalies not medical · dual_write OFF · not Memory GA · no invent lean HTTP for supersede/facts-as-of/patterns. Skill-only (no extra system-note inject). See [memory-mcp.md](./memory-mcp.md).
 
+**Local-edge Docker attach (s1308 · peer aion s1306):** when palace MCP is the Docker edge (`http://127.0.0.1:8080/mcp`), advanced slash/MCP tools still apply once `[[mcp.servers]]` is attached — docker edge ≠ invent Memory GA. Operator steps: [Local-edge Docker Memory MCP](./memory-mcp.md#local-edge-docker-memory-mcp-s1308--peer-aion-s1306).
+
 ## Format
 
 ```markdown
