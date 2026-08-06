@@ -271,13 +271,22 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 	case "/memory", "/mem":
 		if len(parts) < 2 {
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
-			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | semantic [query|--query ...] [--limit N] | ingest-event --subject <id> --content <text> [--event-time|--session-id|--session-seq|--severity|--source-stream] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | ingest <text>]")
+			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | trigger-compact --i-confirm | semantic [query|--query ...] [--limit N] | ingest-event --subject <id> --content <text> [--event-time|--session-id|--session-seq|--severity|--source-stream] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | ingest <text> | status]")
 			return false, nil
 		}
 		sub := strings.ToLower(parts[1])
 		switch sub {
 		case "status", "st":
+			// s1311: base MemoryStatusLine + residual-honest advanced MCP inventory pulse.
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
+			adv, aerr := rt.rt.MemoryAdvancedStatus(context.Background())
+			if aerr != nil {
+				fmt.Fprintf(out, "memory advanced status: %v\n", aerr)
+				return false, nil
+			}
+			if strings.TrimSpace(adv) != "" {
+				fmt.Fprintln(out, adv)
+			}
 		case "recall", "r":
 			q, ropts := parseMemoryRecallArgs(parts[2:])
 			if strings.TrimSpace(q) == "" {
@@ -363,7 +372,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			// MCP-first — no lean HTTP timeline invent. Filters before limit.
 			// Not auto-recall · not Memory GA · dual_write OFF.
 			// Empty ≠ invent memories; offline fail-open residual-honest.
-			// Non-goal: memory_trigger_compact (mutating) without HITL.
+			// Mutating compact: /memory trigger-compact --i-confirm (s1311 HITL).
 			topts, perr := parseMemoryTimelineArgs(parts[2:])
 			if perr != "" {
 				fmt.Fprintf(out, "memory timeline: %s\nusage: /memory timeline [--since RFC3339] [--until RFC3339] [--session-id id] [--query ...] [--limit N]\n", perr)
@@ -384,7 +393,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			// s1296: opt-in read-only Palace tier counts via MCP memory_compact_status.
 			// MCP-first — no lean HTTP invent. Not auto-compact product · not Memory GA.
 			// dual_write OFF. Offline fail-open residual-honest (empty ≠ invent green).
-			// Non-goal: memory_trigger_compact (mutating advisory) without HITL.
+			// Mutating compact: /memory trigger-compact --i-confirm (s1311 HITL).
 			text, err := rt.rt.MemoryCompactStatus(context.Background(), agent.MemoryCompactStatusOpts{})
 			if err != nil {
 				fmt.Fprintf(out, "memory compact-status: %v\n", err)
@@ -392,6 +401,27 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			}
 			if strings.TrimSpace(text) == "" {
 				fmt.Fprintln(out, "(compact-status empty · empty ≠ invent compaction green)")
+				return false, nil
+			}
+			fmt.Fprintln(out, text)
+		case "trigger-compact", "compact-trigger", "tcompact":
+			// s1311: opt-in HITL RecMem compaction advisory via MCP memory_trigger_compact.
+			// Mutating: publishes memory.compact.trigger for RecMem worker. MCP-first only.
+			// Require --i-confirm (HITL) — MemoryTriggerCompact refuses residual-honestly without it.
+			// Not invent compaction green · not Memory GA · dual_write OFF · not auto from compact-status.
+			topts, perr := parseMemoryTriggerCompactArgs(parts[2:])
+			if perr != "" {
+				fmt.Fprintf(out, "memory trigger-compact: %s\nusage: /memory trigger-compact --i-confirm\n", perr)
+				return false, nil
+			}
+			// Missing --i-confirm → Confirm=false; MemoryTriggerCompact refuses residual-honestly (no MCP).
+			text, err := rt.rt.MemoryTriggerCompact(context.Background(), topts)
+			if err != nil {
+				fmt.Fprintf(out, "memory trigger-compact: %v\n", err)
+				return false, nil
+			}
+			if strings.TrimSpace(text) == "" {
+				fmt.Fprintln(out, "(trigger-compact empty · not inventing triggered/cluster_size)")
 				return false, nil
 			}
 			fmt.Fprintln(out, text)
@@ -422,7 +452,6 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			// s1301: opt-in ops/telemetry event ingest via MCP memory_ingest_event (s138 T1).
 			// MCP-first — not a conversation turn (use /memory ingest for turns).
 			// Not Memory GA · dual_write OFF. Offline fail-open residual-honest (never invent memory_id).
-			// Non-goal: memory_trigger_compact without HITL.
 			eopts, perr := parseMemoryIngestEventArgs(parts[2:])
 			if perr != "" {
 				fmt.Fprintf(out, "memory ingest-event: %s\nusage: /memory ingest-event --subject <id> --content <text> [--event-time RFC3339] [--session-id id] [--session-seq N] [--severity info|warning|error|critical] [--source-stream name]\n", perr)
@@ -529,7 +558,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			q, ropts := parseMemoryRecallArgs(parts[1:])
 			text, err := rt.rt.MemoryRecallWithOpts(context.Background(), q, ropts)
 			if err != nil {
-				fmt.Fprintf(out, "memory: %v (try /memory status|recall|related|digest|facts-as-of|timeline|compact-status|semantic|ingest-event|patterns|anomalies|supersede|ingest)\n", err)
+				fmt.Fprintf(out, "memory: %v (try /memory status|recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest)\n", err)
 				return false, nil
 			}
 			if strings.TrimSpace(text) == "" {
@@ -714,7 +743,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /cost                session usage meter + sample estimate
   /mesh                I/O Mesh status + usage
   /catalog [query]     list mesh data products (catalog plane)
-  /memory [recall|related|digest|facts-as-of|timeline|compact-status|semantic|ingest-event|patterns|anomalies|supersede|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL)
+  /memory [recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · status advanced inventory)
   /integrations [list|plan|signing|status]  connector setup via MCP (catalog+plan+signing discovery+portal HITL; not install CRUD)
   /quit                exit
 
@@ -1241,6 +1270,27 @@ func parseMemorySupersedeArgs(args []string) (opts agent.MemorySupersedeOpts, er
 				}
 			}
 			opts.AsOf = strings.TrimSpace(val)
+		case "--i-confirm", "--confirm", "--yes":
+			// Boolean HITL flags — value optional (=true form accepted, ignored).
+			opts.Confirm = true
+		default:
+			if strings.HasPrefix(a, "-") {
+				return opts, "unknown flag " + a
+			}
+			return opts, "unexpected argument " + a
+		}
+	}
+	return opts, ""
+}
+
+// parseMemoryTriggerCompactArgs extracts RecMem trigger-compact HITL flags (s1311).
+// Supports: --i-confirm / --confirm / --yes → Confirm=true. Rejects unknown flags / bare args.
+// Missing confirm parses cleanly with Confirm=false (MemoryTriggerCompact refuses residual-honestly).
+func parseMemoryTriggerCompactArgs(args []string) (opts agent.MemoryTriggerCompactOpts, errMsg string) {
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		key, _, _ := splitFlagKV(a)
+		switch key {
 		case "--i-confirm", "--confirm", "--yes":
 			// Boolean HITL flags — value optional (=true form accepted, ignored).
 			opts.Confirm = true

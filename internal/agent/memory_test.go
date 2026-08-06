@@ -1590,3 +1590,230 @@ func TestFormatIngestEventJSON_NonJSON(t *testing.T) {
 		t.Fatalf("got %q", got)
 	}
 }
+
+// s1311: without Confirm → residual-honest refusal string; must NOT require MCP (no call).
+func TestMemoryTriggerCompact_RefuseWithoutConfirm(t *testing.T) {
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "dept.research"},
+		mcp:    mcp.NewManagerEmpty(nil),
+	}
+	out, err := rt.MemoryTriggerCompact(context.Background(), MemoryTriggerCompactOpts{Confirm: false})
+	if err != nil {
+		t.Fatalf("expected residual-honest refusal nil err, got %v", err)
+	}
+	if !strings.Contains(out, "refused") || !strings.Contains(out, "HITL") {
+		t.Fatalf("refusal: %q", out)
+	}
+	if !strings.Contains(out, "--i-confirm") {
+		t.Fatalf("must mention --i-confirm: %q", out)
+	}
+	if !strings.Contains(out, "trigger-compact") {
+		t.Fatalf("surface: %q", out)
+	}
+	if !strings.Contains(out, triggerCompactHonestyFooter) && !strings.Contains(out, "RecMem advisory") {
+		t.Fatalf("honesty: %q", out)
+	}
+	// Must not look like success with triggered/cluster_size.
+	if strings.Contains(out, "triggered:") || strings.Contains(out, "cluster_size:") {
+		t.Fatalf("must not invent triggered/cluster_size on refuse: %q", out)
+	}
+	if strings.Contains(out, "unavailable") {
+		t.Fatalf("must not reach offline path without Confirm: %q", out)
+	}
+}
+
+// s1311: Confirm + offline MCP → residual-honest fail-open (not invent triggered).
+func TestMemoryTriggerCompact_OfflineFailOpen(t *testing.T) {
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "dept.research"},
+		mcp:    mcp.NewManagerEmpty(nil),
+	}
+	out, err := rt.MemoryTriggerCompact(context.Background(), MemoryTriggerCompactOpts{Confirm: true})
+	if err != nil {
+		t.Fatalf("expected fail-open nil err, got %v", err)
+	}
+	if !strings.Contains(out, "unavailable") || !strings.Contains(out, "not connected") {
+		t.Fatalf("offline: %q", out)
+	}
+	if !strings.Contains(out, "MCP-first") || !strings.Contains(out, "RecMem advisory") {
+		t.Fatalf("honesty offline: %q", out)
+	}
+	if !strings.Contains(out, "not inventing triggered/cluster_size") {
+		t.Fatalf("not-invent pin: %q", out)
+	}
+	if strings.Contains(out, "triggered:") || strings.Contains(out, "cluster_size:") {
+		t.Fatalf("must not invent trigger success offline: %q", out)
+	}
+}
+
+// s1311: hooks disabled error for trigger-compact.
+func TestMemoryTriggerCompact_Disabled(t *testing.T) {
+	rt := &Runtime{memory: DefaultMemoryConfig()}
+	_, err := rt.MemoryTriggerCompact(context.Background(), MemoryTriggerCompactOpts{Confirm: true})
+	if err == nil || !strings.Contains(err.Error(), "disabled") {
+		t.Fatalf("disabled err=%v", err)
+	}
+}
+
+// s1311: formatTriggerCompactJSON residual-honest fixture {triggered, cluster_size}.
+func TestFormatTriggerCompactJSON_Fixture(t *testing.T) {
+	raw := `{"triggered":true,"cluster_size":7}`
+	out := formatTriggerCompactJSON(raw)
+	if out == "" {
+		t.Fatal("expected formatted output")
+	}
+	if !strings.Contains(out, "trigger-compact") {
+		t.Fatalf("header: %q", out)
+	}
+	if !strings.Contains(out, "triggered: true") {
+		t.Fatalf("triggered: %q", out)
+	}
+	if !strings.Contains(out, "cluster_size: 7") {
+		t.Fatalf("cluster_size: %q", out)
+	}
+	if !strings.Contains(out, "RecMem advisory") || !strings.Contains(out, "not invent compaction green") {
+		t.Fatalf("honesty pin missing: %q", out)
+	}
+	if !strings.Contains(out, "dual_write OFF") || !strings.Contains(out, "not Memory GA") {
+		t.Fatalf("dual_write/Memory GA pin missing: %q", out)
+	}
+	if !strings.Contains(out, "mutating HITL") {
+		t.Fatalf("HITL pin missing: %q", out)
+	}
+	// Empty / non-JSON → empty (caller may pass through).
+	if got := formatTriggerCompactJSON(""); got != "" {
+		t.Fatalf("empty: %q", got)
+	}
+	if got := formatTriggerCompactJSON("not json"); got != "" {
+		t.Fatalf("non-json: %q", got)
+	}
+	if got := formatTriggerCompactJSON(`{}`); got != "" {
+		t.Fatalf("empty object must not invent false/0 success: %q", got)
+	}
+}
+
+// s1311: Confirm + mock MCP success formats triggered + cluster_size.
+func TestMemoryTriggerCompact_MockMCPSuccess(t *testing.T) {
+	cInR, cInW := io.Pipe()
+	cOutR, cOutW := io.Pipe()
+	go mockMCPTriggerCompact(cOutW, cInR)
+
+	mut := true // trigger-compact is mutating
+	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "memory", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
+	defer cl.Close()
+	if err := cl.InitForTest(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	mgr := mcp.NewManagerEmpty(nil)
+	mgr.Attach(cl)
+
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "dept.research"},
+		mcp:    mgr,
+	}
+	out, err := rt.MemoryTriggerCompact(context.Background(), MemoryTriggerCompactOpts{Confirm: true})
+	if err != nil {
+		t.Fatalf("err=%v", err)
+	}
+	if !strings.Contains(out, "triggered: true") {
+		t.Fatalf("triggered: %q", out)
+	}
+	if !strings.Contains(out, "cluster_size: 12") {
+		t.Fatalf("cluster_size: %q", out)
+	}
+	if !strings.Contains(out, "RecMem advisory") {
+		t.Fatalf("honesty: %q", out)
+	}
+}
+
+// mockMCPTriggerCompact is a minimal MCP server for memory_trigger_compact success fixture.
+func mockMCPTriggerCompact(w io.WriteCloser, r io.Reader) {
+	defer w.Close()
+	dec := json.NewDecoder(r)
+	for {
+		var req map[string]any
+		if err := dec.Decode(&req); err != nil {
+			return
+		}
+		id := req["id"]
+		method, _ := req["method"].(string)
+		if method == "notifications/initialized" || id == nil {
+			continue
+		}
+		var result any
+		switch method {
+		case "initialize":
+			result = map[string]any{"protocolVersion": "2024-11-05", "serverInfo": map[string]string{"name": "memory", "version": "1"}}
+		case "tools/list":
+			result = map[string]any{"tools": []map[string]any{{
+				"name": "memory_trigger_compact", "description": "RecMem compact advisory",
+				"inputSchema": map[string]any{"type": "object"},
+			}}}
+		case "tools/call":
+			payload := `{"triggered":true,"cluster_size":12}`
+			result = map[string]any{"content": []map[string]any{{"type": "text", "text": payload}}}
+		}
+		line, _ := json.Marshal(map[string]any{"jsonrpc": "2.0", "id": id, "result": result})
+		_, _ = w.Write(append(line, '\n'))
+	}
+}
+
+// s1311: MemoryAdvancedStatus offline residual inventory needles.
+func TestMemoryAdvancedStatus_OfflineResidual(t *testing.T) {
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "dept.research"},
+		mcp:    mcp.NewManagerEmpty(nil),
+	}
+	out, err := rt.MemoryAdvancedStatus(context.Background())
+	if err != nil {
+		t.Fatalf("err=%v", err)
+	}
+	for _, want := range []string{
+		"memory advanced status",
+		"s1311",
+		"advanced tools:",
+		"memory_related",
+		"memory_facts_as_of",
+		"memory_supersede_entity",
+		"memory_timeline",
+		"memory_compact_status",
+		"memory_search_semantic",
+		"memory_ingest_event",
+		"memory_patterns_list",
+		"memory_anomalies_list",
+		"ops_digest_export",
+		"memory_trigger_compact",
+		"offline",
+		"dual_write",
+		"not Memory GA",
+		"/integrations status",
+		"trigger-compact requires HITL",
+		"fail-open",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("advanced status missing %q in:\n%s", want, out)
+		}
+	}
+	// Must not invent product green.
+	if strings.Contains(out, "Memory GA green") || strings.Contains(out, "Memory GA shipped") {
+		t.Fatalf("must not invent Memory GA claim: %s", out)
+	}
+}
+
+// s1311: MemoryAdvancedStatus with hooks disabled still residual (no invent).
+func TestMemoryAdvancedStatus_Disabled(t *testing.T) {
+	rt := &Runtime{memory: DefaultMemoryConfig()}
+	out, err := rt.MemoryAdvancedStatus(context.Background())
+	if err != nil {
+		t.Fatalf("err=%v", err)
+	}
+	if !strings.Contains(out, "hooks disabled") {
+		t.Fatalf("disabled: %q", out)
+	}
+	if !strings.Contains(out, "memory_trigger_compact") {
+		t.Fatalf("inventory still listed: %q", out)
+	}
+	if !strings.Contains(out, "not Memory GA") {
+		t.Fatalf("honesty: %q", out)
+	}
+}

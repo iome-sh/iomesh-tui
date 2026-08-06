@@ -334,6 +334,38 @@ func TestParseMemorySupersedeArgs(t *testing.T) {
 	}
 }
 
+// s1311: /memory trigger-compact HITL flag parser.
+func TestParseMemoryTriggerCompactArgs(t *testing.T) {
+	o, errMsg := parseMemoryTriggerCompactArgs([]string{"--i-confirm"})
+	if errMsg != "" {
+		t.Fatalf("errMsg=%q", errMsg)
+	}
+	if !o.Confirm {
+		t.Fatalf("want Confirm=true, got %+v", o)
+	}
+	o2, err2 := parseMemoryTriggerCompactArgs([]string{"--confirm"})
+	if err2 != "" || !o2.Confirm {
+		t.Fatalf("confirm: %+v err=%q", o2, err2)
+	}
+	oYes, errYes := parseMemoryTriggerCompactArgs([]string{"--yes"})
+	if errYes != "" || !oYes.Confirm {
+		t.Fatalf("yes: %+v err=%q", oYes, errYes)
+	}
+	// Missing confirm still parses cleanly with Confirm=false (HITL gate is MemoryTriggerCompact).
+	o3, err3 := parseMemoryTriggerCompactArgs(nil)
+	if err3 != "" || o3.Confirm {
+		t.Fatalf("nil: %+v err=%q", o3, err3)
+	}
+	_, badFlag := parseMemoryTriggerCompactArgs([]string{"--unknown"})
+	if badFlag == "" {
+		t.Fatal("expected unknown flag")
+	}
+	_, badArg := parseMemoryTriggerCompactArgs([]string{"bare"})
+	if badArg == "" {
+		t.Fatal("expected unexpected argument")
+	}
+}
+
 // s1287: /memory patterns flag parser for --limit.
 func TestParseMemoryPatternsArgs(t *testing.T) {
 	o, errMsg := parseMemoryPatternsArgs([]string{"--limit", "5"})

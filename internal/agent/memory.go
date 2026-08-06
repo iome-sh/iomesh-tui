@@ -1211,7 +1211,7 @@ func formatAnomaliesJSON(raw string, maxBytes int) string {
 // MCP-first: platform ships MCP tool memory_timeline; there is no lean HTTP
 // POST /v1|/v5/memory/timeline route today — do not invent one.
 // Honesty: temporal timeline · filters before limit · not Memory GA · dual_write OFF.
-// Non-goal: memory_trigger_compact (mutating advisory) — not wired without HITL.
+// Mutating compact: use MemoryTriggerCompact HITL (s1311) — not auto from timeline.
 type MemoryTimelineOpts struct {
 	Since     string // optional RFC3339 inclusive lower bound
 	Until     string // optional RFC3339 inclusive upper bound
@@ -1226,7 +1226,7 @@ type MemoryTimelineOpts struct {
 //
 // MCP-first: platform ships MCP tool memory_compact_status; do not invent lean HTTP.
 // Honesty: Palace tier counts residual · not Memory GA · not auto-compact product · dual_write OFF.
-// Non-goal: memory_trigger_compact (mutating advisory) — not wired without HITL.
+// Mutating compact: use MemoryTriggerCompact HITL (s1311) — not auto from compact-status.
 type MemoryCompactStatusOpts struct{}
 
 // timelineHonestyFooter is the residual-honest pin for timeline output (s1296).
@@ -1340,7 +1340,7 @@ func (rt *Runtime) MemoryTimeline(ctx context.Context, opts MemoryTimelineOpts) 
 // Prefers MCP tool memory_compact_status on the configured memory server (MCP-first;
 // no lean HTTP invent). Read-only residual — not auto-compact product · not Memory GA.
 // Offline / tool failure is residual-honest fail-open messaging. Opt-in only — not auto-recall.
-// Does NOT call memory_trigger_compact (mutating advisory; HITL non-goal for s1296).
+// Does NOT call memory_trigger_compact (mutating RecMem advisory; use MemoryTriggerCompact HITL s1311).
 func (rt *Runtime) MemoryCompactStatus(ctx context.Context, _ MemoryCompactStatusOpts) (string, error) {
 	if rt == nil || !rt.memory.Enabled {
 		return "", fmt.Errorf("memory hooks disabled")
@@ -1625,6 +1625,237 @@ func compactStatusString(m map[string]any, keys ...string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+// MemoryTriggerCompactOpts for opt-in HITL RecMem compaction advisory (s1311 / aion memory_trigger_compact).
+// Confirm must be true to call MCP — accidental mutation is refused residual-honestly.
+//
+// MCP-first: platform ships MCP tool memory_trigger_compact (publishes memory.compact.trigger
+// advisory for RecMem worker). Do not invent lean HTTP trigger. Honesty: RecMem advisory ·
+// not invent compaction green · dual_write OFF · not Memory GA · mutating HITL.
+type MemoryTriggerCompactOpts struct {
+	Confirm bool // must be true to call MCP
+}
+
+// triggerCompactHonestyFooter is the residual-honest pin for trigger-compact output (s1311).
+// Locked: RecMem advisory · not invent compaction green · dual_write OFF · not Memory GA · mutating HITL.
+const triggerCompactHonestyFooter = "honesty: RecMem advisory · not invent compaction green · dual_write OFF · not Memory GA · mutating HITL · MCP-first"
+
+// memoryTriggerCompactResult is the aion MCP memory_trigger_compact JSON wire shape.
+// Output: { triggered, cluster_size }.
+type memoryTriggerCompactResult struct {
+	Triggered   bool `json:"triggered"`
+	ClusterSize int  `json:"cluster_size"`
+}
+
+// MemoryTriggerCompact publishes a RecMem compaction advisory (s1311 · aion memory_trigger_compact).
+// Prefers MCP tool memory_trigger_compact on the configured memory server (MCP-first;
+// no lean HTTP invent). Mutating advisory for RecMem worker — NOT auto-compact product green;
+// NOT Memory GA; dual_write OFF.
+//
+// HITL gate: Confirm must be true or the call is refused residual-honestly (string, not error)
+// without invoking MCP. Offline / tool failure is residual-honest fail-open messaging
+// (never invents triggered/cluster_size success). Opt-in only — never auto-trigger.
+func (rt *Runtime) MemoryTriggerCompact(ctx context.Context, opts MemoryTriggerCompactOpts) (string, error) {
+	if rt == nil || !rt.memory.Enabled {
+		return "", fmt.Errorf("memory hooks disabled")
+	}
+
+	// HITL residual-honest refusal — do NOT call MCP without explicit confirm.
+	if !opts.Confirm {
+		return formatTriggerCompactRefuseConfirm(), nil
+	}
+
+	// MCP-first — no lean HTTP trigger invent on platform (document, do not invent).
+	if !rt.mcpMemoryReady() {
+		return formatTriggerCompactOffline(rt.memory.Server), nil
+	}
+	c := rt.mcp.ClientByName(rt.memory.Server)
+	args := map[string]any{}
+	if t := rt.memoryTenant(); t != "" {
+		args["tenant"] = t
+	}
+	start := time.Now()
+	out, err := c.CallTool(ctx, "memory_trigger_compact", args)
+	latMS := int(time.Since(start).Milliseconds())
+	rt.lastMemoryRetrieveMS.Store(int64(latMS))
+	rt.lastMemoryRetrieveCacheHit.Store(false)
+	if err != nil {
+		// Fail-open residual-honest call failure — do not invent triggered success.
+		return formatTriggerCompactCallFailed(err), nil
+	}
+	if formatted := formatTriggerCompactJSON(out); formatted != "" {
+		return formatted, nil
+	}
+	// Unknown payload — pass through with honesty footer (never invent triggered green).
+	raw := strings.TrimSpace(out)
+	if raw == "" {
+		return formatTriggerCompactEmptyPayload(), nil
+	}
+	return raw + "\n" + triggerCompactHonestyFooter, nil
+}
+
+// formatTriggerCompactRefuseConfirm is residual-honest HITL refusal when Confirm is false.
+// Does not call MCP; does not invent trigger success.
+func formatTriggerCompactRefuseConfirm() string {
+	return fmt.Sprintf(
+		"trigger-compact\nstatus: refused · HITL confirmation required\n  mutating RecMem compaction advisory — pass --i-confirm to proceed\n  (not accidental; not invent compaction green)\n%s",
+		triggerCompactHonestyFooter,
+	)
+}
+
+// formatTriggerCompactOffline is residual-honest fail-open when MCP memory server is unavailable.
+// Explicitly not inventing triggered / cluster_size success.
+func formatTriggerCompactOffline(server string) string {
+	if server == "" {
+		server = "memory"
+	}
+	return fmt.Sprintf(
+		"trigger-compact\nstatus: unavailable · mcp server %q not connected · MCP-first (no lean HTTP invent)\n%s · fail-open (not inventing triggered/cluster_size)",
+		server, triggerCompactHonestyFooter,
+	)
+}
+
+// formatTriggerCompactCallFailed is residual-honest fail-open when MCP tool call errors.
+func formatTriggerCompactCallFailed(err error) string {
+	msg := "error"
+	if err != nil {
+		msg = err.Error()
+	}
+	return fmt.Sprintf(
+		"trigger-compact\nstatus: unavailable · mcp call failed: %s\n%s · fail-open (not inventing triggered/cluster_size)",
+		msg, triggerCompactHonestyFooter,
+	)
+}
+
+// formatTriggerCompactEmptyPayload is residual-honest when MCP returns empty body after call.
+// Never invents triggered green.
+func formatTriggerCompactEmptyPayload() string {
+	return fmt.Sprintf(
+		"trigger-compact\nstatus: ok · empty payload (not inventing triggered/cluster_size)\n%s",
+		triggerCompactHonestyFooter,
+	)
+}
+
+// formatTriggerCompact turns triggered + cluster_size into residual-honest result.
+// Call only when MCP returned a parseable payload — never invent success offline.
+func formatTriggerCompact(triggered bool, clusterSize int) string {
+	return fmt.Sprintf(
+		"trigger-compact\ntriggered: %v\ncluster_size: %d\n%s",
+		triggered, clusterSize, triggerCompactHonestyFooter,
+	)
+}
+
+// formatTriggerCompactJSON parses MCP memory_trigger_compact JSON
+// {triggered, cluster_size} into the same human-readable layout as formatTriggerCompact.
+// Returns empty when parse fails (caller may pass through raw).
+func formatTriggerCompactJSON(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw[0] != '{' {
+		return ""
+	}
+	var res memoryTriggerCompactResult
+	if err := json.Unmarshal([]byte(raw), &res); err != nil {
+		return ""
+	}
+	// Accept triggered=false + zero cluster (honest wire) when JSON parsed — that is real wire, not invent.
+	// Require at least one known key so unrelated {} does not silently format as false/0 success.
+	var probe map[string]any
+	if err := json.Unmarshal([]byte(raw), &probe); err != nil {
+		return ""
+	}
+	if _, okT := probe["triggered"]; !okT {
+		if _, okC := probe["cluster_size"]; !okC {
+			return ""
+		}
+	}
+	return formatTriggerCompact(res.Triggered, res.ClusterSize)
+}
+
+// advancedMemoryTools is the residual-honest inventory of advanced MCP tools for
+// MemoryAdvancedStatus (s1311). Order is operator-facing slash surface order.
+var advancedMemoryTools = []struct {
+	Tool  string
+	Slash string // human slash surface label
+	Note  string // residual note (HITL / read-only / etc.)
+}{
+	{"memory_related", "related", "multi-hop lite"},
+	{"memory_facts_as_of", "facts-as-of", "K4 lite"},
+	{"memory_supersede_entity", "supersede", "HITL mutating"},
+	{"memory_timeline", "timeline", "read-only"},
+	{"memory_compact_status", "compact-status", "read-only"},
+	{"memory_search_semantic", "semantic", "tier-4 residual"},
+	{"memory_ingest_event", "ingest-event", "s138 T1 · not turn"},
+	{"memory_patterns_list", "patterns", "ops pulse Beta"},
+	{"memory_anomalies_list", "anomalies", "ops pulse Beta"},
+	{"ops_digest_export", "digest", "ops GA-path framing"},
+	{"memory_trigger_compact", "trigger-compact", "HITL mutating RecMem advisory"},
+}
+
+// advancedStatusHonestyFooter is the residual-honest pin for MemoryAdvancedStatus (s1311).
+const advancedStatusHonestyFooter = "honesty: advanced MCP inventory residual · dual_write OFF · not Memory GA · presence ≠ product green · trigger-compact requires HITL · fail-open"
+
+// MemoryAdvancedStatus is the residual-honest advanced MCP tool inventory pulse (s1311).
+// Probes MCP tool presence (same discovery as mcpToolPresence; does not invent) when
+// the memory server path is connected; fail-open offline/missing. Lists key advanced
+// surfaces: related, facts-as-of, supersede, timeline, compact-status, semantic,
+// ingest-event, patterns, anomalies, ops digest, trigger-compact.
+//
+// Always includes dual_write OFF + not Memory GA + integrations one-liner pointer.
+// Does not call tools (presence probe only) — no invent of tool results.
+func (rt *Runtime) MemoryAdvancedStatus(ctx context.Context) (string, error) {
+	_ = ctx // reserved for future optional live probes; presence-only today
+	var b strings.Builder
+	b.WriteString("memory advanced status (s1311 residual-honest inventory pulse)\n")
+
+	// 1) Memory hooks + MCP memory server path
+	if rt == nil || !rt.memory.Enabled {
+		b.WriteString("memory: hooks disabled (set [memory] enabled=true + MCP server)\n")
+	} else {
+		server := rt.memory.Server
+		if server == "" {
+			server = "memory"
+		}
+		connected := rt.mcpMemoryReady()
+		fmt.Fprintf(&b, "memory: enabled server=%q mcp=%v dual_write=%v\n",
+			server, connected, rt.memory.DualWrite)
+	}
+
+	// 2) MCP path (manager-level)
+	pathState, nServers := rt.mcpPathState()
+	switch pathState {
+	case "available":
+		fmt.Fprintf(&b, "MCP path: available (%d server(s))\n", nServers)
+	case "empty":
+		b.WriteString("MCP path: connected-empty (manager present, 0 servers) · fail-open\n")
+	default:
+		b.WriteString("MCP path: offline (no MCP manager/clients) · fail-open\n")
+	}
+
+	// 3) Advanced tool inventory (present | missing | offline)
+	b.WriteString("advanced tools:\n")
+	for _, t := range advancedMemoryTools {
+		st := rt.mcpToolPresence(t.Tool)
+		fmt.Fprintf(&b, "  %-32s %s", t.Tool+":", st)
+		if t.Note != "" {
+			fmt.Fprintf(&b, " · %s", t.Note)
+		}
+		if t.Slash != "" {
+			fmt.Fprintf(&b, " · /memory %s", t.Slash)
+		}
+		b.WriteString("\n")
+	}
+
+	// 4) Residual pins always
+	b.WriteString("dual_write: OFF (default local-primary honesty)\n")
+	if rt != nil && rt.memory.Enabled && rt.memory.DualWrite {
+		// Config override — still residual; do not invent GA.
+		b.WriteString("  note: config dual_write=true is optional mesh audit only · not Memory GA\n")
+	}
+	b.WriteString("not Memory GA · presence ≠ Connected / product green\n")
+	b.WriteString("integrations: see /integrations status for connector path\n")
+	b.WriteString(advancedStatusHonestyFooter)
+	return strings.TrimSpace(b.String()), nil
 }
 
 // MemorySemanticOpts for opt-in tier-4 semantic facts search (s1301 / aion memory_search_semantic).
