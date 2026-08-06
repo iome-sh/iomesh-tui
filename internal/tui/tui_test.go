@@ -405,6 +405,61 @@ func TestParseMemoryAnomaliesArgs(t *testing.T) {
 	}
 }
 
+// s1296: /memory timeline flag parser for --since/--until/--session-id/--query/--limit.
+func TestParseMemoryTimelineArgs(t *testing.T) {
+	o, errMsg := parseMemoryTimelineArgs([]string{
+		"--since", "2026-08-01T00:00:00Z",
+		"--until", "2026-08-04T12:00:00Z",
+		"--session-id", "sess-1",
+		"--query", "deploy",
+		"--limit", "5",
+	})
+	if errMsg != "" {
+		t.Fatalf("errMsg=%q", errMsg)
+	}
+	if o.Since != "2026-08-01T00:00:00Z" || o.Until != "2026-08-04T12:00:00Z" {
+		t.Fatalf("opts=%+v", o)
+	}
+	if o.SessionID != "sess-1" || o.Query != "deploy" || o.Limit != 5 {
+		t.Fatalf("opts=%+v", o)
+	}
+	// --session_id= form + free tokens as query + --limit=.
+	o2, errMsg2 := parseMemoryTimelineArgs([]string{
+		"--since=2026-01-01T00:00:00Z",
+		"--session_id=sess-2",
+		"--limit=12",
+		"free", "query", "words",
+	})
+	if errMsg2 != "" {
+		t.Fatalf("errMsg=%q", errMsg2)
+	}
+	if o2.Since != "2026-01-01T00:00:00Z" || o2.SessionID != "sess-2" || o2.Limit != 12 {
+		t.Fatalf("opts=%+v", o2)
+	}
+	if o2.Query != "free query words" {
+		t.Fatalf("query=%q", o2.Query)
+	}
+	// Empty args: all zero (caller uses defaults).
+	o3, errMsg3 := parseMemoryTimelineArgs(nil)
+	if errMsg3 != "" || o3.Limit != 0 || o3.Query != "" {
+		t.Fatalf("empty opts=%+v err=%q", o3, errMsg3)
+	}
+	// Invalid limit.
+	_, badLim := parseMemoryTimelineArgs([]string{"--limit", "nope"})
+	if badLim == "" {
+		t.Fatal("expected invalid --limit")
+	}
+	_, badNeg := parseMemoryTimelineArgs([]string{"--limit", "-1"})
+	if badNeg == "" {
+		t.Fatal("expected invalid --limit for negative")
+	}
+	// Unknown flag rejected.
+	_, badFlag := parseMemoryTimelineArgs([]string{"--unknown"})
+	if badFlag == "" {
+		t.Fatal("expected unknown flag")
+	}
+}
+
 // s1276: /memory facts-as-of flag parser for --as-of / --entity / --query / --limit.
 func TestParseMemoryFactsAsOfArgs(t *testing.T) {
 	o, errMsg := parseMemoryFactsAsOfArgs([]string{
