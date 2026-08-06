@@ -138,6 +138,7 @@ func TestParseMemoryRecallArgs(t *testing.T) {
 }
 
 // s1135: /memory related flag parser for seed / query / max-hops.
+// s1281: --prefer-shorter-hops / --legacy-sort / --no-prefer-shorter-hops hop ranking flags.
 func TestParseMemoryRelatedArgs(t *testing.T) {
 	seed, q, o, errMsg := parseMemoryRelatedArgs([]string{
 		"--seed", "person:alice",
@@ -154,6 +155,9 @@ func TestParseMemoryRelatedArgs(t *testing.T) {
 	if o.MaxHops != 2 || o.Limit != 5 {
 		t.Fatalf("opts=%+v", o)
 	}
+	if o.PreferShorterHops != nil {
+		t.Fatalf("PreferShorterHops must be nil when omitted: %+v", o)
+	}
 	// --seed= form + free tokens as query.
 	seed2, q2, o2, errMsg2 := parseMemoryRelatedArgs([]string{
 		"--seed-entity=org:acme",
@@ -168,6 +172,70 @@ func TestParseMemoryRelatedArgs(t *testing.T) {
 	_, _, _, bad := parseMemoryRelatedArgs([]string{"--max-hops", "nope"})
 	if bad == "" {
 		t.Fatal("expected invalid --max-hops")
+	}
+
+	// s1281: bare --prefer-shorter-hops → true
+	_, _, o3, err3 := parseMemoryRelatedArgs([]string{"--seed", "person:x", "--prefer-shorter-hops"})
+	if err3 != "" {
+		t.Fatalf("err3=%q", err3)
+	}
+	if o3.PreferShorterHops == nil || !*o3.PreferShorterHops {
+		t.Fatalf("bare --prefer-shorter-hops want true, got %+v", o3.PreferShorterHops)
+	}
+
+	// s1281: --prefer-shorter-hops=false → false
+	_, _, o4, err4 := parseMemoryRelatedArgs([]string{"--seed", "person:x", "--prefer-shorter-hops=false"})
+	if err4 != "" {
+		t.Fatalf("err4=%q", err4)
+	}
+	if o4.PreferShorterHops == nil || *o4.PreferShorterHops {
+		t.Fatalf("prefer-shorter-hops=false want false, got %+v", o4.PreferShorterHops)
+	}
+
+	// s1281: --prefer_shorter_hops true (space-separated)
+	_, _, o5, err5 := parseMemoryRelatedArgs([]string{"--seed", "person:x", "--prefer_shorter_hops", "true"})
+	if err5 != "" {
+		t.Fatalf("err5=%q", err5)
+	}
+	if o5.PreferShorterHops == nil || !*o5.PreferShorterHops {
+		t.Fatalf("prefer_shorter_hops true want true, got %+v", o5.PreferShorterHops)
+	}
+
+	// s1281: --legacy-sort → false
+	_, _, o6, err6 := parseMemoryRelatedArgs([]string{"--seed", "person:x", "--legacy-sort"})
+	if err6 != "" {
+		t.Fatalf("err6=%q", err6)
+	}
+	if o6.PreferShorterHops == nil || *o6.PreferShorterHops {
+		t.Fatalf("--legacy-sort want false, got %+v", o6.PreferShorterHops)
+	}
+
+	// s1281: --no-prefer-shorter-hops → false
+	_, _, o7, err7 := parseMemoryRelatedArgs([]string{"--seed", "person:x", "--no-prefer-shorter-hops"})
+	if err7 != "" {
+		t.Fatalf("err7=%q", err7)
+	}
+	if o7.PreferShorterHops == nil || *o7.PreferShorterHops {
+		t.Fatalf("--no-prefer-shorter-hops want false, got %+v", o7.PreferShorterHops)
+	}
+
+	// s1281: invalid bool value
+	_, _, _, badBool := parseMemoryRelatedArgs([]string{"--prefer-shorter-hops=maybe"})
+	if badBool == "" {
+		t.Fatal("expected invalid --prefer-shorter-hops")
+	}
+
+	// Bare flag must not swallow free query tokens that are not bool-like.
+	seed8, q8, o8, err8 := parseMemoryRelatedArgs([]string{
+		"--seed", "person:x",
+		"--prefer-shorter-hops",
+		"free", "query",
+	})
+	if err8 != "" || seed8 != "person:x" || q8 != "free query" {
+		t.Fatalf("seed=%q q=%q err=%q", seed8, q8, err8)
+	}
+	if o8.PreferShorterHops == nil || !*o8.PreferShorterHops {
+		t.Fatalf("bare flag + free query: PreferShorterHops=%+v", o8.PreferShorterHops)
 	}
 }
 

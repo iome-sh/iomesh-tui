@@ -683,6 +683,45 @@ func TestRetrieveMemoryRelated_DefaultHopsAndLimit(t *testing.T) {
 	if _, ok := gotBody["seed_entity"]; ok {
 		t.Fatalf("unexpected seed_entity: %v", gotBody)
 	}
+	// s1281 honesty: nil PreferShorterHops omits field (kernel default true).
+	if _, ok := gotBody["prefer_shorter_hops"]; ok {
+		t.Fatalf("prefer_shorter_hops must be omitted when nil: %v", gotBody)
+	}
+}
+
+// s1281: PreferShorterHops false/true sent on body; nil omits (aion s1277 parity).
+func TestRetrieveMemoryRelated_PreferShorterHops(t *testing.T) {
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_ = json.NewEncoder(w).Encode(map[string]any{"memories": []any{}})
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "t"}, nil)
+	f := false
+	_, err := c.RetrieveMemoryRelated(context.Background(), "t", MemoryRelatedOptions{
+		SeedEntity:        "person:alice",
+		PreferShorterHops: &f,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotBody["prefer_shorter_hops"] != false {
+		t.Fatalf("prefer_shorter_hops=%v want false body=%v", gotBody["prefer_shorter_hops"], gotBody)
+	}
+
+	tr := true
+	_, err = c.RetrieveMemoryRelated(context.Background(), "t", MemoryRelatedOptions{
+		SeedEntity:        "person:alice",
+		PreferShorterHops: &tr,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotBody["prefer_shorter_hops"] != true {
+		t.Fatalf("prefer_shorter_hops=%v want true body=%v", gotBody["prefer_shorter_hops"], gotBody)
+	}
 }
 
 // s1200: ops digest posts to /v1/memory/ops_digest with window/horizon/limit and parses patterns+receipts+honesty.
