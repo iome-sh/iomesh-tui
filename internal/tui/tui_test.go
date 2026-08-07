@@ -1078,6 +1078,8 @@ func TestHandleSlash_OnboardStatus(t *testing.T) {
 		"/onboard portal",
 		// s1372 cross-link
 		"/onboard next",
+		// s1382 cross-link to lane status board
+		"/onboard next status",
 	} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("/onboard status missing %q in:\n%s", want, s)
@@ -1121,6 +1123,8 @@ func TestHandleSlash_OnboardNext(t *testing.T) {
 		"/onboard next plugins",
 		"/onboard next gtm",
 		"/onboard next memory",
+		// s1382 status board cross-link
+		"/onboard next status",
 	}
 
 	for _, line := range []string{"/onboard next", "/aion-onboard after", "/agent-onboard continue", "/onboard lanes"} {
@@ -1301,7 +1305,7 @@ func TestHandleSlash_OnboardNextMemoryLane(t *testing.T) {
 	}
 }
 
-// s1377: unknown /onboard next <lane> → overview + usage hint listing lanes.
+// s1377+s1382: unknown /onboard next <lane> → overview + usage hint listing lanes.
 func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -1319,6 +1323,7 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 		"plugins",
 		"gtm",
 		"memory",
+		"status",
 		"residual:",
 	} {
 		if !strings.Contains(s, want) {
@@ -1327,6 +1332,78 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	}
 	if strings.Contains(s, "onboard next plugins lane") {
 		t.Fatalf("unknown next lane must not drill into plugins lane: %s", s)
+	}
+	if strings.Contains(s, "onboard next lane status") {
+		t.Fatalf("unknown next lane must not drill into status board: %s", s)
+	}
+}
+
+// s1382: /onboard next status|pulse|board — residual-honest lane status board.
+func TestHandleSlash_OnboardNextLaneStatus(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	needles := []string{
+		"onboard next lane status",
+		"no MCP dial",
+		"plugins:",
+		"gtm:",
+		"memory:",
+		"portal:",
+		"dogfood_not_run",
+		"path_ready",
+		"skill_ready",
+		"residual_only",
+		"portal_hitl_still",
+		"dual_write OFF",
+		"not Memory GA",
+		"package load ≠ Memory GA",
+		"drafts only",
+		"no auto-send",
+		"Agent Plugins GA",
+		"agent MCP cannot write installs",
+		"catalog ≠ Connected",
+		"portal HITL",
+		"never invent install green",
+		"INSTALL_STORE APPLY",
+		"residual PASS ≠ live dogfood",
+	}
+
+	for _, line := range []string{
+		"/onboard next status",
+		"/onboard next pulse",
+		"/onboard next board",
+		"/aion-onboard after status",
+		"/agent-onboard continue pulse",
+		"/onboard lanes board",
+	} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		if !strings.Contains(s, "samples_ok") && !strings.Contains(s, "samples_missing") {
+			t.Fatalf("%s must report samples_ok or samples_missing:\n%s", line, s)
+		}
+		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Connected: yes") {
+			t.Fatalf("%s must not invent dual_write ON / Connected: %s", line, s)
+		}
+		if strings.Contains(s, "Memory GA shipped") || strings.Contains(s, "Agent Plugins GA shipped") {
+			t.Fatalf("%s must not invent Memory/Plugins GA: %s", line, s)
+		}
+		if strings.Contains(s, "INSTALL_STORE APPLY success") {
+			t.Fatalf("%s must not invent APPLY success: %s", line, s)
+		}
 	}
 }
 
