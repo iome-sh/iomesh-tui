@@ -25,3 +25,16 @@ Locks (never violate):
 - never invent install green / Connected / INSTALL_STORE APPLY / suite ops GA
 - residual PASS ≠ live dogfood publish`)
 }
+
+// GtmDraftChecklist residual-honest numbered draft-only checklist (s1358).
+// Used by /gtm help and /gtm checklist — operator HITL only; never invents auto-send,
+// suite ops GA, dual_write ON, Memory GA, or agent APPLY for connector installs.
+func GtmDraftChecklist() string {
+	return strings.TrimSpace(`GTM draft-only checklist (residual-honest · s1358 · no auto-send):
+  1. Draft content/outreach only — never auto-send email/SNS
+  2. Human publish / human CRM commercial
+  3. Salesforce = GA CRM; HubSpot + GTM suite Beta multi-tenant; guerrilla global-only
+  4. Connector install = portal HITL (not agent APPLY)
+  5. dual_write OFF · not Memory GA · book-demo OFF
+  6. Skill: read_skill gtm-draft-only-agent`)
+}
