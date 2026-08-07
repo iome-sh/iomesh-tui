@@ -1,9 +1,10 @@
-# Agent Plugins package client (s1326 + s1331 runtime wire + s1336 CLI + s1337 sample)
+# Agent Plugins package client (s1326 + s1331 runtime wire + s1336 CLI + s1337/s1346 samples)
 
 **Pin:** free eng **s1326** — Agent Plugins **v1.0.0 package client** (discover + validate).  
 **Pin:** free eng **s1331** — **opt-in runtime wire** of package skills + MCP into existing Skills / MCP runtimes.  
 **Pin:** free eng **s1336** — operator DX CLI `iomesh plugins list|validate`.
 **Pin:** free eng **s1337** — residual-honest **sample package** [`examples/agent-plugins/hello-iome`](../../examples/agent-plugins/hello-iome) (skills-only dogfood).
+**Pin:** free eng **s1346** — residual-honest **sample package** [`examples/agent-plugins/aion-memory-mcp`](../../examples/agent-plugins/aion-memory-mcp) (stdio map of local-primary `aion-memory-mcp` · not Memory GA).
 
 Residual-honest: **package wire ≠ invent Agent Plugins GA**. Not Memory GA. Discover/load success ≠ Connected / install APPLY green. dual_write **OFF** (unchanged). book-demo **OFF**. Sample package ≠ GA. list/validate ≠ invent Agent Plugins GA.
 
@@ -24,6 +25,7 @@ Residual-honest: **package wire ≠ invent Agent Plugins GA**. Not Memory GA. Di
 | Install / marketplace / enable UX | **out of scope** |
 | Full Agent Plugins client GA | **not claimed** |
 | Sample skills-only package (`hello-iome`) | **done** (s1337 · dogfood only · opt-in `[plugins]`) |
+| Sample stdio memory map (`aion-memory-mcp`) | **done** (s1346 · map only · binary on PATH · not Memory GA · dual_write OFF) |
 
 Package API entrypoint:
 
@@ -41,7 +43,9 @@ servers, mw := agentplugins.MCPServersFromPlugins(plugins, dataDirRoot)
 ```
 
 
-## Sample package (s1337)
+## Sample packages
+
+### `hello-iome` (s1337 · skills-only)
 
 In-repo dogfood package (skills-only; no MCP server, no secrets):
 
@@ -49,6 +53,18 @@ In-repo dogfood package (skills-only; no MCP server, no secrets):
 - Enable via opt-in `[plugins]` — see that package's [README](../../examples/agent-plugins/hello-iome/README.md)
 - Loading requires `enabled = true` + `dirs` pointing at the package root (or parent of package roots)
 - Discover/map of the sample ≠ install Connected / Agent Plugins GA
+
+### `aion-memory-mcp` (s1346 · stdio map)
+
+In-repo dogfood package that **maps** local-primary Memory MCP via stdio (no secrets; binary not shipped):
+
+- Path: [`examples/agent-plugins/aion-memory-mcp`](../../examples/agent-plugins/aion-memory-mcp)
+- `mcp.json`: server key `memory`, type `stdio`, command `aion-memory-mcp` (optional skill `aion-memory-local`)
+- Operator must install the binary and put it on **PATH**; connect is fail-open if missing
+- Mapped runtime name: `aion-memory-mcp-memory` (`<manifest.name>-<serverName>`)
+- Enable via opt-in `[plugins]` — see that package's [README](../../examples/agent-plugins/aion-memory-mcp/README.md)
+- Discover/map success ≠ process Connected / install APPLY / **Memory GA** · dual_write **OFF** · not freemium hosted palace
+- TOML `[[mcp.servers]]` remains the **primary** attach path; package map is portable dogfood
 
 ## Package layout (Agent Plugins 1.0.0)
 
