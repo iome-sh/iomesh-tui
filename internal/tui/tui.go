@@ -828,6 +828,31 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		}
 		fmt.Fprintln(out, agent.AionAgentOnboardingGuidanceNote())
 		fmt.Fprintln(out, "— residual: TUI ↔ aion onboarding · dual_write OFF · not Memory GA · never invent Connected · portal HITL · skill aion-agent-onboarding via read_skill")
+	case "/plugins", "/plugin":
+		// s1392: residual-honest /plugins slash soft offline dogfood.
+		// Subcommands: help|? · list · validate · dogfood (aliases soft|samples|offline) · status.
+		// Bare /plugins → help. Discover/list ≠ Connected · soft offline dogfood ≠ invent Agent Plugins GA ·
+		// residual PASS ≠ live dogfood · package load ≠ Memory GA · dual_write OFF · book-demo OFF ·
+		// never invent install green / Connected / INSTALL_STORE APPLY · portal HITL · agent MCP cannot write installs.
+		if len(parts) < 2 {
+			fmt.Fprintln(out, pluginsHelp())
+			return false, nil
+		}
+		sub := strings.ToLower(parts[1])
+		switch sub {
+		case "help", "?":
+			fmt.Fprintln(out, pluginsHelp())
+		case "list", "ls":
+			handlePluginsList(out, parts[2:])
+		case "validate", "check":
+			handlePluginsValidate(out, parts[2:])
+		case "dogfood", "soft", "samples", "offline":
+			handlePluginsDogfood(out)
+		case "status", "st", "pulse":
+			handlePluginsStatus(out)
+		default:
+			fmt.Fprintf(out, "plugins: unknown subcommand %q\n%s\n", parts[1], pluginsHelp())
+		}
 	case "/help", "/?":
 		fmt.Fprint(out, `commands:
   /models              list models (numbered)
@@ -845,6 +870,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /integrations [list|plan|signing|status]  connector setup via MCP (catalog+plan+signing discovery+portal HITL; not install CRUD)
   /gtm [help|checklist]  GTM draft-only guidance or checklist (aliases /gtm-draft /gtm-agent; no auto-send; human publish)
   /onboard [help|checklist|portal|status|next]  TUI agent ↔ aion onboarding guidance, checklist, portal Agent/MCP handoff, offline status, or post-onboard next lanes (aliases /aion-onboard /agent-onboard; residual-honest · portal HITL · settings/agent; next [plugins|gtm|memory|status|export]; next status→pulse|board; next export→receipt|stamp|evidence [json]; next aliases after|continue|lanes)
+  /plugins [help|list|validate|dogfood|status]  residual-honest Agent Plugins soft offline dogfood (alias /plugin; dogfood aliases soft|samples|offline; Discover ≠ Connected · soft offline ≠ live dogfood · ≠ invent Agent Plugins GA)
   /quit                exit
 
 Fullscreen keys: enter send · ctrl+j newline · pgup/pgdn scroll
