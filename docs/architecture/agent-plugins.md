@@ -1,9 +1,10 @@
-# Agent Plugins package client (s1326 + s1331 runtime wire)
+# Agent Plugins package client (s1326 + s1331 runtime wire + s1336 CLI)
 
 **Pin:** free eng **s1326** — Agent Plugins **v1.0.0 package client** (discover + validate).  
-**Pin:** free eng **s1331** — **opt-in runtime wire** of package skills + MCP into existing Skills / MCP runtimes.
+**Pin:** free eng **s1331** — **opt-in runtime wire** of package skills + MCP into existing Skills / MCP runtimes.  
+**Pin:** free eng **s1336** — operator DX CLI `iomesh plugins list|validate`.
 
-Residual-honest: **package wire ≠ invent Agent Plugins GA**. Not Memory GA. Discover/load success ≠ Connected / install APPLY green. dual_write **OFF** (unchanged). book-demo **OFF**.
+Residual-honest: **package wire ≠ invent Agent Plugins GA**. Not Memory GA. Discover/load success ≠ Connected / install APPLY green. dual_write **OFF** (unchanged). book-demo **OFF**. list/validate ≠ invent Agent Plugins GA.
 
 ## What this is
 
@@ -17,6 +18,7 @@ Residual-honest: **package wire ≠ invent Agent Plugins GA**. Not Memory GA. Di
 | Opt-in `[plugins]` config | **done** (s1331 · default `enabled=false`) |
 | Merge plugin skill dirs into skills catalog | **done** (s1331 · fail-open) |
 | Map plugin MCP → `mcp.ServerConfig` (append after TOML) | **done** (s1331 · fail-open) |
+| Operator CLI `iomesh plugins list\|validate` | **done** (s1336 · format helpers in `cli_format.go`) |
 | Approval gates on mutating MCP tools | **still apply** (plugin servers default Mutating=true) |
 | Install / marketplace / enable UX | **out of scope** |
 | Full Agent Plugins client GA | **not claimed** |
@@ -109,20 +111,54 @@ enabled = false
 - **Order:** TOML servers first, then plugin-mapped servers. Plugins-only MCP allowed when `[mcp] enabled` and TOML list empty.
 - **Fail-open:** per dir / per plugin / per MCP server entry.
 
+## CLI operator DX (s1336)
+
+```bash
+iomesh plugins              # alias: list
+iomesh plugins list         # table: NAME VERSION SKILLS MCP WARN ROOT
+iomesh plugins validate     # OK/FAIL per package; exit 1 on fatal or zero OK when dirs set
+iomesh plugins help
+```
+
+### Flags
+
+| Flag | Role |
+|------|------|
+| `--config path` | config.toml (default user config) |
+| `-dir path` | package root **or** parent of roots; **repeatable**; comma-separated OK |
+
+`-dir` **supplements** `[plugins].dirs` for one-shot list/validate without enabling runtime wire. Empty dirs + plugins default-off → residual-honest opt-in message (not a fake “plugins green”).
+
+### Behavior
+
+| Subcommand | Behavior |
+|------------|----------|
+| **list** | `DiscoverAll` on merged dirs; stdout table; stderr per-dir / per-plugin warnings + residual honesty footer. Fail-open (empty table / residual footer, exit 0). |
+| **validate** | `ValidateDirs` (Discover per package root); stdout `OK` / `FAIL` lines; stderr plugin warnings + honesty. **Exit 1** if any fatal FAIL **or** zero plugins OK when dirs were specified. |
+
+### Honesty (CLI)
+
+- list/validate ≠ invent Agent Plugins GA
+- dual_write **OFF** · Discover ≠ Connected · not Memory GA · book-demo **OFF**
+- CLI success ≠ runtime wire / MCP attach / install APPLY green
+- `[plugins]` remains opt-in (`enabled=false` default); CLI can inspect packages via `-dir` without enabling
+
+Pure format helpers live in `internal/agentplugins/cli_format.go` (unit-tested).
+
 ## Residual honesty locks
 
 | Claim | Truth |
 |-------|--------|
-| package client candidacy | discover/validate + opt-in runtime wire |
+| package client candidacy | discover/validate + opt-in runtime wire + operator CLI |
 | ≠ Agent Plugins GA | no marketplace/install UX · no product “plugins green” |
 | ≠ Memory GA | orthogonal surface |
 | dual_write | **OFF** (unchanged default; not a package concern) |
 | book-demo | **OFF** |
-| fail-open | per dir / component / entry |
+| fail-open | per dir / component / entry (list); validate surfaces fatals |
 | secrets | client-owned · never from portable `headers`/`env` package fields |
 | MCP risk | higher than skills — approval gates still apply (mutating default true) |
 | TOML MCP | still primary attach path; plugins append |
-| install / Connected green | **not invented** from Discover or map success |
+| install / Connected green | **not invented** from Discover, list, validate, or map success |
 
 Peer: [Agent Plugins specification](https://agent-plugins.org/specification) v1.0.0 · related local docs [skills.md](./skills.md) · [mcp.md](./mcp.md).
 
@@ -130,4 +166,5 @@ Peer: [Agent Plugins specification](https://agent-plugins.org/specification) v1.
 
 ```bash
 go test ./internal/agentplugins/...
+go build ./cmd/iomesh/
 ```

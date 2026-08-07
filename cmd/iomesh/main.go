@@ -53,6 +53,8 @@ func run(args []string) int {
 			return cmdSkills(args[1:])
 		case "mcp":
 			return cmdMCP(args[1:])
+		case "plugins":
+			return cmdPlugins(args[1:])
 		case "mesh":
 			return cmdMesh(args[1:])
 		case "memory":
@@ -498,6 +500,145 @@ func mcpServerFromTOML(s config.MCPServerTOML, cfg *config.Config) mcp.ServerCon
 		cfg = &config.Config{}
 	}
 	return cfg.BuildMCPServerConfig(s)
+}
+
+// cmdPlugins is operator DX for Agent Plugins packages (s1336): list + validate.
+// Residual honesty: list/validate ≠ invent Agent Plugins GA · dual_write OFF ·
+// Discover ≠ Connected · not Memory GA · book-demo OFF. Fail-open discover;
+// validate exits non-zero on fatal package errors or zero plugins when dirs set.
+func cmdPlugins(args []string) int {
+	sub := "list"
+	rest := args
+	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
+		sub = args[0]
+		rest = args[1:]
+	}
+	switch sub {
+	case "list":
+		return cmdPluginsList(rest)
+	case "validate":
+		return cmdPluginsValidate(rest)
+	case "help", "-h", "--help":
+		printPluginsUsage()
+		return 0
+	default:
+		fmt.Fprintf(os.Stderr, "unknown plugins subcommand %q\n", sub)
+		printPluginsUsage()
+		return 2
+	}
+}
+
+func printPluginsUsage() {
+	fmt.Fprint(os.Stderr, `iomesh plugins — Agent Plugins package operator DX (s1336)
+
+  iomesh plugins [list]           discover packages; table NAME VERSION SKILLS MCP WARN ROOT
+  iomesh plugins validate         OK/FAIL per package root; exit 1 on fatal or zero found
+  iomesh plugins help
+
+Flags:
+  --config path         config.toml (default: ~/.iomesh/config.toml)
+  -dir path             package root or parent of roots (repeatable; comma-separated OK)
+                        supplements [plugins].dirs for one-shot list/validate without enable
+
+Honesty: list/validate ≠ invent Agent Plugins GA · dual_write OFF · Discover ≠ Connected ·
+  not Memory GA · book-demo OFF. [plugins] is opt-in (default enabled=false). Fail-open
+  discover (list); validate surfaces fatals and exits non-zero. Runtime wire is separate (s1331).
+`)
+}
+
+func cmdPluginsList(args []string) int {
+	fs := flag.NewFlagSet("plugins list", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	configPath := fs.String("config", "", "path to config.toml")
+	var dirsFlag agentplugins.DirFlag
+	fs.Var(&dirsFlag, "dir", "plugin package root or parent (repeatable; comma-separated)")
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	cfg, err := loadConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "config: %v\n", err)
+		return 1
+	}
+	dirs := agentplugins.MergePluginDirs(cfg.Plugins.Dirs, []string(dirsFlag))
+	dirsSpecified := len(dirs) > 0
+	if !dirsSpecified {
+		fmt.Println(agentplugins.FormatListEmptyFooter(cfg.Plugins.Enabled, false))
+		fmt.Fprintln(os.Stderr, agentplugins.ResidualCLIHonesty)
+		return 0
+	}
+	plugins, warns := agentplugins.DiscoverAll(dirs)
+	for _, w := range warns {
+		fmt.Fprintf(os.Stderr, "plugins: %s\n", w)
+	}
+	if len(plugins) == 0 {
+		fmt.Println(agentplugins.FormatListEmptyFooter(cfg.Plugins.Enabled, true))
+		fmt.Fprintln(os.Stderr, agentplugins.ResidualCLIHonesty)
+		return 0
+	}
+	fmt.Println(agentplugins.FormatListHeader())
+	for _, p := range plugins {
+		fmt.Println(agentplugins.FormatListRow(agentplugins.PluginToListRow(p)))
+		for _, w := range p.Warnings {
+			fmt.Fprintf(os.Stderr, "plugins %s: %s\n", p.Manifest.Name, w)
+		}
+	}
+	fmt.Fprintln(os.Stderr, agentplugins.ResidualCLIHonesty)
+	return 0
+}
+
+func cmdPluginsValidate(args []string) int {
+	fs := flag.NewFlagSet("plugins validate", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	configPath := fs.String("config", "", "path to config.toml")
+	var dirsFlag agentplugins.DirFlag
+	fs.Var(&dirsFlag, "dir", "plugin package root or parent (repeatable; comma-separated)")
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	cfg, err := loadConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "config: %v\n", err)
+		return 1
+	}
+	dirs := agentplugins.MergePluginDirs(cfg.Plugins.Dirs, []string(dirsFlag))
+	if len(dirs) == 0 {
+		fmt.Println(agentplugins.FormatListEmptyFooter(cfg.Plugins.Enabled, false))
+		fmt.Fprintln(os.Stderr, agentplugins.ResidualCLIHonesty)
+		// No dirs specified → residual-honest guidance; not a fatal package error.
+		// When dirs were intended, operators pass -dir or set [plugins].dirs.
+		if !cfg.Plugins.Enabled {
+			return 0
+		}
+		// enabled but empty dirs: treat as zero plugins when "dirs specified" is false —
+		// residual message only (exit 0). Exit 1 only when dirs were provided.
+		return 0
+	}
+	outcomes, scanWarns := agentplugins.ValidateDirs(dirs)
+	for _, w := range scanWarns {
+		fmt.Fprintf(os.Stderr, "plugins: %s\n", w)
+	}
+	okCount := agentplugins.ValidateOKCount(outcomes)
+	hasFatal := agentplugins.ValidateHasFatal(outcomes)
+	for _, o := range outcomes {
+		if o.OK {
+			fmt.Println(agentplugins.FormatValidateOK(o))
+			for _, w := range o.Warnings {
+				fmt.Fprintf(os.Stderr, "plugins %s: %s\n", o.Name, w)
+			}
+		} else {
+			fmt.Println(agentplugins.FormatValidateFail(o.Path, o.Error))
+		}
+	}
+	if okCount == 0 {
+		fmt.Fprintln(os.Stderr, "validate: zero plugins OK (dirs were specified)")
+	}
+	fmt.Fprintln(os.Stderr, agentplugins.ResidualCLIHonesty)
+	// Exit 1 if any fatal OR zero plugins found when dirs specified.
+	if hasFatal || okCount == 0 {
+		return 1
+	}
+	return 0
 }
 
 func cmdModels(args []string) int {
@@ -2400,6 +2541,7 @@ Usage:
   iomesh sessions                list sessions in workspace
   iomesh skills                  list SKILL.md catalogs
   iomesh mcp [--connect]         list configured MCP servers
+  iomesh plugins [list|validate] Agent Plugins package discover/validate (opt-in; ≠ GA)
   iomesh mesh dogfood            stage I/O Mesh smoke (health/context/emit/pub/memory)
   iomesh mesh pub                ephemeral POST /v1/pub (--subject --payload|--payload-file --yes; PubPrint always-emit)
   iomesh mesh consumer create    durable pull consumer create (--stream --name --yes)
