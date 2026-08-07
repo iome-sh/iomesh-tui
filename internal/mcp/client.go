@@ -33,6 +33,9 @@ type ServerConfig struct {
 	Command string            `toml:"command" json:"command"`
 	Args    []string          `toml:"args" json:"args"`
 	Env     map[string]string `toml:"env" json:"env"`
+	// Cwd is optional working directory for stdio processes (e.g. expanded PLUGIN_ROOT).
+	// Empty leaves the process default (client process cwd).
+	Cwd string `toml:"cwd" json:"cwd"`
 	// URL enables streamable HTTP transport (POST JSON-RPC; JSON or SSE responses).
 	URL string `toml:"url" json:"url"`
 	// Headers are extra HTTP request headers (Authorization, etc.).
@@ -117,6 +120,9 @@ func DialStdio(ctx context.Context, cfg ServerConfig, logger *slog.Logger) (*Cli
 
 	runCtx, cancel := context.WithCancel(context.Background())
 	cmd := exec.CommandContext(runCtx, cfg.Command, cfg.Args...)
+	if strings.TrimSpace(cfg.Cwd) != "" {
+		cmd.Dir = cfg.Cwd
+	}
 	// Scrub secrets then apply explicit server env only.
 	cmd.Env = security.ScrubEnv(nil)
 	for k, v := range cfg.Env {

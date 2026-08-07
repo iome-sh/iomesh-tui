@@ -1,21 +1,25 @@
-# Agent Plugins package client (s1326)
+# Agent Plugins package client (s1326 + s1331 runtime wire)
 
-**Pin:** free eng **s1326** — first Agent Plugins **v1.0.0 package client slice** in `iomesh-tui`.
+**Pin:** free eng **s1326** — Agent Plugins **v1.0.0 package client** (discover + validate).  
+**Pin:** free eng **s1331** — **opt-in runtime wire** of package skills + MCP into existing Skills / MCP runtimes.
 
-Residual-honest: **discovery + closed validation only**. Not full Agent Plugins client GA. Not Memory GA. Package client candidacy ≠ product install green.
+Residual-honest: **package wire ≠ invent Agent Plugins GA**. Not Memory GA. Discover/load success ≠ Connected / install APPLY green. dual_write **OFF** (unchanged). book-demo **OFF**.
 
 ## What this is
 
 | Surface | Status |
 |---------|--------|
 | `plugin.json` closed validation | **done** (`internal/agentplugins`) |
-| Fixed-location skill discovery (`skills/<name>/SKILL.md`) | **done** (map `SkillRef` only) |
-| Fixed-location `mcp.json` parse + server map | **done** (structs only) |
-| `${PLUGIN_ROOT}` / `${PLUGIN_DATA}` expand helpers | **done** (args/env/cwd) |
+| Fixed-location skill discovery (`skills/<name>/SKILL.md`) | **done** |
+| Fixed-location `mcp.json` parse + server map | **done** |
+| `${PLUGIN_ROOT}` / `${PLUGIN_DATA}` expand helpers | **done** (args/env/cwd · never `command`) |
 | Path confinement (`./` + stay in plugin root) | **done** |
-| Runtime attach of MCP processes from package | **not yet** |
-| Wiring package skills into agent `list_skills` | **not yet** |
+| Opt-in `[plugins]` config | **done** (s1331 · default `enabled=false`) |
+| Merge plugin skill dirs into skills catalog | **done** (s1331 · fail-open) |
+| Map plugin MCP → `mcp.ServerConfig` (append after TOML) | **done** (s1331 · fail-open) |
+| Approval gates on mutating MCP tools | **still apply** (plugin servers default Mutating=true) |
 | Install / marketplace / enable UX | **out of scope** |
+| Full Agent Plugins client GA | **not claimed** |
 
 Package API entrypoint:
 
@@ -24,6 +28,12 @@ import "github.com/iome-sh/iomesh-tui/internal/agentplugins"
 
 p, err := agentplugins.Discover("/path/to/plugin")
 // p.Manifest, p.Skills, p.MCPServers, p.Warnings
+
+// s1331 runtime helpers (unit-tested):
+plugins, warns := agentplugins.DiscoverAll(cfg.Plugins.Dirs)
+skillDirs := agentplugins.SkillDirs(plugins) // pluginRoot/skills for LoadDirs
+servers, mw := agentplugins.MCPServersFromPlugins(plugins, dataDirRoot)
+// callers: TOML servers first, then append plugin servers
 ```
 
 ## Package layout (Agent Plugins 1.0.0)
@@ -67,37 +77,52 @@ my-plugin/
 
 ## Relationship to existing paths
 
-| Path | Role after s1326 |
+| Path | Role after s1331 |
 |------|------------------|
-| TOML `[[mcp.servers]]` | **Remains primary** MCP attach until package load is wired |
-| `[skills]` dirs + builtin | **Remains primary** skill load until package skills are merged |
-| `internal/agentplugins` | Validation/discovery library only |
+| TOML `[[mcp.servers]]` | **Remains primary** MCP attach; plugin servers **append after** TOML |
+| `[skills]` dirs + builtin | **Remains primary**; plugin `skills/` dirs **append** when plugins enabled |
+| `internal/agentplugins` | Validation/discovery + runtime map helpers |
+| Approval / yolo | Unchanged — plugin MCP tools default **mutating=true** (fail-closed) |
 
-Do not invent “plugins installed / Connected / MCP attach green” from package discovery alone.
+Do not invent “plugins installed / Connected / MCP attach green” from package discovery or map alone. Process connect still fail-open inside `mcp.NewManager`.
 
-## Optional future config (not wired)
-
-Document-only sketch — **not** read by main in s1326:
+## Config (s1331 · opt-in)
 
 ```toml
-# [plugins]
-# enabled = false
-# dirs = ["~/.iomesh/plugins", ".iomesh/plugins"]
+# Agent Plugins package wire — opt-in (default enabled=false).
+# Each dirs entry is a package root (plugin.json) or a parent of package roots.
+# data_dir: root for per-plugin PLUGIN_DATA (default: <workspace>/.iomesh/plugin-data/<name>).
+# Secrets never from portable plugin fields — only ${PLUGIN_ROOT}/${PLUGIN_DATA} expand.
+# dual_write OFF · book-demo OFF · package wire ≠ Agent Plugins GA.
+[plugins]
+enabled = false
+# dirs = ["~/.iomesh/plugins/my-plugin", "/opt/iomesh/plugins"]
+# data_dir = "~/.iomesh/plugin-data"
 ```
+
+### Runtime mapping details
+
+- **Skills:** `SkillDirs` returns each `pluginRoot/skills` that has discovered `SKILL.md` children; passed to `skills.LoadWithBuiltin` after `[skills].dirs`.
+- **MCP names:** `<pluginManifest.name>-<serverName>` (stable uniqueness across plugins).
+- **stdio:** `command` never placeholder-expanded; `./` resolved under plugin root; `args`/`env`/`cwd` expanded; client injects absolute `PLUGIN_ROOT` + `PLUGIN_DATA` env; `PLUGIN_DATA` dir created (`MkdirAll`) before map return.
+- **HTTP/SSE:** URL + headers (PLUGIN_* expanded in header **values** only). No secret invent.
+- **Order:** TOML servers first, then plugin-mapped servers. Plugins-only MCP allowed when `[mcp] enabled` and TOML list empty.
+- **Fail-open:** per dir / per plugin / per MCP server entry.
 
 ## Residual honesty locks
 
 | Claim | Truth |
 |-------|--------|
-| package client candidacy | discovery/validation slice only |
+| package client candidacy | discover/validate + opt-in runtime wire |
+| ≠ Agent Plugins GA | no marketplace/install UX · no product “plugins green” |
 | ≠ Memory GA | orthogonal surface |
 | dual_write | **OFF** (unchanged default; not a package concern) |
 | book-demo | **OFF** |
-| fail-open | per component / per entry |
+| fail-open | per dir / component / entry |
 | secrets | client-owned · never from portable `headers`/`env` package fields |
-| MCP risk | higher than skills — map structs only; no process attach yet |
-| TOML MCP | still primary attach path |
-| install green | **not invented** from Discover success |
+| MCP risk | higher than skills — approval gates still apply (mutating default true) |
+| TOML MCP | still primary attach path; plugins append |
+| install / Connected green | **not invented** from Discover or map success |
 
 Peer: [Agent Plugins specification](https://agent-plugins.org/specification) v1.0.0 · related local docs [skills.md](./skills.md) · [mcp.md](./mcp.md).
 

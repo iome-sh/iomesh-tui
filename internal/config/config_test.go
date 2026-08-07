@@ -37,6 +37,48 @@ func TestDefault_DualWriteOff(t *testing.T) {
 	}
 }
 
+// TestDefault_PluginsOff pins s1331 residual honesty: [plugins] opt-in only.
+// package wire ≠ Agent Plugins GA · dual_write remains OFF.
+func TestDefault_PluginsOff(t *testing.T) {
+	cfg := Default()
+	if cfg.Plugins.Enabled {
+		t.Fatalf("s1331 honesty: Plugins.Enabled must default false, got %+v", cfg.Plugins)
+	}
+	if len(cfg.Plugins.Dirs) != 0 {
+		t.Fatalf("plugins dirs must default empty, got %+v", cfg.Plugins.Dirs)
+	}
+	if cfg.Memory.DualWrite {
+		t.Fatal("dual_write must stay OFF when plugins section is present")
+	}
+}
+
+func TestLoad_PluginsSection(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.toml")
+	content := `
+[plugins]
+enabled = true
+dirs = ["/opt/plugins/a", "~/plugins/b"]
+data_dir = "/var/plugin-data"
+`
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.Plugins.Enabled {
+		t.Fatal("plugins.enabled")
+	}
+	if len(cfg.Plugins.Dirs) != 2 || cfg.Plugins.Dirs[0] != "/opt/plugins/a" {
+		t.Fatalf("dirs=%v", cfg.Plugins.Dirs)
+	}
+	if cfg.Plugins.DataDir != "/var/plugin-data" {
+		t.Fatalf("data_dir=%q", cfg.Plugins.DataDir)
+	}
+}
+
 func TestLoad_MergeModelOverride(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.toml")
