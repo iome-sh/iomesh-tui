@@ -653,7 +653,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"streamable HTTP",
 		"/onboard portal",
 		"/onboard status",
-		// s1372 post-onboard next lanes
+		// s1372 post-onboard next lanes + s1377 lane drills
 		"/onboard next",
 		"iomesh plugins dogfood",
 		"Agent Plugins GA",
@@ -666,6 +666,14 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"package load ≠ Memory GA",
 		"freemium palace",
 		"AionAgentOnboardingNextLanes",
+		// s1377 per-lane drills
+		"/onboard next plugins",
+		"/onboard next gtm",
+		"/onboard next memory",
+		"AionAgentOnboardingNextPluginsLane",
+		"AionAgentOnboardingNextGtmLane",
+		"AionAgentOnboardingNextMemoryLane",
+		"plugins|gtm|memory",
 	} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("skill body missing %q:\n%s", want, body)

@@ -221,7 +221,7 @@ func TestAionAgentOnboardingStatus_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1372: AionAgentOnboardingNextLanes residual-honest post-onboard continuum needles.
+// s1372+s1377: AionAgentOnboardingNextLanes residual-honest post-onboard continuum needles.
 func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 	out := AionAgentOnboardingNextLanes()
 	if out == "" {
@@ -235,6 +235,7 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"iomesh plugins dogfood",
 		"offline sample validate",
 		"Agent Plugins GA",
+		"/onboard next plugins",
 		"2.",
 		"/gtm checklist",
 		"gtm-draft-only-agent",
@@ -242,6 +243,7 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"no auto-send",
 		"human publish",
 		"GTM agent GA",
+		"/onboard next gtm",
 		"3.",
 		"aion-memory-mcp",
 		"Memory Ops Pack",
@@ -249,6 +251,7 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"dual_write OFF",
 		"package load ≠ Memory GA",
 		"freemium palace",
+		"/onboard next memory",
 		"4.",
 		"portal HITL",
 		"agent MCP cannot write installs",
@@ -275,6 +278,143 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 	}
 	if strings.Contains(out, "auto-send enabled") || strings.Contains(out, "GTM agent GA shipped") {
 		t.Fatalf("must not invent auto-send / GTM agent GA: %s", out)
+	}
+}
+
+// s1377: AionAgentOnboardingNextPluginsLane residual-honest plugins dogfood drill needles.
+func TestAionAgentOnboardingNextPluginsLane_HonestyNeedles(t *testing.T) {
+	out := AionAgentOnboardingNextPluginsLane()
+	if out == "" {
+		t.Fatal("empty plugins lane")
+	}
+	for _, want := range []string{
+		"onboard next plugins lane",
+		"no MCP dial",
+		"iomesh plugins dogfood",
+		"offline sample validate",
+		"examples/agent-plugins",
+		"hello-iome",
+		"aion-memory-mcp",
+		"iomesh plugins list",
+		"iomesh plugins validate",
+		"iomesh plugins dogfood",
+		"plugins dogfood ≠ invent Agent Plugins GA",
+		"Agent Plugins GA",
+		"residual PASS ≠ live dogfood",
+		"never invent install green",
+		"Connected",
+		"INSTALL_STORE APPLY",
+		"catalog ≠ Connected",
+		"agent MCP cannot write installs",
+		"portal HITL",
+		"package load ≠ Memory GA",
+		"dual_write OFF",
+		"book-demo OFF",
+		"not Memory GA",
+		"~$88/$119",
+		"/onboard next",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("plugins lane missing %q in:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
+	}
+	if strings.Contains(out, "Agent Plugins GA shipped") || strings.Contains(out, "Memory GA shipped") {
+		t.Fatalf("must not invent Plugins/Memory GA: %s", out)
+	}
+}
+
+// s1377: AionAgentOnboardingNextGtmLane residual-honest GTM draft-only drill needles.
+func TestAionAgentOnboardingNextGtmLane_HonestyNeedles(t *testing.T) {
+	out := AionAgentOnboardingNextGtmLane()
+	if out == "" {
+		t.Fatal("empty gtm lane")
+	}
+	for _, want := range []string{
+		"onboard next gtm lane",
+		"no MCP dial",
+		"/gtm checklist",
+		"gtm-draft-only-agent",
+		"drafts only",
+		"no auto-send",
+		"human publish",
+		"human CRM commercial",
+		"read_skill gtm-draft-only-agent",
+		"GTM checklist ≠ invent GTM agent GA",
+		"GTM agent GA",
+		"Salesforce",
+		"HubSpot",
+		"guerrilla",
+		"portal HITL",
+		"agent MCP cannot write installs",
+		"never invent install green",
+		"Connected",
+		"INSTALL_STORE APPLY",
+		"catalog ≠ Connected",
+		"dual_write OFF",
+		"book-demo OFF",
+		"not Memory GA",
+		"residual PASS ≠ live dogfood",
+		"~$88/$119",
+		"/onboard next",
+		"/gtm",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("gtm lane missing %q in:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
+	}
+	if strings.Contains(out, "auto-send enabled") || strings.Contains(out, "GTM agent GA shipped") {
+		t.Fatalf("must not invent auto-send / GTM agent GA: %s", out)
+	}
+}
+
+// s1377: AionAgentOnboardingNextMemoryLane residual-honest memory local drill needles.
+func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
+	out := AionAgentOnboardingNextMemoryLane()
+	if out == "" {
+		t.Fatal("empty memory lane")
+	}
+	for _, want := range []string{
+		"onboard next memory lane",
+		"no MCP dial",
+		"aion-memory-mcp",
+		"Memory Ops Pack",
+		"local-primary",
+		"dual_write OFF",
+		"package load ≠ Memory GA",
+		"freemium palace",
+		"not Memory GA",
+		"memory-advanced-agent",
+		"/memory status",
+		"/onboard status",
+		"fail-open offline",
+		"residual PASS ≠ live dogfood",
+		"probe only",
+		"never invent install green",
+		"Connected",
+		"INSTALL_STORE APPLY",
+		"catalog ≠ Connected",
+		"portal HITL",
+		"agent MCP cannot write installs",
+		"book-demo OFF",
+		"console.iome.sh/settings/agent",
+		"~$88/$119",
+		"/onboard next",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("memory lane missing %q in:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
+	}
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "freemium palace GA") {
+		t.Fatalf("must not invent Memory GA / freemium palace: %s", out)
 	}
 }
 
