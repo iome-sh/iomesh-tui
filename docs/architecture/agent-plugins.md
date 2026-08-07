@@ -1,12 +1,13 @@
-# Agent Plugins package client (s1326 + s1331 runtime wire + s1336 CLI + s1337/s1346 samples)
+# Agent Plugins package client (s1326 + s1331 runtime wire + s1336 CLI + s1337/s1346 samples + s1357 dogfood)
 
 **Pin:** free eng **s1326** — Agent Plugins **v1.0.0 package client** (discover + validate).  
 **Pin:** free eng **s1331** — **opt-in runtime wire** of package skills + MCP into existing Skills / MCP runtimes.  
 **Pin:** free eng **s1336** — operator DX CLI `iomesh plugins list|validate`.
 **Pin:** free eng **s1337** — residual-honest **sample package** [`examples/agent-plugins/hello-iome`](../../examples/agent-plugins/hello-iome) (skills-only dogfood).
 **Pin:** free eng **s1346** — residual-honest **sample package** [`examples/agent-plugins/aion-memory-mcp`](../../examples/agent-plugins/aion-memory-mcp) (stdio map of local-primary `aion-memory-mcp` · not Memory GA).
+**Pin:** free eng **s1357** — offline residual-honest `iomesh plugins dogfood` (validates **both** in-repo samples; no MCP dial · PATH residual for binary).
 
-Residual-honest: **package wire ≠ invent Agent Plugins GA**. Not Memory GA. Discover/load success ≠ Connected / install APPLY green. dual_write **OFF** (unchanged). book-demo **OFF**. Sample package ≠ GA. list/validate ≠ invent Agent Plugins GA.
+Residual-honest: **package wire ≠ invent Agent Plugins GA**. Not Memory GA. Discover/load success ≠ Connected / install APPLY green. dual_write **OFF** (unchanged). book-demo **OFF**. Sample package ≠ GA. list/validate/dogfood ≠ invent Agent Plugins GA. dogfood PASS ≠ Connected / Memory GA · PATH residual for `aion-memory-mcp` binary.
 
 ## What this is
 
@@ -21,11 +22,12 @@ Residual-honest: **package wire ≠ invent Agent Plugins GA**. Not Memory GA. Di
 | Merge plugin skill dirs into skills catalog | **done** (s1331 · fail-open) |
 | Map plugin MCP → `mcp.ServerConfig` (append after TOML) | **done** (s1331 · fail-open) |
 | Operator CLI `iomesh plugins list\|validate` | **done** (s1336 · format helpers in `cli_format.go`) |
+| Offline samples dogfood `iomesh plugins dogfood` | **done** (s1357 · both samples · discover/validate only · no MCP dial) |
 | Approval gates on mutating MCP tools | **still apply** (plugin servers default Mutating=true) |
 | Install / marketplace / enable UX | **out of scope** |
 | Full Agent Plugins client GA | **not claimed** |
 | Sample skills-only package (`hello-iome`) | **done** (s1337 · dogfood only · opt-in `[plugins]`) |
-| Sample stdio memory map (`aion-memory-mcp`) | **done** (s1346 · map only · binary on PATH · not Memory GA · dual_write OFF) |
+| Sample stdio memory map (`aion-memory-mcp`) | **done** (s1346 · map only · binary on PATH for connect · not Memory GA · dual_write OFF) |
 
 Package API entrypoint:
 
@@ -139,12 +141,13 @@ enabled = false
 - **Order:** TOML servers first, then plugin-mapped servers. Plugins-only MCP allowed when `[mcp] enabled` and TOML list empty.
 - **Fail-open:** per dir / per plugin / per MCP server entry.
 
-## CLI operator DX (s1336)
+## CLI operator DX (s1336 + s1357 dogfood)
 
 ```bash
 iomesh plugins              # alias: list
 iomesh plugins list         # table: NAME VERSION SKILLS MCP WARN ROOT
 iomesh plugins validate     # OK/FAIL per package; exit 1 on fatal or zero OK when dirs set
+iomesh plugins dogfood      # offline validate both in-repo samples (s1357)
 iomesh plugins help
 ```
 
@@ -152,8 +155,9 @@ iomesh plugins help
 
 | Flag | Role |
 |------|------|
-| `--config path` | config.toml (default user config) |
-| `-dir path` | package root **or** parent of roots; **repeatable**; comma-separated OK |
+| `--config path` | config.toml (default user config) — list/validate |
+| `-dir path` | package root **or** parent of roots; **repeatable**; comma-separated OK — list/validate |
+| `-module-root path` | module root containing `examples/agent-plugins/*` (default: walk up from cwd for `go.mod`) — dogfood |
 
 `-dir` **supplements** `[plugins].dirs` for one-shot list/validate without enabling runtime wire. Empty dirs + plugins default-off → residual-honest opt-in message (not a fake “plugins green”).
 
@@ -163,30 +167,35 @@ iomesh plugins help
 |------------|----------|
 | **list** | `DiscoverAll` on merged dirs; stdout table; stderr per-dir / per-plugin warnings + residual honesty footer. Fail-open (empty table / residual footer, exit 0). |
 | **validate** | `ValidateDirs` (Discover per package root); stdout `OK` / `FAIL` lines; stderr plugin warnings + honesty. **Exit 1** if any fatal FAIL **or** zero plugins OK when dirs were specified. |
+| **dogfood** | Resolves both sample dirs (`hello-iome` + `aion-memory-mcp`) under module root; `ValidateDirs` per sample; stdout `OK`/`FAIL` + summary; stderr PATH residual + honesty. **Exit 1** if any fatal, missing sample, or not both expected samples OK. **No** MCP Dial / process connect · **does not** require `aion-memory-mcp` on PATH. |
+
+Helpers: `SamplePluginRelPaths` / `DefaultSamplePluginDirs` / `FindModuleRoot` / `DogfoodSamples` / `DogfoodPass` in `internal/agentplugins/dogfood.go` (unit-tested).
 
 ### Honesty (CLI)
 
-- list/validate ≠ invent Agent Plugins GA
+- list/validate/dogfood ≠ invent Agent Plugins GA
 - dual_write **OFF** · Discover ≠ Connected · not Memory GA · book-demo **OFF**
+- dogfood PASS ≠ invent Agent Plugins GA · PATH residual for binary · connect skip
 - CLI success ≠ runtime wire / MCP attach / install APPLY green
 - `[plugins]` remains opt-in (`enabled=false` default); CLI can inspect packages via `-dir` without enabling
 
-Pure format helpers live in `internal/agentplugins/cli_format.go` (unit-tested).
+Pure format helpers live in `internal/agentplugins/cli_format.go` (unit-tested). Dogfood helpers: `dogfood.go`.
 
 ## Residual honesty locks
 
 | Claim | Truth |
 |-------|--------|
-| package client candidacy | discover/validate + opt-in runtime wire + operator CLI |
+| package client candidacy | discover/validate + opt-in runtime wire + operator CLI + samples dogfood |
 | ≠ Agent Plugins GA | no marketplace/install UX · no product “plugins green” |
-| ≠ Memory GA | orthogonal surface |
+| ≠ Memory GA | orthogonal surface · aion-memory-mcp sample is map only |
 | dual_write | **OFF** (unchanged default; not a package concern) |
 | book-demo | **OFF** |
-| fail-open | per dir / component / entry (list); validate surfaces fatals |
+| fail-open | per dir / component / entry (list); validate/dogfood surfaces fatals |
 | secrets | client-owned · never from portable `headers`/`env` package fields |
 | MCP risk | higher than skills — approval gates still apply (mutating default true) |
 | TOML MCP | still primary attach path; plugins append |
-| install / Connected green | **not invented** from Discover, list, validate, or map success |
+| install / Connected green | **not invented** from Discover, list, validate, dogfood, or map success |
+| PATH residual | dogfood does **not** require `aion-memory-mcp` binary; connect remains separate |
 
 Peer: [Agent Plugins specification](https://agent-plugins.org/specification) v1.0.0 · related local docs [skills.md](./skills.md) · [mcp.md](./mcp.md).
 
@@ -197,4 +206,6 @@ Peer: [Agent Plugins specification](https://agent-plugins.org/specification) v1.
 ```bash
 go test ./internal/agentplugins/...
 go build ./cmd/iomesh/
+# from module root (offline; no PATH binary required):
+./bin/iomesh plugins dogfood
 ```

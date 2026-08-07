@@ -502,10 +502,11 @@ func mcpServerFromTOML(s config.MCPServerTOML, cfg *config.Config) mcp.ServerCon
 	return cfg.BuildMCPServerConfig(s)
 }
 
-// cmdPlugins is operator DX for Agent Plugins packages (s1336): list + validate.
-// Residual honesty: list/validate ≠ invent Agent Plugins GA · dual_write OFF ·
-// Discover ≠ Connected · not Memory GA · book-demo OFF. Fail-open discover;
-// validate exits non-zero on fatal package errors or zero plugins when dirs set.
+// cmdPlugins is operator DX for Agent Plugins packages (s1336 list/validate · s1357 dogfood).
+// Residual honesty: list/validate/dogfood ≠ invent Agent Plugins GA · dual_write OFF ·
+// Discover ≠ Connected · not Memory GA · PATH residual for binary · book-demo OFF.
+// Fail-open discover; validate exits non-zero on fatal package errors or zero plugins when dirs set.
+// Dogfood validates both in-repo samples offline — no MCP dial / connect.
 func cmdPlugins(args []string) int {
 	sub := "list"
 	rest := args
@@ -518,6 +519,8 @@ func cmdPlugins(args []string) int {
 		return cmdPluginsList(rest)
 	case "validate":
 		return cmdPluginsValidate(rest)
+	case "dogfood":
+		return cmdPluginsDogfood(rest)
 	case "help", "-h", "--help":
 		printPluginsUsage()
 		return 0
@@ -529,21 +532,81 @@ func cmdPlugins(args []string) int {
 }
 
 func printPluginsUsage() {
-	fmt.Fprint(os.Stderr, `iomesh plugins — Agent Plugins package operator DX (s1336)
+	fmt.Fprint(os.Stderr, `iomesh plugins — Agent Plugins package operator DX (s1336 · s1357 dogfood)
 
   iomesh plugins [list]           discover packages; table NAME VERSION SKILLS MCP WARN ROOT
   iomesh plugins validate         OK/FAIL per package root; exit 1 on fatal or zero found
+  iomesh plugins dogfood          offline residual-honest validate of both in-repo samples
   iomesh plugins help
 
-Flags:
+Flags (list|validate):
   --config path         config.toml (default: ~/.iomesh/config.toml)
   -dir path             package root or parent of roots (repeatable; comma-separated OK)
                         supplements [plugins].dirs for one-shot list/validate without enable
 
-Honesty: list/validate ≠ invent Agent Plugins GA · dual_write OFF · Discover ≠ Connected ·
-  not Memory GA · book-demo OFF. [plugins] is opt-in (default enabled=false). Fail-open
-  discover (list); validate surfaces fatals and exits non-zero. Runtime wire is separate (s1331).
+Flags (dogfood):
+  -module-root path     module root containing examples/agent-plugins/* (default: walk up from cwd for go.mod)
+
+Honesty: list/validate/dogfood ≠ invent Agent Plugins GA · dual_write OFF · Discover ≠ Connected ·
+  not Memory GA · PATH residual for binary · book-demo OFF. [plugins] is opt-in (default enabled=false).
+  Fail-open discover (list); validate surfaces fatals and exits non-zero. Dogfood = discover/validate
+  only (no MCP dial / connect). Runtime wire is separate (s1331).
 `)
+}
+
+// cmdPluginsDogfood runs offline residual-honest dogfood of both in-repo sample packages
+// (hello-iome + aion-memory-mcp). Discover/validate only — does not Dial MCP or require
+// aion-memory-mcp on PATH (PATH residual; connect skip). s1357.
+func cmdPluginsDogfood(args []string) int {
+	fs := flag.NewFlagSet("plugins dogfood", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	moduleRoot := fs.String("module-root", "", "module root with examples/agent-plugins (default: find go.mod from cwd)")
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	root := strings.TrimSpace(*moduleRoot)
+	if root == "" {
+		found, err := agentplugins.FindModuleRoot("")
+		if err != nil {
+			// Fallback: treat cwd as module root (operator may have samples without go.mod walk).
+			cwd, cwdErr := os.Getwd()
+			if cwdErr != nil {
+				fmt.Fprintf(os.Stderr, "dogfood: find module root: %v\n", err)
+				fmt.Fprintln(os.Stderr, agentplugins.ResidualDogfoodHonesty)
+				return 1
+			}
+			root = cwd
+			fmt.Fprintf(os.Stderr, "dogfood: go.mod not found above cwd; using cwd as module root (%s)\n", cwd)
+		} else {
+			root = found
+		}
+	}
+	outcomes, warns, err := agentplugins.DogfoodSamples(root)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "dogfood: %v\n", err)
+		fmt.Fprintln(os.Stderr, agentplugins.ResidualDogfoodHonesty)
+		return 1
+	}
+	for _, w := range warns {
+		fmt.Fprintf(os.Stderr, "plugins: %s\n", w)
+	}
+	for _, o := range outcomes {
+		if o.OK {
+			fmt.Println(agentplugins.FormatValidateOK(o))
+			for _, w := range o.Warnings {
+				fmt.Fprintf(os.Stderr, "plugins %s: %s\n", o.Name, w)
+			}
+		} else {
+			fmt.Println(agentplugins.FormatValidateFail(o.Path, o.Error))
+		}
+	}
+	fmt.Println(agentplugins.FormatDogfoodSummary(outcomes))
+	fmt.Fprintln(os.Stderr, agentplugins.ResidualDogfoodHonesty)
+	// Exit 1 if any fatal, missing samples, or not both expected samples OK.
+	if !agentplugins.DogfoodPass(outcomes) {
+		return 1
+	}
+	return 0
 }
 
 func cmdPluginsList(args []string) int {
@@ -2541,7 +2604,7 @@ Usage:
   iomesh sessions                list sessions in workspace
   iomesh skills                  list SKILL.md catalogs
   iomesh mcp [--connect]         list configured MCP servers
-  iomesh plugins [list|validate] Agent Plugins package discover/validate (opt-in; ≠ GA)
+  iomesh plugins [list|validate|dogfood] Agent Plugins package discover/validate/dogfood (opt-in; ≠ GA)
   iomesh mesh dogfood            stage I/O Mesh smoke (health/context/emit/pub/memory)
   iomesh mesh pub                ephemeral POST /v1/pub (--subject --payload|--payload-file --yes; PubPrint always-emit)
   iomesh mesh consumer create    durable pull consumer create (--stream --name --yes)
