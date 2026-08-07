@@ -97,6 +97,9 @@ func TestHandleSlash_ModelsAndCost(t *testing.T) {
 	if !strings.Contains(out.String(), "/gtm") {
 		t.Fatalf("help missing /gtm: %s", out.String())
 	}
+	if !strings.Contains(out.String(), "/onboard") {
+		t.Fatalf("help missing /onboard: %s", out.String())
+	}
 	out.Reset()
 	_, _ = handleSlash(&out, adapter, "/memory")
 	if !strings.Contains(out.String(), "memory:") {
@@ -856,6 +859,127 @@ func TestHandleSlash_GtmHelpChecklist(t *testing.T) {
 	help := out.String()
 	if !strings.Contains(help, "/gtm") || !strings.Contains(help, "checklist") {
 		t.Fatalf("/help missing /gtm checklist mention: %s", help)
+	}
+}
+
+// s1363: /onboard slash — residual-honest TUI agent ↔ aion onboarding guidance.
+func TestHandleSlash_Onboard(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	_, err := handleSlash(&out, adapter, "/onboard")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := out.String()
+	for _, want := range []string{
+		"list_connector_catalog",
+		"plan_connector_setup",
+		"list_org_connector_installs",
+		"dual_write OFF",
+		"not Memory GA",
+		"portal HITL",
+		"never invent install green",
+		"aion-agent-onboarding",
+		"read_skill",
+		"console.iome.sh/integrations",
+	} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("/onboard missing %q in:\n%s", want, s)
+		}
+	}
+	// Residual footer (s1363)
+	if !strings.Contains(s, "residual:") {
+		t.Fatalf("/onboard missing residual footer: %s", s)
+	}
+	if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Connected: yes") {
+		t.Fatalf("must not invent dual_write ON / Connected: %s", s)
+	}
+	if strings.Contains(s, "Memory GA shipped") || strings.Contains(s, "Agent Plugins GA shipped") {
+		t.Fatalf("must not invent Memory/Plugins GA: %s", s)
+	}
+
+	// aliases
+	for _, alias := range []string{"/aion-onboard", "/agent-onboard"} {
+		out.Reset()
+		_, _ = handleSlash(&out, adapter, alias)
+		if !strings.Contains(out.String(), "list_connector_catalog") || !strings.Contains(out.String(), "aion-agent-onboarding") {
+			t.Fatalf("%s alias: %s", alias, out.String())
+		}
+	}
+}
+
+// s1363: /onboard help and /onboard checklist — residual-honest numbered onboarding checklist.
+func TestHandleSlash_OnboardHelpChecklist(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	needles := []string{
+		"1.",
+		"IOMESH/MCP",
+		"fail-open",
+		"2.",
+		"list_connector_catalog",
+		"catalog status ≠ Connected",
+		"3.",
+		"plan_connector_setup",
+		"4.",
+		"list_org_connector_installs",
+		"available=false ≠ empty-as-none",
+		"5.",
+		"dual_write OFF",
+		"not Memory GA",
+		"6.",
+		"/integrations status",
+		"console.iome.sh/integrations",
+		"never invent install green",
+		"INSTALL_STORE APPLY",
+		"book-demo OFF",
+		"residual PASS ≠ live dogfood",
+	}
+
+	for _, line := range []string{"/onboard help", "/onboard checklist", "/aion-onboard help", "/agent-onboard checklist"} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Memory GA shipped") {
+			t.Fatalf("%s must not invent dual_write ON / Memory GA: %s", line, s)
+		}
+	}
+
+	// Unknown sub → guidance + usage
+	out.Reset()
+	_, err := handleSlash(&out, adapter, "/onboard bogon")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := out.String()
+	if !strings.Contains(s, "list_connector_catalog") || !strings.Contains(s, "usage: /onboard") {
+		t.Fatalf("/onboard bogon want guidance+usage: %s", s)
+	}
+	if !strings.Contains(s, "residual:") {
+		t.Fatalf("/onboard bogon missing residual footer: %s", s)
+	}
+
+	// /help mentions /onboard checklist
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/help")
+	if err != nil {
+		t.Fatal(err)
+	}
+	help := out.String()
+	if !strings.Contains(help, "/onboard") || !strings.Contains(help, "checklist") {
+		t.Fatalf("/help missing /onboard checklist mention: %s", help)
 	}
 }
 
