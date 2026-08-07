@@ -730,6 +730,13 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			return false, nil
 		}
 		fmt.Fprintf(out, "theme %s (apply in fullscreen TUI with /theme)\n", th.Name)
+	case "/gtm", "/gtm-draft", "/gtm-agent":
+		// s1352: residual-honest GTM draft-only guidance (no auto-send agency).
+		// Prints agent.GtmDraftOnlyAgentGuidanceNote + short residual footer.
+		// Drafts only · human publish · skill gtm-draft-only-agent via read_skill ·
+		// dual_write OFF · not Memory GA · book-demo OFF · not invent suite ops GA.
+		fmt.Fprintln(out, agent.GtmDraftOnlyAgentGuidanceNote())
+		fmt.Fprintln(out, "— residual: drafts only · human publish · skill gtm-draft-only-agent via read_skill · dual_write OFF · not Memory GA")
 	case "/help", "/?":
 		fmt.Fprint(out, `commands:
   /models              list models (numbered)
@@ -745,6 +752,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /catalog [query]     list mesh data products (catalog plane)
   /memory [recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · status advanced inventory)
   /integrations [list|plan|signing|status]  connector setup via MCP (catalog+plan+signing discovery+portal HITL; not install CRUD)
+  /gtm                 GTM draft-only guidance (aliases /gtm-draft /gtm-agent; no auto-send; human publish)
   /quit                exit
 
 Fullscreen keys: enter send · ctrl+j newline · pgup/pgdn scroll
