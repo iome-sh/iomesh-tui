@@ -689,6 +689,11 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"evidence_kind=onboard_next_lane_status_export",
 		"board/export evidence ≠ invent Connected",
 		"plugins|gtm|memory|status|export",
+		// s1397 session soft dogfood on status/export
+		"soft_offline_dogfood_session_pass",
+		"soft_offline_dogfood_session_fail",
+		"session soft ≠ live dogfood",
+		"/plugins dogfood",
 	} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("skill body missing %q:\n%s", want, body)
