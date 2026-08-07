@@ -10,7 +10,7 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/skills"
 )
 
-// s1363+s1368: AionAgentOnboardingGuidanceNote residual-honest needles.
+// s1363+s1368+s1372: AionAgentOnboardingGuidanceNote residual-honest needles.
 func TestAionAgentOnboardingGuidanceNote_HonestyNeedles(t *testing.T) {
 	out := AionAgentOnboardingGuidanceNote()
 	if out == "" {
@@ -53,6 +53,11 @@ func TestAionAgentOnboardingGuidanceNote_HonestyNeedles(t *testing.T) {
 		"[[mcp.servers]]",
 		"streamable HTTP",
 		"/onboard portal",
+		// s1372 post-onboard continuum cross-link
+		"/onboard next",
+		"drafts only",
+		"no auto-send",
+		"package load ≠ Memory GA",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("guidance missing %q in:\n%s", want, out)
@@ -67,7 +72,7 @@ func TestAionAgentOnboardingGuidanceNote_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1363+s1368: AionAgentOnboardingChecklist residual-honest numbered needles.
+// s1363+s1368+s1372: AionAgentOnboardingChecklist residual-honest numbered needles.
 func TestAionAgentOnboardingChecklist_HonestyNeedles(t *testing.T) {
 	out := AionAgentOnboardingChecklist()
 	if out == "" {
@@ -114,6 +119,11 @@ func TestAionAgentOnboardingChecklist_HonestyNeedles(t *testing.T) {
 		"streamable HTTP",
 		"/onboard portal",
 		"agent MCP cannot write installs",
+		// s1372 post-onboard continuum cross-link
+		"/onboard next",
+		"drafts only",
+		"no auto-send",
+		"package load ≠ Memory GA",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("checklist missing %q in:\n%s", want, out)
@@ -169,7 +179,7 @@ func TestAionAgentOnboardingPortalHandoff_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1368: AionAgentOnboardingStatus residual-honest offline static needles.
+// s1368+s1372: AionAgentOnboardingStatus residual-honest offline static needles.
 func TestAionAgentOnboardingStatus_HonestyNeedles(t *testing.T) {
 	out := AionAgentOnboardingStatus()
 	if out == "" {
@@ -199,6 +209,8 @@ func TestAionAgentOnboardingStatus_HonestyNeedles(t *testing.T) {
 		"/onboard portal",
 		"/onboard checklist",
 		"/integrations status",
+		// s1372 cross-link
+		"/onboard next",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("status missing %q in:\n%s", want, out)
@@ -206,6 +218,63 @@ func TestAionAgentOnboardingStatus_HonestyNeedles(t *testing.T) {
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
 		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
+	}
+}
+
+// s1372: AionAgentOnboardingNextLanes residual-honest post-onboard continuum needles.
+func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
+	out := AionAgentOnboardingNextLanes()
+	if out == "" {
+		t.Fatal("empty next lanes")
+	}
+	for _, want := range []string{
+		"onboard next lanes",
+		"post-onboard continuum",
+		"no MCP dial",
+		"1.",
+		"iomesh plugins dogfood",
+		"offline sample validate",
+		"Agent Plugins GA",
+		"2.",
+		"/gtm checklist",
+		"gtm-draft-only-agent",
+		"drafts only",
+		"no auto-send",
+		"human publish",
+		"GTM agent GA",
+		"3.",
+		"aion-memory-mcp",
+		"Memory Ops Pack",
+		"local-primary",
+		"dual_write OFF",
+		"package load ≠ Memory GA",
+		"freemium palace",
+		"4.",
+		"portal HITL",
+		"agent MCP cannot write installs",
+		"catalog ≠ Connected",
+		"book-demo OFF",
+		"not Memory GA",
+		"residual PASS ≠ live dogfood",
+		"never invent install green",
+		"Connected",
+		"INSTALL_STORE APPLY",
+		"empty-as-none",
+		"plugins dogfood",
+		"~$88/$119",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("next lanes missing %q in:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
+	}
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "Agent Plugins GA shipped") {
+		t.Fatalf("must not invent Memory/Plugins GA: %s", out)
+	}
+	if strings.Contains(out, "auto-send enabled") || strings.Contains(out, "GTM agent GA shipped") {
+		t.Fatalf("must not invent auto-send / GTM agent GA: %s", out)
 	}
 }
 

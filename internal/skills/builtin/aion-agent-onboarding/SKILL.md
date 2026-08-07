@@ -7,7 +7,7 @@ description: Residual-honest TUI agent ↔ aion CP/MCP onboarding (portal Agent/
 
 Builtin playbook for **onboarding a TUI agent session against aion CP/MCP** — residual-honest path only. Molds `connector-integrations-setup` + operator onboarding checklist. **Not** install APPLY, **Not** Memory GA, **Not** Agent Plugins GA, **Not** dual_write ON.
 
-**System note (s1363+s1368):** when MCP is attached (`AttachMCP`), runtime injects residual-honest `<aion-onboarding>` (`AionAgentOnboardingGuidanceNote`) with the same locks. Skill + note stay consistent; skill is the full playbook. Operator slash: `/onboard` (aliases `/aion-onboard` `/agent-onboard`) · `/onboard portal` · `/onboard status` · `/onboard checklist`.
+**System note (s1363+s1368+s1372):** when MCP is attached (`AttachMCP`), runtime injects residual-honest `<aion-onboarding>` (`AionAgentOnboardingGuidanceNote`) with the same locks. Skill + note stay consistent; skill is the full playbook. Operator slash: `/onboard` (aliases `/aion-onboard` `/agent-onboard`) · `/onboard portal` · `/onboard status` · `/onboard checklist` · `/onboard next` (aliases `after` / `continue` / `lanes`).
 
 ## Workflow — two complementary halves
 
@@ -67,6 +67,26 @@ Builtin playbook for **onboarding a TUI agent session against aion CP/MCP** — 
 
 11. **Operator pulse** — slash `/integrations status` · `/onboard checklist` · `/onboard portal` · portal HITL.
 
+### D. Post-onboard next lanes (operator continuum · s1372 · no MCP dial)
+
+After core onboarding, residual-honest next operator lanes — static offline only; **never invent** product GA from these steps. Slash: `/onboard next` (aliases `after` / `continue` / `lanes`).
+
+1. **`iomesh plugins dogfood`** — offline sample validate (`examples/agent-plugins/{hello-iome,aion-memory-mcp}`).
+   - Offline validate only · **≠ invent Agent Plugins GA**.
+   - residual PASS ≠ live dogfood · rates ~$88/$119 optional.
+
+2. **`/gtm checklist` + skill `gtm-draft-only-agent`** — drafts only · no auto-send · human publish.
+   - GTM checklist ≠ invent GTM agent GA · no auto-send · human CRM commercial.
+   - Companion: `read_skill gtm-draft-only-agent`.
+
+3. **local `aion-memory-mcp` / Memory Ops Pack local-primary** — dual_write **OFF**.
+   - Package load ≠ Memory GA · ≠ freemium palace · local-primary only.
+   - Optional advanced memory via `memory-advanced-agent` skill (opt-in).
+
+4. **portal HITL still required for OAuth/install** — agent MCP **cannot write installs**.
+   - catalog ≠ Connected · list_org fail-open ≠ empty-as-none · never invent Connected / INSTALL_STORE APPLY.
+   - Portal: https://console.iome.sh/integrations · Agent/MCP: https://console.iome.sh/settings/agent.
+
 ## Honesty locks
 
 | Lock | Meaning |
@@ -81,6 +101,9 @@ Builtin playbook for **onboarding a TUI agent session against aion CP/MCP** — 
 | portal HITL | Human finishes OAuth / install / key mint in console session |
 | agent MCP cannot write installs | Portal session owns install plane; MCP is residual list/plan |
 | plugins dogfood ≠ Agent Plugins GA | Sample/offline dogfood is not product GA; rates ~$88/$119 optional |
+| drafts only · no auto-send | GTM / post-onboard lanes never auto-send or auto-publish; human publish |
+| package load ≠ Memory GA | Loading aion-memory-mcp / Ops Pack local ≠ invent Memory Palace GA / freemium palace |
+| GTM checklist ≠ GTM agent GA | `/gtm checklist` residual-honest draft path only — not invent GTM agent GA |
 | no invent GA knowledge/analytical | Do not invent GA for knowledge or analytical mesh layers |
 
 ## Non-goals (never do)
@@ -94,15 +117,19 @@ Builtin playbook for **onboarding a TUI agent session against aion CP/MCP** — 
 - Do **not** invent GA for knowledge/analytical connectors or digests.
 - Do **not** invent freemium palace / dual-write audit as product green.
 - Do **not** treat portal test invoke / mint key as Memory GA or install Connected.
+- Do **not** invent Agent Plugins GA from `iomesh plugins dogfood` offline validate.
+- Do **not** invent GTM agent GA from `/gtm checklist` / draft-only skill.
+- Do **not** invent Memory GA / freemium palace from local `aion-memory-mcp` package load.
 
 ## Related
 
-- Builtin skill always available when skills enabled (**s1363+s1368** · molds s1251 connector + s1288 memory-advanced + s1341 gtm-draft-only).
-- System note inject on `AttachMCP`: `<aion-onboarding>` via `AionAgentOnboardingGuidanceNote` (s1363+s1368).
+- Builtin skill always available when skills enabled (**s1363+s1368+s1372** · molds s1251 connector + s1288 memory-advanced + s1341 gtm-draft-only).
+- System note inject on `AttachMCP`: `<aion-onboarding>` via `AionAgentOnboardingGuidanceNote` (s1363+s1368+s1372).
 - Portal handoff block: `AionAgentOnboardingPortalHandoff` · slash `/onboard portal` (aliases `agent-mcp` / `mcp`).
 - Offline status: `AionAgentOnboardingStatus` · slash `/onboard status` (no MCP dial).
+- Post-onboard next lanes: `AionAgentOnboardingNextLanes` · slash `/onboard next` (aliases `after` / `continue` / `lanes`) — plugins · gtm · memory local · portal HITL still (s1372).
 - Companion builtin: `connector-integrations-setup` (list/plan → portal HITL).
 - Companion builtin: `memory-advanced-agent` (opt-in advanced memory · dual_write OFF · not Memory GA).
 - Companion builtin: `gtm-draft-only-agent` (drafts only · human publish · no auto-send).
-- Slash residual honesty: `/onboard [help|checklist|portal|status]` · `/integrations list|plan|status|signing` · `/memory status`.
+- Slash residual honesty: `/onboard [help|checklist|portal|status|next]` · `/integrations list|plan|status|signing` · `/memory status` · `/gtm [help|checklist]`.
 - Skills are **not** Agent Plugins — plugins dogfood ≠ invent Agent Plugins GA.
