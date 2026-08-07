@@ -196,8 +196,9 @@ func (rt *Runtime) AttachSkills(cat *skills.Catalog) {
 
 // AttachMCP registers mcp__* tools from connected servers.
 // Also injects residual-honest integrations guidance (s1251) so the agent uses
-// list → plan → portal HITL without inventing install green, and advanced
-// memory guidance (s1291) so multi-hop / HITL supersede / ops pulse stay opt-in.
+// list → plan → portal HITL without inventing install green, advanced
+// memory guidance (s1291) so multi-hop / HITL supersede / ops pulse stay opt-in,
+// and aion agent onboarding guidance (s1363) for TUI ↔ aion CP/MCP residual path.
 func (rt *Runtime) AttachMCP(mgr *mcp.Manager) {
 	if rt == nil || mgr == nil || mgr.Len() == 0 {
 		return
@@ -213,6 +214,8 @@ func (rt *Runtime) AttachMCP(mgr *mcp.Manager) {
 	rt.appendSystemNote("integrations", IntegrationsAgentGuidanceNote())
 	// s1291: residual-honest advanced memory agent path (opt-in surfaces only).
 	rt.appendSystemNote("memory-advanced", MemoryAdvancedAgentGuidanceNote())
+	// s1363: residual-honest TUI agent ↔ aion backend onboarding workflow.
+	rt.appendSystemNote("aion-onboarding", AionAgentOnboardingGuidanceNote())
 }
 
 // Close releases MCP subprocesses and other runtime resources.

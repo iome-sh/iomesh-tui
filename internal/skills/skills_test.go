@@ -550,3 +550,127 @@ func TestS1341SkillDescriptionResidualHonest(t *testing.T) {
 		t.Fatalf("description should mention HITL publish: %q", sk.Description)
 	}
 }
+
+// --- s1363: builtin aion-agent-onboarding skill (residual-honest TUI ↔ aion) ---
+
+// TestLoadBuiltin_AionAgentOnboarding proves go:embed loads aion-agent-onboarding.
+func TestLoadBuiltin_AionAgentOnboarding(t *testing.T) {
+	cat, err := LoadBuiltin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk, ok := cat.Get("aion-agent-onboarding")
+	if !ok {
+		t.Fatalf("missing aion-agent-onboarding; names=%v", cat.Names())
+	}
+	if sk.Name != "aion-agent-onboarding" {
+		t.Fatalf("name=%q", sk.Name)
+	}
+	if strings.TrimSpace(sk.Description) == "" {
+		t.Fatal("description empty")
+	}
+	if !strings.Contains(sk.Path, "builtin") && sk.SourceDir != "builtin" {
+		t.Fatalf("path/source not builtin: path=%q source=%q", sk.Path, sk.SourceDir)
+	}
+}
+
+// TestLoadWithBuiltin_AionAgentOnboardingAlwaysPresent: skill present even with empty dirs.
+func TestLoadWithBuiltin_AionAgentOnboardingAlwaysPresent(t *testing.T) {
+	cat, err := LoadWithBuiltin(filepath.Join(t.TempDir(), "nope"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := cat.Get("aion-agent-onboarding"); !ok {
+		t.Fatalf("aion-agent-onboarding missing when dirs empty; names=%v", cat.Names())
+	}
+	// Prior builtins still present.
+	if _, ok := cat.Get("connector-integrations-setup"); !ok {
+		t.Fatalf("connector-integrations-setup missing; names=%v", cat.Names())
+	}
+	if _, ok := cat.Get("memory-advanced-agent"); !ok {
+		t.Fatalf("memory-advanced-agent missing; names=%v", cat.Names())
+	}
+	if _, ok := cat.Get("gtm-draft-only-agent"); !ok {
+		t.Fatalf("gtm-draft-only-agent missing; names=%v", cat.Names())
+	}
+}
+
+// TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood pins residual-honest body needles.
+func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
+	cat, err := LoadBuiltin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk, ok := cat.Get("aion-agent-onboarding")
+	if !ok {
+		t.Fatalf("skill missing; names=%v", cat.Names())
+	}
+	desc := strings.ToLower(sk.Description)
+	for _, want := range []string{
+		"residual",
+		"onboard",
+	} {
+		if !strings.Contains(desc, want) {
+			t.Fatalf("description missing residual needle %q: %q", want, sk.Description)
+		}
+	}
+	if strings.Contains(sk.Description, "Connected: yes") || strings.Contains(desc, "memory ga shipped") {
+		t.Fatalf("description invents Connected/Memory GA: %q", sk.Description)
+	}
+	body := sk.Body
+	for _, want := range []string{
+		"list_connector_catalog",
+		"plan_connector_setup",
+		"list_org_connector_installs",
+		"Catalog status ≠ install Connected",
+		"available=false",
+		"empty-as-none",
+		"portal HITL",
+		"console.iome.sh/integrations",
+		"cannot write installs",
+		"dual_write OFF",
+		"local-primary",
+		"not Memory GA",
+		"book-demo OFF",
+		"residual PASS ≠ live dogfood",
+		"never invent install green",
+		"INSTALL_STORE APPLY",
+		"plugins dogfood",
+		"Agent Plugins GA",
+		"~$88/$119",
+		"knowledge/analytical",
+		"/onboard",
+		"/integrations status",
+		"aion-onboarding",
+		"AttachMCP",
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("skill body missing %q:\n%s", want, body)
+		}
+	}
+}
+
+// TestS1363SkillDescriptionResidualHonest pins frontmatter honesty.
+func TestS1363SkillDescriptionResidualHonest(t *testing.T) {
+	cat, err := LoadBuiltin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk, ok := cat.Get("aion-agent-onboarding")
+	if !ok {
+		t.Fatal("missing skill")
+	}
+	if !strings.Contains(sk.Description, "Residual-honest") && !strings.Contains(sk.Description, "residual-honest") {
+		t.Fatalf("description not residual-honest: %q", sk.Description)
+	}
+	desc := strings.ToLower(sk.Description)
+	if !strings.Contains(desc, "portal") && !strings.Contains(sk.Description, "HITL") {
+		t.Fatalf("description should mention portal HITL: %q", sk.Description)
+	}
+	if !strings.Contains(desc, "connected") && !strings.Contains(sk.Description, "Connected") {
+		t.Fatalf("description should say never invent Connected: %q", sk.Description)
+	}
+	if !strings.Contains(desc, "memory") {
+		t.Fatalf("description should mention memory honesty: %q", sk.Description)
+	}
+}

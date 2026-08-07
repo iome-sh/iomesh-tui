@@ -751,6 +751,27 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		}
 		fmt.Fprintln(out, agent.GtmDraftOnlyAgentGuidanceNote())
 		fmt.Fprintln(out, "— residual: drafts only · human publish · skill gtm-draft-only-agent via read_skill · dual_write OFF · not Memory GA")
+	case "/onboard", "/aion-onboard", "/agent-onboard":
+		// s1363: residual-honest TUI agent ↔ aion CP/MCP onboarding guidance.
+		// Bare /onboard (and aliases) → guidance note + residual footer.
+		// help|checklist|? → numbered onboarding checklist.
+		// dual_write OFF · not Memory GA · never invent install green / Connected ·
+		// catalog ≠ Connected · portal HITL · agent MCP cannot write installs.
+		if len(parts) >= 2 {
+			sub := strings.ToLower(parts[1])
+			switch sub {
+			case "help", "checklist", "?":
+				fmt.Fprintln(out, agent.AionAgentOnboardingChecklist())
+				return false, nil
+			}
+			// Unknown subcommand: still print guidance + usage hint.
+			fmt.Fprintln(out, agent.AionAgentOnboardingGuidanceNote())
+			fmt.Fprintln(out, "— residual: TUI ↔ aion onboarding · dual_write OFF · not Memory GA · never invent Connected · portal HITL · skill aion-agent-onboarding via read_skill")
+			fmt.Fprintln(out, "usage: /onboard [help|checklist]  (aliases /aion-onboard /agent-onboard)")
+			return false, nil
+		}
+		fmt.Fprintln(out, agent.AionAgentOnboardingGuidanceNote())
+		fmt.Fprintln(out, "— residual: TUI ↔ aion onboarding · dual_write OFF · not Memory GA · never invent Connected · portal HITL · skill aion-agent-onboarding via read_skill")
 	case "/help", "/?":
 		fmt.Fprint(out, `commands:
   /models              list models (numbered)
@@ -767,6 +788,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /memory [recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · status advanced inventory)
   /integrations [list|plan|signing|status]  connector setup via MCP (catalog+plan+signing discovery+portal HITL; not install CRUD)
   /gtm [help|checklist]  GTM draft-only guidance or checklist (aliases /gtm-draft /gtm-agent; no auto-send; human publish)
+  /onboard [help|checklist]  TUI agent ↔ aion onboarding guidance or checklist (aliases /aion-onboard /agent-onboard; residual-honest · portal HITL)
   /quit                exit
 
 Fullscreen keys: enter send · ctrl+j newline · pgup/pgdn scroll
