@@ -174,6 +174,8 @@ Pure format helpers live in `internal/agentplugins/cli_format.go` (unit-tested).
 
 Peer: [Agent Plugins specification](https://agent-plugins.org/specification) v1.0.0 · related local docs [skills.md](./skills.md) · [mcp.md](./mcp.md).
 
+**Note (s1341):** builtin skills such as `gtm-draft-only-agent` ship via `go:embed` under `internal/skills/builtin/` — they are **not** Agent Plugins packages (orthogonal residual surface; skills loader remains primary for builtins).
+
 ## Tests
 
 ```bash
