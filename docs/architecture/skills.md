@@ -15,6 +15,8 @@ When `[skills] enabled = true` (default):
 
 Load uses `skills.LoadWithBuiltin(dirs...)`: **builtin first**, then workspace/user dirs (user overrides builtin on name collision). Missing directories are skipped. Builtin skills appear even when all dirs are empty.
 
+**Agent Plugins package skills (s1326):** fixed-location discovery of `skills/<name>/SKILL.md` inside a portable plugin package is a library-only slice in `internal/agentplugins` — not yet merged into this loader or agent tools. See [agent-plugins.md](./agent-plugins.md).
+
 ### Builtin: `connector-integrations-setup` (s1251)
 
 Residual-honest agent path for connector integrations via MCP (`list_connector_catalog` → `plan_connector_setup` → optional `get_webhook_signing_headers` → **browser portal HITL**). Explicit non-goals: no invent install green / Connected / INSTALL_STORE APPLY / GA · stub ≠ live · dual_write OFF · book-demo OFF · agent MCP cannot write installs.

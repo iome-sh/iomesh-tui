@@ -361,15 +361,15 @@ func TestLoadBuiltin_S1288MemoryAdvancedSkillDogfood(t *testing.T) {
 		"ops_digest_export",
 		"memory_patterns_list",
 		"memory_anomalies_list",
-		"memory_timeline",        // s1296
-		"memory_compact_status",  // s1296
-		"/memory timeline",       // s1296 slash
-		"/memory compact-status", // s1296 slash
-		"memory_search_semantic", // s1301
-		"memory_ingest_event",    // s1301
-		"/memory semantic",       // s1301 slash
-		"/memory ingest-event",   // s1301 slash
-		"memory_trigger_compact", // s1311 HITL
+		"memory_timeline",         // s1296
+		"memory_compact_status",   // s1296
+		"/memory timeline",        // s1296 slash
+		"/memory compact-status",  // s1296 slash
+		"memory_search_semantic",  // s1301
+		"memory_ingest_event",     // s1301
+		"/memory semantic",        // s1301 slash
+		"/memory ingest-event",    // s1301 slash
+		"memory_trigger_compact",  // s1311 HITL
 		"/memory trigger-compact", // s1311 slash
 		"--i-confirm",
 		"multi-hop lite",
