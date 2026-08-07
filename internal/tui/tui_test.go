@@ -94,6 +94,9 @@ func TestHandleSlash_ModelsAndCost(t *testing.T) {
 	if !strings.Contains(out.String(), "/integrations") {
 		t.Fatalf("help missing /integrations: %s", out.String())
 	}
+	if !strings.Contains(out.String(), "/gtm") {
+		t.Fatalf("help missing /gtm: %s", out.String())
+	}
 	out.Reset()
 	_, _ = handleSlash(&out, adapter, "/memory")
 	if !strings.Contains(out.String(), "memory:") {
@@ -737,6 +740,54 @@ func TestParseIntegrationsSigningArgs(t *testing.T) {
 	_, multi := parseIntegrationsSigningArgs([]string{"github", "extra"})
 	if multi == "" {
 		t.Fatal("expected unexpected argument")
+	}
+}
+
+// s1352: /gtm slash — residual-honest GTM draft-only guidance (no auto-send agency).
+func TestHandleSlash_GtmDraftOnly(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	_, err := handleSlash(&out, adapter, "/gtm")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := out.String()
+	for _, want := range []string{
+		"drafts only",
+		"no auto-send",
+		"human publish",
+		"dual_write OFF",
+		"not Memory GA",
+		"Salesforce",
+		"GA CRM",
+		"gtm-draft-only-agent",
+		"read_skill",
+	} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("/gtm missing %q in:\n%s", want, s)
+		}
+	}
+	// Residual footer (s1352)
+	if !strings.Contains(s, "residual:") {
+		t.Fatalf("/gtm missing residual footer: %s", s)
+	}
+	// Must not invent auto-send agency / dual_write ON / suite ops GA.
+	if strings.Contains(s, "auto-send ON") || strings.Contains(s, "dual_write ON") {
+		t.Fatalf("must not invent auto-send/dual_write ON: %s", s)
+	}
+	if strings.Contains(s, "suite ops GA shipped") || strings.Contains(s, "Memory GA shipped") {
+		t.Fatalf("must not invent suite/Memory GA: %s", s)
+	}
+
+	// aliases
+	for _, alias := range []string{"/gtm-draft", "/gtm-agent"} {
+		out.Reset()
+		_, _ = handleSlash(&out, adapter, alias)
+		if !strings.Contains(out.String(), "drafts only") || !strings.Contains(out.String(), "gtm-draft-only-agent") {
+			t.Fatalf("%s alias: %s", alias, out.String())
+		}
 	}
 }
 
