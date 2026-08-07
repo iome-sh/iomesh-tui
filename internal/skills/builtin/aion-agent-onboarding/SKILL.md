@@ -7,7 +7,7 @@ description: Residual-honest TUI agent ↔ aion CP/MCP onboarding (portal Agent/
 
 Builtin playbook for **onboarding a TUI agent session against aion CP/MCP** — residual-honest path only. Molds `connector-integrations-setup` + operator onboarding checklist. **Not** install APPLY, **Not** Memory GA, **Not** Agent Plugins GA, **Not** dual_write ON.
 
-**System note (s1363+s1368+s1372+s1377+s1382):** when MCP is attached (`AttachMCP`), runtime injects residual-honest `<aion-onboarding>` (`AionAgentOnboardingGuidanceNote`) with the same locks. Skill + note stay consistent; skill is the full playbook. Operator slash: `/onboard` (aliases `/aion-onboard` `/agent-onboard`) · `/onboard portal` · `/onboard status` · `/onboard checklist` · `/onboard next` (aliases `after` / `continue` / `lanes`) · `/onboard next [plugins|gtm|memory]` lane drills (s1377) · `/onboard next status` lane status board (aliases `pulse` / `board` · s1382).
+**System note (s1363+s1368+s1372+s1377+s1382+s1387):** when MCP is attached (`AttachMCP`), runtime injects residual-honest `<aion-onboarding>` (`AionAgentOnboardingGuidanceNote`) with the same locks. Skill + note stay consistent; skill is the full playbook. Operator slash: `/onboard` (aliases `/aion-onboard` `/agent-onboard`) · `/onboard portal` · `/onboard status` · `/onboard checklist` · `/onboard next` (aliases `after` / `continue` / `lanes`) · `/onboard next [plugins|gtm|memory]` lane drills (s1377) · `/onboard next status` lane status board (aliases `pulse` / `board` · s1382) · `/onboard next export` status export receipt (aliases `receipt` / `stamp` / `evidence` · optional `json` · s1387).
 
 ## Workflow — two complementary halves
 
@@ -67,13 +67,14 @@ Builtin playbook for **onboarding a TUI agent session against aion CP/MCP** — 
 
 11. **Operator pulse** — slash `/integrations status` · `/onboard checklist` · `/onboard portal` · portal HITL.
 
-### D. Post-onboard next lanes (operator continuum · s1372+s1377+s1382 · no MCP dial)
+### D. Post-onboard next lanes (operator continuum · s1372+s1377+s1382+s1387 · no MCP dial)
 
 After core onboarding, residual-honest next operator lanes — static offline only; **never invent** product GA from these steps.
 
 - **Overview:** `/onboard next` (aliases `after` / `continue` / `lanes`) → `AionAgentOnboardingNextLanes`.
 - **Lane drills (s1377):** `/onboard next <lane>` (also works with parent aliases, e.g. `/onboard after plugins`).
 - **Lane status board (s1382):** `/onboard next status` (aliases `pulse` / `board`) → `AionAgentOnboardingNextLaneStatus`.
+- **Status export receipt (s1387):** `/onboard next export` (aliases `receipt` / `stamp` / `evidence`) → `AionAgentOnboardingNextLaneStatusExport` · optional `/onboard next export json` → `AionAgentOnboardingNextLaneStatusExportJSON`.
 
 | Lane | Slash | Aliases | API helper |
 |------|-------|---------|------------|
@@ -81,8 +82,9 @@ After core onboarding, residual-honest next operator lanes — static offline on
 | gtm | `/onboard next gtm` | `drafts` | `AionAgentOnboardingNextGtmLane` |
 | memory | `/onboard next memory` | `mcp` · `palace` | `AionAgentOnboardingNextMemoryLane` |
 | status | `/onboard next status` | `pulse` · `board` | `AionAgentOnboardingNextLaneStatus` |
+| export | `/onboard next export` | `receipt` · `stamp` · `evidence` | `AionAgentOnboardingNextLaneStatusExport` (+ optional `json`) |
 
-Unknown lane token → overview + usage hint listing `plugins|gtm|memory|status`.
+Unknown lane token → overview + usage hint listing `plugins|gtm|memory|status|export`.
 
 #### D1. Plugins dogfood lane (`/onboard next plugins`)
 
@@ -120,6 +122,18 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|status`
    - **memory:** dual_write OFF · package load ≠ Memory GA · local-primary ≠ freemium palace.
    - **portal:** `portal_hitl_still` · agent MCP cannot write installs.
    - Slash: `/onboard next status` (aliases `pulse` / `board`) · also linked from `/onboard next` overview and `/onboard status`.
+   - Export receipt: `/onboard next export` (s1387) — offline markdown evidence of this board.
+
+#### D6. Status export receipt (`/onboard next export` · s1387)
+
+6. **Residual-honest status export receipt** — offline markdown (or optional JSON) evidence of the s1382 lane status board.
+   - Header: `evidence_kind=onboard_next_lane_status_export` · `offline_static` · `not_live_dogfood` · serial `s1387`.
+   - Reuses s1382 honest vocabulary only: `path_ready` · `samples_ok`/`samples_missing` · `dogfood_not_run` · `skill_ready` · `residual_only` · `portal_hitl_still`.
+   - **Does NOT** run plugins dogfood · **does NOT** dial MCP · **does NOT** invent install green / Connected / GA / APPLY.
+   - **board/export evidence ≠ invent Connected** — a stamped receipt is offline residual evidence only.
+   - Markdown: `/onboard next export` (aliases `receipt` / `stamp` / `evidence`) → `AionAgentOnboardingNextLaneStatusExport`.
+   - JSON: `/onboard next export json` → `AionAgentOnboardingNextLaneStatusExportJSON`.
+   - Cross-linked from lane status board footer and `/onboard next` overview.
 
 ## Honesty locks
 
@@ -138,6 +152,7 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|status`
 | drafts only · no auto-send | GTM / post-onboard lanes never auto-send or auto-publish; human publish |
 | package load ≠ Memory GA | Loading aion-memory-mcp / Ops Pack local ≠ invent Memory Palace GA / freemium palace |
 | GTM checklist ≠ GTM agent GA | `/gtm checklist` residual-honest draft path only — not invent GTM agent GA |
+| board/export evidence ≠ invent Connected | Lane status board + export receipt are offline residual evidence only — never invent Connected / GA / APPLY |
 | no invent GA knowledge/analytical | Do not invent GA for knowledge or analytical mesh layers |
 
 ## Non-goals (never do)
@@ -154,18 +169,20 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|status`
 - Do **not** invent Agent Plugins GA from `iomesh plugins dogfood` offline validate.
 - Do **not** invent GTM agent GA from `/gtm checklist` / draft-only skill.
 - Do **not** invent Memory GA / freemium palace from local `aion-memory-mcp` package load.
+- Do **not** invent Connected / GA / APPLY from board or export receipt evidence stamps.
 
 ## Related
 
-- Builtin skill always available when skills enabled (**s1363+s1368+s1372+s1377+s1382** · molds s1251 connector + s1288 memory-advanced + s1341 gtm-draft-only).
-- System note inject on `AttachMCP`: `<aion-onboarding>` via `AionAgentOnboardingGuidanceNote` (s1363+s1368+s1372+s1377+s1382).
+- Builtin skill always available when skills enabled (**s1363+s1368+s1372+s1377+s1382+s1387** · molds s1251 connector + s1288 memory-advanced + s1341 gtm-draft-only).
+- System note inject on `AttachMCP`: `<aion-onboarding>` via `AionAgentOnboardingGuidanceNote` (s1363+s1368+s1372+s1377+s1382+s1387).
 - Portal handoff block: `AionAgentOnboardingPortalHandoff` · slash `/onboard portal` (aliases `agent-mcp` / `mcp`).
-- Offline status: `AionAgentOnboardingStatus` · slash `/onboard status` (no MCP dial) · cross-links `/onboard next status` (s1382).
-- Post-onboard next lanes overview: `AionAgentOnboardingNextLanes` · slash `/onboard next` (aliases `after` / `continue` / `lanes`) — plugins · gtm · memory local · portal HITL still (s1372) · status board (s1382).
+- Offline status: `AionAgentOnboardingStatus` · slash `/onboard status` (no MCP dial) · cross-links `/onboard next status` (s1382) · `/onboard next export` (s1387).
+- Post-onboard next lanes overview: `AionAgentOnboardingNextLanes` · slash `/onboard next` (aliases `after` / `continue` / `lanes`) — plugins · gtm · memory local · portal HITL still (s1372) · status board (s1382) · export receipt (s1387).
 - Lane drills (s1377): `AionAgentOnboardingNextPluginsLane` · `AionAgentOnboardingNextGtmLane` · `AionAgentOnboardingNextMemoryLane` · slash `/onboard next [plugins|gtm|memory]` (aliases plugin|dogfood · drafts · mcp|palace).
 - Lane status board (s1382): `AionAgentOnboardingNextLaneStatus` · slash `/onboard next status` (aliases `pulse` / `board`) — honest vocabulary only · no invent Connected/GA/APPLY · dogfood_not_run default.
+- Status export receipt (s1387): `AionAgentOnboardingNextLaneStatusExport` · slash `/onboard next export` (aliases `receipt` / `stamp` / `evidence`) · optional `AionAgentOnboardingNextLaneStatusExportJSON` via `/onboard next export json` — evidence_kind=onboard_next_lane_status_export · offline_static · not_live_dogfood · board/export evidence ≠ invent Connected.
 - Companion builtin: `connector-integrations-setup` (list/plan → portal HITL).
 - Companion builtin: `memory-advanced-agent` (opt-in advanced memory · dual_write OFF · not Memory GA).
 - Companion builtin: `gtm-draft-only-agent` (drafts only · human publish · no auto-send).
-- Slash residual honesty: `/onboard [help|checklist|portal|status|next]` · `/onboard next [plugins|gtm|memory|status]` · `/integrations list|plan|status|signing` · `/memory status` · `/gtm [help|checklist]`.
+- Slash residual honesty: `/onboard [help|checklist|portal|status|next]` · `/onboard next [plugins|gtm|memory|status|export]` · `/integrations list|plan|status|signing` · `/memory status` · `/gtm [help|checklist]`.
 - Skills are **not** Agent Plugins — plugins dogfood ≠ invent Agent Plugins GA.

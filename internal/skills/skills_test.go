@@ -683,7 +683,12 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"path_ready",
 		"skill_ready",
 		"residual_only",
-		"plugins|gtm|memory|status",
+		// s1387 status export receipt
+		"/onboard next export",
+		"AionAgentOnboardingNextLaneStatusExport",
+		"evidence_kind=onboard_next_lane_status_export",
+		"board/export evidence ≠ invent Connected",
+		"plugins|gtm|memory|status|export",
 	} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("skill body missing %q:\n%s", want, body)
