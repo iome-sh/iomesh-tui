@@ -177,6 +177,9 @@ func (rt *Runtime) AttachMeshTools() {
 }
 
 // AttachSkills registers list/read skill tools and appends a catalog block to the system prompt.
+// Also injects residual-honest GTM draft-only guidance (s1347) so the agent keeps
+// drafts only / no auto-send / human publish when the skills catalog attaches
+// (builtin gtm-draft-only-agent is always present when skills are enabled).
 func (rt *Runtime) AttachSkills(cat *skills.Catalog) {
 	if rt == nil || cat == nil || cat.Len() == 0 {
 		return
@@ -186,6 +189,9 @@ func (rt *Runtime) AttachSkills(cat *skills.Catalog) {
 	if block := cat.PromptBlock(); block != "" {
 		rt.appendSystemNote("skills", block)
 	}
+	// s1347: residual-honest GTM draft-only agent path (skill s1341 parity with
+	// integrations / memory-advanced system notes). Always when skills attached.
+	rt.appendSystemNote("gtm-draft-only", GtmDraftOnlyAgentGuidanceNote())
 }
 
 // AttachMCP registers mcp__* tools from connected servers.
