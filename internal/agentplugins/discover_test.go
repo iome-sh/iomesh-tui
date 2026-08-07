@@ -3,9 +3,30 @@ package agentplugins
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
+
+// moduleRoot walks up from this test file to the directory containing go.mod.
+func moduleRoot(t *testing.T) string {
+	t.Helper()
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller failed")
+	}
+	dir := filepath.Dir(file)
+	for {
+		if st, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil && !st.IsDir() {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			t.Fatal("go.mod not found above test file")
+		}
+		dir = parent
+	}
+}
 
 func writePlugin(t *testing.T, root, name string) {
 	t.Helper()
@@ -195,5 +216,35 @@ func TestDiscover_SkillsNotDir(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("warnings=%v", p.Warnings)
+	}
+}
+
+// TestDiscover_HelloIomeExample pins s1337 residual-honest sample package under
+// examples/agent-plugins/hello-iome (skills-only · no invent GA · dual_write OFF).
+func TestDiscover_HelloIomeExample(t *testing.T) {
+	root := filepath.Join(moduleRoot(t), "examples", "agent-plugins", "hello-iome")
+	if st, err := os.Stat(root); err != nil || !st.IsDir() {
+		t.Fatalf("sample package missing at %s: %v", root, err)
+	}
+
+	p, err := Discover(root)
+	if err != nil {
+		t.Fatalf("Discover(%s): %v", root, err)
+	}
+	if p.Manifest.Name != "hello-iome" {
+		t.Fatalf("name=%q", p.Manifest.Name)
+	}
+	if p.Manifest.Schema != PluginSchemaID {
+		t.Fatalf("schema=%q want %q", p.Manifest.Schema, PluginSchemaID)
+	}
+	if len(p.Skills) != 1 || p.Skills[0].Name != "hello-iome" {
+		t.Fatalf("skills=%+v", p.Skills)
+	}
+	if len(p.MCPServers) != 0 {
+		t.Fatalf("sample is skills-only; mcp=%+v", p.MCPServers)
+	}
+	// Residual honesty: Discover success is not install/Connected invent.
+	if !strings.Contains(p.Summary(), `plugin "hello-iome"`) {
+		t.Fatal(p.Summary())
 	}
 }

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "hello-iome",
+  "version": "0.1.0",
+  "description": "Residual-honest sample Agent Plugin (skills-only) for iomesh-tui operator dogfood of package discover + opt-in [plugins] wire. Not Agent Plugins GA · not Memory GA · dual_write OFF · not install APPLY green.",
+  "license": "Apache-2.0",
+  "keywords": [
+    "sample",
+    "skills-only",
+    "residual-honest",
+    "iome"
+  ],
+  "homepage": "https://github.com/iome-sh/iomesh-tui/tree/main/examples/agent-plugins/hello-iome",
+  "repository": "https://github.com/iome-sh/iomesh-tui"
+}

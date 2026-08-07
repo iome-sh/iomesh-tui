@@ -1,10 +1,11 @@
-# Agent Plugins package client (s1326 + s1331 runtime wire + s1336 CLI)
+# Agent Plugins package client (s1326 + s1331 runtime wire + s1336 CLI + s1337 sample)
 
 **Pin:** free eng **s1326** — Agent Plugins **v1.0.0 package client** (discover + validate).  
 **Pin:** free eng **s1331** — **opt-in runtime wire** of package skills + MCP into existing Skills / MCP runtimes.  
 **Pin:** free eng **s1336** — operator DX CLI `iomesh plugins list|validate`.
+**Pin:** free eng **s1337** — residual-honest **sample package** [`examples/agent-plugins/hello-iome`](../../examples/agent-plugins/hello-iome) (skills-only dogfood).
 
-Residual-honest: **package wire ≠ invent Agent Plugins GA**. Not Memory GA. Discover/load success ≠ Connected / install APPLY green. dual_write **OFF** (unchanged). book-demo **OFF**. list/validate ≠ invent Agent Plugins GA.
+Residual-honest: **package wire ≠ invent Agent Plugins GA**. Not Memory GA. Discover/load success ≠ Connected / install APPLY green. dual_write **OFF** (unchanged). book-demo **OFF**. Sample package ≠ GA. list/validate ≠ invent Agent Plugins GA.
 
 ## What this is
 
@@ -22,6 +23,7 @@ Residual-honest: **package wire ≠ invent Agent Plugins GA**. Not Memory GA. Di
 | Approval gates on mutating MCP tools | **still apply** (plugin servers default Mutating=true) |
 | Install / marketplace / enable UX | **out of scope** |
 | Full Agent Plugins client GA | **not claimed** |
+| Sample skills-only package (`hello-iome`) | **done** (s1337 · dogfood only · opt-in `[plugins]`) |
 
 Package API entrypoint:
 
@@ -37,6 +39,16 @@ skillDirs := agentplugins.SkillDirs(plugins) // pluginRoot/skills for LoadDirs
 servers, mw := agentplugins.MCPServersFromPlugins(plugins, dataDirRoot)
 // callers: TOML servers first, then append plugin servers
 ```
+
+
+## Sample package (s1337)
+
+In-repo dogfood package (skills-only; no MCP server, no secrets):
+
+- Path: [`examples/agent-plugins/hello-iome`](../../examples/agent-plugins/hello-iome)
+- Enable via opt-in `[plugins]` — see that package's [README](../../examples/agent-plugins/hello-iome/README.md)
+- Loading requires `enabled = true` + `dirs` pointing at the package root (or parent of package roots)
+- Discover/map of the sample ≠ install Connected / Agent Plugins GA
 
 ## Package layout (Agent Plugins 1.0.0)
 
