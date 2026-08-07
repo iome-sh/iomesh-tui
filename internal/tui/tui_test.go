@@ -994,6 +994,10 @@ func TestHandleSlash_OnboardHelpChecklist(t *testing.T) {
 	if !strings.Contains(help, "portal") || !strings.Contains(help, "status") {
 		t.Fatalf("/help missing /onboard portal|status mention: %s", help)
 	}
+	// s1372: /help mentions /onboard next
+	if !strings.Contains(help, "next") {
+		t.Fatalf("/help missing /onboard next mention: %s", help)
+	}
 }
 
 // s1368: /onboard portal (and aliases) — residual-honest portal Agent/MCP handoff.
@@ -1065,6 +1069,8 @@ func TestHandleSlash_OnboardStatus(t *testing.T) {
 		"agent MCP cannot write installs",
 		"residual PASS ≠ live dogfood",
 		"/onboard portal",
+		// s1372 cross-link
+		"/onboard next",
 	} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("/onboard status missing %q in:\n%s", want, s)
@@ -1072,6 +1078,61 @@ func TestHandleSlash_OnboardStatus(t *testing.T) {
 	}
 	if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Connected: yes") {
 		t.Fatalf("must not invent dual_write ON / Connected: %s", s)
+	}
+}
+
+// s1372: /onboard next (and aliases) — residual-honest post-onboard operator lanes.
+func TestHandleSlash_OnboardNext(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	needles := []string{
+		"onboard next lanes",
+		"post-onboard continuum",
+		"iomesh plugins dogfood",
+		"offline sample validate",
+		"Agent Plugins GA",
+		"/gtm checklist",
+		"gtm-draft-only-agent",
+		"drafts only",
+		"no auto-send",
+		"human publish",
+		"aion-memory-mcp",
+		"local-primary",
+		"dual_write OFF",
+		"package load ≠ Memory GA",
+		"freemium palace",
+		"portal HITL",
+		"agent MCP cannot write installs",
+		"catalog ≠ Connected",
+		"not Memory GA",
+		"residual PASS ≠ live dogfood",
+		"never invent install green",
+		"INSTALL_STORE APPLY",
+	}
+
+	for _, line := range []string{"/onboard next", "/aion-onboard after", "/agent-onboard continue", "/onboard lanes"} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Connected: yes") {
+			t.Fatalf("%s must not invent dual_write ON / Connected: %s", line, s)
+		}
+		if strings.Contains(s, "Memory GA shipped") || strings.Contains(s, "Agent Plugins GA shipped") {
+			t.Fatalf("%s must not invent Memory/Plugins GA: %s", line, s)
+		}
 	}
 }
 
