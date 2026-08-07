@@ -132,6 +132,18 @@ max_depth = 2
 enabled = true
 # dirs = ["/path/to/extra/skills"]
 
+# Agent Plugins package wire (s1331) — opt-in; default disabled.
+# package wire ≠ Agent Plugins GA · dual_write OFF · book-demo OFF
+# Discover/load success ≠ Connected / install APPLY green.
+# dirs: package roots (plugin.json) or parents of package roots; ~/ expanded.
+# data_dir: per-plugin PLUGIN_DATA root (default: <workspace>/.iomesh/plugin-data/<name>).
+# Secrets never from portable plugin fields — only ${PLUGIN_ROOT}/${PLUGIN_DATA} expand.
+# Plugin MCP servers append after [[mcp.servers]] (TOML remains primary).
+# [plugins]
+# enabled = false
+# dirs = ["~/.iomesh/plugins/my-plugin"]
+# data_dir = "~/.iomesh/plugin-data"
+
 # MCP: Model Context Protocol servers (opt-in). stdio and/or streamable HTTP.
 # Tools appear as mcp__<server>__<tool>; mutating=true (default) requires approval.
 [mcp]

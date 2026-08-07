@@ -29,6 +29,9 @@ type Config struct {
 	Skills    SkillsSection        `toml:"skills"`
 	MCP       MCPSection           `toml:"mcp"`
 	Memory    MemorySection        `toml:"memory"`
+	// Plugins is opt-in Agent Plugins package discovery (s1331). Default disabled.
+	// Discover/load success ≠ Connected / install APPLY green · dual_write OFF.
+	Plugins PluginsSection `toml:"plugins"`
 	// Catalog is the resolved runtime model list (not from TOML directly).
 	Catalog []router.ModelConfig `toml:"-"`
 }
@@ -124,6 +127,18 @@ type FeaturesSection struct {
 type SkillsSection struct {
 	Enabled bool     `toml:"enabled"`
 	Dirs    []string `toml:"dirs"` // extra dirs; workspace/user defaults always scanned when enabled
+}
+
+// PluginsSection configures Agent Plugins package discovery (s1331 runtime wire).
+// Opt-in: Enabled defaults false. Dirs are absolute or ~/ expanded plugin package
+// roots (or parent dirs whose immediate children are package roots).
+// DataDir is the root for per-plugin PLUGIN_DATA; empty → workspace .iomesh/plugin-data/<name>.
+// Residual honesty: package wire ≠ Agent Plugins GA · dual_write OFF · secrets never
+// from portable plugin fields · TOML [[mcp.servers]] remains primary (plugins append).
+type PluginsSection struct {
+	Enabled bool     `toml:"enabled"`
+	Dirs    []string `toml:"dirs"`
+	DataDir string   `toml:"data_dir"`
 }
 
 // MCPServerTOML is one MCP server (stdio command and/or HTTP url).
@@ -297,6 +312,9 @@ func Default() *Config {
 		},
 		MCP: MCPSection{
 			Enabled: false, // opt-in: no servers until configured
+		},
+		Plugins: PluginsSection{
+			Enabled: false, // s1331: opt-in Agent Plugins package wire
 		},
 		Memory: MemorySection{
 			Enabled:          false,

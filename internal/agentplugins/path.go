@@ -1,7 +1,8 @@
 // Package agentplugins implements the Agent Plugins v1.0.0 package client
 // slice: closed plugin.json validation, fixed-location discovery of skills
-// and mcp.json mapping. It does not attach MCP processes or load skills into
-// the agent runtime.
+// and mcp.json mapping, plus opt-in runtime wire helpers (s1331) that map
+// packages into skills dirs and mcp.ServerConfig for the existing Skills + MCP
+// runtimes. Discover/map success ≠ Connected / install APPLY green · not GA.
 package agentplugins
 
 import (
