@@ -159,6 +159,32 @@ func TestDogfoodSamples_MissingModule(t *testing.T) {
 	}
 }
 
+func TestSamplesSoftState(t *testing.T) {
+	// Module root with both samples → samples_ok.
+	root := moduleRoot(t)
+	if got := SamplesSoftState(root); got != "samples_ok" {
+		t.Fatalf("module root: got %q want samples_ok", got)
+	}
+	// Missing root → samples_missing.
+	tmp := filepath.Join(t.TempDir(), "no-samples")
+	if got := SamplesSoftState(tmp); got != "samples_missing" {
+		t.Fatalf("missing: got %q want samples_missing", got)
+	}
+	// ResidualSlashHonesty pins (s1392).
+	for _, want := range []string{
+		"soft offline dogfood ≠ invent Agent Plugins GA",
+		"dual_write OFF",
+		"Discover ≠ Connected",
+		"not Memory GA",
+		"residual PASS ≠ live dogfood",
+		"package load ≠ Memory GA",
+	} {
+		if !strings.Contains(ResidualSlashHonesty, want) {
+			t.Fatalf("ResidualSlashHonesty missing %q: %s", want, ResidualSlashHonesty)
+		}
+	}
+}
+
 func TestDogfoodSamples_EmptyRootResolves(t *testing.T) {
 	// Empty moduleRoot uses FindModuleRoot(cwd). Chdir to module so both samples OK.
 	root := moduleRoot(t)

@@ -1,0 +1,206 @@
+package tui
+
+import (
+	"fmt"
+	"io"
+	"os"
+	"strings"
+	"sync"
+
+	"github.com/iome-sh/iomesh-tui/internal/agentplugins"
+)
+
+// Session-only soft dogfood marker for /plugins status (s1392).
+// Default dogfood_not_run. Soft offline dogfood PASS ≠ invent Agent Plugins GA · ≠ live dogfood.
+var pluginsSlashSession struct {
+	mu   sync.Mutex
+	ran  bool
+	pass bool // residual soft offline pass only
+}
+
+// resetPluginsSlashSession clears session dogfood marker (tests only).
+func resetPluginsSlashSession() {
+	pluginsSlashSession.mu.Lock()
+	defer pluginsSlashSession.mu.Unlock()
+	pluginsSlashSession.ran = false
+	pluginsSlashSession.pass = false
+}
+
+func markPluginsSlashDogfoodSession(pass bool) {
+	pluginsSlashSession.mu.Lock()
+	defer pluginsSlashSession.mu.Unlock()
+	pluginsSlashSession.ran = true
+	pluginsSlashSession.pass = pass
+}
+
+func pluginsSlashSessionDogfoodState() (ran bool, pass bool) {
+	pluginsSlashSession.mu.Lock()
+	defer pluginsSlashSession.mu.Unlock()
+	return pluginsSlashSession.ran, pluginsSlashSession.pass
+}
+
+// pluginsHelp is bare /plugins and help/? copy (s1392 residual honesty).
+func pluginsHelp() string {
+	return strings.TrimSpace(`usage: /plugins [help|list|validate|dogfood|status]  (alias /plugin)
+  help|?              this residual-honest usage (also bare /plugins)
+  list [dir...]       DiscoverAll fail-open residual (Discover ≠ Connected)
+  validate [dir...]   ValidateDirs fail-open residual (OK ≠ install green)
+  dogfood             soft offline dogfood both in-repo samples (aliases soft|samples|offline)
+  status              residual plugins pulse: samples_ok|samples_missing · dogfood_not_run
+
+dogfood = discover/validate only · no MCP dial · PATH residual · soft offline ≠ live dogfood
+Discover/list ≠ Connected · package load ≠ Memory GA · soft offline dogfood ≠ invent Agent Plugins GA
+never invent install green / Connected / INSTALL_STORE APPLY · dual_write OFF · book-demo OFF · portal HITL
+CLI twin: iomesh plugins list|validate|dogfood · continuum: /onboard next plugins · /onboard next status
+` + agentplugins.ResidualSlashHonesty)
+}
+
+// handlePluginsList residual-honest /plugins list (s1392).
+// DiscoverAll fail-open; residual offline message when no dirs.
+func handlePluginsList(out io.Writer, args []string) {
+	dirs := nonEmptyArgs(args)
+	if len(dirs) == 0 {
+		// No dirs: residual-honest offline opt-in message (not invent empty-as-none / Connected).
+		fmt.Fprintln(out, agentplugins.FormatListEmptyFooter(false, false))
+		fmt.Fprintln(out, "tip: pass package roots: /plugins list examples/agent-plugins/hello-iome")
+		fmt.Fprintln(out, "or soft offline dogfood: /plugins dogfood (both in-repo samples)")
+		fmt.Fprintln(out, agentplugins.ResidualSlashHonesty)
+		return
+	}
+	plugins, warns := agentplugins.DiscoverAll(dirs)
+	for _, w := range warns {
+		fmt.Fprintf(out, "plugins: %s\n", w)
+	}
+	if len(plugins) == 0 {
+		fmt.Fprintln(out, agentplugins.FormatListEmptyFooter(false, true))
+		fmt.Fprintln(out, agentplugins.ResidualSlashHonesty)
+		return
+	}
+	fmt.Fprintln(out, agentplugins.FormatListHeader())
+	for _, p := range plugins {
+		fmt.Fprintln(out, agentplugins.FormatListRow(agentplugins.PluginToListRow(p)))
+		for _, w := range p.Warnings {
+			fmt.Fprintf(out, "plugins %s: %s\n", p.Manifest.Name, w)
+		}
+	}
+	fmt.Fprintln(out, "note: Discover ≠ Connected · list ≠ invent Agent Plugins GA · package load ≠ Memory GA")
+	fmt.Fprintln(out, agentplugins.ResidualSlashHonesty)
+}
+
+// handlePluginsValidate residual-honest /plugins validate (s1392).
+// ValidateDirs fail-open for TUI display (exit codes are CLI-only).
+func handlePluginsValidate(out io.Writer, args []string) {
+	dirs := nonEmptyArgs(args)
+	if len(dirs) == 0 {
+		fmt.Fprintln(out, agentplugins.FormatListEmptyFooter(false, false))
+		fmt.Fprintln(out, "tip: pass package roots: /plugins validate examples/agent-plugins/hello-iome")
+		fmt.Fprintln(out, "or soft offline dogfood: /plugins dogfood (both in-repo samples)")
+		fmt.Fprintln(out, agentplugins.ResidualSlashHonesty)
+		return
+	}
+	outcomes, scanWarns := agentplugins.ValidateDirs(dirs)
+	for _, w := range scanWarns {
+		fmt.Fprintf(out, "plugins: %s\n", w)
+	}
+	if len(outcomes) == 0 {
+		fmt.Fprintln(out, agentplugins.FormatListEmptyFooter(false, true))
+		fmt.Fprintln(out, agentplugins.ResidualSlashHonesty)
+		return
+	}
+	for _, o := range outcomes {
+		if o.OK {
+			fmt.Fprintln(out, agentplugins.FormatValidateOK(o))
+			for _, w := range o.Warnings {
+				fmt.Fprintf(out, "plugins %s: %s\n", o.Name, w)
+			}
+		} else {
+			fmt.Fprintln(out, agentplugins.FormatValidateFail(o.Path, o.Error))
+		}
+	}
+	okCount := agentplugins.ValidateOKCount(outcomes)
+	fmt.Fprintf(out, "validate summary: ok=%d/%d (fail-open TUI · OK ≠ Connected / install APPLY · ≠ invent Agent Plugins GA)\n",
+		okCount, len(outcomes))
+	fmt.Fprintln(out, agentplugins.ResidualSlashHonesty)
+}
+
+// handlePluginsDogfood residual-honest soft offline /plugins dogfood (s1392).
+// Calls DogfoodSamples with FindModuleRoot; never invents GA/Connected/live dogfood.
+func handlePluginsDogfood(out io.Writer) {
+	root, err := agentplugins.FindModuleRoot("")
+	if err != nil {
+		// Fallback: treat cwd as module root (operator may have samples without go.mod walk).
+		cwd, cwdErr := os.Getwd()
+		if cwdErr != nil {
+			fmt.Fprintf(out, "dogfood: find module root: %v\n", err)
+			fmt.Fprintln(out, agentplugins.ResidualDogfoodHonesty)
+			markPluginsSlashDogfoodSession(false)
+			return
+		}
+		root = cwd
+		fmt.Fprintf(out, "dogfood: go.mod not found above cwd; using cwd as module root (%s)\n", cwd)
+	}
+	outcomes, warns, err := agentplugins.DogfoodSamples(root)
+	if err != nil {
+		fmt.Fprintf(out, "dogfood: %v\n", err)
+		fmt.Fprintln(out, agentplugins.ResidualDogfoodHonesty)
+		markPluginsSlashDogfoodSession(false)
+		return
+	}
+	for _, w := range warns {
+		fmt.Fprintf(out, "plugins: %s\n", w)
+	}
+	for _, o := range outcomes {
+		if o.OK {
+			fmt.Fprintln(out, agentplugins.FormatValidateOK(o))
+			for _, w := range o.Warnings {
+				fmt.Fprintf(out, "plugins %s: %s\n", o.Name, w)
+			}
+		} else {
+			fmt.Fprintln(out, agentplugins.FormatValidateFail(o.Path, o.Error))
+		}
+	}
+	fmt.Fprintln(out, agentplugins.FormatDogfoodSummary(outcomes))
+	pass := agentplugins.DogfoodPass(outcomes)
+	markPluginsSlashDogfoodSession(pass)
+	// Residual-honest framing: soft offline ≠ live dogfood ≠ Agent Plugins GA.
+	fmt.Fprintln(out, "note: soft offline dogfood PASS ≠ invent Agent Plugins GA · residual PASS ≠ live dogfood · Discover ≠ Connected · package load ≠ Memory GA")
+	fmt.Fprintln(out, agentplugins.ResidualDogfoodHonesty)
+	fmt.Fprintln(out, agentplugins.ResidualSlashHonesty)
+}
+
+// handlePluginsStatus residual-honest /plugins status pulse (s1392).
+// samples_ok|samples_missing · dogfood_not_run default (session soft marker optional).
+// ≠ live dogfood · ≠ invent Agent Plugins GA.
+func handlePluginsStatus(out io.Writer) {
+	samples := agentplugins.SamplesSoftState("")
+	ran, pass := pluginsSlashSessionDogfoodState()
+	dogfoodState := "dogfood_not_run"
+	if ran {
+		// Session-only soft offline marker — never claim live dogfood / GA.
+		if pass {
+			dogfoodState = "soft_offline_dogfood_session_pass"
+		} else {
+			dogfoodState = "soft_offline_dogfood_session_fail"
+		}
+	}
+	fmt.Fprintln(out, strings.TrimSpace(fmt.Sprintf(`plugins status (residual-honest · s1392 · soft offline · no MCP dial · not live dogfood):
+  samples: %s
+  dogfood: %s
+  note: samples soft-check only · dogfood_not_run default · session soft marker ≠ live dogfood
+  · soft offline dogfood ≠ invent Agent Plugins GA · Discover ≠ Connected · package load ≠ Memory GA
+  · never invent install green / Connected / INSTALL_STORE APPLY · dual_write OFF · book-demo OFF
+  slash: /plugins dogfood (aliases soft|samples|offline) · /plugins list · /plugins validate
+  continuum: /onboard next plugins · /onboard next status · iomesh plugins dogfood
+%s`, samples, dogfoodState, agentplugins.ResidualSlashHonesty)))
+}
+
+func nonEmptyArgs(args []string) []string {
+	var out []string
+	for _, a := range args {
+		a = strings.TrimSpace(a)
+		if a != "" {
+			out = append(out, a)
+		}
+	}
+	return out
+}

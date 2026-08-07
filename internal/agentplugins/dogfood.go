@@ -156,3 +156,31 @@ func FormatDogfoodSummary(outcomes []ValidateOutcome) string {
 	return fmt.Sprintf("dogfood %s: ok=%d/%d want=%d (discover/validate only · no MCP dial · PATH residual)",
 		status, ok, total, want)
 }
+
+// SamplesSoftState soft-checks in-repo sample package dirs (s1382/s1392).
+// Returns "samples_ok" when both hello-iome + aion-memory-mcp dirs exist under
+// moduleRoot; "samples_missing" otherwise (including when module root cannot
+// be resolved). When moduleRoot is empty, FindModuleRoot("") is used.
+// Soft path check only — ≠ dogfood run · ≠ invent Agent Plugins GA · ≠ Connected · ≠ live dogfood.
+func SamplesSoftState(moduleRoot string) string {
+	root := strings.TrimSpace(moduleRoot)
+	if root == "" {
+		found, err := FindModuleRoot("")
+		if err != nil {
+			return "samples_missing"
+		}
+		root = found
+	}
+	for _, d := range DefaultSamplePluginDirs(root) {
+		st, statErr := os.Stat(d)
+		if statErr != nil || !st.IsDir() {
+			return "samples_missing"
+		}
+	}
+	return "samples_ok"
+}
+
+// ResidualSlashHonesty is the residual-honest footer for TUI /plugins slash (s1392).
+// Soft offline dogfood ≠ invent Agent Plugins GA · dual_write OFF · Discover ≠ Connected ·
+// not Memory GA · residual PASS ≠ live dogfood · package load ≠ Memory GA · book-demo OFF.
+const ResidualSlashHonesty = "honesty: soft offline dogfood ≠ invent Agent Plugins GA · dual_write OFF · Discover ≠ Connected · not Memory GA · residual PASS ≠ live dogfood · package load ≠ Memory GA · book-demo OFF · never invent install green / Connected / INSTALL_STORE APPLY"

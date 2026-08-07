@@ -3,7 +3,6 @@ package agent
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/iome-sh/iomesh-tui/internal/agentplugins"
@@ -123,8 +122,8 @@ func AionAgentOnboardingStatus() string {
 // Never invents Agent Plugins GA, Memory GA, auto-send, or install Connected.
 func AionAgentOnboardingNextLanes() string {
 	return strings.TrimSpace(`aion onboard next lanes (residual-honest · post-onboard continuum · s1372+s1377+s1382+s1387 · no MCP dial):
-  1. iomesh plugins dogfood — offline sample validate (examples/agent-plugins) · ≠ invent Agent Plugins GA
-     drill: /onboard next plugins (aliases plugin|dogfood)
+  1. iomesh plugins dogfood · /plugins dogfood — offline sample validate (examples/agent-plugins) · ≠ invent Agent Plugins GA
+     drill: /onboard next plugins (aliases plugin|dogfood) · slash: /plugins dogfood
   2. /gtm checklist + skill gtm-draft-only-agent — drafts only · no auto-send · human publish · GTM checklist ≠ invent GTM agent GA
      drill: /onboard next gtm (alias drafts)
   3. local aion-memory-mcp / Memory Ops Pack local-primary — dual_write OFF · package load ≠ Memory GA · ≠ freemium palace
@@ -136,22 +135,23 @@ func AionAgentOnboardingNextLanes() string {
 Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · never invent install green / Connected / INSTALL_STORE APPLY · list_org fail-open ≠ empty-as-none · plugins dogfood ≠ invent Agent Plugins GA · drafts only · no auto-send · rates ~$88/$119 optional · package load ≠ Memory GA · board/export evidence ≠ invent Connected`)
 }
 
-// AionAgentOnboardingNextPluginsLane residual-honest plugins dogfood drill for /onboard next plugins (s1377).
-// Static offline — iomesh plugins dogfood path only. Never invents Agent Plugins GA,
+// AionAgentOnboardingNextPluginsLane residual-honest plugins dogfood drill for /onboard next plugins (s1377+s1392).
+// Static offline — iomesh plugins dogfood + /plugins dogfood path. Never invents Agent Plugins GA,
 // install Connected, dual_write ON, or live dogfood green.
 func AionAgentOnboardingNextPluginsLane() string {
-	return strings.TrimSpace(`aion onboard next plugins lane (residual-honest · s1377 · no MCP dial):
-  Path: iomesh plugins dogfood — offline sample validate only
+	return strings.TrimSpace(`aion onboard next plugins lane (residual-honest · s1377+s1392 · no MCP dial):
+  Path: iomesh plugins dogfood · /plugins dogfood — offline sample validate only
   Samples: examples/agent-plugins/{hello-iome,aion-memory-mcp}
   Steps:
-    1. iomesh plugins list — closed-manifest discovery map (≠ invent install green / Connected)
-    2. iomesh plugins validate <path> — offline package shape residual
-    3. iomesh plugins dogfood — both in-repo samples offline (residual PASS ≠ live dogfood)
+    1. iomesh plugins list · /plugins list — closed-manifest discovery map (≠ invent install green / Connected)
+    2. iomesh plugins validate <path> · /plugins validate — offline package shape residual
+    3. iomesh plugins dogfood · /plugins dogfood — both in-repo samples offline (residual PASS ≠ live dogfood)
   Honesty:
-    · plugins dogfood ≠ invent Agent Plugins GA
+    · plugins dogfood ≠ invent Agent Plugins GA · soft offline dogfood ≠ invent Agent Plugins GA
     · residual PASS ≠ live dogfood · never invent install green / Connected / INSTALL_STORE APPLY
     · catalog ≠ Connected · agent MCP cannot write installs · portal HITL still for OAuth/install
     · package load ≠ Memory GA · rates ~$88/$119 optional
+  Slash: /plugins dogfood (aliases soft|samples|offline) · /plugins list · /plugins validate · /plugins status
   Back: /onboard next · companion samples offline only
 
 Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · never invent install green / Connected / INSTALL_STORE APPLY · plugins dogfood ≠ invent Agent Plugins GA · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · package load ≠ Memory GA · rates ~$88/$119 optional`)
@@ -232,8 +232,9 @@ func AionAgentOnboardingNextLaneStatus() string {
     · list_org fail-open ≠ empty-as-none · never invent Connected / INSTALL_STORE APPLY
     · Agent/MCP mint/copy/probe @ https://console.iome.sh/settings/agent · connectors @ https://console.iome.sh/integrations
 
-  slash: /onboard next status (aliases pulse|board) · /onboard next export (aliases receipt|stamp|evidence) · /onboard next · /onboard status · /integrations status
+  slash: /onboard next status (aliases pulse|board) · /onboard next export (aliases receipt|stamp|evidence) · /onboard next · /onboard status · /integrations status · /plugins dogfood · /plugins status
   export receipt: /onboard next export — offline markdown evidence of this board (board/export evidence ≠ invent Connected)
+  plugins soft offline: /plugins dogfood (aliases soft|samples|offline) — soft offline ≠ live dogfood · ≠ invent Agent Plugins GA
 
 Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · plugins dogfood ≠ invent Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · rates ~$88/$119 optional · board/export evidence ≠ invent Connected`, samplesState))
 }
@@ -291,6 +292,7 @@ portal: portal_hitl_still
 
 /onboard next export (aliases receipt|stamp|evidence) · optional /onboard next export json
 /onboard next status (aliases pulse|board) · /onboard next · /onboard status
+/plugins dogfood (aliases soft|samples|offline) · /plugins status — soft offline ≠ live dogfood · ≠ invent Agent Plugins GA
 
 Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · plugins dogfood ≠ invent Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · board/export evidence ≠ invent Connected · rates ~$88/$119 optional`, samplesState))
 }
@@ -351,8 +353,10 @@ func AionAgentOnboardingNextLaneStatusExportJSON() string {
 			"/onboard next export",
 			"/onboard next export json",
 			"/onboard next status",
+			"/plugins dogfood",
+			"/plugins status",
 		},
-		Note: "offline static evidence of residual-honest lane board; board/export evidence ≠ invent Connected; does NOT run plugins dogfood or dial MCP",
+		Note: "offline static evidence of residual-honest lane board; board/export evidence ≠ invent Connected; does NOT run plugins dogfood or dial MCP; soft offline dogfood ≠ invent Agent Plugins GA",
 	}
 	b, err := json.MarshalIndent(dto, "", "  ")
 	if err != nil {
@@ -362,20 +366,10 @@ func AionAgentOnboardingNextLaneStatusExportJSON() string {
 	return string(b)
 }
 
-// nextLanePluginsSamplesSoftState soft-checks in-repo sample package dirs (s1382/s1387).
+// nextLanePluginsSamplesSoftState soft-checks in-repo sample package dirs (s1382/s1387/s1392).
 // samples_ok when both hello-iome + aion-memory-mcp dirs exist under module root;
 // samples_missing otherwise (including when module root is not found).
 // Does not run dogfood, Dial MCP, or invent Agent Plugins GA / Connected.
 func nextLanePluginsSamplesSoftState() string {
-	root, err := agentplugins.FindModuleRoot("")
-	if err != nil {
-		return "samples_missing"
-	}
-	for _, d := range agentplugins.DefaultSamplePluginDirs(root) {
-		st, statErr := os.Stat(d)
-		if statErr != nil || !st.IsDir() {
-			return "samples_missing"
-		}
-	}
-	return "samples_ok"
+	return agentplugins.SamplesSoftState("")
 }

@@ -302,6 +302,7 @@ func TestAionAgentOnboardingNextPluginsLane_HonestyNeedles(t *testing.T) {
 		"onboard next plugins lane",
 		"no MCP dial",
 		"iomesh plugins dogfood",
+		"/plugins dogfood",
 		"offline sample validate",
 		"examples/agent-plugins",
 		"hello-iome",
@@ -324,6 +325,7 @@ func TestAionAgentOnboardingNextPluginsLane_HonestyNeedles(t *testing.T) {
 		"not Memory GA",
 		"~$88/$119",
 		"/onboard next",
+		"/plugins status",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("plugins lane missing %q in:\n%s", want, out)
@@ -485,6 +487,9 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"/onboard next memory",
 		"/onboard next",
 		"/onboard status",
+		// s1392: /plugins dogfood soft offline cross-link
+		"/plugins dogfood",
+		"/plugins status",
 		// s1387: board → export cross-link honesty
 		"board/export evidence ≠ invent Connected",
 	} {
@@ -563,6 +568,9 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 		// slash
 		"/onboard next export",
 		"/onboard next status",
+		// s1392: /plugins dogfood soft offline cross-link
+		"/plugins dogfood",
+		"/plugins status",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("export receipt missing %q in:\n%s", want, out)
@@ -608,6 +616,8 @@ func TestAionAgentOnboardingNextLaneStatusExportJSON_HonestyNeedles(t *testing.T
 		"board/export evidence ≠ invent Connected",
 		"never invent install green / Connected / INSTALL_STORE APPLY",
 		"/onboard next export",
+		"/plugins dogfood",
+		"/plugins status",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("export JSON missing %q in:\n%s", want, out)

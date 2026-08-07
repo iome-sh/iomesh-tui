@@ -6,10 +6,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/iome-sh/iomesh-tui/internal/agent"
+	"github.com/iome-sh/iomesh-tui/internal/agentplugins"
 	"github.com/iome-sh/iomesh-tui/internal/router"
 )
 
@@ -99,6 +101,9 @@ func TestHandleSlash_ModelsAndCost(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "/onboard") {
 		t.Fatalf("help missing /onboard: %s", out.String())
+	}
+	if !strings.Contains(out.String(), "/plugins") {
+		t.Fatalf("help missing /plugins: %s", out.String())
 	}
 	out.Reset()
 	_, _ = handleSlash(&out, adapter, "/memory")
@@ -1166,6 +1171,7 @@ func TestHandleSlash_OnboardNextPluginsLane(t *testing.T) {
 	needles := []string{
 		"onboard next plugins lane",
 		"iomesh plugins dogfood",
+		"/plugins dogfood",
 		"offline sample validate",
 		"examples/agent-plugins",
 		"Agent Plugins GA",
@@ -1532,6 +1538,234 @@ func TestHandleSlash_OnboardNextLaneStatusExportJSON(t *testing.T) {
 		if strings.Contains(s, "INSTALL_STORE APPLY success") {
 			t.Fatalf("%s must not invent APPLY success: %s", line, s)
 		}
+	}
+}
+
+// s1392: residual-honest /plugins slash soft offline dogfood (help·list·validate·dogfood·status).
+func TestHandleSlash_Plugins(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+	resetPluginsSlashSession()
+	t.Cleanup(resetPluginsSlashSession)
+
+	// bare /plugins → help
+	_, err := handleSlash(&out, adapter, "/plugins")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := out.String()
+	for _, want := range []string{
+		"usage: /plugins",
+		"list",
+		"validate",
+		"dogfood",
+		"status",
+		"soft offline dogfood ≠ invent Agent Plugins GA",
+		"Discover ≠ Connected",
+		"dual_write OFF",
+		"not Memory GA",
+		"residual PASS ≠ live dogfood",
+	} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("bare /plugins missing %q in:\n%s", want, s)
+		}
+	}
+	if strings.Contains(s, "Agent Plugins GA shipped") || strings.Contains(s, "Connected: yes") {
+		t.Fatalf("must not invent GA/Connected: %s", s)
+	}
+
+	// help aliases
+	for _, line := range []string{"/plugins help", "/plugin ?", "/plugins help"} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		if !strings.Contains(out.String(), "usage: /plugins") {
+			t.Fatalf("%s want help: %s", line, out.String())
+		}
+	}
+
+	// list with no dirs → residual offline opt-in message (fail-open)
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/plugins list")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s = out.String()
+	for _, want := range []string{
+		"[plugins] is opt-in",
+		"/plugins dogfood",
+		"Agent Plugins GA",
+	} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("list empty missing %q in:\n%s", want, s)
+		}
+	}
+	if strings.Contains(s, "Connected: yes") {
+		t.Fatalf("list must not invent Connected: %s", s)
+	}
+
+	// validate with no dirs → residual offline
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/plugins validate")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "[plugins] is opt-in") {
+		t.Fatalf("validate empty: %s", out.String())
+	}
+
+	// status default dogfood_not_run + samples soft state
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/plugins status")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s = out.String()
+	for _, want := range []string{
+		"plugins status",
+		"dogfood_not_run",
+		"not live dogfood",
+		"soft offline dogfood ≠ invent Agent Plugins GA",
+		"/plugins dogfood",
+		"dual_write OFF",
+		"package load ≠ Memory GA",
+	} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("status missing %q in:\n%s", want, s)
+		}
+	}
+	if !strings.Contains(s, "samples_ok") && !strings.Contains(s, "samples_missing") {
+		t.Fatalf("status must report samples soft state: %s", s)
+	}
+	if strings.Contains(s, "dogfood PASS live") || strings.Contains(s, "Agent Plugins GA shipped") {
+		t.Fatalf("status must not invent live dogfood/GA: %s", s)
+	}
+
+	// status alias
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/plugin st")
+	if !strings.Contains(out.String(), "dogfood_not_run") {
+		t.Fatalf("st alias: %s", out.String())
+	}
+
+	// dogfood soft offline (uses FindModuleRoot from cwd — repo has samples)
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/plugins dogfood")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s = out.String()
+	for _, want := range []string{
+		"dogfood",
+		"no MCP dial",
+		"Agent Plugins GA",
+		"dual_write OFF",
+		"Discover ≠ Connected",
+	} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("dogfood missing %q in:\n%s", want, s)
+		}
+	}
+	// Must not invent live dogfood green / GA product language.
+	if strings.Contains(s, "Agent Plugins GA shipped") || strings.Contains(s, "live dogfood green") {
+		t.Fatalf("dogfood must not invent GA/live green: %s", s)
+	}
+	// ResidualDogfoodHonesty footer present.
+	if !strings.Contains(s, "PATH residual") && !strings.Contains(s, "dogfood PASS ≠ invent Agent Plugins GA") {
+		// Accept either residual dogfood honesty phrasing.
+		if !strings.Contains(s, "soft offline dogfood ≠ invent Agent Plugins GA") {
+			t.Fatalf("dogfood missing honesty footer: %s", s)
+		}
+	}
+
+	// dogfood aliases
+	for _, line := range []string{"/plugins soft", "/plugins samples", "/plugin offline"} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		if !strings.Contains(out.String(), "dogfood") {
+			t.Fatalf("%s want dogfood output: %s", line, out.String())
+		}
+	}
+
+	// After dogfood, status may show session soft marker (≠ live dogfood).
+	// Note prose still mentions "dogfood_not_run default" — check the dogfood: state line.
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/plugins status")
+	s = out.String()
+	if !strings.Contains(s, "dogfood: soft_offline_dogfood_session") {
+		t.Fatalf("after dogfood, want dogfood: soft_offline_dogfood_session_* marker:\n%s", s)
+	}
+	if strings.Contains(s, "dogfood: dogfood_not_run") {
+		t.Fatalf("after dogfood, dogfood state line should not be dogfood_not_run:\n%s", s)
+	}
+	if strings.Contains(s, "live dogfood green") || strings.Contains(s, "Agent Plugins GA shipped") {
+		t.Fatalf("session marker must not invent live GA: %s", s)
+	}
+
+	// unknown subcommand → help
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/plugins bogon")
+	if !strings.Contains(out.String(), "unknown subcommand") || !strings.Contains(out.String(), "usage: /plugins") {
+		t.Fatalf("unknown sub: %s", out.String())
+	}
+
+	// /help mentions /plugins
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/help")
+	if !strings.Contains(out.String(), "/plugins") {
+		t.Fatalf("/help missing /plugins: %s", out.String())
+	}
+}
+
+// s1392: /plugins list|validate with real sample dir (Discover ≠ Connected).
+func TestHandleSlash_PluginsListValidateSample(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	root, err := agentplugins.FindModuleRoot("")
+	if err != nil {
+		t.Skipf("module root not found (offline residual skip): %v", err)
+	}
+	sample := filepath.Join(root, "examples", "agent-plugins", "hello-iome")
+
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/plugins list "+sample)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := out.String()
+	// Discovered row expected for in-repo sample — never invent Connected green.
+	if !strings.Contains(s, "hello-iome") {
+		t.Fatalf("list want hello-iome row: %s", s)
+	}
+	if strings.Contains(s, "Connected: yes") {
+		t.Fatalf("list must not invent Connected: %s", s)
+	}
+	if !strings.Contains(s, "honesty:") {
+		t.Fatalf("list missing honesty footer: %s", s)
+	}
+
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/plugins validate "+sample)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s = out.String()
+	if !strings.Contains(s, "OK") {
+		t.Fatalf("validate want OK for sample: %s", s)
+	}
+	if strings.Contains(s, "Connected: yes") {
+		t.Fatalf("validate must not invent Connected: %s", s)
+	}
+	if !strings.Contains(s, "honesty:") {
+		t.Fatalf("validate missing honesty: %s", s)
 	}
 }
 
