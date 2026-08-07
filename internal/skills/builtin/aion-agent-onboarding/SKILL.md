@@ -7,7 +7,7 @@ description: Residual-honest TUI agent ↔ aion CP/MCP onboarding (portal Agent/
 
 Builtin playbook for **onboarding a TUI agent session against aion CP/MCP** — residual-honest path only. Molds `connector-integrations-setup` + operator onboarding checklist. **Not** install APPLY, **Not** Memory GA, **Not** Agent Plugins GA, **Not** dual_write ON.
 
-**System note (s1363+s1368+s1372+s1377):** when MCP is attached (`AttachMCP`), runtime injects residual-honest `<aion-onboarding>` (`AionAgentOnboardingGuidanceNote`) with the same locks. Skill + note stay consistent; skill is the full playbook. Operator slash: `/onboard` (aliases `/aion-onboard` `/agent-onboard`) · `/onboard portal` · `/onboard status` · `/onboard checklist` · `/onboard next` (aliases `after` / `continue` / `lanes`) · `/onboard next [plugins|gtm|memory]` lane drills (s1377).
+**System note (s1363+s1368+s1372+s1377+s1382):** when MCP is attached (`AttachMCP`), runtime injects residual-honest `<aion-onboarding>` (`AionAgentOnboardingGuidanceNote`) with the same locks. Skill + note stay consistent; skill is the full playbook. Operator slash: `/onboard` (aliases `/aion-onboard` `/agent-onboard`) · `/onboard portal` · `/onboard status` · `/onboard checklist` · `/onboard next` (aliases `after` / `continue` / `lanes`) · `/onboard next [plugins|gtm|memory]` lane drills (s1377) · `/onboard next status` lane status board (aliases `pulse` / `board` · s1382).
 
 ## Workflow — two complementary halves
 
@@ -67,20 +67,22 @@ Builtin playbook for **onboarding a TUI agent session against aion CP/MCP** — 
 
 11. **Operator pulse** — slash `/integrations status` · `/onboard checklist` · `/onboard portal` · portal HITL.
 
-### D. Post-onboard next lanes (operator continuum · s1372+s1377 · no MCP dial)
+### D. Post-onboard next lanes (operator continuum · s1372+s1377+s1382 · no MCP dial)
 
 After core onboarding, residual-honest next operator lanes — static offline only; **never invent** product GA from these steps.
 
 - **Overview:** `/onboard next` (aliases `after` / `continue` / `lanes`) → `AionAgentOnboardingNextLanes`.
 - **Lane drills (s1377):** `/onboard next <lane>` (also works with parent aliases, e.g. `/onboard after plugins`).
+- **Lane status board (s1382):** `/onboard next status` (aliases `pulse` / `board`) → `AionAgentOnboardingNextLaneStatus`.
 
 | Lane | Slash | Aliases | API helper |
 |------|-------|---------|------------|
 | plugins | `/onboard next plugins` | `plugin` · `dogfood` | `AionAgentOnboardingNextPluginsLane` |
 | gtm | `/onboard next gtm` | `drafts` | `AionAgentOnboardingNextGtmLane` |
 | memory | `/onboard next memory` | `mcp` · `palace` | `AionAgentOnboardingNextMemoryLane` |
+| status | `/onboard next status` | `pulse` · `board` | `AionAgentOnboardingNextLaneStatus` |
 
-Unknown lane token → overview + usage hint listing `plugins|gtm|memory`.
+Unknown lane token → overview + usage hint listing `plugins|gtm|memory|status`.
 
 #### D1. Plugins dogfood lane (`/onboard next plugins`)
 
@@ -107,6 +109,17 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory`.
 4. **portal HITL still required for OAuth/install** — agent MCP **cannot write installs**.
    - catalog ≠ Connected · list_org fail-open ≠ empty-as-none · never invent Connected / INSTALL_STORE APPLY.
    - Portal: https://console.iome.sh/integrations · Agent/MCP: https://console.iome.sh/settings/agent.
+
+#### D5. Lane status board (`/onboard next status` · s1382)
+
+5. **Residual-honest lane status board** — static offline pulse of plugins · gtm · memory · portal.
+   - **No MCP dial** · never invent install green / Connected / GA / APPLY as success.
+   - Honest state vocabulary only: `path_ready` · `samples_ok` · `samples_missing` · `dogfood_not_run` · `skill_ready` · `residual_only` · `portal_hitl_still`.
+   - **plugins:** optional soft-check of sample dirs (`examples/agent-plugins`) · always `dogfood_not_run` unless operator ran dogfood separately · ≠ invent Agent Plugins GA.
+   - **gtm:** skill/checklist path ready · drafts only · no auto-send · ≠ invent GTM agent GA.
+   - **memory:** dual_write OFF · package load ≠ Memory GA · local-primary ≠ freemium palace.
+   - **portal:** `portal_hitl_still` · agent MCP cannot write installs.
+   - Slash: `/onboard next status` (aliases `pulse` / `board`) · also linked from `/onboard next` overview and `/onboard status`.
 
 ## Honesty locks
 
@@ -144,14 +157,15 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory`.
 
 ## Related
 
-- Builtin skill always available when skills enabled (**s1363+s1368+s1372+s1377** · molds s1251 connector + s1288 memory-advanced + s1341 gtm-draft-only).
-- System note inject on `AttachMCP`: `<aion-onboarding>` via `AionAgentOnboardingGuidanceNote` (s1363+s1368+s1372+s1377).
+- Builtin skill always available when skills enabled (**s1363+s1368+s1372+s1377+s1382** · molds s1251 connector + s1288 memory-advanced + s1341 gtm-draft-only).
+- System note inject on `AttachMCP`: `<aion-onboarding>` via `AionAgentOnboardingGuidanceNote` (s1363+s1368+s1372+s1377+s1382).
 - Portal handoff block: `AionAgentOnboardingPortalHandoff` · slash `/onboard portal` (aliases `agent-mcp` / `mcp`).
-- Offline status: `AionAgentOnboardingStatus` · slash `/onboard status` (no MCP dial).
-- Post-onboard next lanes overview: `AionAgentOnboardingNextLanes` · slash `/onboard next` (aliases `after` / `continue` / `lanes`) — plugins · gtm · memory local · portal HITL still (s1372).
+- Offline status: `AionAgentOnboardingStatus` · slash `/onboard status` (no MCP dial) · cross-links `/onboard next status` (s1382).
+- Post-onboard next lanes overview: `AionAgentOnboardingNextLanes` · slash `/onboard next` (aliases `after` / `continue` / `lanes`) — plugins · gtm · memory local · portal HITL still (s1372) · status board (s1382).
 - Lane drills (s1377): `AionAgentOnboardingNextPluginsLane` · `AionAgentOnboardingNextGtmLane` · `AionAgentOnboardingNextMemoryLane` · slash `/onboard next [plugins|gtm|memory]` (aliases plugin|dogfood · drafts · mcp|palace).
+- Lane status board (s1382): `AionAgentOnboardingNextLaneStatus` · slash `/onboard next status` (aliases `pulse` / `board`) — honest vocabulary only · no invent Connected/GA/APPLY · dogfood_not_run default.
 - Companion builtin: `connector-integrations-setup` (list/plan → portal HITL).
 - Companion builtin: `memory-advanced-agent` (opt-in advanced memory · dual_write OFF · not Memory GA).
 - Companion builtin: `gtm-draft-only-agent` (drafts only · human publish · no auto-send).
-- Slash residual honesty: `/onboard [help|checklist|portal|status|next]` · `/onboard next [plugins|gtm|memory]` · `/integrations list|plan|status|signing` · `/memory status` · `/gtm [help|checklist]`.
+- Slash residual honesty: `/onboard [help|checklist|portal|status|next]` · `/onboard next [plugins|gtm|memory|status]` · `/integrations list|plan|status|signing` · `/memory status` · `/gtm [help|checklist]`.
 - Skills are **not** Agent Plugins — plugins dogfood ≠ invent Agent Plugins GA.

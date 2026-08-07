@@ -179,7 +179,7 @@ func TestAionAgentOnboardingPortalHandoff_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1368+s1372: AionAgentOnboardingStatus residual-honest offline static needles.
+// s1368+s1372+s1382: AionAgentOnboardingStatus residual-honest offline static needles.
 func TestAionAgentOnboardingStatus_HonestyNeedles(t *testing.T) {
 	out := AionAgentOnboardingStatus()
 	if out == "" {
@@ -211,6 +211,8 @@ func TestAionAgentOnboardingStatus_HonestyNeedles(t *testing.T) {
 		"/integrations status",
 		// s1372 cross-link
 		"/onboard next",
+		// s1382 cross-link to lane status board
+		"/onboard next status",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("status missing %q in:\n%s", want, out)
@@ -221,7 +223,7 @@ func TestAionAgentOnboardingStatus_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1372+s1377: AionAgentOnboardingNextLanes residual-honest post-onboard continuum needles.
+// s1372+s1377+s1382: AionAgentOnboardingNextLanes residual-honest post-onboard continuum needles.
 func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 	out := AionAgentOnboardingNextLanes()
 	if out == "" {
@@ -265,6 +267,9 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"empty-as-none",
 		"plugins dogfood",
 		"~$88/$119",
+		// s1382 cross-link to lane status board
+		"/onboard next status",
+		"status board",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("next lanes missing %q in:\n%s", want, out)
@@ -415,6 +420,89 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 	}
 	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "freemium palace GA") {
 		t.Fatalf("must not invent Memory GA / freemium palace: %s", out)
+	}
+}
+
+// s1382: AionAgentOnboardingNextLaneStatus residual-honest lane status board needles.
+func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
+	out := AionAgentOnboardingNextLaneStatus()
+	if out == "" {
+		t.Fatal("empty next lane status board")
+	}
+	// All four lanes named + honest vocabulary + locks (no invent Connected/GA/APPLY success).
+	for _, want := range []string{
+		"onboard next lane status",
+		"no MCP dial",
+		"not live dogfood",
+		// lanes
+		"plugins:",
+		"gtm:",
+		"memory:",
+		"portal:",
+		// honest state vocabulary (never invent connected/ga/apply as success)
+		"dogfood_not_run",
+		"path_ready",
+		"skill_ready",
+		"residual_only",
+		"portal_hitl_still",
+		// plugins honesty
+		"Agent Plugins GA",
+		"plugins dogfood ≠ invent Agent Plugins GA",
+		"examples/agent-plugins",
+		// gtm honesty
+		"drafts only",
+		"no auto-send",
+		"GTM agent GA",
+		"GTM checklist ≠ invent GTM agent GA",
+		// memory honesty
+		"dual_write OFF",
+		"package load ≠ Memory GA",
+		"local-primary",
+		"freemium palace",
+		"not Memory GA",
+		// portal honesty
+		"agent MCP cannot write installs",
+		"catalog ≠ Connected",
+		"portal HITL",
+		// locks footer
+		"book-demo OFF",
+		"residual PASS ≠ live dogfood",
+		"never invent install green",
+		"Connected",
+		"INSTALL_STORE APPLY",
+		"~$88/$119",
+		// cross-links
+		"/onboard next status",
+		"/onboard next plugins",
+		"/onboard next gtm",
+		"/onboard next memory",
+		"/onboard next",
+		"/onboard status",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("next lane status missing %q in:\n%s", want, out)
+		}
+	}
+	// Soft samples state must be one of the honest values (from module-root soft check).
+	if !strings.Contains(out, "samples_ok") && !strings.Contains(out, "samples_missing") {
+		t.Fatalf("next lane status must report samples_ok or samples_missing:\n%s", out)
+	}
+	// Must not invent product success language.
+	if strings.Contains(out, "Connected: yes") || strings.Contains(out, "dual_write ON") {
+		t.Fatalf("must not invent Connected/dual_write ON: %s", out)
+	}
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "Agent Plugins GA shipped") {
+		t.Fatalf("must not invent Memory/Plugins GA: %s", out)
+	}
+	if strings.Contains(out, "GTM agent GA shipped") || strings.Contains(out, "auto-send enabled") {
+		t.Fatalf("must not invent GTM agent GA / auto-send: %s", out)
+	}
+	if strings.Contains(out, "INSTALL_STORE APPLY success") || strings.Contains(out, "APPLY: ok") {
+		t.Fatalf("must not invent APPLY success: %s", out)
+	}
+	// Never claim dogfood was run / live dogfood green from this static board.
+	if strings.Contains(out, "dogfood_run") || strings.Contains(out, "dogfood PASS live") {
+		t.Fatalf("must not invent dogfood run/live PASS: %s", out)
 	}
 }
 
