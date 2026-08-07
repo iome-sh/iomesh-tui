@@ -424,3 +424,129 @@ func TestS1288SkillDescriptionResidualHonest(t *testing.T) {
 		t.Fatalf("description should mention dual_write OFF: %q", sk.Description)
 	}
 }
+
+// --- s1341: builtin gtm-draft-only-agent skill (residual-honest GTM draft-only roles) ---
+
+// TestLoadBuiltin_GtmDraftOnlyAgent proves go:embed loads gtm-draft-only-agent.
+func TestLoadBuiltin_GtmDraftOnlyAgent(t *testing.T) {
+	cat, err := LoadBuiltin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk, ok := cat.Get("gtm-draft-only-agent")
+	if !ok {
+		t.Fatalf("missing gtm-draft-only-agent; names=%v", cat.Names())
+	}
+	if sk.Name != "gtm-draft-only-agent" {
+		t.Fatalf("name=%q", sk.Name)
+	}
+	if strings.TrimSpace(sk.Description) == "" {
+		t.Fatal("description empty")
+	}
+	// Builtin source marker.
+	if !strings.Contains(sk.Path, "builtin") && sk.SourceDir != "builtin" {
+		t.Fatalf("path/source not builtin: path=%q source=%q", sk.Path, sk.SourceDir)
+	}
+}
+
+// TestLoadWithBuiltin_GtmDraftOnlyAgentAlwaysPresent: skill present even with empty dirs.
+func TestLoadWithBuiltin_GtmDraftOnlyAgentAlwaysPresent(t *testing.T) {
+	cat, err := LoadWithBuiltin(filepath.Join(t.TempDir(), "nope"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := cat.Get("gtm-draft-only-agent"); !ok {
+		t.Fatalf("gtm-draft-only-agent missing when dirs empty; names=%v", cat.Names())
+	}
+	// Prior builtins still present.
+	if _, ok := cat.Get("connector-integrations-setup"); !ok {
+		t.Fatalf("connector-integrations-setup missing; names=%v", cat.Names())
+	}
+	if _, ok := cat.Get("memory-advanced-agent"); !ok {
+		t.Fatalf("memory-advanced-agent missing; names=%v", cat.Names())
+	}
+}
+
+// TestLoadBuiltin_S1341GtmDraftOnlySkillDogfood pins residual-honest body needles.
+func TestLoadBuiltin_S1341GtmDraftOnlySkillDogfood(t *testing.T) {
+	cat, err := LoadBuiltin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk, ok := cat.Get("gtm-draft-only-agent")
+	if !ok {
+		t.Fatalf("skill missing; names=%v", cat.Names())
+	}
+	desc := strings.ToLower(sk.Description)
+	for _, want := range []string{
+		"residual",
+		"draft",
+	} {
+		if !strings.Contains(desc, want) {
+			t.Fatalf("description missing residual needle %q: %q", want, sk.Description)
+		}
+	}
+	// Description must not invent auto-send / Connected success.
+	if strings.Contains(desc, "auto-send green") || strings.Contains(sk.Description, "Connected: yes") {
+		t.Fatalf("description invents auto-send/Connected: %q", sk.Description)
+	}
+	body := sk.Body
+	for _, want := range []string{
+		"Orchestrator",
+		"Content Creator",
+		"Campaign Planner",
+		"Lead Manager",
+		"No auto SNS",
+		"No auto email send",
+		"Commercial CRM",
+		"Drafts only",
+		"Human publish",
+		"list_connector_catalog",
+		"plan_connector_setup",
+		"portal HITL",
+		"Never invent suite ops GA",
+		"HubSpot",
+		"Beta multi-tenant",
+		"Guerrilla",
+		"Salesforce",
+		"GA CRM",
+		"dual_write OFF",
+		"not Memory GA",
+		"book-demo OFF",
+		"residual PASS ≠ live dogfood",
+		"Memory Ops Pack",
+		"not freemium palace",
+		"does not APPLY",
+		"hermes-grok-marketing-sales-pipeline",
+		"Phase 2",
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("skill body missing %q:\n%s", want, body)
+		}
+	}
+}
+
+// TestS1341SkillDescriptionResidualHonest pins frontmatter honesty.
+func TestS1341SkillDescriptionResidualHonest(t *testing.T) {
+	cat, err := LoadBuiltin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk, ok := cat.Get("gtm-draft-only-agent")
+	if !ok {
+		t.Fatal("missing skill")
+	}
+	if !strings.Contains(sk.Description, "Residual-honest") && !strings.Contains(sk.Description, "residual-honest") {
+		t.Fatalf("description not residual-honest: %q", sk.Description)
+	}
+	desc := strings.ToLower(sk.Description)
+	if !strings.Contains(desc, "draft") {
+		t.Fatalf("description should say draft-only: %q", sk.Description)
+	}
+	if !strings.Contains(desc, "auto-send") && !strings.Contains(desc, "not auto-send") {
+		t.Fatalf("description should say not auto-send: %q", sk.Description)
+	}
+	if !strings.Contains(desc, "hitl") && !strings.Contains(sk.Description, "HITL") {
+		t.Fatalf("description should mention HITL publish: %q", sk.Description)
+	}
+}

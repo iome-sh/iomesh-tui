@@ -29,6 +29,10 @@ Residual-honest agent path for **advanced memory** surfaces already on main: `/m
 
 **Local-edge Docker attach (s1308 · peer aion s1306):** when palace MCP is the Docker edge (`http://127.0.0.1:8080/mcp`), advanced slash/MCP tools still apply once `[[mcp.servers]]` is attached — docker edge ≠ invent Memory GA. Operator steps: [Local-edge Docker Memory MCP](./memory-mcp.md#local-edge-docker-memory-mcp-s1308--peer-aion-s1306).
 
+### Builtin: `gtm-draft-only-agent` (s1341)
+
+Residual-honest **draft-only GTM AI agent roles** (Orchestrator · Content Creator · Campaign Planner · Lead Manager) — drafts/plans only · HITL publish · no auto-send / no auto-publish · mesh grounding via residual integrations list/plan MCP + portal HITL (never invent Connected / suite ops GA) · dual_write OFF · not Memory GA · book-demo OFF · residual PASS ≠ live dogfood. Aligns with aion hermes-grok-marketing-sales-pipeline Phase 2 local hard gates.
+
 ## Format
 
 ```markdown
