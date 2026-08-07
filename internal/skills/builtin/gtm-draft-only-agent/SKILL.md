@@ -89,6 +89,7 @@ For **institutional recall** on the operator box, optional **Memory Ops Pack** /
 ## Related
 
 - Builtin skill always available when skills enabled (**s1341** · molds s1251 connector + s1288 memory-advanced).
+- **s1347:** runtime injects residual-honest `<gtm-draft-only>` system note on `AttachSkills` (`GtmDraftOnlyAgentGuidanceNote`) — same mold as integrations / memory-advanced notes.
 - Companion builtin: `connector-integrations-setup` (list/plan → portal HITL).
 - Companion builtin: `memory-advanced-agent` (opt-in advanced memory · dual_write OFF · not Memory GA).
 - Aion SSOT hard gates: hermes-grok-marketing-sales-pipeline Phase 2 local (drafts only · human publish · human CRM commercial).

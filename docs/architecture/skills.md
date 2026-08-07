@@ -33,6 +33,8 @@ Residual-honest agent path for **advanced memory** surfaces already on main: `/m
 
 Residual-honest **draft-only GTM AI agent roles** (Orchestrator · Content Creator · Campaign Planner · Lead Manager) — drafts/plans only · HITL publish · no auto-send / no auto-publish · mesh grounding via residual integrations list/plan MCP + portal HITL (never invent Connected / suite ops GA) · dual_write OFF · not Memory GA · book-demo OFF · residual PASS ≠ live dogfood. Aligns with aion hermes-grok-marketing-sales-pipeline Phase 2 local hard gates.
 
+Paired with the `<gtm-draft-only>` system note injected on `AttachSkills` (`GtmDraftOnlyAgentGuidanceNote`, s1347).
+
 ## Format
 
 ```markdown
