@@ -213,6 +213,8 @@ func TestAionAgentOnboardingStatus_HonestyNeedles(t *testing.T) {
 		"/onboard next",
 		// s1382 cross-link to lane status board
 		"/onboard next status",
+		// s1387 cross-link to status export receipt
+		"/onboard next export",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("status missing %q in:\n%s", want, out)
@@ -270,6 +272,10 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		// s1382 cross-link to lane status board
 		"/onboard next status",
 		"status board",
+		// s1387 cross-link to status export receipt
+		"/onboard next export",
+		"export receipt",
+		"board/export evidence ≠ invent Connected",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("next lanes missing %q in:\n%s", want, out)
@@ -473,11 +479,14 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"~$88/$119",
 		// cross-links
 		"/onboard next status",
+		"/onboard next export",
 		"/onboard next plugins",
 		"/onboard next gtm",
 		"/onboard next memory",
 		"/onboard next",
 		"/onboard status",
+		// s1387: board → export cross-link honesty
+		"board/export evidence ≠ invent Connected",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("next lane status missing %q in:\n%s", want, out)
@@ -503,6 +512,115 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 	// Never claim dogfood was run / live dogfood green from this static board.
 	if strings.Contains(out, "dogfood_run") || strings.Contains(out, "dogfood PASS live") {
 		t.Fatalf("must not invent dogfood run/live PASS: %s", out)
+	}
+}
+
+// s1387: AionAgentOnboardingNextLaneStatusExport residual-honest markdown export receipt needles.
+func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
+	out := AionAgentOnboardingNextLaneStatusExport()
+	if out == "" {
+		t.Fatal("empty next lane status export receipt")
+	}
+	for _, want := range []string{
+		// evidence header
+		"evidence_kind=onboard_next_lane_status_export",
+		"offline_static",
+		"not_live_dogfood",
+		"serial=s1387",
+		"format=markdown",
+		"export receipt",
+		// lanes + s1382 vocabulary only
+		"plugins:",
+		"gtm:",
+		"memory:",
+		"portal:",
+		"dogfood_not_run",
+		"path_ready",
+		"skill_ready",
+		"residual_only",
+		"portal_hitl_still",
+		// honesty locks
+		"dual_write OFF",
+		"book-demo OFF",
+		"not Memory GA",
+		"residual PASS ≠ live dogfood",
+		"never invent install green",
+		"Connected",
+		"INSTALL_STORE APPLY",
+		"catalog ≠ Connected",
+		"portal HITL",
+		"agent MCP cannot write installs",
+		"plugins dogfood ≠ invent Agent Plugins GA",
+		"drafts only",
+		"no auto-send",
+		"GTM checklist ≠ invent GTM agent GA",
+		"package load ≠ Memory GA",
+		"board/export evidence ≠ invent Connected",
+		"~$88/$119",
+		// does not run dogfood / dial MCP
+		"does NOT run plugins dogfood",
+		"does NOT dial MCP",
+		// slash
+		"/onboard next export",
+		"/onboard next status",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("export receipt missing %q in:\n%s", want, out)
+		}
+	}
+	if !strings.Contains(out, "samples_ok") && !strings.Contains(out, "samples_missing") {
+		t.Fatalf("export receipt must report samples_ok or samples_missing:\n%s", out)
+	}
+	// Must not invent product success language.
+	if strings.Contains(out, "Connected: yes") || strings.Contains(out, "dual_write ON") {
+		t.Fatalf("must not invent Connected/dual_write ON: %s", out)
+	}
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "Agent Plugins GA shipped") {
+		t.Fatalf("must not invent Memory/Plugins GA: %s", out)
+	}
+	if strings.Contains(out, "INSTALL_STORE APPLY success") || strings.Contains(out, "APPLY: ok") {
+		t.Fatalf("must not invent APPLY success: %s", out)
+	}
+	if strings.Contains(out, "dogfood_run") || strings.Contains(out, "dogfood PASS live") {
+		t.Fatalf("must not invent dogfood run/live PASS: %s", out)
+	}
+}
+
+// s1387: AionAgentOnboardingNextLaneStatusExportJSON residual-honest JSON export needles.
+func TestAionAgentOnboardingNextLaneStatusExportJSON_HonestyNeedles(t *testing.T) {
+	out := AionAgentOnboardingNextLaneStatusExportJSON()
+	if out == "" {
+		t.Fatal("empty next lane status export JSON")
+	}
+	for _, want := range []string{
+		`"evidence_kind": "onboard_next_lane_status_export"`,
+		`"offline_static": true`,
+		`"not_live_dogfood": true`,
+		`"serial": "s1387"`,
+		`"format": "json"`,
+		`"dogfood_not_run": true`,
+		"path_ready",
+		"skill_ready",
+		"residual_only",
+		"portal_hitl_still",
+		"dual_write OFF",
+		"not Memory GA",
+		"board/export evidence ≠ invent Connected",
+		"never invent install green / Connected / INSTALL_STORE APPLY",
+		"/onboard next export",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("export JSON missing %q in:\n%s", want, out)
+		}
+	}
+	if !strings.Contains(out, "samples_ok") && !strings.Contains(out, "samples_missing") {
+		t.Fatalf("export JSON must report samples_ok or samples_missing:\n%s", out)
+	}
+	if strings.Contains(out, "Connected: yes") || strings.Contains(out, "dual_write ON") {
+		t.Fatalf("must not invent Connected/dual_write ON: %s", out)
+	}
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "INSTALL_STORE APPLY success") {
+		t.Fatalf("must not invent Memory GA / APPLY success: %s", out)
 	}
 }
 
