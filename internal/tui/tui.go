@@ -752,12 +752,13 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		fmt.Fprintln(out, agent.GtmDraftOnlyAgentGuidanceNote())
 		fmt.Fprintln(out, "— residual: drafts only · human publish · skill gtm-draft-only-agent via read_skill · dual_write OFF · not Memory GA")
 	case "/onboard", "/aion-onboard", "/agent-onboard":
-		// s1363+s1368+s1372: residual-honest TUI agent ↔ aion CP/MCP onboarding guidance.
+		// s1363+s1368+s1372+s1377: residual-honest TUI agent ↔ aion CP/MCP onboarding guidance.
 		// Bare /onboard (and aliases) → guidance note + residual footer.
 		// help|checklist|? → numbered onboarding checklist.
 		// portal|agent-mcp|mcp → portal Agent/MCP handoff (mint/copy/probe + TUI [[mcp.servers]]).
 		// status → residual-honest offline static status (no MCP dial).
-		// next|after|continue|lanes → post-onboard operator lanes (plugins·gtm·memory).
+		// next|after|continue|lanes → post-onboard operator lanes overview (plugins·gtm·memory).
+		// next <lane> (s1377): plugins|plugin|dogfood · gtm|drafts · memory|mcp|palace.
 		// dual_write OFF · not Memory GA · never invent install green / Connected ·
 		// catalog ≠ Connected · portal HITL · agent MCP cannot write installs.
 		if len(parts) >= 2 {
@@ -774,6 +775,30 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 				fmt.Fprintln(out, agent.AionAgentOnboardingStatus())
 				return false, nil
 			case "next", "after", "continue", "lanes":
+				// s1377: optional lane drill-down as second token.
+				if len(parts) >= 3 {
+					lane := strings.ToLower(parts[2])
+					switch lane {
+					case "plugins", "plugin", "dogfood":
+						fmt.Fprintln(out, agent.AionAgentOnboardingNextPluginsLane())
+						fmt.Fprintln(out, "— residual: plugins dogfood lane · dual_write OFF · not Memory GA · plugins dogfood ≠ Agent Plugins GA · residual PASS ≠ live dogfood · package load ≠ Memory GA · portal HITL")
+						return false, nil
+					case "gtm", "drafts":
+						fmt.Fprintln(out, agent.AionAgentOnboardingNextGtmLane())
+						fmt.Fprintln(out, "— residual: gtm draft-only lane · drafts only · no auto-send · human publish · GTM checklist ≠ invent GTM agent GA · dual_write OFF · not Memory GA")
+						return false, nil
+					case "memory", "mcp", "palace":
+						fmt.Fprintln(out, agent.AionAgentOnboardingNextMemoryLane())
+						fmt.Fprintln(out, "— residual: memory local lane · dual_write OFF · not Memory GA · package load ≠ Memory GA · ≠ freemium palace · portal HITL")
+						return false, nil
+					default:
+						// Unknown next sub → overview + usage hint listing lanes.
+						fmt.Fprintln(out, agent.AionAgentOnboardingNextLanes())
+						fmt.Fprintln(out, "— residual: post-onboard next lanes · dual_write OFF · not Memory GA · plugins dogfood ≠ Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · portal HITL")
+						fmt.Fprintln(out, "usage: /onboard next [plugins|gtm|memory]  (lane aliases: plugins→plugin|dogfood · gtm→drafts · memory→mcp|palace; parent aliases after|continue|lanes)")
+						return false, nil
+					}
+				}
 				fmt.Fprintln(out, agent.AionAgentOnboardingNextLanes())
 				fmt.Fprintln(out, "— residual: post-onboard next lanes · dual_write OFF · not Memory GA · plugins dogfood ≠ Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · portal HITL")
 				return false, nil
@@ -781,7 +806,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			// Unknown subcommand: still print guidance + usage hint.
 			fmt.Fprintln(out, agent.AionAgentOnboardingGuidanceNote())
 			fmt.Fprintln(out, "— residual: TUI ↔ aion onboarding · dual_write OFF · not Memory GA · never invent Connected · portal HITL · skill aion-agent-onboarding via read_skill")
-			fmt.Fprintln(out, "usage: /onboard [help|checklist|portal|status|next]  (aliases /aion-onboard /agent-onboard; portal aliases agent-mcp|mcp; next aliases after|continue|lanes)")
+			fmt.Fprintln(out, "usage: /onboard [help|checklist|portal|status|next]  (aliases /aion-onboard /agent-onboard; portal aliases agent-mcp|mcp; next aliases after|continue|lanes; next lanes: plugins|gtm|memory)")
 			return false, nil
 		}
 		fmt.Fprintln(out, agent.AionAgentOnboardingGuidanceNote())
@@ -802,7 +827,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /memory [recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · status advanced inventory)
   /integrations [list|plan|signing|status]  connector setup via MCP (catalog+plan+signing discovery+portal HITL; not install CRUD)
   /gtm [help|checklist]  GTM draft-only guidance or checklist (aliases /gtm-draft /gtm-agent; no auto-send; human publish)
-  /onboard [help|checklist|portal|status|next]  TUI agent ↔ aion onboarding guidance, checklist, portal Agent/MCP handoff, offline status, or post-onboard next lanes (aliases /aion-onboard /agent-onboard; residual-honest · portal HITL · settings/agent; next aliases after|continue|lanes)
+  /onboard [help|checklist|portal|status|next]  TUI agent ↔ aion onboarding guidance, checklist, portal Agent/MCP handoff, offline status, or post-onboard next lanes (aliases /aion-onboard /agent-onboard; residual-honest · portal HITL · settings/agent; next [plugins|gtm|memory]; next aliases after|continue|lanes)
   /quit                exit
 
 Fullscreen keys: enter send · ctrl+j newline · pgup/pgdn scroll

@@ -7,7 +7,7 @@ description: Residual-honest TUI agent ↔ aion CP/MCP onboarding (portal Agent/
 
 Builtin playbook for **onboarding a TUI agent session against aion CP/MCP** — residual-honest path only. Molds `connector-integrations-setup` + operator onboarding checklist. **Not** install APPLY, **Not** Memory GA, **Not** Agent Plugins GA, **Not** dual_write ON.
 
-**System note (s1363+s1368+s1372):** when MCP is attached (`AttachMCP`), runtime injects residual-honest `<aion-onboarding>` (`AionAgentOnboardingGuidanceNote`) with the same locks. Skill + note stay consistent; skill is the full playbook. Operator slash: `/onboard` (aliases `/aion-onboard` `/agent-onboard`) · `/onboard portal` · `/onboard status` · `/onboard checklist` · `/onboard next` (aliases `after` / `continue` / `lanes`).
+**System note (s1363+s1368+s1372+s1377):** when MCP is attached (`AttachMCP`), runtime injects residual-honest `<aion-onboarding>` (`AionAgentOnboardingGuidanceNote`) with the same locks. Skill + note stay consistent; skill is the full playbook. Operator slash: `/onboard` (aliases `/aion-onboard` `/agent-onboard`) · `/onboard portal` · `/onboard status` · `/onboard checklist` · `/onboard next` (aliases `after` / `continue` / `lanes`) · `/onboard next [plugins|gtm|memory]` lane drills (s1377).
 
 ## Workflow — two complementary halves
 
@@ -67,21 +67,42 @@ Builtin playbook for **onboarding a TUI agent session against aion CP/MCP** — 
 
 11. **Operator pulse** — slash `/integrations status` · `/onboard checklist` · `/onboard portal` · portal HITL.
 
-### D. Post-onboard next lanes (operator continuum · s1372 · no MCP dial)
+### D. Post-onboard next lanes (operator continuum · s1372+s1377 · no MCP dial)
 
-After core onboarding, residual-honest next operator lanes — static offline only; **never invent** product GA from these steps. Slash: `/onboard next` (aliases `after` / `continue` / `lanes`).
+After core onboarding, residual-honest next operator lanes — static offline only; **never invent** product GA from these steps.
+
+- **Overview:** `/onboard next` (aliases `after` / `continue` / `lanes`) → `AionAgentOnboardingNextLanes`.
+- **Lane drills (s1377):** `/onboard next <lane>` (also works with parent aliases, e.g. `/onboard after plugins`).
+
+| Lane | Slash | Aliases | API helper |
+|------|-------|---------|------------|
+| plugins | `/onboard next plugins` | `plugin` · `dogfood` | `AionAgentOnboardingNextPluginsLane` |
+| gtm | `/onboard next gtm` | `drafts` | `AionAgentOnboardingNextGtmLane` |
+| memory | `/onboard next memory` | `mcp` · `palace` | `AionAgentOnboardingNextMemoryLane` |
+
+Unknown lane token → overview + usage hint listing `plugins|gtm|memory`.
+
+#### D1. Plugins dogfood lane (`/onboard next plugins`)
 
 1. **`iomesh plugins dogfood`** — offline sample validate (`examples/agent-plugins/{hello-iome,aion-memory-mcp}`).
+   - Steps: `iomesh plugins list` → `validate <path>` → `dogfood` (both in-repo samples offline).
    - Offline validate only · **≠ invent Agent Plugins GA**.
-   - residual PASS ≠ live dogfood · rates ~$88/$119 optional.
+   - residual PASS ≠ live dogfood · rates ~$88/$119 optional · package load ≠ Memory GA.
+
+#### D2. GTM draft-only lane (`/onboard next gtm`)
 
 2. **`/gtm checklist` + skill `gtm-draft-only-agent`** — drafts only · no auto-send · human publish.
    - GTM checklist ≠ invent GTM agent GA · no auto-send · human CRM commercial.
-   - Companion: `read_skill gtm-draft-only-agent`.
+   - Companion: `read_skill gtm-draft-only-agent` · slash `/gtm [help|checklist]`.
+
+#### D3. Memory local lane (`/onboard next memory`)
 
 3. **local `aion-memory-mcp` / Memory Ops Pack local-primary** — dual_write **OFF**.
    - Package load ≠ Memory GA · ≠ freemium palace · local-primary only.
    - Optional advanced memory via `memory-advanced-agent` skill (opt-in).
+   - Operator pulse: `/memory status` · `/onboard status`.
+
+#### D4. Portal HITL still (all lanes)
 
 4. **portal HITL still required for OAuth/install** — agent MCP **cannot write installs**.
    - catalog ≠ Connected · list_org fail-open ≠ empty-as-none · never invent Connected / INSTALL_STORE APPLY.
@@ -123,13 +144,14 @@ After core onboarding, residual-honest next operator lanes — static offline on
 
 ## Related
 
-- Builtin skill always available when skills enabled (**s1363+s1368+s1372** · molds s1251 connector + s1288 memory-advanced + s1341 gtm-draft-only).
-- System note inject on `AttachMCP`: `<aion-onboarding>` via `AionAgentOnboardingGuidanceNote` (s1363+s1368+s1372).
+- Builtin skill always available when skills enabled (**s1363+s1368+s1372+s1377** · molds s1251 connector + s1288 memory-advanced + s1341 gtm-draft-only).
+- System note inject on `AttachMCP`: `<aion-onboarding>` via `AionAgentOnboardingGuidanceNote` (s1363+s1368+s1372+s1377).
 - Portal handoff block: `AionAgentOnboardingPortalHandoff` · slash `/onboard portal` (aliases `agent-mcp` / `mcp`).
 - Offline status: `AionAgentOnboardingStatus` · slash `/onboard status` (no MCP dial).
-- Post-onboard next lanes: `AionAgentOnboardingNextLanes` · slash `/onboard next` (aliases `after` / `continue` / `lanes`) — plugins · gtm · memory local · portal HITL still (s1372).
+- Post-onboard next lanes overview: `AionAgentOnboardingNextLanes` · slash `/onboard next` (aliases `after` / `continue` / `lanes`) — plugins · gtm · memory local · portal HITL still (s1372).
+- Lane drills (s1377): `AionAgentOnboardingNextPluginsLane` · `AionAgentOnboardingNextGtmLane` · `AionAgentOnboardingNextMemoryLane` · slash `/onboard next [plugins|gtm|memory]` (aliases plugin|dogfood · drafts · mcp|palace).
 - Companion builtin: `connector-integrations-setup` (list/plan → portal HITL).
 - Companion builtin: `memory-advanced-agent` (opt-in advanced memory · dual_write OFF · not Memory GA).
 - Companion builtin: `gtm-draft-only-agent` (drafts only · human publish · no auto-send).
-- Slash residual honesty: `/onboard [help|checklist|portal|status|next]` · `/integrations list|plan|status|signing` · `/memory status` · `/gtm [help|checklist]`.
+- Slash residual honesty: `/onboard [help|checklist|portal|status|next]` · `/onboard next [plugins|gtm|memory]` · `/integrations list|plan|status|signing` · `/memory status` · `/gtm [help|checklist]`.
 - Skills are **not** Agent Plugins — plugins dogfood ≠ invent Agent Plugins GA.

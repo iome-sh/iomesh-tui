@@ -998,6 +998,13 @@ func TestHandleSlash_OnboardHelpChecklist(t *testing.T) {
 	if !strings.Contains(help, "next") {
 		t.Fatalf("/help missing /onboard next mention: %s", help)
 	}
+	// s1377: /help mentions next [plugins|gtm|memory] lane drills
+	if !strings.Contains(help, "plugins") || !strings.Contains(help, "gtm") || !strings.Contains(help, "memory") {
+		// help line lists next [plugins|gtm|memory] — ensure lane tokens appear near onboard
+		if !strings.Contains(help, "next [plugins|gtm|memory]") && !strings.Contains(help, "plugins|gtm|memory") {
+			t.Fatalf("/help missing /onboard next lane drill mention: %s", help)
+		}
+	}
 }
 
 // s1368: /onboard portal (and aliases) — residual-honest portal Agent/MCP handoff.
@@ -1081,7 +1088,7 @@ func TestHandleSlash_OnboardStatus(t *testing.T) {
 	}
 }
 
-// s1372: /onboard next (and aliases) — residual-honest post-onboard operator lanes.
+// s1372: /onboard next (and aliases) — residual-honest post-onboard operator lanes overview.
 func TestHandleSlash_OnboardNext(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -1110,6 +1117,10 @@ func TestHandleSlash_OnboardNext(t *testing.T) {
 		"residual PASS ≠ live dogfood",
 		"never invent install green",
 		"INSTALL_STORE APPLY",
+		// s1377 drill cross-links on overview
+		"/onboard next plugins",
+		"/onboard next gtm",
+		"/onboard next memory",
 	}
 
 	for _, line := range []string{"/onboard next", "/aion-onboard after", "/agent-onboard continue", "/onboard lanes"} {
@@ -1133,6 +1144,189 @@ func TestHandleSlash_OnboardNext(t *testing.T) {
 		if strings.Contains(s, "Memory GA shipped") || strings.Contains(s, "Agent Plugins GA shipped") {
 			t.Fatalf("%s must not invent Memory/Plugins GA: %s", line, s)
 		}
+	}
+}
+
+// s1377: /onboard next plugins|plugin|dogfood — residual-honest plugins dogfood lane drill.
+func TestHandleSlash_OnboardNextPluginsLane(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	needles := []string{
+		"onboard next plugins lane",
+		"iomesh plugins dogfood",
+		"offline sample validate",
+		"examples/agent-plugins",
+		"Agent Plugins GA",
+		"plugins dogfood ≠ invent Agent Plugins GA",
+		"residual PASS ≠ live dogfood",
+		"dual_write OFF",
+		"not Memory GA",
+		"package load ≠ Memory GA",
+		"never invent install green",
+		"INSTALL_STORE APPLY",
+		"catalog ≠ Connected",
+		"portal HITL",
+		"agent MCP cannot write installs",
+	}
+
+	for _, line := range []string{
+		"/onboard next plugins",
+		"/onboard next plugin",
+		"/onboard next dogfood",
+		"/aion-onboard after plugins",
+		"/agent-onboard continue dogfood",
+		"/onboard lanes plugins",
+	} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Agent Plugins GA shipped") {
+			t.Fatalf("%s must not invent dual_write ON / Plugins GA: %s", line, s)
+		}
+	}
+}
+
+// s1377: /onboard next gtm|drafts — residual-honest GTM draft-only lane drill.
+func TestHandleSlash_OnboardNextGtmLane(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	needles := []string{
+		"onboard next gtm lane",
+		"/gtm checklist",
+		"gtm-draft-only-agent",
+		"drafts only",
+		"no auto-send",
+		"human publish",
+		"GTM agent GA",
+		"GTM checklist ≠ invent GTM agent GA",
+		"dual_write OFF",
+		"not Memory GA",
+		"portal HITL",
+		"agent MCP cannot write installs",
+		"never invent install green",
+		"INSTALL_STORE APPLY",
+	}
+
+	for _, line := range []string{
+		"/onboard next gtm",
+		"/onboard next drafts",
+		"/aion-onboard after gtm",
+		"/agent-onboard continue drafts",
+		"/onboard lanes gtm",
+	} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		if strings.Contains(s, "auto-send enabled") || strings.Contains(s, "GTM agent GA shipped") {
+			t.Fatalf("%s must not invent auto-send / GTM agent GA: %s", line, s)
+		}
+	}
+}
+
+// s1377: /onboard next memory|mcp|palace — residual-honest memory local lane drill.
+func TestHandleSlash_OnboardNextMemoryLane(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	needles := []string{
+		"onboard next memory lane",
+		"aion-memory-mcp",
+		"Memory Ops Pack",
+		"local-primary",
+		"dual_write OFF",
+		"package load ≠ Memory GA",
+		"freemium palace",
+		"not Memory GA",
+		"/memory status",
+		"residual PASS ≠ live dogfood",
+		"portal HITL",
+		"agent MCP cannot write installs",
+		"never invent install green",
+		"INSTALL_STORE APPLY",
+		"console.iome.sh/settings/agent",
+	}
+
+	for _, line := range []string{
+		"/onboard next memory",
+		"/onboard next mcp",
+		"/onboard next palace",
+		"/aion-onboard after memory",
+		"/agent-onboard continue palace",
+		"/onboard lanes mcp",
+	} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Memory GA shipped") {
+			t.Fatalf("%s must not invent dual_write ON / Memory GA: %s", line, s)
+		}
+	}
+}
+
+// s1377: unknown /onboard next <lane> → overview + usage hint listing lanes.
+func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	_, err := handleSlash(&out, adapter, "/onboard next unknown-lane")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := out.String()
+	for _, want := range []string{
+		"onboard next lanes",
+		"post-onboard continuum",
+		"usage:",
+		"plugins",
+		"gtm",
+		"memory",
+		"residual:",
+	} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("unknown next lane missing %q in:\n%s", want, s)
+		}
+	}
+	if strings.Contains(s, "onboard next plugins lane") {
+		t.Fatalf("unknown next lane must not drill into plugins lane: %s", s)
 	}
 }
 
