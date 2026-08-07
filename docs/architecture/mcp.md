@@ -9,6 +9,8 @@ Minimal [Model Context Protocol](https://modelcontextprotocol.io) client support
 
 If both `url` and `command` are set, **URL wins**.
 
+**Agent Plugins package MCP (s1326):** root `mcp.json` closed parse + server map structs live in `internal/agentplugins` (discovery only — **no** process attach). TOML `[[mcp.servers]]` remains the primary runtime path until package load is wired. See [agent-plugins.md](./agent-plugins.md).
+
 ## Methods
 
 | Method | Support |

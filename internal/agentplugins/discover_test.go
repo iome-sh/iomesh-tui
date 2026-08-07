@@ -1,0 +1,199 @@
+package agentplugins
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+func writePlugin(t *testing.T, root, name string) {
+	t.Helper()
+	body := `{"$schema":"https://agent-plugins.org/schemas/1.0.0/plugin.schema.json","name":"` + name + `"}`
+	if err := os.WriteFile(filepath.Join(root, "plugin.json"), []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestDiscover_SkillsOnly(t *testing.T) {
+	root := t.TempDir()
+	writePlugin(t, root, "skills-only")
+	// Immediate skill.
+	sk := filepath.Join(root, "skills", "summarize")
+	if err := os.MkdirAll(sk, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(sk, "SKILL.md"), []byte("---\nname: summarize\n---\n# S\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// Nested deeper skill must NOT be discovered.
+	deep := filepath.Join(root, "skills", "summarize", "nested", "inner")
+	if err := os.MkdirAll(deep, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(deep, "SKILL.md"), []byte("# nested"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// Dir without SKILL.md ignored.
+	if err := os.MkdirAll(filepath.Join(root, "skills", "empty"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// Second skill.
+	sk2 := filepath.Join(root, "skills", "deploy")
+	if err := os.MkdirAll(sk2, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(sk2, "SKILL.md"), []byte("# deploy"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	p, err := Discover(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.Manifest.Name != "skills-only" {
+		t.Fatal(p.Manifest.Name)
+	}
+	if len(p.Skills) != 2 {
+		t.Fatalf("skills=%d %+v", len(p.Skills), p.Skills)
+	}
+	// Sorted by name: deploy, summarize
+	if p.Skills[0].Name != "deploy" || p.Skills[1].Name != "summarize" {
+		t.Fatal(p.Skills)
+	}
+	if len(p.MCPServers) != 0 {
+		t.Fatal("no mcp expected")
+	}
+	if !strings.Contains(p.Summary(), `plugin "skills-only"`) {
+		t.Fatal(p.Summary())
+	}
+}
+
+func TestDiscover_MissingSkillsAndMCP_OK(t *testing.T) {
+	root := t.TempDir()
+	writePlugin(t, root, "bare")
+	p, err := Discover(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.Skills) != 0 || len(p.MCPServers) != 0 {
+		t.Fatalf("%+v", p)
+	}
+}
+
+func TestDiscover_WithMCP(t *testing.T) {
+	root := t.TempDir()
+	writePlugin(t, root, "with-mcp")
+	mcp := `{
+		"$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+		"mcpServers": {
+			"npx-tool": {"type": "stdio", "command": "npx", "args": ["-y", "pkg"]},
+			"remote": {"type": "streamable-http", "url": "https://mcp.example.com/mcp"}
+		}
+	}`
+	if err := os.WriteFile(filepath.Join(root, "mcp.json"), []byte(mcp), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// skill
+	sk := filepath.Join(root, "skills", "help")
+	_ = os.MkdirAll(sk, 0o755)
+	_ = os.WriteFile(filepath.Join(sk, "SKILL.md"), []byte("# help"), 0o644)
+
+	p, err := Discover(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.Skills) != 1 || p.Skills[0].Name != "help" {
+		t.Fatal(p.Skills)
+	}
+	if len(p.MCPServers) != 2 {
+		t.Fatalf("mcp=%+v warnings=%v", p.MCPServers, p.Warnings)
+	}
+}
+
+func TestDiscover_MCPFailOpen_SkillsStillLoad(t *testing.T) {
+	root := t.TempDir()
+	writePlugin(t, root, "mcp-bad")
+	// Invalid mcp.json should disable MCP only.
+	if err := os.WriteFile(filepath.Join(root, "mcp.json"), []byte(`not-json`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	sk := filepath.Join(root, "skills", "ok")
+	_ = os.MkdirAll(sk, 0o755)
+	_ = os.WriteFile(filepath.Join(sk, "SKILL.md"), []byte("# ok"), 0o644)
+
+	p, err := Discover(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.Skills) != 1 {
+		t.Fatal(p.Skills)
+	}
+	if len(p.MCPServers) != 0 {
+		t.Fatal(p.MCPServers)
+	}
+	if len(p.Warnings) == 0 {
+		t.Fatal("want mcp warning")
+	}
+}
+
+func TestDiscover_FatalMissingManifest(t *testing.T) {
+	if _, err := Discover(t.TempDir()); err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+func TestDiscover_FatalBadName(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "plugin.json"), []byte(`{"name":"Bad Name"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Discover(root); err == nil {
+		t.Fatal("expected bad name error")
+	}
+}
+
+func TestDiscover_UnknownManifestKeyWarn(t *testing.T) {
+	root := t.TempDir()
+	body := `{"name":"warn-plugin","inline_skills":true}`
+	if err := os.WriteFile(filepath.Join(root, "plugin.json"), []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	p, err := Discover(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, w := range p.Warnings {
+		if strings.Contains(w, "inline_skills") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("warnings=%v", p.Warnings)
+	}
+}
+
+func TestDiscover_SkillsNotDir(t *testing.T) {
+	root := t.TempDir()
+	writePlugin(t, root, "skills-file")
+	if err := os.WriteFile(filepath.Join(root, "skills"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	p, err := Discover(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.Skills) != 0 {
+		t.Fatal(p.Skills)
+	}
+	found := false
+	for _, w := range p.Warnings {
+		if strings.Contains(w, "not a directory") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("warnings=%v", p.Warnings)
+	}
+}
