@@ -884,6 +884,11 @@ func TestHandleSlash_Onboard(t *testing.T) {
 		"aion-agent-onboarding",
 		"read_skill",
 		"console.iome.sh/integrations",
+		// s1368 portal Agent/MCP lane in guidance
+		"console.iome.sh/settings/agent",
+		"Agent/MCP",
+		"[[mcp.servers]]",
+		"streamable HTTP",
 	} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("/onboard missing %q in:\n%s", want, s)
@@ -938,6 +943,11 @@ func TestHandleSlash_OnboardHelpChecklist(t *testing.T) {
 		"INSTALL_STORE APPLY",
 		"book-demo OFF",
 		"residual PASS ≠ live dogfood",
+		// s1368
+		"console.iome.sh/settings/agent",
+		"Agent/MCP",
+		"[[mcp.servers]]",
+		"/onboard portal",
 	}
 
 	for _, line := range []string{"/onboard help", "/onboard checklist", "/aion-onboard help", "/agent-onboard checklist"} {
@@ -980,6 +990,88 @@ func TestHandleSlash_OnboardHelpChecklist(t *testing.T) {
 	help := out.String()
 	if !strings.Contains(help, "/onboard") || !strings.Contains(help, "checklist") {
 		t.Fatalf("/help missing /onboard checklist mention: %s", help)
+	}
+	if !strings.Contains(help, "portal") || !strings.Contains(help, "status") {
+		t.Fatalf("/help missing /onboard portal|status mention: %s", help)
+	}
+}
+
+// s1368: /onboard portal (and aliases) — residual-honest portal Agent/MCP handoff.
+func TestHandleSlash_OnboardPortal(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	needles := []string{
+		"portal Agent/MCP",
+		"console.iome.sh/settings/agent",
+		"Mint API key",
+		"copy MCP connection",
+		"Test invoke",
+		"probe only",
+		"not Memory GA",
+		"[[mcp.servers]]",
+		"streamable HTTP",
+		"/integrations status",
+		"console.iome.sh/integrations",
+		"agent MCP cannot write installs",
+		"dual_write OFF",
+		"never invent install green",
+		"INSTALL_STORE APPLY",
+		"residual PASS ≠ live dogfood",
+	}
+
+	for _, line := range []string{"/onboard portal", "/aion-onboard portal", "/agent-onboard agent-mcp", "/onboard mcp"} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Connected: yes") {
+			t.Fatalf("%s must not invent dual_write ON / Connected: %s", line, s)
+		}
+	}
+}
+
+// s1368: /onboard status — residual-honest offline static status (no MCP dial).
+func TestHandleSlash_OnboardStatus(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	_, err := handleSlash(&out, adapter, "/onboard status")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := out.String()
+	for _, want := range []string{
+		"MCP attach",
+		"fail-open offline",
+		"dual_write OFF",
+		"not Memory GA",
+		"portal HITL",
+		"console.iome.sh/settings/agent",
+		"console.iome.sh/integrations",
+		"never invent install green",
+		"agent MCP cannot write installs",
+		"residual PASS ≠ live dogfood",
+		"/onboard portal",
+	} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("/onboard status missing %q in:\n%s", want, s)
+		}
+	}
+	if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Connected: yes") {
+		t.Fatalf("must not invent dual_write ON / Connected: %s", s)
 	}
 }
 

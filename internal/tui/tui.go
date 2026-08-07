@@ -752,9 +752,11 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		fmt.Fprintln(out, agent.GtmDraftOnlyAgentGuidanceNote())
 		fmt.Fprintln(out, "— residual: drafts only · human publish · skill gtm-draft-only-agent via read_skill · dual_write OFF · not Memory GA")
 	case "/onboard", "/aion-onboard", "/agent-onboard":
-		// s1363: residual-honest TUI agent ↔ aion CP/MCP onboarding guidance.
+		// s1363+s1368: residual-honest TUI agent ↔ aion CP/MCP onboarding guidance.
 		// Bare /onboard (and aliases) → guidance note + residual footer.
 		// help|checklist|? → numbered onboarding checklist.
+		// portal|agent-mcp|mcp → portal Agent/MCP handoff (mint/copy/probe + TUI [[mcp.servers]]).
+		// status → residual-honest offline static status (no MCP dial).
 		// dual_write OFF · not Memory GA · never invent install green / Connected ·
 		// catalog ≠ Connected · portal HITL · agent MCP cannot write installs.
 		if len(parts) >= 2 {
@@ -763,11 +765,18 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			case "help", "checklist", "?":
 				fmt.Fprintln(out, agent.AionAgentOnboardingChecklist())
 				return false, nil
+			case "portal", "agent-mcp", "mcp":
+				fmt.Fprintln(out, agent.AionAgentOnboardingPortalHandoff())
+				fmt.Fprintln(out, "— residual: portal Agent/MCP handoff · dual_write OFF · not Memory GA · probe only ≠ Memory GA · never invent Connected · portal HITL")
+				return false, nil
+			case "status":
+				fmt.Fprintln(out, agent.AionAgentOnboardingStatus())
+				return false, nil
 			}
 			// Unknown subcommand: still print guidance + usage hint.
 			fmt.Fprintln(out, agent.AionAgentOnboardingGuidanceNote())
 			fmt.Fprintln(out, "— residual: TUI ↔ aion onboarding · dual_write OFF · not Memory GA · never invent Connected · portal HITL · skill aion-agent-onboarding via read_skill")
-			fmt.Fprintln(out, "usage: /onboard [help|checklist]  (aliases /aion-onboard /agent-onboard)")
+			fmt.Fprintln(out, "usage: /onboard [help|checklist|portal|status]  (aliases /aion-onboard /agent-onboard; portal aliases agent-mcp|mcp)")
 			return false, nil
 		}
 		fmt.Fprintln(out, agent.AionAgentOnboardingGuidanceNote())
@@ -788,7 +797,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /memory [recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · status advanced inventory)
   /integrations [list|plan|signing|status]  connector setup via MCP (catalog+plan+signing discovery+portal HITL; not install CRUD)
   /gtm [help|checklist]  GTM draft-only guidance or checklist (aliases /gtm-draft /gtm-agent; no auto-send; human publish)
-  /onboard [help|checklist]  TUI agent ↔ aion onboarding guidance or checklist (aliases /aion-onboard /agent-onboard; residual-honest · portal HITL)
+  /onboard [help|checklist|portal|status]  TUI agent ↔ aion onboarding guidance, checklist, portal Agent/MCP handoff, or offline status (aliases /aion-onboard /agent-onboard; residual-honest · portal HITL · settings/agent)
   /quit                exit
 
 Fullscreen keys: enter send · ctrl+j newline · pgup/pgdn scroll
