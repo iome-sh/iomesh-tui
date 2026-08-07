@@ -791,6 +791,74 @@ func TestHandleSlash_GtmDraftOnly(t *testing.T) {
 	}
 }
 
+// s1358: /gtm help and /gtm checklist — residual-honest numbered draft-only checklist.
+func TestHandleSlash_GtmHelpChecklist(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	needles := []string{
+		"1.",
+		"Draft content/outreach only",
+		"never auto-send",
+		"email/SNS",
+		"2.",
+		"Human publish",
+		"human CRM commercial",
+		"3.",
+		"Salesforce",
+		"GA CRM",
+		"HubSpot",
+		"Beta multi-tenant",
+		"guerrilla",
+		"global-only",
+		"4.",
+		"portal HITL",
+		"not agent APPLY",
+		"5.",
+		"dual_write OFF",
+		"not Memory GA",
+		"book-demo OFF",
+		"6.",
+		"read_skill",
+		"gtm-draft-only-agent",
+	}
+
+	for _, line := range []string{"/gtm help", "/gtm checklist", "/gtm-draft help", "/gtm-agent checklist"} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		// Checklist mode must not invent auto-send agency.
+		if strings.Contains(s, "auto-send ON") || strings.Contains(s, "dual_write ON") {
+			t.Fatalf("%s must not invent auto-send/dual_write ON: %s", line, s)
+		}
+		// Bare guidance residual footer is for /gtm only, not required on checklist.
+		// But checklist should not claim suite ops GA shipped.
+		if strings.Contains(s, "suite ops GA shipped") || strings.Contains(s, "Memory GA shipped") {
+			t.Fatalf("%s must not invent suite/Memory GA: %s", line, s)
+		}
+	}
+
+	// /help mentions help|checklist subcommands
+	out.Reset()
+	_, err := handleSlash(&out, adapter, "/help")
+	if err != nil {
+		t.Fatal(err)
+	}
+	help := out.String()
+	if !strings.Contains(help, "/gtm") || !strings.Contains(help, "checklist") {
+		t.Fatalf("/help missing /gtm checklist mention: %s", help)
+	}
+}
+
 // s1238/s1247: /integrations slash routing — bare/help + status pulse + list/plan fail-open offline.
 func TestHandleSlash_Integrations(t *testing.T) {
 	rt := testRuntime(t)

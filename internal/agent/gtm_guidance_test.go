@@ -46,6 +46,51 @@ func TestGtmDraftOnlyAgentGuidanceNote_HonestyNeedles(t *testing.T) {
 	}
 }
 
+// s1358: GtmDraftChecklist residual-honest numbered draft-only needles.
+func TestGtmDraftChecklist_HonestyNeedles(t *testing.T) {
+	out := GtmDraftChecklist()
+	if out == "" {
+		t.Fatal("empty checklist")
+	}
+	for _, want := range []string{
+		"1.",
+		"Draft content/outreach only",
+		"never auto-send",
+		"email/SNS",
+		"2.",
+		"Human publish",
+		"human CRM commercial",
+		"3.",
+		"Salesforce",
+		"GA CRM",
+		"HubSpot",
+		"GTM suite",
+		"Beta multi-tenant",
+		"guerrilla",
+		"global-only",
+		"4.",
+		"portal HITL",
+		"not agent APPLY",
+		"5.",
+		"dual_write OFF",
+		"not Memory GA",
+		"book-demo OFF",
+		"6.",
+		"read_skill",
+		"gtm-draft-only-agent",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("checklist missing %q in:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "auto-send ON") || strings.Contains(out, "dual_write ON") {
+		t.Fatalf("must not invent auto-send/dual_write ON: %s", out)
+	}
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "suite ops GA shipped") {
+		t.Fatalf("must not invent Memory/suite GA: %s", out)
+	}
+}
+
 // s1347: AttachSkills injects <gtm-draft-only> system note when skills catalog attaches.
 // Mirrors TestAttachMCP_InjectsMemoryAdvancedGuidance (s1291).
 func TestAttachSkills_InjectsGtmDraftOnlyGuidance(t *testing.T) {
