@@ -547,7 +547,6 @@ func AionAgentOnboardingNextSalesClaims() string {
 Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent Connected / INSTALL_STORE APPLY · mesh ≠ memory · dual_auth_candidacy_open · tool ship ≠ dual-auth live · never invent dual-auth live · drafts only · no auto-send · rates ~$88/$119 optional · Ops Pack ≠ GPU fleet · pull ≠ freemium hosted palace · agent MCP cannot write installs · catalog ≠ Connected · list_plan_not_connected · no invent GA · board/export evidence ≠ invent Connected · leave ON_SIGNAL unset · Knowledge Beta→GA cannot invent H1/H2 offline · PASS ≠ invent human-gate green`)
 }
 
-
 // AionAgentOnboardingNextDemoReadiness residual-honest demo readiness board for
 // /onboard next demo (s1442). Static offline — no MCP dial · no invent book-demo ON /
 // Landgrab READY / Connected / Memory GA / dual-auth live / human-gate green.
