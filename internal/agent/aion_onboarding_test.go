@@ -235,7 +235,7 @@ func TestAionAgentOnboardingStatus_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1372+s1377+s1382+s1402+s1407+s1413: AionAgentOnboardingNextLanes residual-honest post-onboard continuum needles.
+// s1372+s1377+s1382+s1402+s1407+s1413+s1417: AionAgentOnboardingNextLanes residual-honest post-onboard continuum needles.
 func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 	out := AionAgentOnboardingNextLanes()
 	if out == "" {
@@ -285,12 +285,22 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"/onboard next memory-pull",
 		"ops-pack|pull-path|memorypull|ops_pack",
 		"pull stays mesh",
+		// s1417 agentic integrations product plane 3
 		"6.",
+		"agentic integrations",
+		"product plane 3",
+		"MCP list/plan residual-honest",
+		"plan_connector_setup",
+		"/onboard next agentic",
+		"agentic-integrations|integrations|portal-hitl|list-plan|hitl",
+		"list_plan_not_connected",
+		// portal HITL still
+		"7.",
 		"portal HITL",
 		"agent MCP cannot write installs",
 		"catalog ≠ Connected",
 		// s1413 human-gates
-		"7.",
+		"8.",
 		"human-gates",
 		"/onboard next human-gates",
 		"human|gates|apply-gates",
@@ -322,6 +332,7 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"pull ≠ freemium hosted palace",
 		"Knowledge Beta→GA cannot invent H1/H2 offline",
 		"leave ON_SIGNAL unset",
+		"template= ≠ install APPLY",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("next lanes missing %q in:\n%s", want, out)
@@ -602,6 +613,67 @@ func TestAionAgentOnboardingNextMemoryPullLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
+// s1417: AionAgentOnboardingNextAgenticLane residual-honest product plane 3 agentic integrations needles.
+func TestAionAgentOnboardingNextAgenticLane_HonestyNeedles(t *testing.T) {
+	out := AionAgentOnboardingNextAgenticLane()
+	if out == "" {
+		t.Fatal("empty agentic lane")
+	}
+	for _, want := range []string{
+		"onboard next agentic lane",
+		"no MCP dial",
+		"product plane 3",
+		"agentic integrations",
+		"MCP list/plan residual-honest",
+		"plan_connector_setup",
+		"portal deep links",
+		"browser HITL only",
+		"template= ≠ install APPLY",
+		"deep_links = browser HITL only",
+		"/integrations/{id}",
+		"/integrations/add?template={id}",
+		"/integrations",
+		"list_org fail-open ≠ empty-as-none",
+		"available=false default residual",
+		"agent MCP cannot write installs",
+		"catalog ≠ Connected",
+		"never invent Connected",
+		"console.iome.sh/integrations",
+		"console.iome.sh/settings/agent",
+		"dual_write OFF",
+		"book-demo OFF",
+		"not Memory GA",
+		"residual PASS ≠ live dogfood",
+		"PASS ≠ live APPLY",
+		"open boxes stay open",
+		"rates ~$88/$119 optional",
+		"path_ready",
+		"residual_only",
+		"portal_hitl_still",
+		"list_plan_not_connected",
+		"/onboard next agentic",
+		"agentic-integrations|integrations|portal-hitl|list-plan|hitl",
+		"bare mcp",
+		"memory lane",
+		"portal handoff",
+		"does not claim dual-auth live for list_org",
+		"board/export evidence ≠ invent Connected",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("agentic lane missing %q in:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
+	}
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "INSTALL_STORE APPLY success") {
+		t.Fatalf("must not invent Memory GA / INSTALL_STORE APPLY: %s", out)
+	}
+	if strings.Contains(out, "install green: yes") || strings.Contains(out, "list_org Connected") {
+		t.Fatalf("must not invent install green / list_org Connected: %s", out)
+	}
+}
+
 // s1413: AionAgentHumanGatesHonestyBoard residual-honest still-required vs offline needles.
 func TestAionAgentHumanGatesHonestyBoard_HonestyNeedles(t *testing.T) {
 	out := AionAgentHumanGatesHonestyBoard()
@@ -696,6 +768,7 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"memory:",
 		"mesh:",
 		"memory-pull:",
+		"agentic:",
 		"portal:",
 		// honest state vocabulary (never invent connected/ga/apply/stream/pull green as success)
 		"dogfood_not_run",
@@ -705,6 +778,7 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"streams_not_probed",
 		"pull_not_probed",
 		"portal_hitl_still",
+		"list_plan_not_connected",
 		// plugins honesty
 		"Agent Plugins GA",
 		"plugins dogfood ≠ invent Agent Plugins GA",
@@ -733,6 +807,12 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"never invent pull green",
 		"/onboard next memory-pull",
 		"package load ≠ Ops Pack entitlement",
+		// agentic honesty (s1417)
+		"product plane 3",
+		"MCP list/plan residual-honest",
+		"plan_connector_setup",
+		"/onboard next agentic",
+		"template= ≠ install APPLY",
 		// portal honesty
 		"agent MCP cannot write installs",
 		"catalog ≠ Connected",
@@ -898,12 +978,13 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 		"serial=s1387",
 		"format=markdown",
 		"export receipt",
-		// lanes + s1382+s1402+s1407 vocabulary only
+		// lanes + s1382+s1402+s1407+s1417 vocabulary only
 		"plugins:",
 		"gtm:",
 		"memory:",
 		"mesh:",
 		"memory-pull:",
+		"agentic:",
 		"portal:",
 		"dogfood_not_run",
 		"path_ready",
@@ -912,6 +993,7 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 		"streams_not_probed",
 		"pull_not_probed",
 		"portal_hitl_still",
+		"list_plan_not_connected",
 		// honesty locks
 		"dual_write OFF",
 		"book-demo OFF",
@@ -940,6 +1022,11 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 		"Ops Pack ≠ GPU fleet",
 		"never invent pull green",
 		"pull ≠ freemium hosted palace",
+		// s1417 agentic honesty
+		"product plane 3",
+		"plan_connector_setup",
+		"/onboard next agentic",
+		"template= ≠ install APPLY",
 		// does not run dogfood / dial MCP
 		"does NOT run plugins dogfood",
 		"does NOT dial MCP",
@@ -997,9 +1084,11 @@ func TestAionAgentOnboardingNextLaneStatusExportJSON_HonestyNeedles(t *testing.T
 		"streams_not_probed",
 		"pull_not_probed",
 		"portal_hitl_still",
+		"list_plan_not_connected",
 		`"mesh":`,
 		`"memory-pull":`,
 		`"ops_pack":`,
+		`"agentic":`,
 		"dual_write OFF",
 		"not Memory GA",
 		"session soft ≠ live dogfood",
@@ -1011,9 +1100,12 @@ func TestAionAgentOnboardingNextLaneStatusExportJSON_HonestyNeedles(t *testing.T
 		"Ops Pack ≠ GPU fleet",
 		"never invent pull green",
 		"pull ≠ freemium hosted palace",
+		"plan deep links = browser HITL only",
+		"template= ≠ install APPLY",
 		"/onboard next export",
 		"/onboard next mesh",
 		"/onboard next memory-pull",
+		"/onboard next agentic",
 		"/plugins dogfood",
 		"/plugins status",
 	} {

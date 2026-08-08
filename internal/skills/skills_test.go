@@ -693,6 +693,19 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"ops-pack",
 		"pull-path",
 		"plugins|gtm|memory|mesh|memory-pull",
+		// s1417 agentic integrations product plane 3
+		"/onboard next agentic",
+		"AionAgentOnboardingNextAgenticLane",
+		"product plane 3",
+		"agentic integrations",
+		"MCP list/plan residual-honest",
+		"list_plan_not_connected",
+		"plan_connector_setup",
+		"portal-hitl",
+		"list-plan",
+		"agentic-integrations",
+		"template= ≠ install APPLY",
+		"plugins|gtm|memory|mesh|memory-pull|agentic",
 		// s1413 human-gates honesty board
 		"/onboard next human-gates",
 		"AionAgentHumanGatesHonestyBoard",
@@ -720,7 +733,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"AionAgentOnboardingNextLaneStatusExport",
 		"evidence_kind=onboard_next_lane_status_export",
 		"board/export evidence ≠ invent Connected",
-		"plugins|gtm|memory|mesh|memory-pull|status|export|human-gates",
+		"plugins|gtm|memory|mesh|memory-pull|agentic|status|export|human-gates",
 		// s1397 session soft dogfood on status/export
 		"soft_offline_dogfood_session_pass",
 		"soft_offline_dogfood_session_fail",

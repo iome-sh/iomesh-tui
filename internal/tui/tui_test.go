@@ -1481,7 +1481,7 @@ func TestHandleSlash_OnboardNextMemoryPullLane(t *testing.T) {
 	}
 }
 
-// s1377+s1382+s1387+s1402+s1407+s1413: unknown /onboard next <lane> → overview + usage hint listing lanes.
+// s1377+s1382+s1387+s1402+s1407+s1413+s1417: unknown /onboard next <lane> → overview + usage hint listing lanes.
 func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -1501,6 +1501,7 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 		"memory",
 		"mesh",
 		"memory-pull",
+		"agentic",
 		"status",
 		"export",
 		"human-gates",
@@ -1519,6 +1520,9 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	if strings.Contains(s, "onboard next memory-pull lane") {
 		t.Fatalf("unknown next lane must not drill into memory-pull lane: %s", s)
 	}
+	if strings.Contains(s, "onboard next agentic lane") {
+		t.Fatalf("unknown next lane must not drill into agentic lane: %s", s)
+	}
 	if strings.Contains(s, "human-gates honesty board") {
 		t.Fatalf("unknown next lane must not drill into human-gates board: %s", s)
 	}
@@ -1527,6 +1531,110 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	}
 	if strings.Contains(s, "evidence_kind=onboard_next_lane_status_export") {
 		t.Fatalf("unknown next lane must not emit export receipt: %s", s)
+	}
+}
+
+// s1417: /onboard next agentic|agentic-integrations|integrations|portal-hitl|list-plan|hitl —
+// residual-honest product plane 3 agentic integrations (MCP list/plan + portal HITL).
+// bare mcp stays memory; bare portal stays portal handoff; bare pull stays mesh.
+func TestHandleSlash_OnboardNextAgenticLane(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	needles := []string{
+		"onboard next agentic lane",
+		"product plane 3",
+		"agentic integrations",
+		"MCP list/plan residual-honest",
+		"plan_connector_setup",
+		"portal deep links",
+		"browser HITL only",
+		"template= ≠ install APPLY",
+		"list_org fail-open ≠ empty-as-none",
+		"catalog ≠ Connected",
+		"agent MCP cannot write installs",
+		"never invent Connected",
+		"list_plan_not_connected",
+		"portal_hitl_still",
+		"dual_write OFF",
+		"not Memory GA",
+		"book-demo OFF",
+		"residual PASS ≠ live dogfood",
+		"PASS ≠ live APPLY",
+		"console.iome.sh/integrations",
+		"console.iome.sh/settings/agent",
+	}
+
+	for _, line := range []string{
+		"/onboard next agentic",
+		"/onboard next agentic-integrations",
+		"/onboard next integrations",
+		"/onboard next portal-hitl",
+		"/onboard next list-plan",
+		"/onboard next hitl",
+		"/aion-onboard after agentic",
+		"/agent-onboard continue integrations",
+		"/onboard lanes portal-hitl",
+	} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Memory GA shipped") {
+			t.Fatalf("%s must not invent dual_write ON / Memory GA: %s", line, s)
+		}
+		if strings.Contains(s, "Connected: yes") || strings.Contains(s, "INSTALL_STORE APPLY success") {
+			t.Fatalf("%s must not invent Connected/APPLY green: %s", line, s)
+		}
+		// Must not be memory lane or portal handoff body titles.
+		if strings.Contains(s, "onboard next memory lane") {
+			t.Fatalf("%s must not emit memory lane body: %s", line, s)
+		}
+		if strings.Contains(s, "portal Agent/MCP handoff") {
+			t.Fatalf("%s must not emit portal handoff body: %s", line, s)
+		}
+		if strings.Contains(s, "onboard next lane status (") {
+			t.Fatalf("%s must not emit status board: %s", line, s)
+		}
+	}
+
+	// bare mcp under /onboard next stays memory lane (not agentic).
+	out.Reset()
+	_, err := handleSlash(&out, adapter, "/onboard next mcp")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mcpOut := out.String()
+	if !strings.Contains(mcpOut, "onboard next memory lane") {
+		t.Fatalf("bare mcp under next must map to memory lane, got:\n%s", mcpOut)
+	}
+	if strings.Contains(mcpOut, "onboard next agentic lane") {
+		t.Fatalf("bare mcp must not drill agentic lane:\n%s", mcpOut)
+	}
+
+	// bare portal under /onboard stays portal handoff (not agentic).
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard portal")
+	if err != nil {
+		t.Fatal(err)
+	}
+	portalOut := out.String()
+	if !strings.Contains(portalOut, "portal Agent/MCP handoff") {
+		t.Fatalf("bare portal must map to portal handoff, got:\n%s", portalOut)
+	}
+	if strings.Contains(portalOut, "onboard next agentic lane") {
+		t.Fatalf("bare portal must not drill agentic lane:\n%s", portalOut)
 	}
 }
 
@@ -1617,6 +1725,7 @@ func TestHandleSlash_OnboardNextLaneStatus(t *testing.T) {
 		"memory:",
 		"mesh:",
 		"memory-pull:",
+		"agentic:",
 		"portal:",
 		"dogfood_not_run",
 		"path_ready",
@@ -1625,6 +1734,7 @@ func TestHandleSlash_OnboardNextLaneStatus(t *testing.T) {
 		"streams_not_probed",
 		"pull_not_probed",
 		"portal_hitl_still",
+		"list_plan_not_connected",
 		"mesh ≠ memory",
 		"dual_write OFF",
 		"not Memory GA",
@@ -1641,9 +1751,11 @@ func TestHandleSlash_OnboardNextLaneStatus(t *testing.T) {
 		"session soft ≠ live dogfood",
 		"/onboard next export",
 		"/onboard next memory-pull",
+		"/onboard next agentic",
 		"Ops Pack ≠ GPU fleet",
 		"never invent pull green",
 		"board/export evidence ≠ invent Connected",
+		"product plane 3",
 	}
 
 	for _, line := range []string{
@@ -1702,6 +1814,7 @@ func TestHandleSlash_OnboardNextLaneStatusExport(t *testing.T) {
 		"memory:",
 		"mesh:",
 		"memory-pull:",
+		"agentic:",
 		"portal:",
 		"dogfood_not_run",
 		"path_ready",
@@ -1710,6 +1823,7 @@ func TestHandleSlash_OnboardNextLaneStatusExport(t *testing.T) {
 		"streams_not_probed",
 		"pull_not_probed",
 		"portal_hitl_still",
+		"list_plan_not_connected",
 		"dual_write OFF",
 		"not Memory GA",
 		"mesh ≠ memory",
@@ -1727,6 +1841,8 @@ func TestHandleSlash_OnboardNextLaneStatusExport(t *testing.T) {
 		"Ops Pack ≠ GPU fleet",
 		"never invent pull green",
 		"/onboard next memory-pull",
+		"/onboard next agentic",
+		"product plane 3",
 	}
 
 	for _, line := range []string{
@@ -1797,12 +1913,15 @@ func TestHandleSlash_OnboardNextLaneStatusExportJSON(t *testing.T) {
 			"path_ready",
 			"portal_hitl_still",
 			"pull_not_probed",
+			"list_plan_not_connected",
 			`"memory-pull":`,
 			`"ops_pack":`,
+			`"agentic":`,
 			"board/export evidence ≠ invent Connected",
 			"session soft ≠ live dogfood",
 			"residual:",
 			"s1387",
+			"/onboard next agentic",
 		} {
 			if !strings.Contains(s, want) {
 				t.Fatalf("%s missing %q in:\n%s", line, want, s)
