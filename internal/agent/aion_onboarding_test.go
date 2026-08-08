@@ -331,6 +331,12 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"three product planes",
 		"three-planes|product-planes|product|pillars|three_planes",
 		"dual_auth_candidacy_open",
+		// s1437 sales/buyer claims cross-link
+		"/onboard next sales",
+		"sales/buyer claims",
+		"claims|buyer|claim-matrix|sales-claims|buyer-claims",
+		"may claim / must not claim",
+		"three-planes grounded",
 		// pulse stays board (not mesh alias)
 		"pulse stays board",
 		"never invent pull green",
@@ -780,6 +786,103 @@ func TestAionAgentOnboardingNextThreePlanes_HonestyNeedles(t *testing.T) {
 	}
 	if strings.Contains(out, "INSTALL_STORE APPLY success") {
 		t.Fatalf("must not invent INSTALL_STORE APPLY success: %s", out)
+	}
+}
+
+// s1437: AionAgentOnboardingNextSalesClaims residual-honest sales/buyer claims board needles.
+func TestAionAgentOnboardingNextSalesClaims_HonestyNeedles(t *testing.T) {
+	out := AionAgentOnboardingNextSalesClaims()
+	if out == "" {
+		t.Fatal("empty sales claims board")
+	}
+	for _, want := range []string{
+		"onboard next sales / buyer claims",
+		"no MCP dial",
+		"s1437",
+		"three-planes grounded",
+		// may claim
+		"MAY CLAIM",
+		"streaming org heartbeats",
+		"not OTel/APM",
+		"mesh ≠ memory",
+		"~$88",
+		"~$119",
+		"dual_write OFF",
+		"local-primary",
+		"Palace sunset",
+		"Salesforce = GA CRM",
+		"HubSpot + GTM suite Beta multi-tenant",
+		"guerrilla global-only",
+		"knowledge / analytical = Beta",
+		"no invent GA knowledge/analytical",
+		"MCP list/plan residual-honest",
+		"catalog ≠ Connected",
+		"list_plan_not_connected",
+		"/onboard next planes",
+		// must not claim
+		"MUST NOT CLAIM",
+		"never invent Connected",
+		"INSTALL_STORE APPLY",
+		"not Memory GA",
+		"Ops Pack ≠ GPU fleet",
+		"book-demo OFF",
+		"dual_auth_candidacy_open",
+		"tool ship ≠ dual-auth live",
+		"agent MCP cannot write installs",
+		"PASS ≠ invent human-gate green",
+		"Slack HMAC",
+		"Stripe Customers:Write",
+		"H1/H2 INSTALL_STORE",
+		"open boxes stay open",
+		"residual PASS ≠ live dogfood",
+		"PASS ≠ live APPLY",
+		// three-planes companion
+		"plane 1 mesh",
+		"plane 2 memory-pull",
+		"plane 3 agentic",
+		"streams_not_probed",
+		"pull_not_probed",
+		// slash + aliases
+		"/onboard next sales",
+		"claims|buyer|claim-matrix|sales-claims|buyer-claims",
+		// do not steal
+		"NOT product|planes",
+		"NOT gtm|drafts",
+		"NOT pulse|board",
+		// cross-links
+		"/onboard next mesh",
+		"/onboard next memory-pull",
+		"/onboard next agentic",
+		"/onboard next human-gates",
+		"/onboard next status",
+		"drafts only",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("sales claims board missing %q in:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
+	}
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "book-demo ON") {
+		t.Fatalf("must not invent Memory GA shipped / book-demo ON: %s", out)
+	}
+	if strings.Contains(out, "dual-auth live: yes") || strings.Contains(out, "INSTALL_STORE APPLY success") {
+		t.Fatalf("must not invent dual-auth live / INSTALL_STORE APPLY success: %s", out)
+	}
+	if strings.Contains(out, "Knowledge GA shipped") || strings.Contains(out, "Analytics GA shipped") {
+		t.Fatalf("must not invent Knowledge/Analytics GA: %s", out)
+	}
+	// Must-not section should still surface the forbidden-claim list (rephrased).
+	for _, want := range []string{
+		"invent dual_write as ON",
+		"invent book-demo as ON",
+		"invent dual-auth as live",
+		"Ops Pack as GPU fleet",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("sales claims must-not section missing %q in:\n%s", want, out)
+		}
 	}
 }
 
