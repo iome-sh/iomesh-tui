@@ -757,7 +757,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		// help|checklist|? → numbered onboarding checklist.
 		// portal|agent-mcp|mcp → portal Agent/MCP handoff (mint/copy/probe + TUI [[mcp.servers]]).
 		// status → residual-honest offline static status (no MCP dial).
-		// next|after|continue|lanes → post-onboard operator lanes overview (plugins·gtm·memory·mesh·memory-pull·agentic·planes·sales·human-gates).
+		// next|after|continue|lanes → post-onboard operator lanes overview (plugins·gtm·memory·mesh·memory-pull·agentic·planes·sales·demo·human-gates).
 		// next <lane> (s1377): plugins|plugin|dogfood · gtm|drafts · memory|mcp|palace.
 		// next mesh (s1402): mesh|stream|streams|heartbeat|heartbeats|pull (NOT pulse — pulse stays status board).
 		// next memory-pull (s1407): memory-pull|ops-pack|pull-path|memorypull|ops_pack (NOT bare pull — pull stays mesh).
@@ -829,6 +829,13 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 						fmt.Fprintln(out, agent.AionAgentOnboardingNextSalesClaims())
 						fmt.Fprintln(out, "— residual: sales/buyer claims board · s1437 · no MCP dial · may claim / must not claim · three-planes grounded · dual_write OFF · book-demo OFF · not Memory GA · never invent Connected · dual_auth_candidacy_open · tool ship ≠ dual-auth live · residual PASS ≠ live dogfood · PASS ≠ live APPLY · rates ~$88/$119 optional · open boxes stay open")
 						return false, nil
+					case "demo", "demo-ready", "readiness", "demo-readiness", "lighthouse", "landgrab":
+						// s1442: residual-honest demo readiness board (Lighthouse · book-demo OFF · Landgrab NOT READY).
+						// Do NOT steal sales|claims (sales claims) · product|planes (three-planes) · pulse|board (status) · gtm|drafts.
+						// landgrab alias stays honesty NOT READY — not invent ready.
+						fmt.Fprintln(out, agent.AionAgentOnboardingNextDemoReadiness())
+						fmt.Fprintln(out, "— residual: demo readiness board · s1442 · no MCP dial · Lighthouse beachhead packaging · book-demo OFF · Landgrab NOT READY · three planes · sales claims · human gates still open · dual_write OFF · not Memory GA · never invent Connected · residual PASS ≠ live dogfood · PASS ≠ live APPLY · residual PASS ≠ logos met · open boxes stay open · rates ~$88/$119 optional · founder-led walkthrough only when scheduled")
+						return false, nil
 					case "agentic", "agentic-integrations", "integrations", "portal-hitl", "list-plan", "hitl":
 						// s1417: product plane 3 agentic integrations (MCP list/plan + portal HITL).
 						// s1422: optional 4th token dogfood|soft|samples|offline|list-plan-soft → soft offline list/plan dogfood.
@@ -879,7 +886,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 						// Unknown next sub → overview + usage hint listing lanes.
 						fmt.Fprintln(out, agent.AionAgentOnboardingNextLanes())
 						fmt.Fprintln(out, "— residual: post-onboard next lanes · dual_write OFF · not Memory GA · plugins dogfood ≠ Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · mesh ≠ memory · portal HITL · board/export evidence ≠ invent Connected · pull_not_probed · list_plan_not_connected · PASS ≠ invent human-gate green")
-						fmt.Fprintln(out, "usage: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|status|export|human-gates]  (lane aliases: plugins→plugin|dogfood · gtm→drafts · memory→mcp|palace · mesh→stream|streams|heartbeat|heartbeats|pull · memory-pull→ops-pack|pull-path|memorypull|ops_pack · agentic→agentic-integrations|integrations|portal-hitl|list-plan|hitl · planes→three-planes|product-planes|product|pillars|three_planes · sales→claims|buyer|claim-matrix|sales-claims|buyer-claims · status→pulse|board · export→receipt|stamp|evidence · human-gates→human|gates|apply-gates; parent aliases after|continue|lanes; export json for JSON receipt; pulse stays status board; bare pull stays mesh; bare mcp stays memory; bare portal stays portal handoff; product/planes stay three-planes)")
+						fmt.Fprintln(out, "usage: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|demo|status|export|human-gates]  (lane aliases: plugins→plugin|dogfood · gtm→drafts · memory→mcp|palace · mesh→stream|streams|heartbeat|heartbeats|pull · memory-pull→ops-pack|pull-path|memorypull|ops_pack · agentic→agentic-integrations|integrations|portal-hitl|list-plan|hitl · planes→three-planes|product-planes|product|pillars|three_planes · sales→claims|buyer|claim-matrix|sales-claims|buyer-claims · demo→demo-ready|readiness|demo-readiness|lighthouse|landgrab · status→pulse|board · export→receipt|stamp|evidence · human-gates→human|gates|apply-gates; parent aliases after|continue|lanes; export json for JSON receipt; pulse stays status board; bare pull stays mesh; bare mcp stays memory; bare portal stays portal handoff; product/planes stay three-planes; landgrab stays Landgrab NOT READY honesty)")
 						return false, nil
 					}
 				}
@@ -890,7 +897,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			// Unknown subcommand: still print guidance + usage hint.
 			fmt.Fprintln(out, agent.AionAgentOnboardingGuidanceNote())
 			fmt.Fprintln(out, "— residual: TUI ↔ aion onboarding · dual_write OFF · not Memory GA · never invent Connected · portal HITL · skill aion-agent-onboarding via read_skill")
-			fmt.Fprintln(out, "usage: /onboard [help|checklist|portal|status|next]  (aliases /aion-onboard /agent-onboard; portal aliases agent-mcp|mcp; next aliases after|continue|lanes; next lanes: plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|status|export|human-gates)")
+			fmt.Fprintln(out, "usage: /onboard [help|checklist|portal|status|next]  (aliases /aion-onboard /agent-onboard; portal aliases agent-mcp|mcp; next aliases after|continue|lanes; next lanes: plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|demo|status|export|human-gates)")
 			return false, nil
 		}
 		fmt.Fprintln(out, agent.AionAgentOnboardingGuidanceNote())

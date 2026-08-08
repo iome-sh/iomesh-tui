@@ -337,6 +337,13 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"claims|buyer|claim-matrix|sales-claims|buyer-claims",
 		"may claim / must not claim",
 		"three-planes grounded",
+		// s1442 demo readiness cross-link
+		"/onboard next demo",
+		"demo readiness",
+		"demo-ready|readiness|demo-readiness|lighthouse|landgrab",
+		"Landgrab NOT READY",
+		"book-demo OFF",
+		"residual PASS ≠ logos met",
 		// pulse stays board (not mesh alias)
 		"pulse stays board",
 		"never invent pull green",
@@ -883,6 +890,88 @@ func TestAionAgentOnboardingNextSalesClaims_HonestyNeedles(t *testing.T) {
 		if !strings.Contains(out, want) {
 			t.Fatalf("sales claims must-not section missing %q in:\n%s", want, out)
 		}
+	}
+}
+
+// s1442: AionAgentOnboardingNextDemoReadiness residual-honest demo readiness board needles.
+func TestAionAgentOnboardingNextDemoReadiness_HonestyNeedles(t *testing.T) {
+	out := AionAgentOnboardingNextDemoReadiness()
+	if out == "" {
+		t.Fatal("empty demo readiness board")
+	}
+	for _, want := range []string{
+		"onboard next demo readiness",
+		"no MCP dial",
+		"s1442",
+		// packaging
+		"Lighthouse beachhead",
+		"B2B SaaS",
+		"book-demo OFF",
+		"See pricing",
+		"leave ON_SIGNAL unset",
+		// Landgrab
+		"Landgrab NOT READY",
+		"empty-honest",
+		"residual PASS ≠ logos met",
+		"do not invent book-demo as ON",
+		// three planes
+		"/onboard next planes",
+		"mesh · memory-pull · agentic",
+		"streams_not_probed",
+		"pull_not_probed",
+		"list_plan_not_connected",
+		"dual_auth_candidacy_open",
+		// sales claims
+		"/onboard next sales",
+		"may claim / must not claim",
+		// human gates
+		"Slack HMAC",
+		"Stripe Customers:Write",
+		"H1/H2 INSTALL_STORE",
+		"K-D*",
+		"/onboard next human-gates",
+		"PASS ≠ invent human-gate green",
+		"open boxes stay open",
+		// honesty locks
+		"dual_write OFF",
+		"not Memory GA",
+		"never invent Connected",
+		"residual PASS ≠ live dogfood",
+		"PASS ≠ live APPLY",
+		"rates ~$88/$119 optional",
+		// demo path residual
+		"founder-led walkthrough only when scheduled",
+		"operator runbook ≠ public /demo booking live",
+		// slash + aliases
+		"/onboard next demo",
+		"demo-ready|readiness|demo-readiness|lighthouse|landgrab",
+		// do not steal
+		"NOT sales|claims",
+		"NOT product|planes",
+		"NOT pulse|board",
+		"NOT gtm|drafts",
+		// cross-links
+		"/onboard next mesh",
+		"/onboard next memory-pull",
+		"/onboard next agentic",
+		"/onboard next status",
+		"/onboard next export",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("demo readiness board missing %q in:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
+	}
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "book-demo ON") {
+		t.Fatalf("must not invent Memory GA shipped / book-demo ON: %s", out)
+	}
+	if strings.Contains(out, "Landgrab READY: yes") || strings.Contains(out, "Landgrab: READY") {
+		t.Fatalf("must not invent Landgrab READY: %s", out)
+	}
+	if strings.Contains(out, "dual-auth live: yes") || strings.Contains(out, "INSTALL_STORE APPLY success") {
+		t.Fatalf("must not invent dual-auth live / INSTALL_STORE APPLY success: %s", out)
 	}
 }
 
