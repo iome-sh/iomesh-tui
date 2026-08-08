@@ -634,13 +634,14 @@ Locks: dual_write OFF · book-demo OFF · Landgrab NOT READY · not Memory GA ·
 // founders/operators post-onboard (residual-honest statuses only).
 //
 // Rows (residual-honest only):
-//  1 Demo readiness — companion /onboard next demo · Lighthouse · book-demo OFF · Landgrab NOT READY
-//  2 Sales claims — companion /onboard next sales · may/must-not residual-honest
-//  3 Three planes — companion /onboard next planes · mesh · memory-pull · agentic residual-honest
-//  4 Human gates — companion /onboard next human-gates · Slack HMAC · Stripe Write · H1/H2 still human
-//  5 Agentic dual-auth — dual_auth_candidacy_open · tool ship ≠ dual-auth live · list_org unavailable
-//  6 Policy locks — dual_write OFF · not Memory GA · leave ON_SIGNAL unset · rates ~$88/$119 optional
-//  7 Export tip — /onboard next export for offline evidence · board/export evidence ≠ invent Connected
+//
+//	1 Demo readiness — companion /onboard next demo · Lighthouse · book-demo OFF · Landgrab NOT READY
+//	2 Sales claims — companion /onboard next sales · may/must-not residual-honest
+//	3 Three planes — companion /onboard next planes · mesh · memory-pull · agentic residual-honest
+//	4 Human gates — companion /onboard next human-gates · Slack HMAC · Stripe Write · H1/H2 still human
+//	5 Agentic dual-auth — dual_auth_candidacy_open · tool ship ≠ dual-auth live · list_org unavailable
+//	6 Policy locks — dual_write OFF · not Memory GA · leave ON_SIGNAL unset · rates ~$88/$119 optional
+//	7 Export tip — /onboard next export for offline evidence · board/export evidence ≠ invent Connected
 //
 // Honest vocab: residual_only · path_ready · still_human · policy_off · not_ready · portal_hitl_still
 // Aliases: operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix
