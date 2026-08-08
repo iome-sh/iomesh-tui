@@ -8,7 +8,7 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/agentplugins"
 )
 
-// AionAgentOnboardingGuidanceNote residual-honest system note (s1363 + s1368 + s1372 + s1377 + s1382 + s1387 + s1402 + s1407 + s1413 + s1417 + s1432 + s1437).
+// AionAgentOnboardingGuidanceNote residual-honest system note (s1363 + s1368 + s1372 + s1377 + s1382 + s1387 + s1402 + s1407 + s1413 + s1417 + s1432 + s1437 + s1442 + s1447).
 // Injected on AttachMCP after integrations + memory-advanced notes.
 // Steers TUI agent ↔ aion CP/MCP onboarding without inventing install green,
 // Memory GA, Agent Plugins GA, or dual_write ON.
@@ -25,10 +25,11 @@ import (
 // s1432: /onboard next planes residual-honest three product planes board (mesh · memory-pull · agentic).
 // s1437: /onboard next sales residual-honest sales/buyer claims board (may claim / must not claim).
 // s1442: /onboard next demo residual-honest demo readiness board (Lighthouse · book-demo OFF · Landgrab NOT READY).
+// s1447: /onboard next operator residual-honest operator readiness matrix (demo · sales · planes · human-gates).
 // Unit-tested for honesty needles. Molds IntegrationsAgentGuidanceNote /
 // GtmDraftOnlyAgentGuidanceNote / MemoryAdvancedAgentGuidanceNote.
 func AionAgentOnboardingGuidanceNote() string {
-	return strings.TrimSpace(`aion agent onboarding (residual-honest TUI ↔ aion CP/MCP · s1363+s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442):
+	return strings.TrimSpace(`aion agent onboarding (residual-honest TUI ↔ aion CP/MCP · s1363+s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447):
 Point IOMESH/MCP at aion tools — fail-open offline (never invent tool green).
 
 Connector path (integrations portal HITL · product plane 3 agentic integrations):
@@ -45,12 +46,13 @@ Portal Agent/MCP lane (complementary · s1368 · credential → copy connection 
 Memory + operator:
 5. Memory: dual_write OFF · local-primary · not Memory GA · optional plugins dogfood ≠ invent Agent Plugins GA (rates ~$88/$119 optional)
 6. Operator pulse: /integrations status · /onboard checklist · /onboard portal · portal HITL
-7. Post-onboard continuum: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|demo|status|export|human-gates] (plugins dogfood · /gtm checklist · aion-memory-mcp local · mesh streaming heartbeats · Ops Pack pull path · agentic integrations MCP list/plan + portal HITL · three product planes board · sales/buyer claims · demo readiness · lane status board · status export receipt · human-gates still-required vs offline)
+7. Post-onboard continuum: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|demo|operator|status|export|human-gates] (plugins dogfood · /gtm checklist · aion-memory-mcp local · mesh streaming heartbeats · Ops Pack pull path · agentic integrations MCP list/plan + portal HITL · three product planes board · sales/buyer claims · demo readiness · operator readiness matrix · lane status board · status export receipt · human-gates still-required vs offline)
 8. Human gates (s1413): /onboard next human-gates — still human Slack HMAC · Stripe Customers:Write · H1/H2 INSTALL_STORE · D1–D5 · book-demo OFF · ON_SIGNAL unset · offline residual ≠ invent APPLY
 9. Agentic integrations (s1417 · product plane 3): /onboard next agentic — MCP list/plan residual-honest · plan_connector_setup → portal deep links · browser HITL only · list_org fail-open ≠ empty-as-none · never invent Connected
 10. Three product planes (s1432): /onboard next planes — mesh · memory-pull · agentic residual-honest consolidate · streams_not_probed · pull_not_probed · list_plan_not_connected · dual_auth_candidacy_open · never invent Connected
 11. Sales/buyer claims (s1437): /onboard next sales — may claim / must not claim residual-honest · three-planes grounded · never invent Connected / Memory GA / dual-auth live
 12. Demo readiness (s1442): /onboard next demo — Lighthouse beachhead packaging · book-demo OFF · Landgrab NOT READY · three planes · sales claims · human gates still open · never invent Connected
+13. Operator readiness matrix (s1447): /onboard next operator — consolidate demo · sales · planes · human-gates · dual-auth candidacy · policy locks residual-honest · never invent Connected / GA
 
 Skill: read_skill aion-agent-onboarding when available
 
@@ -71,10 +73,11 @@ Locks (never violate):
 - agentic: MCP list/plan residual-honest · plan deep links = browser HITL only · template= ≠ install APPLY · list_plan_not_connected · never invent Connected
 - planes: mesh · memory-pull · agentic consolidate · never invent stream green / pull green / Connected · dual_auth_candidacy_open
 - sales claims: may claim residual-honest only · must not invent Connected / Memory GA / dual-auth live / human-gate green
-- demo readiness: Lighthouse packaging · book-demo OFF · Landgrab NOT READY · residual PASS ≠ logos met · founder-led walkthrough only when scheduled · never invent book-demo ON / Connected`)
+- demo readiness: Lighthouse packaging · book-demo OFF · Landgrab NOT READY · residual PASS ≠ logos met · founder-led walkthrough only when scheduled · never invent book-demo ON / Connected
+- operator matrix: residual_only · path_ready · still_human · policy_off · not_ready · portal_hitl_still · dual_auth_candidacy_open · never invent Connected / GA / dual-auth live`)
 }
 
-// AionAgentOnboardingChecklist residual-honest numbered onboarding checklist (s1363 + s1368 + s1372 + s1377 + s1382 + s1387 + s1402 + s1407 + s1413 + s1417 + s1432 + s1437).
+// AionAgentOnboardingChecklist residual-honest numbered onboarding checklist (s1363 + s1368 + s1372 + s1377 + s1382 + s1387 + s1402 + s1407 + s1413 + s1417 + s1432 + s1437 + s1442 + s1447).
 // Used by /onboard help and /onboard checklist — operator HITL only; never invents
 // install green, Memory GA, Agent Plugins GA, dual_write ON, or agent APPLY.
 // s1368: portal Agent/MCP handoff steps (mint/copy/probe) + TUI [[mcp.servers]].
@@ -89,8 +92,9 @@ Locks (never violate):
 // s1432: /onboard next planes residual-honest three product planes board (mesh · memory-pull · agentic).
 // s1437: /onboard next sales residual-honest sales/buyer claims board (may / must-not).
 // s1442: /onboard next demo residual-honest demo readiness board (Lighthouse · Landgrab NOT READY).
+// s1447: /onboard next operator residual-honest operator readiness matrix (demo · sales · planes · human-gates).
 func AionAgentOnboardingChecklist() string {
-	return strings.TrimSpace(`aion agent onboarding checklist (residual-honest · s1363+s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442 · TUI ↔ aion):
+	return strings.TrimSpace(`aion agent onboarding checklist (residual-honest · s1363+s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447 · TUI ↔ aion):
   1. Point IOMESH/MCP at aion tools (fail-open offline)
   2. list_connector_catalog — catalog status ≠ Connected
   3. plan_connector_setup → portal deep links (browser HITL · template= ≠ install APPLY)
@@ -99,12 +103,13 @@ func AionAgentOnboardingChecklist() string {
   6. TUI: [[mcp.servers]] streamable HTTP → /onboard · /integrations status (agent MCP cannot write installs)
   7. Memory dual_write OFF · local-primary · not Memory GA · optional plugins dogfood ≠ Agent Plugins GA
   8. Operator: /integrations status · /onboard checklist · /onboard portal · portal https://console.iome.sh/integrations
-  9. Post-onboard: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|demo|status|export|human-gates] (plugins · gtm · memory local · mesh streaming heartbeats · Ops Pack pull path · agentic integrations MCP list/plan + portal HITL · three product planes board · sales/buyer claims · demo readiness · lane status board · status export receipt · human-gates still-required vs offline)
+  9. Post-onboard: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|demo|operator|status|export|human-gates] (plugins · gtm · memory local · mesh streaming heartbeats · Ops Pack pull path · agentic integrations MCP list/plan + portal HITL · three product planes board · sales/buyer claims · demo readiness · operator readiness matrix · lane status board · status export receipt · human-gates still-required vs offline)
   10. Human gates: /onboard next human-gates — still human Slack HMAC · Stripe Customers:Write · H1/H2 INSTALL_STORE · D1–D5 · book-demo OFF · ON_SIGNAL unset · PASS ≠ invent human-gate green · never invent APPLY
   11. Agentic integrations (product plane 3): /onboard next agentic — MCP list/plan residual-honest · plan_connector_setup → portal deep links · browser HITL only · list_org fail-open ≠ empty-as-none · catalog ≠ Connected · never invent Connected
   12. Three product planes (s1432): /onboard next planes — mesh · memory-pull · agentic residual-honest consolidate · streams_not_probed · pull_not_probed · list_plan_not_connected · dual_auth_candidacy_open · never invent Connected
   13. Sales/buyer claims (s1437): /onboard next sales — may claim / must not claim residual-honest · three-planes grounded · never invent Connected / Memory GA / dual-auth live
   14. Demo readiness (s1442): /onboard next demo — Lighthouse beachhead packaging · book-demo OFF · Landgrab NOT READY · three planes · sales claims · human gates still open · never invent Connected
+  15. Operator readiness matrix (s1447): /onboard next operator — consolidate demo · sales · planes · human-gates · dual-auth candidacy · policy locks residual-honest · never invent Connected / GA
   Locks: never invent install green / Connected / INSTALL_STORE APPLY · book-demo OFF · Landgrab NOT READY · residual PASS ≠ live dogfood · PASS ≠ live APPLY · rates ~$88/$119 optional · no invent GA knowledge/analytical · catalog status ≠ Connected · portal HITL · drafts only · no auto-send · package load ≠ Memory GA · board/export evidence ≠ invent Connected · mesh = streaming org heartbeats · mesh ≠ memory · never invent stream green · pull ≠ freemium hosted palace · Ops Pack ≠ GPU fleet · pull_not_probed · open boxes stay open · Knowledge Beta→GA cannot invent H1/H2 offline · leave ON_SIGNAL unset · list_plan_not_connected · plan deep links = browser HITL only · template= ≠ install APPLY · dual_auth_candidacy_open · sales claims residual-honest only · residual PASS ≠ logos met`)
 }
 
@@ -127,7 +132,7 @@ TUI half (local config · streamable HTTP):
 Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · never invent install green / Connected / INSTALL_STORE APPLY · list_org fail-open ≠ empty-as-none · catalog ≠ Connected · portal HITL · plugins dogfood ≠ invent Agent Plugins GA`)
 }
 
-// AionAgentOnboardingStatus residual-honest static offline status lines for /onboard status (s1368 + s1372 + s1377 + s1382 + s1387 + s1402 + s1407 + s1413 + s1417 + s1432 + s1437).
+// AionAgentOnboardingStatus residual-honest static offline status lines for /onboard status (s1368 + s1372 + s1377 + s1382 + s1387 + s1402 + s1407 + s1413 + s1417 + s1432 + s1437 + s1442 + s1447).
 // No MCP dial — operator pulse only. Never invents attach green, install Connected, or Memory GA.
 // s1372: cross-link → /onboard next operator lanes.
 // s1377: lane drills via /onboard next [plugins|gtm|memory].
@@ -140,8 +145,9 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ liv
 // s1432: cross-link → /onboard next planes three product planes board.
 // s1437: cross-link → /onboard next sales sales/buyer claims board.
 // s1442: cross-link → /onboard next demo demo readiness board.
+// s1447: cross-link → /onboard next operator operator readiness matrix.
 func AionAgentOnboardingStatus() string {
-	return strings.TrimSpace(`aion onboard status (residual-honest · offline static · s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437):
+	return strings.TrimSpace(`aion onboard status (residual-honest · offline static · s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447):
   MCP attach: expected for full path · fail-open offline (never invent tool green / install green)
   dual_write OFF · local-primary · not Memory GA · book-demo OFF · leave ON_SIGNAL unset
   portal HITL: Agent/MCP mint/copy/probe @ https://console.iome.sh/settings/agent · connectors @ https://console.iome.sh/integrations
@@ -155,11 +161,12 @@ func AionAgentOnboardingStatus() string {
   three planes: /onboard next planes — mesh · memory-pull · agentic residual-honest consolidate · streams_not_probed · pull_not_probed · list_plan_not_connected · dual_auth_candidacy_open
   sales claims: /onboard next sales — may claim / must not claim residual-honest · three-planes grounded · never invent Connected / Memory GA
   demo readiness: /onboard next demo — Lighthouse beachhead · book-demo OFF · Landgrab NOT READY · human gates still open · never invent Connected
+  operator matrix: /onboard next operator — demo · sales · planes · human-gates · dual-auth candidacy · policy locks residual-honest · never invent Connected (s1447)
   human-gates: still human Slack HMAC · Stripe Customers:Write · H1/H2 INSTALL_STORE · D1–D5 · open boxes stay open · Knowledge Beta→GA cannot invent H1/H2 offline
-  slash: /onboard portal · /onboard checklist · /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|demo|status|export|human-gates] · /onboard next status · /onboard next export · /onboard next mesh · /onboard next memory-pull · /onboard next agentic · /onboard next planes · /onboard next sales · /onboard next demo · /onboard next human-gates · /integrations status`)
+  slash: /onboard portal · /onboard checklist · /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|demo|operator|status|export|human-gates] · /onboard next status · /onboard next export · /onboard next mesh · /onboard next memory-pull · /onboard next agentic · /onboard next planes · /onboard next sales · /onboard next demo · /onboard next operator · /onboard next human-gates · /integrations status`)
 }
 
-// AionAgentOnboardingNextLanes residual-honest post-onboard continuum for /onboard next (s1372 + s1377 + s1382 + s1387 + s1402 + s1407 + s1413 + s1417 + s1432 + s1437).
+// AionAgentOnboardingNextLanes residual-honest post-onboard continuum for /onboard next (s1372 + s1377 + s1382 + s1387 + s1402 + s1407 + s1413 + s1417 + s1432 + s1437 + s1442 + s1447).
 // Static offline block — no MCP dial. Lists residual-honest operator lanes after
 // core onboarding (plugins dogfood · GTM drafts · local memory · mesh streaming · Ops Pack pull · agentic integrations · portal HITL still · human gates · sales claims).
 // s1377: drill-down via /onboard next plugins|gtm|memory (see lane helpers below).
@@ -172,9 +179,10 @@ func AionAgentOnboardingStatus() string {
 // s1432: three product planes board via /onboard next planes (aliases three-planes|product-planes|product|pillars|three_planes).
 // s1437: sales/buyer claims board via /onboard next sales (aliases claims|buyer|claim-matrix|sales-claims|buyer-claims).
 // s1442: demo readiness board via /onboard next demo (aliases demo-ready|readiness|demo-readiness|lighthouse|landgrab).
+// s1447: operator readiness matrix via /onboard next operator (aliases operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix).
 // Never invents Agent Plugins GA, Memory GA, auto-send, install Connected, stream green, pull green, or human-gate green.
 func AionAgentOnboardingNextLanes() string {
-	return strings.TrimSpace(`aion onboard next lanes (residual-honest · post-onboard continuum · s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437 · no MCP dial):
+	return strings.TrimSpace(`aion onboard next lanes (residual-honest · post-onboard continuum · s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447 · no MCP dial):
   1. iomesh plugins dogfood · /plugins dogfood — offline sample validate (examples/agent-plugins) · ≠ invent Agent Plugins GA
      drill: /onboard next plugins (aliases plugin|dogfood) · slash: /plugins dogfood
   2. /gtm checklist + skill gtm-draft-only-agent — drafts only · no auto-send · human publish · GTM checklist ≠ invent GTM agent GA
@@ -193,12 +201,13 @@ func AionAgentOnboardingNextLanes() string {
   three product planes: /onboard next planes (aliases three-planes|product-planes|product|pillars|three_planes) — mesh · memory-pull · agentic residual-honest consolidate · streams_not_probed · pull_not_probed · list_plan_not_connected · dual_auth_candidacy_open · never invent Connected (s1432)
   sales/buyer claims: /onboard next sales (aliases claims|buyer|claim-matrix|sales-claims|buyer-claims) — may claim / must not claim residual-honest · three-planes grounded · never invent Connected / Memory GA / dual-auth live (s1437) · NOT product/planes (those stay three-planes) · NOT gtm (drafts) · NOT pulse/board (status)
   demo readiness: /onboard next demo (aliases demo-ready|readiness|demo-readiness|lighthouse|landgrab) — Lighthouse beachhead packaging · book-demo OFF · Landgrab NOT READY · three planes · sales claims · human gates still open · residual PASS ≠ logos met (s1442) · NOT sales/claims (sales claims) · NOT product/planes (three-planes) · NOT pulse/board (status) · NOT gtm/drafts
+  operator readiness matrix: /onboard next operator (aliases operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix) — consolidate demo · sales · planes · human-gates · dual-auth candidacy · policy locks residual-honest · residual_only · path_ready · still_human · policy_off · not_ready · portal_hitl_still (s1447) · NOT demo/readiness/lighthouse/landgrab (demo board) · NOT sales/claims · NOT product/planes · NOT pulse/board · NOT export/receipt
   status board: /onboard next status (aliases pulse|board) — residual-honest lane states only (never invent connected/ga/apply as success · pulse stays board)
   export receipt: /onboard next export (aliases receipt|stamp|evidence) — offline markdown evidence of board (board/export evidence ≠ invent Connected)
   human-gates board: /onboard next human-gates — still human vs offline residual only vs shipped/policy (local memory / dual_write OFF / agent MCP list/plan do not close human APPLY gates)
   agentic lane: /onboard next agentic — product plane 3 MCP list/plan + portal HITL · list_plan_not_connected · never invent Connected / install green
 
-Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · PASS ≠ invent human-gate green · open boxes stay open · leave ON_SIGNAL unset · Knowledge Beta→GA cannot invent H1/H2 offline · never invent install green / Connected / INSTALL_STORE APPLY · list_org fail-open ≠ empty-as-none · plugins dogfood ≠ invent Agent Plugins GA · drafts only · no auto-send · rates ~$88/$119 optional · package load ≠ Memory GA · board/export evidence ≠ invent Connected · mesh = streaming org heartbeats · mesh ≠ memory · never invent stream green / Connected · not OTel/APM · streams_not_probed honest · pull ≠ freemium hosted palace · Ops Pack ≠ GPU fleet · pull_not_probed honest · never invent pull green · list_plan_not_connected · dual_auth_candidacy_open · plan deep links = browser HITL only · template= ≠ install APPLY · sales claims residual-honest only · demo readiness residual-honest only · Landgrab NOT READY · residual PASS ≠ logos met`)
+Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · PASS ≠ invent human-gate green · open boxes stay open · leave ON_SIGNAL unset · Knowledge Beta→GA cannot invent H1/H2 offline · never invent install green / Connected / INSTALL_STORE APPLY · list_org fail-open ≠ empty-as-none · plugins dogfood ≠ invent Agent Plugins GA · drafts only · no auto-send · rates ~$88/$119 optional · package load ≠ Memory GA · board/export evidence ≠ invent Connected · mesh = streaming org heartbeats · mesh ≠ memory · never invent stream green / Connected · not OTel/APM · streams_not_probed honest · pull ≠ freemium hosted palace · Ops Pack ≠ GPU fleet · pull_not_probed honest · never invent pull green · list_plan_not_connected · dual_auth_candidacy_open · plan deep links = browser HITL only · template= ≠ install APPLY · sales claims residual-honest only · demo readiness residual-honest only · Landgrab NOT READY · residual PASS ≠ logos met · operator matrix residual-honest only`)
 }
 
 // AionAgentOnboardingNextPluginsLane residual-honest plugins dogfood drill for /onboard next plugins (s1377+s1392).
@@ -487,9 +496,10 @@ func AionAgentOnboardingNextThreePlanes() string {
   slash: /onboard next planes (aliases three-planes|product-planes|product|pillars|three_planes)
     · NOT pulse|board (those stay status board) · NOT bare pull (mesh) · NOT bare mcp (memory)
   companion drills: /onboard next mesh · /onboard next memory-pull · /onboard next agentic · /onboard next agentic dual-auth · /onboard next agentic dogfood
-  companion boards: /onboard next status (aliases pulse|board) · /onboard next export · /onboard next human-gates · /onboard next sales · /onboard next demo · /onboard next · /onboard status
+  companion boards: /onboard next status (aliases pulse|board) · /onboard next export · /onboard next human-gates · /onboard next sales · /onboard next demo · /onboard next operator · /onboard next · /onboard status
   sales claims tip: /onboard next sales (aliases claims|buyer|claim-matrix|sales-claims|buyer-claims) — may claim / must not claim residual-honest (s1437)
   demo readiness tip: /onboard next demo (aliases demo-ready|readiness|demo-readiness|lighthouse|landgrab) — Lighthouse · book-demo OFF · Landgrab NOT READY (s1442)
+  operator matrix tip: /onboard next operator (aliases operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix) — demo · sales · planes · human-gates consolidate residual-honest (s1447)
 
 Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · mesh ≠ memory · never invent stream green / pull green / Connected / INSTALL_STORE APPLY · streams_not_probed · pull_not_probed · Ops Pack ≠ GPU fleet · pull ≠ freemium hosted palace · agent MCP cannot write installs · list_plan_not_connected · portal_hitl_still · dual_auth_candidacy_open · tool ship ≠ dual-auth live · never invent dual-auth live · catalog ≠ Connected · plan deep links = browser HITL only · template= ≠ install APPLY · rates ~$88/$119 optional · no invent GA · board/export evidence ≠ invent Connected · path_ready · residual_only · leave ON_SIGNAL unset · Knowledge Beta→GA cannot invent H1/H2 offline`)
 }
@@ -542,7 +552,8 @@ func AionAgentOnboardingNextSalesClaims() string {
   slash: /onboard next sales (aliases claims|buyer|claim-matrix|sales-claims|buyer-claims)
     · NOT product|planes (those stay three-planes board) · NOT gtm|drafts (GTM draft lane) · NOT pulse|board (status board)
   companion: /onboard next planes · /onboard next mesh · /onboard next memory-pull · /onboard next agentic · /onboard next agentic dual-auth
-  companion boards: /onboard next status · /onboard next export · /onboard next human-gates · /onboard next gtm · /onboard next · /onboard status
+  companion boards: /onboard next status · /onboard next export · /onboard next human-gates · /onboard next gtm · /onboard next demo · /onboard next operator · /onboard next · /onboard status
+  operator matrix tip: /onboard next operator (aliases operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix) — demo · sales · planes · human-gates consolidate residual-honest (s1447)
 
 Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent Connected / INSTALL_STORE APPLY · mesh ≠ memory · dual_auth_candidacy_open · tool ship ≠ dual-auth live · never invent dual-auth live · drafts only · no auto-send · rates ~$88/$119 optional · Ops Pack ≠ GPU fleet · pull ≠ freemium hosted palace · agent MCP cannot write installs · catalog ≠ Connected · list_plan_not_connected · no invent GA · board/export evidence ≠ invent Connected · leave ON_SIGNAL unset · Knowledge Beta→GA cannot invent H1/H2 offline · PASS ≠ invent human-gate green`)
 }
@@ -610,9 +621,86 @@ func AionAgentOnboardingNextDemoReadiness() string {
   slash: /onboard next demo (aliases demo-ready|readiness|demo-readiness|lighthouse|landgrab)
     · NOT sales|claims (those stay sales claims board) · NOT product|planes (three-planes) · NOT pulse|board (status) · NOT gtm|drafts (GTM draft lane)
   companion: /onboard next planes · /onboard next sales · /onboard next human-gates · /onboard next mesh · /onboard next memory-pull · /onboard next agentic
-  companion boards: /onboard next status · /onboard next export · /onboard next · /onboard status
+  companion boards: /onboard next status · /onboard next export · /onboard next operator · /onboard next · /onboard status
+  operator matrix tip: /onboard next operator (aliases operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix) — demo · sales · planes · human-gates consolidate residual-honest (s1447)
 
 Locks: dual_write OFF · book-demo OFF · Landgrab NOT READY · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · residual PASS ≠ logos met · open boxes stay open · never invent Connected / INSTALL_STORE APPLY · dual_auth_candidacy_open · tool ship ≠ dual-auth live · never invent dual-auth live · rates ~$88/$119 optional · no invent GA · leave ON_SIGNAL unset · Knowledge Beta→GA cannot invent H1/H2 offline · PASS ≠ invent human-gate green · board/export evidence ≠ invent Connected · founder-led walkthrough only when scheduled · operator runbook ≠ public /demo booking live · never invent book-demo as ON · never invent Landgrab as READY`)
+}
+
+// AionAgentOnboardingNextOperatorMatrix residual-honest operator readiness matrix board for
+// /onboard next operator (s1447). Static offline — no MCP dial · no invent green / Connected /
+// Memory GA / dual-auth live / human-gate green / book-demo ON / Landgrab READY.
+// Consolidates demo · sales · planes · human-gates · dual-auth candidacy · policy locks for
+// founders/operators post-onboard (residual-honest statuses only).
+//
+// Rows (residual-honest only):
+//  1 Demo readiness — companion /onboard next demo · Lighthouse · book-demo OFF · Landgrab NOT READY
+//  2 Sales claims — companion /onboard next sales · may/must-not residual-honest
+//  3 Three planes — companion /onboard next planes · mesh · memory-pull · agentic residual-honest
+//  4 Human gates — companion /onboard next human-gates · Slack HMAC · Stripe Write · H1/H2 still human
+//  5 Agentic dual-auth — dual_auth_candidacy_open · tool ship ≠ dual-auth live · list_org unavailable
+//  6 Policy locks — dual_write OFF · not Memory GA · leave ON_SIGNAL unset · rates ~$88/$119 optional
+//  7 Export tip — /onboard next export for offline evidence · board/export evidence ≠ invent Connected
+//
+// Honest vocab: residual_only · path_ready · still_human · policy_off · not_ready · portal_hitl_still
+// Aliases: operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix
+// Do NOT steal: demo|readiness|lighthouse|landgrab (demo) · sales|claims · planes|product ·
+// pulse|board (status) · export|receipt.
+// Cross-links: /onboard next demo · sales · planes · human-gates · agentic dual-auth · status · export.
+func AionAgentOnboardingNextOperatorMatrix() string {
+	return strings.TrimSpace(`aion onboard next operator readiness matrix (residual-honest · s1447 · no MCP dial · offline static · not live dogfood · not live APPLY · residual_only · never invent Connected):
+  board for founders/operators — consolidates demo · sales · planes · human-gates readiness honesty only (never invent green / Connected / GA / APPLY as success):
+
+  row 1 · Demo readiness (not_ready · residual_only):
+    · path_ready packaging residual · Lighthouse beachhead · B2B SaaS framing
+    · book-demo OFF · Landgrab NOT READY · residual PASS ≠ logos met
+    · founder-led walkthrough only when scheduled · operator runbook ≠ public /demo booking live
+    · never invent book-demo as ON · never invent Landgrab as READY / Connected
+    · companion: /onboard next demo (aliases demo-ready|readiness|demo-readiness|lighthouse|landgrab)
+
+  row 2 · Sales claims (residual_only · three-planes grounded):
+    · may claim / must not claim residual-honest · never invent Connected / Memory GA / dual-auth live
+    · sales claims residual-honest only · never invent human-gate green
+    · companion: /onboard next sales (aliases claims|buyer|claim-matrix|sales-claims|buyer-claims)
+
+  row 3 · Three product planes (path_ready · residual_only):
+    · mesh · memory-pull · agentic residual-honest consolidate
+    · streams_not_probed · pull_not_probed · list_plan_not_connected · dual_auth_candidacy_open
+    · mesh ≠ memory · never invent stream green / pull green / Connected
+    · companion: /onboard next planes (aliases three-planes|product-planes|product|pillars|three_planes)
+
+  row 4 · Human gates (still_human · open boxes stay open):
+    · still human Slack HMAC · Stripe Customers:Write · H1/H2 INSTALL_STORE · D1–D5 / K-D*
+    · book-demo OFF · leave ON_SIGNAL unset · PASS ≠ invent human-gate green · PASS ≠ live APPLY
+    · open boxes stay open · Knowledge Beta→GA cannot invent H1/H2 offline
+    · companion: /onboard next human-gates (aliases human|gates|apply-gates)
+
+  row 5 · Agentic dual-auth candidacy (portal_hitl_still · dual_auth_candidacy_open):
+    · dual_auth_candidacy_open · list_org_unavailable · tool ship ≠ dual-auth live
+    · list_plan_not_connected · portal_hitl_still · never invent dual-auth live · never invent Connected
+    · agent MCP cannot write installs · catalog ≠ Connected · list_org fail-open ≠ empty-as-none
+    · companion: /onboard next agentic dual-auth (aliases candidacy|list-org|org-installs|dual_auth|dual-auth-candidacy)
+    · soft dogfood tip: /onboard next agentic dogfood · soft offline list/plan ≠ invent Connected
+
+  row 6 · Policy locks (policy_off · residual_only):
+    · dual_write OFF · not Memory GA · leave ON_SIGNAL unset · book-demo OFF
+    · rates ~$88 mesh / ~$119 Memory Ops Pack optional (commercial framing only · not product GA claim)
+    · no invent GA · drafts only · no auto-send · residual PASS ≠ live dogfood · PASS ≠ live APPLY
+    · residual PASS ≠ logos met · board/export evidence ≠ invent Connected
+
+  row 7 · Export tip (offline evidence only):
+    · /onboard next export (aliases receipt|stamp|evidence) — offline markdown evidence
+    · board/export evidence ≠ invent Connected · residual PASS ≠ live dogfood · PASS ≠ live APPLY
+    · optional: /onboard next export json · /onboard next status (aliases pulse|board)
+
+  honest vocab (this matrix only): residual_only · path_ready · still_human · policy_off · not_ready · portal_hitl_still · dual_auth_candidacy_open · list_org_unavailable · list_plan_not_connected · streams_not_probed · pull_not_probed
+
+  slash: /onboard next operator (aliases operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix)
+    · NOT demo|readiness|lighthouse|landgrab (those stay demo board) · NOT sales|claims (sales claims) · NOT product|planes (three-planes) · NOT pulse|board (status) · NOT export|receipt (export receipt)
+  companion: /onboard next demo · /onboard next sales · /onboard next planes · /onboard next human-gates · /onboard next agentic · /onboard next agentic dual-auth
+  companion boards: /onboard next status · /onboard next export · /onboard next · /onboard status
+
+Locks: dual_write OFF · book-demo OFF · Landgrab NOT READY · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · residual PASS ≠ logos met · open boxes stay open · never invent Connected / INSTALL_STORE APPLY · dual_auth_candidacy_open · tool ship ≠ dual-auth live · never invent dual-auth live · rates ~$88/$119 optional · no invent GA · leave ON_SIGNAL unset · Knowledge Beta→GA cannot invent H1/H2 offline · PASS ≠ invent human-gate green · board/export evidence ≠ invent Connected · residual_only · path_ready · still_human · policy_off · not_ready · portal_hitl_still`)
 }
 
 // AionAgentOnboardingNextLaneStatus residual-honest post-onboard lane status board for
@@ -686,11 +774,12 @@ func AionAgentOnboardingNextLaneStatus() string {
     · list_org fail-open ≠ empty-as-none · never invent Connected / INSTALL_STORE APPLY
     · Agent/MCP mint/copy/probe @ https://console.iome.sh/settings/agent · connectors @ https://console.iome.sh/integrations
 
-  slash: /onboard next status (aliases pulse|board) · /onboard next export (aliases receipt|stamp|evidence) · /onboard next mesh · /onboard next memory-pull · /onboard next agentic (aliases agentic-integrations|integrations|portal-hitl|list-plan|hitl) · /onboard next agentic dogfood · /onboard next agentic dual-auth · /onboard next planes (aliases three-planes|product-planes|product|pillars|three_planes) · /onboard next sales (aliases claims|buyer|claim-matrix|sales-claims|buyer-claims) · /onboard next demo (aliases demo-ready|readiness|demo-readiness|lighthouse|landgrab) · /onboard next human-gates (aliases human|gates|apply-gates) · /onboard next · /onboard status · /integrations status · /plugins dogfood · /plugins status · /mesh
+  slash: /onboard next status (aliases pulse|board) · /onboard next export (aliases receipt|stamp|evidence) · /onboard next mesh · /onboard next memory-pull · /onboard next agentic (aliases agentic-integrations|integrations|portal-hitl|list-plan|hitl) · /onboard next agentic dogfood · /onboard next agentic dual-auth · /onboard next planes (aliases three-planes|product-planes|product|pillars|three_planes) · /onboard next sales (aliases claims|buyer|claim-matrix|sales-claims|buyer-claims) · /onboard next demo (aliases demo-ready|readiness|demo-readiness|lighthouse|landgrab) · /onboard next operator (aliases operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix) · /onboard next human-gates (aliases human|gates|apply-gates) · /onboard next · /onboard status · /integrations status · /plugins dogfood · /plugins status · /mesh
   export receipt: /onboard next export — offline markdown evidence of this board (board/export evidence ≠ invent Connected)
   three product planes: /onboard next planes — mesh · memory-pull · agentic residual-honest consolidate · streams_not_probed · pull_not_probed · list_plan_not_connected · dual_auth_candidacy_open · never invent Connected (s1432)
   sales/buyer claims: /onboard next sales (aliases claims|buyer|claim-matrix|sales-claims|buyer-claims) — may claim / must not claim residual-honest · three-planes grounded · never invent Connected / Memory GA (s1437)
   demo readiness: /onboard next demo (aliases demo-ready|readiness|demo-readiness|lighthouse|landgrab) — Lighthouse beachhead · book-demo OFF · Landgrab NOT READY · human gates still open (s1442)
+  operator readiness matrix: /onboard next operator (aliases operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix) — demo · sales · planes · human-gates · dual-auth candidacy · policy locks residual-honest (s1447)
   human-gates: /onboard next human-gates — still human vs offline residual · PASS ≠ invent human-gate green · PASS ≠ live APPLY · open boxes stay open (s1413)
   plugins soft offline: /plugins dogfood (aliases soft|samples|offline) — soft offline ≠ live dogfood · ≠ invent Agent Plugins GA · session soft refreshes this board
   agentic soft offline: /onboard next agentic dogfood (aliases soft|samples|offline|list-plan-soft) — soft offline list/plan ≠ live dogfood · ≠ invent Connected · session soft refreshes agentic lane

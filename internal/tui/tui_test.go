@@ -1481,7 +1481,7 @@ func TestHandleSlash_OnboardNextMemoryPullLane(t *testing.T) {
 	}
 }
 
-// s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442: unknown /onboard next <lane> → overview + usage hint listing lanes.
+// s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447: unknown /onboard next <lane> → overview + usage hint listing lanes.
 func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -1505,6 +1505,7 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 		"planes",
 		"sales",
 		"demo",
+		"operator",
 		"status",
 		"export",
 		"human-gates",
@@ -1534,6 +1535,9 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	}
 	if strings.Contains(s, "onboard next demo readiness") {
 		t.Fatalf("unknown next lane must not drill into demo readiness board: %s", s)
+	}
+	if strings.Contains(s, "onboard next operator readiness matrix") {
+		t.Fatalf("unknown next lane must not drill into operator readiness matrix: %s", s)
 	}
 	if strings.Contains(s, "human-gates honesty board") {
 		t.Fatalf("unknown next lane must not drill into human-gates board: %s", s)
@@ -1814,6 +1818,180 @@ func TestHandleSlash_OnboardNextDemoReadiness(t *testing.T) {
 // s1432: /onboard next planes|three-planes|product-planes|product|pillars|three_planes —
 // residual-honest three product planes board (mesh · memory-pull · agentic).
 // bare pulse stays status; bare pull stays mesh; bare mcp stays memory.
+// s1447: /onboard next operator|operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix —
+// residual-honest operator readiness matrix (demo · sales · planes · human-gates).
+// demo/readiness/lighthouse/landgrab stay demo; sales/claims stay sales; product/planes stay three-planes;
+// pulse stays status; export stays export.
+func TestHandleSlash_OnboardNextOperatorMatrix(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	needles := []string{
+		"onboard next operator readiness matrix",
+		"no MCP dial",
+		"s1447",
+		"book-demo OFF",
+		"Landgrab NOT READY",
+		"dual_write OFF",
+		"not Memory GA",
+		"never invent Connected",
+		"dual_auth_candidacy_open",
+		"tool ship ≠ dual-auth live",
+		"residual PASS ≠ live dogfood",
+		"PASS ≠ live APPLY",
+		"residual PASS ≠ logos met",
+		"residual_only",
+		"path_ready",
+		"still_human",
+		"policy_off",
+		"not_ready",
+		"portal_hitl_still",
+		"/onboard next demo",
+		"/onboard next sales",
+		"/onboard next planes",
+		"/onboard next human-gates",
+		"/onboard next export",
+	}
+	for _, line := range []string{
+		"/onboard next operator",
+		"/onboard next operator-matrix",
+		"/onboard next ops-matrix",
+		"/onboard next operator-readiness",
+		"/onboard next ops-readiness",
+		"/onboard next matrix",
+		"/aion-onboard after operator",
+		"/agent-onboard continue matrix",
+	} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		// Must not be demo / sales / three-planes / status / export boards alone.
+		if strings.Contains(s, "onboard next demo readiness (") {
+			t.Fatalf("%s must not be demo readiness board: %s", line, s)
+		}
+		if strings.Contains(s, "onboard next sales / buyer claims (") {
+			t.Fatalf("%s must not be sales claims board: %s", line, s)
+		}
+		if strings.Contains(s, "onboard next three product planes (") {
+			t.Fatalf("%s must not be three planes board: %s", line, s)
+		}
+		if strings.Contains(s, "onboard next lane status (") {
+			t.Fatalf("%s must not be status board: %s", line, s)
+		}
+		if strings.Contains(s, "evidence_kind=onboard_next_lane_status_export") {
+			t.Fatalf("%s must not be export receipt: %s", line, s)
+		}
+	}
+
+	// demo stays demo readiness (not operator matrix).
+	out.Reset()
+	_, err := handleSlash(&out, adapter, "/onboard next demo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	demoOut := out.String()
+	if !strings.Contains(demoOut, "onboard next demo readiness") {
+		t.Fatalf("demo must stay demo readiness: %s", demoOut)
+	}
+	if strings.Contains(demoOut, "onboard next operator readiness matrix") {
+		t.Fatalf("demo must not open operator matrix: %s", demoOut)
+	}
+
+	// readiness stays demo (not operator matrix).
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next readiness")
+	if err != nil {
+		t.Fatal(err)
+	}
+	readinessOut := out.String()
+	if !strings.Contains(readinessOut, "onboard next demo readiness") {
+		t.Fatalf("readiness must stay demo readiness: %s", readinessOut)
+	}
+	if strings.Contains(readinessOut, "onboard next operator readiness matrix") {
+		t.Fatalf("readiness must not open operator matrix: %s", readinessOut)
+	}
+
+	// landgrab stays demo (not operator matrix).
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next landgrab")
+	if err != nil {
+		t.Fatal(err)
+	}
+	landgrabOut := out.String()
+	if !strings.Contains(landgrabOut, "onboard next demo readiness") {
+		t.Fatalf("landgrab must stay demo readiness: %s", landgrabOut)
+	}
+	if strings.Contains(landgrabOut, "onboard next operator readiness matrix") {
+		t.Fatalf("landgrab must not open operator matrix: %s", landgrabOut)
+	}
+
+	// sales stays sales claims (not operator matrix).
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next sales")
+	if err != nil {
+		t.Fatal(err)
+	}
+	salesOut := out.String()
+	if !strings.Contains(salesOut, "onboard next sales / buyer claims") {
+		t.Fatalf("sales must stay sales claims: %s", salesOut)
+	}
+	if strings.Contains(salesOut, "onboard next operator readiness matrix") {
+		t.Fatalf("sales must not open operator matrix: %s", salesOut)
+	}
+
+	// planes stays three-planes (not operator matrix).
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next planes")
+	if err != nil {
+		t.Fatal(err)
+	}
+	planesOut := out.String()
+	if !strings.Contains(planesOut, "onboard next three product planes") {
+		t.Fatalf("planes must stay three planes: %s", planesOut)
+	}
+	if strings.Contains(planesOut, "onboard next operator readiness matrix") {
+		t.Fatalf("planes must not open operator matrix: %s", planesOut)
+	}
+
+	// pulse stays status board (not operator matrix).
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next pulse")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pulseOut := out.String()
+	if !strings.Contains(pulseOut, "onboard next lane status") {
+		t.Fatalf("pulse must stay status board: %s", pulseOut)
+	}
+	if strings.Contains(pulseOut, "onboard next operator readiness matrix") {
+		t.Fatalf("pulse must not open operator matrix: %s", pulseOut)
+	}
+
+	// export stays export receipt (not operator matrix).
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next export")
+	if err != nil {
+		t.Fatal(err)
+	}
+	exportOut := out.String()
+	if !strings.Contains(exportOut, "evidence_kind=onboard_next_lane_status_export") {
+		t.Fatalf("export must stay export receipt: %s", exportOut)
+	}
+	if strings.Contains(exportOut, "onboard next operator readiness matrix") {
+		t.Fatalf("export must not open operator matrix: %s", exportOut)
+	}
+}
+
+
 func TestHandleSlash_OnboardNextThreePlanes(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
