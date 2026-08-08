@@ -670,6 +670,11 @@ func TestAionAgentOnboardingNextAgenticLane_HonestyNeedles(t *testing.T) {
 		"session soft ≠ live dogfood",
 		"soft offline ≠ live dogfood",
 		"/onboard portal mint/copy/probe",
+		// s1427 dual-auth candidacy tip on main board
+		"dual_auth_candidacy_open",
+		"/onboard next agentic dual-auth",
+		"candidacy|list-org|org-installs|dual_auth|dual-auth-candidacy",
+		"tool ship ≠ dual-auth live",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("agentic lane missing %q in:\n%s", want, out)
@@ -683,6 +688,76 @@ func TestAionAgentOnboardingNextAgenticLane_HonestyNeedles(t *testing.T) {
 	}
 	if strings.Contains(out, "install green: yes") || strings.Contains(out, "list_org Connected") {
 		t.Fatalf("must not invent install green / list_org Connected: %s", out)
+	}
+}
+
+// s1427: AionAgentOnboardingNextAgenticDualAuthCandidacy residual-honest dual-auth candidacy needles.
+func TestAionAgentOnboardingNextAgenticDualAuthCandidacy_HonestyNeedles(t *testing.T) {
+	out := AionAgentOnboardingNextAgenticDualAuthCandidacy()
+	if out == "" {
+		t.Fatal("empty dual-auth candidacy board")
+	}
+	for _, want := range []string{
+		"onboard next agentic dual-auth candidacy",
+		"no MCP dial",
+		"product plane 3",
+		"dual_auth_candidacy_open",
+		"list_org_connector_installs",
+		"available=false",
+		"status=unavailable",
+		"installs=null",
+		"never invent empty-as-none",
+		"installs=null not []",
+		"tool ship ≠ dual-auth live",
+		"PASS ≠ invent dual-auth shipped",
+		"never invent dual-auth live",
+		"portal session owns install index",
+		"session-cookie + org membership only",
+		"agent MCP cannot write installs",
+		"catalog ≠ Connected",
+		"never invent Connected",
+		"console.iome.sh/integrations",
+		"dual_write OFF",
+		"book-demo OFF",
+		"not Memory GA",
+		"residual PASS ≠ live dogfood",
+		"PASS ≠ live APPLY",
+		"open boxes stay open",
+		"rates ~$88/$119 optional",
+		"path_ready",
+		"residual_only",
+		"list_org_unavailable",
+		"/onboard next agentic dual-auth",
+		"candidacy|list-org|org-installs|dual_auth|dual-auth-candidacy",
+		"/onboard next agentic",
+		"/onboard next agentic dogfood",
+		"/onboard portal",
+		"/onboard next status",
+		"dogfood|soft|samples|offline|list-plan-soft",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("dual-auth candidacy missing %q in:\n%s", want, out)
+		}
+	}
+	// Anti-inventions
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
+	}
+	if strings.Contains(out, "dual-auth live shipped") || strings.Contains(out, "dual-auth: live") {
+		t.Fatalf("must not invent dual-auth live: %s", out)
+	}
+	if strings.Contains(out, "installs: []") || strings.Contains(out, `"installs":[]`) {
+		t.Fatalf("must not invent empty-as-none installs=[]: %s", out)
+	}
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "INSTALL_STORE APPLY success") {
+		t.Fatalf("must not invent Memory GA / INSTALL_STORE APPLY: %s", out)
+	}
+	// Must not be main agentic board body or soft dogfood runner.
+	if strings.Contains(out, "onboard next agentic lane (") {
+		t.Fatalf("dual-auth board must not be main agentic lane body: %s", out)
+	}
+	if strings.Contains(out, "agentic list/plan soft offline dogfood") {
+		t.Fatalf("dual-auth board must not be soft dogfood runner: %s", out)
 	}
 }
 
@@ -915,12 +990,16 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"never invent pull green",
 		"/onboard next memory-pull",
 		"package load ≠ Ops Pack entitlement",
-		// agentic honesty (s1417)
+		// agentic honesty (s1417+s1427)
 		"product plane 3",
 		"MCP list/plan residual-honest",
 		"plan_connector_setup",
 		"/onboard next agentic",
 		"template= ≠ install APPLY",
+		"dual_auth_candidacy_open",
+		"list_org_unavailable",
+		"tool ship ≠ dual-auth live",
+		"/onboard next agentic dual-auth",
 		// portal honesty
 		"agent MCP cannot write installs",
 		"catalog ≠ Connected",

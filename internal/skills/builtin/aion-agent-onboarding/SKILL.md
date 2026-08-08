@@ -7,7 +7,7 @@ description: Residual-honest TUI agent ↔ aion CP/MCP onboarding (portal Agent/
 
 Builtin playbook for **onboarding a TUI agent session against aion CP/MCP** — residual-honest path only. Molds `connector-integrations-setup` + operator onboarding checklist. **Not** install APPLY, **Not** Memory GA, **Not** Agent Plugins GA, **Not** dual_write ON.
 
-**System note (s1363+s1368+s1372+s1377+s1382+s1387+s1397+s1402+s1407+s1413+s1417+s1422):** when MCP is attached (`AttachMCP`), runtime injects residual-honest `<aion-onboarding>` (`AionAgentOnboardingGuidanceNote`) with the same locks. Skill + note stay consistent; skill is the full playbook. Operator slash: `/onboard` (aliases `/aion-onboard` `/agent-onboard`) · `/onboard portal` · `/onboard status` · `/onboard checklist` · `/onboard next` (aliases `after` / `continue` / `lanes`) · `/onboard next [plugins|gtm|memory|mesh|memory-pull|agentic]` lane drills (s1377+s1402+s1407+s1417) · `/onboard next agentic dogfood` soft offline list/plan (s1422 · aliases `soft`/`samples`/`offline`/`list-plan-soft`) · `/onboard next status` lane status board (aliases `pulse` / `board` · s1382+s1397 session soft dogfood · s1402 mesh row · s1407 memory-pull/ops_pack row · s1417+s1422 agentic row + list/plan soft) · `/onboard next export` status export receipt (aliases `receipt` / `stamp` / `evidence` · optional `json` · s1387+s1397+s1402+s1407+s1417+s1422) · `/onboard next human-gates` still-required vs offline residual (aliases `human` / `gates` / `apply-gates` · s1413).
+**System note (s1363+s1368+s1372+s1377+s1382+s1387+s1397+s1402+s1407+s1413+s1417+s1422+s1427):** when MCP is attached (`AttachMCP`), runtime injects residual-honest `<aion-onboarding>` (`AionAgentOnboardingGuidanceNote`) with the same locks. Skill + note stay consistent; skill is the full playbook. Operator slash: `/onboard` (aliases `/aion-onboard` `/agent-onboard`) · `/onboard portal` · `/onboard status` · `/onboard checklist` · `/onboard next` (aliases `after` / `continue` / `lanes`) · `/onboard next [plugins|gtm|memory|mesh|memory-pull|agentic]` lane drills (s1377+s1402+s1407+s1417) · `/onboard next agentic dogfood` soft offline list/plan (s1422 · aliases `soft`/`samples`/`offline`/`list-plan-soft`) · `/onboard next agentic dual-auth` dual-auth candidacy depth (s1427 · aliases `candidacy`/`list-org`/`org-installs`/`dual_auth`/`dual-auth-candidacy`) · `/onboard next status` lane status board (aliases `pulse` / `board` · s1382+s1397 session soft dogfood · s1402 mesh row · s1407 memory-pull/ops_pack row · s1417+s1422+s1427 agentic row + list/plan soft + dual_auth_candidacy_open) · `/onboard next export` status export receipt (aliases `receipt` / `stamp` / `evidence` · optional `json` · s1387+s1397+s1402+s1407+s1417+s1422+s1427) · `/onboard next human-gates` still-required vs offline residual (aliases `human` / `gates` / `apply-gates` · s1413).
 
 ## Workflow — two complementary halves
 
@@ -67,15 +67,16 @@ Builtin playbook for **onboarding a TUI agent session against aion CP/MCP** — 
 
 11. **Operator pulse** — slash `/integrations status` · `/onboard checklist` · `/onboard portal` · portal HITL.
 
-### D. Post-onboard next lanes (operator continuum · s1372+s1377+s1382+s1387+s1397+s1402+s1407+s1413+s1417+s1422 · no MCP dial)
+### D. Post-onboard next lanes (operator continuum · s1372+s1377+s1382+s1387+s1397+s1402+s1407+s1413+s1417+s1422+s1427 · no MCP dial)
 
 After core onboarding, residual-honest next operator lanes — static offline only; **never invent** product GA from these steps.
 
 - **Overview:** `/onboard next` (aliases `after` / `continue` / `lanes`) → `AionAgentOnboardingNextLanes`.
 - **Lane drills (s1377+s1402+s1407+s1417):** `/onboard next <lane>` (also works with parent aliases, e.g. `/onboard after plugins` · `/onboard next mesh` · `/onboard next memory-pull` · `/onboard next agentic`).
 - **Agentic soft offline list/plan dogfood (s1422):** `/onboard next agentic dogfood` (aliases `soft` / `samples` / `offline` / `list-plan-soft` as 4th token) → `RunAgenticListPlanSoftDogfood` — independent of plugins soft · **bare `/onboard next agentic` stays board** (not auto dogfood).
-- **Lane status board (s1382+s1397+s1402+s1407+s1417+s1422):** `/onboard next status` (aliases `pulse` / `board`) → `AionAgentOnboardingNextLaneStatus` — plugins dogfood lane reflects **session soft** marker after `/plugins dogfood` · mesh row is `streams_not_probed` · memory-pull/ops_pack row is `pull_not_probed` · agentic row is `list_plan_not_connected` · `portal_hitl_still` · **`<soft label>`** (s1422).
-- **Status export receipt (s1387+s1397+s1402+s1407+s1417+s1422):** `/onboard next export` (aliases `receipt` / `stamp` / `evidence`) → `AionAgentOnboardingNextLaneStatusExport` · optional `/onboard next export json` → `AionAgentOnboardingNextLaneStatusExportJSON` — same session soft + mesh + memory-pull + agentic soft rows · JSON field `agentic_list_plan_soft_state`.
+- **Agentic dual-auth candidacy (s1427):** `/onboard next agentic dual-auth` (aliases `candidacy` / `list-org` / `org-installs` / `dual_auth` / `dual-auth-candidacy` as 4th token) → `AionAgentOnboardingNextAgenticDualAuthCandidacy` — `list_org` fail-open · **tool ship ≠ dual-auth live** · **do not steal** dogfood soft aliases.
+- **Lane status board (s1382+s1397+s1402+s1407+s1417+s1422+s1427):** `/onboard next status` (aliases `pulse` / `board`) → `AionAgentOnboardingNextLaneStatus` — plugins dogfood lane reflects **session soft** marker after `/plugins dogfood` · mesh row is `streams_not_probed` · memory-pull/ops_pack row is `pull_not_probed` · agentic row is `list_plan_not_connected` · `portal_hitl_still` · **`<soft label>`** (s1422) · `dual_auth_candidacy_open` · `list_org_unavailable` (s1427).
+- **Status export receipt (s1387+s1397+s1402+s1407+s1417+s1422+s1427):** `/onboard next export` (aliases `receipt` / `stamp` / `evidence`) → `AionAgentOnboardingNextLaneStatusExport` · optional `/onboard next export json` → `AionAgentOnboardingNextLaneStatusExportJSON` — same session soft + mesh + memory-pull + agentic soft + dual-auth candidacy rows · JSON field `agentic_list_plan_soft_state`.
 - **Human-gates honesty board (s1413):** `/onboard next human-gates` (aliases `human` / `gates` / `apply-gates`) → `AionAgentHumanGatesHonestyBoard` — still human vs offline residual only vs shipped/policy · **PASS ≠ invent human-gate green** · **PASS ≠ live APPLY** · open boxes stay open.
 
 | Lane | Slash | Aliases | API helper |
@@ -86,6 +87,7 @@ After core onboarding, residual-honest next operator lanes — static offline on
 | mesh | `/onboard next mesh` | `stream` · `streams` · `heartbeat` · `heartbeats` · `pull` | `AionAgentOnboardingNextMeshLane` |
 | memory-pull | `/onboard next memory-pull` | `ops-pack` · `pull-path` · `memorypull` · `ops_pack` | `AionAgentOnboardingNextMemoryPullLane` |
 | agentic | `/onboard next agentic` | `agentic-integrations` · `integrations` · `portal-hitl` · `list-plan` · `hitl` | `AionAgentOnboardingNextAgenticLane` |
+| agentic dual-auth | `/onboard next agentic dual-auth` | `candidacy` · `list-org` · `org-installs` · `dual_auth` · `dual-auth-candidacy` | `AionAgentOnboardingNextAgenticDualAuthCandidacy` |
 | human-gates | `/onboard next human-gates` | `human` · `gates` · `apply-gates` | `AionAgentHumanGatesHonestyBoard` |
 | status | `/onboard next status` | `pulse` · `board` | `AionAgentOnboardingNextLaneStatus` |
 | export | `/onboard next export` | `receipt` · `stamp` · `evidence` | `AionAgentOnboardingNextLaneStatusExport` (+ optional `json`) |
@@ -144,7 +146,7 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|mesh|me
    - API: `AionAgentOnboardingNextMemoryPullLane`.
    - Companion: `/onboard next mesh` (streaming heartbeats) · `/onboard next memory` (local-edge attach).
 
-#### D3d. Agentic integrations lane (`/onboard next agentic` · s1417+s1422 · product plane 3)
+#### D3d. Agentic integrations lane (`/onboard next agentic` · s1417+s1422+s1427 · product plane 3)
 
 3d. **Agentic integrations (product plane 3)** — residual-honest MCP list/plan + portal HITL continuum.
    - MCP **list**: `list_connector_catalog` / list connectors residual-honest · **catalog ≠ Connected** · catalog status ≠ install Connected.
@@ -154,10 +156,11 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|mesh|me
    - **portal HITL** for OAuth/install @ https://console.iome.sh/integrations — **agent MCP cannot write installs**.
    - Companion (not this lane): Agent/MCP mint/copy/probe @ https://console.iome.sh/settings/agent · `/onboard portal` · human-gates still-required vs offline.
    - **Portal HITL polish (s1422):** proven paths only · `template=` ≠ install APPLY · deep_links = browser HITL only · complementary `/onboard portal` mint/copy/probe (probe only) · OAuth/install still portal HITL · dual_write OFF · catalog ≠ Connected.
-   - Honest board vocab: `path_ready` · `residual_only` · `portal_hitl_still` · `list_plan_not_connected` · soft label (s1422).
+   - Honest board vocab: `path_ready` · `residual_only` · `portal_hitl_still` · `list_plan_not_connected` · soft label (s1422) · `dual_auth_candidacy_open` (s1427).
    - dual_write **OFF** · book-demo **OFF** · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · rates ~$88/$119 optional.
-   - Does **not** claim dual-auth live for list_org · residual soft path only.
+   - Does **not** claim dual-auth live for list_org · residual soft path only · **tool ship ≠ dual-auth live**.
    - Slash: `/onboard next agentic` (aliases `agentic-integrations` / `integrations` / `portal-hitl` / `list-plan` / `hitl`) — **NOT** bare `mcp` (memory) · **NOT** bare `portal`/`agent-mcp` (portal handoff) · **NOT** bare `pull` (mesh).
+   - Dual-auth depth tip: `/onboard next agentic dual-auth` (s1427) · soft dogfood tip: `/onboard next agentic dogfood` (s1422).
    - API: `AionAgentOnboardingNextAgenticLane`.
    - Companion: `/onboard portal` · `/integrations list|plan|status` · `/onboard next human-gates` · `/onboard next status` · `/onboard next export`.
 
@@ -175,6 +178,22 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|mesh|me
    - Tip: re-run `/onboard next status` then `/onboard next export` so agentic lane reflects session soft.
    - API: `RunAgenticListPlanSoftDogfood` · session SSOT in `agent` package (`AgenticListPlanSoftSessionLabel`).
 
+#### D3d-dual-auth. Agentic dual-auth candidacy (`/onboard next agentic dual-auth` · s1427)
+
+3d-dual-auth. **Dual-auth candidacy depth** for org installs snapshot residual — static offline only.
+   - MCP tool residual: `list_org_connector_installs` · `available=false` · `status=unavailable` · `installs=null`.
+   - **never invent empty-as-none** — `installs=null` not `[]` · `available=false` ≠ "none connected".
+   - **dual_auth_candidacy_open** · **list_org_unavailable** · **tool ship ≠ dual-auth live** · **PASS ≠ invent dual-auth shipped** · never invent dual-auth live.
+   - **portal session owns install index** · session-cookie + org membership only · **agent MCP cannot write installs**.
+   - catalog ≠ Connected · never invent Connected · portal HITL @ https://console.iome.sh/integrations.
+   - dual_write **OFF** · book-demo **OFF** · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · rates ~$88/$119 optional.
+   - Honest vocab: `path_ready` · `residual_only` · `dual_auth_candidacy_open` · `list_org_unavailable`.
+   - Slash: `/onboard next agentic dual-auth` (aliases 4th token `candidacy` / `list-org` / `org-installs` / `dual_auth` / `dual-auth-candidacy`).
+   - **Do not steal:** `dogfood` / `soft` / `samples` / `offline` / `list-plan-soft` stay soft dogfood (s1422).
+   - Bare `/onboard next agentic` stays main agentic board.
+   - API: `AionAgentOnboardingNextAgenticDualAuthCandidacy`.
+   - Companion: `/onboard next agentic` · `/onboard next agentic dogfood` · `/onboard portal` · `/onboard next status`.
+
 #### D4. Portal HITL still (all lanes)
 
 4. **portal HITL still required for OAuth/install** — agent MCP **cannot write installs**.
@@ -182,33 +201,33 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|mesh|me
    - Portal: https://console.iome.sh/integrations · Agent/MCP: https://console.iome.sh/settings/agent.
    - Full agentic list/plan drill: **D3d** `/onboard next agentic` (s1417).
 
-#### D5. Lane status board (`/onboard next status` · s1382+s1397+s1402+s1407+s1417+s1422)
+#### D5. Lane status board (`/onboard next status` · s1382+s1397+s1402+s1407+s1417+s1422+s1427)
 
 5. **Residual-honest lane status board** — offline pulse of plugins · gtm · memory · mesh · memory-pull · agentic · portal.
    - **No MCP dial** · never invent install green / Connected / GA / APPLY / stream green / pull green as success.
-   - Honest state vocabulary only: `path_ready` · `samples_ok` · `samples_missing` · `dogfood_not_run` · `soft_offline_dogfood_session_pass` · `soft_offline_dogfood_session_fail` · `skill_ready` · `residual_only` · `streams_not_probed` · `pull_not_probed` · `portal_hitl_still` · `list_plan_not_connected` · `list_plan_soft_not_run` · `soft_offline_list_plan_session_pass` · `soft_offline_list_plan_session_fail`.
+   - Honest state vocabulary only: `path_ready` · `samples_ok` · `samples_missing` · `dogfood_not_run` · `soft_offline_dogfood_session_pass` · `soft_offline_dogfood_session_fail` · `skill_ready` · `residual_only` · `streams_not_probed` · `pull_not_probed` · `portal_hitl_still` · `list_plan_not_connected` · `list_plan_soft_not_run` · `soft_offline_list_plan_session_pass` · `soft_offline_list_plan_session_fail` · `dual_auth_candidacy_open` · `list_org_unavailable`.
    - **plugins:** soft-check of sample dirs (`examples/agent-plugins`) · default `dogfood_not_run` · after `/plugins dogfood` session soft pass/fail (s1397) · **session soft ≠ live dogfood** · ≠ invent Agent Plugins GA · board ≠ invent Connected.
    - **gtm:** skill/checklist path ready · drafts only · no auto-send · ≠ invent GTM agent GA.
    - **memory:** dual_write OFF · package load ≠ Memory GA · local-primary ≠ freemium palace · mesh ≠ memory.
    - **mesh (s1402):** `path_ready` · `residual_only` · `streams_not_probed` · streaming org heartbeats · not OTel/APM · never invent stream green / Connected · empty streams honest.
    - **memory-pull (s1407):** `path_ready` · `residual_only` · `pull_not_probed` · Ops Pack pull path · pull ≠ freemium hosted palace · Ops Pack ≠ GPU fleet · never invent pull green.
-   - **agentic (s1417+s1422):** `path_ready` · `residual_only` · `portal_hitl_still` · `list_plan_not_connected` · `<soft label>` · product plane 3 MCP list/plan residual-honest · never invent Connected · plan deep links = browser HITL only · template= ≠ install APPLY · session soft list/plan ≠ live dogfood · soft offline ≠ invent Connected.
+   - **agentic (s1417+s1422+s1427):** `path_ready` · `residual_only` · `portal_hitl_still` · `list_plan_not_connected` · `<soft label>` · `dual_auth_candidacy_open` · `list_org_unavailable` · product plane 3 MCP list/plan residual-honest · never invent Connected · plan deep links = browser HITL only · template= ≠ install APPLY · session soft list/plan ≠ live dogfood · soft offline ≠ invent Connected · **tool ship ≠ dual-auth live**.
    - **portal:** `portal_hitl_still` · agent MCP cannot write installs.
    - Slash: `/onboard next status` (aliases `pulse` / `board`) · also linked from `/onboard next` overview and `/onboard status`.
-   - Export receipt: `/onboard next export` (s1387+s1397+s1402+s1407+s1417+s1422) — offline markdown evidence of this board (includes session soft + mesh + memory-pull + agentic soft rows).
+   - Export receipt: `/onboard next export` (s1387+s1397+s1402+s1407+s1417+s1422+s1427) — offline markdown evidence of this board (includes session soft + mesh + memory-pull + agentic soft + dual-auth candidacy rows).
 
-#### D6. Status export receipt (`/onboard next export` · s1387+s1397+s1402+s1407+s1417+s1422)
+#### D6. Status export receipt (`/onboard next export` · s1387+s1397+s1402+s1407+s1417+s1422+s1427)
 
-6. **Residual-honest status export receipt** — offline markdown (or optional JSON) evidence of the s1382 lane status board (plugins lane includes s1397 session soft marker when set · mesh row s1402 · memory-pull/ops_pack row s1407 · agentic row s1417+s1422 soft).
+6. **Residual-honest status export receipt** — offline markdown (or optional JSON) evidence of the s1382 lane status board (plugins lane includes s1397 session soft marker when set · mesh row s1402 · memory-pull/ops_pack row s1407 · agentic row s1417+s1422 soft · dual-auth candidacy s1427).
    - Header: `evidence_kind=onboard_next_lane_status_export` · `offline_static` · `not_live_dogfood` · serial `s1387`.
-   - Reuses honest vocabulary: `path_ready` · `samples_ok`/`samples_missing` · `dogfood_not_run` · `soft_offline_dogfood_session_pass|fail` · `skill_ready` · `residual_only` · `streams_not_probed` · `pull_not_probed` · `portal_hitl_still` · `list_plan_not_connected` · `list_plan_soft_not_run` · `soft_offline_list_plan_session_pass|fail`.
-   - JSON field `plugins_dogfood_state` mirrors plugins session soft label; `dogfood_not_run` is true only when plugins session soft has not run; JSON field `agentic_list_plan_soft_state` mirrors agentic list/plan soft (independent · s1422); mesh lane value is `path_ready · residual_only · streams_not_probed`; memory-pull and ops_pack lanes are `path_ready · residual_only · pull_not_probed`; agentic lane is `path_ready · residual_only · portal_hitl_still · list_plan_not_connected · <soft label>`.
-   - **Does NOT** run plugins dogfood · **does NOT** run agentic list/plan dogfood · **does NOT** dial MCP · **does NOT** invent install green / Connected / GA / APPLY / stream green / pull green.
-   - **session soft ≠ live dogfood** · **soft offline list/plan ≠ invent Connected** · **board/export evidence ≠ invent Connected** — a stamped receipt is offline residual evidence only.
+   - Reuses honest vocabulary: `path_ready` · `samples_ok`/`samples_missing` · `dogfood_not_run` · `soft_offline_dogfood_session_pass|fail` · `skill_ready` · `residual_only` · `streams_not_probed` · `pull_not_probed` · `portal_hitl_still` · `list_plan_not_connected` · `list_plan_soft_not_run` · `soft_offline_list_plan_session_pass|fail` · `dual_auth_candidacy_open` · `list_org_unavailable`.
+   - JSON field `plugins_dogfood_state` mirrors plugins session soft label; `dogfood_not_run` is true only when plugins session soft has not run; JSON field `agentic_list_plan_soft_state` mirrors agentic list/plan soft (independent · s1422); mesh lane value is `path_ready · residual_only · streams_not_probed`; memory-pull and ops_pack lanes are `path_ready · residual_only · pull_not_probed`; agentic lane is `path_ready · residual_only · portal_hitl_still · list_plan_not_connected · dual_auth_candidacy_open · list_org_unavailable · <soft label>`.
+   - **Does NOT** run plugins dogfood · **does NOT** run agentic list/plan dogfood · **does NOT** dial MCP · **does NOT** invent install green / Connected / GA / APPLY / stream green / pull green / dual-auth live.
+   - **session soft ≠ live dogfood** · **soft offline list/plan ≠ invent Connected** · **tool ship ≠ dual-auth live** · **board/export evidence ≠ invent Connected** — a stamped receipt is offline residual evidence only.
    - Markdown: `/onboard next export` (aliases `receipt` / `stamp` / `evidence`) → `AionAgentOnboardingNextLaneStatusExport`.
    - JSON: `/onboard next export json` → `AionAgentOnboardingNextLaneStatusExportJSON`.
-   - Cross-linked from lane status board footer, `/onboard next` overview, `/plugins dogfood` tip, and `/onboard next agentic dogfood` tip.
-   - Optional tip: `/onboard next agentic` (s1417) · `/onboard next agentic dogfood` (s1422) · `/onboard next human-gates` (s1413) for still-required human APPLY residuals (does not invent green from this receipt).
+   - Cross-linked from lane status board footer, `/onboard next` overview, `/plugins dogfood` tip, `/onboard next agentic dogfood` tip, and `/onboard next agentic dual-auth` tip.
+   - Optional tip: `/onboard next agentic` (s1417) · `/onboard next agentic dogfood` (s1422) · `/onboard next agentic dual-auth` (s1427) · `/onboard next human-gates` (s1413) for still-required human APPLY residuals (does not invent green from this receipt).
 
 #### D7. Human-gates honesty board (`/onboard next human-gates` · s1413)
 
@@ -241,6 +260,9 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|mesh|me
 | board/export evidence ≠ invent Connected | Lane status board + export receipt are offline residual evidence only — never invent Connected / GA / APPLY |
 | session soft ≠ live dogfood | `/plugins dogfood` or `/onboard next agentic dogfood` session marker on status/export is soft offline residual only — not live dogfood · not Agent Plugins GA · not invent Connected |
 | soft offline list/plan ≠ invent Connected | Agentic list/plan soft offline dogfood (s1422) never invents Connected / install APPLY / dual-auth live |
+| tool ship ≠ dual-auth live | MCP tool `list_org_connector_installs` shipping residual ≠ invent dual-auth product live (s1427) |
+| dual_auth_candidacy_open | Org installs dual-auth is residual candidacy only · never invent dual-auth shipped |
+| list_org_unavailable | list_org fail-open residual · available=false · status=unavailable · installs=null · never invent empty-as-none |
 | mesh = streaming org heartbeats | I/O Mesh product plane 1 = governed `dept.*` org heartbeats — not OTel/APM · not medical · not hosted Memory Palace |
 | mesh ≠ memory | Mesh streaming lane is separate from local-edge memory lane; pull = egress into local palace only |
 | never invent stream green | Empty streams honest · `streams_not_probed` residual · never invent Connected / live stream green from board/export |
@@ -287,21 +309,25 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|mesh|me
 - Do **not** steal bare `mcp` under `/onboard next` for agentic — bare `mcp` stays memory; agentic uses `agentic` / `agentic-integrations` / `integrations` / `portal-hitl` / `list-plan` / `hitl`.
 - Do **not** steal bare `portal` / `agent-mcp` under `/onboard` for agentic — those stay portal handoff; agentic uses `portal-hitl`.
 - Do **not** steal bare `/onboard next dogfood` for agentic soft — bare `dogfood` stays plugins lane; agentic soft uses `/onboard next agentic dogfood`.
+- Do **not** invent dual-auth live / dual-auth shipped from residual candidacy or tool ship (`tool ship ≠ dual-auth live` · `dual_auth_candidacy_open` · `list_org_unavailable` · s1427).
+- Do **not** invent empty-as-none installs from `list_org_connector_installs` fail-open (`available=false` · `status=unavailable` · `installs=null` not `[]`).
+- Do **not** steal dogfood soft 4th tokens for dual-auth — `dogfood`/`soft`/`samples`/`offline`/`list-plan-soft` stay soft dogfood (s1422); dual-auth uses `dual-auth`/`candidacy`/`list-org`/`org-installs`/`dual_auth`/`dual-auth-candidacy`.
 
 ## Related
 
-- Builtin skill always available when skills enabled (**s1363+s1368+s1372+s1377+s1382+s1387+s1397+s1402+s1407+s1413+s1417+s1422** · molds s1251 connector + s1288 memory-advanced + s1341 gtm-draft-only).
+- Builtin skill always available when skills enabled (**s1363+s1368+s1372+s1377+s1382+s1387+s1397+s1402+s1407+s1413+s1417+s1422+s1427** · molds s1251 connector + s1288 memory-advanced + s1341 gtm-draft-only).
 - System note inject on `AttachMCP`: `<aion-onboarding>` via `AionAgentOnboardingGuidanceNote` (s1363+s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417).
 - Portal handoff block: `AionAgentOnboardingPortalHandoff` · slash `/onboard portal` (aliases `agent-mcp` / `mcp`).
-- Offline status: `AionAgentOnboardingStatus` · slash `/onboard status` (no MCP dial) · cross-links `/onboard next status` (s1382+s1397+s1402+s1407+s1417+s1422) · `/onboard next export` (s1387+s1397+s1402+s1407+s1417+s1422) · `/onboard next mesh` (s1402) · `/onboard next memory-pull` (s1407) · `/onboard next agentic` (s1417) · `/onboard next agentic dogfood` (s1422) · `/onboard next human-gates` (s1413).
-- Post-onboard next lanes overview: `AionAgentOnboardingNextLanes` · slash `/onboard next` (aliases `after` / `continue` / `lanes`) — plugins · gtm · memory local · mesh streaming · Ops Pack pull path · agentic integrations product plane 3 · portal HITL still (s1372+s1402+s1407+s1417) · human-gates still-required vs offline (s1413) · status board (s1382+s1397+s1402+s1407+s1417+s1422) · export receipt (s1387+s1397+s1402+s1407+s1417+s1422).
+- Offline status: `AionAgentOnboardingStatus` · slash `/onboard status` (no MCP dial) · cross-links `/onboard next status` (s1382+s1397+s1402+s1407+s1417+s1422+s1427) · `/onboard next export` (s1387+s1397+s1402+s1407+s1417+s1422+s1427) · `/onboard next mesh` (s1402) · `/onboard next memory-pull` (s1407) · `/onboard next agentic` (s1417) · `/onboard next agentic dogfood` (s1422) · `/onboard next agentic dual-auth` (s1427) · `/onboard next human-gates` (s1413).
+- Post-onboard next lanes overview: `AionAgentOnboardingNextLanes` · slash `/onboard next` (aliases `after` / `continue` / `lanes`) — plugins · gtm · memory local · mesh streaming · Ops Pack pull path · agentic integrations product plane 3 · portal HITL still (s1372+s1402+s1407+s1417) · human-gates still-required vs offline (s1413) · status board (s1382+s1397+s1402+s1407+s1417+s1422+s1427) · export receipt (s1387+s1397+s1402+s1407+s1417+s1422+s1427).
 - Lane drills (s1377+s1402+s1407+s1417): `AionAgentOnboardingNextPluginsLane` · `AionAgentOnboardingNextGtmLane` · `AionAgentOnboardingNextMemoryLane` · `AionAgentOnboardingNextMeshLane` · `AionAgentOnboardingNextMemoryPullLane` · `AionAgentOnboardingNextAgenticLane` · slash `/onboard next [plugins|gtm|memory|mesh|memory-pull|agentic]` (aliases plugin|dogfood · drafts · mcp|palace · stream|streams|heartbeat|heartbeats|pull · ops-pack|pull-path|memorypull|ops_pack · agentic-integrations|integrations|portal-hitl|list-plan|hitl).
 - Agentic list/plan soft offline dogfood (s1422): `RunAgenticListPlanSoftDogfood` · slash `/onboard next agentic dogfood` (aliases soft|samples|offline|list-plan-soft) · session SSOT independent of plugins · default `list_plan_soft_not_run` · soft offline ≠ invent Connected · bare agentic stays board.
+- Agentic dual-auth candidacy (s1427): `AionAgentOnboardingNextAgenticDualAuthCandidacy` · slash `/onboard next agentic dual-auth` (aliases candidacy|list-org|org-installs|dual_auth|dual-auth-candidacy) · dual_auth_candidacy_open · list_org_unavailable · tool ship ≠ dual-auth live · never invent empty-as-none · dogfood soft aliases not stolen.
 - Human-gates honesty board (s1413): `AionAgentHumanGatesHonestyBoard` · slash `/onboard next human-gates` (aliases `human` / `gates` / `apply-gates`) — still human Slack HMAC · Stripe Customers:Write · H1/H2 INSTALL_STORE · D1–D5 · book-demo OFF · leave ON_SIGNAL unset · offline residual ≠ invent APPLY · **PASS ≠ invent human-gate green** · **PASS ≠ live APPLY** · open boxes stay open · Knowledge Beta→GA cannot invent H1/H2 offline · local memory / dual_write OFF / agent MCP list/plan do not close human APPLY gates · operator `make human-gates-status`.
-- Lane status board (s1382+s1397+s1402+s1407+s1417+s1422): `AionAgentOnboardingNextLaneStatus` · slash `/onboard next status` (aliases `pulse` / `board`) — honest vocabulary only · no invent Connected/GA/APPLY/stream green/pull green · dogfood_not_run default · session soft pass/fail after `/plugins dogfood` · mesh `streams_not_probed` · memory-pull `pull_not_probed` · agentic `list_plan_not_connected` · agentic soft `list_plan_soft_not_run` default · session soft ≠ live dogfood.
-- Status export receipt (s1387+s1397+s1402+s1407+s1417+s1422): `AionAgentOnboardingNextLaneStatusExport` · slash `/onboard next export` (aliases `receipt` / `stamp` / `evidence`) · optional `AionAgentOnboardingNextLaneStatusExportJSON` via `/onboard next export json` — evidence_kind=onboard_next_lane_status_export · offline_static · not_live_dogfood · plugins_dogfood_state session soft · agentic_list_plan_soft_state session soft (s1422) · mesh streams_not_probed · memory-pull/ops_pack pull_not_probed · agentic list_plan_not_connected · board/export evidence ≠ invent Connected · human-gates tip (s1413) · agentic tip (s1417) · agentic dogfood tip (s1422).
+- Lane status board (s1382+s1397+s1402+s1407+s1417+s1422+s1427): `AionAgentOnboardingNextLaneStatus` · slash `/onboard next status` (aliases `pulse` / `board`) — honest vocabulary only · no invent Connected/GA/APPLY/stream green/pull green · dogfood_not_run default · session soft pass/fail after `/plugins dogfood` · mesh `streams_not_probed` · memory-pull `pull_not_probed` · agentic `list_plan_not_connected` · agentic soft `list_plan_soft_not_run` default · dual_auth_candidacy_open · list_org_unavailable · session soft ≠ live dogfood · tool ship ≠ dual-auth live.
+- Status export receipt (s1387+s1397+s1402+s1407+s1417+s1422+s1427): `AionAgentOnboardingNextLaneStatusExport` · slash `/onboard next export` (aliases `receipt` / `stamp` / `evidence`) · optional `AionAgentOnboardingNextLaneStatusExportJSON` via `/onboard next export json` — evidence_kind=onboard_next_lane_status_export · offline_static · not_live_dogfood · plugins_dogfood_state session soft · agentic_list_plan_soft_state session soft (s1422) · mesh streams_not_probed · memory-pull/ops_pack pull_not_probed · agentic list_plan_not_connected · dual_auth_candidacy_open · list_org_unavailable · board/export evidence ≠ invent Connected · human-gates tip (s1413) · agentic tip (s1417) · agentic dogfood tip (s1422) · dual-auth tip (s1427).
 - Companion builtin: `connector-integrations-setup` (list/plan → portal HITL).
 - Companion builtin: `memory-advanced-agent` (opt-in advanced memory · dual_write OFF · not Memory GA).
 - Companion builtin: `gtm-draft-only-agent` (drafts only · human publish · no auto-send).
-- Slash residual honesty: `/onboard [help|checklist|portal|status|next]` · `/onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|status|export|human-gates]` · `/onboard next agentic dogfood` · `/plugins dogfood|status` · `/integrations list|plan|status|signing` · `/memory status` · `/mesh` · `/gtm [help|checklist]`.
-- Skills are **not** Agent Plugins — plugins dogfood ≠ invent Agent Plugins GA · session soft ≠ live dogfood · mesh ≠ memory · Ops Pack ≠ GPU fleet · human-gates offline ≠ invent APPLY · agentic list/plan ≠ invent Connected · soft offline list/plan ≠ invent Connected.
+- Slash residual honesty: `/onboard [help|checklist|portal|status|next]` · `/onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|status|export|human-gates]` · `/onboard next agentic dogfood` · `/onboard next agentic dual-auth` · `/plugins dogfood|status` · `/integrations list|plan|status|signing` · `/memory status` · `/mesh` · `/gtm [help|checklist]`.
+- Skills are **not** Agent Plugins — plugins dogfood ≠ invent Agent Plugins GA · session soft ≠ live dogfood · mesh ≠ memory · Ops Pack ≠ GPU fleet · human-gates offline ≠ invent APPLY · agentic list/plan ≠ invent Connected · soft offline list/plan ≠ invent Connected · tool ship ≠ dual-auth live.
