@@ -1397,9 +1397,91 @@ func TestHandleSlash_OnboardNextMeshLane(t *testing.T) {
 	if strings.Contains(pulseOut, "onboard next mesh lane") {
 		t.Fatalf("pulse must not drill mesh lane:\n%s", pulseOut)
 	}
+
+	// bare pull stays mesh (s1407 memory-pull must not steal pull).
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next pull")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pullOut := out.String()
+	if !strings.Contains(pullOut, "onboard next mesh lane") {
+		t.Fatalf("bare pull must map to mesh lane, got:\n%s", pullOut)
+	}
+	if strings.Contains(pullOut, "onboard next memory-pull lane") {
+		t.Fatalf("bare pull must not drill memory-pull lane:\n%s", pullOut)
+	}
 }
 
-// s1377+s1382+s1387+s1402: unknown /onboard next <lane> → overview + usage hint listing lanes.
+// s1407: /onboard next memory-pull|ops-pack|pull-path|memorypull|ops_pack — residual-honest Ops Pack pull path.
+// bare pull stays mesh (asserted in mesh test).
+func TestHandleSlash_OnboardNextMemoryPullLane(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	needles := []string{
+		"onboard next memory-pull lane",
+		"Ops Pack pull path",
+		"iomesh memory pull",
+		"mesh → local palace",
+		"dual_write OFF",
+		"not Memory GA",
+		"pull_not_probed",
+		"never invent pull green",
+		"Ops Pack ≠ GPU fleet",
+		"not freemium hosted palace",
+		"Palace sunset",
+		"package load ≠ Ops Pack entitlement",
+		"residual PASS ≠ live dogfood",
+		"PASS ≠ live APPLY",
+		"mesh ≠ memory",
+		"portal HITL",
+		"agent MCP cannot write installs",
+		"catalog ≠ Connected",
+	}
+
+	for _, line := range []string{
+		"/onboard next memory-pull",
+		"/onboard next ops-pack",
+		"/onboard next pull-path",
+		"/onboard next memorypull",
+		"/onboard next ops_pack",
+		"/aion-onboard after memory-pull",
+		"/agent-onboard continue ops-pack",
+		"/onboard lanes pull-path",
+	} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Memory GA shipped") {
+			t.Fatalf("%s must not invent dual_write ON / Memory GA: %s", line, s)
+		}
+		if strings.Contains(s, "pull green: yes") || strings.Contains(s, "Connected: yes") {
+			t.Fatalf("%s must not invent pull/Connected green: %s", line, s)
+		}
+		// Must not be mesh lane body title.
+		if strings.Contains(s, "onboard next mesh lane") {
+			t.Fatalf("%s must not emit mesh lane body: %s", line, s)
+		}
+		if strings.Contains(s, "onboard next lane status (") {
+			t.Fatalf("%s must not emit status board: %s", line, s)
+		}
+	}
+}
+
+// s1377+s1382+s1387+s1402+s1407: unknown /onboard next <lane> → overview + usage hint listing lanes.
 func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -1418,6 +1500,7 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 		"gtm",
 		"memory",
 		"mesh",
+		"memory-pull",
 		"status",
 		"export",
 		"residual:",
@@ -1431,6 +1514,9 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	}
 	if strings.Contains(s, "onboard next mesh lane") {
 		t.Fatalf("unknown next lane must not drill into mesh lane: %s", s)
+	}
+	if strings.Contains(s, "onboard next memory-pull lane") {
+		t.Fatalf("unknown next lane must not drill into memory-pull lane: %s", s)
 	}
 	if strings.Contains(s, "onboard next lane status") {
 		t.Fatalf("unknown next lane must not drill into status board: %s", s)
@@ -1455,12 +1541,14 @@ func TestHandleSlash_OnboardNextLaneStatus(t *testing.T) {
 		"gtm:",
 		"memory:",
 		"mesh:",
+		"memory-pull:",
 		"portal:",
 		"dogfood_not_run",
 		"path_ready",
 		"skill_ready",
 		"residual_only",
 		"streams_not_probed",
+		"pull_not_probed",
 		"portal_hitl_still",
 		"mesh ≠ memory",
 		"dual_write OFF",
@@ -1477,6 +1565,9 @@ func TestHandleSlash_OnboardNextLaneStatus(t *testing.T) {
 		"residual PASS ≠ live dogfood",
 		"session soft ≠ live dogfood",
 		"/onboard next export",
+		"/onboard next memory-pull",
+		"Ops Pack ≠ GPU fleet",
+		"never invent pull green",
 		"board/export evidence ≠ invent Connected",
 	}
 
@@ -1535,12 +1626,14 @@ func TestHandleSlash_OnboardNextLaneStatusExport(t *testing.T) {
 		"gtm:",
 		"memory:",
 		"mesh:",
+		"memory-pull:",
 		"portal:",
 		"dogfood_not_run",
 		"path_ready",
 		"skill_ready",
 		"residual_only",
 		"streams_not_probed",
+		"pull_not_probed",
 		"portal_hitl_still",
 		"dual_write OFF",
 		"not Memory GA",
@@ -1556,6 +1649,9 @@ func TestHandleSlash_OnboardNextLaneStatusExport(t *testing.T) {
 		"no auto-send",
 		"residual PASS ≠ live dogfood",
 		"session soft ≠ live dogfood",
+		"Ops Pack ≠ GPU fleet",
+		"never invent pull green",
+		"/onboard next memory-pull",
 	}
 
 	for _, line := range []string{
@@ -1625,6 +1721,9 @@ func TestHandleSlash_OnboardNextLaneStatusExportJSON(t *testing.T) {
 			`"plugins_dogfood_state": "dogfood_not_run"`,
 			"path_ready",
 			"portal_hitl_still",
+			"pull_not_probed",
+			`"memory-pull":`,
+			`"ops_pack":`,
 			"board/export evidence ≠ invent Connected",
 			"session soft ≠ live dogfood",
 			"residual:",
