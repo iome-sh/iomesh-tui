@@ -1541,6 +1541,8 @@ func TestHandleSlash_OnboardNextAgenticLane(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
 	adapter := runtimeAdapter{rt: rt}
+	agent.ResetAgenticListPlanSoftDogfoodSessionState()
+	t.Cleanup(agent.ResetAgenticListPlanSoftDogfoodSessionState)
 
 	needles := []string{
 		"onboard next agentic lane",
@@ -1564,6 +1566,10 @@ func TestHandleSlash_OnboardNextAgenticLane(t *testing.T) {
 		"PASS ≠ live APPLY",
 		"console.iome.sh/integrations",
 		"console.iome.sh/settings/agent",
+		// s1422 portal HITL polish + soft tip on board
+		"Portal HITL polish",
+		"list_plan_soft_not_run",
+		"/onboard next agentic dogfood",
 	}
 
 	for _, line := range []string{
@@ -1590,6 +1596,10 @@ func TestHandleSlash_OnboardNextAgenticLane(t *testing.T) {
 		}
 		if !strings.Contains(s, "residual:") {
 			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		// Bare agentic must be board, not auto soft dogfood runner.
+		if strings.Contains(s, "agentic list/plan soft offline dogfood") {
+			t.Fatalf("%s must not auto-run soft dogfood (bare agentic = board):\n%s", line, s)
 		}
 		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Memory GA shipped") {
 			t.Fatalf("%s must not invent dual_write ON / Memory GA: %s", line, s)
@@ -1635,6 +1645,120 @@ func TestHandleSlash_OnboardNextAgenticLane(t *testing.T) {
 	}
 	if strings.Contains(portalOut, "onboard next agentic lane") {
 		t.Fatalf("bare portal must not drill agentic lane:\n%s", portalOut)
+	}
+}
+
+// s1422: /onboard next agentic dogfood|soft|offline|list-plan-soft|samples — soft offline list/plan dogfood.
+func TestHandleSlash_OnboardNextAgenticListPlanSoftDogfood(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+	agent.ResetAgenticListPlanSoftDogfoodSessionState()
+	resetPluginsSlashSession()
+	t.Cleanup(func() {
+		agent.ResetAgenticListPlanSoftDogfoodSessionState()
+		resetPluginsSlashSession()
+	})
+
+	needles := []string{
+		"agentic list/plan soft offline dogfood",
+		"no MCP dial",
+		"not live dogfood",
+		"result: PASS",
+		"soft_offline_list_plan_session_pass",
+		"/integrations/{id}",
+		"/integrations/add?template={id}",
+		"list_plan_not_connected",
+		"soft offline list/plan ≠ live dogfood",
+		"≠ invent Connected",
+		"portal HITL still",
+		"session soft ≠ live dogfood",
+		"re-run /onboard next status then /onboard next export",
+		"dual_write OFF",
+		"agent MCP cannot write installs",
+	}
+
+	for _, line := range []string{
+		"/onboard next agentic dogfood",
+		"/onboard next agentic soft",
+		"/onboard next agentic offline",
+		"/onboard next agentic list-plan-soft",
+		"/onboard next agentic samples",
+		"/onboard next agentic-integrations dogfood",
+		"/onboard next integrations soft",
+		"/aion-onboard after agentic offline",
+		"/agent-onboard continue portal-hitl list-plan-soft",
+	} {
+		agent.ResetAgenticListPlanSoftDogfoodSessionState()
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		// Must not be the static board body title alone without dogfood runner framing.
+		if strings.Contains(s, "Connected: yes") || strings.Contains(s, "dual_write ON") {
+			t.Fatalf("%s must not invent Connected/dual_write ON:\n%s", line, s)
+		}
+		// Must not steal plugins dogfood path.
+		if strings.Contains(s, "onboard next plugins lane") {
+			t.Fatalf("%s must not emit plugins lane:\n%s", line, s)
+		}
+		// Session marker set
+		if got := agent.AgenticListPlanSoftSessionLabel(); got != agent.AgenticListPlanSoftPass {
+			t.Fatalf("%s session label: got %q want %q", line, got, agent.AgenticListPlanSoftPass)
+		}
+	}
+
+	// Status/export reflect soft after dogfood
+	out.Reset()
+	_, err := handleSlash(&out, adapter, "/onboard next status")
+	if err != nil {
+		t.Fatal(err)
+	}
+	statusOut := out.String()
+	if !strings.Contains(statusOut, "soft_offline_list_plan_session_pass") {
+		t.Fatalf("status after dogfood want soft pass:\n%s", statusOut)
+	}
+	if !strings.Contains(statusOut, "list_plan_not_connected") {
+		t.Fatalf("status still want list_plan_not_connected:\n%s", statusOut)
+	}
+	// Plugins soft independent default
+	if !strings.Contains(statusOut, "dogfood_not_run") {
+		t.Fatalf("plugins soft must stay dogfood_not_run when only agentic soft ran:\n%s", statusOut)
+	}
+
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next export json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	js := out.String()
+	if !strings.Contains(js, `"agentic_list_plan_soft_state": "soft_offline_list_plan_session_pass"`) {
+		t.Fatalf("export json want agentic_list_plan_soft_state pass:\n%s", js)
+	}
+
+	// bare /onboard next dogfood still plugins lane (does not steal for agentic)
+	agent.ResetAgenticListPlanSoftDogfoodSessionState()
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next dogfood")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pluginsOut := out.String()
+	if !strings.Contains(pluginsOut, "onboard next plugins lane") {
+		t.Fatalf("bare next dogfood must stay plugins lane:\n%s", pluginsOut)
+	}
+	if strings.Contains(pluginsOut, "agentic list/plan soft offline dogfood") {
+		t.Fatalf("bare next dogfood must not run agentic soft dogfood:\n%s", pluginsOut)
 	}
 }
 
@@ -1715,7 +1839,11 @@ func TestHandleSlash_OnboardNextLaneStatus(t *testing.T) {
 	var out bytes.Buffer
 	adapter := runtimeAdapter{rt: rt}
 	resetPluginsSlashSession()
-	t.Cleanup(resetPluginsSlashSession)
+	agent.ResetAgenticListPlanSoftDogfoodSessionState()
+	t.Cleanup(func() {
+		resetPluginsSlashSession()
+		agent.ResetAgenticListPlanSoftDogfoodSessionState()
+	})
 
 	needles := []string{
 		"onboard next lane status",
@@ -1726,6 +1854,7 @@ func TestHandleSlash_OnboardNextLaneStatus(t *testing.T) {
 		"mesh:",
 		"memory-pull:",
 		"agentic:",
+		"list_plan_soft_not_run",
 		"portal:",
 		"dogfood_not_run",
 		"path_ready",
@@ -1801,7 +1930,11 @@ func TestHandleSlash_OnboardNextLaneStatusExport(t *testing.T) {
 	var out bytes.Buffer
 	adapter := runtimeAdapter{rt: rt}
 	resetPluginsSlashSession()
-	t.Cleanup(resetPluginsSlashSession)
+	agent.ResetAgenticListPlanSoftDogfoodSessionState()
+	t.Cleanup(func() {
+		resetPluginsSlashSession()
+		agent.ResetAgenticListPlanSoftDogfoodSessionState()
+	})
 
 	needles := []string{
 		"evidence_kind=onboard_next_lane_status_export",
@@ -1817,6 +1950,7 @@ func TestHandleSlash_OnboardNextLaneStatusExport(t *testing.T) {
 		"agentic:",
 		"portal:",
 		"dogfood_not_run",
+		"list_plan_soft_not_run",
 		"path_ready",
 		"skill_ready",
 		"residual_only",
@@ -1842,6 +1976,7 @@ func TestHandleSlash_OnboardNextLaneStatusExport(t *testing.T) {
 		"never invent pull green",
 		"/onboard next memory-pull",
 		"/onboard next agentic",
+		"/onboard next agentic dogfood",
 		"product plane 3",
 	}
 
@@ -1889,7 +2024,11 @@ func TestHandleSlash_OnboardNextLaneStatusExportJSON(t *testing.T) {
 	var out bytes.Buffer
 	adapter := runtimeAdapter{rt: rt}
 	resetPluginsSlashSession()
-	t.Cleanup(resetPluginsSlashSession)
+	agent.ResetAgenticListPlanSoftDogfoodSessionState()
+	t.Cleanup(func() {
+		resetPluginsSlashSession()
+		agent.ResetAgenticListPlanSoftDogfoodSessionState()
+	})
 
 	for _, line := range []string{
 		"/onboard next export json",
@@ -1910,6 +2049,7 @@ func TestHandleSlash_OnboardNextLaneStatusExportJSON(t *testing.T) {
 			`"format": "json"`,
 			`"dogfood_not_run": true`,
 			`"plugins_dogfood_state": "dogfood_not_run"`,
+			`"agentic_list_plan_soft_state": "list_plan_soft_not_run"`,
 			"path_ready",
 			"portal_hitl_still",
 			"pull_not_probed",
@@ -1922,6 +2062,7 @@ func TestHandleSlash_OnboardNextLaneStatusExportJSON(t *testing.T) {
 			"residual:",
 			"s1387",
 			"/onboard next agentic",
+			"/onboard next agentic dogfood",
 		} {
 			if !strings.Contains(s, want) {
 				t.Fatalf("%s missing %q in:\n%s", line, want, s)
@@ -1942,7 +2083,11 @@ func TestHandleSlash_OnboardNextStatusExport_SessionSoftDogfood(t *testing.T) {
 	var out bytes.Buffer
 	adapter := runtimeAdapter{rt: rt}
 	resetPluginsSlashSession()
-	t.Cleanup(resetPluginsSlashSession)
+	agent.ResetAgenticListPlanSoftDogfoodSessionState()
+	t.Cleanup(func() {
+		resetPluginsSlashSession()
+		agent.ResetAgenticListPlanSoftDogfoodSessionState()
+	})
 
 	// Default status/export: dogfood_not_run
 	out.Reset()

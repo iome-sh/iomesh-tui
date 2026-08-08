@@ -706,6 +706,16 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"agentic-integrations",
 		"template= ≠ install APPLY",
 		"plugins|gtm|memory|mesh|memory-pull|agentic",
+		// s1422 agentic list/plan soft offline dogfood + portal HITL polish
+		"/onboard next agentic dogfood",
+		"RunAgenticListPlanSoftDogfood",
+		"list_plan_soft_not_run",
+		"soft_offline_list_plan_session_pass",
+		"soft_offline_list_plan_session_fail",
+		"agentic_list_plan_soft_state",
+		"Portal HITL polish",
+		"soft offline list/plan ≠ invent Connected",
+		"list-plan-soft",
 		// s1413 human-gates honesty board
 		"/onboard next human-gates",
 		"AionAgentHumanGatesHonestyBoard",
