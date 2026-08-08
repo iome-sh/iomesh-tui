@@ -1268,7 +1268,7 @@ func TestHandleSlash_OnboardNextGtmLane(t *testing.T) {
 	}
 }
 
-// s1377+s1453+s1458: /onboard next memory|mcp|palace — residual-honest memory local + edge OSS + M2 lean attach drill.
+// s1377+s1453+s1458+s1463: /onboard next memory|mcp|palace — residual-honest memory local + edge OSS + M2 lean + M3 edge dogfood drill.
 func TestHandleSlash_OnboardNextMemoryLane(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -1283,7 +1283,14 @@ func TestHandleSlash_OnboardNextMemoryLane(t *testing.T) {
 		"stdio",
 		"M2 lean",
 		"scaffold/M2",
+		"s1463",
+		"M3 edge dogfood",
+		"edge dogfood",
+		"docker compose",
+		"healthz",
+		"offline dogfood tip ≠ invent live dogfood as green",
 		"PASS ≠ invent full platform sidecar parity",
+		"residual PASS ≠ public flip",
 		"aion broker private",
 		"OSS path ≠ invent public flip complete",
 		"Memory Ops Pack",

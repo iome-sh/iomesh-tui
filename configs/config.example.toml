@@ -181,17 +181,29 @@ enabled = false
 # # allow_loopback = true
 # # mutating = true
 
-# --- Memory Palace (aion-memory-mcp) — see docs/architecture/memory-mcp.md ---
-# Preferred: streamable HTTP (aion-memory-mcp -http-addr :8080)
+# --- Memory Palace (product edge: iomesh-memory-mcp · residual aion-memory-mcp) ---
+# See docs/architecture/memory-mcp.md · Edge OSS Option A (s1453) · M2 lean attach (s1458) · M3 edge dogfood (s1463).
+# Honesty: dual_write OFF · not Memory GA · package load ≠ Memory GA · offline dogfood tip ≠ invent live dogfood as green ·
+# residual PASS ≠ public flip · PASS ≠ invent full platform sidecar parity · aion broker private · still private · M4 later.
+#
+# Preferred product edge (HTTP): build/run from github.com/iome-sh/iomesh-memory-mcp
+#   docker compose up --build  →  image iomesh-memory-mcp:local  →  http://127.0.0.1:8080/mcp
+#   healthz: curl -fsS http://127.0.0.1:8080/healthz  (probe only · ≠ invent tool green)
 # [mcp]
 # enabled = true
 # [[mcp.servers]]
-# name = "memory"
+# name = "iomesh-memory-mcp"
 # url = "http://127.0.0.1:8080/mcp"
 # allow_loopback = true
 # mutating = true
 #
-# Alternate stdio:
+# Product edge stdio alternate (same binary · no HTTP):
+# # command = "iomesh-memory-mcp"
+# # args = ["-palace-root", "./data/memory-palaces", "-tenant", "default"]
+#
+# Residual platform attach (aion-memory-mcp · not product edge naming):
+# # name = "memory"
+# # url = "http://127.0.0.1:8080/mcp"
 # # command = "aion-memory-mcp"
 # # args = ["-palace-root", "/data/memory-palaces"]
 # # env = { "MEMORY_TENANT" = "dept.research" }
