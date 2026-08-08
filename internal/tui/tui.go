@@ -757,9 +757,10 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		// help|checklist|? → numbered onboarding checklist.
 		// portal|agent-mcp|mcp → portal Agent/MCP handoff (mint/copy/probe + TUI [[mcp.servers]]).
 		// status → residual-honest offline static status (no MCP dial).
-		// next|after|continue|lanes → post-onboard operator lanes overview (plugins·gtm·memory·mesh).
+		// next|after|continue|lanes → post-onboard operator lanes overview (plugins·gtm·memory·mesh·memory-pull).
 		// next <lane> (s1377): plugins|plugin|dogfood · gtm|drafts · memory|mcp|palace.
 		// next mesh (s1402): mesh|stream|streams|heartbeat|heartbeats|pull (NOT pulse — pulse stays status board).
+		// next memory-pull (s1407): memory-pull|ops-pack|pull-path|memorypull|ops_pack (NOT bare pull — pull stays mesh).
 		// next status|pulse|board (s1382): residual-honest lane status board.
 		// next export|receipt|stamp|evidence (s1387): residual-honest status export receipt.
 		// dual_write OFF · not Memory GA · never invent install green / Connected ·
@@ -780,7 +781,8 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			case "next", "after", "continue", "lanes":
 				// s1377: optional lane drill-down; s1382: status|pulse|board lane status board;
 				// s1387: export|receipt|stamp|evidence status export receipt (+ optional json);
-				// s1402: mesh|stream|streams|heartbeat|heartbeats|pull streaming lane.
+				// s1402: mesh|stream|streams|heartbeat|heartbeats|pull streaming lane;
+				// s1407: memory-pull|ops-pack|pull-path|memorypull|ops_pack Ops Pack pull path.
 				if len(parts) >= 3 {
 					lane := strings.ToLower(parts[2])
 					switch lane {
@@ -798,39 +800,45 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 						return false, nil
 					case "mesh", "stream", "streams", "heartbeat", "heartbeats", "pull":
 						// s1402: mesh streaming lane (org heartbeats). NOT pulse — pulse stays status board.
+						// bare pull stays mesh (s1407 memory-pull uses memory-pull|ops-pack|pull-path|memorypull|ops_pack).
 						fmt.Fprintln(out, agent.AionAgentOnboardingNextMeshLane())
 						fmt.Fprintln(out, "— residual: mesh streaming lane · dual_write OFF · not Memory GA · mesh = streaming org heartbeats · mesh ≠ memory · never invent stream green · streams_not_probed · not OTel/APM · pull ≠ freemium hosted palace · rates ~$88/$119 optional")
 						return false, nil
+					case "memory-pull", "ops-pack", "pull-path", "memorypull", "ops_pack":
+						// s1407: Ops Pack pull path. Bare pull stays mesh (s1402).
+						fmt.Fprintln(out, agent.AionAgentOnboardingNextMemoryPullLane())
+						fmt.Fprintln(out, "— residual: memory-pull Ops Pack lane · dual_write OFF · not Memory GA · pull = mesh → local palace egress · pull ≠ freemium hosted palace · Ops Pack ≠ GPU fleet · pull_not_probed · never invent pull green · package load ≠ Ops Pack entitlement · rates ~$88/$119 optional")
+						return false, nil
 					case "status", "pulse", "board":
 						fmt.Fprintln(out, agent.AionAgentOnboardingNextLaneStatus())
-						fmt.Fprintln(out, "— residual: next lane status board · dual_write OFF · not Memory GA · session soft ≠ live dogfood · portal_hitl_still · streams_not_probed · never invent Connected/GA/APPLY/stream green · residual PASS ≠ live dogfood · board/export evidence ≠ invent Connected · mesh ≠ memory")
+						fmt.Fprintln(out, "— residual: next lane status board · dual_write OFF · not Memory GA · session soft ≠ live dogfood · portal_hitl_still · streams_not_probed · pull_not_probed · never invent Connected/GA/APPLY/stream green/pull green · residual PASS ≠ live dogfood · board/export evidence ≠ invent Connected · mesh ≠ memory")
 						return false, nil
 					case "export", "receipt", "stamp", "evidence":
 						// Optional third token: json → JSON receipt; otherwise markdown.
 						if len(parts) >= 4 && strings.ToLower(parts[3]) == "json" {
 							fmt.Fprintln(out, agent.AionAgentOnboardingNextLaneStatusExportJSON())
-							fmt.Fprintln(out, "— residual: next lane status export json · evidence_kind=onboard_next_lane_status_export · offline_static · not_live_dogfood · s1387 · session soft ≠ live dogfood · streams_not_probed · board/export evidence ≠ invent Connected · dual_write OFF · not Memory GA · mesh ≠ memory")
+							fmt.Fprintln(out, "— residual: next lane status export json · evidence_kind=onboard_next_lane_status_export · offline_static · not_live_dogfood · s1387 · session soft ≠ live dogfood · streams_not_probed · pull_not_probed · board/export evidence ≠ invent Connected · dual_write OFF · not Memory GA · mesh ≠ memory")
 							return false, nil
 						}
 						fmt.Fprintln(out, agent.AionAgentOnboardingNextLaneStatusExport())
-						fmt.Fprintln(out, "— residual: next lane status export receipt · evidence_kind=onboard_next_lane_status_export · offline_static · not_live_dogfood · s1387 · session soft ≠ live dogfood · streams_not_probed · board/export evidence ≠ invent Connected · dual_write OFF · not Memory GA · mesh ≠ memory")
+						fmt.Fprintln(out, "— residual: next lane status export receipt · evidence_kind=onboard_next_lane_status_export · offline_static · not_live_dogfood · s1387 · session soft ≠ live dogfood · streams_not_probed · pull_not_probed · board/export evidence ≠ invent Connected · dual_write OFF · not Memory GA · mesh ≠ memory")
 						return false, nil
 					default:
 						// Unknown next sub → overview + usage hint listing lanes.
 						fmt.Fprintln(out, agent.AionAgentOnboardingNextLanes())
-						fmt.Fprintln(out, "— residual: post-onboard next lanes · dual_write OFF · not Memory GA · plugins dogfood ≠ Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · mesh ≠ memory · portal HITL · board/export evidence ≠ invent Connected")
-						fmt.Fprintln(out, "usage: /onboard next [plugins|gtm|memory|mesh|status|export]  (lane aliases: plugins→plugin|dogfood · gtm→drafts · memory→mcp|palace · mesh→stream|streams|heartbeat|heartbeats|pull · status→pulse|board · export→receipt|stamp|evidence; parent aliases after|continue|lanes; export json for JSON receipt; pulse stays status board)")
+						fmt.Fprintln(out, "— residual: post-onboard next lanes · dual_write OFF · not Memory GA · plugins dogfood ≠ Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · mesh ≠ memory · portal HITL · board/export evidence ≠ invent Connected · pull_not_probed")
+						fmt.Fprintln(out, "usage: /onboard next [plugins|gtm|memory|mesh|memory-pull|status|export]  (lane aliases: plugins→plugin|dogfood · gtm→drafts · memory→mcp|palace · mesh→stream|streams|heartbeat|heartbeats|pull · memory-pull→ops-pack|pull-path|memorypull|ops_pack · status→pulse|board · export→receipt|stamp|evidence; parent aliases after|continue|lanes; export json for JSON receipt; pulse stays status board; bare pull stays mesh)")
 						return false, nil
 					}
 				}
 				fmt.Fprintln(out, agent.AionAgentOnboardingNextLanes())
-				fmt.Fprintln(out, "— residual: post-onboard next lanes · dual_write OFF · not Memory GA · plugins dogfood ≠ Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · mesh ≠ memory · portal HITL · board/export evidence ≠ invent Connected")
+				fmt.Fprintln(out, "— residual: post-onboard next lanes · dual_write OFF · not Memory GA · plugins dogfood ≠ Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · mesh ≠ memory · portal HITL · board/export evidence ≠ invent Connected · pull_not_probed")
 				return false, nil
 			}
 			// Unknown subcommand: still print guidance + usage hint.
 			fmt.Fprintln(out, agent.AionAgentOnboardingGuidanceNote())
 			fmt.Fprintln(out, "— residual: TUI ↔ aion onboarding · dual_write OFF · not Memory GA · never invent Connected · portal HITL · skill aion-agent-onboarding via read_skill")
-			fmt.Fprintln(out, "usage: /onboard [help|checklist|portal|status|next]  (aliases /aion-onboard /agent-onboard; portal aliases agent-mcp|mcp; next aliases after|continue|lanes; next lanes: plugins|gtm|memory|mesh|status|export)")
+			fmt.Fprintln(out, "usage: /onboard [help|checklist|portal|status|next]  (aliases /aion-onboard /agent-onboard; portal aliases agent-mcp|mcp; next aliases after|continue|lanes; next lanes: plugins|gtm|memory|mesh|memory-pull|status|export)")
 			return false, nil
 		}
 		fmt.Fprintln(out, agent.AionAgentOnboardingGuidanceNote())

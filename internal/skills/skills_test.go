@@ -683,6 +683,16 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"not OTel/APM",
 		"never invent stream green",
 		"plugins|gtm|memory|mesh",
+		// s1407 Ops Pack / memory-pull lane
+		"/onboard next memory-pull",
+		"AionAgentOnboardingNextMemoryPullLane",
+		"Ops Pack pull path",
+		"pull_not_probed",
+		"Ops Pack ≠ GPU fleet",
+		"never invent pull green",
+		"ops-pack",
+		"pull-path",
+		"plugins|gtm|memory|mesh|memory-pull",
 		// s1382 lane status board
 		"/onboard next status",
 		"AionAgentOnboardingNextLaneStatus",
@@ -697,7 +707,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"AionAgentOnboardingNextLaneStatusExport",
 		"evidence_kind=onboard_next_lane_status_export",
 		"board/export evidence ≠ invent Connected",
-		"plugins|gtm|memory|mesh|status|export",
+		"plugins|gtm|memory|mesh|memory-pull|status|export",
 		// s1397 session soft dogfood on status/export
 		"soft_offline_dogfood_session_pass",
 		"soft_offline_dogfood_session_fail",

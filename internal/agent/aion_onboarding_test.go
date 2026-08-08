@@ -220,6 +220,11 @@ func TestAionAgentOnboardingStatus_HonestyNeedles(t *testing.T) {
 		"/onboard next mesh",
 		"mesh = streaming org heartbeats",
 		"mesh ≠ memory",
+		// s1407 Ops Pack pull path
+		"/onboard next memory-pull",
+		"pull_not_probed",
+		"Ops Pack ≠ GPU fleet",
+		"pull ≠ freemium hosted palace",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("status missing %q in:\n%s", want, out)
@@ -230,7 +235,7 @@ func TestAionAgentOnboardingStatus_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1372+s1377+s1382+s1402: AionAgentOnboardingNextLanes residual-honest post-onboard continuum needles.
+// s1372+s1377+s1382+s1402+s1407: AionAgentOnboardingNextLanes residual-honest post-onboard continuum needles.
 func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 	out := AionAgentOnboardingNextLanes()
 	if out == "" {
@@ -270,7 +275,17 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"not OTel/APM",
 		"/onboard next mesh",
 		"streams_not_probed",
+		// s1407 Ops Pack pull path
 		"5.",
+		"Memory Ops Pack pull path",
+		"iomesh memory pull",
+		"mesh → local palace",
+		"Ops Pack ≠ GPU fleet",
+		"pull_not_probed",
+		"/onboard next memory-pull",
+		"ops-pack|pull-path|memorypull|ops_pack",
+		"pull stays mesh",
+		"6.",
 		"portal HITL",
 		"agent MCP cannot write installs",
 		"catalog ≠ Connected",
@@ -292,6 +307,8 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"board/export evidence ≠ invent Connected",
 		// pulse stays board (not mesh alias)
 		"pulse stays board",
+		"never invent pull green",
+		"pull ≠ freemium hosted palace",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("next lanes missing %q in:\n%s", want, out)
@@ -308,6 +325,9 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 	}
 	if strings.Contains(out, "stream green: yes") || strings.Contains(out, "streams Connected") {
 		t.Fatalf("must not invent stream green: %s", out)
+	}
+	if strings.Contains(out, "pull green: yes") {
+		t.Fatalf("must not invent pull green: %s", out)
 	}
 }
 
@@ -513,6 +533,62 @@ func TestAionAgentOnboardingNextMeshLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
+// s1407: AionAgentOnboardingNextMemoryPullLane residual-honest Ops Pack pull path needles.
+func TestAionAgentOnboardingNextMemoryPullLane_HonestyNeedles(t *testing.T) {
+	out := AionAgentOnboardingNextMemoryPullLane()
+	if out == "" {
+		t.Fatal("empty memory-pull lane")
+	}
+	for _, want := range []string{
+		"onboard next memory-pull lane",
+		"no MCP dial",
+		"Ops Pack pull path",
+		"iomesh memory pull",
+		"mesh → local palace",
+		"CreateConsumer",
+		"memory_ingest_turn",
+		"dual_write OFF",
+		"not freemium hosted palace",
+		"not Memory GA",
+		"Palace sunset",
+		"Ops Pack ≠ GPU fleet",
+		"~$119",
+		"~$88",
+		"Memory Ops Pack",
+		"package load ≠ Ops Pack entitlement",
+		"package load ≠ Memory GA",
+		"pull_not_probed",
+		"never invent pull green",
+		"residual PASS ≠ live dogfood",
+		"PASS ≠ live APPLY",
+		"book-demo OFF",
+		"mesh ≠ memory",
+		"catalog ≠ Connected",
+		"portal HITL",
+		"agent MCP cannot write installs",
+		"/onboard next memory-pull",
+		"ops-pack|pull-path|memorypull|ops_pack",
+		"bare pull stays mesh",
+		"/onboard next mesh",
+		"/onboard next memory",
+		"/onboard next status",
+		"board/export evidence ≠ invent Connected",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("memory-pull lane missing %q in:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
+	}
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "pull green: yes") {
+		t.Fatalf("must not invent Memory GA / pull green: %s", out)
+	}
+	if strings.Contains(out, "GPU fleet green") || strings.Contains(out, "freemium hosted palace ON") {
+		t.Fatalf("must not invent GPU fleet / freemium palace: %s", out)
+	}
+}
+
 // s1382: AionAgentOnboardingNextLaneStatus residual-honest lane status board needles.
 func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 	agentplugins.ResetSoftDogfoodSessionState()
@@ -522,7 +598,7 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 	if out == "" {
 		t.Fatal("empty next lane status board")
 	}
-	// All five lanes named + honest vocabulary + locks (no invent Connected/GA/APPLY/stream green success).
+	// All lanes named + honest vocabulary + locks (no invent Connected/GA/APPLY/stream/pull green success).
 	for _, want := range []string{
 		"onboard next lane status",
 		"no MCP dial",
@@ -532,13 +608,15 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"gtm:",
 		"memory:",
 		"mesh:",
+		"memory-pull:",
 		"portal:",
-		// honest state vocabulary (never invent connected/ga/apply/stream green as success)
+		// honest state vocabulary (never invent connected/ga/apply/stream/pull green as success)
 		"dogfood_not_run",
 		"path_ready",
 		"skill_ready",
 		"residual_only",
 		"streams_not_probed",
+		"pull_not_probed",
 		"portal_hitl_still",
 		// plugins honesty
 		"Agent Plugins GA",
@@ -562,6 +640,12 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"not OTel/APM",
 		"never invent stream green",
 		"/onboard next mesh",
+		// memory-pull honesty (s1407)
+		"Ops Pack pull path",
+		"Ops Pack ≠ GPU fleet",
+		"never invent pull green",
+		"/onboard next memory-pull",
+		"package load ≠ Ops Pack entitlement",
 		// portal honesty
 		"agent MCP cannot write installs",
 		"catalog ≠ Connected",
@@ -615,6 +699,9 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 	}
 	if strings.Contains(out, "stream green: yes") || strings.Contains(out, "streams Connected") {
 		t.Fatalf("must not invent stream green: %s", out)
+	}
+	if strings.Contains(out, "pull green: yes") {
+		t.Fatalf("must not invent pull green: %s", out)
 	}
 }
 
@@ -724,17 +811,19 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 		"serial=s1387",
 		"format=markdown",
 		"export receipt",
-		// lanes + s1382+s1402 vocabulary only
+		// lanes + s1382+s1402+s1407 vocabulary only
 		"plugins:",
 		"gtm:",
 		"memory:",
 		"mesh:",
+		"memory-pull:",
 		"portal:",
 		"dogfood_not_run",
 		"path_ready",
 		"skill_ready",
 		"residual_only",
 		"streams_not_probed",
+		"pull_not_probed",
 		"portal_hitl_still",
 		// honesty locks
 		"dual_write OFF",
@@ -760,6 +849,10 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 		"mesh ≠ memory",
 		"never invent stream green",
 		"not OTel/APM",
+		// s1407 memory-pull honesty
+		"Ops Pack ≠ GPU fleet",
+		"never invent pull green",
+		"pull ≠ freemium hosted palace",
 		// does not run dogfood / dial MCP
 		"does NOT run plugins dogfood",
 		"does NOT dial MCP",
@@ -767,6 +860,7 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 		"/onboard next export",
 		"/onboard next status",
 		"/onboard next mesh",
+		"/onboard next memory-pull",
 		// s1392: /plugins dogfood soft offline cross-link
 		"/plugins dogfood",
 		"/plugins status",
@@ -814,8 +908,11 @@ func TestAionAgentOnboardingNextLaneStatusExportJSON_HonestyNeedles(t *testing.T
 		"skill_ready",
 		"residual_only",
 		"streams_not_probed",
+		"pull_not_probed",
 		"portal_hitl_still",
 		`"mesh":`,
+		`"memory-pull":`,
+		`"ops_pack":`,
 		"dual_write OFF",
 		"not Memory GA",
 		"session soft ≠ live dogfood",
@@ -824,8 +921,12 @@ func TestAionAgentOnboardingNextLaneStatusExportJSON_HonestyNeedles(t *testing.T
 		"mesh = streaming org heartbeats",
 		"mesh ≠ memory",
 		"never invent stream green / Connected",
+		"Ops Pack ≠ GPU fleet",
+		"never invent pull green",
+		"pull ≠ freemium hosted palace",
 		"/onboard next export",
 		"/onboard next mesh",
+		"/onboard next memory-pull",
 		"/plugins dogfood",
 		"/plugins status",
 	} {
@@ -844,6 +945,9 @@ func TestAionAgentOnboardingNextLaneStatusExportJSON_HonestyNeedles(t *testing.T
 	}
 	if strings.Contains(out, "stream green: yes") {
 		t.Fatalf("must not invent stream green: %s", out)
+	}
+	if strings.Contains(out, "pull green: yes") {
+		t.Fatalf("must not invent pull green: %s", out)
 	}
 }
 
