@@ -1003,12 +1003,15 @@ func TestHandleSlash_OnboardHelpChecklist(t *testing.T) {
 	if !strings.Contains(help, "next") {
 		t.Fatalf("/help missing /onboard next mention: %s", help)
 	}
-	// s1377+s1382+s1387: /help mentions next [plugins|gtm|memory|status|export] lanes
+	// s1377+s1382+s1387+s1402: /help mentions next [plugins|gtm|memory|mesh|status|export] lanes
 	if !strings.Contains(help, "plugins") || !strings.Contains(help, "gtm") || !strings.Contains(help, "memory") {
 		// help line lists next [plugins|gtm|memory|…] — ensure lane tokens appear near onboard
 		if !strings.Contains(help, "next [plugins|gtm|memory") && !strings.Contains(help, "plugins|gtm|memory") {
 			t.Fatalf("/help missing /onboard next lane drill mention: %s", help)
 		}
+	}
+	if !strings.Contains(help, "mesh") {
+		t.Fatalf("/help missing /onboard next mesh mention: %s", help)
 	}
 	if !strings.Contains(help, "export") {
 		t.Fatalf("/help missing /onboard next export mention: %s", help)
@@ -1317,7 +1320,86 @@ func TestHandleSlash_OnboardNextMemoryLane(t *testing.T) {
 	}
 }
 
-// s1377+s1382+s1387: unknown /onboard next <lane> → overview + usage hint listing lanes.
+// s1402: /onboard next mesh|stream|streams|heartbeat|heartbeats|pull — residual-honest mesh streaming lane.
+// pulse stays status board (not a mesh alias).
+func TestHandleSlash_OnboardNextMeshLane(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	needles := []string{
+		"onboard next mesh lane",
+		"I/O Mesh",
+		"streaming org heartbeats",
+		"dept.*",
+		"mesh ≠ memory",
+		"not OTel/APM",
+		"streams_not_probed",
+		"never invent stream green",
+		"dual_write OFF",
+		"not Memory GA",
+		"iomesh memory pull",
+		"not freemium hosted palace",
+		"Palace sunset",
+		"residual PASS ≠ live dogfood",
+		"portal HITL",
+		"agent MCP cannot write installs",
+		"catalog ≠ Connected",
+	}
+
+	for _, line := range []string{
+		"/onboard next mesh",
+		"/onboard next stream",
+		"/onboard next streams",
+		"/onboard next heartbeat",
+		"/onboard next heartbeats",
+		"/onboard next pull",
+		"/aion-onboard after mesh",
+		"/agent-onboard continue streams",
+		"/onboard lanes heartbeat",
+	} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Memory GA shipped") {
+			t.Fatalf("%s must not invent dual_write ON / Memory GA: %s", line, s)
+		}
+		if strings.Contains(s, "stream green: yes") || strings.Contains(s, "Connected: yes") {
+			t.Fatalf("%s must not invent stream/Connected green: %s", line, s)
+		}
+		// Mesh drill must not be confused with status board body title.
+		if strings.Contains(s, "onboard next lane status (") {
+			t.Fatalf("%s must not emit status board: %s", line, s)
+		}
+	}
+
+	// pulse stays status board — not mesh lane.
+	out.Reset()
+	_, err := handleSlash(&out, adapter, "/onboard next pulse")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pulseOut := out.String()
+	if !strings.Contains(pulseOut, "onboard next lane status") {
+		t.Fatalf("pulse must stay status board, got:\n%s", pulseOut)
+	}
+	if strings.Contains(pulseOut, "onboard next mesh lane") {
+		t.Fatalf("pulse must not drill mesh lane:\n%s", pulseOut)
+	}
+}
+
+// s1377+s1382+s1387+s1402: unknown /onboard next <lane> → overview + usage hint listing lanes.
 func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -1335,6 +1417,7 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 		"plugins",
 		"gtm",
 		"memory",
+		"mesh",
 		"status",
 		"export",
 		"residual:",
@@ -1345,6 +1428,9 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	}
 	if strings.Contains(s, "onboard next plugins lane") {
 		t.Fatalf("unknown next lane must not drill into plugins lane: %s", s)
+	}
+	if strings.Contains(s, "onboard next mesh lane") {
+		t.Fatalf("unknown next lane must not drill into mesh lane: %s", s)
 	}
 	if strings.Contains(s, "onboard next lane status") {
 		t.Fatalf("unknown next lane must not drill into status board: %s", s)
@@ -1368,12 +1454,15 @@ func TestHandleSlash_OnboardNextLaneStatus(t *testing.T) {
 		"plugins:",
 		"gtm:",
 		"memory:",
+		"mesh:",
 		"portal:",
 		"dogfood_not_run",
 		"path_ready",
 		"skill_ready",
 		"residual_only",
+		"streams_not_probed",
 		"portal_hitl_still",
+		"mesh ≠ memory",
 		"dual_write OFF",
 		"not Memory GA",
 		"package load ≠ Memory GA",
@@ -1445,14 +1534,17 @@ func TestHandleSlash_OnboardNextLaneStatusExport(t *testing.T) {
 		"plugins:",
 		"gtm:",
 		"memory:",
+		"mesh:",
 		"portal:",
 		"dogfood_not_run",
 		"path_ready",
 		"skill_ready",
 		"residual_only",
+		"streams_not_probed",
 		"portal_hitl_still",
 		"dual_write OFF",
 		"not Memory GA",
+		"mesh ≠ memory",
 		"board/export evidence ≠ invent Connected",
 		"never invent install green",
 		"INSTALL_STORE APPLY",

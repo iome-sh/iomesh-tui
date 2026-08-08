@@ -674,6 +674,15 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"AionAgentOnboardingNextGtmLane",
 		"AionAgentOnboardingNextMemoryLane",
 		"plugins|gtm|memory",
+		// s1402 mesh streaming lane
+		"/onboard next mesh",
+		"AionAgentOnboardingNextMeshLane",
+		"streaming org heartbeats",
+		"mesh ≠ memory",
+		"streams_not_probed",
+		"not OTel/APM",
+		"never invent stream green",
+		"plugins|gtm|memory|mesh",
 		// s1382 lane status board
 		"/onboard next status",
 		"AionAgentOnboardingNextLaneStatus",
@@ -688,7 +697,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"AionAgentOnboardingNextLaneStatusExport",
 		"evidence_kind=onboard_next_lane_status_export",
 		"board/export evidence ≠ invent Connected",
-		"plugins|gtm|memory|status|export",
+		"plugins|gtm|memory|mesh|status|export",
 		// s1397 session soft dogfood on status/export
 		"soft_offline_dogfood_session_pass",
 		"soft_offline_dogfood_session_fail",
