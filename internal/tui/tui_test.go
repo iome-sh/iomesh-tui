@@ -1481,7 +1481,7 @@ func TestHandleSlash_OnboardNextMemoryPullLane(t *testing.T) {
 	}
 }
 
-// s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432: unknown /onboard next <lane> → overview + usage hint listing lanes.
+// s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437: unknown /onboard next <lane> → overview + usage hint listing lanes.
 func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -1503,6 +1503,7 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 		"memory-pull",
 		"agentic",
 		"planes",
+		"sales",
 		"status",
 		"export",
 		"human-gates",
@@ -1527,6 +1528,9 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	if strings.Contains(s, "onboard next three product planes") {
 		t.Fatalf("unknown next lane must not drill into three planes board: %s", s)
 	}
+	if strings.Contains(s, "onboard next sales / buyer claims") {
+		t.Fatalf("unknown next lane must not drill into sales claims board: %s", s)
+	}
 	if strings.Contains(s, "human-gates honesty board") {
 		t.Fatalf("unknown next lane must not drill into human-gates board: %s", s)
 	}
@@ -1535,6 +1539,124 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	}
 	if strings.Contains(s, "evidence_kind=onboard_next_lane_status_export") {
 		t.Fatalf("unknown next lane must not emit export receipt: %s", s)
+	}
+}
+
+// s1437: /onboard next sales|claims|buyer|claim-matrix|sales-claims|buyer-claims —
+// residual-honest sales/buyer claims board (may claim / must not claim).
+// product/planes stay three-planes; gtm stays drafts; pulse stays status.
+func TestHandleSlash_OnboardNextSalesClaims(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	needles := []string{
+		"onboard next sales / buyer claims",
+		"no MCP dial",
+		"s1437",
+		"MAY CLAIM",
+		"MUST NOT CLAIM",
+		"streaming org heartbeats",
+		"dual_write OFF",
+		"not Memory GA",
+		"Salesforce = GA CRM",
+		"HubSpot + GTM suite Beta multi-tenant",
+		"never invent Connected",
+		"dual_auth_candidacy_open",
+		"tool ship ≠ dual-auth live",
+		"book-demo OFF",
+		"residual PASS ≠ live dogfood",
+		"PASS ≠ live APPLY",
+		"three-planes grounded",
+		"/onboard next planes",
+	}
+	for _, line := range []string{
+		"/onboard next sales",
+		"/onboard next claims",
+		"/onboard next buyer",
+		"/onboard next claim-matrix",
+		"/onboard next sales-claims",
+		"/onboard next buyer-claims",
+		"/aion-onboard after sales",
+		"/agent-onboard continue claims",
+	} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		// Must not be three-planes / status / gtm-only boards.
+		if strings.Contains(s, "onboard next three product planes (") {
+			t.Fatalf("%s must not be three planes board: %s", line, s)
+		}
+		if strings.Contains(s, "onboard next lane status (") {
+			t.Fatalf("%s must not be status board: %s", line, s)
+		}
+		if strings.Contains(s, "onboard next gtm lane") {
+			t.Fatalf("%s must not be gtm-only lane: %s", line, s)
+		}
+	}
+
+	// product stays three-planes (not sales claims).
+	out.Reset()
+	_, err := handleSlash(&out, adapter, "/onboard next product")
+	if err != nil {
+		t.Fatal(err)
+	}
+	productOut := out.String()
+	if !strings.Contains(productOut, "onboard next three product planes") {
+		t.Fatalf("product must stay three planes: %s", productOut)
+	}
+	if strings.Contains(productOut, "onboard next sales / buyer claims") {
+		t.Fatalf("product must not open sales claims: %s", productOut)
+	}
+
+	// planes stays three-planes (not sales claims).
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next planes")
+	if err != nil {
+		t.Fatal(err)
+	}
+	planesOut := out.String()
+	if !strings.Contains(planesOut, "onboard next three product planes") {
+		t.Fatalf("planes must stay three planes: %s", planesOut)
+	}
+	if strings.Contains(planesOut, "onboard next sales / buyer claims") {
+		t.Fatalf("planes must not open sales claims: %s", planesOut)
+	}
+
+	// gtm stays GTM draft lane (not sales claims).
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next gtm")
+	if err != nil {
+		t.Fatal(err)
+	}
+	gtmOut := out.String()
+	if !strings.Contains(gtmOut, "onboard next gtm lane") {
+		t.Fatalf("gtm must stay gtm lane: %s", gtmOut)
+	}
+	if strings.Contains(gtmOut, "onboard next sales / buyer claims") {
+		t.Fatalf("gtm must not open sales claims: %s", gtmOut)
+	}
+
+	// pulse stays status board (not sales claims).
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next pulse")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pulseOut := out.String()
+	if !strings.Contains(pulseOut, "onboard next lane status") {
+		t.Fatalf("pulse must stay status board: %s", pulseOut)
+	}
+	if strings.Contains(pulseOut, "onboard next sales / buyer claims") {
+		t.Fatalf("pulse must not open sales claims: %s", pulseOut)
 	}
 }
 

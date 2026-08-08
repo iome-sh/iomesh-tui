@@ -757,12 +757,13 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		// help|checklist|? → numbered onboarding checklist.
 		// portal|agent-mcp|mcp → portal Agent/MCP handoff (mint/copy/probe + TUI [[mcp.servers]]).
 		// status → residual-honest offline static status (no MCP dial).
-		// next|after|continue|lanes → post-onboard operator lanes overview (plugins·gtm·memory·mesh·memory-pull·agentic·planes·human-gates).
+		// next|after|continue|lanes → post-onboard operator lanes overview (plugins·gtm·memory·mesh·memory-pull·agentic·planes·sales·human-gates).
 		// next <lane> (s1377): plugins|plugin|dogfood · gtm|drafts · memory|mcp|palace.
 		// next mesh (s1402): mesh|stream|streams|heartbeat|heartbeats|pull (NOT pulse — pulse stays status board).
 		// next memory-pull (s1407): memory-pull|ops-pack|pull-path|memorypull|ops_pack (NOT bare pull — pull stays mesh).
 		// next agentic (s1417): agentic|agentic-integrations|integrations|portal-hitl|list-plan|hitl (NOT bare mcp/portal/pull).
 		// next planes (s1432): planes|three-planes|product-planes|product|pillars|three_planes (NOT pulse/board · pull · mcp).
+		// next sales (s1437): sales|claims|buyer|claim-matrix|sales-claims|buyer-claims (NOT product/planes · gtm · pulse/board).
 		// next status|pulse|board (s1382): residual-honest lane status board.
 		// next export|receipt|stamp|evidence (s1387): residual-honest status export receipt.
 		// next human-gates|human|gates|apply-gates (s1413): residual-honest human-gates still-required vs offline.
@@ -788,6 +789,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 				// s1407: memory-pull|ops-pack|pull-path|memorypull|ops_pack Ops Pack pull path;
 				// s1417: agentic|agentic-integrations|integrations|portal-hitl|list-plan|hitl plane-3 agentic integrations;
 				// s1432: planes|three-planes|product-planes|product|pillars|three_planes three product planes board;
+				// s1437: sales|claims|buyer|claim-matrix|sales-claims|buyer-claims sales/buyer claims board;
 				// s1413: human-gates|human|gates|apply-gates still-required vs offline residual.
 				if len(parts) >= 3 {
 					lane := strings.ToLower(parts[2])
@@ -820,6 +822,12 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 						// Do NOT steal pulse|board (status) · pull (mesh) · mcp (memory).
 						fmt.Fprintln(out, agent.AionAgentOnboardingNextThreePlanes())
 						fmt.Fprintln(out, "— residual: three product planes board · s1432 · no MCP dial · mesh · memory-pull · agentic · streams_not_probed · pull_not_probed · list_plan_not_connected · dual_auth_candidacy_open · dual_write OFF · not Memory GA · never invent stream green / pull green / Connected · residual PASS ≠ live dogfood · PASS ≠ live APPLY · rates ~$88/$119 optional · open boxes stay open")
+						return false, nil
+					case "sales", "claims", "buyer", "claim-matrix", "sales-claims", "buyer-claims":
+						// s1437: residual-honest sales / buyer claims board (may claim / must not claim).
+						// Do NOT steal product|planes (three-planes) · gtm|drafts (GTM) · pulse|board (status).
+						fmt.Fprintln(out, agent.AionAgentOnboardingNextSalesClaims())
+						fmt.Fprintln(out, "— residual: sales/buyer claims board · s1437 · no MCP dial · may claim / must not claim · three-planes grounded · dual_write OFF · book-demo OFF · not Memory GA · never invent Connected · dual_auth_candidacy_open · tool ship ≠ dual-auth live · residual PASS ≠ live dogfood · PASS ≠ live APPLY · rates ~$88/$119 optional · open boxes stay open")
 						return false, nil
 					case "agentic", "agentic-integrations", "integrations", "portal-hitl", "list-plan", "hitl":
 						// s1417: product plane 3 agentic integrations (MCP list/plan + portal HITL).
@@ -871,7 +879,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 						// Unknown next sub → overview + usage hint listing lanes.
 						fmt.Fprintln(out, agent.AionAgentOnboardingNextLanes())
 						fmt.Fprintln(out, "— residual: post-onboard next lanes · dual_write OFF · not Memory GA · plugins dogfood ≠ Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · mesh ≠ memory · portal HITL · board/export evidence ≠ invent Connected · pull_not_probed · list_plan_not_connected · PASS ≠ invent human-gate green")
-						fmt.Fprintln(out, "usage: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|planes|status|export|human-gates]  (lane aliases: plugins→plugin|dogfood · gtm→drafts · memory→mcp|palace · mesh→stream|streams|heartbeat|heartbeats|pull · memory-pull→ops-pack|pull-path|memorypull|ops_pack · agentic→agentic-integrations|integrations|portal-hitl|list-plan|hitl · planes→three-planes|product-planes|product|pillars|three_planes · status→pulse|board · export→receipt|stamp|evidence · human-gates→human|gates|apply-gates; parent aliases after|continue|lanes; export json for JSON receipt; pulse stays status board; bare pull stays mesh; bare mcp stays memory; bare portal stays portal handoff)")
+						fmt.Fprintln(out, "usage: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|status|export|human-gates]  (lane aliases: plugins→plugin|dogfood · gtm→drafts · memory→mcp|palace · mesh→stream|streams|heartbeat|heartbeats|pull · memory-pull→ops-pack|pull-path|memorypull|ops_pack · agentic→agentic-integrations|integrations|portal-hitl|list-plan|hitl · planes→three-planes|product-planes|product|pillars|three_planes · sales→claims|buyer|claim-matrix|sales-claims|buyer-claims · status→pulse|board · export→receipt|stamp|evidence · human-gates→human|gates|apply-gates; parent aliases after|continue|lanes; export json for JSON receipt; pulse stays status board; bare pull stays mesh; bare mcp stays memory; bare portal stays portal handoff; product/planes stay three-planes)")
 						return false, nil
 					}
 				}
@@ -882,7 +890,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			// Unknown subcommand: still print guidance + usage hint.
 			fmt.Fprintln(out, agent.AionAgentOnboardingGuidanceNote())
 			fmt.Fprintln(out, "— residual: TUI ↔ aion onboarding · dual_write OFF · not Memory GA · never invent Connected · portal HITL · skill aion-agent-onboarding via read_skill")
-			fmt.Fprintln(out, "usage: /onboard [help|checklist|portal|status|next]  (aliases /aion-onboard /agent-onboard; portal aliases agent-mcp|mcp; next aliases after|continue|lanes; next lanes: plugins|gtm|memory|mesh|memory-pull|agentic|planes|status|export|human-gates)")
+			fmt.Fprintln(out, "usage: /onboard [help|checklist|portal|status|next]  (aliases /aion-onboard /agent-onboard; portal aliases agent-mcp|mcp; next aliases after|continue|lanes; next lanes: plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|status|export|human-gates)")
 			return false, nil
 		}
 		fmt.Fprintln(out, agent.AionAgentOnboardingGuidanceNote())
@@ -928,7 +936,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /memory [recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · status advanced inventory)
   /integrations [list|plan|signing|status]  connector setup via MCP (catalog+plan+signing discovery+portal HITL; not install CRUD)
   /gtm [help|checklist]  GTM draft-only guidance or checklist (aliases /gtm-draft /gtm-agent; no auto-send; human publish)
-  /onboard [help|checklist|portal|status|next]  TUI agent ↔ aion onboarding guidance, checklist, portal Agent/MCP handoff, offline status, or post-onboard next lanes (aliases /aion-onboard /agent-onboard; residual-honest · portal HITL · settings/agent; next [plugins|gtm|memory|mesh|status|export]; next mesh→stream|streams|heartbeat|heartbeats|pull; next status→pulse|board; next export→receipt|stamp|evidence [json]; next aliases after|continue|lanes; pulse stays status board)
+  /onboard [help|checklist|portal|status|next]  TUI agent ↔ aion onboarding guidance, checklist, portal Agent/MCP handoff, offline status, or post-onboard next lanes (aliases /aion-onboard /agent-onboard; residual-honest · portal HITL · settings/agent; next [plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|status|export|human-gates]; next mesh→stream|streams|heartbeat|heartbeats|pull; next planes→three-planes|product-planes|product|pillars|three_planes; next sales→claims|buyer|claim-matrix|sales-claims|buyer-claims; next status→pulse|board; next export→receipt|stamp|evidence [json]; next aliases after|continue|lanes; pulse stays status board; product/planes stay three-planes)
   /plugins [help|list|validate|dogfood|status]  residual-honest Agent Plugins soft offline dogfood (alias /plugin; dogfood aliases soft|samples|offline; Discover ≠ Connected · soft offline ≠ live dogfood · ≠ invent Agent Plugins GA)
   /quit                exit
 
