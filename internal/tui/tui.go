@@ -816,7 +816,8 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 					case "agentic", "agentic-integrations", "integrations", "portal-hitl", "list-plan", "hitl":
 						// s1417: product plane 3 agentic integrations (MCP list/plan + portal HITL).
 						// s1422: optional 4th token dogfood|soft|samples|offline|list-plan-soft → soft offline list/plan dogfood.
-						// Bare /onboard next agentic stays board (not auto dogfood).
+						// s1427: optional 4th token dual-auth|candidacy|list-org|org-installs|dual_auth|dual-auth-candidacy → dual-auth candidacy board.
+						// Bare /onboard next agentic stays board (not auto dogfood / dual-auth).
 						// NOT bare mcp (memory) · NOT bare portal|agent-mcp (portal handoff) · NOT bare pull (mesh).
 						// NOT bare dogfood under /onboard next (dogfood stays plugins lane).
 						if len(parts) >= 4 {
@@ -826,10 +827,16 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 								fmt.Fprintln(out, agent.RunAgenticListPlanSoftDogfood())
 								fmt.Fprintln(out, "— residual: agentic list/plan soft offline dogfood · s1422 · no MCP dial · soft offline list/plan ≠ live dogfood · ≠ invent Connected · portal HITL still · list_org fail-open ≠ empty-as-none · session soft ≠ live dogfood · dual_write OFF · not Memory GA · template= ≠ install APPLY · agent MCP cannot write installs")
 								return false, nil
+							case "dual-auth", "candidacy", "list-org", "org-installs", "dual_auth", "dual-auth-candidacy":
+								// s1427: dual-auth candidacy depth (list_org fail-open · tool ship ≠ dual-auth live).
+								// Does NOT steal dogfood|soft|samples|offline|list-plan-soft (s1422 soft dogfood).
+								fmt.Fprintln(out, agent.AionAgentOnboardingNextAgenticDualAuthCandidacy())
+								fmt.Fprintln(out, "— residual: agentic dual-auth candidacy · s1427 · no MCP dial · dual_auth_candidacy_open · list_org_unavailable · list_org_connector_installs available=false status=unavailable installs=null · never invent empty-as-none · tool ship ≠ dual-auth live · never invent dual-auth live · agent MCP cannot write installs · portal HITL · dual_write OFF · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open")
+								return false, nil
 							}
 						}
 						fmt.Fprintln(out, agent.AionAgentOnboardingNextAgenticLane())
-						fmt.Fprintln(out, "— residual: agentic integrations lane · product plane 3 · dual_write OFF · not Memory GA · MCP list/plan residual-honest · plan deep links = browser HITL only · template= ≠ install APPLY · catalog ≠ Connected · list_org fail-open ≠ empty-as-none · list_plan_not_connected · portal_hitl_still · agent MCP cannot write installs · never invent Connected · rates ~$88/$119 optional · soft dogfood: /onboard next agentic dogfood")
+						fmt.Fprintln(out, "— residual: agentic integrations lane · product plane 3 · dual_write OFF · not Memory GA · MCP list/plan residual-honest · plan deep links = browser HITL only · template= ≠ install APPLY · catalog ≠ Connected · list_org fail-open ≠ empty-as-none · list_plan_not_connected · portal_hitl_still · agent MCP cannot write installs · never invent Connected · rates ~$88/$119 optional · soft dogfood: /onboard next agentic dogfood · dual-auth: /onboard next agentic dual-auth")
 						return false, nil
 					case "human-gates", "human", "gates", "apply-gates":
 						// s1413: residual-honest human-gates still-required vs offline residual.

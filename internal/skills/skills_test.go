@@ -716,6 +716,18 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"Portal HITL polish",
 		"soft offline list/plan ≠ invent Connected",
 		"list-plan-soft",
+		// s1427 agentic dual-auth candidacy depth
+		"/onboard next agentic dual-auth",
+		"AionAgentOnboardingNextAgenticDualAuthCandidacy",
+		"dual_auth_candidacy_open",
+		"list_org_unavailable",
+		"tool ship ≠ dual-auth live",
+		"list_org_connector_installs",
+		"installs=null",
+		"never invent empty-as-none",
+		"dual-auth-candidacy",
+		"list-org",
+		"org-installs",
 		// s1413 human-gates honesty board
 		"/onboard next human-gates",
 		"AionAgentHumanGatesHonestyBoard",

@@ -1648,6 +1648,111 @@ func TestHandleSlash_OnboardNextAgenticLane(t *testing.T) {
 	}
 }
 
+// s1427: /onboard next agentic dual-auth|candidacy|list-org|org-installs|dual_auth|dual-auth-candidacy —
+// residual-honest dual-auth candidacy depth (list_org fail-open · tool ship ≠ dual-auth live).
+// dogfood|soft|samples|offline|list-plan-soft stay soft dogfood; bare agentic stays main board.
+func TestHandleSlash_OnboardNextAgenticDualAuthCandidacy(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+	agent.ResetAgenticListPlanSoftDogfoodSessionState()
+	t.Cleanup(agent.ResetAgenticListPlanSoftDogfoodSessionState)
+
+	needles := []string{
+		"onboard next agentic dual-auth candidacy",
+		"dual_auth_candidacy_open",
+		"list_org_connector_installs",
+		"available=false",
+		"status=unavailable",
+		"installs=null",
+		"never invent empty-as-none",
+		"tool ship ≠ dual-auth live",
+		"never invent dual-auth live",
+		"portal session owns install index",
+		"agent MCP cannot write installs",
+		"catalog ≠ Connected",
+		"never invent Connected",
+		"list_org_unavailable",
+		"path_ready",
+		"residual_only",
+		"dual_write OFF",
+		"not Memory GA",
+		"book-demo OFF",
+		"residual PASS ≠ live dogfood",
+		"PASS ≠ live APPLY",
+		"open boxes stay open",
+		"console.iome.sh/integrations",
+	}
+
+	for _, line := range []string{
+		"/onboard next agentic dual-auth",
+		"/onboard next agentic candidacy",
+		"/onboard next agentic list-org",
+		"/onboard next agentic org-installs",
+		"/onboard next agentic dual_auth",
+		"/onboard next agentic dual-auth-candidacy",
+		"/onboard next agentic-integrations dual-auth",
+		"/onboard next integrations candidacy",
+		"/aion-onboard after agentic list-org",
+		"/agent-onboard continue portal-hitl org-installs",
+	} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		// Must not be soft dogfood runner or main agentic board body title alone without dual-auth framing.
+		if strings.Contains(s, "agentic list/plan soft offline dogfood") {
+			t.Fatalf("%s must not run soft dogfood:\n%s", line, s)
+		}
+		if strings.Contains(s, "onboard next agentic lane (") {
+			t.Fatalf("%s must not emit main agentic board body:\n%s", line, s)
+		}
+		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Connected: yes") {
+			t.Fatalf("%s must not invent dual_write ON / Connected:\n%s", line, s)
+		}
+		if strings.Contains(s, "dual-auth: live") || strings.Contains(s, "dual-auth live shipped") {
+			t.Fatalf("%s must not invent dual-auth live:\n%s", line, s)
+		}
+	}
+
+	// Bare agentic still main board (not dual-auth board).
+	out.Reset()
+	_, err := handleSlash(&out, adapter, "/onboard next agentic")
+	if err != nil {
+		t.Fatal(err)
+	}
+	bare := out.String()
+	if !strings.Contains(bare, "onboard next agentic lane") {
+		t.Fatalf("bare agentic want main board:\n%s", bare)
+	}
+	if strings.Contains(bare, "onboard next agentic dual-auth candidacy") {
+		t.Fatalf("bare agentic must not emit dual-auth board body:\n%s", bare)
+	}
+	// Soft dogfood aliases still soft dogfood (not dual-auth).
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next agentic dogfood")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dog := out.String()
+	if !strings.Contains(dog, "agentic list/plan soft offline dogfood") {
+		t.Fatalf("dogfood alias must stay soft dogfood:\n%s", dog)
+	}
+	if strings.Contains(dog, "onboard next agentic dual-auth candidacy") {
+		t.Fatalf("dogfood must not emit dual-auth board:\n%s", dog)
+	}
+}
+
 // s1422: /onboard next agentic dogfood|soft|offline|list-plan-soft|samples — soft offline list/plan dogfood.
 func TestHandleSlash_OnboardNextAgenticListPlanSoftDogfood(t *testing.T) {
 	rt := testRuntime(t)
