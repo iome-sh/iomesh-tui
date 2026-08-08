@@ -1268,7 +1268,7 @@ func TestHandleSlash_OnboardNextGtmLane(t *testing.T) {
 	}
 }
 
-// s1377+s1453+s1458+s1463: /onboard next memory|mcp|palace — residual-honest memory local + edge OSS + M2 lean + M3 edge dogfood drill.
+// s1377+s1453+s1458+s1463+s1469: /onboard next memory|mcp|palace — residual-honest memory local + edge OSS + M2 lean + M3 edge dogfood + M4 public flip readiness drill.
 func TestHandleSlash_OnboardNextMemoryLane(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -1288,6 +1288,12 @@ func TestHandleSlash_OnboardNextMemoryLane(t *testing.T) {
 		"edge dogfood",
 		"docker compose",
 		"healthz",
+		"s1469",
+		"M4 public flip readiness",
+		"public flip readiness",
+		"kernel first",
+		"still private",
+		"readiness tip ≠ invent public flip complete",
 		"offline dogfood tip ≠ invent live dogfood as green",
 		"PASS ≠ invent full platform sidecar parity",
 		"residual PASS ≠ public flip",
