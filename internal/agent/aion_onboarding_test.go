@@ -326,6 +326,11 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"/onboard next export",
 		"export receipt",
 		"board/export evidence ≠ invent Connected",
+		// s1432 three product planes cross-link
+		"/onboard next planes",
+		"three product planes",
+		"three-planes|product-planes|product|pillars|three_planes",
+		"dual_auth_candidacy_open",
 		// pulse stays board (not mesh alias)
 		"pulse stays board",
 		"never invent pull green",
@@ -688,6 +693,93 @@ func TestAionAgentOnboardingNextAgenticLane_HonestyNeedles(t *testing.T) {
 	}
 	if strings.Contains(out, "install green: yes") || strings.Contains(out, "list_org Connected") {
 		t.Fatalf("must not invent install green / list_org Connected: %s", out)
+	}
+}
+
+// s1432: AionAgentOnboardingNextThreePlanes residual-honest three product planes board needles.
+func TestAionAgentOnboardingNextThreePlanes_HonestyNeedles(t *testing.T) {
+	out := AionAgentOnboardingNextThreePlanes()
+	if out == "" {
+		t.Fatal("empty three product planes board")
+	}
+	for _, want := range []string{
+		"onboard next three product planes",
+		"no MCP dial",
+		"s1432",
+		// plane 1 mesh
+		"plane 1",
+		"Mesh",
+		"product plane 1",
+		"streaming org heartbeats",
+		"dept.*",
+		"mesh ≠ memory",
+		"not OTel/APM",
+		"streams_not_probed",
+		"never invent stream green",
+		"/onboard next mesh",
+		// plane 2 memory-pull
+		"plane 2",
+		"Memory-pull",
+		"Ops Pack",
+		"product plane 2",
+		"mesh → local palace egress",
+		"dual_write OFF",
+		"Ops Pack ≠ GPU",
+		"pull_not_probed",
+		"never invent pull green",
+		"/onboard next memory-pull",
+		// plane 3 agentic
+		"plane 3",
+		"Agentic integrations",
+		"product plane 3",
+		"MCP list/plan residual-honest",
+		"portal_hitl_still",
+		"list_plan_not_connected",
+		"dual_auth_candidacy_open",
+		"agent MCP cannot write installs",
+		"never invent Connected",
+		"tool ship ≠ dual-auth live",
+		"/onboard next agentic",
+		"/onboard next agentic dual-auth",
+		"/onboard next agentic dogfood",
+		// honest vocab shared
+		"path_ready",
+		"residual_only",
+		// rates + gates
+		"~$88",
+		"~$119",
+		"book-demo OFF",
+		"not Memory GA",
+		"residual PASS ≠ live dogfood",
+		"PASS ≠ live APPLY",
+		"open boxes stay open",
+		// slash + aliases
+		"/onboard next planes",
+		"three-planes|product-planes|product|pillars|three_planes",
+		"pulse|board",
+		// cross-links
+		"/onboard next status",
+		"/onboard next export",
+		"/onboard next human-gates",
+		// do not steal
+		"bare pull stays mesh",
+		"NOT bare mcp",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("three planes board missing %q in:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
+	}
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "stream green: yes") {
+		t.Fatalf("must not invent Memory GA / stream green: %s", out)
+	}
+	if strings.Contains(out, "pull green: yes") || strings.Contains(out, "dual-auth live: yes") {
+		t.Fatalf("must not invent pull green / dual-auth live: %s", out)
+	}
+	if strings.Contains(out, "INSTALL_STORE APPLY success") {
+		t.Fatalf("must not invent INSTALL_STORE APPLY success: %s", out)
 	}
 }
 

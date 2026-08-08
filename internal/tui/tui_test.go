@@ -1481,7 +1481,7 @@ func TestHandleSlash_OnboardNextMemoryPullLane(t *testing.T) {
 	}
 }
 
-// s1377+s1382+s1387+s1402+s1407+s1413+s1417: unknown /onboard next <lane> → overview + usage hint listing lanes.
+// s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432: unknown /onboard next <lane> → overview + usage hint listing lanes.
 func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -1502,6 +1502,7 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 		"mesh",
 		"memory-pull",
 		"agentic",
+		"planes",
 		"status",
 		"export",
 		"human-gates",
@@ -1523,6 +1524,9 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	if strings.Contains(s, "onboard next agentic lane") {
 		t.Fatalf("unknown next lane must not drill into agentic lane: %s", s)
 	}
+	if strings.Contains(s, "onboard next three product planes") {
+		t.Fatalf("unknown next lane must not drill into three planes board: %s", s)
+	}
 	if strings.Contains(s, "human-gates honesty board") {
 		t.Fatalf("unknown next lane must not drill into human-gates board: %s", s)
 	}
@@ -1531,6 +1535,109 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	}
 	if strings.Contains(s, "evidence_kind=onboard_next_lane_status_export") {
 		t.Fatalf("unknown next lane must not emit export receipt: %s", s)
+	}
+}
+
+// s1432: /onboard next planes|three-planes|product-planes|product|pillars|three_planes —
+// residual-honest three product planes board (mesh · memory-pull · agentic).
+// bare pulse stays status; bare pull stays mesh; bare mcp stays memory.
+func TestHandleSlash_OnboardNextThreePlanes(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	needles := []string{
+		"onboard next three product planes",
+		"no MCP dial",
+		"plane 1",
+		"streaming org heartbeats",
+		"streams_not_probed",
+		"mesh ≠ memory",
+		"plane 2",
+		"pull_not_probed",
+		"Ops Pack ≠ GPU",
+		"plane 3",
+		"list_plan_not_connected",
+		"dual_auth_candidacy_open",
+		"never invent Connected",
+		"dual_write OFF",
+		"not Memory GA",
+		"residual PASS ≠ live dogfood",
+		"PASS ≠ live APPLY",
+	}
+	for _, line := range []string{
+		"/onboard next planes",
+		"/onboard next three-planes",
+		"/onboard next product-planes",
+		"/onboard next product",
+		"/onboard next pillars",
+		"/onboard next three_planes",
+		"/aion-onboard after planes",
+		"/agent-onboard continue three-planes",
+	} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		// Must not be status/mesh/memory/agentic-only boards.
+		if strings.Contains(s, "onboard next lane status (") {
+			t.Fatalf("%s must not be status board: %s", line, s)
+		}
+		if strings.Contains(s, "onboard next mesh lane") {
+			t.Fatalf("%s must not be mesh-only lane: %s", line, s)
+		}
+		if strings.Contains(s, "onboard next agentic lane (") {
+			t.Fatalf("%s must not be agentic-only lane: %s", line, s)
+		}
+	}
+
+	// bare pulse under /onboard next stays status board (not three-planes).
+	out.Reset()
+	_, err := handleSlash(&out, adapter, "/onboard next pulse")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pulseOut := out.String()
+	if !strings.Contains(pulseOut, "onboard next lane status") {
+		t.Fatalf("bare pulse must stay status board: %s", pulseOut)
+	}
+	if strings.Contains(pulseOut, "onboard next three product planes") {
+		t.Fatalf("bare pulse must not open three planes board: %s", pulseOut)
+	}
+
+	// bare pull stays mesh (not three-planes).
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next pull")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pullOut := out.String()
+	if !strings.Contains(pullOut, "onboard next mesh lane") {
+		t.Fatalf("bare pull must stay mesh: %s", pullOut)
+	}
+	if strings.Contains(pullOut, "onboard next three product planes") {
+		t.Fatalf("bare pull must not open three planes board: %s", pullOut)
+	}
+
+	// bare mcp stays memory (not three-planes).
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next mcp")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mcpOut := out.String()
+	if !strings.Contains(mcpOut, "onboard next memory lane") {
+		t.Fatalf("bare mcp must stay memory: %s", mcpOut)
+	}
+	if strings.Contains(mcpOut, "onboard next three product planes") {
+		t.Fatalf("bare mcp must not open three planes board: %s", mcpOut)
 	}
 }
 

@@ -757,11 +757,12 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		// help|checklist|? → numbered onboarding checklist.
 		// portal|agent-mcp|mcp → portal Agent/MCP handoff (mint/copy/probe + TUI [[mcp.servers]]).
 		// status → residual-honest offline static status (no MCP dial).
-		// next|after|continue|lanes → post-onboard operator lanes overview (plugins·gtm·memory·mesh·memory-pull·agentic·human-gates).
+		// next|after|continue|lanes → post-onboard operator lanes overview (plugins·gtm·memory·mesh·memory-pull·agentic·planes·human-gates).
 		// next <lane> (s1377): plugins|plugin|dogfood · gtm|drafts · memory|mcp|palace.
 		// next mesh (s1402): mesh|stream|streams|heartbeat|heartbeats|pull (NOT pulse — pulse stays status board).
 		// next memory-pull (s1407): memory-pull|ops-pack|pull-path|memorypull|ops_pack (NOT bare pull — pull stays mesh).
 		// next agentic (s1417): agentic|agentic-integrations|integrations|portal-hitl|list-plan|hitl (NOT bare mcp/portal/pull).
+		// next planes (s1432): planes|three-planes|product-planes|product|pillars|three_planes (NOT pulse/board · pull · mcp).
 		// next status|pulse|board (s1382): residual-honest lane status board.
 		// next export|receipt|stamp|evidence (s1387): residual-honest status export receipt.
 		// next human-gates|human|gates|apply-gates (s1413): residual-honest human-gates still-required vs offline.
@@ -786,6 +787,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 				// s1402: mesh|stream|streams|heartbeat|heartbeats|pull streaming lane;
 				// s1407: memory-pull|ops-pack|pull-path|memorypull|ops_pack Ops Pack pull path;
 				// s1417: agentic|agentic-integrations|integrations|portal-hitl|list-plan|hitl plane-3 agentic integrations;
+				// s1432: planes|three-planes|product-planes|product|pillars|three_planes three product planes board;
 				// s1413: human-gates|human|gates|apply-gates still-required vs offline residual.
 				if len(parts) >= 3 {
 					lane := strings.ToLower(parts[2])
@@ -812,6 +814,12 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 						// s1407: Ops Pack pull path. Bare pull stays mesh (s1402).
 						fmt.Fprintln(out, agent.AionAgentOnboardingNextMemoryPullLane())
 						fmt.Fprintln(out, "— residual: memory-pull Ops Pack lane · dual_write OFF · not Memory GA · pull = mesh → local palace egress · pull ≠ freemium hosted palace · Ops Pack ≠ GPU fleet · pull_not_probed · never invent pull green · package load ≠ Ops Pack entitlement · rates ~$88/$119 optional")
+						return false, nil
+					case "planes", "three-planes", "product-planes", "product", "pillars", "three_planes":
+						// s1432: residual-honest three product planes board (mesh · memory-pull · agentic).
+						// Do NOT steal pulse|board (status) · pull (mesh) · mcp (memory).
+						fmt.Fprintln(out, agent.AionAgentOnboardingNextThreePlanes())
+						fmt.Fprintln(out, "— residual: three product planes board · s1432 · no MCP dial · mesh · memory-pull · agentic · streams_not_probed · pull_not_probed · list_plan_not_connected · dual_auth_candidacy_open · dual_write OFF · not Memory GA · never invent stream green / pull green / Connected · residual PASS ≠ live dogfood · PASS ≠ live APPLY · rates ~$88/$119 optional · open boxes stay open")
 						return false, nil
 					case "agentic", "agentic-integrations", "integrations", "portal-hitl", "list-plan", "hitl":
 						// s1417: product plane 3 agentic integrations (MCP list/plan + portal HITL).
@@ -863,7 +871,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 						// Unknown next sub → overview + usage hint listing lanes.
 						fmt.Fprintln(out, agent.AionAgentOnboardingNextLanes())
 						fmt.Fprintln(out, "— residual: post-onboard next lanes · dual_write OFF · not Memory GA · plugins dogfood ≠ Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · mesh ≠ memory · portal HITL · board/export evidence ≠ invent Connected · pull_not_probed · list_plan_not_connected · PASS ≠ invent human-gate green")
-						fmt.Fprintln(out, "usage: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|status|export|human-gates]  (lane aliases: plugins→plugin|dogfood · gtm→drafts · memory→mcp|palace · mesh→stream|streams|heartbeat|heartbeats|pull · memory-pull→ops-pack|pull-path|memorypull|ops_pack · agentic→agentic-integrations|integrations|portal-hitl|list-plan|hitl · status→pulse|board · export→receipt|stamp|evidence · human-gates→human|gates|apply-gates; parent aliases after|continue|lanes; export json for JSON receipt; pulse stays status board; bare pull stays mesh; bare mcp stays memory; bare portal stays portal handoff)")
+						fmt.Fprintln(out, "usage: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|planes|status|export|human-gates]  (lane aliases: plugins→plugin|dogfood · gtm→drafts · memory→mcp|palace · mesh→stream|streams|heartbeat|heartbeats|pull · memory-pull→ops-pack|pull-path|memorypull|ops_pack · agentic→agentic-integrations|integrations|portal-hitl|list-plan|hitl · planes→three-planes|product-planes|product|pillars|three_planes · status→pulse|board · export→receipt|stamp|evidence · human-gates→human|gates|apply-gates; parent aliases after|continue|lanes; export json for JSON receipt; pulse stays status board; bare pull stays mesh; bare mcp stays memory; bare portal stays portal handoff)")
 						return false, nil
 					}
 				}
@@ -874,7 +882,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			// Unknown subcommand: still print guidance + usage hint.
 			fmt.Fprintln(out, agent.AionAgentOnboardingGuidanceNote())
 			fmt.Fprintln(out, "— residual: TUI ↔ aion onboarding · dual_write OFF · not Memory GA · never invent Connected · portal HITL · skill aion-agent-onboarding via read_skill")
-			fmt.Fprintln(out, "usage: /onboard [help|checklist|portal|status|next]  (aliases /aion-onboard /agent-onboard; portal aliases agent-mcp|mcp; next aliases after|continue|lanes; next lanes: plugins|gtm|memory|mesh|memory-pull|agentic|status|export|human-gates)")
+			fmt.Fprintln(out, "usage: /onboard [help|checklist|portal|status|next]  (aliases /aion-onboard /agent-onboard; portal aliases agent-mcp|mcp; next aliases after|continue|lanes; next lanes: plugins|gtm|memory|mesh|memory-pull|agentic|planes|status|export|human-gates)")
 			return false, nil
 		}
 		fmt.Fprintln(out, agent.AionAgentOnboardingGuidanceNote())
