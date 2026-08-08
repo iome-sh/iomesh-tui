@@ -1481,7 +1481,7 @@ func TestHandleSlash_OnboardNextMemoryPullLane(t *testing.T) {
 	}
 }
 
-// s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437: unknown /onboard next <lane> → overview + usage hint listing lanes.
+// s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442: unknown /onboard next <lane> → overview + usage hint listing lanes.
 func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -1504,6 +1504,7 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 		"agentic",
 		"planes",
 		"sales",
+		"demo",
 		"status",
 		"export",
 		"human-gates",
@@ -1530,6 +1531,9 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	}
 	if strings.Contains(s, "onboard next sales / buyer claims") {
 		t.Fatalf("unknown next lane must not drill into sales claims board: %s", s)
+	}
+	if strings.Contains(s, "onboard next demo readiness") {
+		t.Fatalf("unknown next lane must not drill into demo readiness board: %s", s)
 	}
 	if strings.Contains(s, "human-gates honesty board") {
 		t.Fatalf("unknown next lane must not drill into human-gates board: %s", s)
@@ -1657,6 +1661,153 @@ func TestHandleSlash_OnboardNextSalesClaims(t *testing.T) {
 	}
 	if strings.Contains(pulseOut, "onboard next sales / buyer claims") {
 		t.Fatalf("pulse must not open sales claims: %s", pulseOut)
+	}
+}
+
+// s1442: /onboard next demo|demo-ready|readiness|demo-readiness|lighthouse|landgrab —
+// residual-honest demo readiness board (Lighthouse · book-demo OFF · Landgrab NOT READY).
+// sales/claims stay sales claims; product/planes stay three-planes; pulse stays status; gtm stays drafts.
+func TestHandleSlash_OnboardNextDemoReadiness(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	needles := []string{
+		"onboard next demo readiness",
+		"no MCP dial",
+		"s1442",
+		"Lighthouse beachhead",
+		"book-demo OFF",
+		"Landgrab NOT READY",
+		"dual_write OFF",
+		"not Memory GA",
+		"never invent Connected",
+		"residual PASS ≠ live dogfood",
+		"PASS ≠ live APPLY",
+		"residual PASS ≠ logos met",
+		"/onboard next planes",
+		"/onboard next sales",
+		"/onboard next human-gates",
+		"founder-led walkthrough only when scheduled",
+	}
+	for _, line := range []string{
+		"/onboard next demo",
+		"/onboard next demo-ready",
+		"/onboard next readiness",
+		"/onboard next demo-readiness",
+		"/onboard next lighthouse",
+		"/onboard next landgrab",
+		"/aion-onboard after demo",
+		"/agent-onboard continue lighthouse",
+	} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		// Must not be sales / three-planes / status / gtm-only boards.
+		if strings.Contains(s, "onboard next sales / buyer claims (") {
+			t.Fatalf("%s must not be sales claims board: %s", line, s)
+		}
+		if strings.Contains(s, "onboard next three product planes (") {
+			t.Fatalf("%s must not be three planes board: %s", line, s)
+		}
+		if strings.Contains(s, "onboard next lane status (") {
+			t.Fatalf("%s must not be status board: %s", line, s)
+		}
+		if strings.Contains(s, "onboard next gtm lane") {
+			t.Fatalf("%s must not be gtm-only lane: %s", line, s)
+		}
+	}
+
+	// sales stays sales claims (not demo readiness).
+	out.Reset()
+	_, err := handleSlash(&out, adapter, "/onboard next sales")
+	if err != nil {
+		t.Fatal(err)
+	}
+	salesOut := out.String()
+	if !strings.Contains(salesOut, "onboard next sales / buyer claims") {
+		t.Fatalf("sales must stay sales claims: %s", salesOut)
+	}
+	if strings.Contains(salesOut, "onboard next demo readiness") {
+		t.Fatalf("sales must not open demo readiness: %s", salesOut)
+	}
+
+	// claims stays sales claims (not demo readiness).
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next claims")
+	if err != nil {
+		t.Fatal(err)
+	}
+	claimsOut := out.String()
+	if !strings.Contains(claimsOut, "onboard next sales / buyer claims") {
+		t.Fatalf("claims must stay sales claims: %s", claimsOut)
+	}
+	if strings.Contains(claimsOut, "onboard next demo readiness") {
+		t.Fatalf("claims must not open demo readiness: %s", claimsOut)
+	}
+
+	// product stays three-planes (not demo readiness).
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next product")
+	if err != nil {
+		t.Fatal(err)
+	}
+	productOut := out.String()
+	if !strings.Contains(productOut, "onboard next three product planes") {
+		t.Fatalf("product must stay three planes: %s", productOut)
+	}
+	if strings.Contains(productOut, "onboard next demo readiness") {
+		t.Fatalf("product must not open demo readiness: %s", productOut)
+	}
+
+	// planes stays three-planes (not demo readiness).
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next planes")
+	if err != nil {
+		t.Fatal(err)
+	}
+	planesOut := out.String()
+	if !strings.Contains(planesOut, "onboard next three product planes") {
+		t.Fatalf("planes must stay three planes: %s", planesOut)
+	}
+	if strings.Contains(planesOut, "onboard next demo readiness") {
+		t.Fatalf("planes must not open demo readiness: %s", planesOut)
+	}
+
+	// gtm stays GTM draft lane (not demo readiness).
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next gtm")
+	if err != nil {
+		t.Fatal(err)
+	}
+	gtmOut := out.String()
+	if !strings.Contains(gtmOut, "onboard next gtm lane") {
+		t.Fatalf("gtm must stay gtm lane: %s", gtmOut)
+	}
+	if strings.Contains(gtmOut, "onboard next demo readiness") {
+		t.Fatalf("gtm must not open demo readiness: %s", gtmOut)
+	}
+
+	// pulse stays status board (not demo readiness).
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next pulse")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pulseOut := out.String()
+	if !strings.Contains(pulseOut, "onboard next lane status") {
+		t.Fatalf("pulse must stay status board: %s", pulseOut)
+	}
+	if strings.Contains(pulseOut, "onboard next demo readiness") {
+		t.Fatalf("pulse must not open demo readiness: %s", pulseOut)
 	}
 }
 
