@@ -674,7 +674,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"AionAgentOnboardingNextGtmLane",
 		"AionAgentOnboardingNextMemoryLane",
 		"plugins|gtm|memory",
-		// s1453+s1458 edge Memory OSS install honesty + M2 lean attach tip
+		// s1453+s1458+s1463+s1469 edge Memory OSS install honesty + M2 lean attach + M3 dogfood + M4 public flip readiness tip
 		"iomesh-memory-mcp",
 		"aion broker private",
 		"OSS path ≠ invent public flip complete",
@@ -685,6 +685,9 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"http://127.0.0.1:8080/mcp",
 		"scaffold/M2",
 		"PASS ≠ invent full platform sidecar parity",
+		"M4 public flip readiness",
+		"kernel first",
+		"residual PASS ≠ public flip",
 		"mesh optional for pull",
 		"Palace sunset",
 		// s1402 mesh streaming lane
