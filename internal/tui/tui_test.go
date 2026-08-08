@@ -1481,7 +1481,7 @@ func TestHandleSlash_OnboardNextMemoryPullLane(t *testing.T) {
 	}
 }
 
-// s1377+s1382+s1387+s1402+s1407: unknown /onboard next <lane> → overview + usage hint listing lanes.
+// s1377+s1382+s1387+s1402+s1407+s1413: unknown /onboard next <lane> → overview + usage hint listing lanes.
 func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -1503,6 +1503,7 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 		"memory-pull",
 		"status",
 		"export",
+		"human-gates",
 		"residual:",
 	} {
 		if !strings.Contains(s, want) {
@@ -1518,11 +1519,85 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	if strings.Contains(s, "onboard next memory-pull lane") {
 		t.Fatalf("unknown next lane must not drill into memory-pull lane: %s", s)
 	}
+	if strings.Contains(s, "human-gates honesty board") {
+		t.Fatalf("unknown next lane must not drill into human-gates board: %s", s)
+	}
 	if strings.Contains(s, "onboard next lane status") {
 		t.Fatalf("unknown next lane must not drill into status board: %s", s)
 	}
 	if strings.Contains(s, "evidence_kind=onboard_next_lane_status_export") {
 		t.Fatalf("unknown next lane must not emit export receipt: %s", s)
+	}
+}
+
+// s1413: /onboard next human-gates|human|gates|apply-gates — residual-honest still-required vs offline.
+func TestHandleSlash_OnboardNextHumanGates(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	needles := []string{
+		"human-gates honesty board",
+		"still_human",
+		"offline_residual_only",
+		"shipped_or_policy",
+		"Slack HMAC",
+		"Stripe Customers:Write",
+		"H1/H2 INSTALL_STORE",
+		"D1–D5",
+		"book-demo OFF",
+		"ON_SIGNAL",
+		"dual_write OFF",
+		"not Memory GA",
+		"PASS ≠ invent human-gate green",
+		"PASS ≠ live APPLY",
+		"open boxes stay open",
+		"Knowledge Beta→GA cannot invent H1/H2 offline",
+		"dry-run ≠ APPLY",
+		"analytical NO-install intentional",
+		"do NOT close human APPLY gates",
+		"make human-gates-status",
+		"never invent APPLY",
+		"Palace sunset",
+		"agent MCP cannot write installs",
+	}
+
+	for _, line := range []string{
+		"/onboard next human-gates",
+		"/onboard next human",
+		"/onboard next gates",
+		"/onboard next apply-gates",
+		"/aion-onboard after human-gates",
+		"/agent-onboard continue gates",
+		"/onboard lanes human",
+	} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "book-demo ON") {
+			t.Fatalf("%s must not invent dual_write ON / book-demo ON: %s", line, s)
+		}
+		if strings.Contains(s, "Memory GA shipped") || strings.Contains(s, "Connected: yes") {
+			t.Fatalf("%s must not invent Memory GA / Connected: %s", line, s)
+		}
+		// Must not be status board body title.
+		if strings.Contains(s, "onboard next lane status (") {
+			t.Fatalf("%s must not emit status board: %s", line, s)
+		}
+		if strings.Contains(s, "onboard next mesh lane") {
+			t.Fatalf("%s must not emit mesh lane body: %s", line, s)
+		}
 	}
 }
 
