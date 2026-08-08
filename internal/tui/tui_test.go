@@ -1268,7 +1268,7 @@ func TestHandleSlash_OnboardNextGtmLane(t *testing.T) {
 	}
 }
 
-// s1377+s1453: /onboard next memory|mcp|palace — residual-honest memory local + edge OSS drill.
+// s1377+s1453+s1458: /onboard next memory|mcp|palace — residual-honest memory local + edge OSS + M2 lean attach drill.
 func TestHandleSlash_OnboardNextMemoryLane(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -1278,6 +1278,12 @@ func TestHandleSlash_OnboardNextMemoryLane(t *testing.T) {
 		"onboard next memory lane",
 		"aion-memory-mcp",
 		"iomesh-memory-mcp",
+		"github.com/iome-sh/iomesh-memory-mcp",
+		"http://127.0.0.1:8080/mcp",
+		"stdio",
+		"M2 lean",
+		"scaffold/M2",
+		"PASS ≠ invent full platform sidecar parity",
 		"aion broker private",
 		"OSS path ≠ invent public flip complete",
 		"Memory Ops Pack",

@@ -261,6 +261,8 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"3.",
 		"aion-memory-mcp",
 		"iomesh-memory-mcp",
+		"github.com/iome-sh/iomesh-memory-mcp",
+		"M2 lean host",
 		"aion broker private",
 		"OSS path ≠ invent public flip complete",
 		"local-primary",
@@ -476,7 +478,7 @@ func TestAionAgentOnboardingNextGtmLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1377+s1453: AionAgentOnboardingNextMemoryLane residual-honest memory local + edge OSS needles.
+// s1377+s1453+s1458: AionAgentOnboardingNextMemoryLane residual-honest memory local + edge OSS + M2 lean attach needles.
 func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 	out := AionAgentOnboardingNextMemoryLane()
 	if out == "" {
@@ -485,16 +487,23 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 	for _, want := range []string{
 		"onboard next memory lane",
 		"no MCP dial",
-		"s1377+s1453",
+		"s1377+s1453+s1458",
 		"local-primary",
 		"github.com/iome-sh/memory",
+		"github.com/iome-sh/iomesh-memory-mcp",
 		"iomesh-memory-mcp",
-		"aion-memory-mcp", // today residual attach path
+		"aion-memory-mcp", // residual attach path still documented
 		"aion broker private",
 		"OSS path ≠ invent public flip complete",
 		"Edge OSS",
 		"Option A",
 		"streamable HTTP",
+		"http://127.0.0.1:8080/mcp",
+		"stdio",
+		"M2 lean",
+		"scaffold/M2",
+		"PASS ≠ invent full platform sidecar parity",
+		"tool parity may be lean",
 		"Palace sunset",
 		"mesh optional for pull",
 		"/onboard next memory-pull",
@@ -534,6 +543,9 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 	}
 	if strings.Contains(out, "public flip complete: yes") || strings.Contains(out, "OSS public flip complete") {
 		t.Fatalf("must not invent public OSS flip complete: %s", out)
+	}
+	if strings.Contains(out, "full platform sidecar parity: yes") || strings.Contains(out, "platform sidecar parity complete") {
+		t.Fatalf("must not invent full platform sidecar parity: %s", out)
 	}
 }
 
@@ -1372,7 +1384,7 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"no auto-send",
 		"GTM agent GA",
 		"GTM checklist ≠ invent GTM agent GA",
-		// memory honesty (+ s1453 edge OSS tip)
+		// memory honesty (+ s1453+s1458 edge OSS + M2 lean attach tip)
 		"dual_write OFF",
 		"package load ≠ Memory GA",
 		"local-primary",
@@ -1382,6 +1394,8 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"Palace sunset",
 		"mesh optional for pull",
 		"iomesh-memory-mcp",
+		"M2 lean attach",
+		"PASS ≠ invent full platform sidecar parity",
 		"aion broker private",
 		"OSS path ≠ invent public flip complete",
 		// mesh honesty (s1402)
@@ -1591,8 +1605,10 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 		"pull_not_probed",
 		"portal_hitl_still",
 		"list_plan_not_connected",
-		// memory edge OSS tip (s1453)
+		// memory edge OSS tip (s1453+s1458 M2 lean attach)
 		"iomesh-memory-mcp",
+		"M2 lean attach",
+		"PASS ≠ invent full platform sidecar parity",
 		"aion broker private",
 		"OSS path ≠ invent public flip complete",
 		"Palace sunset",
