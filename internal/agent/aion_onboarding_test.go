@@ -613,8 +613,11 @@ func TestAionAgentOnboardingNextMemoryPullLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1417: AionAgentOnboardingNextAgenticLane residual-honest product plane 3 agentic integrations needles.
+// s1417+s1422: AionAgentOnboardingNextAgenticLane residual-honest product plane 3 agentic integrations needles.
 func TestAionAgentOnboardingNextAgenticLane_HonestyNeedles(t *testing.T) {
+	ResetAgenticListPlanSoftDogfoodSessionState()
+	t.Cleanup(ResetAgenticListPlanSoftDogfoodSessionState)
+
 	out := AionAgentOnboardingNextAgenticLane()
 	if out == "" {
 		t.Fatal("empty agentic lane")
@@ -658,6 +661,15 @@ func TestAionAgentOnboardingNextAgenticLane_HonestyNeedles(t *testing.T) {
 		"portal handoff",
 		"does not claim dual-auth live for list_org",
 		"board/export evidence ≠ invent Connected",
+		// s1422 portal HITL polish + soft dogfood
+		"Portal HITL polish",
+		"list_plan_soft_not_run",
+		"/onboard next agentic dogfood",
+		"soft|samples|offline|list-plan-soft",
+		"soft offline list/plan ≠ live dogfood",
+		"session soft ≠ live dogfood",
+		"soft offline ≠ live dogfood",
+		"/onboard portal mint/copy/probe",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("agentic lane missing %q in:\n%s", want, out)
@@ -671,6 +683,97 @@ func TestAionAgentOnboardingNextAgenticLane_HonestyNeedles(t *testing.T) {
 	}
 	if strings.Contains(out, "install green: yes") || strings.Contains(out, "list_org Connected") {
 		t.Fatalf("must not invent install green / list_org Connected: %s", out)
+	}
+}
+
+// s1422: status/export reflect agentic list/plan session soft after dogfood.
+func TestAionAgentOnboardingNextLaneStatus_AgenticListPlanSoftDogfood(t *testing.T) {
+	ResetAgenticListPlanSoftDogfoodSessionState()
+	agentplugins.ResetSoftDogfoodSessionState()
+	t.Cleanup(func() {
+		ResetAgenticListPlanSoftDogfoodSessionState()
+		agentplugins.ResetSoftDogfoodSessionState()
+	})
+
+	// Default: list_plan_soft_not_run on agentic row
+	out := AionAgentOnboardingNextLaneStatus()
+	if !strings.Contains(out, "list_plan_soft_not_run") {
+		t.Fatalf("default status want list_plan_soft_not_run:\n%s", out)
+	}
+	if !strings.Contains(out, "list_plan_not_connected") {
+		t.Fatalf("default status still want list_plan_not_connected:\n%s", out)
+	}
+	if strings.Contains(out, "soft_offline_list_plan_session_pass") || strings.Contains(out, "soft_offline_list_plan_session_fail") {
+		t.Fatalf("default status must not show agentic soft pass/fail:\n%s", out)
+	}
+	// Plugins default independent
+	if !strings.Contains(out, "dogfood_not_run") {
+		t.Fatalf("plugins default dogfood_not_run still required:\n%s", out)
+	}
+
+	// Soft pass via runner
+	_ = RunAgenticListPlanSoftDogfood()
+	out = AionAgentOnboardingNextLaneStatus()
+	if !strings.Contains(out, "soft_offline_list_plan_session_pass") {
+		t.Fatalf("after pass want soft_offline_list_plan_session_pass:\n%s", out)
+	}
+	if strings.Contains(out, "· list_plan_soft_not_run") {
+		t.Fatalf("after pass agentic lane must not hardcode list_plan_soft_not_run as state:\n%s", out)
+	}
+	for _, want := range []string{
+		"session soft list/plan ≠ live dogfood",
+		"soft offline ≠ invent Connected",
+		"list_plan_not_connected",
+		"portal_hitl_still",
+		"not live dogfood",
+		"/onboard next agentic dogfood",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("pass status missing honesty %q:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "Connected: yes") || strings.Contains(out, "live dogfood green") {
+		t.Fatalf("pass status must not invent Connected/live:\n%s", out)
+	}
+	// Plugins soft still independent default
+	if !strings.Contains(out, "dogfood_not_run") {
+		t.Fatalf("agentic soft must not steal plugins dogfood marker:\n%s", out)
+	}
+
+	// Soft fail
+	SetAgenticListPlanSoftDogfoodSessionState(false)
+	out = AionAgentOnboardingNextLaneStatus()
+	if !strings.Contains(out, "soft_offline_list_plan_session_fail") {
+		t.Fatalf("after fail want soft_offline_list_plan_session_fail:\n%s", out)
+	}
+	if strings.Contains(out, "soft_offline_list_plan_session_pass") {
+		t.Fatalf("after fail must not show pass:\n%s", out)
+	}
+
+	// Export markdown + JSON follow session
+	exp := AionAgentOnboardingNextLaneStatusExport()
+	if !strings.Contains(exp, "soft_offline_list_plan_session_fail") {
+		t.Fatalf("export after fail want session fail:\n%s", exp)
+	}
+	if !strings.Contains(exp, "session soft list/plan ≠ live dogfood") {
+		t.Fatalf("export missing agentic session soft honesty:\n%s", exp)
+	}
+	if strings.Contains(exp, "Connected: yes") {
+		t.Fatalf("export must not invent Connected:\n%s", exp)
+	}
+
+	js := AionAgentOnboardingNextLaneStatusExportJSON()
+	if !strings.Contains(js, `"agentic_list_plan_soft_state": "soft_offline_list_plan_session_fail"`) {
+		t.Fatalf("export JSON want agentic_list_plan_soft_state fail:\n%s", js)
+	}
+	if !strings.Contains(js, "soft_offline_list_plan_session_fail") {
+		t.Fatalf("export JSON agentic lane want soft fail:\n%s", js)
+	}
+	if !strings.Contains(js, "session soft ≠ live dogfood") {
+		t.Fatalf("export JSON missing session soft honesty:\n%s", js)
+	}
+	if strings.Contains(js, "Connected: yes") {
+		t.Fatalf("export JSON must not invent Connected:\n%s", js)
 	}
 }
 
@@ -751,7 +854,11 @@ func TestAionAgentHumanGatesHonestyBoard_HonestyNeedles(t *testing.T) {
 // s1382: AionAgentOnboardingNextLaneStatus residual-honest lane status board needles.
 func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 	agentplugins.ResetSoftDogfoodSessionState()
-	t.Cleanup(agentplugins.ResetSoftDogfoodSessionState)
+	ResetAgenticListPlanSoftDogfoodSessionState()
+	t.Cleanup(func() {
+		agentplugins.ResetSoftDogfoodSessionState()
+		ResetAgenticListPlanSoftDogfoodSessionState()
+	})
 
 	out := AionAgentOnboardingNextLaneStatus()
 	if out == "" {
@@ -772,6 +879,7 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"portal:",
 		// honest state vocabulary (never invent connected/ga/apply/stream/pull green as success)
 		"dogfood_not_run",
+		"list_plan_soft_not_run",
 		"path_ready",
 		"skill_ready",
 		"residual_only",
@@ -964,7 +1072,11 @@ func TestAionAgentOnboardingNextLaneStatus_SessionSoftDogfood(t *testing.T) {
 // s1387: AionAgentOnboardingNextLaneStatusExport residual-honest markdown export receipt needles.
 func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 	agentplugins.ResetSoftDogfoodSessionState()
-	t.Cleanup(agentplugins.ResetSoftDogfoodSessionState)
+	ResetAgenticListPlanSoftDogfoodSessionState()
+	t.Cleanup(func() {
+		agentplugins.ResetSoftDogfoodSessionState()
+		ResetAgenticListPlanSoftDogfoodSessionState()
+	})
 
 	out := AionAgentOnboardingNextLaneStatusExport()
 	if out == "" {
@@ -978,7 +1090,7 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 		"serial=s1387",
 		"format=markdown",
 		"export receipt",
-		// lanes + s1382+s1402+s1407+s1417 vocabulary only
+		// lanes + s1382+s1402+s1407+s1417+s1422 vocabulary only
 		"plugins:",
 		"gtm:",
 		"memory:",
@@ -987,6 +1099,7 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 		"agentic:",
 		"portal:",
 		"dogfood_not_run",
+		"list_plan_soft_not_run",
 		"path_ready",
 		"skill_ready",
 		"residual_only",
@@ -1064,7 +1177,11 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 // s1387: AionAgentOnboardingNextLaneStatusExportJSON residual-honest JSON export needles.
 func TestAionAgentOnboardingNextLaneStatusExportJSON_HonestyNeedles(t *testing.T) {
 	agentplugins.ResetSoftDogfoodSessionState()
-	t.Cleanup(agentplugins.ResetSoftDogfoodSessionState)
+	ResetAgenticListPlanSoftDogfoodSessionState()
+	t.Cleanup(func() {
+		agentplugins.ResetSoftDogfoodSessionState()
+		ResetAgenticListPlanSoftDogfoodSessionState()
+	})
 
 	out := AionAgentOnboardingNextLaneStatusExportJSON()
 	if out == "" {
@@ -1078,6 +1195,7 @@ func TestAionAgentOnboardingNextLaneStatusExportJSON_HonestyNeedles(t *testing.T
 		`"format": "json"`,
 		`"dogfood_not_run": true`,
 		`"plugins_dogfood_state": "dogfood_not_run"`,
+		`"agentic_list_plan_soft_state": "list_plan_soft_not_run"`,
 		"path_ready",
 		"skill_ready",
 		"residual_only",
@@ -1092,6 +1210,7 @@ func TestAionAgentOnboardingNextLaneStatusExportJSON_HonestyNeedles(t *testing.T
 		"dual_write OFF",
 		"not Memory GA",
 		"session soft ≠ live dogfood",
+		"soft offline list/plan ≠ live dogfood",
 		"board/export evidence ≠ invent Connected",
 		"never invent install green / Connected / INSTALL_STORE APPLY",
 		"mesh = streaming org heartbeats",
@@ -1104,6 +1223,7 @@ func TestAionAgentOnboardingNextLaneStatusExportJSON_HonestyNeedles(t *testing.T
 		"template= ≠ install APPLY",
 		"/onboard next export",
 		"/onboard next mesh",
+		"/onboard next agentic dogfood",
 		"/onboard next memory-pull",
 		"/onboard next agentic",
 		"/plugins dogfood",
