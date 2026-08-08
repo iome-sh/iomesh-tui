@@ -235,7 +235,7 @@ func TestAionAgentOnboardingStatus_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1372+s1377+s1382+s1402+s1407: AionAgentOnboardingNextLanes residual-honest post-onboard continuum needles.
+// s1372+s1377+s1382+s1402+s1407+s1413: AionAgentOnboardingNextLanes residual-honest post-onboard continuum needles.
 func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 	out := AionAgentOnboardingNextLanes()
 	if out == "" {
@@ -289,6 +289,17 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"portal HITL",
 		"agent MCP cannot write installs",
 		"catalog ≠ Connected",
+		// s1413 human-gates
+		"7.",
+		"human-gates",
+		"/onboard next human-gates",
+		"human|gates|apply-gates",
+		"PASS ≠ invent human-gate green",
+		"PASS ≠ live APPLY",
+		"open boxes stay open",
+		"Slack HMAC",
+		"Stripe Customers:Write",
+		"H1/H2 INSTALL_STORE",
 		"book-demo OFF",
 		"not Memory GA",
 		"residual PASS ≠ live dogfood",
@@ -309,6 +320,8 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"pulse stays board",
 		"never invent pull green",
 		"pull ≠ freemium hosted palace",
+		"Knowledge Beta→GA cannot invent H1/H2 offline",
+		"leave ON_SIGNAL unset",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("next lanes missing %q in:\n%s", want, out)
@@ -586,6 +599,80 @@ func TestAionAgentOnboardingNextMemoryPullLane_HonestyNeedles(t *testing.T) {
 	}
 	if strings.Contains(out, "GPU fleet green") || strings.Contains(out, "freemium hosted palace ON") {
 		t.Fatalf("must not invent GPU fleet / freemium palace: %s", out)
+	}
+}
+
+// s1413: AionAgentHumanGatesHonestyBoard residual-honest still-required vs offline needles.
+func TestAionAgentHumanGatesHonestyBoard_HonestyNeedles(t *testing.T) {
+	out := AionAgentHumanGatesHonestyBoard()
+	if out == "" {
+		t.Fatal("empty human-gates honesty board")
+	}
+	for _, want := range []string{
+		"human-gates honesty board",
+		"no MCP dial",
+		"not live APPLY",
+		// sections
+		"still_human",
+		"offline_residual_only",
+		"shipped_or_policy",
+		"do_not_close",
+		// still human APPLY residuals
+		"Slack HMAC",
+		"Stripe Customers:Write",
+		"H1/H2 INSTALL_STORE",
+		"D1–D5",
+		"book-demo OFF",
+		"ON_SIGNAL",
+		"leave ON_SIGNAL unset",
+		// offline residual only
+		"residual gates",
+		"soft dogfood",
+		"agent MCP list/plan",
+		"dry-run",
+		"dry-run ≠ APPLY",
+		// shipped / policy
+		"GitHub App HMAC",
+		"dogfood-proven",
+		"dual_write OFF",
+		"Palace sunset",
+		"analytical NO-install intentional",
+		// do not close human APPLY
+		"do NOT close human APPLY gates",
+		"local memory",
+		// honesty locks
+		"PASS ≠ invent human-gate green",
+		"PASS ≠ live APPLY",
+		"open boxes stay open",
+		"Knowledge Beta→GA cannot invent H1/H2 offline",
+		"not Memory GA",
+		"never invent APPLY",
+		"catalog ≠ Connected",
+		"portal HITL",
+		"agent MCP cannot write installs",
+		"board/export evidence ≠ invent Connected",
+		"rates ~$88/$119 optional",
+		// operator
+		"make human-gates-status",
+		"/onboard next human-gates",
+		"human|gates|apply-gates",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("human-gates board missing %q in:\n%s", want, out)
+		}
+	}
+	// Forbidden invent tokens
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "book-demo ON") {
+		t.Fatalf("must not invent dual_write ON / book-demo ON: %s", out)
+	}
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent Memory GA / Connected green: %s", out)
+	}
+	if strings.Contains(out, "H1/H2 green: yes") || strings.Contains(out, "INSTALL_STORE APPLY: done") {
+		t.Fatalf("must not invent H1/H2 / INSTALL_STORE green: %s", out)
+	}
+	if strings.Contains(out, "human-gate green: yes") || strings.Contains(out, "ON_SIGNAL=1") {
+		t.Fatalf("must not invent human-gate green / ON_SIGNAL set: %s", out)
 	}
 }
 

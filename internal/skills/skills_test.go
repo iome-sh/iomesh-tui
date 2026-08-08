@@ -693,6 +693,19 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"ops-pack",
 		"pull-path",
 		"plugins|gtm|memory|mesh|memory-pull",
+		// s1413 human-gates honesty board
+		"/onboard next human-gates",
+		"AionAgentHumanGatesHonestyBoard",
+		"PASS ≠ invent human-gate green",
+		"PASS ≠ live APPLY",
+		"open boxes stay open",
+		"Slack HMAC",
+		"Stripe Customers:Write",
+		"H1/H2 INSTALL_STORE",
+		"Knowledge Beta→GA cannot invent H1/H2 offline",
+		"leave ON_SIGNAL unset",
+		"apply-gates",
+		"make human-gates-status",
 		// s1382 lane status board
 		"/onboard next status",
 		"AionAgentOnboardingNextLaneStatus",
@@ -707,7 +720,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"AionAgentOnboardingNextLaneStatusExport",
 		"evidence_kind=onboard_next_lane_status_export",
 		"board/export evidence ≠ invent Connected",
-		"plugins|gtm|memory|mesh|memory-pull|status|export",
+		"plugins|gtm|memory|mesh|memory-pull|status|export|human-gates",
 		// s1397 session soft dogfood on status/export
 		"soft_offline_dogfood_session_pass",
 		"soft_offline_dogfood_session_fail",
