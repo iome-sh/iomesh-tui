@@ -260,7 +260,9 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"/onboard next gtm",
 		"3.",
 		"aion-memory-mcp",
-		"Memory Ops Pack",
+		"iomesh-memory-mcp",
+		"aion broker private",
+		"OSS path ≠ invent public flip complete",
 		"local-primary",
 		"dual_write OFF",
 		"package load ≠ Memory GA",
@@ -474,7 +476,7 @@ func TestAionAgentOnboardingNextGtmLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1377: AionAgentOnboardingNextMemoryLane residual-honest memory local drill needles.
+// s1377+s1453: AionAgentOnboardingNextMemoryLane residual-honest memory local + edge OSS needles.
 func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 	out := AionAgentOnboardingNextMemoryLane()
 	if out == "" {
@@ -483,9 +485,20 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 	for _, want := range []string{
 		"onboard next memory lane",
 		"no MCP dial",
-		"aion-memory-mcp",
-		"Memory Ops Pack",
+		"s1377+s1453",
 		"local-primary",
+		"github.com/iome-sh/memory",
+		"iomesh-memory-mcp",
+		"aion-memory-mcp", // today residual attach path
+		"aion broker private",
+		"OSS path ≠ invent public flip complete",
+		"Edge OSS",
+		"Option A",
+		"streamable HTTP",
+		"Palace sunset",
+		"mesh optional for pull",
+		"/onboard next memory-pull",
+		"/onboard next operator",
 		"dual_write OFF",
 		"package load ≠ Memory GA",
 		"freemium palace",
@@ -495,6 +508,7 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 		"/onboard status",
 		"fail-open offline",
 		"residual PASS ≠ live dogfood",
+		"PASS ≠ live APPLY",
 		"probe only",
 		"never invent install green",
 		"Connected",
@@ -517,6 +531,9 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 	}
 	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "freemium palace GA") {
 		t.Fatalf("must not invent Memory GA / freemium palace: %s", out)
+	}
+	if strings.Contains(out, "public flip complete: yes") || strings.Contains(out, "OSS public flip complete") {
+		t.Fatalf("must not invent public OSS flip complete: %s", out)
 	}
 }
 
@@ -1355,13 +1372,18 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"no auto-send",
 		"GTM agent GA",
 		"GTM checklist ≠ invent GTM agent GA",
-		// memory honesty
+		// memory honesty (+ s1453 edge OSS tip)
 		"dual_write OFF",
 		"package load ≠ Memory GA",
 		"local-primary",
 		"freemium palace",
 		"not Memory GA",
 		"mesh ≠ memory",
+		"Palace sunset",
+		"mesh optional for pull",
+		"iomesh-memory-mcp",
+		"aion broker private",
+		"OSS path ≠ invent public flip complete",
 		// mesh honesty (s1402)
 		"streaming org heartbeats",
 		"not OTel/APM",
@@ -1569,6 +1591,12 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 		"pull_not_probed",
 		"portal_hitl_still",
 		"list_plan_not_connected",
+		// memory edge OSS tip (s1453)
+		"iomesh-memory-mcp",
+		"aion broker private",
+		"OSS path ≠ invent public flip complete",
+		"Palace sunset",
+		"mesh optional for pull",
 		// honesty locks
 		"dual_write OFF",
 		"book-demo OFF",

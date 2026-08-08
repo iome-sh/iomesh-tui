@@ -674,6 +674,14 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"AionAgentOnboardingNextGtmLane",
 		"AionAgentOnboardingNextMemoryLane",
 		"plugins|gtm|memory",
+		// s1453 edge Memory OSS install honesty
+		"iomesh-memory-mcp",
+		"aion broker private",
+		"OSS path ≠ invent public flip complete",
+		"Edge OSS Option A",
+		"github.com/iome-sh/memory",
+		"mesh optional for pull",
+		"Palace sunset",
 		// s1402 mesh streaming lane
 		"/onboard next mesh",
 		"AionAgentOnboardingNextMeshLane",

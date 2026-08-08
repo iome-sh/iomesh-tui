@@ -806,8 +806,9 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 						fmt.Fprintln(out, "— residual: gtm draft-only lane · drafts only · no auto-send · human publish · GTM checklist ≠ invent GTM agent GA · dual_write OFF · not Memory GA")
 						return false, nil
 					case "memory", "mcp", "palace":
+						// s1377+s1453: local-primary memory + edge OSS Option A naming honesty.
 						fmt.Fprintln(out, agent.AionAgentOnboardingNextMemoryLane())
-						fmt.Fprintln(out, "— residual: memory local lane · dual_write OFF · not Memory GA · package load ≠ Memory GA · ≠ freemium palace · mesh ≠ memory · portal HITL")
+						fmt.Fprintln(out, "— residual: memory local lane · dual_write OFF · not Memory GA · package load ≠ Memory GA · ≠ freemium palace · mesh ≠ memory · iomesh-memory-mcp · aion broker private · OSS path ≠ invent public flip complete · portal HITL")
 						return false, nil
 					case "mesh", "stream", "streams", "heartbeat", "heartbeats", "pull":
 						// s1402: mesh streaming lane (org heartbeats). NOT pulse — pulse stays status board.

@@ -187,7 +187,7 @@ func AionAgentOnboardingNextLanes() string {
      drill: /onboard next plugins (aliases plugin|dogfood) · slash: /plugins dogfood
   2. /gtm checklist + skill gtm-draft-only-agent — drafts only · no auto-send · human publish · GTM checklist ≠ invent GTM agent GA
      drill: /onboard next gtm (alias drafts)
-  3. local aion-memory-mcp / Memory Ops Pack local-primary — dual_write OFF · package load ≠ Memory GA · ≠ freemium palace
+  3. local-primary Memory edge (TUI + Memory MCP + memory kernel + local palace) — dual_write OFF · package load ≠ Memory GA · ≠ freemium palace · product host iomesh-memory-mcp · aion broker private · OSS path ≠ invent public flip complete (s1453) · today residual aion-memory-mcp / streamable HTTP attach
      drill: /onboard next memory (aliases mcp|palace)
   4. I/O Mesh streaming org heartbeats on dept.* — mesh ≠ memory · not OTel/APM · not hosted Memory Palace · empty streams honest
      drill: /onboard next mesh (aliases stream|streams|heartbeat|heartbeats|pull) · residual soft: /mesh · iomesh mesh status|streams|consumer
@@ -252,26 +252,38 @@ func AionAgentOnboardingNextGtmLane() string {
 Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · drafts only · no auto-send · human publish · GTM checklist ≠ invent GTM agent GA · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · rates ~$88/$119 optional`)
 }
 
-// AionAgentOnboardingNextMemoryLane residual-honest memory local drill for /onboard next memory (s1377).
-// Static offline — aion-memory-mcp / Memory Ops Pack local-primary. Never invents Memory GA,
-// freemium palace, dual_write ON, or install Connected.
+// AionAgentOnboardingNextMemoryLane residual-honest memory local drill for /onboard next memory (s1377+s1453).
+// Static offline — local-primary Memory edge (TUI + Memory MCP + github.com/iome-sh/memory kernel + local palace).
+// Naming honesty (s1453 Option A): product MCP host = iomesh-memory-mcp (not aion-memory-mcp for product edge);
+// aion = private cloud broker. Today may still attach streamable HTTP MCP (local edge docker when available)
+// or residual aion-memory-mcp path. Never invents Memory GA, freemium palace, dual_write ON, install Connected,
+// or public OSS flip complete.
 func AionAgentOnboardingNextMemoryLane() string {
-	return strings.TrimSpace(`aion onboard next memory lane (residual-honest · s1377 · no MCP dial):
-  Path: local aion-memory-mcp / Memory Ops Pack local-primary — dual_write OFF
+	return strings.TrimSpace(`aion onboard next memory lane (residual-honest · s1377+s1453 · no MCP dial):
+  Path: local-primary Memory edge — TUI + Memory MCP + github.com/iome-sh/memory kernel + local palace — dual_write OFF
+  Edge OSS (Option A · s1453 · residual-honest install story):
+    · product MCP host name = iomesh-memory-mcp (not aion-memory-mcp for product naming) · future host / GHCR residual
+    · kernel = github.com/iome-sh/memory · aion broker private (cloud CP stays private · not OSS edge pack)
+    · OSS path ≠ invent public flip complete · cleanup-before-OSS residual · peer s1452 OSS bar mention only
+    · Today attach residual: streamable HTTP MCP (local edge docker when available) or aion-memory-mcp binary residual · package load ≠ Memory GA
   Steps:
-    1. Attach aion-memory-mcp (local-primary) — package load ≠ Memory GA · ≠ freemium palace
-    2. dual_write OFF · local-primary only · not Memory GA
+    1. Attach Memory MCP local-primary (streamable HTTP or residual aion-memory-mcp) — package load ≠ Memory GA · ≠ freemium palace
+    2. dual_write OFF · local-primary only · not Memory GA · Palace sunset
     3. Optional: read_skill memory-advanced-agent (opt-in advanced · still dual_write OFF · not Memory GA)
-    4. Operator pulse: /memory status · /onboard status (fail-open offline · never invent tool green)
+    4. Optional mesh pull only: /onboard next memory-pull · Memory Ops Pack optional (~$119 pull/retain) · mesh optional for pull · dual_write OFF
+    5. Operator pulse: /memory status · /onboard status · /onboard next operator (fail-open offline · never invent tool green)
   Honesty:
-    · package load ≠ Memory GA · ≠ freemium palace · dual_write OFF
-    · residual PASS ≠ live dogfood · test invoke = probe only ≠ Memory GA
+    · package load ≠ Memory GA · ≠ freemium palace · dual_write OFF · Palace sunset
+    · residual PASS ≠ live dogfood · test invoke = probe only ≠ Memory GA · PASS ≠ live APPLY
     · never invent install green / Connected / INSTALL_STORE APPLY
     · catalog ≠ Connected · portal HITL · agent MCP cannot write installs
-    · mesh ≠ memory · memory lane is local-edge palace, not streaming org heartbeats
+    · mesh ≠ memory · mesh optional for pull only · memory lane is local-edge palace, not streaming org heartbeats
+    · iomesh-memory-mcp naming honesty · aion broker private · OSS path ≠ invent public flip complete
+    · rates ~$88 mesh / ~$119 Memory Ops Pack optional · package load ≠ Memory GA
+  Companion: /onboard next memory-pull · /onboard next operator · docs/architecture/memory-mcp.md Edge OSS Option A
   Back: /onboard next · /memory status · portal Agent/MCP https://console.iome.sh/settings/agent
 
-Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · package load ≠ Memory GA · ≠ freemium palace · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · rates ~$88/$119 optional · mesh ≠ memory`)
+Locks: dual_write OFF · book-demo OFF · not Memory GA · Palace sunset · residual PASS ≠ live dogfood · PASS ≠ live APPLY · package load ≠ Memory GA · ≠ freemium palace · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · rates ~$88/$119 optional · Memory Ops Pack optional · mesh ≠ memory · mesh optional for pull · iomesh-memory-mcp · aion broker private · OSS path ≠ invent public flip complete`)
 }
 
 // AionAgentOnboardingNextMeshLane residual-honest mesh streaming lane for /onboard next mesh (s1402).
@@ -741,8 +753,9 @@ func AionAgentOnboardingNextLaneStatus() string {
     · drill: /onboard next gtm (alias drafts)
 
   memory: path_ready · residual_only
-    · dual_write OFF · local-primary · package load ≠ Memory GA · ≠ freemium palace
-    · not Memory GA · book-demo OFF · rates ~$88/$119 optional · mesh ≠ memory
+    · dual_write OFF · local-primary · package load ≠ Memory GA · ≠ freemium palace · Palace sunset
+    · not Memory GA · book-demo OFF · rates ~$88/$119 optional · mesh ≠ memory · mesh optional for pull
+    · edge OSS tip (s1453): iomesh-memory-mcp product host · aion broker private · OSS path ≠ invent public flip complete
     · drill: /onboard next memory (aliases mcp|palace)
 
   mesh: path_ready · residual_only · streams_not_probed
@@ -826,8 +839,9 @@ gtm: skill_ready · path_ready · residual_only
   · drill: /onboard next gtm (alias drafts)
 
 memory: path_ready · residual_only
-  · dual_write OFF · local-primary · package load ≠ Memory GA · ≠ freemium palace
-  · not Memory GA · book-demo OFF · rates ~$88/$119 optional · mesh ≠ memory
+  · dual_write OFF · local-primary · package load ≠ Memory GA · ≠ freemium palace · Palace sunset
+  · not Memory GA · book-demo OFF · rates ~$88/$119 optional · mesh ≠ memory · mesh optional for pull
+  · edge OSS tip (s1453): iomesh-memory-mcp product host · aion broker private · OSS path ≠ invent public flip complete
   · drill: /onboard next memory (aliases mcp|palace)
 
 mesh: path_ready · residual_only · streams_not_probed

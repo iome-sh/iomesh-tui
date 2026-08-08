@@ -1268,7 +1268,7 @@ func TestHandleSlash_OnboardNextGtmLane(t *testing.T) {
 	}
 }
 
-// s1377: /onboard next memory|mcp|palace — residual-honest memory local lane drill.
+// s1377+s1453: /onboard next memory|mcp|palace — residual-honest memory local + edge OSS drill.
 func TestHandleSlash_OnboardNextMemoryLane(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -1277,12 +1277,16 @@ func TestHandleSlash_OnboardNextMemoryLane(t *testing.T) {
 	needles := []string{
 		"onboard next memory lane",
 		"aion-memory-mcp",
+		"iomesh-memory-mcp",
+		"aion broker private",
+		"OSS path ≠ invent public flip complete",
 		"Memory Ops Pack",
 		"local-primary",
 		"dual_write OFF",
 		"package load ≠ Memory GA",
 		"freemium palace",
 		"not Memory GA",
+		"Palace sunset",
 		"/memory status",
 		"residual PASS ≠ live dogfood",
 		"portal HITL",
