@@ -46,6 +46,7 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 | **3 semantic + ingest-event (s1301)** | **done (opt-in · MCP-first)** | `/memory semantic` → MCP `memory_search_semantic` (tier-4 semantic facts residual · empty ≠ invent); `/memory ingest-event` → MCP `memory_ingest_event` (s138 T1 temporal event telemetry · not conversation turn · never invent memory_id); not Memory GA · dual_write OFF · no lean HTTP invent |
 | **3 local-edge Docker attach docs (s1308)** | **done (docs only)** | Operator/agent docs for attaching **local-edge Docker** `aion-memory-mcp` streamable HTTP (peer aion **s1306** compose + residual **s1307**); TUI `[[mcp.servers]]` URL attach · dual_write OFF · local-primary · hosted Palace sunset · **not** Memory GA · docker edge ≠ invent GA · no public registry tag claim |
 | **3 edge OSS Option A install honesty (s1453)** | **done (docs + onboard memory lane)** | Residual-honest edge install story: product MCP host **`iomesh-memory-mcp`** · kernel `github.com/iome-sh/memory` · aion broker **private** · dual_write OFF · not Memory GA · Palace sunset · mesh optional for pull · **OSS path ≠ invent public flip complete** |
+| **3 M2 lean host attach tip (s1458)** | **done (docs + onboard memory lane)** | Residual-honest **M2 lean edge host** attach when built from `github.com/iome-sh/iomesh-memory-mcp`: go run/build · streamable HTTP `http://127.0.0.1:8080/mcp` or stdio · dual_write OFF · not Memory GA · aion broker private · scaffold/M2 · tool parity may be lean vs platform residual · **PASS ≠ invent full platform sidecar parity** · keeps Option A honesty |
 | **3 trigger-compact HITL + advanced status (s1311)** | **done (opt-in · MCP-first · HITL)** | `/memory trigger-compact --i-confirm` → MCP `memory_trigger_compact` (RecMem advisory · mutating HITL · refuse without confirm); `/memory status` prints `MemoryStatusLine` + `MemoryAdvancedStatus` residual inventory (related · facts-as-of · supersede · timeline · compact-status · semantic · ingest-event · patterns · anomalies · digest · trigger-compact); dual_write OFF · not Memory GA · not invent compaction green · no lean HTTP invent |
 | **4 pull (s652)** | **done (M1)** | `iomesh memory pull` — durable mesh consumer → local MCP `memory_ingest_turn` (cost-max local palace; dual_write remains optional audit) |
 
@@ -261,14 +262,14 @@ iomesh
 
 See also [Local edge stack (s761/s765)](#local-edge-stack-s761-product--s765-completeness-pin) · [Local-primary LT honesty (s768)](#local-primary-lt-honesty-s768-pin) · [Edge OSS Option A (s1453)](#edge-oss-option-a-s1453) · [mcp.md](./mcp.md) streamable HTTP.
 
-#### Edge OSS Option A (s1453)
+#### Edge OSS Option A (s1453) · M2 lean attach (s1458)
 
 Residual-honest **edge Memory OSS install path** for operators (docs + `/onboard next memory` lane honesty — **does not** invent public flip complete, Memory GA, or Connected green):
 
 | Layer | Role | Honesty |
 |-------|------|---------|
 | **iomesh-tui** | Public MIT agent harness | Already public · local-primary client |
-| **Memory MCP host** | Product name **`iomesh-memory-mcp`** (future extract / GHCR residual) | **Not** `aion-memory-mcp` for product edge naming |
+| **Memory MCP host** | Product name **`iomesh-memory-mcp`** (M2 lean scaffold · GHCR residual) | **Not** `aion-memory-mcp` for product edge naming |
 | **Kernel** | `github.com/iome-sh/memory` | Private until cleanup-to-TUI-bar + flip (peer free eng **s1452** OSS bar — mention only) |
 | **Local palace** | FS palace via MCP (`-palace-root` / docker edge) | Hosted Palace **sunset** · dual_write **OFF** |
 | **aion broker / CP** | Private cloud control plane | **Stays private** · not OSS edge pack |
@@ -281,13 +282,27 @@ iomesh-tui (public MIT)  +  Memory MCP (iomesh-memory-mcp product name)  +  gith
 
 Optional mesh feed: credentials + platform + **Memory Ops Pack (~$119)** for durable `iomesh memory pull` only — mesh base footprint separate (~$88). Mesh is **optional for pull only**, not required for local-primary Memory.
 
-**Today residual attach (not invent flip complete):**
+**M2 lean host attach (s1458 · residual-honest · not invent flip complete / GA):**
+
+When built from **`github.com/iome-sh/iomesh-memory-mcp`** (peer free eng M2 scaffold · mention only):
+
+| Surface | Residual honesty |
+|---------|------------------|
+| **Product host** | **`iomesh-memory-mcp`** · go run / go build from that repo |
+| **Attach** | Streamable HTTP `http://127.0.0.1:8080/mcp` **or** stdio · TUI `[[mcp.servers]]` URL or command |
+| **dual_write** | **OFF** · not primary palace path |
+| **not Memory GA** | M2 lean edge ≠ product Memory GA / multi-tenant hosted palace |
+| **aion broker private** | Cloud broker/CP stays private · not OSS edge pack |
+| **scaffold/M2 residual** | Tool parity may be **lean** vs platform residual sidecar · **PASS ≠ invent full platform sidecar parity** |
+| **public flip** | **OSS path ≠ invent public flip complete** · M2 scaffold ≠ M4 public flip |
+
+**Also residual attach (not invent flip complete):**
 
 - Streamable HTTP MCP (local edge docker when available — peer aion s1306 compose; see [Local-edge Docker](#local-edge-docker-memory-mcp-s1308--peer-aion-s1306) above)
 - Or residual `aion-memory-mcp` binary / sample map path (`examples/agent-plugins/aion-memory-mcp`)
-- Package load ≠ Memory GA · docker edge ≠ invent GA · **OSS path ≠ invent public flip complete**
+- Package load ≠ Memory GA · docker edge ≠ invent GA · **OSS path ≠ invent public flip complete** · lean/M2 ≠ invent platform sidecar parity
 
-**Honesty hard locks (s1453):**
+**Honesty hard locks (s1453+s1458):**
 
 | Claim | Truth |
 |-------|--------|
@@ -296,11 +311,13 @@ Optional mesh feed: credentials + platform + **Memory Ops Pack (~$119)** for dur
 | **Palace sunset** | Hosted cloud Palace sunset until scale |
 | **mesh optional** | Mesh optional for pull only · memory lane is local-edge palace |
 | **iomesh-memory-mcp** | Product MCP host naming · not `aion-memory-mcp` for public product host |
+| **M2 lean attach** | Host available when built from `github.com/iome-sh/iomesh-memory-mcp` · HTTP `:8080/mcp` or stdio · scaffold/M2 |
 | **aion broker private** | aion cloud broker/CP stays private · not open-sourced with edge pack |
 | **OSS path ≠ invent public flip complete** | Naming + install story residual · public kernel/host flip not claimed complete |
+| **PASS ≠ invent full platform sidecar parity** | Lean M2 tool surface may lag platform residual · attach residual ≠ invent full parity |
 | **never invent Connected** | Attach residual fail-open · residual PASS ≠ live dogfood · PASS ≠ live APPLY |
 
-Operator surfaces: `/onboard next memory` · `/onboard next memory-pull` · `/onboard next operator` · peer free eng s1452 OSS bar (mention only) · aion residual s1454 (mention only).
+Operator surfaces: `/onboard next memory` · `/onboard next memory-pull` · `/onboard next operator` · peer free eng s1452 OSS bar (mention only) · peer free eng M2 scaffold s1457 (mention only) · aion residual s1454/s1459 (mention only).
 
 ### Temporal retrieve options (s1068)
 
@@ -684,6 +701,7 @@ Opt-in residual-honest mutating compact advisory + operator inventory pulse:
 - Do not claim temporal pipeline is live unless stage/prod embedding + temporal flags are on.
 - **s1308:** local-edge Docker MCP attach (peer aion s1306) is customer-edge FS palace only — dual_write OFF · hosted Palace sunset · **not** Memory GA · docker edge ≠ invent GA · local image tag ≠ public registry claim.
 - **s1453:** edge OSS Option A residual-honest install story — product host **`iomesh-memory-mcp`** · kernel `github.com/iome-sh/memory` · aion broker **private** · dual_write OFF · not Memory GA · Palace sunset · mesh optional for pull · **OSS path ≠ invent public flip complete**.
+- **s1458:** M2 lean edge host attach tip — when built from `github.com/iome-sh/iomesh-memory-mcp`: go run/build · streamable HTTP `http://127.0.0.1:8080/mcp` or stdio · dual_write OFF · not Memory GA · aion broker private · scaffold/M2 · tool parity may be lean vs platform residual · **PASS ≠ invent full platform sidecar parity** · keeps Option A honesty.
 
 
 ## s1069 recall efficiency

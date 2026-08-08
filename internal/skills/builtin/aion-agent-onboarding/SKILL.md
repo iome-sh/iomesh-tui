@@ -121,12 +121,13 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|mesh|me
    - GTM checklist ≠ invent GTM agent GA · no auto-send · human CRM commercial.
    - Companion: `read_skill gtm-draft-only-agent` · slash `/gtm [help|checklist]`.
 
-#### D3. Memory local lane (`/onboard next memory` · s1377+s1453)
+#### D3. Memory local lane (`/onboard next memory` · s1377+s1453+s1458)
 
 3. **local-primary Memory edge** — TUI + Memory MCP + `github.com/iome-sh/memory` kernel + local palace · dual_write **OFF**.
    - Package load ≠ Memory GA · ≠ freemium palace · local-primary only · **Palace sunset**.
    - **Edge OSS Option A (s1453):** product MCP host = **`iomesh-memory-mcp`** (not `aion-memory-mcp` for product naming) · aion = **private** cloud broker · kernel module `github.com/iome-sh/memory`.
-   - **Today residual attach:** streamable HTTP MCP (local edge docker when available) or residual `aion-memory-mcp` path · **OSS path ≠ invent public flip complete**.
+   - **M2 lean host attach (s1458):** when built from **`github.com/iome-sh/iomesh-memory-mcp`** — go run / go build · streamable HTTP `http://127.0.0.1:8080/mcp` or stdio · dual_write **OFF** · not Memory GA · aion broker private · residual: **scaffold/M2** · tool parity may be lean vs platform residual · **PASS ≠ invent full platform sidecar parity**.
+   - **Also residual attach:** local edge docker (when available) or residual `aion-memory-mcp` path · **OSS path ≠ invent public flip complete**.
    - Mesh **optional for pull only** · companion `/onboard next memory-pull` · `/onboard next operator`.
    - Optional advanced memory via `memory-advanced-agent` skill (opt-in).
    - Operator pulse: `/memory status` · `/onboard status`.
@@ -274,7 +275,7 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|mesh|me
    - Honest state vocabulary only: `path_ready` · `samples_ok` · `samples_missing` · `dogfood_not_run` · `soft_offline_dogfood_session_pass` · `soft_offline_dogfood_session_fail` · `skill_ready` · `residual_only` · `streams_not_probed` · `pull_not_probed` · `portal_hitl_still` · `list_plan_not_connected` · `list_plan_soft_not_run` · `soft_offline_list_plan_session_pass` · `soft_offline_list_plan_session_fail` · `dual_auth_candidacy_open` · `list_org_unavailable`.
    - **plugins:** soft-check of sample dirs (`examples/agent-plugins`) · default `dogfood_not_run` · after `/plugins dogfood` session soft pass/fail (s1397) · **session soft ≠ live dogfood** · ≠ invent Agent Plugins GA · board ≠ invent Connected.
    - **gtm:** skill/checklist path ready · drafts only · no auto-send · ≠ invent GTM agent GA.
-   - **memory:** dual_write OFF · package load ≠ Memory GA · local-primary ≠ freemium palace · mesh ≠ memory · **s1453** edge OSS tip (`iomesh-memory-mcp` · aion broker private · OSS path ≠ invent public flip complete · mesh optional for pull · Palace sunset).
+   - **memory:** dual_write OFF · package load ≠ Memory GA · local-primary ≠ freemium palace · mesh ≠ memory · **s1453+s1458** edge OSS tip (`iomesh-memory-mcp` · M2 lean attach when built · dual_write OFF · not Memory GA · aion broker private · OSS path ≠ invent public flip complete · scaffold/M2 · PASS ≠ invent full platform sidecar parity · mesh optional for pull · Palace sunset).
    - **mesh (s1402):** `path_ready` · `residual_only` · `streams_not_probed` · streaming org heartbeats · not OTel/APM · never invent stream green / Connected · empty streams honest.
    - **memory-pull (s1407):** `path_ready` · `residual_only` · `pull_not_probed` · Ops Pack pull path · pull ≠ freemium hosted palace · Ops Pack ≠ GPU fleet · never invent pull green.
    - **agentic (s1417+s1422+s1427):** `path_ready` · `residual_only` · `portal_hitl_still` · `list_plan_not_connected` · `<soft label>` · `dual_auth_candidacy_open` · `list_org_unavailable` · product plane 3 MCP list/plan residual-honest · never invent Connected · plan deep links = browser HITL only · template= ≠ install APPLY · session soft list/plan ≠ live dogfood · soft offline ≠ invent Connected · **tool ship ≠ dual-auth live**.
@@ -323,6 +324,8 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|mesh|me
 | drafts only · no auto-send | GTM / post-onboard lanes never auto-send or auto-publish; human publish |
 | package load ≠ Memory GA | Loading aion-memory-mcp / Ops Pack local ≠ invent Memory Palace GA / freemium palace |
 | iomesh-memory-mcp | Product edge MCP host naming (s1453 Option A) · not `aion-memory-mcp` for public product host |
+| M2 lean attach (s1458) | Host available when built from `github.com/iome-sh/iomesh-memory-mcp` · go run/build · HTTP `http://127.0.0.1:8080/mcp` or stdio · dual_write OFF · scaffold/M2 |
+| PASS ≠ invent full platform sidecar parity | Lean M2 tool surface may lag platform residual · attach residual ≠ invent full parity |
 | aion broker private | aion stays private cloud broker/CP · not OSS edge pack |
 | OSS path ≠ invent public flip complete | Edge OSS Option A residual-honest · public kernel/host flip not claimed complete |
 | mesh optional for pull | Mesh is optional feed via pull only · not required for local-primary Memory |
@@ -365,6 +368,7 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|mesh|me
 - Do **not** invent GTM agent GA from `/gtm checklist` / draft-only skill.
 - Do **not** invent Memory GA / freemium palace from local `aion-memory-mcp` package load.
 - Do **not** invent public OSS flip complete / Memory GA from edge OSS Option A residual (`iomesh-memory-mcp` naming · aion broker private · peer s1452 bar mention only).
+- Do **not** invent full platform sidecar parity / Memory GA from M2 lean host attach residual (`iomesh-memory-mcp` scaffold/M2 · dual_write OFF · PASS ≠ invent full platform sidecar parity · s1458).
 - Do **not** invent Connected / GA / APPLY from board or export receipt evidence stamps.
 - Do **not** treat session soft dogfood pass/fail as live dogfood or Agent Plugins GA.
 - Do **not** invent stream green / Connected / live mesh from residual soft status/streams (empty streams honest · `streams_not_probed`).
