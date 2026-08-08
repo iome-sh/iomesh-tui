@@ -344,6 +344,13 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"Landgrab NOT READY",
 		"book-demo OFF",
 		"residual PASS ≠ logos met",
+		// s1447 operator readiness matrix cross-link
+		"/onboard next operator",
+		"operator readiness matrix",
+		"operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix",
+		"still_human",
+		"policy_off",
+		"not_ready",
 		// pulse stays board (not mesh alias)
 		"pulse stays board",
 		"never invent pull green",
@@ -976,6 +983,98 @@ func TestAionAgentOnboardingNextDemoReadiness_HonestyNeedles(t *testing.T) {
 }
 
 // s1427: AionAgentOnboardingNextAgenticDualAuthCandidacy residual-honest dual-auth candidacy needles.
+// s1447: AionAgentOnboardingNextOperatorMatrix residual-honest operator readiness matrix needles.
+func TestAionAgentOnboardingNextOperatorMatrix_HonestyNeedles(t *testing.T) {
+	out := AionAgentOnboardingNextOperatorMatrix()
+	if out == "" {
+		t.Fatal("empty operator readiness matrix")
+	}
+	for _, want := range []string{
+		"onboard next operator readiness matrix",
+		"no MCP dial",
+		"s1447",
+		// honest vocab
+		"residual_only",
+		"path_ready",
+		"still_human",
+		"policy_off",
+		"not_ready",
+		"portal_hitl_still",
+		// row 1 demo
+		"Demo readiness",
+		"Lighthouse beachhead",
+		"book-demo OFF",
+		"Landgrab NOT READY",
+		"residual PASS ≠ logos met",
+		"/onboard next demo",
+		// row 2 sales
+		"Sales claims",
+		"may claim / must not claim",
+		"/onboard next sales",
+		// row 3 planes
+		"Three product planes",
+		"mesh · memory-pull · agentic",
+		"streams_not_probed",
+		"pull_not_probed",
+		"list_plan_not_connected",
+		"/onboard next planes",
+		// row 4 human gates
+		"Human gates",
+		"Slack HMAC",
+		"Stripe Customers:Write",
+		"H1/H2 INSTALL_STORE",
+		"/onboard next human-gates",
+		"PASS ≠ invent human-gate green",
+		"open boxes stay open",
+		// row 5 dual-auth
+		"dual_auth_candidacy_open",
+		"list_org_unavailable",
+		"tool ship ≠ dual-auth live",
+		"/onboard next agentic dual-auth",
+		// row 6 policy
+		"dual_write OFF",
+		"not Memory GA",
+		"leave ON_SIGNAL unset",
+		"rates ~$88",
+		"~$119",
+		// row 7 export
+		"/onboard next export",
+		"board/export evidence ≠ invent Connected",
+		// honesty locks
+		"never invent Connected",
+		"residual PASS ≠ live dogfood",
+		"PASS ≠ live APPLY",
+		// slash + aliases
+		"/onboard next operator",
+		"operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix",
+		// do not steal
+		"NOT demo|readiness|lighthouse|landgrab",
+		"NOT sales|claims",
+		"NOT product|planes",
+		"NOT pulse|board",
+		"NOT export|receipt",
+		// companions
+		"/onboard next agentic",
+		"/onboard next status",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("operator readiness matrix missing %q in:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
+	}
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "book-demo ON") {
+		t.Fatalf("must not invent Memory GA shipped / book-demo ON: %s", out)
+	}
+	if strings.Contains(out, "Landgrab READY: yes") || strings.Contains(out, "Landgrab: READY") {
+		t.Fatalf("must not invent Landgrab READY: %s", out)
+	}
+	if strings.Contains(out, "dual-auth live: yes") || strings.Contains(out, "INSTALL_STORE APPLY success") {
+		t.Fatalf("must not invent dual-auth live / INSTALL_STORE APPLY success: %s", out)
+	}
+}
+
 func TestAionAgentOnboardingNextAgenticDualAuthCandidacy_HonestyNeedles(t *testing.T) {
 	out := AionAgentOnboardingNextAgenticDualAuthCandidacy()
 	if out == "" {
