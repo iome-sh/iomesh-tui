@@ -47,6 +47,7 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 | **3 local-edge Docker attach docs (s1308)** | **done (docs only)** | Operator/agent docs for attaching **local-edge Docker** `aion-memory-mcp` streamable HTTP (peer aion **s1306** compose + residual **s1307**); TUI `[[mcp.servers]]` URL attach · dual_write OFF · local-primary · hosted Palace sunset · **not** Memory GA · docker edge ≠ invent GA · no public registry tag claim |
 | **3 edge OSS Option A install honesty (s1453)** | **done (docs + onboard memory lane)** | Residual-honest edge install story: product MCP host **`iomesh-memory-mcp`** · kernel `github.com/iome-sh/memory` · aion broker **private** · dual_write OFF · not Memory GA · Palace sunset · mesh optional for pull · **OSS path ≠ invent public flip complete** |
 | **3 M2 lean host attach tip (s1458)** | **done (docs + onboard memory lane)** | Residual-honest **M2 lean edge host** attach when built from `github.com/iome-sh/iomesh-memory-mcp`: go run/build · streamable HTTP `http://127.0.0.1:8080/mcp` or stdio · dual_write OFF · not Memory GA · aion broker private · scaffold/M2 · tool parity may be lean vs platform residual · **PASS ≠ invent full platform sidecar parity** · keeps Option A honesty |
+| **3 M3 edge dogfood tip (s1463)** | **done (docs + onboard memory lane)** | Residual-honest **M3 edge dogfood** TUI↔`iomesh-memory-mcp` path: build/run from product repo · `docker compose up --build` → image `iomesh-memory-mcp:local` · attach `http://127.0.0.1:8080/mcp` · healthz · stdio alternate · peer mcp `make edge-dogfood-gate` (mention only) · dual_write OFF · not Memory GA · still private · **offline dogfood tip ≠ invent live dogfood as green** · **PASS ≠ invent full platform sidecar parity** · residual PASS ≠ public flip · M3 after M2 · M4 later deliberate |
 | **3 trigger-compact HITL + advanced status (s1311)** | **done (opt-in · MCP-first · HITL)** | `/memory trigger-compact --i-confirm` → MCP `memory_trigger_compact` (RecMem advisory · mutating HITL · refuse without confirm); `/memory status` prints `MemoryStatusLine` + `MemoryAdvancedStatus` residual inventory (related · facts-as-of · supersede · timeline · compact-status · semantic · ingest-event · patterns · anomalies · digest · trigger-compact); dual_write OFF · not Memory GA · not invent compaction green · no lean HTTP invent |
 | **4 pull (s652)** | **done (M1)** | `iomesh memory pull` — durable mesh consumer → local MCP `memory_ingest_turn` (cost-max local palace; dual_write remains optional audit) |
 
@@ -262,14 +263,14 @@ iomesh
 
 See also [Local edge stack (s761/s765)](#local-edge-stack-s761-product--s765-completeness-pin) · [Local-primary LT honesty (s768)](#local-primary-lt-honesty-s768-pin) · [Edge OSS Option A (s1453)](#edge-oss-option-a-s1453) · [mcp.md](./mcp.md) streamable HTTP.
 
-#### Edge OSS Option A (s1453) · M2 lean attach (s1458)
+#### Edge OSS Option A (s1453) · M2 lean attach (s1458) · M3 edge dogfood (s1463)
 
-Residual-honest **edge Memory OSS install path** for operators (docs + `/onboard next memory` lane honesty — **does not** invent public flip complete, Memory GA, or Connected green):
+Residual-honest **edge Memory OSS install path** for operators (docs + `/onboard next memory` lane honesty — **does not** invent public flip complete, Memory GA, live dogfood green, or Connected green):
 
 | Layer | Role | Honesty |
 |-------|------|---------|
 | **iomesh-tui** | Public MIT agent harness | Already public · local-primary client |
-| **Memory MCP host** | Product name **`iomesh-memory-mcp`** (M2 lean scaffold · GHCR residual) | **Not** `aion-memory-mcp` for product edge naming |
+| **Memory MCP host** | Product name **`iomesh-memory-mcp`** (M2 lean scaffold · M3 dogfood tip · GHCR residual) | **Not** `aion-memory-mcp` for product edge naming |
 | **Kernel** | `github.com/iome-sh/memory` | Private until cleanup-to-TUI-bar + flip (peer free eng **s1452** OSS bar — mention only) |
 | **Local palace** | FS palace via MCP (`-palace-root` / docker edge) | Hosted Palace **sunset** · dual_write **OFF** |
 | **aion broker / CP** | Private cloud control plane | **Stays private** · not OSS edge pack |
@@ -296,13 +297,64 @@ When built from **`github.com/iome-sh/iomesh-memory-mcp`** (peer free eng M2 sca
 | **scaffold/M2 residual** | Tool parity may be **lean** vs platform residual sidecar · **PASS ≠ invent full platform sidecar parity** |
 | **public flip** | **OSS path ≠ invent public flip complete** · M2 scaffold ≠ M4 public flip |
 
+**M3 edge dogfood (s1463 · residual-honest · after M2 scaffold · not invent live dogfood green / flip):**
+
+TUI ↔ product **`iomesh-memory-mcp`** compose / HTTP / stdio dogfood tip (docs + `/onboard next memory` — **offline dogfood tip ≠ invent live dogfood as green**):
+
+| Surface | Residual honesty |
+|---------|------------------|
+| **Product repo** | Build/run from **`github.com/iome-sh/iomesh-memory-mcp`** (peer free eng **s1462** edge dogfood product — mention only) |
+| **Compose** | In product repo: `docker compose up --build` → image **`iomesh-memory-mcp:local`** · port `8080:8080` |
+| **Attach (HTTP preferred)** | Streamable HTTP `http://127.0.0.1:8080/mcp` · TUI `[[mcp.servers]]` URL |
+| **healthz** | `curl -fsS http://127.0.0.1:8080/healthz` (probe only · ≠ invent tool green / Memory GA) |
+| **stdio alternate** | `go run` / `go build` binary · `command` + `args` in `[[mcp.servers]]` (no HTTP) |
+| **Offline gate** | Peer mcp `make edge-dogfood-gate` (mention only) · TUI docs this section |
+| **dual_write** | **OFF** · not primary palace path |
+| **not Memory GA** | M3 edge dogfood ≠ product Memory GA / multi-tenant hosted palace |
+| **still private** | Host/kernel still private until deliberate flip · aion broker private |
+| **compose PASS ≠ public registry** | Local image tag `iomesh-memory-mcp:local` ≠ invent GHCR public pull green |
+| **offline ≠ live dogfood** | **offline dogfood tip ≠ invent live dogfood as green** · residual PASS ≠ live APPLY |
+| **parity / flip** | **PASS ≠ invent full platform sidecar parity** · residual PASS ≠ public flip · M3 after M2 · **M4 public flip later deliberate** |
+
+**Attach TOML snippet (HTTP preferred · residual-honest):**
+
+```toml
+[mcp]
+enabled = true
+[[mcp.servers]]
+name = "iomesh-memory-mcp"
+url = "http://127.0.0.1:8080/mcp"
+allow_loopback = true
+mutating = true
+
+# Alternate stdio (no HTTP):
+# command = "iomesh-memory-mcp"
+# args = ["-palace-root", "./data/memory-palaces", "-tenant", "default"]
+
+[memory]
+enabled = true
+server = "iomesh-memory-mcp"
+tenant = "default"
+dual_write = false   # OFF · not primary palace · package load ≠ Memory GA
+```
+
+**healthz curl (probe only):**
+
+```bash
+# from product repo github.com/iome-sh/iomesh-memory-mcp
+export GH_TOKEN=…   # while kernel github.com/iome-sh/memory is private
+docker compose up --build
+curl -fsS http://127.0.0.1:8080/healthz
+# attach TUI [[mcp.servers]] url = "http://127.0.0.1:8080/mcp"
+```
+
 **Also residual attach (not invent flip complete):**
 
 - Streamable HTTP MCP (local edge docker when available — peer aion s1306 compose; see [Local-edge Docker](#local-edge-docker-memory-mcp-s1308--peer-aion-s1306) above)
 - Or residual `aion-memory-mcp` binary / sample map path (`examples/agent-plugins/aion-memory-mcp`)
-- Package load ≠ Memory GA · docker edge ≠ invent GA · **OSS path ≠ invent public flip complete** · lean/M2 ≠ invent platform sidecar parity
+- Package load ≠ Memory GA · docker edge ≠ invent GA · **OSS path ≠ invent public flip complete** · lean/M2 ≠ invent platform sidecar parity · offline dogfood tip ≠ invent live dogfood as green
 
-**Honesty hard locks (s1453+s1458):**
+**Honesty hard locks (s1453+s1458+s1463):**
 
 | Claim | Truth |
 |-------|--------|
@@ -312,12 +364,17 @@ When built from **`github.com/iome-sh/iomesh-memory-mcp`** (peer free eng M2 sca
 | **mesh optional** | Mesh optional for pull only · memory lane is local-edge palace |
 | **iomesh-memory-mcp** | Product MCP host naming · not `aion-memory-mcp` for public product host |
 | **M2 lean attach** | Host available when built from `github.com/iome-sh/iomesh-memory-mcp` · HTTP `:8080/mcp` or stdio · scaffold/M2 |
+| **M3 edge dogfood** | Product compose/HTTP/stdio tip · image `iomesh-memory-mcp:local` · healthz · offline tip only |
+| **offline dogfood tip ≠ invent live dogfood as green** | Docs/onboard tip residual · does not claim live dogfood green / Connected |
+| **compose PASS ≠ public registry** | Local image tag ≠ invent public GHCR pull / flip complete |
 | **aion broker private** | aion cloud broker/CP stays private · not open-sourced with edge pack |
+| **still private** | Host/kernel private until deliberate · residual PASS ≠ public flip |
 | **OSS path ≠ invent public flip complete** | Naming + install story residual · public kernel/host flip not claimed complete |
-| **PASS ≠ invent full platform sidecar parity** | Lean M2 tool surface may lag platform residual · attach residual ≠ invent full parity |
+| **PASS ≠ invent full platform sidecar parity** | Lean M2/M3 tool surface may lag platform residual · attach residual ≠ invent full parity |
+| **M4 later deliberate** | M3 after M2 scaffold · public flip is later deliberate wave |
 | **never invent Connected** | Attach residual fail-open · residual PASS ≠ live dogfood · PASS ≠ live APPLY |
 
-Operator surfaces: `/onboard next memory` · `/onboard next memory-pull` · `/onboard next operator` · peer free eng s1452 OSS bar (mention only) · peer free eng M2 scaffold s1457 (mention only) · aion residual s1454/s1459 (mention only).
+Operator surfaces: `/onboard next memory` · `/onboard next memory-pull` · `/onboard next operator` · peer free eng s1452 OSS bar (mention only) · peer free eng M2 scaffold s1457 (mention only) · peer free eng M3 edge dogfood product s1462 (mention only) · aion residual s1454/s1459/s1464 (mention only).
 
 ### Temporal retrieve options (s1068)
 
@@ -702,6 +759,7 @@ Opt-in residual-honest mutating compact advisory + operator inventory pulse:
 - **s1308:** local-edge Docker MCP attach (peer aion s1306) is customer-edge FS palace only — dual_write OFF · hosted Palace sunset · **not** Memory GA · docker edge ≠ invent GA · local image tag ≠ public registry claim.
 - **s1453:** edge OSS Option A residual-honest install story — product host **`iomesh-memory-mcp`** · kernel `github.com/iome-sh/memory` · aion broker **private** · dual_write OFF · not Memory GA · Palace sunset · mesh optional for pull · **OSS path ≠ invent public flip complete**.
 - **s1458:** M2 lean edge host attach tip — when built from `github.com/iome-sh/iomesh-memory-mcp`: go run/build · streamable HTTP `http://127.0.0.1:8080/mcp` or stdio · dual_write OFF · not Memory GA · aion broker private · scaffold/M2 · tool parity may be lean vs platform residual · **PASS ≠ invent full platform sidecar parity** · keeps Option A honesty.
+- **s1463:** M3 edge dogfood tip — TUI↔`iomesh-memory-mcp` compose/HTTP/stdio path: `docker compose up --build` → image `iomesh-memory-mcp:local` · attach `http://127.0.0.1:8080/mcp` · healthz · stdio alternate · peer mcp `make edge-dogfood-gate` (mention only) · dual_write OFF · not Memory GA · still private · **offline dogfood tip ≠ invent live dogfood as green** · **PASS ≠ invent full platform sidecar parity** · residual PASS ≠ public flip · M3 after M2 · M4 later deliberate · keeps Option A + M2 honesty.
 
 
 ## s1069 recall efficiency

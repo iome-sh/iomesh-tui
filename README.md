@@ -58,6 +58,8 @@ Any other **OpenAI-compatible** chat endpoint can be added under `[model.<name>]
 
 **Local Docker MCP edge (s1308 · peer aion s1306):** run lean Memory Palace MCP via aion compose (`docker compose -f deploy/foundation/docker-compose.local-memory-edge.yml up -d --build` → `http://127.0.0.1:8080/mcp`), attach TUI with `[[mcp.servers]]` URL + `[memory]`. Local build image `aion-local-memory-mcp:latest` · dual_write OFF · not Memory GA · docker edge ≠ invent GA. Docs: [memory-mcp.md Local-edge Docker](docs/architecture/memory-mcp.md#local-edge-docker-memory-mcp-s1308--peer-aion-s1306).
 
+**Product edge M3 dogfood tip (s1463 · residual-honest):** preferred host is **`iomesh-memory-mcp`** from [`github.com/iome-sh/iomesh-memory-mcp`](https://github.com/iome-sh/iomesh-memory-mcp) — `docker compose up --build` → image `iomesh-memory-mcp:local` → attach `http://127.0.0.1:8080/mcp` (healthz · stdio alternate). dual_write OFF · not Memory GA · still private · offline dogfood tip ≠ invent live dogfood as green · residual PASS ≠ public flip. Docs: [memory-mcp.md Edge OSS / M3](docs/architecture/memory-mcp.md#edge-oss-option-a-s1453--m2-lean-attach-s1458--m3-edge-dogfood-s1463).
+
 ## Quick start
 
 **Requirements:** Go version in [go.mod](go.mod) (CI uses that toolchain).

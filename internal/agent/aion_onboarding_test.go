@@ -263,6 +263,8 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"iomesh-memory-mcp",
 		"github.com/iome-sh/iomesh-memory-mcp",
 		"M2 lean host",
+		"M3 edge dogfood",
+		"docker compose",
 		"aion broker private",
 		"OSS path ≠ invent public flip complete",
 		"local-primary",
@@ -478,7 +480,7 @@ func TestAionAgentOnboardingNextGtmLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1377+s1453+s1458: AionAgentOnboardingNextMemoryLane residual-honest memory local + edge OSS + M2 lean attach needles.
+// s1377+s1453+s1458+s1463: AionAgentOnboardingNextMemoryLane residual-honest memory local + edge OSS + M2 lean + M3 edge dogfood needles.
 func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 	out := AionAgentOnboardingNextMemoryLane()
 	if out == "" {
@@ -487,7 +489,7 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 	for _, want := range []string{
 		"onboard next memory lane",
 		"no MCP dial",
-		"s1377+s1453+s1458",
+		"s1377+s1453+s1458+s1463",
 		"local-primary",
 		"github.com/iome-sh/memory",
 		"github.com/iome-sh/iomesh-memory-mcp",
@@ -502,6 +504,18 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 		"stdio",
 		"M2 lean",
 		"scaffold/M2",
+		"s1463",
+		"M3 edge dogfood",
+		"edge dogfood",
+		"docker compose",
+		"iomesh-memory-mcp:local",
+		"healthz",
+		"edge-dogfood-gate",
+		"offline dogfood tip ≠ invent live dogfood as green",
+		"residual PASS ≠ public flip",
+		"M3 after M2",
+		"M4 public flip later",
+		"still private",
 		"PASS ≠ invent full platform sidecar parity",
 		"tool parity may be lean",
 		"Palace sunset",
@@ -546,6 +560,9 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 	}
 	if strings.Contains(out, "full platform sidecar parity: yes") || strings.Contains(out, "platform sidecar parity complete") {
 		t.Fatalf("must not invent full platform sidecar parity: %s", out)
+	}
+	if strings.Contains(out, "live dogfood green: yes") || strings.Contains(out, "live dogfood: green") {
+		t.Fatalf("must not invent live dogfood green: %s", out)
 	}
 }
 
@@ -1384,7 +1401,7 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"no auto-send",
 		"GTM agent GA",
 		"GTM checklist ≠ invent GTM agent GA",
-		// memory honesty (+ s1453+s1458 edge OSS + M2 lean attach tip)
+		// memory honesty (+ s1453+s1458+s1463 edge OSS + M2 lean + M3 edge dogfood tip)
 		"dual_write OFF",
 		"package load ≠ Memory GA",
 		"local-primary",
@@ -1395,6 +1412,10 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"mesh optional for pull",
 		"iomesh-memory-mcp",
 		"M2 lean attach",
+		"M3 edge dogfood",
+		"docker compose",
+		"offline dogfood tip ≠ invent live dogfood as green",
+		"residual PASS ≠ public flip",
 		"PASS ≠ invent full platform sidecar parity",
 		"aion broker private",
 		"OSS path ≠ invent public flip complete",
@@ -1605,9 +1626,13 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 		"pull_not_probed",
 		"portal_hitl_still",
 		"list_plan_not_connected",
-		// memory edge OSS tip (s1453+s1458 M2 lean attach)
+		// memory edge OSS tip (s1453+s1458+s1463 M2 lean + M3 edge dogfood)
 		"iomesh-memory-mcp",
 		"M2 lean attach",
+		"M3 edge dogfood",
+		"docker compose",
+		"offline dogfood tip ≠ invent live dogfood as green",
+		"residual PASS ≠ public flip",
 		"PASS ≠ invent full platform sidecar parity",
 		"aion broker private",
 		"OSS path ≠ invent public flip complete",
