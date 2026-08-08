@@ -5,38 +5,18 @@ import (
 	"io"
 	"os"
 	"strings"
-	"sync"
 
 	"github.com/iome-sh/iomesh-tui/internal/agentplugins"
 )
 
-// Session-only soft dogfood marker for /plugins status (s1392).
-// Default dogfood_not_run. Soft offline dogfood PASS ≠ invent Agent Plugins GA · ≠ live dogfood.
-var pluginsSlashSession struct {
-	mu   sync.Mutex
-	ran  bool
-	pass bool // residual soft offline pass only
-}
-
 // resetPluginsSlashSession clears session dogfood marker (tests only).
+// SSOT: agentplugins.ResetSoftDogfoodSessionState (s1392 set · s1397 shared with onboard next status/export).
 func resetPluginsSlashSession() {
-	pluginsSlashSession.mu.Lock()
-	defer pluginsSlashSession.mu.Unlock()
-	pluginsSlashSession.ran = false
-	pluginsSlashSession.pass = false
+	agentplugins.ResetSoftDogfoodSessionState()
 }
 
 func markPluginsSlashDogfoodSession(pass bool) {
-	pluginsSlashSession.mu.Lock()
-	defer pluginsSlashSession.mu.Unlock()
-	pluginsSlashSession.ran = true
-	pluginsSlashSession.pass = pass
-}
-
-func pluginsSlashSessionDogfoodState() (ran bool, pass bool) {
-	pluginsSlashSession.mu.Lock()
-	defer pluginsSlashSession.mu.Unlock()
-	return pluginsSlashSession.ran, pluginsSlashSession.pass
+	agentplugins.SetSoftDogfoodSessionState(pass)
 }
 
 // pluginsHelp is bare /plugins and help/? copy (s1392 residual honesty).
@@ -164,25 +144,20 @@ func handlePluginsDogfood(out io.Writer) {
 	markPluginsSlashDogfoodSession(pass)
 	// Residual-honest framing: soft offline ≠ live dogfood ≠ Agent Plugins GA.
 	fmt.Fprintln(out, "note: soft offline dogfood PASS ≠ invent Agent Plugins GA · residual PASS ≠ live dogfood · Discover ≠ Connected · package load ≠ Memory GA")
+	fmt.Fprintln(out, "session marker: "+agentplugins.SoftDogfoodSessionLabel()+" · session soft ≠ live dogfood · board/export evidence ≠ invent Connected")
+	// s1397: tip re-run status board + export so session soft state refreshes residual evidence.
+	fmt.Fprintln(out, "tip: re-run /onboard next status then /onboard next export — session soft dogfood refreshes plugins lane (≠ invent Agent Plugins GA · ≠ live dogfood · board ≠ invent Connected)")
 	fmt.Fprintln(out, agentplugins.ResidualDogfoodHonesty)
 	fmt.Fprintln(out, agentplugins.ResidualSlashHonesty)
 }
 
-// handlePluginsStatus residual-honest /plugins status pulse (s1392).
+// handlePluginsStatus residual-honest /plugins status pulse (s1392 · s1397 shared session SSOT).
 // samples_ok|samples_missing · dogfood_not_run default (session soft marker optional).
 // ≠ live dogfood · ≠ invent Agent Plugins GA.
 func handlePluginsStatus(out io.Writer) {
 	samples := agentplugins.SamplesSoftState("")
-	ran, pass := pluginsSlashSessionDogfoodState()
-	dogfoodState := "dogfood_not_run"
-	if ran {
-		// Session-only soft offline marker — never claim live dogfood / GA.
-		if pass {
-			dogfoodState = "soft_offline_dogfood_session_pass"
-		} else {
-			dogfoodState = "soft_offline_dogfood_session_fail"
-		}
-	}
+	// Session SSOT in agentplugins (s1397) — shared with /onboard next status + export.
+	dogfoodState := agentplugins.SoftDogfoodSessionLabel()
 	fmt.Fprintln(out, strings.TrimSpace(fmt.Sprintf(`plugins status (residual-honest · s1392 · soft offline · no MCP dial · not live dogfood):
   samples: %s
   dogfood: %s
@@ -190,7 +165,7 @@ func handlePluginsStatus(out io.Writer) {
   · soft offline dogfood ≠ invent Agent Plugins GA · Discover ≠ Connected · package load ≠ Memory GA
   · never invent install green / Connected / INSTALL_STORE APPLY · dual_write OFF · book-demo OFF
   slash: /plugins dogfood (aliases soft|samples|offline) · /plugins list · /plugins validate
-  continuum: /onboard next plugins · /onboard next status · iomesh plugins dogfood
+  continuum: /onboard next plugins · /onboard next status · /onboard next export · iomesh plugins dogfood
 %s`, samples, dogfoodState, agentplugins.ResidualSlashHonesty)))
 }
 

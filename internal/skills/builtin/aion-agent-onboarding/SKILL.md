@@ -7,7 +7,7 @@ description: Residual-honest TUI agent ↔ aion CP/MCP onboarding (portal Agent/
 
 Builtin playbook for **onboarding a TUI agent session against aion CP/MCP** — residual-honest path only. Molds `connector-integrations-setup` + operator onboarding checklist. **Not** install APPLY, **Not** Memory GA, **Not** Agent Plugins GA, **Not** dual_write ON.
 
-**System note (s1363+s1368+s1372+s1377+s1382+s1387):** when MCP is attached (`AttachMCP`), runtime injects residual-honest `<aion-onboarding>` (`AionAgentOnboardingGuidanceNote`) with the same locks. Skill + note stay consistent; skill is the full playbook. Operator slash: `/onboard` (aliases `/aion-onboard` `/agent-onboard`) · `/onboard portal` · `/onboard status` · `/onboard checklist` · `/onboard next` (aliases `after` / `continue` / `lanes`) · `/onboard next [plugins|gtm|memory]` lane drills (s1377) · `/onboard next status` lane status board (aliases `pulse` / `board` · s1382) · `/onboard next export` status export receipt (aliases `receipt` / `stamp` / `evidence` · optional `json` · s1387).
+**System note (s1363+s1368+s1372+s1377+s1382+s1387+s1397):** when MCP is attached (`AttachMCP`), runtime injects residual-honest `<aion-onboarding>` (`AionAgentOnboardingGuidanceNote`) with the same locks. Skill + note stay consistent; skill is the full playbook. Operator slash: `/onboard` (aliases `/aion-onboard` `/agent-onboard`) · `/onboard portal` · `/onboard status` · `/onboard checklist` · `/onboard next` (aliases `after` / `continue` / `lanes`) · `/onboard next [plugins|gtm|memory]` lane drills (s1377) · `/onboard next status` lane status board (aliases `pulse` / `board` · s1382+s1397 session soft dogfood) · `/onboard next export` status export receipt (aliases `receipt` / `stamp` / `evidence` · optional `json` · s1387+s1397).
 
 ## Workflow — two complementary halves
 
@@ -67,14 +67,14 @@ Builtin playbook for **onboarding a TUI agent session against aion CP/MCP** — 
 
 11. **Operator pulse** — slash `/integrations status` · `/onboard checklist` · `/onboard portal` · portal HITL.
 
-### D. Post-onboard next lanes (operator continuum · s1372+s1377+s1382+s1387 · no MCP dial)
+### D. Post-onboard next lanes (operator continuum · s1372+s1377+s1382+s1387+s1397 · no MCP dial)
 
 After core onboarding, residual-honest next operator lanes — static offline only; **never invent** product GA from these steps.
 
 - **Overview:** `/onboard next` (aliases `after` / `continue` / `lanes`) → `AionAgentOnboardingNextLanes`.
 - **Lane drills (s1377):** `/onboard next <lane>` (also works with parent aliases, e.g. `/onboard after plugins`).
-- **Lane status board (s1382):** `/onboard next status` (aliases `pulse` / `board`) → `AionAgentOnboardingNextLaneStatus`.
-- **Status export receipt (s1387):** `/onboard next export` (aliases `receipt` / `stamp` / `evidence`) → `AionAgentOnboardingNextLaneStatusExport` · optional `/onboard next export json` → `AionAgentOnboardingNextLaneStatusExportJSON`.
+- **Lane status board (s1382+s1397):** `/onboard next status` (aliases `pulse` / `board`) → `AionAgentOnboardingNextLaneStatus` — plugins dogfood lane reflects **session soft** marker after `/plugins dogfood`.
+- **Status export receipt (s1387+s1397):** `/onboard next export` (aliases `receipt` / `stamp` / `evidence`) → `AionAgentOnboardingNextLaneStatusExport` · optional `/onboard next export json` → `AionAgentOnboardingNextLaneStatusExportJSON` — same session soft state.
 
 | Lane | Slash | Aliases | API helper |
 |------|-------|---------|------------|
@@ -88,10 +88,16 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|status|
 
 #### D1. Plugins dogfood lane (`/onboard next plugins`)
 
-1. **`iomesh plugins dogfood`** — offline sample validate (`examples/agent-plugins/{hello-iome,aion-memory-mcp}`).
+1. **`iomesh plugins dogfood`** / **`/plugins dogfood`** — offline sample validate (`examples/agent-plugins/{hello-iome,aion-memory-mcp}`).
    - Steps: `iomesh plugins list` → `validate <path>` → `dogfood` (both in-repo samples offline).
-   - Offline validate only · **≠ invent Agent Plugins GA**.
+   - Offline validate only · **≠ invent Agent Plugins GA** · soft offline dogfood ≠ invent Agent Plugins GA.
    - residual PASS ≠ live dogfood · rates ~$88/$119 optional · package load ≠ Memory GA.
+   - **s1397 session soft marker:** after `/plugins dogfood`, session stores soft residual pass/fail.
+     - Default: `dogfood_not_run`
+     - Soft pass: `soft_offline_dogfood_session_pass`
+     - Soft fail: `soft_offline_dogfood_session_fail`
+     - **session soft ≠ live dogfood** · board/export evidence ≠ invent Connected.
+     - Tip: re-run `/onboard next status` then `/onboard next export` to refresh residual evidence.
 
 #### D2. GTM draft-only lane (`/onboard next gtm`)
 
@@ -112,28 +118,29 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|status|
    - catalog ≠ Connected · list_org fail-open ≠ empty-as-none · never invent Connected / INSTALL_STORE APPLY.
    - Portal: https://console.iome.sh/integrations · Agent/MCP: https://console.iome.sh/settings/agent.
 
-#### D5. Lane status board (`/onboard next status` · s1382)
+#### D5. Lane status board (`/onboard next status` · s1382+s1397)
 
-5. **Residual-honest lane status board** — static offline pulse of plugins · gtm · memory · portal.
+5. **Residual-honest lane status board** — offline pulse of plugins · gtm · memory · portal.
    - **No MCP dial** · never invent install green / Connected / GA / APPLY as success.
-   - Honest state vocabulary only: `path_ready` · `samples_ok` · `samples_missing` · `dogfood_not_run` · `skill_ready` · `residual_only` · `portal_hitl_still`.
-   - **plugins:** optional soft-check of sample dirs (`examples/agent-plugins`) · always `dogfood_not_run` unless operator ran dogfood separately · ≠ invent Agent Plugins GA.
+   - Honest state vocabulary only: `path_ready` · `samples_ok` · `samples_missing` · `dogfood_not_run` · `soft_offline_dogfood_session_pass` · `soft_offline_dogfood_session_fail` · `skill_ready` · `residual_only` · `portal_hitl_still`.
+   - **plugins:** soft-check of sample dirs (`examples/agent-plugins`) · default `dogfood_not_run` · after `/plugins dogfood` session soft pass/fail (s1397) · **session soft ≠ live dogfood** · ≠ invent Agent Plugins GA · board ≠ invent Connected.
    - **gtm:** skill/checklist path ready · drafts only · no auto-send · ≠ invent GTM agent GA.
    - **memory:** dual_write OFF · package load ≠ Memory GA · local-primary ≠ freemium palace.
    - **portal:** `portal_hitl_still` · agent MCP cannot write installs.
    - Slash: `/onboard next status` (aliases `pulse` / `board`) · also linked from `/onboard next` overview and `/onboard status`.
-   - Export receipt: `/onboard next export` (s1387) — offline markdown evidence of this board.
+   - Export receipt: `/onboard next export` (s1387+s1397) — offline markdown evidence of this board (includes session soft state).
 
-#### D6. Status export receipt (`/onboard next export` · s1387)
+#### D6. Status export receipt (`/onboard next export` · s1387+s1397)
 
-6. **Residual-honest status export receipt** — offline markdown (or optional JSON) evidence of the s1382 lane status board.
+6. **Residual-honest status export receipt** — offline markdown (or optional JSON) evidence of the s1382 lane status board (plugins lane includes s1397 session soft marker when set).
    - Header: `evidence_kind=onboard_next_lane_status_export` · `offline_static` · `not_live_dogfood` · serial `s1387`.
-   - Reuses s1382 honest vocabulary only: `path_ready` · `samples_ok`/`samples_missing` · `dogfood_not_run` · `skill_ready` · `residual_only` · `portal_hitl_still`.
+   - Reuses honest vocabulary: `path_ready` · `samples_ok`/`samples_missing` · `dogfood_not_run` · `soft_offline_dogfood_session_pass|fail` · `skill_ready` · `residual_only` · `portal_hitl_still`.
+   - JSON field `plugins_dogfood_state` mirrors session soft label; `dogfood_not_run` is true only when session soft has not run.
    - **Does NOT** run plugins dogfood · **does NOT** dial MCP · **does NOT** invent install green / Connected / GA / APPLY.
-   - **board/export evidence ≠ invent Connected** — a stamped receipt is offline residual evidence only.
+   - **session soft ≠ live dogfood** · **board/export evidence ≠ invent Connected** — a stamped receipt is offline residual evidence only.
    - Markdown: `/onboard next export` (aliases `receipt` / `stamp` / `evidence`) → `AionAgentOnboardingNextLaneStatusExport`.
    - JSON: `/onboard next export json` → `AionAgentOnboardingNextLaneStatusExportJSON`.
-   - Cross-linked from lane status board footer and `/onboard next` overview.
+   - Cross-linked from lane status board footer, `/onboard next` overview, and `/plugins dogfood` tip.
 
 ## Honesty locks
 
@@ -153,6 +160,7 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|status|
 | package load ≠ Memory GA | Loading aion-memory-mcp / Ops Pack local ≠ invent Memory Palace GA / freemium palace |
 | GTM checklist ≠ GTM agent GA | `/gtm checklist` residual-honest draft path only — not invent GTM agent GA |
 | board/export evidence ≠ invent Connected | Lane status board + export receipt are offline residual evidence only — never invent Connected / GA / APPLY |
+| session soft ≠ live dogfood | `/plugins dogfood` session marker on status/export is soft offline residual only — not live dogfood · not Agent Plugins GA |
 | no invent GA knowledge/analytical | Do not invent GA for knowledge or analytical mesh layers |
 
 ## Non-goals (never do)
@@ -170,19 +178,20 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|status|
 - Do **not** invent GTM agent GA from `/gtm checklist` / draft-only skill.
 - Do **not** invent Memory GA / freemium palace from local `aion-memory-mcp` package load.
 - Do **not** invent Connected / GA / APPLY from board or export receipt evidence stamps.
+- Do **not** treat session soft dogfood pass/fail as live dogfood or Agent Plugins GA.
 
 ## Related
 
-- Builtin skill always available when skills enabled (**s1363+s1368+s1372+s1377+s1382+s1387** · molds s1251 connector + s1288 memory-advanced + s1341 gtm-draft-only).
+- Builtin skill always available when skills enabled (**s1363+s1368+s1372+s1377+s1382+s1387+s1397** · molds s1251 connector + s1288 memory-advanced + s1341 gtm-draft-only).
 - System note inject on `AttachMCP`: `<aion-onboarding>` via `AionAgentOnboardingGuidanceNote` (s1363+s1368+s1372+s1377+s1382+s1387).
 - Portal handoff block: `AionAgentOnboardingPortalHandoff` · slash `/onboard portal` (aliases `agent-mcp` / `mcp`).
-- Offline status: `AionAgentOnboardingStatus` · slash `/onboard status` (no MCP dial) · cross-links `/onboard next status` (s1382) · `/onboard next export` (s1387).
-- Post-onboard next lanes overview: `AionAgentOnboardingNextLanes` · slash `/onboard next` (aliases `after` / `continue` / `lanes`) — plugins · gtm · memory local · portal HITL still (s1372) · status board (s1382) · export receipt (s1387).
+- Offline status: `AionAgentOnboardingStatus` · slash `/onboard status` (no MCP dial) · cross-links `/onboard next status` (s1382+s1397) · `/onboard next export` (s1387+s1397).
+- Post-onboard next lanes overview: `AionAgentOnboardingNextLanes` · slash `/onboard next` (aliases `after` / `continue` / `lanes`) — plugins · gtm · memory local · portal HITL still (s1372) · status board (s1382+s1397) · export receipt (s1387+s1397).
 - Lane drills (s1377): `AionAgentOnboardingNextPluginsLane` · `AionAgentOnboardingNextGtmLane` · `AionAgentOnboardingNextMemoryLane` · slash `/onboard next [plugins|gtm|memory]` (aliases plugin|dogfood · drafts · mcp|palace).
-- Lane status board (s1382): `AionAgentOnboardingNextLaneStatus` · slash `/onboard next status` (aliases `pulse` / `board`) — honest vocabulary only · no invent Connected/GA/APPLY · dogfood_not_run default.
-- Status export receipt (s1387): `AionAgentOnboardingNextLaneStatusExport` · slash `/onboard next export` (aliases `receipt` / `stamp` / `evidence`) · optional `AionAgentOnboardingNextLaneStatusExportJSON` via `/onboard next export json` — evidence_kind=onboard_next_lane_status_export · offline_static · not_live_dogfood · board/export evidence ≠ invent Connected.
+- Lane status board (s1382+s1397): `AionAgentOnboardingNextLaneStatus` · slash `/onboard next status` (aliases `pulse` / `board`) — honest vocabulary only · no invent Connected/GA/APPLY · dogfood_not_run default · session soft pass/fail after `/plugins dogfood` · session soft ≠ live dogfood.
+- Status export receipt (s1387+s1397): `AionAgentOnboardingNextLaneStatusExport` · slash `/onboard next export` (aliases `receipt` / `stamp` / `evidence`) · optional `AionAgentOnboardingNextLaneStatusExportJSON` via `/onboard next export json` — evidence_kind=onboard_next_lane_status_export · offline_static · not_live_dogfood · plugins_dogfood_state session soft · board/export evidence ≠ invent Connected.
 - Companion builtin: `connector-integrations-setup` (list/plan → portal HITL).
 - Companion builtin: `memory-advanced-agent` (opt-in advanced memory · dual_write OFF · not Memory GA).
 - Companion builtin: `gtm-draft-only-agent` (drafts only · human publish · no auto-send).
-- Slash residual honesty: `/onboard [help|checklist|portal|status|next]` · `/onboard next [plugins|gtm|memory|status|export]` · `/integrations list|plan|status|signing` · `/memory status` · `/gtm [help|checklist]`.
-- Skills are **not** Agent Plugins — plugins dogfood ≠ invent Agent Plugins GA.
+- Slash residual honesty: `/onboard [help|checklist|portal|status|next]` · `/onboard next [plugins|gtm|memory|status|export]` · `/plugins dogfood|status` · `/integrations list|plan|status|signing` · `/memory status` · `/gtm [help|checklist]`.
+- Skills are **not** Agent Plugins — plugins dogfood ≠ invent Agent Plugins GA · session soft ≠ live dogfood.

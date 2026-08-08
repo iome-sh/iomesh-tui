@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iome-sh/iomesh-tui/internal/agentplugins"
 	"github.com/iome-sh/iomesh-tui/internal/mcp"
 	"github.com/iome-sh/iomesh-tui/internal/skills"
 )
@@ -433,6 +434,9 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 
 // s1382: AionAgentOnboardingNextLaneStatus residual-honest lane status board needles.
 func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
+	agentplugins.ResetSoftDogfoodSessionState()
+	t.Cleanup(agentplugins.ResetSoftDogfoodSessionState)
+
 	out := AionAgentOnboardingNextLaneStatus()
 	if out == "" {
 		t.Fatal("empty next lane status board")
@@ -456,6 +460,7 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		// plugins honesty
 		"Agent Plugins GA",
 		"plugins dogfood ≠ invent Agent Plugins GA",
+		"session soft marker ≠ live dogfood",
 		"examples/agent-plugins",
 		// gtm honesty
 		"drafts only",
@@ -475,6 +480,7 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		// locks footer
 		"book-demo OFF",
 		"residual PASS ≠ live dogfood",
+		"session soft ≠ live dogfood",
 		"never invent install green",
 		"Connected",
 		"INSTALL_STORE APPLY",
@@ -520,8 +526,100 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 	}
 }
 
+// s1397: status/export reflect session soft dogfood pass/fail (≠ live dogfood · ≠ invent GA/Connected).
+func TestAionAgentOnboardingNextLaneStatus_SessionSoftDogfood(t *testing.T) {
+	agentplugins.ResetSoftDogfoodSessionState()
+	t.Cleanup(agentplugins.ResetSoftDogfoodSessionState)
+
+	// Default: dogfood_not_run
+	out := AionAgentOnboardingNextLaneStatus()
+	if !strings.Contains(out, "dogfood_not_run") {
+		t.Fatalf("default status want dogfood_not_run:\n%s", out)
+	}
+	if strings.Contains(out, "soft_offline_dogfood_session_pass") || strings.Contains(out, "soft_offline_dogfood_session_fail") {
+		t.Fatalf("default status must not show session pass/fail:\n%s", out)
+	}
+
+	// Soft pass → session pass label
+	agentplugins.SetSoftDogfoodSessionState(true)
+	out = AionAgentOnboardingNextLaneStatus()
+	if !strings.Contains(out, "soft_offline_dogfood_session_pass") {
+		t.Fatalf("after pass want soft_offline_dogfood_session_pass:\n%s", out)
+	}
+	// Avoid matching residual honesty prose that still mentions "dogfood_not_run default".
+	if strings.Contains(out, "· dogfood_not_run ·") {
+		t.Fatalf("after pass plugins lane must not hardcode dogfood_not_run:\n%s", out)
+	}
+	for _, want := range []string{
+		"session soft marker ≠ live dogfood",
+		"soft offline dogfood ≠ invent Agent Plugins GA",
+		"board/export evidence ≠ invent Connected",
+		"not live dogfood",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("pass status missing honesty %q:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "Connected: yes") || strings.Contains(out, "Agent Plugins GA shipped") || strings.Contains(out, "live dogfood green") {
+		t.Fatalf("pass status must not invent Connected/GA/live:\n%s", out)
+	}
+
+	// Soft fail
+	agentplugins.SetSoftDogfoodSessionState(false)
+	out = AionAgentOnboardingNextLaneStatus()
+	if !strings.Contains(out, "soft_offline_dogfood_session_fail") {
+		t.Fatalf("after fail want soft_offline_dogfood_session_fail:\n%s", out)
+	}
+	if strings.Contains(out, "soft_offline_dogfood_session_pass") {
+		t.Fatalf("after fail must not show pass:\n%s", out)
+	}
+	if strings.Contains(out, "Connected: yes") || strings.Contains(out, "Agent Plugins GA shipped") {
+		t.Fatalf("fail status must not invent Connected/GA:\n%s", out)
+	}
+
+	// Export markdown + JSON follow session
+	exp := AionAgentOnboardingNextLaneStatusExport()
+	if !strings.Contains(exp, "soft_offline_dogfood_session_fail") {
+		t.Fatalf("export after fail want session fail:\n%s", exp)
+	}
+	if !strings.Contains(exp, "session soft ≠ live dogfood") {
+		t.Fatalf("export missing session soft honesty:\n%s", exp)
+	}
+	if strings.Contains(exp, "Connected: yes") || strings.Contains(exp, "Agent Plugins GA shipped") {
+		t.Fatalf("export must not invent Connected/GA:\n%s", exp)
+	}
+
+	js := AionAgentOnboardingNextLaneStatusExportJSON()
+	if !strings.Contains(js, `"plugins_dogfood_state": "soft_offline_dogfood_session_fail"`) {
+		t.Fatalf("export JSON want plugins_dogfood_state fail:\n%s", js)
+	}
+	if !strings.Contains(js, `"dogfood_not_run": false`) {
+		t.Fatalf("export JSON after session run want dogfood_not_run false:\n%s", js)
+	}
+	if !strings.Contains(js, "session soft ≠ live dogfood") {
+		t.Fatalf("export JSON missing session soft honesty:\n%s", js)
+	}
+	if strings.Contains(js, "Connected: yes") || strings.Contains(js, "Agent Plugins GA shipped") {
+		t.Fatalf("export JSON must not invent Connected/GA:\n%s", js)
+	}
+
+	// Pass on export
+	agentplugins.SetSoftDogfoodSessionState(true)
+	exp = AionAgentOnboardingNextLaneStatusExport()
+	if !strings.Contains(exp, "soft_offline_dogfood_session_pass") {
+		t.Fatalf("export after pass want session pass:\n%s", exp)
+	}
+	js = AionAgentOnboardingNextLaneStatusExportJSON()
+	if !strings.Contains(js, `"plugins_dogfood_state": "soft_offline_dogfood_session_pass"`) {
+		t.Fatalf("export JSON want plugins_dogfood_state pass:\n%s", js)
+	}
+}
+
 // s1387: AionAgentOnboardingNextLaneStatusExport residual-honest markdown export receipt needles.
 func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
+	agentplugins.ResetSoftDogfoodSessionState()
+	t.Cleanup(agentplugins.ResetSoftDogfoodSessionState)
+
 	out := AionAgentOnboardingNextLaneStatusExport()
 	if out == "" {
 		t.Fatal("empty next lane status export receipt")
@@ -549,6 +647,7 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 		"book-demo OFF",
 		"not Memory GA",
 		"residual PASS ≠ live dogfood",
+		"session soft ≠ live dogfood",
 		"never invent install green",
 		"Connected",
 		"INSTALL_STORE APPLY",
@@ -596,6 +695,9 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 
 // s1387: AionAgentOnboardingNextLaneStatusExportJSON residual-honest JSON export needles.
 func TestAionAgentOnboardingNextLaneStatusExportJSON_HonestyNeedles(t *testing.T) {
+	agentplugins.ResetSoftDogfoodSessionState()
+	t.Cleanup(agentplugins.ResetSoftDogfoodSessionState)
+
 	out := AionAgentOnboardingNextLaneStatusExportJSON()
 	if out == "" {
 		t.Fatal("empty next lane status export JSON")
@@ -607,12 +709,14 @@ func TestAionAgentOnboardingNextLaneStatusExportJSON_HonestyNeedles(t *testing.T
 		`"serial": "s1387"`,
 		`"format": "json"`,
 		`"dogfood_not_run": true`,
+		`"plugins_dogfood_state": "dogfood_not_run"`,
 		"path_ready",
 		"skill_ready",
 		"residual_only",
 		"portal_hitl_still",
 		"dual_write OFF",
 		"not Memory GA",
+		"session soft ≠ live dogfood",
 		"board/export evidence ≠ invent Connected",
 		"never invent install green / Connected / INSTALL_STORE APPLY",
 		"/onboard next export",

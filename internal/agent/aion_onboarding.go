@@ -199,23 +199,27 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ liv
 }
 
 // AionAgentOnboardingNextLaneStatus residual-honest post-onboard lane status board for
-// /onboard next status (aliases pulse|board) — free eng s1382 (+ s1387 export cross-link).
+// /onboard next status (aliases pulse|board) — free eng s1382 (+ s1387 export · s1397 session soft dogfood).
 // Default path: no MCP dial · no invent install green / Connected / GA / APPLY.
 // Honest state vocabulary only: path_ready · samples_ok · samples_missing ·
-// dogfood_not_run · skill_ready · residual_only · portal_hitl_still.
-// Optional soft check: sample package dirs via agentplugins (not dogfood run).
+// dogfood_not_run · soft_offline_dogfood_session_pass|fail · skill_ready · residual_only · portal_hitl_still.
+// Optional soft check: sample package dirs via agentplugins.
+// Plugins dogfood state: default dogfood_not_run; after /plugins dogfood session marker
+// soft_offline_dogfood_session_pass|fail (session soft ≠ live dogfood · ≠ invent Agent Plugins GA).
 // Never claims dogfood PASS live, Agent Plugins GA, Memory GA, or install Connected.
 func AionAgentOnboardingNextLaneStatus() string {
 	samplesState := nextLanePluginsSamplesSoftState()
-	// Default honesty: this board never runs dogfood — always dogfood_not_run.
+	dogfoodState := nextLanePluginsDogfoodSessionState()
 	// samples_ok|samples_missing is path soft-check only ≠ residual PASS / live dogfood.
-	return strings.TrimSpace(fmt.Sprintf(`aion onboard next lane status (residual-honest · s1382 · no MCP dial · not live dogfood):
+	// dogfoodState is session soft marker only (default dogfood_not_run) — ≠ live dogfood.
+	return strings.TrimSpace(fmt.Sprintf(`aion onboard next lane status (residual-honest · s1382+s1397 · no MCP dial · not live dogfood):
   board (honest vocabulary only — never invent connected / ga / apply as success):
 
-  plugins: %s · dogfood_not_run · path_ready
+  plugins: %s · %s · path_ready
     · offline samples soft-check only (examples/agent-plugins) · ≠ invent Agent Plugins GA
+    · session soft marker ≠ live dogfood · soft offline dogfood ≠ invent Agent Plugins GA
     · residual PASS ≠ live dogfood · never invent install green / Connected / INSTALL_STORE APPLY
-    · drill: /onboard next plugins (aliases plugin|dogfood)
+    · board/export evidence ≠ invent Connected · drill: /onboard next plugins (aliases plugin|dogfood)
 
   gtm: skill_ready · path_ready · residual_only
     · /gtm checklist + skill gtm-draft-only-agent path ready
@@ -234,20 +238,22 @@ func AionAgentOnboardingNextLaneStatus() string {
 
   slash: /onboard next status (aliases pulse|board) · /onboard next export (aliases receipt|stamp|evidence) · /onboard next · /onboard status · /integrations status · /plugins dogfood · /plugins status
   export receipt: /onboard next export — offline markdown evidence of this board (board/export evidence ≠ invent Connected)
-  plugins soft offline: /plugins dogfood (aliases soft|samples|offline) — soft offline ≠ live dogfood · ≠ invent Agent Plugins GA
+  plugins soft offline: /plugins dogfood (aliases soft|samples|offline) — soft offline ≠ live dogfood · ≠ invent Agent Plugins GA · session soft refreshes this board
 
-Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · plugins dogfood ≠ invent Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · rates ~$88/$119 optional · board/export evidence ≠ invent Connected`, samplesState))
+Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · plugins dogfood ≠ invent Agent Plugins GA · session soft ≠ live dogfood · drafts only · no auto-send · package load ≠ Memory GA · rates ~$88/$119 optional · board/export evidence ≠ invent Connected`, samplesState, dogfoodState))
 }
 
 // AionAgentOnboardingNextLaneStatusExport residual-honest markdown status export receipt
-// for /onboard next export (aliases receipt|stamp|evidence) — free eng s1387.
-// Offline static evidence of the s1382 lane status board vocabulary only.
-// Does NOT run plugins dogfood, dial MCP, or invent install green / Connected / GA / APPLY.
+// for /onboard next export (aliases receipt|stamp|evidence) — free eng s1387 (+ s1397 session soft).
+// Offline evidence of the s1382 lane status board vocabulary; plugins dogfood lane reflects
+// session soft marker from /plugins dogfood when present (default dogfood_not_run).
+// Does NOT run plugins dogfood itself, dial MCP, or invent install green / Connected / GA / APPLY.
 // Header pins evidence_kind=onboard_next_lane_status_export · offline_static ·
 // not_live_dogfood · serial s1387.
-// board/export evidence ≠ invent Connected.
+// board/export evidence ≠ invent Connected · session soft ≠ live dogfood.
 func AionAgentOnboardingNextLaneStatusExport() string {
 	samplesState := nextLanePluginsSamplesSoftState()
+	dogfoodState := nextLanePluginsDogfoodSessionState()
 	return strings.TrimSpace(fmt.Sprintf(`# aion onboard next lane status export receipt
 
 evidence_kind=onboard_next_lane_status_export
@@ -256,12 +262,13 @@ not_live_dogfood=true
 serial=s1387
 format=markdown
 
-## board (honest vocabulary only — s1382 reuse · never invent connected / ga / apply as success)
+## board (honest vocabulary only — s1382+s1397 reuse · never invent connected / ga / apply as success)
 
-plugins: %s · dogfood_not_run · path_ready
+plugins: %s · %s · path_ready
   · offline samples soft-check only (examples/agent-plugins) · ≠ invent Agent Plugins GA
+  · session soft marker ≠ live dogfood · soft offline dogfood ≠ invent Agent Plugins GA
   · residual PASS ≠ live dogfood · never invent install green / Connected / INSTALL_STORE APPLY
-  · drill: /onboard next plugins (aliases plugin|dogfood)
+  · board/export evidence ≠ invent Connected · drill: /onboard next plugins (aliases plugin|dogfood)
 
 gtm: skill_ready · path_ready · residual_only
   · /gtm checklist + skill gtm-draft-only-agent path ready
@@ -283,10 +290,11 @@ portal: portal_hitl_still
 - dual_write OFF · book-demo OFF · not Memory GA
 - residual PASS ≠ live dogfood · never invent install green / Connected / INSTALL_STORE APPLY
 - catalog ≠ Connected · portal HITL · agent MCP cannot write installs
-- plugins dogfood ≠ invent Agent Plugins GA · drafts only · no auto-send
+- plugins dogfood ≠ invent Agent Plugins GA · session soft ≠ live dogfood · drafts only · no auto-send
 - GTM checklist ≠ invent GTM agent GA · package load ≠ Memory GA
 - board/export evidence ≠ invent Connected · rates ~$88/$119 optional
 - this receipt does NOT run plugins dogfood · does NOT dial MCP · does NOT invent green
+- session soft marker (if present) ≠ live dogfood · ≠ invent Agent Plugins GA · board ≠ invent Connected
 
 ## slash
 
@@ -294,30 +302,35 @@ portal: portal_hitl_still
 /onboard next status (aliases pulse|board) · /onboard next · /onboard status
 /plugins dogfood (aliases soft|samples|offline) · /plugins status — soft offline ≠ live dogfood · ≠ invent Agent Plugins GA
 
-Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · plugins dogfood ≠ invent Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · board/export evidence ≠ invent Connected · rates ~$88/$119 optional`, samplesState))
+Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · plugins dogfood ≠ invent Agent Plugins GA · session soft ≠ live dogfood · drafts only · no auto-send · package load ≠ Memory GA · board/export evidence ≠ invent Connected · rates ~$88/$119 optional`, samplesState, dogfoodState))
 }
 
-// nextLaneStatusExportDTO is the offline JSON shape for AionAgentOnboardingNextLaneStatusExportJSON (s1387).
+// nextLaneStatusExportDTO is the offline JSON shape for AionAgentOnboardingNextLaneStatusExportJSON (s1387+s1397).
 // Honest vocabulary only — never invents Connected/GA/APPLY success.
+// Plugins dogfood session state (s1397): dogfood_not_run default; soft_offline_dogfood_session_pass|fail after /plugins dogfood.
 type nextLaneStatusExportDTO struct {
-	EvidenceKind   string            `json:"evidence_kind"`
-	OfflineStatic  bool              `json:"offline_static"`
-	NotLiveDogfood bool              `json:"not_live_dogfood"`
-	Serial         string            `json:"serial"`
-	Format         string            `json:"format"`
-	Lanes          map[string]string `json:"lanes"`
-	SamplesState   string            `json:"samples_state"`
-	DogfoodNotRun  bool              `json:"dogfood_not_run"`
-	HonestyLocks   []string          `json:"honesty_locks"`
-	Slash          []string          `json:"slash"`
-	Note           string            `json:"note"`
+	EvidenceKind        string            `json:"evidence_kind"`
+	OfflineStatic       bool              `json:"offline_static"`
+	NotLiveDogfood      bool              `json:"not_live_dogfood"`
+	Serial              string            `json:"serial"`
+	Format              string            `json:"format"`
+	Lanes               map[string]string `json:"lanes"`
+	SamplesState        string            `json:"samples_state"`
+	PluginsDogfoodState string            `json:"plugins_dogfood_state"`
+	DogfoodNotRun       bool              `json:"dogfood_not_run"`
+	HonestyLocks        []string          `json:"honesty_locks"`
+	Slash               []string          `json:"slash"`
+	Note                string            `json:"note"`
 }
 
 // AionAgentOnboardingNextLaneStatusExportJSON residual-honest JSON status export receipt
-// for /onboard next export json (s1387). Same honesty as markdown; offline static only.
-// Does NOT run plugins dogfood, dial MCP, or invent install green / Connected / GA / APPLY.
+// for /onboard next export json (s1387+s1397). Same honesty as markdown; offline only.
+// Reflects session soft dogfood marker when set by /plugins dogfood (≠ live dogfood).
+// Does NOT run plugins dogfood itself, dial MCP, or invent install green / Connected / GA / APPLY.
 func AionAgentOnboardingNextLaneStatusExportJSON() string {
 	samplesState := nextLanePluginsSamplesSoftState()
+	dogfoodState := nextLanePluginsDogfoodSessionState()
+	ran, _ := agentplugins.GetSoftDogfoodSessionState()
 	dto := nextLaneStatusExportDTO{
 		EvidenceKind:   "onboard_next_lane_status_export",
 		OfflineStatic:  true,
@@ -325,23 +338,28 @@ func AionAgentOnboardingNextLaneStatusExportJSON() string {
 		Serial:         "s1387",
 		Format:         "json",
 		Lanes: map[string]string{
-			"plugins": fmt.Sprintf("%s · dogfood_not_run · path_ready", samplesState),
+			"plugins": fmt.Sprintf("%s · %s · path_ready", samplesState, dogfoodState),
 			"gtm":     "skill_ready · path_ready · residual_only",
 			"memory":  "path_ready · residual_only",
 			"portal":  "portal_hitl_still",
 		},
-		SamplesState:  samplesState,
-		DogfoodNotRun: true,
+		SamplesState:        samplesState,
+		PluginsDogfoodState: dogfoodState,
+		// dogfood_not_run true only when session soft dogfood has not run (s1397).
+		// When ran, still not_live_dogfood=true — session soft ≠ live dogfood.
+		DogfoodNotRun: !ran,
 		HonestyLocks: []string{
 			"dual_write OFF",
 			"book-demo OFF",
 			"not Memory GA",
 			"residual PASS ≠ live dogfood",
+			"session soft ≠ live dogfood",
 			"never invent install green / Connected / INSTALL_STORE APPLY",
 			"catalog ≠ Connected",
 			"portal HITL",
 			"agent MCP cannot write installs",
 			"plugins dogfood ≠ invent Agent Plugins GA",
+			"soft offline dogfood ≠ invent Agent Plugins GA",
 			"drafts only",
 			"no auto-send",
 			"GTM checklist ≠ invent GTM agent GA",
@@ -356,7 +374,7 @@ func AionAgentOnboardingNextLaneStatusExportJSON() string {
 			"/plugins dogfood",
 			"/plugins status",
 		},
-		Note: "offline static evidence of residual-honest lane board; board/export evidence ≠ invent Connected; does NOT run plugins dogfood or dial MCP; soft offline dogfood ≠ invent Agent Plugins GA",
+		Note: "offline residual-honest lane board evidence; plugins_dogfood_state is session soft marker only (default dogfood_not_run); session soft ≠ live dogfood; board/export evidence ≠ invent Connected; does NOT run plugins dogfood or dial MCP; soft offline dogfood ≠ invent Agent Plugins GA",
 	}
 	b, err := json.MarshalIndent(dto, "", "  ")
 	if err != nil {
@@ -372,4 +390,11 @@ func AionAgentOnboardingNextLaneStatusExportJSON() string {
 // Does not run dogfood, Dial MCP, or invent Agent Plugins GA / Connected.
 func nextLanePluginsSamplesSoftState() string {
 	return agentplugins.SamplesSoftState("")
+}
+
+// nextLanePluginsDogfoodSessionState returns session soft dogfood vocabulary (s1397).
+// Default dogfood_not_run; after /plugins dogfood: soft_offline_dogfood_session_pass|fail.
+// Session soft ≠ live dogfood · ≠ invent Agent Plugins GA · board ≠ invent Connected.
+func nextLanePluginsDogfoodSessionState() string {
+	return agentplugins.SoftDogfoodSessionLabel()
 }

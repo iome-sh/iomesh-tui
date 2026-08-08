@@ -1359,6 +1359,8 @@ func TestHandleSlash_OnboardNextLaneStatus(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
 	adapter := runtimeAdapter{rt: rt}
+	resetPluginsSlashSession()
+	t.Cleanup(resetPluginsSlashSession)
 
 	needles := []string{
 		"onboard next lane status",
@@ -1384,6 +1386,7 @@ func TestHandleSlash_OnboardNextLaneStatus(t *testing.T) {
 		"never invent install green",
 		"INSTALL_STORE APPLY",
 		"residual PASS ≠ live dogfood",
+		"session soft ≠ live dogfood",
 		"/onboard next export",
 		"board/export evidence ≠ invent Connected",
 	}
@@ -1430,6 +1433,8 @@ func TestHandleSlash_OnboardNextLaneStatusExport(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
 	adapter := runtimeAdapter{rt: rt}
+	resetPluginsSlashSession()
+	t.Cleanup(resetPluginsSlashSession)
 
 	needles := []string{
 		"evidence_kind=onboard_next_lane_status_export",
@@ -1458,6 +1463,7 @@ func TestHandleSlash_OnboardNextLaneStatusExport(t *testing.T) {
 		"drafts only",
 		"no auto-send",
 		"residual PASS ≠ live dogfood",
+		"session soft ≠ live dogfood",
 	}
 
 	for _, line := range []string{
@@ -1503,6 +1509,8 @@ func TestHandleSlash_OnboardNextLaneStatusExportJSON(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
 	adapter := runtimeAdapter{rt: rt}
+	resetPluginsSlashSession()
+	t.Cleanup(resetPluginsSlashSession)
 
 	for _, line := range []string{
 		"/onboard next export json",
@@ -1522,9 +1530,11 @@ func TestHandleSlash_OnboardNextLaneStatusExportJSON(t *testing.T) {
 			`"serial": "s1387"`,
 			`"format": "json"`,
 			`"dogfood_not_run": true`,
+			`"plugins_dogfood_state": "dogfood_not_run"`,
 			"path_ready",
 			"portal_hitl_still",
 			"board/export evidence ≠ invent Connected",
+			"session soft ≠ live dogfood",
 			"residual:",
 			"s1387",
 		} {
@@ -1538,6 +1548,106 @@ func TestHandleSlash_OnboardNextLaneStatusExportJSON(t *testing.T) {
 		if strings.Contains(s, "INSTALL_STORE APPLY success") {
 			t.Fatalf("%s must not invent APPLY success: %s", line, s)
 		}
+	}
+}
+
+// s1397: after /plugins dogfood, /onboard next status + export reflect session soft marker.
+func TestHandleSlash_OnboardNextStatusExport_SessionSoftDogfood(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+	resetPluginsSlashSession()
+	t.Cleanup(resetPluginsSlashSession)
+
+	// Default status/export: dogfood_not_run
+	out.Reset()
+	_, err := handleSlash(&out, adapter, "/onboard next status")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "dogfood_not_run") {
+		t.Fatalf("default status want dogfood_not_run:\n%s", out.String())
+	}
+
+	// Run soft offline dogfood (sets session marker)
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/plugins dogfood")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dogfoodOut := out.String()
+	for _, want := range []string{
+		"/onboard next status",
+		"/onboard next export",
+		"session soft ≠ live dogfood",
+		"Agent Plugins GA",
+	} {
+		if !strings.Contains(dogfoodOut, want) {
+			t.Fatalf("dogfood tip/honesty missing %q in:\n%s", want, dogfoodOut)
+		}
+	}
+	if strings.Contains(dogfoodOut, "Agent Plugins GA shipped") || strings.Contains(dogfoodOut, "Connected: yes") {
+		t.Fatalf("dogfood must not invent GA/Connected:\n%s", dogfoodOut)
+	}
+
+	// Status board should show session soft marker (pass expected when samples present).
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next status")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := out.String()
+	if !strings.Contains(s, "soft_offline_dogfood_session") {
+		t.Fatalf("after dogfood, status want soft_offline_dogfood_session_*:\n%s", s)
+	}
+	if strings.Contains(s, "· dogfood_not_run ·") {
+		t.Fatalf("after dogfood, plugins lane must not hardcode dogfood_not_run:\n%s", s)
+	}
+	for _, want := range []string{
+		"session soft ≠ live dogfood",
+		"board/export evidence ≠ invent Connected",
+		"not live dogfood",
+	} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("status after dogfood missing %q:\n%s", want, s)
+		}
+	}
+	if strings.Contains(s, "Connected: yes") || strings.Contains(s, "Agent Plugins GA shipped") || strings.Contains(s, "live dogfood green") {
+		t.Fatalf("status after dogfood must not invent Connected/GA/live:\n%s", s)
+	}
+
+	// Export markdown
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next export")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s = out.String()
+	if !strings.Contains(s, "soft_offline_dogfood_session") {
+		t.Fatalf("after dogfood, export want soft_offline_dogfood_session_*:\n%s", s)
+	}
+	if strings.Contains(s, "Connected: yes") || strings.Contains(s, "Agent Plugins GA shipped") {
+		t.Fatalf("export after dogfood must not invent Connected/GA:\n%s", s)
+	}
+
+	// Export JSON
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/onboard next export json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s = out.String()
+	if !strings.Contains(s, `"plugins_dogfood_state": "soft_offline_dogfood_session_`) {
+		t.Fatalf("export JSON after dogfood want plugins_dogfood_state session marker:\n%s", s)
+	}
+	if !strings.Contains(s, `"dogfood_not_run": false`) {
+		t.Fatalf("export JSON after dogfood want dogfood_not_run false:\n%s", s)
+	}
+	if !strings.Contains(s, `"not_live_dogfood": true`) {
+		t.Fatalf("export JSON must keep not_live_dogfood true:\n%s", s)
+	}
+	if strings.Contains(s, "Connected: yes") || strings.Contains(s, "Agent Plugins GA shipped") {
+		t.Fatalf("export JSON after dogfood must not invent Connected/GA:\n%s", s)
 	}
 }
 

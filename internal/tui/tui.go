@@ -796,17 +796,17 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 						return false, nil
 					case "status", "pulse", "board":
 						fmt.Fprintln(out, agent.AionAgentOnboardingNextLaneStatus())
-						fmt.Fprintln(out, "— residual: next lane status board · dual_write OFF · not Memory GA · dogfood_not_run · portal_hitl_still · never invent Connected/GA/APPLY · residual PASS ≠ live dogfood · board/export evidence ≠ invent Connected")
+						fmt.Fprintln(out, "— residual: next lane status board · dual_write OFF · not Memory GA · session soft ≠ live dogfood · portal_hitl_still · never invent Connected/GA/APPLY · residual PASS ≠ live dogfood · board/export evidence ≠ invent Connected")
 						return false, nil
 					case "export", "receipt", "stamp", "evidence":
 						// Optional third token: json → JSON receipt; otherwise markdown.
 						if len(parts) >= 4 && strings.ToLower(parts[3]) == "json" {
 							fmt.Fprintln(out, agent.AionAgentOnboardingNextLaneStatusExportJSON())
-							fmt.Fprintln(out, "— residual: next lane status export json · evidence_kind=onboard_next_lane_status_export · offline_static · not_live_dogfood · s1387 · board/export evidence ≠ invent Connected · dual_write OFF · not Memory GA")
+							fmt.Fprintln(out, "— residual: next lane status export json · evidence_kind=onboard_next_lane_status_export · offline_static · not_live_dogfood · s1387 · session soft ≠ live dogfood · board/export evidence ≠ invent Connected · dual_write OFF · not Memory GA")
 							return false, nil
 						}
 						fmt.Fprintln(out, agent.AionAgentOnboardingNextLaneStatusExport())
-						fmt.Fprintln(out, "— residual: next lane status export receipt · evidence_kind=onboard_next_lane_status_export · offline_static · not_live_dogfood · s1387 · board/export evidence ≠ invent Connected · dual_write OFF · not Memory GA")
+						fmt.Fprintln(out, "— residual: next lane status export receipt · evidence_kind=onboard_next_lane_status_export · offline_static · not_live_dogfood · s1387 · session soft ≠ live dogfood · board/export evidence ≠ invent Connected · dual_write OFF · not Memory GA")
 						return false, nil
 					default:
 						// Unknown next sub → overview + usage hint listing lanes.
