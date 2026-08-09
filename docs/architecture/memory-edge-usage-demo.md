@@ -411,10 +411,11 @@ Offline residual boards (docs-shaped, no invent green):
 /onboard next memory
 /onboard next agentic
 /onboard next memory-pull
+/onboard next setup
 /onboard next demo
 ```
 
-Useful for demo hosts who need honesty boards without claiming live APPLY.
+Useful for demo hosts who need honesty boards without claiming live APPLY. Companion setup map: `/onboard next setup` (s1542 · P1–P7 closeout residual · dual_write OFF · never invent Connected).
 
 ---
 

@@ -28,7 +28,7 @@ type DriftSnapshot struct {
 
 // DriftReport is a report-only maintenance drift probe (s1534 P6b).
 // OK = dual_write honest + no critical contradictions; OK ≠ invent Connected / install green.
-// Findings list residual-honest mismatches; Notes suggest next steps (no auto-repair).
+// Findings list residual-honest mismatches; Notes suggest next steps (guided repair via /setup repair).
 type DriftReport struct {
 	// config intent
 	ConfigPresent           bool
@@ -51,7 +51,8 @@ type DriftReport struct {
 }
 
 // BuildDriftReport compares config intent with a runtime DriftSnapshot (report-only).
-// Never invents Connected / Memory GA / install green. No auto-repair.
+// Never invents Connected / Memory GA / install green.
+// Next steps point at guided /setup repair plan · apply --yes (safe steps only).
 func BuildDriftReport(cfg *config.Config, snap DriftSnapshot) DriftReport {
 	rep := DriftReport{
 		MCPAttached:    snap.MCPAttached,
@@ -125,11 +126,11 @@ func BuildDriftReport(cfg *config.Config, snap DriftSnapshot) DriftReport {
 		rep.OK = false
 	}
 
-	// --- Notes: next steps only (no auto-repair) ---
+	// --- Notes: next steps only (report-only; guided repair is separate /setup repair) ---
 	rep.Notes = append(rep.Notes,
-		"drift is report-only · no auto-repair · dual_write OFF · not Memory GA",
-		"next steps when mismatched: /setup reload · /setup pull start · /setup analyze start · start memory host",
-		"package wire / drift PASS ≠ invent Connected · CLI iomesh memory pull still valid",
+		"drift is report-only · guided repair via /setup repair plan · apply --yes (safe steps only) · dual_write OFF · not Memory GA",
+		"next steps when mismatched: /setup repair plan · /setup repair apply --yes · /setup reload · /setup pull start · /setup analyze start · start memory host",
+		"package wire / drift PASS ≠ invent Connected · CLI iomesh memory pull still valid · dual_write never auto ON",
 	)
 	if !rep.ConfigPresent {
 		rep.Notes = append(rep.Notes, "no config — run: iomesh setup init local-memory or /setup init")
