@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **README OSS boundary (edge-first honesty)** — lead with **MIT OSS agent harness + optional mesh client surface — not the hosted multi-tenant mesh control plane**; table of what this public repo is / is not; status line separates shipped harness from **internal roadmap** (private control plane, install-store fleet APPLY, knowledge multi-tenant INSTALL_STORE punted for edge-first); edge install docs table; residual serial stamps framed as deep-doc labels not control-plane claims. dual_write OFF · not Memory GA · public OSS ≠ invent platform GA.
+
 ### Added
 
 - **Edge-first human-gates residual pin (s1550)** — rewrite `AionAgentHumanGatesHonestyBoard` for **edge-first** launch residual: local TUI + `iomesh-memory-mcp` + optional mesh pull · **dual_write OFF** · knowledge multi-tenant INSTALL_STORE **punted** (H1/H2 not launch gate) · Slack HMAC **punted for now** · integrations path = TUI agent MCP list/plan + portal HITL when OAuth needed · Stripe key/ACL largely closed (ACL residual only if Dashboard regresses) · still portal HITL when connect · book-demo OFF · E10 only if claiming Edge Memory GA · Edge Memory GA **candidacy only**. Sections: architecture · still_human_or_policy · punted_or_demoted · offline_residual_only/shipped_or_policy · operator. Light cross-links: guidance human-gates step · operator matrix row 4 · TUI residual footer · skill `aion-agent-onboarding` · [docs/architecture/setup-lifecycle.md](docs/architecture/setup-lifecycle.md). Honesty: dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · PASS ≠ invent Connected · agent MCP cannot write installs · portal HITL when connect · knowledge multi-tenant punted · Slack HMAC punted · H1/H2 not launch gate · open policy boxes stay honest.
