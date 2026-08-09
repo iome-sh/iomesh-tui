@@ -1,8 +1,8 @@
 # Setup lifecycle (agent-native wizard foundation)
 
-**Serial:** free eng **s1525** P1–P2 · **s1526** P3–P4 · **s1530** P5 · **s1534** P6 · residual-honest  
-**Status:** foundation + agent-native slash/skill + package wire + `ReplaceMCP` + in-session opt-in continuous pull + analyze ticks + report-only drift  
-**Not yet:** auto-repair from drift (report-only residual next steps)
+**Serial:** free eng **s1525** P1–P2 · **s1526** P3–P4 · **s1530** P5 · **s1534** P6 · **s1538** P7 · residual-honest  
+**Status:** foundation + agent-native slash/skill + package wire + `ReplaceMCP` + in-session opt-in continuous pull + analyze ticks + report-only drift + **guided repair** (safe steps · explicit `--yes`)  
+**Shipped P7:** `/setup repair` plan + apply `--yes` (safe steps only · notes stay human)
 
 ## Goal
 
@@ -14,6 +14,7 @@ setup init → write managed config → start memory host → preflight probe
   → /setup pull start (or CLI iomesh memory pull)
   → /setup analyze start (or /memory digest one-shot)
   → /setup drift (report-only)
+  → /setup repair plan · /setup repair apply --yes (safe steps only)
 ```
 
 ## CLI
@@ -55,7 +56,7 @@ Managed block markers:
 
 User edits **outside** the block are preserved on re-init.
 
-## Slash `/setup` (s1526 P3 + s1530 P5 + s1534 P6)
+## Slash `/setup` (s1526 P3 + s1530 P5 + s1534 P6 + s1538 P7)
 
 Agent-native operator surface (alias `/setup-lifecycle`):
 
@@ -78,23 +79,27 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 /setup analyze once …
 /setup analyze stop
 /setup drift [--config path]   # report-only FormatDriftText
-/setup maintain                # alias of drift (no auto-repair)
+/setup maintain                # alias of drift
+/setup repair                  # guided plan from current drift (default = plan)
+/setup repair plan [--config path]
+/setup repair apply --yes [--config path]   # safe steps only · refuse without --yes
 ```
 
 | Subcommand | Behavior |
 |------------|----------|
-| bare / `help` | usage + honesty one-liner (dual_write OFF · not Memory GA · pull/analyze opt-in · drift report-only) |
+| bare / `help` | usage + honesty one-liner (dual_write OFF · not Memory GA · pull/analyze opt-in · drift · guided repair) |
 | `init` | `setup.BuildManagedFragment` + `config.WriteSetupManagedUser` (or `--print-only`) |
 | `preflight` / `status` / `check` | `setup.Preflight` + `FormatPreflightText` |
 | `portal` | browser HITL URLs only |
 | `reload` | `runtimewire.ConnectMCP` + `Runtime.ReplaceMCP` (optional `--config path`) |
 | `pull` | in-session continuous pull status/start/once/stop (s1530 P5) |
 | `analyze` | in-session analyze tick status/start/once/stop (s1534 P6) |
-| `drift` / `maintain` | report-only `BuildDriftReport` + `FormatDriftText` (s1534 P6 · no auto-repair) |
+| `drift` / `maintain` | report-only `BuildDriftReport` + `FormatDriftText` (s1534 P6) |
+| `repair` | guided `PlanRepair` / `ApplyRepairPlan` (s1538 P7 · plan default · apply requires `--yes`) |
 
 Simple flags on slash `init`: `--stdio` · `--print-only` · `--plugins-dir path` · `--memory-url URL`. Full flag set remains on CLI `iomesh setup init`.
 
-After init: start memory host (if needed) · set secret env vars · `/setup reload` (or restart TUI) · optional `/setup pull start` when mesh + consumer configured · optional `/setup analyze start` · `/setup drift` for residual next steps.
+After init: start memory host (if needed) · set secret env vars · `/setup reload` (or restart TUI) · optional `/setup pull start` when mesh + consumer configured · optional `/setup analyze start` · `/setup drift` for residual next steps · optional `/setup repair apply --yes` for safe guided steps only.
 
 ## Continuous pull (s1530 P5)
 
@@ -133,15 +138,32 @@ Report-only config intent vs runtime snapshot:
 | Slash | `/setup drift` · `/setup maintain` (alias) |
 | API | `setup.BuildDriftReport(cfg, snap)` · `setup.FormatDriftText(rep)` · `Runtime.DriftSnapshot()` |
 
-**Honesty:** dual_write OFF · not Memory GA · drift report ≠ invent install green · package wire ≠ Connected · **no auto-repair**.
+**Honesty:** dual_write OFF · not Memory GA · drift report ≠ invent install green · package wire ≠ Connected · residual next-steps notes (guided repair is separate P7).
 
-## Agent surfaces (s1526 P3 + s1530 P5 + s1534 P6)
+## Guided repair (s1538 P7)
+
+Plan + optional apply of **safe** residual steps from a drift report:
+
+| Path | How |
+|------|-----|
+| Slash plan | `/setup repair` · `/setup repair plan` → `PlanRepair` + `FormatRepairPlan` (no side effects) |
+| Slash apply | `/setup repair apply --yes` → `ApplyRepairPlan(…, dryRun=false)` · refuse without `--yes` |
+| API | `setup.PlanRepair(rep)` · `FormatRepairPlan` · `FormatRepairResult` · `ApplyRepairPlan(ctx, plan, executor, dryRun)` |
+| Executor | TUI `setupRepairExecutor`: `ReloadMCP` · `StartPull` · `StartAnalyze` |
+
+**Safe auto-apply kinds (with `--yes` only):** `reload_mcp` · `start_pull` (when pull_continuous + mesh) · `start_analyze` (when analyze_continuous).
+
+**Note/manual kinds (never auto-applied):** dual_write flip · memory host start · mesh `[iomesh]` config · noop.
+
+**Honesty:** dual_write OFF · not Memory GA · **repair apply ≠ invent Connected** · package wire ≠ Connected · portal HITL still human · dual_write never auto-flipped ON · no auto-repair without explicit `apply --yes`.
+
+## Agent surfaces (s1526 P3 + s1530 P5 + s1534 P6 + s1538 P7)
 
 | Surface | Detail |
 |---------|--------|
 | Builtin skill | `setup-lifecycle-agent` via `go:embed` under `internal/skills/builtin/` — always merged when skills enabled |
 | System note | `<setup-lifecycle>` via `setup.SetupLifecycleAgentGuidanceNote()` on `AttachMCP` |
-| Slash | `/setup` / `/setup-lifecycle` including `pull` · `analyze` · `drift` |
+| Slash | `/setup` / `/setup-lifecycle` including `pull` · `analyze` · `drift` · `repair` |
 
 Skill + note + slash share honesty locks; skill is the full playbook.
 
@@ -156,7 +178,8 @@ Skill + note + slash share honesty locks; skill is the full playbook.
 | portal HITL | OAuth/install still browser |
 | continuous pull opt-in | `/setup pull` · `pull_continuous` · CLI `iomesh memory pull` still valid · pull ≠ invent Connected |
 | analyze ticks opt-in | `/setup analyze` · `analyze_continuous` · `/memory digest` still valid · analyze tick ≠ invent Connected |
-| drift report-only | `/setup drift` · `/setup maintain` · no auto-repair · drift ≠ invent install green · package wire ≠ Connected |
+| drift report-only | `/setup drift` · `/setup maintain` · residual next steps · drift ≠ invent install green · package wire ≠ Connected |
+| guided repair explicit | `/setup repair` · `apply --yes` only · safe steps · repair apply ≠ invent Connected · no auto-repair without `--yes` |
 
 ## Preflight states
 
@@ -180,15 +203,15 @@ Shared package wire (`internal/runtimewire`):
 **Honesty:** package wire ≠ Connected · dual_write OFF · Discover/map ≠ install APPLY green.  
 Skills catalog is **not** re-scanned on `/setup reload` (restart for skill-only path changes).
 
-## Next phases (plan)
+## Phases (plan)
 
 - ~~`/setup` slash + `setup-lifecycle-agent` skill~~ **shipped s1526 P3**  
 - ~~`ReplaceMCP` / package wire / `/setup reload`~~ **shipped s1526 P4**  
 - ~~In-session continuous pull (`/setup pull` · `pull_continuous`)~~ **shipped s1530 P5**  
 - ~~Analyze auto-ticks (`/setup analyze` · `analyze_continuous`) + drift report~~ **shipped s1534 P6**  
-- Maintenance auto-repair (later · drift remains report-only for now)
+- ~~Guided repair (`/setup repair` plan · `apply --yes` safe steps)~~ **shipped s1538 P7**
 
-See product plan: agent-native MCP/plugin setup wizard + continuous pull/analyze.
+See product plan: agent-native MCP/plugin setup wizard + continuous pull/analyze + guided repair.
 
 ## Related
 

@@ -571,14 +571,16 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			fmt.Fprintln(out, text)
 		}
 	case "/setup", "/setup-lifecycle":
-		// s1526 P3–P4 + s1530 P5 + s1534 P6: agent-native setup lifecycle slash
-		// (init/preflight/portal/reload/pull/analyze/drift). Residual honesty: dual_write OFF ·
+		// s1526 P3–P4 + s1530 P5 + s1534 P6 + s1538 P7: agent-native setup lifecycle slash
+		// (init/preflight/portal/reload/pull/analyze/drift/repair). Residual honesty: dual_write OFF ·
 		// not Memory GA · catalog ≠ Connected · portal HITL · setup PASS ≠ invent
 		// install green · continuous pull/analyze opt-in · CLI iomesh memory pull still valid ·
-		// /memory digest still valid · drift report-only ≠ invent install green.
+		// /memory digest still valid · drift report-only ≠ invent install green ·
+		// repair plan/apply safe steps only · repair apply ≠ invent Connected · no auto-repair without apply --yes.
 		// P4: /setup reload → runtimewire.ConnectMCP + Runtime.ReplaceMCP (package wire ≠ Connected).
 		// P5: /setup pull → Runtime continuous memory pull (opt-in · pull ≠ invent Connected).
 		// P6: /setup analyze → Runtime analyze ticks; /setup drift|maintain → report-only drift.
+		// P7: /setup repair → PlanRepair / ApplyRepairPlan (safe steps · explicit --yes).
 		if len(parts) < 2 {
 			fmt.Fprintln(out, setupHelp())
 			return false, nil
@@ -601,6 +603,8 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			handleSetupAnalyze(out, rt, parts[2:])
 		case "drift", "maintain", "maintenance":
 			handleSetupDrift(out, rt, parts[2:])
+		case "repair", "fix":
+			handleSetupRepair(out, rt, parts[2:])
 		default:
 			fmt.Fprintf(out, "setup: unknown subcommand %q\n%s\n", parts[1], setupHelp())
 		}
@@ -990,7 +994,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /catalog [query]     list mesh data products (catalog plane)
   /memory [recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · status advanced inventory)
   /integrations [list|plan|signing|status]  connector setup via MCP (catalog+plan+signing discovery+portal HITL; not install CRUD)
-  /setup [init|preflight|portal|reload|pull]  setup lifecycle (managed config · preflight · portal HITL · hot MCP reload · opt-in continuous pull; alias /setup-lifecycle; dual_write OFF · not Memory GA · PASS ≠ invent Connected · pull ≠ invent Connected)
+  /setup [init|preflight|portal|reload|pull|analyze|drift|repair]  setup lifecycle (managed config · preflight · portal HITL · hot MCP reload · opt-in continuous pull/analyze · drift report · guided repair; alias /setup-lifecycle; dual_write OFF · not Memory GA · PASS ≠ invent Connected · pull/analyze/repair ≠ invent Connected)
   /gtm [help|checklist]  GTM draft-only guidance or checklist (aliases /gtm-draft /gtm-agent; no auto-send; human publish)
   /onboard [help|checklist|portal|status|next]  TUI agent ↔ aion onboarding guidance, checklist, portal Agent/MCP handoff, offline status, or post-onboard next lanes (aliases /aion-onboard /agent-onboard; residual-honest · portal HITL · settings/agent; next [plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|demo|operator|status|export|human-gates]; next mesh→stream|streams|heartbeat|heartbeats|pull; next planes→three-planes|product-planes|product|pillars|three_planes; next sales→claims|buyer|claim-matrix|sales-claims|buyer-claims; next demo→demo-ready|readiness|demo-readiness|lighthouse|landgrab; next operator→operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix; next status→pulse|board; next export→receipt|stamp|evidence [json]; next aliases after|continue|lanes; pulse stays status board; product/planes stay three-planes; readiness/lighthouse stay demo)
   /plugins [help|list|validate|smoke|status]  residual-honest Agent Plugins soft offline smoke (alias /plugin; smoke aliases dogfood|soft|samples|offline; check→validate; Discover ≠ Connected · soft offline ≠ live smoke · ≠ invent Agent Plugins GA)
@@ -1019,16 +1023,17 @@ honesty: ` + agent.IntegrationsHonestyOneLiner + `
   aion MCP v178 list/plan + v30 signing · browser HITL for OAuth · never invent install green`)
 }
 
-// setupHelp is bare /setup and help/? copy (s1526 P3+P4 + s1530 P5 + s1534 P6 residual honesty).
+// setupHelp is bare /setup and help/? copy (s1526 P3+P4 + s1530 P5 + s1534 P6 + s1538 P7 residual honesty).
 func setupHelp() string {
-	return strings.TrimSpace(`usage: /setup [init [profiles] [--stdio] [--print-only] [--plugins-dir path] | preflight | portal | reload | pull … | analyze … | drift|maintain]
+	return strings.TrimSpace(`usage: /setup [init [profiles] [--stdio] [--print-only] [--plugins-dir path] | preflight | portal | reload | pull … | analyze … | drift|maintain | repair …]
   init       write managed config fragment (profiles: local-memory|plugins|mesh|platform-mcp|all; default local-memory)
   preflight  residual-honest probe (aliases status|check) — PASS ≠ invent Connected / Memory GA
   portal     browser HITL URLs (integrations + settings/agent)
   reload     hot-swap MCP from user config (ConnectMCP + ReplaceMCP; package wire ≠ Connected)
   pull       continuous pull status|start|once|stop (s1530 P5 · opt-in · CLI iomesh memory pull still valid)
   analyze    analyze tick status|start|once|stop (s1534 P6 · opt-in · /memory digest still valid)
-  drift      report-only config vs runtime drift (alias maintain · no auto-repair)
+  drift      report-only config vs runtime drift (alias maintain · residual next steps)
+  repair     guided plan from drift · apply safe steps only with --yes (s1538 P7 · no auto-repair without --yes)
   help|?     this residual-honest usage (also bare /setup)
 aliases: /setup-lifecycle
 honesty: ` + setup.SetupLifecycleHonestyOneLiner + `
@@ -1037,7 +1042,8 @@ honesty: ` + setup.SetupLifecycleHonestyOneLiner + `
   reload: dual_write OFF · does not invent install green · skills dirs not re-scanned (restart for skill-only)
   pull: dual_write OFF · not Memory GA · pull ≠ invent Connected · CLI iomesh memory pull still valid
   analyze: dual_write OFF · not Memory GA · analyze tick ≠ invent Connected · /memory digest still valid
-  drift: dual_write OFF · not Memory GA · drift report ≠ invent install green · package wire ≠ Connected`)
+  drift: dual_write OFF · not Memory GA · drift report ≠ invent install green · package wire ≠ Connected
+  repair: dual_write OFF · not Memory GA · repair apply ≠ invent Connected · package wire ≠ Connected · portal HITL still human · safe steps only · no auto-repair without apply --yes`)
 }
 
 // setupPullHonesty is printed on every /setup pull output (s1530 P5 residual honesty).
@@ -1118,7 +1124,7 @@ func handleSetupInit(out io.Writer, args []string) {
 	fmt.Fprintln(out, "next: ensure iomesh-memory-mcp is running (if local-memory) · set secret env vars")
 	fmt.Fprintln(out, "then: /setup preflight  · /setup reload  (or restart iomesh; CLI: iomesh setup preflight)")
 	fmt.Fprintln(out, "honesty: dual_write OFF · not Memory GA · catalog ≠ Connected · portal HITL for installs")
-	fmt.Fprintln(out, "note: continuous pull opt-in via /setup pull · analyze ticks via /setup analyze · drift report /setup drift · CLI iomesh memory pull · /memory digest still valid · reload = package wire ≠ Connected")
+	fmt.Fprintln(out, "note: continuous pull opt-in via /setup pull · analyze ticks via /setup analyze · drift /setup drift · guided repair /setup repair · CLI iomesh memory pull · /memory digest still valid · reload = package wire ≠ Connected")
 }
 
 // handleSetupReload reloads MCP servers from config without process restart (s1526 P4).
@@ -1174,7 +1180,7 @@ func handleSetupReload(out io.Writer, rt runtimeAdapter, args []string) {
 	}
 	fmt.Fprintf(out, "setup reload: connected=%d tools=%d (package wire · fail-open per server)\n", mgr.Len(), nTools)
 	fmt.Fprintln(out, "honesty: dual_write OFF · package wire ≠ Connected · Discover/map ≠ install APPLY green · not Memory GA")
-	fmt.Fprintln(out, "note: skills catalog not re-scanned on reload · continuous pull/analyze opt-in via /setup pull · /setup analyze · drift /setup drift · CLI iomesh memory pull · /memory digest still valid")
+	fmt.Fprintln(out, "note: skills catalog not re-scanned on reload · continuous pull/analyze opt-in via /setup pull · /setup analyze · drift /setup drift · repair /setup repair · CLI iomesh memory pull · /memory digest still valid")
 }
 
 // handleSetupPull dispatches /setup pull [status|start|once|stop] (s1530 P5).
@@ -1690,8 +1696,213 @@ func handleSetupDrift(out io.Writer, rt runtimeAdapter, args []string) {
 func setupDriftHelp() string {
 	return strings.TrimSpace(`usage: /setup drift [--config path]
   report-only config intent vs runtime snapshot (alias: /setup maintain)
-  no auto-repair · residual next-steps notes only
+  residual next-steps notes · guided repair via /setup repair (plan · apply --yes)
 honesty: dual_write OFF · not Memory GA · drift report ≠ invent install green · package wire ≠ Connected`)
+}
+
+// setupRepairHonesty is printed on every /setup repair output (s1538 P7 residual honesty).
+const setupRepairHonesty = "honesty: dual_write OFF · not Memory GA · repair apply ≠ invent Connected · package wire ≠ Connected · portal HITL still human"
+
+// handleSetupRepair dispatches /setup repair [plan|apply] (s1538 P7).
+// Bare /setup repair → plan only (FormatRepairPlan from current drift).
+// apply requires --yes; refuse without --yes (no auto-repair).
+// Residual-honest: repair apply ≠ invent Connected · dual_write OFF · portal HITL still human.
+func handleSetupRepair(out io.Writer, rt runtimeAdapter, args []string) {
+	sub := "plan"
+	rest := args
+	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
+		sub = strings.ToLower(strings.TrimSpace(args[0]))
+		rest = args[1:]
+	}
+	switch sub {
+	case "plan", "dry-run", "dryrun", "dry_run", "":
+		handleSetupRepairPlan(out, rt, rest)
+	case "apply":
+		handleSetupRepairApply(out, rt, rest)
+	case "help", "?":
+		fmt.Fprintln(out, setupRepairHelp())
+	default:
+		fmt.Fprintf(out, "setup repair: unknown subcommand %q\n%s\n", sub, setupRepairHelp())
+	}
+}
+
+func setupRepairHelp() string {
+	return strings.TrimSpace(`usage: /setup repair [plan|apply] [--config path] [--yes]
+  plan    residual-honest repair plan from current drift (default; bare /setup repair)
+  apply   apply safe steps only; requires --yes (refuse without --yes · no auto-repair)
+honesty: dual_write OFF · not Memory GA · repair apply ≠ invent Connected · package wire ≠ Connected · portal HITL still human
+  safe steps only (reload_mcp · start_pull · start_analyze) · notes for human host/mesh/dual_write
+  dual_write never auto-flipped ON · apply success ≠ invent Connected / Memory GA`)
+}
+
+// handleSetupRepairPlan prints FormatRepairPlan(PlanRepair(drift)) residual-honest (no side effects).
+func handleSetupRepairPlan(out io.Writer, rt runtimeAdapter, args []string) {
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		if a == "help" || a == "?" {
+			fmt.Fprintln(out, setupRepairHelp())
+			return
+		}
+	}
+	cfg, _, loadNote := loadSetupConfig(args)
+	if loadNote != "" {
+		fmt.Fprintln(out, loadNote)
+	}
+	rep := buildSetupDriftReport(rt, cfg)
+	plan := setup.PlanRepair(rep)
+	// Plan path is no-side-effects; FormatRepairPlan always includes RepairHonestyFooter.
+	fmt.Fprint(out, setup.FormatRepairPlan(plan))
+}
+
+// handleSetupRepairApply applies safe steps only when --yes is present.
+// Without --yes: residual-honest refuse (no auto-repair).
+func handleSetupRepairApply(out io.Writer, rt runtimeAdapter, args []string) {
+	yes := false
+	cfgPath := ""
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		switch {
+		case a == "help" || a == "?":
+			fmt.Fprintln(out, setupRepairHelp())
+			return
+		case a == "--yes" || a == "-y" || a == "--confirm":
+			yes = true
+		case a == "--config" && i+1 < len(args):
+			i++
+			cfgPath = strings.TrimSpace(args[i])
+		case strings.HasPrefix(a, "--config="):
+			cfgPath = strings.TrimSpace(strings.TrimPrefix(a, "--config="))
+		case strings.HasPrefix(a, "-"):
+			fmt.Fprintf(out, "setup repair apply: unknown flag %q\n%s\n", a, setupRepairHelp())
+			return
+		default:
+			fmt.Fprintf(out, "setup repair apply: unexpected arg %q\n%s\n", a, setupRepairHelp())
+			return
+		}
+	}
+	if !yes {
+		fmt.Fprintln(out, "setup repair apply: refuse without --yes (explicit opt-in · no auto-repair)")
+		fmt.Fprintln(out, "hint: /setup repair plan to preview · /setup repair apply --yes for safe steps only")
+		fmt.Fprintln(out, setupRepairHonesty)
+		return
+	}
+	// Load config (explicit path or user).
+	var (
+		cfg *config.Config
+		err error
+	)
+	if cfgPath != "" {
+		cfg, err = config.Load(cfgPath)
+	} else {
+		cfg, err = config.LoadUser()
+	}
+	if err != nil {
+		fmt.Fprintf(out, "setup repair apply: config note: %v (continuing with empty config intent)\n", err)
+		cfg = nil
+	}
+	rep := buildSetupDriftReport(rt, cfg)
+	plan := setup.PlanRepair(rep)
+	ex := setupRepairExecutor{rt: rt, cfg: cfg}
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	result := setup.ApplyRepairPlan(ctx, plan, ex, false /* dryRun */)
+	fmt.Fprint(out, setup.FormatRepairResult(result))
+	// Optionally re-print residual-honest drift summary after apply.
+	after := buildSetupDriftReport(rt, cfg)
+	fmt.Fprintln(out, "--- post-apply drift (residual-honest · ≠ invent install green) ---")
+	fmt.Fprint(out, setup.FormatDriftText(after))
+}
+
+// loadSetupConfig parses optional --config from args and loads user/path config.
+// Fail-open: returns nil cfg + note on load error (residual-honest empty intent).
+func loadSetupConfig(args []string) (cfg *config.Config, cfgPath string, note string) {
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		switch {
+		case a == "--config" && i+1 < len(args):
+			i++
+			cfgPath = strings.TrimSpace(args[i])
+		case strings.HasPrefix(a, "--config="):
+			cfgPath = strings.TrimSpace(strings.TrimPrefix(a, "--config="))
+		}
+	}
+	var err error
+	if cfgPath != "" {
+		cfg, err = config.Load(cfgPath)
+	} else {
+		cfg, err = config.LoadUser()
+	}
+	if err != nil {
+		return nil, cfgPath, fmt.Sprintf("setup repair: config note: %v (continuing with empty config intent)", err)
+	}
+	return cfg, cfgPath, ""
+}
+
+// buildSetupDriftReport maps runtime DriftSnapshot + cfg into setup.DriftReport.
+// nil/no runtime → zero snap residual-honest (not invent green).
+func buildSetupDriftReport(rt runtimeAdapter, cfg *config.Config) setup.DriftReport {
+	var snap setup.DriftSnapshot
+	if rt.rt != nil {
+		as := rt.rt.DriftSnapshot()
+		snap = setup.DriftSnapshot{
+			MCPAttached:    as.MCPAttached,
+			MCPServerCount: as.MCPServerCount,
+			MemoryServerOK: as.MemoryServerOK,
+			MemoryServer:   as.MemoryServer,
+			MeshEnabled:    as.MeshEnabled,
+			PullRunning:    as.PullRunning,
+			PullConsumer:   as.PullConsumer,
+			AnalyzeRunning: as.AnalyzeRunning,
+			DualWrite:      as.DualWrite,
+			MemoryEnabled:  as.MemoryEnabled,
+		}
+	}
+	return setup.BuildDriftReport(cfg, snap)
+}
+
+// setupRepairExecutor implements setup.RepairExecutor wrapping runtimeAdapter.
+// ReloadMCP mirrors handleSetupReload; StartPull/StartAnalyze use config knobs.
+type setupRepairExecutor struct {
+	rt  runtimeAdapter
+	cfg *config.Config
+}
+
+func (e setupRepairExecutor) ReloadMCP(ctx context.Context) error {
+	if e.rt.rt == nil {
+		return fmt.Errorf("no agent runtime")
+	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	ws := ""
+	if e.rt.rt.Workspace() != nil {
+		ws = e.rt.rt.Workspace().Root()
+	}
+	// ConnectMCP returns nil when MCP feature off or no servers — ReplaceMCP detaches.
+	// package wire ≠ Connected (same honesty as /setup reload).
+	mgr := runtimewire.ConnectMCP(ctx, e.cfg, ws, slog.Default())
+	e.rt.rt.ReplaceMCP(mgr)
+	return nil
+}
+
+func (e setupRepairExecutor) StartPull(ctx context.Context) error {
+	if e.rt.rt == nil {
+		return fmt.Errorf("no agent runtime")
+	}
+	_ = ctx
+	pullCfg := continuousPullConfigFromMemory(e.cfg, false)
+	pullCfg.Enabled = true
+	return e.rt.rt.StartContinuousMemoryPull(pullCfg)
+}
+
+func (e setupRepairExecutor) StartAnalyze(ctx context.Context) error {
+	if e.rt.rt == nil {
+		return fmt.Errorf("no agent runtime")
+	}
+	_ = ctx
+	tickCfg := analyzeTickConfigFromMemory(e.cfg)
+	tickCfg.Enabled = true
+	return e.rt.rt.StartAnalyzeTick(tickCfg)
 }
 
 // handleSetupPreflight runs residual-honest setup.Preflight for /setup preflight|status|check.

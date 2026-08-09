@@ -10,9 +10,14 @@ End-to-end **example** story:
 signup (portal)  →  install TUI  →  MCP integrations (list/plan + portal HITL)
                  →  local memory install (kernel + MCP host)  →  attach TUI
                  →  show usage (/memory · mcp --connect · agent turn)
+                 →  optional /setup lifecycle map (residual-honest · dual_write OFF):
+                      init → preflight → portal HITL → reload
+                      → pull (opt-in) → analyze (opt-in) → drift (report)
+                      → repair plan · repair apply --yes (safe steps only)
 ```
 
-This is a **runbook-style example**, not a product claim that every step is automatic or GA-green.
+This is a **runbook-style example**, not a product claim that every step is automatic or GA-green.  
+**Honesty on the setup map:** PASS / pull / analyze / drift OK / repair apply **≠ invent Connected** · not Memory GA · portal HITL still human · no auto-repair without explicit `apply --yes`. See [setup-lifecycle.md](./setup-lifecycle.md).
 
 ---
 
@@ -382,7 +387,7 @@ In-session opt-in (s1530 P5 residual-honest · after mesh + `pull_consumer` conf
 
 Or set `[memory] pull_continuous = true` (setup fragment default **false**). Mesh is **pull egress** into local palace · dual_write stays OFF · pull ≠ invent Connected · hosted Palace sunset · CLI `iomesh memory pull` still valid.
 
-In-session analyze ticks + drift (s1534 P6 residual-honest · opt-in · report-only):
+In-session analyze ticks + drift + guided repair (s1534 P6 + s1538 P7 residual-honest · opt-in · explicit apply):
 
 ```text
 /setup analyze status
@@ -391,9 +396,12 @@ In-session analyze ticks + drift (s1534 P6 residual-honest · opt-in · report-o
 /setup analyze stop
 /setup drift
 /setup maintain
+/setup repair
+/setup repair plan
+/setup repair apply --yes
 ```
 
-Or set `[memory] analyze_continuous = true` (setup fragment default **false**). **`/memory digest` still valid** as one-shot ops pulse · analyze tick ≠ invent Connected · drift report ≠ invent install green · package wire ≠ Connected · dual_write OFF · not Memory GA · no auto-repair.
+Or set `[memory] analyze_continuous = true` (setup fragment default **false**). **`/memory digest` still valid** as one-shot ops pulse · analyze tick ≠ invent Connected · drift report ≠ invent install green · package wire ≠ Connected · dual_write OFF · not Memory GA · **guided repair** plans from drift · `apply --yes` safe steps only (`reload_mcp` · `start_pull` · `start_analyze`) · refuse without `--yes` · repair apply ≠ invent Connected · portal HITL still human · dual_write never auto-flipped ON · notes for human host/mesh remain manual.
 
 ### 5g. Onboard residual lanes (no live dial)
 

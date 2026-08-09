@@ -902,7 +902,7 @@ func TestLoadWithBuiltin_SetupLifecycleAgentAlwaysPresent(t *testing.T) {
 }
 
 // TestLoadBuiltin_S1526SetupLifecycleAgentSkillDogfood pins residual-honest body needles.
-// Extended s1530 P5 + s1534 P6: pull/analyze/drift opt-in honesty.
+// Extended s1530 P5 + s1534 P6 + s1538 P7: pull/analyze/drift/repair opt-in honesty.
 func TestLoadBuiltin_S1526SetupLifecycleAgentSkillDogfood(t *testing.T) {
 	cat, err := LoadBuiltin()
 	if err != nil {
@@ -926,6 +926,8 @@ func TestLoadBuiltin_S1526SetupLifecycleAgentSkillDogfood(t *testing.T) {
 		"/setup analyze",
 		"analyze_continuous",
 		"/setup drift",
+		"/setup repair",
+		"repair apply",
 		"/memory digest",
 		"INSTALL_STORE",
 		"secrets",

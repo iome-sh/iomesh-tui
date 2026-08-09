@@ -3265,6 +3265,7 @@ func TestHandleSlash_SetupLifecycle(t *testing.T) {
 		"pull",
 		"analyze",
 		"drift",
+		"repair",
 		"init",
 		"setup-lifecycle-agent",
 		"iomesh memory pull",
@@ -3651,6 +3652,118 @@ func TestHandleSlash_SetupDrift(t *testing.T) {
 	for _, want := range []string{"report-only", "dual_write OFF", "package wire ≠ Connected"} {
 		if !strings.Contains(helpOut, want) {
 			t.Fatalf("drift help missing %q: %s", want, helpOut)
+		}
+	}
+}
+
+// s1538 P7: /setup repair — plan residual-honest · apply refuses without --yes · no invent Connected.
+func TestHandleSlash_SetupRepair(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	emptyCfg := filepath.Join(t.TempDir(), "repair.toml")
+	if err := os.WriteFile(emptyCfg, []byte("# empty\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// bare /setup repair → plan residual-honest (no panic · no invent green)
+	_, err := handleSlash(&out, adapter, "/setup repair --config "+emptyCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := out.String()
+	for _, want := range []string{
+		"setup repair plan",
+		"dual_write OFF",
+		"not Memory GA",
+		"repair apply ≠ invent Connected",
+		"package wire ≠ Connected",
+	} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("repair plan missing %q in:\n%s", want, s)
+		}
+	}
+	if strings.Contains(s, "Connected: yes") || strings.Contains(s, "Memory GA shipped") || strings.Contains(s, "auto-repair applied") {
+		t.Fatalf("must not invent green/auto-repair:\n%s", s)
+	}
+
+	// explicit plan alias
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/setup repair plan --config "+emptyCfg)
+	if !strings.Contains(out.String(), "setup repair plan") {
+		t.Fatalf("plan alias: %s", out.String())
+	}
+	if !strings.Contains(out.String(), "dual_write OFF") {
+		t.Fatalf("plan honesty: %s", out.String())
+	}
+
+	// apply without --yes → residual-honest refuse (no auto-repair)
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/setup repair apply --config "+emptyCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	refuse := out.String()
+	for _, want := range []string{
+		"refuse without --yes",
+		"no auto-repair",
+		"dual_write OFF",
+		"not Memory GA",
+		"repair apply ≠ invent Connected",
+	} {
+		if !strings.Contains(refuse, want) {
+			t.Fatalf("apply refuse missing %q in:\n%s", want, refuse)
+		}
+	}
+	// Must not have run FormatRepairResult apply path without --yes
+	if strings.Contains(refuse, "setup repair result") {
+		t.Fatalf("must not apply without --yes:\n%s", refuse)
+	}
+
+	// apply --yes residual-honest (safe steps or notes; never invent Connected)
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/setup repair apply --yes --config "+emptyCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	applied := out.String()
+	for _, want := range []string{
+		"setup repair result",
+		"dual_write OFF",
+		"not Memory GA",
+		"repair apply ≠ invent Connected",
+		"package wire ≠ Connected",
+	} {
+		if !strings.Contains(applied, want) {
+			t.Fatalf("apply --yes missing %q in:\n%s", want, applied)
+		}
+	}
+	if strings.Contains(applied, "Connected: yes") || strings.Contains(applied, "Memory GA shipped") {
+		t.Fatalf("apply must not invent green:\n%s", applied)
+	}
+
+	// nil / no runtime → residual-honest plan (no panic)
+	out.Reset()
+	_, _ = handleSlash(&out, runtimeAdapter{}, "/setup repair --config "+emptyCfg)
+	nilOut := out.String()
+	if !strings.Contains(nilOut, "setup repair plan") {
+		t.Fatalf("nil runtime repair plan: %s", nilOut)
+	}
+	if !strings.Contains(nilOut, "dual_write OFF") || !strings.Contains(nilOut, "repair apply ≠ invent Connected") {
+		t.Fatalf("nil runtime repair honesty: %s", nilOut)
+	}
+	if strings.Contains(nilOut, "Connected: yes") || strings.Contains(nilOut, "install green shipped") {
+		t.Fatalf("nil runtime must not invent green: %s", nilOut)
+	}
+
+	// help lists plan/apply
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/setup repair help")
+	helpOut := out.String()
+	for _, want := range []string{"plan", "apply", "--yes", "dual_write OFF", "repair apply ≠ invent Connected"} {
+		if !strings.Contains(helpOut, want) {
+			t.Fatalf("repair help missing %q: %s", want, helpOut)
 		}
 	}
 }
