@@ -68,6 +68,12 @@ func TestAionAgentOnboardingGuidanceNote_HonestyNeedles(t *testing.T) {
 		// s1546 still-human APPLY reaffirm after setup closeout
 		"setup closeout residual ≠ invent APPLY",
 		"s1546",
+		// s1550 edge-first human-gates residual pin
+		"s1550",
+		"edge-first",
+		"knowledge multi-tenant punted",
+		"Slack HMAC punted",
+		"portal HITL when connect",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("guidance missing %q in:\n%s", want, out)
@@ -1179,18 +1185,23 @@ func TestAionAgentOnboardingNextOperatorMatrix_HonestyNeedles(t *testing.T) {
 		"pull_not_probed",
 		"list_plan_not_connected",
 		"/onboard next planes",
-		// row 4 human gates
+		// row 4 human gates (s1550 edge-first)
 		"Human gates",
-		"Slack HMAC",
-		"Stripe Customers:Write",
-		"H1/H2 INSTALL_STORE",
+		"edge-first",
+		"knowledge multi-tenant punted",
+		"Slack HMAC punted",
+		"portal HITL when connect",
 		"/onboard next human-gates",
-		"PASS ≠ invent human-gate green",
-		"open boxes stay open",
+		"dual_write OFF",
+		"not Memory GA",
+		"Edge Memory GA candidacy only",
+		"residual PASS ≠ invent Edge Memory GA",
+		"PASS ≠ invent Connected",
+		"H1/H2 not launch gate",
 		// s1546 setup closeout residual ≠ invent APPLY
 		"setup closeout residual ≠ invent APPLY",
 		"s1546",
-		"E10 Open",
+		"E10",
 		// row 5 dual-auth
 		"dual_auth_candidacy_open",
 		"list_org_unavailable",
@@ -1400,8 +1411,8 @@ func TestAionAgentOnboardingNextLaneStatus_AgenticListPlanSoftDogfood(t *testing
 	}
 }
 
-// s1413+s1546: AionAgentHumanGatesHonestyBoard residual-honest still-required vs offline needles.
-// s1546: after setup closeout residual reaffirm — setup residual ≠ invent human-gate green / live APPLY / E10.
+// s1413+s1546+s1550: AionAgentHumanGatesHonestyBoard residual-honest edge-first needles.
+// s1550: edge-first pin — knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect.
 func TestAionAgentHumanGatesHonestyBoard_HonestyNeedles(t *testing.T) {
 	out := AionAgentHumanGatesHonestyBoard()
 	if out == "" {
@@ -1410,60 +1421,49 @@ func TestAionAgentHumanGatesHonestyBoard_HonestyNeedles(t *testing.T) {
 	for _, want := range []string{
 		"human-gates honesty board",
 		"no MCP dial",
-		"not live APPLY",
+		"s1550",
+		"edge-first",
 		// sections
-		"still_human",
+		"architecture",
+		"still_human_or_policy",
+		"punted_or_demoted",
 		"offline_residual_only",
 		"shipped_or_policy",
-		"do_not_close",
-		// still human APPLY residuals
-		"Slack HMAC",
-		"Stripe Customers:Write",
-		"H1/H2 INSTALL_STORE",
-		"D1–D5",
-		"book-demo OFF",
-		"ON_SIGNAL",
-		"leave ON_SIGNAL unset",
-		// s1546 after setup closeout residual
-		"After setup closeout residual",
-		"s1546",
-		"setup_not_probed",
-		"setup residual ≠ invent",
-		"E10 Open",
-		"/onboard next setup",
-		// offline residual only
-		"residual gates",
-		"soft dogfood",
-		"agent MCP list/plan",
-		"dry-run",
-		"dry-run ≠ APPLY",
-		// shipped / policy
-		"GitHub App HMAC",
-		"dogfood-proven",
+		// architecture locked
 		"dual_write OFF",
-		"Palace sunset",
-		"analytical NO-install intentional",
-		// do not close human APPLY
-		"do NOT close human APPLY gates",
-		"local memory",
-		// honesty locks
-		"PASS ≠ invent human-gate green",
-		"PASS ≠ live APPLY",
-		"open boxes stay open",
-		"Knowledge Beta→GA cannot invent H1/H2 offline",
-		"not Memory GA",
-		"never invent APPLY",
-		"catalog ≠ Connected",
+		"knowledge multi-tenant",
+		"H1/H2 not launch gate",
+		"Slack HMAC punted",
 		"portal HITL",
-		"agent MCP cannot write installs",
-		"board/export evidence ≠ invent Connected",
-		"rates ~$88/$119 optional",
+		"agent cannot write installs",
+		// still human or policy
+		"catalog ≠ Connected",
+		"book-demo OFF",
+		"leave ON_SIGNAL unset",
+		"Edge Memory GA",
+		"E10",
+		// punted
+		"knowledge multi-tenant punted",
+		"H1/H2",
+		"INSTALL_STORE",
+		"Stripe",
+		// offline / shipped
+		"agent MCP list/plan",
+		"not Memory GA",
+		"Edge Memory GA candidacy only",
 		"residual PASS ≠ invent Edge Memory GA",
-		"setup closeout residual ≠ invent human-gate green",
+		"PASS ≠ invent Connected",
 		// operator
-		"make human-gates-status",
 		"/onboard next human-gates",
+		"/onboard next setup",
+		"/integrations list|plan|status",
+		"never invent Connected",
 		"human|gates|apply-gates",
+		// locks
+		"agent MCP cannot write installs",
+		"portal HITL when connect",
+		"Slack HMAC punted",
+		"open policy boxes stay honest",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("human-gates board missing %q in:\n%s", want, out)
@@ -1481,6 +1481,9 @@ func TestAionAgentHumanGatesHonestyBoard_HonestyNeedles(t *testing.T) {
 	}
 	if strings.Contains(out, "human-gate green: yes") || strings.Contains(out, "ON_SIGNAL=1") {
 		t.Fatalf("must not invent human-gate green / ON_SIGNAL set: %s", out)
+	}
+	if strings.Contains(out, "Edge Memory GA declared") && strings.Contains(out, "Edge Memory GA declared: yes") {
+		t.Fatalf("must not invent Edge Memory GA declared: %s", out)
 	}
 }
 
