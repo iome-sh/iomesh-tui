@@ -108,4 +108,4 @@ iomesh plugins dogfood   # hello-iome + iomesh-memory-mcp product samples
 - No bundled binary
 - Residual `aion-memory-mcp` sample is **not** product edge naming
 
-See [docs/architecture/agent-plugins.md](../../../docs/architecture/agent-plugins.md) and [memory-mcp.md](../../../docs/architecture/memory-mcp.md).
+See [docs/architecture/agent-plugins.md](../../../docs/architecture/agent-plugins.md), [memory-mcp.md](../../../docs/architecture/memory-mcp.md), and the end-to-end [memory-edge-usage-demo.md](../../../docs/architecture/memory-edge-usage-demo.md) (s1513).
