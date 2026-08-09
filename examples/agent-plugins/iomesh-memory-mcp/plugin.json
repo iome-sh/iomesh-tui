@@ -1,0 +1,19 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "iomesh-memory-mcp",
+  "version": "0.1.0",
+  "description": "Residual-honest product edge memory MCP package map for public iomesh-memory-mcp via stdio. Not Memory GA · dual_write OFF · not freemium hosted palace · package load ≠ Connected · not Agent Plugins GA · public go install · no GOPRIVATE.",
+  "license": "Apache-2.0",
+  "keywords": [
+    "sample",
+    "memory",
+    "stdio",
+    "local-primary",
+    "residual-honest",
+    "product-edge",
+    "public",
+    "iome"
+  ],
+  "homepage": "https://github.com/iome-sh/iomesh-tui/tree/main/examples/agent-plugins/iomesh-memory-mcp",
+  "repository": "https://github.com/iome-sh/iomesh-tui"
+}

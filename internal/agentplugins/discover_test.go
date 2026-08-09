@@ -249,9 +249,70 @@ func TestDiscover_HelloIomeExample(t *testing.T) {
 	}
 }
 
-// TestDiscover_AionMemoryMCPExample pins s1346 residual-honest sample package under
-// examples/agent-plugins/aion-memory-mcp (stdio map · not Memory GA · dual_write OFF ·
-// package load ≠ Connected · binary on PATH required for connect).
+// TestDiscover_IomeshMemoryMCPExample pins s1478 product sample package under
+// examples/agent-plugins/iomesh-memory-mcp (public product stdio map · not Memory GA ·
+// dual_write OFF · package load ≠ Connected · binary on PATH required for connect).
+func TestDiscover_IomeshMemoryMCPExample(t *testing.T) {
+	root := filepath.Join(moduleRoot(t), "examples", "agent-plugins", "iomesh-memory-mcp")
+	if st, err := os.Stat(root); err != nil || !st.IsDir() {
+		t.Fatalf("sample package missing at %s: %v", root, err)
+	}
+
+	p, err := Discover(root)
+	if err != nil {
+		t.Fatalf("Discover(%s): %v", root, err)
+	}
+	if p.Manifest.Name != "iomesh-memory-mcp" {
+		t.Fatalf("name=%q", p.Manifest.Name)
+	}
+	if p.Manifest.Schema != PluginSchemaID {
+		t.Fatalf("schema=%q want %q", p.Manifest.Schema, PluginSchemaID)
+	}
+	if len(p.Skills) != 1 || p.Skills[0].Name != "iomesh-memory-local" {
+		t.Fatalf("skills=%+v", p.Skills)
+	}
+	if len(p.MCPServers) != 1 {
+		t.Fatalf("want 1 mcp server; got %+v warnings=%v", p.MCPServers, p.Warnings)
+	}
+	srv := p.MCPServers[0]
+	if srv.Name != "memory" {
+		t.Fatalf("mcp name=%q", srv.Name)
+	}
+	if srv.Type != TransportStdio {
+		t.Fatalf("mcp type=%q want %q", srv.Type, TransportStdio)
+	}
+	if srv.Command != "iomesh-memory-mcp" {
+		t.Fatalf("mcp command=%q", srv.Command)
+	}
+	if len(srv.Env) != 0 || len(srv.Headers) != 0 {
+		t.Fatalf("sample must not ship secrets env/headers: env=%v headers=%v", srv.Env, srv.Headers)
+	}
+
+	dataRoot := filepath.Join(t.TempDir(), "plugin-data")
+	cfgs, warns := MCPServersFromPlugins([]*Plugin{p}, dataRoot)
+	if len(warns) != 0 {
+		t.Fatalf("map warnings=%v", warns)
+	}
+	if len(cfgs) != 1 {
+		t.Fatalf("cfgs=%d", len(cfgs))
+	}
+	if cfgs[0].Name != "iomesh-memory-mcp-memory" {
+		t.Fatalf("mapped name=%q", cfgs[0].Name)
+	}
+	if cfgs[0].Command != "iomesh-memory-mcp" {
+		t.Fatalf("mapped command=%q", cfgs[0].Command)
+	}
+	if cfgs[0].Env["PLUGIN_ROOT"] == "" || cfgs[0].Env["PLUGIN_DATA"] == "" {
+		t.Fatalf("PLUGIN_ROOT/DATA inject missing: %+v", cfgs[0].Env)
+	}
+	if !strings.Contains(p.Summary(), `plugin "iomesh-memory-mcp"`) {
+		t.Fatal(p.Summary())
+	}
+}
+
+// TestDiscover_AionMemoryMCPExample pins s1346 residual private sample package under
+// examples/agent-plugins/aion-memory-mcp (stdio map · not product naming · not Memory GA ·
+// dual_write OFF · package load ≠ Connected · binary on PATH required for connect).
 func TestDiscover_AionMemoryMCPExample(t *testing.T) {
 	root := filepath.Join(moduleRoot(t), "examples", "agent-plugins", "aion-memory-mcp")
 	if st, err := os.Stat(root); err != nil || !st.IsDir() {
