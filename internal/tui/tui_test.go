@@ -3262,8 +3262,10 @@ func TestHandleSlash_SetupLifecycle(t *testing.T) {
 		"preflight",
 		"portal",
 		"reload",
+		"pull",
 		"init",
 		"setup-lifecycle-agent",
+		"iomesh memory pull",
 	} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("help missing %q in:\n%s", want, s)
@@ -3365,5 +3367,115 @@ func TestHandleSlash_SetupLifecycle(t *testing.T) {
 	}
 	if strings.Contains(rel, "Connected green") || strings.Contains(rel, "install APPLY green shipped") {
 		t.Fatalf("reload must not invent green: %s", rel)
+	}
+}
+
+// s1530 P5: /setup pull — residual-honest status/start/stop without inventing Connected.
+func TestHandleSlash_SetupPull(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	// bare /setup pull → status idle residual-honest
+	_, err := handleSlash(&out, adapter, "/setup pull")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := out.String()
+	for _, want := range []string{
+		"setup pull status",
+		"running: false",
+		"dual_write OFF",
+		"not Memory GA",
+		"pull ≠ invent Connected",
+		"iomesh memory pull",
+	} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("pull status missing %q in:\n%s", want, s)
+		}
+	}
+	if strings.Contains(s, "running: true") {
+		t.Fatalf("idle must not invent running true:\n%s", s)
+	}
+	if strings.Contains(s, "Connected: yes") || strings.Contains(s, "Memory GA shipped") {
+		t.Fatalf("must not invent green:\n%s", s)
+	}
+
+	// explicit status alias
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/setup pull status")
+	if !strings.Contains(out.String(), "running: false") {
+		t.Fatalf("status alias: %s", out.String())
+	}
+
+	// start without mesh/consumer → residual-honest error (not panic)
+	out.Reset()
+	emptyCfg := filepath.Join(t.TempDir(), "pull.toml")
+	if err := os.WriteFile(emptyCfg, []byte("# empty — no pull_consumer\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, err = handleSlash(&out, adapter, "/setup pull start --config "+emptyCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	startOut := out.String()
+	if !strings.Contains(startOut, "setup pull start:") {
+		t.Fatalf("start error path: %s", startOut)
+	}
+	// consumer required or mesh disabled — both residual-honest
+	if !strings.Contains(startOut, "pull_consumer") && !strings.Contains(startOut, "mesh disabled") && !strings.Contains(startOut, "no runtime") {
+		t.Fatalf("start should residual-honest fail (consumer/mesh): %s", startOut)
+	}
+	if !strings.Contains(startOut, "dual_write OFF") || !strings.Contains(startOut, "not Memory GA") {
+		t.Fatalf("start error missing honesty: %s", startOut)
+	}
+	if strings.Contains(startOut, "Connected green") || strings.Contains(startOut, "Memory GA shipped") {
+		t.Fatalf("start must not invent green: %s", startOut)
+	}
+
+	// once without mesh → residual-honest error
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/setup pull once --config "+emptyCfg)
+	onceOut := out.String()
+	if !strings.Contains(onceOut, "setup pull once:") && !strings.Contains(onceOut, "setup pull start:") {
+		// label is "once" when forceOnce
+		if !strings.Contains(onceOut, "once") {
+			t.Fatalf("once path: %s", onceOut)
+		}
+	}
+	if !strings.Contains(onceOut, "dual_write OFF") {
+		t.Fatalf("once honesty: %s", onceOut)
+	}
+
+	// stop when idle → no-op residual-honest
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/setup pull stop")
+	stopOut := out.String()
+	if !strings.Contains(stopOut, "setup pull stop") {
+		t.Fatalf("stop: %s", stopOut)
+	}
+	if !strings.Contains(stopOut, "dual_write OFF") {
+		t.Fatalf("stop honesty: %s", stopOut)
+	}
+
+	// no runtime → residual-honest not invent green
+	out.Reset()
+	_, _ = handleSlash(&out, runtimeAdapter{}, "/setup pull status")
+	nilOut := out.String()
+	if !strings.Contains(nilOut, "no agent runtime") && !strings.Contains(nilOut, "running: false") {
+		t.Fatalf("nil runtime status: %s", nilOut)
+	}
+	if !strings.Contains(nilOut, "dual_write OFF") {
+		t.Fatalf("nil runtime honesty: %s", nilOut)
+	}
+
+	// help lists pull subcommands
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/setup pull help")
+	helpOut := out.String()
+	for _, want := range []string{"status", "start", "once", "stop", "iomesh memory pull"} {
+		if !strings.Contains(helpOut, want) {
+			t.Fatalf("pull help missing %q: %s", want, helpOut)
+		}
 	}
 }

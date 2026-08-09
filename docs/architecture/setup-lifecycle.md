@@ -1,8 +1,8 @@
 # Setup lifecycle (agent-native wizard foundation)
 
-**Serial:** free eng **s1525** P1–P2 · **s1526** P3–P4 · residual-honest  
-**Status:** foundation + agent-native slash/skill + package wire + `ReplaceMCP`  
-**Not yet:** in-session continuous pull, analyze ticks (later PRs)
+**Serial:** free eng **s1525** P1–P2 · **s1526** P3–P4 · **s1530** P5 · residual-honest  
+**Status:** foundation + agent-native slash/skill + package wire + `ReplaceMCP` + in-session opt-in continuous pull  
+**Not yet:** analyze auto-ticks (later PRs)
 
 ## Goal
 
@@ -10,8 +10,8 @@ Enable the map story without inventing Connected / Memory GA:
 
 ```text
 setup init → write managed config → start memory host → preflight probe
-  → restart TUI → optional portal HITL integrations
-  → iomesh memory pull (continuous) → /memory analyze
+  → /setup reload (or restart TUI) → optional portal HITL integrations
+  → /setup pull start (or CLI iomesh memory pull) → /memory digest
 ```
 
 ## CLI
@@ -28,13 +28,16 @@ iomesh setup init all --print-only
 
 # Preflight (probe · not invent green)
 iomesh setup preflight --json
+
+# Continuous / once pull still valid as CLI
+iomesh memory pull --stream EVENTS --name tui-local-palace --once --dry-run
 ```
 
 ### Profiles
 
 | Profile | Writes |
 |---------|--------|
-| `local-memory` | `[mcp]` + memory server URL/stdio + `[memory]` dual_write=false |
+| `local-memory` | `[mcp]` + memory server URL/stdio + `[memory]` dual_write=false · pull_continuous=false |
 | `plugins` | `[plugins] enabled` + dirs |
 | `mesh` | `[iomesh]` endpoint/tenant placeholders + `api_key_env` |
 | `platform-mcp` | platform `[[mcp.servers]]` + `oauth_token_env` |
@@ -50,7 +53,7 @@ Managed block markers:
 
 User edits **outside** the block are preserved on re-init.
 
-## Slash `/setup` (s1526 P3)
+## Slash `/setup` (s1526 P3 + s1530 P5)
 
 Agent-native operator surface (alias `/setup-lifecycle`):
 
@@ -62,27 +65,49 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 /setup preflight               # aliases status|check — FormatPreflightText
 /setup portal                  # console.iome.sh/integrations + settings/agent
 /setup reload                  # hot-swap MCP from config (P4 · package wire ≠ Connected)
+/setup pull                    # continuous pull status (alias status)
+/setup pull status
+/setup pull start [--once] [--config path]
+/setup pull once [--config path]
+/setup pull stop
 ```
 
 | Subcommand | Behavior |
 |------------|----------|
-| bare / `help` | usage + `dual_write OFF · not Memory GA · catalog ≠ Connected` |
+| bare / `help` | usage + honesty one-liner (dual_write OFF · not Memory GA · pull opt-in) |
 | `init` | `setup.BuildManagedFragment` + `config.WriteSetupManagedUser` (or `--print-only`) |
 | `preflight` / `status` / `check` | `setup.Preflight` + `FormatPreflightText` |
 | `portal` | browser HITL URLs only |
 | `reload` | `runtimewire.ConnectMCP` + `Runtime.ReplaceMCP` (optional `--config path`) |
+| `pull` | in-session continuous pull status/start/once/stop (s1530 P5) |
 
 Simple flags on slash `init`: `--stdio` · `--print-only` · `--plugins-dir path` · `--memory-url URL`. Full flag set remains on CLI `iomesh setup init`.
 
-After init: start memory host (if needed) · set secret env vars · `/setup reload` (or restart TUI).
+After init: start memory host (if needed) · set secret env vars · `/setup reload` (or restart TUI) · optional `/setup pull start` when mesh + consumer configured.
 
-## Agent surfaces (s1526 P3)
+## Continuous pull (s1530 P5)
+
+In-session opt-in continuous mesh → local MCP palace pull:
+
+| Path | How |
+|------|-----|
+| Slash | `/setup pull start` (MaxLoops=0 continuous) · `/setup pull once` · `/setup pull stop` · `/setup pull status` |
+| Config | `[memory] pull_continuous = true` (setup fragment default **false**) |
+| CLI | `iomesh memory pull` still valid |
+
+Config knobs reused: `pull_stream` (default `EVENTS`) · `pull_consumer` · `pull_filter` · `pull_batch` · `pull_max_wait_ms` · `server` · `tenant`.
+
+**Honesty:** dual_write OFF · not Memory GA · pull ≠ invent Connected · idle/status must not invent green · CLI still valid.
+
+Analyze auto-ticks remain a later phase (`/memory digest` is the current residual ops pulse).
+
+## Agent surfaces (s1526 P3 + s1530 P5)
 
 | Surface | Detail |
 |---------|--------|
 | Builtin skill | `setup-lifecycle-agent` via `go:embed` under `internal/skills/builtin/` — always merged when skills enabled |
 | System note | `<setup-lifecycle>` via `setup.SetupLifecycleAgentGuidanceNote()` on `AttachMCP` |
-| Slash | `/setup` / `/setup-lifecycle` |
+| Slash | `/setup` / `/setup-lifecycle` including `pull` |
 
 Skill + note + slash share honesty locks; skill is the full playbook.
 
@@ -95,7 +120,7 @@ Skill + note + slash share honesty locks; skill is the full playbook.
 | catalog ≠ Connected | Setup PASS ≠ invent install green |
 | secrets | Env **names** only (`api_key_env`, `oauth_token_env`) |
 | portal HITL | OAuth/install still browser |
-| continuous pull | Still CLI `iomesh memory pull` until in-session PR |
+| continuous pull opt-in | `/setup pull` · `pull_continuous` · CLI `iomesh memory pull` still valid · pull ≠ invent Connected |
 
 ## Preflight states
 
@@ -123,7 +148,8 @@ Skills catalog is **not** re-scanned on `/setup reload` (restart for skill-only 
 
 - ~~`/setup` slash + `setup-lifecycle-agent` skill~~ **shipped s1526 P3**  
 - ~~`ReplaceMCP` / package wire / `/setup reload`~~ **shipped s1526 P4**  
-- In-session continuous pull + analyze ticks  
+- ~~In-session continuous pull (`/setup pull` · `pull_continuous`)~~ **shipped s1530 P5**  
+- Analyze auto-ticks (later)  
 - Maintenance drift repair  
 
 See product plan: agent-native MCP/plugin setup wizard + continuous pull/analyze.

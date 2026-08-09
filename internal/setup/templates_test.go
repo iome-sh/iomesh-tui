@@ -22,6 +22,13 @@ func TestBuildManagedFragment_LocalMemoryDualWriteOff(t *testing.T) {
 	if !strings.Contains(frag, "[mcp]") || !strings.Contains(frag, "enabled = true") {
 		t.Fatal("mcp not enabled")
 	}
+	// s1530 P5: pull_continuous default false (in-session opt-in · CLI still valid).
+	if !strings.Contains(frag, "pull_continuous = false") {
+		t.Fatalf("missing pull_continuous = false:\n%s", frag)
+	}
+	if strings.Contains(frag, "pull_continuous = true") {
+		t.Fatal("must not set pull_continuous true by default")
+	}
 }
 
 func TestBuildManagedFragment_All(t *testing.T) {

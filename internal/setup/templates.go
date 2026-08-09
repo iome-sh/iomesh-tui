@@ -44,7 +44,7 @@ type InitOptions struct {
 	// AutoRecall / AutoIngest for [memory].
 	AutoRecall bool
 	AutoIngest bool
-	// Pull opt-in fields (still pull_enabled only via later phases; document consumer).
+	// Pull opt-in fields (stream/consumer for continuous pull / CLI; pull_continuous default false).
 	PullStream   string
 	PullConsumer string
 }
@@ -179,7 +179,10 @@ func BuildManagedFragment(profiles []Profile, opt InitOptions) (string, error) {
 		fmt.Fprintf(&b, "auto_ingest = %v\n", opt.AutoIngest)
 		b.WriteString("dual_write = false  # OFF · local-primary · setup never invents Memory GA\n")
 		fmt.Fprintf(&b, "pull_stream = %q\n", opt.PullStream)
-		fmt.Fprintf(&b, "pull_consumer = %q  # required for continuous pull (later / CLI)\n", opt.PullConsumer)
+		fmt.Fprintf(&b, "pull_consumer = %q  # required for continuous pull\n", opt.PullConsumer)
+		// pull_continuous default false: in-session opt-in via /setup pull start or set true + reload/restart.
+		// CLI iomesh memory pull remains a valid path either way.
+		b.WriteString("pull_continuous = false  # opt-in continuous pull · /setup pull start or set true · CLI iomesh memory pull still valid\n")
 		b.WriteString("\n")
 	}
 

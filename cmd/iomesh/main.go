@@ -112,6 +112,9 @@ func run(args []string) int {
 	}
 
 	var metrics router.MetricsSink = router.NopMetrics{}
+	// s675/s1530: wire [memory].pull_role / pull_allow_suffix onto Client so in-session
+	// continuous pull (and consumer create/fetch) send federated ACL headers.
+	// Fail-open empty → omit. dual_write remains report-only default OFF.
 	mesh := iomesh.New(iomesh.Config{
 		Enabled:         cfg.IOMesh.Enabled,
 		Endpoint:        cfg.IOMesh.Endpoint,
@@ -127,6 +130,8 @@ func run(args []string) int {
 		PolicyMode:      iomesh.PolicyMode(cfg.IOMesh.PolicyMode),
 		CatalogPlane:    cfg.IOMesh.CatalogPlane,
 		InjectCatalog:   cfg.IOMesh.InjectCatalog,
+		Role:            strings.TrimSpace(cfg.Memory.PullRole),
+		PullAllowSuffix: strings.TrimSpace(cfg.Memory.PullAllowSuffix),
 	}, logger)
 	if mesh.Enabled() {
 		metrics = mesh
@@ -217,6 +222,39 @@ func run(args []string) int {
 			RecallSessionSeq: cfg.Memory.RecallSessionSeq,
 			RecallCacheTTLMS: cfg.Memory.RecallCacheTTLMS,
 		})
+	}
+
+	// s1530 P5: opt-in in-session continuous memory pull (default OFF).
+	// Only when pull_continuous && pull_consumer set. Fail-open log warn on start error
+	// (do not fail process start). pull running ≠ invent install green / Ops Pack GA.
+	if cfg.Memory.PullContinuous {
+		consumer := strings.TrimSpace(cfg.Memory.PullConsumer)
+		if consumer != "" {
+			stream := strings.TrimSpace(cfg.Memory.PullStream)
+			server := strings.TrimSpace(cfg.Memory.Server)
+			tenant := strings.TrimSpace(cfg.Memory.Tenant)
+			if tenant == "" {
+				tenant = strings.TrimSpace(cfg.IOMesh.Tenant)
+			}
+			if err := rt.StartContinuousMemoryPull(agent.ContinuousPullConfig{
+				Enabled:   true,
+				Stream:    stream,
+				Consumer:  consumer,
+				Filter:    strings.TrimSpace(cfg.Memory.PullFilter),
+				Batch:     cfg.Memory.PullBatch,
+				MaxWaitMS: cfg.Memory.PullMaxWaitMS,
+				Server:    server,
+				Tenant:    tenant,
+			}); err != nil {
+				logger.Warn("continuous memory pull auto-start failed", "err", err)
+			} else {
+				logger.Info("continuous memory pull started",
+					"stream", stream, "consumer", consumer,
+					"role", strings.TrimSpace(cfg.Memory.PullRole))
+			}
+		} else {
+			logger.Warn("pull_continuous set but pull_consumer empty; continuous pull not started")
+		}
 	}
 
 	store, err := session.Open(rt.Workspace().Root())

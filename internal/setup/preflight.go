@@ -169,7 +169,7 @@ func Preflight(ctx context.Context, cfgPath string) (*PreflightReport, error) {
 	rep.Notes = append(rep.Notes,
 		"preflight PASS ≠ invent Connected / INSTALL_STORE green / Memory GA",
 		"portal HITL still required for connector OAuth/install",
-		"continuous pull: iomesh memory pull (or later /setup pull) after mesh + consumer configured",
+		"continuous pull: opt-in /setup pull start|once or pull_continuous=true · CLI iomesh memory pull still valid · after mesh + consumer configured · pull ≠ invent Connected",
 	)
 	return rep, nil
 }

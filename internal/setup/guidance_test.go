@@ -20,6 +20,8 @@ func TestSetupLifecycleAgentGuidanceNote_HonestyNeedles(t *testing.T) {
 		"read_skill",
 		"/setup",
 		"iomesh memory pull",
+		"pull_continuous",
+		"/setup pull",
 		"never invent",
 		"INSTALL_STORE",
 		"secrets",
@@ -55,7 +57,14 @@ func TestSetupLifecyclePortalHandoff_HonestyNeedles(t *testing.T) {
 
 func TestSetupLifecycleHonestyOneLiner(t *testing.T) {
 	s := SetupLifecycleHonestyOneLiner
-	for _, want := range []string{"dual_write OFF", "not Memory GA", "Connected"} {
+	for _, want := range []string{
+		"dual_write OFF",
+		"not Memory GA",
+		"Connected",
+		"iomesh memory pull",
+		"pull_continuous",
+		"/setup pull",
+	} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("one-liner missing %q: %s", want, s)
 		}
