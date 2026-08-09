@@ -169,6 +169,8 @@ If no platform connector MCP is available in the demo environment, say so honest
 
 ## Phase 3 — Local memory install (kernel + MCP)
 
+For ONNX embeddings, durable palace knobs, and residual-honest Qdrant notes, see **[memory-advanced-install.md](./memory-advanced-install.md)** (s1525 · maximize benefit ladder).
+
 ### Is install automatic?
 
 | Piece | Automatic? | What actually happens |

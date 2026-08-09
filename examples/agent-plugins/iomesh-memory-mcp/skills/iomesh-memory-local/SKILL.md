@@ -64,3 +64,10 @@ Attach after install:
 - s1517 product-only: this package is the in-tree Memory sample (hello-iome is skills-only)
 - Architecture: `docs/architecture/agent-plugins.md` · `docs/architecture/memory-mcp.md` (s1478 public product attach)
 - Spec peer: [Agent Plugins 1.0.0](https://agent-plugins.org/specification)
+
+## Advanced install tip (s1525)
+
+- Default: hash embeddings · no Qdrant · dual_write OFF · not Memory GA.
+- Maximize semantic: set `MEMORY_ONNX_MODEL_PATH` on the **MCP host** (not only TUI env).
+- Qdrant docker/podman is **optional residual** (kernel VectorStore) — lean host does not wire it into search.
+- Operator doc: `docs/architecture/memory-advanced-install.md`.

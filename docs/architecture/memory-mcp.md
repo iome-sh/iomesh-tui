@@ -875,3 +875,4 @@ Opt-in residual-honest mutating compact advisory + operator inventory pulse:
 
 Client-side short-TTL cache for sync `RetrieveMemory` (`[memory] recall_cache_ttl_ms`, default 3000; `0` disables). Keyed by tenant+session+query+limit+since/until. Fail-open process-local only — not product Memory GA. Snippet early-stop at `max_snippet_bytes`. Auto-recall events always emit retrieve latency (`Nms` / `Nms cache`).
 - **s1517:** drop residual aion Memory sample from TUI tree — product host/docs/onboard/`examples/agent-plugins` use **`iomesh-memory-mcp` only** · aion broker/CP private · dual_write OFF · not Memory GA · no invent platform GA from rename.
+- **s1525:** advanced Memory install ladder for TUI — optional ONNX on host maximizes semantic; Qdrant not required / not wired lean host search · dual_write OFF · not Memory GA · [memory-advanced-install.md](./memory-advanced-install.md).
