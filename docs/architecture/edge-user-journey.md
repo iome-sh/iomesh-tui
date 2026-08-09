@@ -1,7 +1,7 @@
 # Edge user journey (7-stage SSOT)
 
-**Serial:** free eng **s1554** · residual-honest **edge-first product narrative**  
-**Status:** Wave A **docs SSOT only** — aligns core product story to seven stages  
+**Serial:** free eng **s1554** (Wave A docs SSOT) · **s1558** (Wave B first-run polish residual) · residual-honest **edge-first product narrative**  
+**Status:** Wave A docs SSOT **shipped** · Wave B first-run polish **partially in product** (`/onboard next journey` + setup stage-4 map · residual-honest)  
 **Audience:** operators, demo hosts, residual eng, GTM-adjacent claims review  
 **Planes:** local TUI + public edge Memory (`iomesh-memory-mcp` + kernel) · optional portal/mesh · **aion private**
 
@@ -13,21 +13,22 @@
 This document is the **single source of truth** for the edge-user journey narrative.  
 Demo runbooks, setup lifecycle, and integrations docs **map into** these stages — they do not invent a different product path.
 
-**Honesty one-liner:** drafts only · dual_write **OFF** · not Memory GA · Edge Memory GA **candidacy only** · edge-first · knowledge multi-tenant **punted** · Slack HMAC **punted** · H1/H2 **not** launch gate · portal HITL when connect · book-demo **OFF** · agent MCP **cannot** write installs · catalog ≠ Connected · residual PASS ≠ invent Edge Memory GA · rates ~$88/$119 · aion private · Palace sunset · free eng **s1554**.
+**Operator surface (s1558 Wave B):** `/onboard next journey` (aliases `edge-journey` · `user-journey` · `first-run` · `edge_user_journey`) — residual-honest first-run map of the 7 stages · companion stage-4 detail `/onboard next setup` · setup guidance notes stages 1–7 with in-session focus on 4–7.
+
+**Honesty one-liner:** drafts only · dual_write **OFF** · not Memory GA · Edge Memory GA **candidacy only** · edge-first · knowledge multi-tenant **punted** · Slack HMAC **punted** · H1/H2 **not** launch gate · portal HITL when connect · book-demo **OFF** · agent MCP **cannot** write installs · catalog ≠ Connected · residual PASS ≠ invent Edge Memory GA · rates ~$88/$119 · aion private · Palace sunset · free eng **s1554** / Wave B **s1558**.
 
 ---
 
-## Wave A scope
+## Wave scope
 
-| In scope (this serial) | Out of scope (do not invent shipped) |
-|------------------------|--------------------------------------|
-| Docs SSOT for 7 stages | Wave B+ first-run wizard UX polish |
-| Cross-links + phase mapping | TUI portal SSO / full console login in TUI |
-| Residual-honest maturity stamps | Memory host auto-provision on signup |
-| Ownership map across repos | Agent MCP INSTALL_STORE APPLY / Connected invent |
-| Honesty locks + residual gaps | dual_write ON · book-demo ON · Memory GA |
+| Wave | In scope | Out of scope (do not invent shipped) |
+|------|----------|--------------------------------------|
+| **A (s1554)** | Docs SSOT for 7 stages · cross-links + phase mapping · residual-honest maturity stamps · ownership map · honesty locks + residual gaps | Auto memory host · TUI portal SSO · Connected invent · dual_write ON · book-demo ON · Memory GA |
+| **B (s1558 · residual shipped)** | `/onboard next journey` first-run map · setup lane stage-4 mapping · setup guidance first-run polish · skill/docs stamps | Deeper interactive wizard UX beyond residual map · invent auto host / SSO / APPLY / dual_write ON |
 
-**Free-floor peer:** free-floor ownership remains **s1556+** (mention only). Residual product narrative **does not** rewrite free-floor.
+**Still out of scope (all waves until residual closes):** TUI portal SSO / full console login in TUI · Memory host auto-provision on signup · Agent MCP INSTALL_STORE APPLY / Connected invent · dual_write ON · book-demo ON · Memory GA declared.
+
+**Free-floor peer:** free-floor ownership remains **s1556+** / Wave B mention **s1560+** (mention only). Residual product narrative **does not** rewrite free-floor.
 
 ---
 
@@ -125,5 +126,6 @@ Demo runbooks, setup lifecycle, and integrations docs **map into** these stages 
 - Invent Memory GA / Edge Memory GA declared / E10 closed  
 - dual_write ON as primary path  
 - Auto Memory provision on signup  
-- Rewrite free-floor (peer **s1556+**) from residual product docs  
-- Wave B first-run UX polish claimed as shipped in Wave A  
+- Rewrite free-floor (peer **s1556+** / **s1560+** mention) from residual product docs  
+- Claim full interactive first-run wizard beyond residual map lanes (Wave B ships residual-honest map + setup stage-4 polish only)  
+- Invent auto Memory host · TUI portal SSO · Connected · dual_write ON · Memory GA declared  

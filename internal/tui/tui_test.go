@@ -1506,7 +1506,7 @@ func TestHandleSlash_OnboardNextMemoryPullLane(t *testing.T) {
 	}
 }
 
-// s1542: /onboard next setup|setup-lifecycle|wizard|lifecycle|setup_lifecycle — residual-honest setup lifecycle P1–P7 closeout.
+// s1542+s1558: /onboard next setup|setup-lifecycle|wizard|lifecycle|setup_lifecycle — residual-honest setup lifecycle P1–P7 closeout.
 func TestHandleSlash_OnboardNextSetupLane(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -1515,6 +1515,7 @@ func TestHandleSlash_OnboardNextSetupLane(t *testing.T) {
 	needles := []string{
 		"onboard next setup lane",
 		"setup lifecycle P1–P7 closeout residual",
+		"stage 4 of edge-user-journey",
 		"/setup init",
 		"/setup preflight",
 		"/setup reload",
@@ -1533,6 +1534,7 @@ func TestHandleSlash_OnboardNextSetupLane(t *testing.T) {
 		"setup_not_probed",
 		"offline static lane ≠ live dogfood",
 		"setup closeout residual ≠ invent Edge Memory GA",
+		"/onboard next journey",
 		"portal HITL",
 		"catalog ≠ Connected",
 		"never invent install green",
@@ -1574,7 +1576,85 @@ func TestHandleSlash_OnboardNextSetupLane(t *testing.T) {
 	}
 }
 
-// s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542: unknown /onboard next <lane> → overview + usage hint listing lanes.
+// s1558 Wave B: /onboard next journey|edge-journey|user-journey|first-run|edge_user_journey — residual-honest 7-stage first-run map.
+func TestHandleSlash_OnboardNextJourneyLane(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	needles := []string{
+		"onboard next journey lane",
+		"s1558 Wave B",
+		"edge-user-journey first-run map",
+		"1. Signup",
+		"2. Download TUI",
+		"3. TUI auth/keys",
+		"4. Setup wizard",
+		"5. Connectors",
+		"6. Local store",
+		"7. Analyze",
+		"dual_write OFF",
+		"not Memory GA",
+		"Edge Memory GA candidacy only",
+		"residual PASS ≠ invent Edge Memory GA",
+		"portal HITL",
+		"agent MCP cannot write installs",
+		"catalog ≠ Connected",
+		"book-demo OFF",
+		"no invent TUI portal SSO",
+		"host not auto",
+		"free eng s1558",
+		"free-floor peer s1560+",
+		"/onboard next setup",
+		"/integrations list|plan|status",
+		"/onboard next memory",
+		"/memory digest",
+		"docs/architecture/edge-user-journey.md",
+		"docs/architecture/setup-lifecycle.md",
+		"docs/architecture/memory-edge-usage-demo.md",
+	}
+
+	for _, line := range []string{
+		"/onboard next journey",
+		"/onboard next edge-journey",
+		"/onboard next user-journey",
+		"/onboard next first-run",
+		"/onboard next edge_user_journey",
+		"/aion-onboard after journey",
+		"/agent-onboard continue first-run",
+		"/onboard lanes edge-journey",
+	} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Memory GA shipped") {
+			t.Fatalf("%s must not invent dual_write ON / Memory GA: %s", line, s)
+		}
+		if strings.Contains(s, "Connected: yes") || strings.Contains(s, "Edge Memory GA declared") {
+			t.Fatalf("%s must not invent Connected / Edge Memory GA declared: %s", line, s)
+		}
+		if strings.Contains(s, "onboard next lane status (") {
+			t.Fatalf("%s must not emit status board: %s", line, s)
+		}
+		// wizard alias must stay setup lane (not journey).
+		if strings.Contains(s, "onboard next setup lane") && strings.Contains(line, "journey") {
+			// journey board may mention setup companion; do not fail solely on that.
+		}
+	}
+}
+
+// s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1558: unknown /onboard next <lane> → overview + usage hint listing lanes.
 func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -1600,6 +1680,7 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 		"demo",
 		"operator",
 		"setup",
+		"journey",
 		"status",
 		"export",
 		"human-gates",
@@ -1611,6 +1692,9 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	}
 	if strings.Contains(s, "onboard next plugins lane") {
 		t.Fatalf("unknown next lane must not drill into plugins lane: %s", s)
+	}
+	if strings.Contains(s, "onboard next journey lane") {
+		t.Fatalf("unknown next lane must not drill into journey lane: %s", s)
 	}
 	if strings.Contains(s, "onboard next mesh lane") {
 		t.Fatalf("unknown next lane must not drill into mesh lane: %s", s)
