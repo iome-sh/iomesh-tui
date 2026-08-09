@@ -4,7 +4,7 @@ import "strings"
 
 // Portal URLs for residual-honest setup handoff (browser HITL).
 const (
-	PortalIntegrationsURL = "https://console.iome.sh/integrations"
+	PortalIntegrationsURL  = "https://console.iome.sh/integrations"
 	PortalAgentSettingsURL = "https://console.iome.sh/settings/agent"
 )
 

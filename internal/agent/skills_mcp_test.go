@@ -187,7 +187,6 @@ func TestUnregisterMCPTools_Idempotent(t *testing.T) {
 	reg.UnregisterMCPTools()
 }
 
-
 func testRT(t *testing.T, workspace string) *Runtime {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

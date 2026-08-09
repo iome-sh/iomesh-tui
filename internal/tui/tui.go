@@ -1183,7 +1183,6 @@ func handleSetupPreflight(out io.Writer, args []string) {
 	fmt.Fprint(out, setup.FormatPreflightText(rep))
 }
 
-
 // parseIntegrationsListArgs extracts optional --layer for /integrations list (s1238).
 // Supports: --layer operational|knowledge|analytical|all (also --mesh-layer / --mesh_layer).
 // Returns errMsg when a flag is malformed or the layer value is invalid.
