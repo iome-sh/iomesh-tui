@@ -17,9 +17,12 @@ import (
 	"time"
 
 	"github.com/iome-sh/iomesh-tui/internal/agent"
+	"github.com/iome-sh/iomesh-tui/internal/config"
 	"github.com/iome-sh/iomesh-tui/internal/iomesh"
 	"github.com/iome-sh/iomesh-tui/internal/router"
+	"github.com/iome-sh/iomesh-tui/internal/runtimewire"
 	"github.com/iome-sh/iomesh-tui/internal/session"
+	"github.com/iome-sh/iomesh-tui/internal/setup"
 )
 
 // Runner is the subset of agent.Runtime needed by the TUI.
@@ -567,6 +570,31 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			}
 			fmt.Fprintln(out, text)
 		}
+	case "/setup", "/setup-lifecycle":
+		// s1526 P3 + P4: agent-native setup lifecycle slash (init/preflight/portal/reload).
+		// Residual honesty: dual_write OFF · not Memory GA · catalog ≠ Connected ·
+		// portal HITL · setup PASS ≠ invent install green · continuous pull still CLI.
+		// P4: /setup reload → runtimewire.ConnectMCP + Runtime.ReplaceMCP (package wire ≠ Connected).
+		// Not in-session continuous pull (later).
+		if len(parts) < 2 {
+			fmt.Fprintln(out, setupHelp())
+			return false, nil
+		}
+		sub := strings.ToLower(parts[1])
+		switch sub {
+		case "help", "?":
+			fmt.Fprintln(out, setupHelp())
+		case "init":
+			handleSetupInit(out, parts[2:])
+		case "preflight", "status", "check", "st":
+			handleSetupPreflight(out, parts[2:])
+		case "portal", "hitl", "urls":
+			fmt.Fprintln(out, setup.SetupLifecyclePortalHandoff())
+		case "reload", "reattach", "hot-reload":
+			handleSetupReload(out, rt, parts[2:])
+		default:
+			fmt.Fprintf(out, "setup: unknown subcommand %q\n%s\n", parts[1], setupHelp())
+		}
 	case "/integrations", "/integration", "/connectors":
 		// s1238/s1242/s1243/s1247: agent/TUI path for connector integrations setup via MCP tools
 		// list_connector_catalog / plan_connector_setup (aion v178) · get_webhook_signing_headers (v30).
@@ -953,6 +981,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /catalog [query]     list mesh data products (catalog plane)
   /memory [recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · status advanced inventory)
   /integrations [list|plan|signing|status]  connector setup via MCP (catalog+plan+signing discovery+portal HITL; not install CRUD)
+  /setup [init|preflight|portal|reload]  setup lifecycle (managed config · preflight · portal HITL · hot MCP reload; alias /setup-lifecycle; dual_write OFF · not Memory GA · PASS ≠ invent Connected)
   /gtm [help|checklist]  GTM draft-only guidance or checklist (aliases /gtm-draft /gtm-agent; no auto-send; human publish)
   /onboard [help|checklist|portal|status|next]  TUI agent ↔ aion onboarding guidance, checklist, portal Agent/MCP handoff, offline status, or post-onboard next lanes (aliases /aion-onboard /agent-onboard; residual-honest · portal HITL · settings/agent; next [plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|demo|operator|status|export|human-gates]; next mesh→stream|streams|heartbeat|heartbeats|pull; next planes→three-planes|product-planes|product|pillars|three_planes; next sales→claims|buyer|claim-matrix|sales-claims|buyer-claims; next demo→demo-ready|readiness|demo-readiness|lighthouse|landgrab; next operator→operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix; next status→pulse|board; next export→receipt|stamp|evidence [json]; next aliases after|continue|lanes; pulse stays status board; product/planes stay three-planes; readiness/lighthouse stay demo)
   /plugins [help|list|validate|smoke|status]  residual-honest Agent Plugins soft offline smoke (alias /plugin; smoke aliases dogfood|soft|samples|offline; check→validate; Discover ≠ Connected · soft offline ≠ live smoke · ≠ invent Agent Plugins GA)
@@ -980,6 +1009,180 @@ honesty: ` + agent.IntegrationsHonestyOneLiner + `
   fail-open when MCP unavailable → portal HITL https://console.iome.sh/integrations
   aion MCP v178 list/plan + v30 signing · browser HITL for OAuth · never invent install green`)
 }
+
+// setupHelp is bare /setup and help/? copy (s1526 P3+P4 residual honesty).
+func setupHelp() string {
+	return strings.TrimSpace(`usage: /setup [init [profiles] [--stdio] [--print-only] [--plugins-dir path] | preflight | portal | reload]
+  init       write managed config fragment (profiles: local-memory|plugins|mesh|platform-mcp|all; default local-memory)
+  preflight  residual-honest probe (aliases status|check) — PASS ≠ invent Connected / Memory GA
+  portal     browser HITL URLs (integrations + settings/agent)
+  reload     hot-swap MCP from user config (ConnectMCP + ReplaceMCP; package wire ≠ Connected)
+  help|?     this residual-honest usage (also bare /setup)
+aliases: /setup-lifecycle
+honesty: ` + setup.SetupLifecycleHonestyOneLiner + `
+  secrets via env names only · portal HITL for OAuth/install · continuous pull still CLI iomesh memory pull
+  skill: read_skill setup-lifecycle-agent · system note <setup-lifecycle> on AttachMCP
+  reload: dual_write OFF · does not invent install green · skills dirs not re-scanned (restart for skill-only)`)
+}
+
+// handleSetupInit parses simple /setup init args and writes (or prints) managed fragment.
+func handleSetupInit(out io.Writer, args []string) {
+	opt := setup.DefaultInitOptions()
+	printOnly := false
+	var profileTokens []string
+	var pluginDirs []string
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		switch {
+		case a == "--stdio" || a == "-stdio":
+			opt.UseStdioMemory = true
+		case a == "--print-only" || a == "--print" || a == "-n":
+			printOnly = true
+		case a == "--plugins-dir" || a == "--plugins_dir":
+			if i+1 >= len(args) || strings.HasPrefix(args[i+1], "-") {
+				fmt.Fprintln(out, "setup init: --plugins-dir requires a path")
+				return
+			}
+			i++
+			pluginDirs = append(pluginDirs, args[i])
+		case strings.HasPrefix(a, "--plugins-dir="):
+			pluginDirs = append(pluginDirs, strings.TrimPrefix(a, "--plugins-dir="))
+		case a == "--memory-url" || a == "--memory_url":
+			if i+1 >= len(args) || strings.HasPrefix(args[i+1], "-") {
+				fmt.Fprintln(out, "setup init: --memory-url requires a URL")
+				return
+			}
+			i++
+			opt.MemoryHTTPURL = strings.TrimSpace(args[i])
+		case strings.HasPrefix(a, "--memory-url="):
+			opt.MemoryHTTPURL = strings.TrimSpace(strings.TrimPrefix(a, "--memory-url="))
+		case a == "--config":
+			// Accept and ignore with note — slash always uses user path unless print-only;
+			// full --config path support stays on CLI iomesh setup init.
+			if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+				i++
+				fmt.Fprintf(out, "setup init: note — slash writes user config path (CLI --config for custom path); got %q ignored for write target\n", args[i])
+			}
+		case strings.HasPrefix(a, "-"):
+			fmt.Fprintf(out, "setup init: unknown flag %q\n%s\n", a, setupHelp())
+			return
+		default:
+			profileTokens = append(profileTokens, a)
+		}
+	}
+	opt.PluginsDirs = pluginDirs
+	var profiles []setup.Profile
+	if len(profileTokens) == 0 {
+		profiles = []setup.Profile{setup.ProfileLocalMemory}
+	} else {
+		profiles = setup.ParseProfiles(strings.Join(profileTokens, ","))
+	}
+	frag, err := setup.BuildManagedFragment(profiles, opt)
+	if err != nil {
+		fmt.Fprintf(out, "setup init: %v\n", err)
+		return
+	}
+	if printOnly {
+		fmt.Fprint(out, frag)
+		if !strings.HasSuffix(frag, "\n") {
+			fmt.Fprintln(out)
+		}
+		fmt.Fprintln(out, "honesty: dual_write OFF · not Memory GA · catalog ≠ Connected · portal HITL · setup PASS ≠ invent install green")
+		return
+	}
+	path, err := config.WriteSetupManagedUser(frag)
+	if err != nil {
+		fmt.Fprintf(out, "setup init: write: %v\n", err)
+		return
+	}
+	fmt.Fprintf(out, "setup init: wrote managed fragment → %s\n", path)
+	fmt.Fprintf(out, "profiles: %v\n", profiles)
+	fmt.Fprintln(out, "next: ensure iomesh-memory-mcp is running (if local-memory) · set secret env vars")
+	fmt.Fprintln(out, "then: /setup preflight  · /setup reload  (or restart iomesh; CLI: iomesh setup preflight)")
+	fmt.Fprintln(out, "honesty: dual_write OFF · not Memory GA · catalog ≠ Connected · portal HITL for installs")
+	fmt.Fprintln(out, "note: continuous pull still CLI iomesh memory pull · reload = package wire ≠ Connected")
+}
+
+// handleSetupReload reloads MCP servers from config without process restart (s1526 P4).
+// Uses runtimewire.ConnectMCP + Runtime.ReplaceMCP. Residual-honest: package wire ≠ Connected.
+func handleSetupReload(out io.Writer, rt runtimeAdapter, args []string) {
+	if rt.rt == nil {
+		fmt.Fprintln(out, "setup reload: no agent runtime")
+		return
+	}
+	cfgPath := ""
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		if a == "--config" && i+1 < len(args) {
+			i++
+			cfgPath = strings.TrimSpace(args[i])
+			continue
+		}
+		if strings.HasPrefix(a, "--config=") {
+			cfgPath = strings.TrimSpace(strings.TrimPrefix(a, "--config="))
+			continue
+		}
+	}
+	var (
+		cfg *config.Config
+		err error
+	)
+	if cfgPath != "" {
+		cfg, err = config.Load(cfgPath)
+	} else {
+		cfg, err = config.LoadUser()
+	}
+	if err != nil {
+		fmt.Fprintf(out, "setup reload: config: %v\n", err)
+		return
+	}
+	ws := ""
+	if rt.rt.Workspace() != nil {
+		ws = rt.rt.Workspace().Root()
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
+	defer cancel()
+	// ConnectMCP returns nil when MCP feature off or no servers — ReplaceMCP detaches.
+	mgr := runtimewire.ConnectMCP(ctx, cfg, ws, slog.Default())
+	rt.rt.ReplaceMCP(mgr)
+	if mgr == nil {
+		fmt.Fprintln(out, "setup reload: MCP feature off or no servers configured — detached")
+		fmt.Fprintln(out, "honesty: dual_write OFF · package wire ≠ Connected · not Memory GA · portal HITL for installs")
+		return
+	}
+	nTools := 0
+	for range mgr.Bindings() {
+		nTools++
+	}
+	fmt.Fprintf(out, "setup reload: connected=%d tools=%d (package wire · fail-open per server)\n", mgr.Len(), nTools)
+	fmt.Fprintln(out, "honesty: dual_write OFF · package wire ≠ Connected · Discover/map ≠ install APPLY green · not Memory GA")
+	fmt.Fprintln(out, "note: skills catalog not re-scanned on reload · continuous pull still CLI iomesh memory pull")
+}
+
+// handleSetupPreflight runs residual-honest setup.Preflight for /setup preflight|status|check.
+func handleSetupPreflight(out io.Writer, args []string) {
+	cfgPath := ""
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		if a == "--config" && i+1 < len(args) {
+			i++
+			cfgPath = strings.TrimSpace(args[i])
+			continue
+		}
+		if strings.HasPrefix(a, "--config=") {
+			cfgPath = strings.TrimSpace(strings.TrimPrefix(a, "--config="))
+			continue
+		}
+		// ignore unknown trailing tokens lightly
+	}
+	rep, err := setup.Preflight(context.Background(), cfgPath)
+	if err != nil {
+		fmt.Fprintf(out, "setup preflight: %v\n", err)
+		return
+	}
+	fmt.Fprint(out, setup.FormatPreflightText(rep))
+}
+
 
 // parseIntegrationsListArgs extracts optional --layer for /integrations list (s1238).
 // Supports: --layer operational|knowledge|analytical|all (also --mesh-layer / --mesh_layer).

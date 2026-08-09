@@ -17,7 +17,7 @@
 | [architecture/memory-mcp.md](architecture/memory-mcp.md) | Memory Palace + temporal MCP integration plan |
 | [architecture/memory-edge-usage-demo.md](architecture/memory-edge-usage-demo.md) | Residual-honest signup → integrations → local memory (kernel + MCP) → show usage demo |
 | [architecture/memory-advanced-install.md](architecture/memory-advanced-install.md) | Advanced Memory install ladder: ONNX optional · Qdrant residual · maximize TUI benefit |
-| [architecture/setup-lifecycle.md](architecture/setup-lifecycle.md) | Setup lifecycle foundation: `iomesh setup init\|preflight` · managed config · residual honesty |
+| [architecture/setup-lifecycle.md](architecture/setup-lifecycle.md) | Setup lifecycle: `iomesh setup init\|preflight` · `/setup` slash · skill · managed config · residual honesty |
 | [architecture/agent-integrations-setup.md](architecture/agent-integrations-setup.md) | `/integrations` MCP catalog/plan + portal HITL |
 | [EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md](EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md) | E4 MCP client attach dogfood evidence stamp |
 

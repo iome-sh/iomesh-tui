@@ -859,3 +859,84 @@ func TestS1363SkillDescriptionResidualHonest(t *testing.T) {
 		t.Fatalf("description should mention memory honesty: %q", sk.Description)
 	}
 }
+
+// --- s1526 P3: builtin setup-lifecycle-agent skill (residual-honest setup lifecycle) ---
+
+// TestLoadBuiltin_SetupLifecycleAgent proves go:embed loads setup-lifecycle-agent.
+func TestLoadBuiltin_SetupLifecycleAgent(t *testing.T) {
+	cat, err := LoadBuiltin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk, ok := cat.Get("setup-lifecycle-agent")
+	if !ok {
+		t.Fatalf("missing setup-lifecycle-agent; names=%v", cat.Names())
+	}
+	if sk.Name != "setup-lifecycle-agent" {
+		t.Fatalf("name=%q", sk.Name)
+	}
+	if strings.TrimSpace(sk.Description) == "" {
+		t.Fatal("description empty")
+	}
+	if !strings.Contains(sk.Path, "builtin") && sk.SourceDir != "builtin" {
+		t.Fatalf("path/source not builtin: path=%q source=%q", sk.Path, sk.SourceDir)
+	}
+}
+
+// TestLoadWithBuiltin_SetupLifecycleAgentAlwaysPresent: skill present even with empty dirs.
+func TestLoadWithBuiltin_SetupLifecycleAgentAlwaysPresent(t *testing.T) {
+	cat, err := LoadWithBuiltin(filepath.Join(t.TempDir(), "nope"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := cat.Get("setup-lifecycle-agent"); !ok {
+		t.Fatalf("setup-lifecycle-agent missing when dirs empty; names=%v", cat.Names())
+	}
+	// Prior builtins still present.
+	if _, ok := cat.Get("connector-integrations-setup"); !ok {
+		t.Fatalf("connector-integrations-setup missing; names=%v", cat.Names())
+	}
+	if _, ok := cat.Get("aion-agent-onboarding"); !ok {
+		t.Fatalf("aion-agent-onboarding missing; names=%v", cat.Names())
+	}
+}
+
+// TestLoadBuiltin_S1526SetupLifecycleAgentSkillDogfood pins residual-honest body needles.
+func TestLoadBuiltin_S1526SetupLifecycleAgentSkillDogfood(t *testing.T) {
+	cat, err := LoadBuiltin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sk, ok := cat.Get("setup-lifecycle-agent")
+	if !ok {
+		t.Fatal("missing setup-lifecycle-agent")
+	}
+	for _, want := range []string{
+		"dual_write OFF",
+		"not Memory GA",
+		"Connected",
+		"portal HITL",
+		"iomesh setup",
+		"/setup",
+		"preflight",
+		"iomesh memory pull",
+		"INSTALL_STORE",
+		"secrets",
+	} {
+		if !strings.Contains(sk.Body, want) && !strings.Contains(sk.Description, want) {
+			if !strings.Contains(sk.Body, want) {
+				t.Fatalf("body missing %q:\n%s", want, sk.Body)
+			}
+		}
+	}
+	if !strings.Contains(sk.Description, "dual_write OFF") && !strings.Contains(sk.Description, "not Memory GA") {
+		t.Fatalf("description should carry honesty: %q", sk.Description)
+	}
+	// Body must lock dual_write OFF (refuse true is OK; invent GA claim is not).
+	if !strings.Contains(sk.Body, "dual_write OFF") && !strings.Contains(sk.Body, "dual_write = false") {
+		t.Fatal("body missing dual_write OFF lock")
+	}
+	if strings.Contains(sk.Body, "Memory GA shipped") {
+		t.Fatalf("must not invent Memory GA shipped in skill body")
+	}
+}

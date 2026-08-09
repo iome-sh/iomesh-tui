@@ -13,6 +13,7 @@ import (
 //   - s1288 memory-advanced-agent
 //   - s1341 gtm-draft-only-agent
 //   - s1363 aion-agent-onboarding
+//   - s1526 setup-lifecycle-agent
 //
 // Layout: builtin/<name>/SKILL.md — always merged when skills are enabled so
 // residual-honest guidance is available even if user/workspace skill dirs are empty.
@@ -109,8 +110,9 @@ func (c *Catalog) Merge(other *Catalog) *Catalog {
 // LoadWithBuiltin loads builtin skills first, then overlays dirs (user/workspace
 // win on name collision). Missing dirs are ignored. Always returns builtin skills
 // even when all dirs are empty — so connector-integrations-setup (s1251),
-// memory-advanced-agent (s1288), gtm-draft-only-agent (s1341), and
-// aion-agent-onboarding (s1363) always appear when skills are enabled.
+// memory-advanced-agent (s1288), gtm-draft-only-agent (s1341),
+// aion-agent-onboarding (s1363), and setup-lifecycle-agent (s1526) always
+// appear when skills are enabled.
 func LoadWithBuiltin(dirs ...string) (*Catalog, error) {
 	cat, err := LoadBuiltin()
 	if err != nil {

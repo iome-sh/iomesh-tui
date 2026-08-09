@@ -3240,3 +3240,109 @@ func TestTruncate(t *testing.T) {
 		t.Fatal()
 	}
 }
+
+// s1526 P3: /setup slash — bare/help honesty + init print-only + preflight + portal.
+func TestHandleSlash_SetupLifecycle(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	// bare → help + honesty needles
+	_, err := handleSlash(&out, adapter, "/setup")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := out.String()
+	for _, want := range []string{
+		"usage: /setup",
+		"dual_write OFF",
+		"not Memory GA",
+		"Connected",
+		"preflight",
+		"portal",
+		"init",
+		"setup-lifecycle-agent",
+	} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("help missing %q in:\n%s", want, s)
+		}
+	}
+	if strings.Contains(s, "Memory GA shipped") || strings.Contains(s, "dual_write ON") {
+		t.Fatalf("must not invent GA/dual_write ON: %s", s)
+	}
+
+	// alias + help sub
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/setup-lifecycle help")
+	if !strings.Contains(out.String(), "usage: /setup") {
+		t.Fatalf("help alias: %s", out.String())
+	}
+
+	// /help mentions /setup
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/help")
+	if !strings.Contains(out.String(), "/setup") {
+		t.Fatalf("/help missing /setup: %s", out.String())
+	}
+
+	// init --print-only residual fragment
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/setup init local-memory --print-only")
+	initOut := out.String()
+	if !strings.Contains(initOut, "dual_write = false") && !strings.Contains(initOut, "dual_write OFF") {
+		t.Fatalf("init print-only want dual_write off: %s", initOut)
+	}
+	if !strings.Contains(initOut, "[memory]") && !strings.Contains(initOut, "iomesh-memory-mcp") {
+		t.Fatalf("init print-only want memory fragment: %s", initOut)
+	}
+	if strings.Contains(initOut, "dual_write = true") {
+		t.Fatalf("must not print dual_write = true: %s", initOut)
+	}
+
+	// portal URLs
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/setup portal")
+	portalOut := out.String()
+	if !strings.Contains(portalOut, "console.iome.sh/integrations") {
+		t.Fatalf("portal integrations: %s", portalOut)
+	}
+	if !strings.Contains(portalOut, "settings/agent") {
+		t.Fatalf("portal agent settings: %s", portalOut)
+	}
+	if !strings.Contains(portalOut, "dual_write OFF") {
+		t.Fatalf("portal honesty: %s", portalOut)
+	}
+
+	// preflight against missing config path (honest not_started / fail path)
+	out.Reset()
+	missing := filepath.Join(t.TempDir(), "no-such-config.toml")
+	_, _ = handleSlash(&out, adapter, "/setup preflight --config "+missing)
+	pf := out.String()
+	if !strings.Contains(pf, "setup preflight") && !strings.Contains(pf, "not Memory GA") {
+		// FormatPreflightText or load error both residual
+		if !strings.Contains(pf, "preflight") {
+			t.Fatalf("preflight output: %s", pf)
+		}
+	}
+	// Must not invent Connected product success (honesty needles mentioning Connected are OK)
+	if strings.Contains(pf, "Connected: yes") || strings.Contains(pf, "state: Connected") {
+		t.Fatalf("preflight must not invent Connected green: %s", pf)
+	}
+	if !strings.Contains(pf, "not Memory GA") || !strings.Contains(pf, "dual_write") {
+		t.Fatalf("preflight missing honesty: %s", pf)
+	}
+
+	// status alias
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/setup status --config "+missing)
+	if out.Len() == 0 {
+		t.Fatal("status alias empty")
+	}
+
+	// unknown sub
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/setup apply")
+	if !strings.Contains(out.String(), "unknown subcommand") {
+		t.Fatalf("unknown sub: %s", out.String())
+	}
+}

@@ -16,6 +16,7 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/iomesh"
 	"github.com/iome-sh/iomesh-tui/internal/mcp"
 	"github.com/iome-sh/iomesh-tui/internal/router"
+	"github.com/iome-sh/iomesh-tui/internal/setup"
 	"github.com/iome-sh/iomesh-tui/internal/skills"
 	"github.com/iome-sh/iomesh-tui/internal/subagent"
 	"github.com/iome-sh/iomesh-tui/internal/workspace"
@@ -198,7 +199,9 @@ func (rt *Runtime) AttachSkills(cat *skills.Catalog) {
 // Also injects residual-honest integrations guidance (s1251) so the agent uses
 // list → plan → portal HITL without inventing install green, advanced
 // memory guidance (s1291) so multi-hop / HITL supersede / ops pulse stay opt-in,
-// and aion agent onboarding guidance (s1363) for TUI ↔ aion CP/MCP residual path.
+// aion agent onboarding guidance (s1363) for TUI ↔ aion CP/MCP residual path,
+// and setup lifecycle guidance (s1526 P3) for init/preflight without inventing
+// Connected / Memory GA.
 func (rt *Runtime) AttachMCP(mgr *mcp.Manager) {
 	if rt == nil || mgr == nil || mgr.Len() == 0 {
 		return
@@ -216,6 +219,8 @@ func (rt *Runtime) AttachMCP(mgr *mcp.Manager) {
 	rt.appendSystemNote("memory-advanced", MemoryAdvancedAgentGuidanceNote())
 	// s1363: residual-honest TUI agent ↔ aion backend onboarding workflow.
 	rt.appendSystemNote("aion-onboarding", AionAgentOnboardingGuidanceNote())
+	// s1526 P3: residual-honest setup lifecycle (init/preflight · dual_write OFF).
+	rt.appendSystemNote("setup-lifecycle", setup.SetupLifecycleAgentGuidanceNote())
 }
 
 // Close releases MCP subprocesses and other runtime resources.
