@@ -65,6 +65,9 @@ func TestAionAgentOnboardingGuidanceNote_HonestyNeedles(t *testing.T) {
 		"setup_not_probed",
 		"repair apply ≠ invent Connected",
 		"E10 Open",
+		// s1546 still-human APPLY reaffirm after setup closeout
+		"setup closeout residual ≠ invent APPLY",
+		"s1546",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("guidance missing %q in:\n%s", want, out)
@@ -173,6 +176,10 @@ func TestAionAgentOnboardingPortalHandoff_HonestyNeedles(t *testing.T) {
 		"portal HITL",
 		"plugins dogfood",
 		"Agent Plugins GA",
+		// s1546 human-gates companion after setup
+		"/onboard next human-gates",
+		"setup closeout residual ≠ invent APPLY",
+		"still-human APPLY open",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("portal handoff missing %q in:\n%s", want, out)
@@ -1180,6 +1187,10 @@ func TestAionAgentOnboardingNextOperatorMatrix_HonestyNeedles(t *testing.T) {
 		"/onboard next human-gates",
 		"PASS ≠ invent human-gate green",
 		"open boxes stay open",
+		// s1546 setup closeout residual ≠ invent APPLY
+		"setup closeout residual ≠ invent APPLY",
+		"s1546",
+		"E10 Open",
 		// row 5 dual-auth
 		"dual_auth_candidacy_open",
 		"list_org_unavailable",
@@ -1389,7 +1400,8 @@ func TestAionAgentOnboardingNextLaneStatus_AgenticListPlanSoftDogfood(t *testing
 	}
 }
 
-// s1413: AionAgentHumanGatesHonestyBoard residual-honest still-required vs offline needles.
+// s1413+s1546: AionAgentHumanGatesHonestyBoard residual-honest still-required vs offline needles.
+// s1546: after setup closeout residual reaffirm — setup residual ≠ invent human-gate green / live APPLY / E10.
 func TestAionAgentHumanGatesHonestyBoard_HonestyNeedles(t *testing.T) {
 	out := AionAgentHumanGatesHonestyBoard()
 	if out == "" {
@@ -1412,6 +1424,13 @@ func TestAionAgentHumanGatesHonestyBoard_HonestyNeedles(t *testing.T) {
 		"book-demo OFF",
 		"ON_SIGNAL",
 		"leave ON_SIGNAL unset",
+		// s1546 after setup closeout residual
+		"After setup closeout residual",
+		"s1546",
+		"setup_not_probed",
+		"setup residual ≠ invent",
+		"E10 Open",
+		"/onboard next setup",
 		// offline residual only
 		"residual gates",
 		"soft dogfood",
@@ -1439,6 +1458,8 @@ func TestAionAgentHumanGatesHonestyBoard_HonestyNeedles(t *testing.T) {
 		"agent MCP cannot write installs",
 		"board/export evidence ≠ invent Connected",
 		"rates ~$88/$119 optional",
+		"residual PASS ≠ invent Edge Memory GA",
+		"setup closeout residual ≠ invent human-gate green",
 		// operator
 		"make human-gates-status",
 		"/onboard next human-gates",
