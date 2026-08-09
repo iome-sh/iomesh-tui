@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Setup lifecycle foundation (s1525 P1–P2)** — agent-native setup path: `internal/config` managed-block write (`WriteSetupManagedFragment` refuses `dual_write=true`) · `iomesh setup init` profiles (`local-memory|plugins|mesh|platform-mcp|all`) · `iomesh setup preflight [--json]` residual-honest probes (never invent Connected/Memory GA). Docs: [docs/architecture/setup-lifecycle.md](docs/architecture/setup-lifecycle.md). Later: `/setup` slash, continuous pull-in-session, analyze ticks.
 - **Advanced Memory install ladder (s1525)** — residual-honest operator guide to maximize TUI Memory benefit: baseline host + auto_recall · advanced slash · optional ONNX (`MEMORY_ONNX_MODEL_PATH` on host) · Qdrant documented as **not required** / lean host `qdrant=off`. See [docs/architecture/memory-advanced-install.md](docs/architecture/memory-advanced-install.md) · sample plugin README.
 
 ### Changed
