@@ -90,6 +90,103 @@ func TestAttachMCP_EmptyNoop(t *testing.T) {
 	}
 }
 
+// s1526 P4: ReplaceMCP nil-safe detach + hot-swap tools without process restart.
+func TestReplaceMCP_NilSafeDetach(t *testing.T) {
+	rt := testRT(t, t.TempDir())
+	// No prior MCP — nil is fine.
+	rt.ReplaceMCP(nil)
+	if rt.MCP() != nil {
+		t.Fatal("expected nil MCP after ReplaceMCP(nil)")
+	}
+	// Empty manager detaches (same as nil).
+	rt.ReplaceMCP(mcp.NewManagerEmpty(nil))
+	if rt.MCP() != nil {
+		t.Fatal("empty manager must detach")
+	}
+	sys := rt.Messages()[0].Content
+	if !strings.Contains(sys, "detached") {
+		t.Fatalf("expected detached mcp note: %s", sys)
+	}
+}
+
+func TestReplaceMCP_HotSwapTools(t *testing.T) {
+	// First mock server.
+	cInR1, cInW1 := io.Pipe()
+	cOutR1, cOutW1 := io.Pipe()
+	go mockMCPAgent(cOutW1, cInR1)
+	mut := false
+	cl1 := mcp.NewClientForTest(mcp.ServerConfig{Name: "mock-a", Command: "x", Mutating: &mut}, cInW1, cOutR1, nil)
+	defer cl1.Close()
+	if err := cl1.InitForTest(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	mgr1 := mcp.NewManagerEmpty(nil)
+	mgr1.Attach(cl1)
+
+	rt := testRT(t, t.TempDir())
+	rt.AttachMCP(mgr1)
+	nameA := mcp.ToolQualifiedName("mock-a", "echo")
+	if _, err := rt.tools.Execute(context.Background(), nameA, `{"text":"a"}`); err != nil {
+		t.Fatalf("tool a before replace: %v", err)
+	}
+	sys1 := rt.Messages()[0].Content
+	if strings.Count(sys1, "<integrations>") != 1 {
+		t.Fatalf("expected single integrations note after attach, got %d", strings.Count(sys1, "<integrations>"))
+	}
+
+	// Second mock server — ReplaceMCP should unregister mock-a tools and attach mock-b.
+	cInR2, cInW2 := io.Pipe()
+	cOutR2, cOutW2 := io.Pipe()
+	go mockMCPAgent(cOutW2, cInR2)
+	cl2 := mcp.NewClientForTest(mcp.ServerConfig{Name: "mock-b", Command: "x", Mutating: &mut}, cInW2, cOutR2, nil)
+	defer cl2.Close()
+	if err := cl2.InitForTest(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	mgr2 := mcp.NewManagerEmpty(nil)
+	mgr2.Attach(cl2)
+
+	rt.ReplaceMCP(mgr2)
+	if rt.MCP() == nil {
+		t.Fatal("mcp not attached after replace")
+	}
+	nameB := mcp.ToolQualifiedName("mock-b", "echo")
+	if _, err := rt.tools.Execute(context.Background(), nameB, `{"text":"b"}`); err != nil {
+		t.Fatalf("tool b after replace: %v", err)
+	}
+	// Old mcp__ tool must be gone.
+	if _, err := rt.tools.Execute(context.Background(), nameA, `{"text":"a"}`); err == nil {
+		t.Fatal("expected mock-a tool unregistered after ReplaceMCP")
+	}
+	// System notes upsert — no duplicate integrations/mcp tags.
+	sys2 := rt.Messages()[0].Content
+	if strings.Count(sys2, "<integrations>") != 1 {
+		t.Fatalf("integrations note duplicated: %d", strings.Count(sys2, "<integrations>"))
+	}
+	if strings.Count(sys2, "<mcp>") != 1 {
+		t.Fatalf("mcp note count: %d", strings.Count(sys2, "<mcp>"))
+	}
+	if !strings.Contains(sys2, "1 server") {
+		t.Fatalf("mcp note should reflect new manager: %s", sys2)
+	}
+
+	// Detach via ReplaceMCP(nil) after attach.
+	rt.ReplaceMCP(nil)
+	if rt.MCP() != nil {
+		t.Fatal("expected nil after detach")
+	}
+	if _, err := rt.tools.Execute(context.Background(), nameB, `{"text":"b"}`); err == nil {
+		t.Fatal("expected tools cleared on detach")
+	}
+}
+
+func TestUnregisterMCPTools_Idempotent(t *testing.T) {
+	reg := ToolRegistry{funcs: map[string]toolFunc{}, meta: map[string]toolMeta{}}
+	// No panic on empty.
+	reg.UnregisterMCPTools()
+	reg.UnregisterMCPTools()
+}
+
 func testRT(t *testing.T, workspace string) *Runtime {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

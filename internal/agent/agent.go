@@ -16,6 +16,7 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/iomesh"
 	"github.com/iome-sh/iomesh-tui/internal/mcp"
 	"github.com/iome-sh/iomesh-tui/internal/router"
+	"github.com/iome-sh/iomesh-tui/internal/setup"
 	"github.com/iome-sh/iomesh-tui/internal/skills"
 	"github.com/iome-sh/iomesh-tui/internal/subagent"
 	"github.com/iome-sh/iomesh-tui/internal/workspace"
@@ -198,11 +199,21 @@ func (rt *Runtime) AttachSkills(cat *skills.Catalog) {
 // Also injects residual-honest integrations guidance (s1251) so the agent uses
 // list → plan → portal HITL without inventing install green, advanced
 // memory guidance (s1291) so multi-hop / HITL supersede / ops pulse stay opt-in,
-// and aion agent onboarding guidance (s1363) for TUI ↔ aion CP/MCP residual path.
+// aion agent onboarding guidance (s1363) for TUI ↔ aion CP/MCP residual path,
+// and setup lifecycle guidance (s1526 P3) for init/preflight without inventing
+// Connected / Memory GA.
+// System notes upsert by tag (safe to re-attach after ReplaceMCP).
 func (rt *Runtime) AttachMCP(mgr *mcp.Manager) {
 	if rt == nil || mgr == nil || mgr.Len() == 0 {
 		return
 	}
+	rt.mu.Lock()
+	defer rt.mu.Unlock()
+	rt.attachMCPLocked(mgr)
+}
+
+// attachMCPLocked assumes rt.mu is held.
+func (rt *Runtime) attachMCPLocked(mgr *mcp.Manager) {
 	rt.mcp = mgr
 	rt.tools.RegisterMCPTools(mgr)
 	n := 0
@@ -216,6 +227,36 @@ func (rt *Runtime) AttachMCP(mgr *mcp.Manager) {
 	rt.appendSystemNote("memory-advanced", MemoryAdvancedAgentGuidanceNote())
 	// s1363: residual-honest TUI agent ↔ aion backend onboarding workflow.
 	rt.appendSystemNote("aion-onboarding", AionAgentOnboardingGuidanceNote())
+	// s1526 P3: residual-honest setup lifecycle (init/preflight · dual_write OFF).
+	rt.appendSystemNote("setup-lifecycle", setup.SetupLifecycleAgentGuidanceNote())
+}
+
+// ReplaceMCP hot-swaps the MCP manager without a process restart (s1526 P4).
+// Closes the previous manager (if any), unregisters mcp__* / MCP meta tools, then
+// attaches the new manager. Prefer between-turns use (holds rt.mu).
+//
+// mgr may be nil or empty: detaches MCP tools and upserts a residual-honest
+// "detached" mcp system note (does not invent Connected).
+//
+// Residual honesty: package wire / reload ≠ Connected / install APPLY green · dual_write OFF.
+func (rt *Runtime) ReplaceMCP(mgr *mcp.Manager) {
+	if rt == nil {
+		return
+	}
+	rt.mu.Lock()
+	defer rt.mu.Unlock()
+
+	old := rt.mcp
+	rt.tools.UnregisterMCPTools()
+	rt.mcp = nil
+	if old != nil && old != mgr {
+		_ = old.Close()
+	}
+	if mgr == nil || mgr.Len() == 0 {
+		rt.appendSystemNote("mcp", "MCP: detached (no connected servers). Reload after setup is residual-honest package wire ≠ Connected.")
+		return
+	}
+	rt.attachMCPLocked(mgr)
 }
 
 // Close releases MCP subprocesses and other runtime resources.
@@ -223,19 +264,42 @@ func (rt *Runtime) Close() error {
 	if rt == nil {
 		return nil
 	}
-	if rt.mcp != nil {
-		return rt.mcp.Close()
+	rt.mu.Lock()
+	mgr := rt.mcp
+	rt.mcp = nil
+	rt.mu.Unlock()
+	if mgr != nil {
+		return mgr.Close()
 	}
 	return nil
 }
 
+// appendSystemNote upserts a tagged block on the first system message.
+// If <tag>...</tag> already exists it is replaced (ReplaceMCP / re-Attach safe);
+// otherwise the block is appended. Does not skip empty body.
 func (rt *Runtime) appendSystemNote(tag, body string) {
+	block := "\n\n<" + tag + ">\n" + body + "\n</" + tag + ">"
 	if len(rt.messages) == 0 {
 		return
 	}
 	// Prefer first system message.
 	if rt.messages[0].Role == "system" {
-		rt.messages[0].Content += "\n\n<" + tag + ">\n" + body + "\n</" + tag + ">"
+		content := rt.messages[0].Content
+		open := "<" + tag + ">"
+		close := "</" + tag + ">"
+		if start := strings.Index(content, open); start >= 0 {
+			if endRel := strings.Index(content[start:], close); endRel >= 0 {
+				endAbs := start + endRel + len(close)
+				blockStart := start
+				// Drop leading "\n\n" that preface an existing tagged block.
+				if blockStart >= 2 && content[blockStart-2:blockStart] == "\n\n" {
+					blockStart -= 2
+				}
+				rt.messages[0].Content = content[:blockStart] + block + content[endAbs:]
+				return
+			}
+		}
+		rt.messages[0].Content += block
 		return
 	}
 	rt.messages = append([]router.Message{{

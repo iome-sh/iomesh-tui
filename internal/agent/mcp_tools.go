@@ -4,10 +4,37 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/iome-sh/iomesh-tui/internal/mcp"
 	"github.com/iome-sh/iomesh-tui/internal/router"
 )
+
+// mcpMetaToolNames are registry names for MCP resource/prompt meta tools (not mcp__*).
+var mcpMetaToolNames = []string{
+	"list_mcp_resources",
+	"read_mcp_resource",
+	"list_mcp_prompts",
+	"get_mcp_prompt",
+}
+
+// UnregisterMCPTools removes all mcp__* bindings and MCP meta tools from the registry.
+// Used by Runtime.ReplaceMCP before re-attach (s1526 P4 hot reload).
+func (r *ToolRegistry) UnregisterMCPTools() {
+	if r == nil || r.funcs == nil {
+		return
+	}
+	for name := range r.funcs {
+		if strings.HasPrefix(name, "mcp__") {
+			delete(r.funcs, name)
+			delete(r.meta, name)
+		}
+	}
+	for _, name := range mcpMetaToolNames {
+		delete(r.funcs, name)
+		delete(r.meta, name)
+	}
+}
 
 // RegisterMCPTools exposes connected MCP server tools as agent tools
 // named mcp__<server>__<tool>. Mutating flag comes from server config (default true).
