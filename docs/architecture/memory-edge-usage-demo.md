@@ -1,6 +1,7 @@
 # Memory edge usage demo (example)
 
 **Serial:** free eng **s1513** · residual-honest **utilization / demo walkthrough** for product tip  
+**SSOT:** product narrative stages live in **[edge-user-journey.md](./edge-user-journey.md)** (free eng **s1554** · 7-stage edge-first journey) — this file is the **runbook**, not the ownership SSOT.  
 **Audience:** operators, demo hosts, sales eng dogfood, new users  
 **Planes used:** local Memory **kernel** (`github.com/iome-sh/memory`) + product **MCP host** (`iomesh-memory-mcp`) + **iomesh-tui** client
 
@@ -18,6 +19,17 @@ signup (portal)  →  install TUI  →  MCP integrations (list/plan + portal HIT
 
 This is a **runbook-style example**, not a product claim that every step is automatic or GA-green.  
 **Honesty on the setup map:** PASS / pull / analyze / drift OK / repair apply **≠ invent Connected** · not Memory GA · portal HITL still human · no auto-repair without explicit `apply --yes`. See [setup-lifecycle.md](./setup-lifecycle.md).
+
+### Phase → 7-stage SSOT mapping (s1554)
+
+| Demo phase (this file) | Edge journey stage | Notes |
+|------------------------|--------------------|--------|
+| Phase 0 — Signup | **1 Signup** | Optional for pure local memory |
+| Phase 1 — Install TUI (+ LLM keys) | **2 Download TUI** · **3 TUI auth/keys** | Keys/Ollama in Phase 1 body |
+| Optional `/setup` map (intro + lifecycle doc) | **4 Setup wizard** | Full detail: [setup-lifecycle.md](./setup-lifecycle.md) |
+| Phase 2 — Integrations | **5 Connectors / events on mesh** | list/plan + portal HITL · catalog ≠ Connected |
+| Phase 3 — Local memory install · Phase 4 — Attach | **6 Local store** | host not auto on signup · dual_write OFF |
+| Phase 5 — Show usage (+ digest / analyze) | **7 Analyze** | `/memory` · digest · optional mesh pull Ops Pack ~$119 |
 
 ---
 
@@ -477,6 +489,8 @@ curl -fsS http://127.0.0.1:8080/healthz
 
 | Doc / path | Why |
 |------------|-----|
+| [edge-user-journey.md](./edge-user-journey.md) | **SSOT** 7-stage edge-first narrative (s1554) |
+| [setup-lifecycle.md](./setup-lifecycle.md) | Stage 4 setup wizard P1–P7 residual map |
 | [memory-mcp.md](./memory-mcp.md) | Full Memory phases, slash table, edge OSS honesty |
 | [agent-integrations-setup.md](./agent-integrations-setup.md) | `/integrations` MCP tools + portal HITL |
 | [mcp.md](./mcp.md) | MCP client transports + `iomesh mcp --connect` |
