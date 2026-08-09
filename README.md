@@ -60,6 +60,8 @@ Any other **OpenAI-compatible** chat endpoint can be added under `[model.<name>]
 
 **Product edge public install (s1478 · residual-honest):** both [`github.com/iome-sh/memory`](https://github.com/iome-sh/memory) and [`github.com/iome-sh/iomesh-memory-mcp`](https://github.com/iome-sh/iomesh-memory-mcp) are **public** — **no GOPRIVATE** / PAT. Install: `go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main` · kernel `go get github.com/iome-sh/memory@main` · attach `http://127.0.0.1:8080/mcp` or stdio `iomesh-memory-mcp` · docker compose still valid. dual_write OFF · not Memory GA · aion broker **still private** · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA. Docs: [memory-mcp.md Edge OSS / s1478](docs/architecture/memory-mcp.md#edge-oss-option-a-s1453--m2-lean-attach-s1458--m3-edge-dogfood-s1463--m4-public-flip-readiness-s1469--s1478-public-product-attach).
 
+**Usage / demo example (s1513 · residual-honest):** signup (optional) → TUI MCP integrations list/plan + portal HITL → local memory install (kernel + MCP host; **not fully automatic**) → attach → show `/memory` usage. Walkthrough: [memory-edge-usage-demo.md](docs/architecture/memory-edge-usage-demo.md).
+
 ## Quick start
 
 **Requirements:** Go version in [go.mod](go.mod) (CI uses that toolchain).
