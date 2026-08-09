@@ -2518,8 +2518,8 @@ func TestHandleSlash_OnboardNextAgenticListPlanSoftDogfood(t *testing.T) {
 	}
 }
 
-// s1413+s1546: /onboard next human-gates|human|gates|apply-gates — residual-honest still-required vs offline.
-// s1546: setup closeout residual ≠ invent APPLY / human-gate green · E10 Open.
+// s1413+s1546+s1550: /onboard next human-gates|human|gates|apply-gates — residual-honest edge-first.
+// s1550: edge-first · knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect.
 func TestHandleSlash_OnboardNextHumanGates(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -2527,34 +2527,29 @@ func TestHandleSlash_OnboardNextHumanGates(t *testing.T) {
 
 	needles := []string{
 		"human-gates honesty board",
-		"still_human",
+		"edge-first",
+		"s1550",
+		"architecture",
+		"still_human_or_policy",
+		"punted_or_demoted",
 		"offline_residual_only",
 		"shipped_or_policy",
-		"Slack HMAC",
-		"Stripe Customers:Write",
-		"H1/H2 INSTALL_STORE",
-		"D1–D5",
+		"knowledge multi-tenant punted",
+		"Slack HMAC punted",
+		"portal HITL",
+		"H1/H2 not launch gate",
 		"book-demo OFF",
 		"ON_SIGNAL",
 		"dual_write OFF",
 		"not Memory GA",
-		"PASS ≠ invent human-gate green",
-		"PASS ≠ live APPLY",
-		"open boxes stay open",
-		"Knowledge Beta→GA cannot invent H1/H2 offline",
-		"dry-run ≠ APPLY",
-		"analytical NO-install intentional",
-		"do NOT close human APPLY gates",
-		"make human-gates-status",
-		"never invent APPLY",
-		"Palace sunset",
+		"Edge Memory GA candidacy only",
+		"residual PASS ≠ invent Edge Memory GA",
+		"PASS ≠ invent Connected",
+		"catalog ≠ Connected",
 		"agent MCP cannot write installs",
-		// s1546 setup closeout residual reaffirm
-		"After setup closeout residual",
-		"s1546",
-		"setup closeout residual ≠ invent APPLY",
-		"E10 Open",
-		"setup_not_probed",
+		"never invent Connected",
+		"/onboard next human-gates",
+		"/integrations list|plan|status",
 	}
 
 	for _, line := range []string{

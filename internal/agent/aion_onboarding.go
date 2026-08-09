@@ -28,10 +28,11 @@ import (
 // s1447: /onboard next operator residual-honest operator readiness matrix (demo · sales · planes · human-gates).
 // s1542: /onboard next setup residual-honest setup lifecycle P1–P7 closeout map (init→preflight→reload→portal→pull→analyze→drift→repair).
 // s1546: still-human APPLY reaffirm after setup closeout — setup residual ≠ invent human-gate green / live APPLY.
+// s1550: edge-first human-gates residual pin — knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect.
 // Unit-tested for honesty needles. Molds IntegrationsAgentGuidanceNote /
 // GtmDraftOnlyAgentGuidanceNote / MemoryAdvancedAgentGuidanceNote.
 func AionAgentOnboardingGuidanceNote() string {
-	return strings.TrimSpace(`aion agent onboarding (residual-honest TUI ↔ aion CP/MCP · s1363+s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1546):
+	return strings.TrimSpace(`aion agent onboarding (residual-honest TUI ↔ aion CP/MCP · s1363+s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1546+s1550):
 Point IOMESH/MCP at aion tools — fail-open offline (never invent tool green).
 
 Connector path (integrations portal HITL · product plane 3 agentic integrations):
@@ -49,7 +50,7 @@ Memory + operator:
 5. Memory: dual_write OFF · local-primary · not Memory GA · optional plugins dogfood ≠ invent Agent Plugins GA (rates ~$88/$119 optional)
 6. Operator pulse: /integrations status · /onboard checklist · /onboard portal · portal HITL
 7. Post-onboard continuum: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|demo|operator|setup|status|export|human-gates] (plugins dogfood · /gtm checklist · iomesh-memory-mcp local · mesh streaming heartbeats · Ops Pack pull path · agentic integrations MCP list/plan + portal HITL · three product planes board · sales/buyer claims · demo readiness · operator readiness matrix · setup lifecycle P1–P7 map · lane status board · status export receipt · human-gates still-required vs offline)
-8. Human gates (s1413+s1546): /onboard next human-gates — still human Slack HMAC · Stripe Customers:Write · H1/H2 INSTALL_STORE · D1–D5 · book-demo OFF · ON_SIGNAL unset · offline residual ≠ invent APPLY · setup closeout residual ≠ invent APPLY (s1546)
+8. Human gates (s1413+s1546+s1550 edge-first): /onboard next human-gates — edge-first · knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect · book-demo OFF · ON_SIGNAL unset · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · never invent Connected
 9. Agentic integrations (s1417 · product plane 3): /onboard next agentic — MCP list/plan residual-honest · plan_connector_setup → portal deep links · browser HITL only · list_org fail-open ≠ empty-as-none · never invent Connected
 10. Three product planes (s1432): /onboard next planes — mesh · memory-pull · agentic residual-honest consolidate · streams_not_probed · pull_not_probed · list_plan_not_connected · dual_auth_candidacy_open · never invent Connected
 11. Sales/buyer claims (s1437): /onboard next sales — may claim / must not claim residual-honest · three-planes grounded · never invent Connected / Memory GA / dual-auth live
@@ -729,7 +730,7 @@ Locks: dual_write OFF · book-demo OFF · Landgrab NOT READY · not Memory GA ·
 //	1 Demo readiness — companion /onboard next demo · Lighthouse · book-demo OFF · Landgrab NOT READY
 //	2 Sales claims — companion /onboard next sales · may/must-not residual-honest
 //	3 Three planes — companion /onboard next planes · mesh · memory-pull · agentic residual-honest
-//	4 Human gates — companion /onboard next human-gates · Slack HMAC · Stripe Write · H1/H2 still human
+//	4 Human gates — companion /onboard next human-gates · edge-first (s1550) · knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect
 //	5 Agentic dual-auth — dual_auth_candidacy_open · tool ship ≠ dual-auth live · list_org unavailable
 //	6 Policy locks — dual_write OFF · not Memory GA · leave ON_SIGNAL unset · rates ~$88/$119 optional
 //	7 Export tip — /onboard next export for offline evidence · board/export evidence ≠ invent Connected
@@ -761,11 +762,11 @@ func AionAgentOnboardingNextOperatorMatrix() string {
     · mesh ≠ memory · never invent stream green / pull green / Connected
     · companion: /onboard next planes (aliases three-planes|product-planes|product|pillars|three_planes)
 
-  row 4 · Human gates (still_human · open boxes stay open):
-    · still human Slack HMAC · Stripe Customers:Write · H1/H2 INSTALL_STORE · D1–D5 / K-D*
-    · book-demo OFF · leave ON_SIGNAL unset · PASS ≠ invent human-gate green · PASS ≠ live APPLY
-    · open boxes stay open · Knowledge Beta→GA cannot invent H1/H2 offline
-    · setup closeout residual ≠ invent APPLY (s1546) · E10 Open
+  row 4 · Human gates (still_human · edge-first s1550 · open policy boxes stay honest):
+    · edge-first · knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect
+    · book-demo OFF · leave ON_SIGNAL unset · dual_write OFF · not Memory GA · Edge Memory GA candidacy only
+    · residual PASS ≠ invent Edge Memory GA · PASS ≠ invent Connected · H1/H2 not launch gate
+    · setup closeout residual ≠ invent APPLY (s1546) · E10 only if claiming Edge Memory GA
     · companion: /onboard next human-gates (aliases human|gates|apply-gates)
 
   row 5 · Agentic dual-auth candidacy (portal_hitl_still · dual_auth_candidacy_open):
@@ -1141,55 +1142,49 @@ func nextLanePluginsDogfoodSessionState() string {
 }
 
 // AionAgentHumanGatesHonestyBoard residual-honest human-gates status section for operators
-// (/onboard next human-gates · aliases human|gates|apply-gates) — free eng s1413 + s1546 reaffirm.
+// (/onboard next human-gates · aliases human|gates|apply-gates) — free eng s1413 + s1546 + s1550 edge-first.
 // Static offline — no MCP dial · no gcloud · never invents human-gate green or live APPLY.
-// Separates: still human APPLY · offline residual only · shipped/policy.
-// Explicit: local memory / dual_write OFF / residual-honest agent MCP list/plan do NOT close human APPLY gates.
-// s1546: after setup closeout residual (s1542 P1–P7 / /onboard next setup) reaffirm —
-// setup residual complete ≠ invent human-gate green / live APPLY / OAuth Connected / E10 sign-off.
-// Operator tip: re-run make human-gates-status / residual gate on aion · never invent APPLY.
-// Honesty locks: PASS ≠ invent human-gate green · PASS ≠ live APPLY · open boxes stay open ·
-// dual_write OFF · book-demo OFF · leave ON_SIGNAL unset · Knowledge Beta→GA cannot invent H1/H2 offline ·
-// not Memory GA · E10 Open · residual PASS ≠ invent Edge Memory GA · rates ~$88/$119 optional ·
-// analytical NO-install intentional.
+// s1550 edge-first pin (founders): local TUI + iomesh-memory-mcp + optional mesh pull · dual_write OFF ·
+// knowledge multi-tenant INSTALL_STORE punted (H1/H2 not launch) · Slack HMAC punted for now ·
+// integrations path = TUI agent MCP list/plan + portal HITL when OAuth needed · Stripe residual closed
+// unless ACL regresses · E10 only if claiming Edge Memory GA · book-demo OFF.
+// s1546: setup residual complete ≠ invent human-gate green / live APPLY / OAuth Connected / E10.
+// Honesty locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only ·
+// residual PASS ≠ invent Edge Memory GA · PASS ≠ invent Connected · agent MCP cannot write installs ·
+// portal HITL when connect · knowledge multi-tenant punted · Slack HMAC punted · H1/H2 not launch gate ·
+// open policy boxes stay honest.
 func AionAgentHumanGatesHonestyBoard() string {
-	return strings.TrimSpace(`aion human-gates honesty board (residual-honest · s1413+s1546 · no MCP dial · not live APPLY):
-  board (honest vocabulary only — never invent human-gate green / Connected / APPLY / H1/H2 green as success):
+	return strings.TrimSpace(`aion human-gates honesty board (residual-honest · s1550 edge-first · no MCP dial):
 
-  still_human (open boxes stay open · human APPLY only):
-    · Slack HMAC rotate — Signing Secret still human if not rotated · make broker-hmac-rotate dry-run default · SM name present ≠ real App secrets
-    · Stripe Customers:Write — Dashboard ACL on live restricted key · SM present ≠ Write granted · Checkout may use customer_email fallback
-    · H1/H2 INSTALL_STORE image APPLY — CP image first · broker second · VPC/rqlite · Knowledge Beta→GA cannot invent H1/H2 offline
-    · knowledge live dogfood D1–D5 — after H1/H2 only · dry-run ≠ APPLY · fixture ≠ live dogfood · catalog knowledge stays Beta
-    · book-demo OFF (to turn ON needs separate launch gates) · leave ON_SIGNAL unset (no invent warm APPLY)
+  architecture (locked):
+    · edge-first local memory · dual_write OFF · hosted palace sunset
+    · knowledge multi-tenant INSTALL_STORE punted · H1/H2 not launch gate
+    · Slack HMAC punted for now · no live Slack signed-webhook requirement for this residual
+    · integrations path: TUI agent MCP list/plan + portal HITL (agent cannot write installs)
 
-  After setup closeout residual (s1542/s1546):
-    · setup path P1–P7 / /onboard next setup residual complete · setup_not_probed still honest offline
-    · setup residual ≠ invent Slack HMAC green · Stripe Write green · H1/H2 INSTALL_STORE green · OAuth Connected · E10 sign-off
-    · companion: /onboard next setup · /setup portal · docs mention only for aion ops residual still-human apply after setup closeout
+  still_human_or_policy (edge-first launch residual):
+    · portal HITL OAuth/connect when customer must Connect — agent MCP cannot write installs · catalog ≠ Connected
+    · book-demo OFF · leave ON_SIGNAL unset
+    · E10 founder sign-off only if claiming Edge Memory GA (candidacy allowed without E10)
+    · optional E4 edge dogfood if tightening Edge Memory claim beyond candidacy
 
-  offline_residual_only (PASS ≠ invent human-gate green · PASS ≠ live APPLY):
-    · residual gates (make human-gates-hmac-stripe-install-store-residual-gate · mesh INSTALL_STORE residual · knowledge dry-run residual)
-    · soft dogfood / offline samples · session soft ≠ live dogfood · residual PASS ≠ live dogfood
-    · agent MCP list/plan · residual-honest list_org fail-open · catalog ≠ Connected · agent MCP cannot write installs
-    · dry-run paths (broker-hmac-rotate dry-run · stage install dogfood dry-run · knowledge dry-run) · dry-run ≠ APPLY
+  punted_or_demoted (not launch peer for edge-first):
+    · Slack HMAC rotate — punted for now · residual PASS ≠ invent Slack Connected green
+    · H1/H2 knowledge INSTALL_STORE — punted with knowledge multi-tenant · gcloud ops residual only if un-punt later
+    · knowledge D1–D5 / exit-Beta — deferred with multi-tenant knowledge punt
+    · Stripe key material + Customers/Checkout Write — validated residual (SM update) · ACL residual only if Dashboard regresses
 
-  shipped_or_policy (do not re-claim as closing open human boxes):
-    · GitHub App HMAC may be dogfood-proven (signed ping 200) — Slack still human until rotated
-    · dual_write OFF · Palace sunset · local-primary memory · not Memory GA · package load ≠ Memory GA
-    · analytical NO-install intentional (dbt/warehouse INSTALL_STORE not shipped · embeddings N/A by design)
-    · rates ~$88 mesh / ~$119 Memory Ops Pack optional — commercial framing only · not product GA claim
-
-  do_not_close (explicit · offline residual never invents APPLY):
-    · local memory / dual_write OFF / residual-honest agent MCP list/plan do NOT close human APPLY gates
-    · board/export evidence ≠ invent Connected · offline PASS ≠ invent human-gate green · open boxes stay open
-    · setup closeout residual ≠ invent human-gate green · residual PASS ≠ invent Edge Memory GA
+  offline_residual_only / shipped_or_policy:
+    · setup lifecycle residual complete ≠ invent Connected / Memory GA
+    · agent MCP list/plan residual-honest · dual_write OFF · not Memory GA · Edge Memory GA candidacy only
+    · local memory / dual_write OFF do NOT invent Edge Memory GA declared
+    · residual PASS ≠ invent Edge Memory GA · PASS ≠ invent Connected · open policy boxes stay honest
 
   operator:
-    · re-run make human-gates-status (aion s191 · read-only · NO APPLY) · residual gate on aion
-    · never invent APPLY · never invent Slack rotate done · never invent Stripe Write · never invent INSTALL_STORE green
-    · slash: /onboard next human-gates (aliases human|gates|apply-gates) · /onboard next status · /onboard next export
-    · companion: /onboard next setup · /setup portal · /onboard next · /onboard status · /integrations status · portal HITL https://console.iome.sh/integrations
+    · slash: /onboard next human-gates · /onboard next setup · /integrations list|plan|status
+    · companion aion ops residual: edge-first human gates residual (s1550)
+    · never invent Connected / INSTALL_STORE green / Edge Memory GA / book-demo as ON
+    · aliases human|gates|apply-gates · companion /onboard next · /onboard status · /setup portal
 
-Locks: dual_write OFF · book-demo OFF · leave ON_SIGNAL unset · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · PASS ≠ invent human-gate green · open boxes stay open · E10 Open · residual PASS ≠ invent Edge Memory GA · Knowledge Beta→GA cannot invent H1/H2 offline · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · dry-run ≠ APPLY · rates ~$88/$119 optional · analytical NO-install intentional · board/export evidence ≠ invent Connected · setup closeout residual ≠ invent human-gate green`)
+Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · PASS ≠ invent Connected · agent MCP cannot write installs · portal HITL when connect · knowledge multi-tenant punted · Slack HMAC punted · H1/H2 not launch gate · open policy boxes stay honest`)
 }

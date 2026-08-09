@@ -1,10 +1,11 @@
 # Setup lifecycle (agent-native wizard foundation)
 
-**Serial:** free eng **s1525** P1–P2 · **s1526** P3–P4 · **s1530** P5 · **s1534** P6 · **s1538** P7 · **s1542** closeout residual · **s1546** still-human APPLY reaffirm · residual-honest  
+**Serial:** free eng **s1525** P1–P2 · **s1526** P3–P4 · **s1530** P5 · **s1534** P6 · **s1538** P7 · **s1542** closeout residual · **s1546** still-human APPLY reaffirm · **s1550** edge-first human-gates residual pin · residual-honest  
 **Status:** foundation + agent-native slash/skill + package wire + `ReplaceMCP` + in-session opt-in continuous pull + analyze ticks + report-only drift + **guided repair** (safe steps · explicit `--yes`) + **onboard next setup** lane  
 **Shipped P7:** `/setup repair` plan + apply `--yes` (safe steps only · notes stay human)  
 **Shipped s1542:** residual-honest `/onboard next setup` consolidates P1–P7 map story  
-**Related (s1546):** still-human APPLY reaffirm after closeout — setup residual complete ≠ invent human-gate green / live APPLY / E10 (`/onboard next human-gates`)
+**Related (s1546):** still-human APPLY reaffirm after closeout — setup residual complete ≠ invent human-gate green / live APPLY / E10 (`/onboard next human-gates`)  
+**Related (s1550):** edge-first human-gates residual pin — knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect · dual_write OFF · Edge Memory GA candidacy only (`/onboard next human-gates`)
 
 ## Goal
 
@@ -229,6 +230,7 @@ Skills catalog is **not** re-scanned on `/setup reload` (restart for skill-only 
 - ~~Guided repair (`/setup repair` plan · `apply --yes` safe steps)~~ **shipped s1538 P7**  
 - ~~Onboard next setup lane (P1–P7 closeout residual map)~~ **shipped s1542**  
 - ~~Still-human APPLY reaffirm after setup closeout~~ **shipped s1546** (`/onboard next human-gates` · setup residual ≠ invent APPLY)
+- ~~Edge-first human-gates residual pin~~ **shipped s1550** (`/onboard next human-gates` · knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect)
 
 See product plan: agent-native MCP/plugin setup wizard + continuous pull/analyze + guided repair.
 

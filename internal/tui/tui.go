@@ -921,12 +921,12 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 						fmt.Fprintln(out, "— residual: agentic integrations lane · product plane 3 · dual_write OFF · not Memory GA · MCP list/plan residual-honest · plan deep links = browser HITL only · template= ≠ install APPLY · catalog ≠ Connected · list_org fail-open ≠ empty-as-none · list_plan_not_connected · portal_hitl_still · agent MCP cannot write installs · never invent Connected · rates ~$88/$119 optional · soft dogfood: /onboard next agentic dogfood · dual-auth: /onboard next agentic dual-auth")
 						return false, nil
 					case "human-gates", "human", "gates", "apply-gates":
-						// s1413+s1546: residual-honest human-gates still-required vs offline residual.
-						// Still human: Slack HMAC · Stripe Customers:Write · H1/H2 INSTALL_STORE · D1–D5 · book-demo OFF · ON_SIGNAL unset.
-						// Offline residual ≠ invent APPLY · open boxes stay open · PASS ≠ invent human-gate green.
-						// s1546: setup closeout residual ≠ invent APPLY / human-gate green · E10 Open.
+						// s1413+s1546+s1550: residual-honest human-gates edge-first residual pin.
+						// edge-first · knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect.
+						// dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA.
+						// PASS ≠ invent Connected · never invent INSTALL_STORE green / book-demo ON.
 						fmt.Fprintln(out, agent.AionAgentHumanGatesHonestyBoard())
-						fmt.Fprintln(out, "— residual: human-gates honesty board · s1546 · dual_write OFF · not Memory GA · book-demo OFF · leave ON_SIGNAL unset · PASS ≠ invent human-gate green · PASS ≠ live APPLY · open boxes stay open · E10 Open · setup closeout residual ≠ invent APPLY · Knowledge Beta→GA cannot invent H1/H2 offline · never invent APPLY · local memory / dual_write OFF / agent MCP list/plan do not close human APPLY gates")
+						fmt.Fprintln(out, "— residual: human-gates honesty board · s1550 edge-first · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · PASS ≠ invent Connected · knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect · book-demo OFF · leave ON_SIGNAL unset · H1/H2 not launch gate · agent MCP cannot write installs · never invent Connected / INSTALL_STORE green / book-demo as ON")
 						return false, nil
 					case "status", "pulse", "board":
 						fmt.Fprintln(out, agent.AionAgentOnboardingNextLaneStatus())
