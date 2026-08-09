@@ -14,6 +14,8 @@ Residual-honest **stdio map** sample package for operator dogfood of iomesh-tui 
 | secrets in package JSON | **none** — portable map only |
 | public install | `go install …@main` · **no GOPRIVATE** / PAT |
 | connect | requires **`iomesh-memory-mcp` on PATH** · fail-open if missing |
+| advanced ONNX | optional `MEMORY_ONNX_MODEL_PATH` on **host** · improves semantic · not required |
+| Qdrant | **not required** · lean host search `qdrant=off` · not invent cloud palace |
 
 This package **maps** a stdio server entry named `memory` → command `iomesh-memory-mcp`. It does **not** ship the binary, mint secrets, or invent attach green. Runtime attach still fail-opens inside `mcp.NewManager` when the binary is absent.
 
@@ -94,8 +96,33 @@ From the iomesh-tui module root:
 go test ./internal/agentplugins/ -run TestDiscover_IomeshMemoryMCPExample -count=1
 iomesh plugins validate -dir examples/agent-plugins/iomesh-memory-mcp
 iomesh plugins list -dir examples/agent-plugins/iomesh-memory-mcp
-iomesh plugins dogfood   # hello-iome + iomesh-memory-mcp product samples
+iomesh plugins smoke   # hello-iome + iomesh-memory-mcp product samples (legacy: dogfood)
 ```
+
+
+## Advanced Memory install (maximize benefit · s1525)
+
+Baseline sample map only needs the **host binary on PATH** (hash embeddings · no Qdrant).
+
+To **maximize** TUI Memory quality:
+
+| Level | Add | Benefit |
+|-------|-----|---------|
+| L1 | durable palace root · `auto_recall` · optional `auto_ingest` | durable multi-session UX |
+| L2 | `/memory status` + advanced slash / builtin `memory-advanced-agent` | related · semantic · HITL surfaces when tools present |
+| L3 | `MEMORY_ONNX_MODEL_PATH` on the **host** process | stronger hybrid / semantic ranking |
+| L4 | optional local Qdrant container | **not** used by lean host search (`qdrant=off`) · kernel VectorStore residual only |
+
+```bash
+# L3 example (host process, not TUI alone)
+export MEMORY_ONNX_MODEL_PATH=/path/to/onnx/model
+iomesh-memory-mcp -palace-root ./data/memory-palaces -tenant default -http-addr :8080
+curl -fsS http://127.0.0.1:8080/healthz   # embeddings=onnx when load OK · qdrant=off
+```
+
+Full ladder + Docker/Podman notes: [memory-advanced-install.md](../../../docs/architecture/memory-advanced-install.md).
+
+**Honesty:** ONNX optional · Qdrant **not required** for TUI · dual_write OFF · not Memory GA · sample map ≠ Connected.
 
 ## Non-goals
 
