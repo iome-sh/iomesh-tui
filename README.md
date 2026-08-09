@@ -4,20 +4,32 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/github/go-mod/go-version/iome-sh/iomesh-tui)](go.mod)
 
-**I/O Mesh TUI** — a Go coding-agent harness inspired by [xAI Grok Build](https://github.com/xai-org/grok-build), with a **multi-provider LLM router** and optional **I/O Mesh** context / policy / metering hooks.
+**I/O Mesh TUI** — a Go coding-agent harness inspired by [xAI Grok Build](https://github.com/xai-org/grok-build), with a **multi-provider LLM router** and optional **I/O Mesh** client hooks (publish/pull heartbeats, local memory attach).
 
 Official open-source tooling from [IOMesh](https://iome.sh) (**IOMesh Technology Ltd.**).
 
-> **Status:** public open-source **v0.71.x** (pre-1.0). Agent loop, subagents, full-screen TUI, permissions, ACP, skills, MCP, local Memory Palace (MCP + mesh pull; dual-write optional audit default OFF · not hosted cloud GPU palace) + sync retrieve / sidecar auto-recall, stage mesh smoke, deeper mesh (lineage · policy · catalog · metering), multi-model catalog (DeepSeek · Grok · Gemini · Vertex · Ollama local). Not a multi-tenant remote sandbox — see [SECURITY.md](SECURITY.md).
-
 ### Open source / local-primary
 
-MIT OSS **agent harness** + optional mesh client surface — **not** the hosted multi-tenant mesh control plane. The TUI is a **local agent on the org pulse plane**: optional mesh hooks publish/pull organizational **heartbeats / pulses** (`dept.*` work events — not host/APM metrics · public copy = heartbeat/pulse only). Memory is **local-primary** (local Memory Palace via MCP + mesh **pull** egress; not freemium hosted palace). Optional **Ollama** local AI ≠ platform GPU. Platform **$119** language (if any) = **Memory Ops Pack** (pull / retain / audit / support) — not cloud GPU palace. dual_write default OFF · hosted Palace sunset · no invent GA · Beta. Buyer claim pin: [memory-mcp.md](docs/architecture/memory-mcp.md#buyer-claim-pin-s774) · org-pulse edge framing: [mesh smoke / org-pulse](docs/architecture/mesh-dogfood.md#org-pulse-edge-framing-s785-pin).
+**MIT OSS agent harness + optional mesh client surface — not the hosted multi-tenant mesh control plane.**
+
+| This public repo is | This public repo is **not** |
+|---------------------|-----------------------------|
+| Local agent loop (TUI / headless / ACP), tools, subagents, skills, MCP client | Hosted multi-tenant control plane, broker fleet, portal, billing, install-store CRUD |
+| Optional **mesh client** hooks against a broker you run or subscribe to | Free access to IOMesh Cloud / `aion` platform services |
+| **Local-primary** memory via public [`memory`](https://github.com/iome-sh/memory) + [`iomesh-memory-mcp`](https://github.com/iome-sh/iomesh-memory-mcp) | Freemium hosted Memory Palace / platform GPU / invent **Memory GA** |
+| Optional mesh **pull** into local palace; dual_write default **OFF** | Push-to-cloud-palace product path |
+
+The TUI is a **local agent on the org pulse plane**: optional mesh hooks publish/pull organizational **heartbeats / pulses** (`dept.*` work events — not host/APM metrics · public copy = heartbeat/pulse only). Optional **Ollama** local AI ≠ platform GPU. Platform **$119** language (if any) = **Memory Ops Pack** (pull / retain / audit / support) — not cloud GPU palace. dual_write default OFF · hosted Palace sunset · no invent GA · **Beta** / pre-1.0. Not a multi-tenant remote sandbox — see [SECURITY.md](SECURITY.md).
+
+Buyer claim pin: [memory-mcp.md](docs/architecture/memory-mcp.md#buyer-claim-pin-s774) · org-pulse edge framing: [mesh smoke / org-pulse](docs/architecture/mesh-dogfood.md#org-pulse-edge-framing-s785-pin).
+
+> **Status:** public open-source **v0.71.x** (pre-1.0, **Beta**). Shipped in this harness: agent loop · subagents · full-screen TUI · permissions · ACP · skills · MCP client · local Memory Palace attach · multi-model catalog (DeepSeek · Grok · Gemini · Vertex · Ollama local). Optional client mesh smoke / catalog / policy / metering hooks when pointed at a broker. **Internal roadmap** items (serial residual stamps, platform install-plane, knowledge multi-tenant INSTALL_STORE, live fleet APPLY) live in private platform docs — they are **not** claims that this MIT repo is the control plane.
 
 ## Table of contents
 
 - [Why this project](#why-this-project)
 - [Supported models](#supported-models)
+- [Edge install \& docs](#edge-install--docs)
 - [Quick start](#quick-start)
 - [CLI](#cli)
 - [Configuration](#configuration)
@@ -34,7 +46,7 @@ MIT OSS **agent harness** + optional mesh client surface — **not** the hosted 
 | Multi-provider agents | Built-in **DeepSeek**, **xAI Grok**, **Gemini**, **Vertex Gemini**, **Ollama** (local pin); pin any logical name or add OpenAI-compatible endpoints |
 | Sustainable defaults | Auto-cascade prefers **DeepSeek V4 Flash → Pro → Grok 4.5** for price/performance (override anytime; Ollama is pin-only) |
 | Integration simplicity | Pure-Go OpenAI-compatible HTTP + SSE (`internal/router`) |
-| Platform fit | Optional I/O Mesh context plane, policy gates, `dept.*` org heartbeats / usage streams (`internal/iomesh`) |
+| Optional mesh client | Opt-in client hooks for heartbeats / policy / catalog when `IOMESH_ENDPOINT` (or config) points at a broker — **not** shipping the multi-tenant control plane in this repo |
 | Familiar agent UX | TUI / headless / ACP, tools, subagents, workspace root, slash commands |
 
 ## Supported models
@@ -54,15 +66,20 @@ Built-in catalog (`iomesh models`). **Default cascade** uses the first three row
 
 Any other **OpenAI-compatible** chat endpoint can be added under `[model.<name>]` in config (OpenAI, Anthropic-compatible gateways, other Ollama tags, llama.cpp/vLLM, etc.). Details: [docs/architecture/llm-cascade.md](docs/architecture/llm-cascade.md).
 
-**Local AI (Beta):** `ollama serve` + `ollama pull llama3.2`, then `iomesh -m ollama-llama3.2`. Local only — not platform GPU / not invent GA. Cost-max stack: mesh pull egress + local memory MCP (primary LT palace) + Ollama pin; dual_write optional audit default OFF; hosted Palace sunset. Local-edge stack complete (completeness pin; catalog pin ≠ cascade default). See [memory-mcp.md](docs/architecture/memory-mcp.md#local-primary-lt-honesty-s768-pin).
+## Edge install & docs
 
-**Local Docker MCP edge (s1308 · s1517 product host):** run product Memory MCP via [`iomesh-memory-mcp`](https://github.com/iome-sh/iomesh-memory-mcp) `docker compose up --build` → `http://127.0.0.1:8080/mcp`, attach TUI with `[[mcp.servers]]` URL + `[memory]`. Local image `iomesh-memory-mcp:local` · dual_write OFF · not Memory GA · docker edge ≠ invent GA · aion broker private. Docs: [memory-mcp.md Local-edge Docker](docs/architecture/memory-mcp.md#local-edge-docker-memory-mcp-s1308--product-host-preferred--s1517).
+Public **edge** path only — MIT harness + public memory kernel/MCP. Serial stamps in deep docs are **internal residual/roadmap labels**, not a claim that this repo hosts the multi-tenant control plane.
 
-**Product edge public install (s1478 · residual-honest):** both [`github.com/iome-sh/memory`](https://github.com/iome-sh/memory) and [`github.com/iome-sh/iomesh-memory-mcp`](https://github.com/iome-sh/iomesh-memory-mcp) are **public** — **no GOPRIVATE** / PAT. Install: `go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main` · kernel `go get github.com/iome-sh/memory@main` · attach `http://127.0.0.1:8080/mcp` or stdio `iomesh-memory-mcp` · docker compose still valid. dual_write OFF · not Memory GA · aion broker **still private** · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA. Docs: [memory-mcp.md Edge OSS / s1478](docs/architecture/memory-mcp.md#edge-oss-option-a-s1453--m2-lean-attach-s1458--m3-edge-dogfood-s1463--m4-public-flip-readiness-s1469--s1478-public-product-attach).
+| Topic | Honesty | Doc |
+|-------|---------|-----|
+| Local AI (Ollama) | Local only · not platform GPU · not invent GA | [memory-mcp.md](docs/architecture/memory-mcp.md#local-primary-lt-honesty-s768-pin) |
+| Local Docker Memory MCP | Product host [`iomesh-memory-mcp`](https://github.com/iome-sh/iomesh-memory-mcp) · dual_write OFF · not Memory GA · aion/broker **private** | [memory-mcp.md Local-edge Docker](docs/architecture/memory-mcp.md#local-edge-docker-memory-mcp-s1308--product-host-preferred--s1517) |
+| Public edge install | `go install …/iomesh-memory-mcp@main` · `go get github.com/iome-sh/memory@main` · **no GOPRIVATE** · public OSS ≠ invent platform GA | [memory-mcp.md Edge OSS](docs/architecture/memory-mcp.md#edge-oss-option-a-s1453--m2-lean-attach-s1458--m3-edge-dogfood-s1463--m4-public-flip-readiness-s1469--s1478-public-product-attach) |
+| Advanced Memory install | ONNX optional · Qdrant not required for lean TUI | [memory-advanced-install.md](docs/architecture/memory-advanced-install.md) |
+| Usage / demo walkthrough | Signup optional · integrations list/plan + portal HITL · local memory not fully automatic | [memory-edge-usage-demo.md](docs/architecture/memory-edge-usage-demo.md) |
+| Setup lifecycle | Agent-native `/setup` · residual-honest · dual_write OFF | [setup-lifecycle.md](docs/architecture/setup-lifecycle.md) |
 
-**Advanced Memory install (s1525 · residual-honest):** maximize benefit ladder (ONNX optional · Qdrant not required for TUI) — [memory-advanced-install.md](docs/architecture/memory-advanced-install.md).
-
-**Usage / demo example (s1513 · residual-honest):** signup (optional) → TUI MCP integrations list/plan + portal HITL → local memory install (kernel + MCP host; **not fully automatic**) → attach → show `/memory` usage. Walkthrough: [memory-edge-usage-demo.md](docs/architecture/memory-edge-usage-demo.md).
+**Internal roadmap (private platform · not this MIT surface):** multi-tenant mesh control plane, connector install-store fleet APPLY, knowledge multi-tenant INSTALL_STORE (punted for edge-first), live Cloud Run/image residual gates, portal billing fleet. Those live in private `aion` / ops residual docs — **not** shipped as open control-plane code here.
 
 ## Quick start
 
@@ -172,6 +189,8 @@ Details: [docs/security.md](docs/security.md) · [docs/architecture/permissions.
 Index: **[docs/README.md](docs/README.md)** (architecture, MCP, ACP, TUI, mesh smoke, …).
 
 Open-source process: [CONTRIBUTING](CONTRIBUTING.md) · [SUPPORT](SUPPORT.md) · [RELEASING](RELEASING.md) · [CHANGELOG](CHANGELOG.md) · [docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md).
+
+**Boundary reminder:** deep docs may mention optional mesh client behavior or residual serial stamps for maintainers. That is **edge/client documentation**, not a promise that this repository is the hosted multi-tenant mesh control plane.
 
 ## Layout
 
