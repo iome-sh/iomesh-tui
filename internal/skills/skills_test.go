@@ -807,7 +807,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"repair apply ≠ invent Connected",
 		"E10 Open",
 		"plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|demo|operator|setup|status|export|human-gates",
-		// s1413 human-gates honesty board
+		// s1413+s1546 human-gates honesty board
 		"/onboard next human-gates",
 		"AionAgentHumanGatesHonestyBoard",
 		"PASS ≠ invent human-gate green",
@@ -820,6 +820,9 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"leave ON_SIGNAL unset",
 		"apply-gates",
 		"make human-gates-status",
+		// s1546 setup closeout residual ≠ invent APPLY
+		"setup closeout residual ≠ invent APPLY",
+		"s1546",
 		// s1382 lane status board
 		"/onboard next status",
 		"AionAgentOnboardingNextLaneStatus",

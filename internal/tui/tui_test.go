@@ -2518,7 +2518,8 @@ func TestHandleSlash_OnboardNextAgenticListPlanSoftDogfood(t *testing.T) {
 	}
 }
 
-// s1413: /onboard next human-gates|human|gates|apply-gates — residual-honest still-required vs offline.
+// s1413+s1546: /onboard next human-gates|human|gates|apply-gates — residual-honest still-required vs offline.
+// s1546: setup closeout residual ≠ invent APPLY / human-gate green · E10 Open.
 func TestHandleSlash_OnboardNextHumanGates(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -2548,6 +2549,12 @@ func TestHandleSlash_OnboardNextHumanGates(t *testing.T) {
 		"never invent APPLY",
 		"Palace sunset",
 		"agent MCP cannot write installs",
+		// s1546 setup closeout residual reaffirm
+		"After setup closeout residual",
+		"s1546",
+		"setup closeout residual ≠ invent APPLY",
+		"E10 Open",
+		"setup_not_probed",
 	}
 
 	for _, line := range []string{
