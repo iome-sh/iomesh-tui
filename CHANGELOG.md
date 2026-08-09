@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Advanced Memory install ladder (s1525)** — residual-honest operator guide to maximize TUI Memory benefit: baseline host + auto_recall · advanced slash · optional ONNX (`MEMORY_ONNX_MODEL_PATH` on host) · Qdrant documented as **not required** / lean host `qdrant=off`. See [docs/architecture/memory-advanced-install.md](docs/architecture/memory-advanced-install.md) · sample plugin README.
+
 ### Changed
 
 - **Public mesh/plugins smoke rename (s1521)** — public CLI prefers `iomesh mesh smoke` and `iomesh plugins smoke` (also `check`); `dogfood` / `probe` remain **legacy aliases**. README, CONTRIBUTING, Makefile (`smoke` / `smoke-unit`), and mesh smoke docs updated so public copy no longer leads with internal “dogfood”. dual_write OFF · not Memory GA · smoke ≠ invent Connected/GA.
