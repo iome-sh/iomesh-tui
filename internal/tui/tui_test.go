@@ -1118,7 +1118,7 @@ func TestHandleSlash_OnboardNext(t *testing.T) {
 		"drafts only",
 		"no auto-send",
 		"human publish",
-		"iomesh-memory-mcp",  // product host (s1517: residual aion sample removed)
+		"iomesh-memory-mcp", // product host (s1517: residual aion sample removed)
 		"local-primary",
 		"dual_write OFF",
 		"package load ≠ Memory GA",
@@ -1276,7 +1276,7 @@ func TestHandleSlash_OnboardNextMemoryLane(t *testing.T) {
 
 	needles := []string{
 		"onboard next memory lane",
-		"iomesh-memory-mcp",  // product host (s1517: residual aion sample removed)
+		"iomesh-memory-mcp", // product host (s1517: residual aion sample removed)
 		"iomesh-memory-mcp",
 		"github.com/iome-sh/iomesh-memory-mcp",
 		"http://127.0.0.1:8080/mcp",

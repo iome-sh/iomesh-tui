@@ -662,7 +662,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"drafts only",
 		"no auto-send",
 		"human publish",
-		"iomesh-memory-mcp",  // product host (s1517: residual aion sample removed)
+		"iomesh-memory-mcp", // product host (s1517: residual aion sample removed)
 		"package load ≠ Memory GA",
 		"freemium palace",
 		"AionAgentOnboardingNextLanes",
