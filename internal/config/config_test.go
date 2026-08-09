@@ -154,6 +154,8 @@ dual_write = true
 limit = 12
 pull_role = "agent"
 pull_allow_suffix = "ops,memory"
+pull_continuous = true
+pull_consumer = "tui-local-palace"
 `
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
@@ -174,6 +176,9 @@ pull_allow_suffix = "ops,memory"
 	if cfg.Memory.PullRole != "agent" || cfg.Memory.PullAllowSuffix != "ops,memory" {
 		t.Fatalf("pull role/suffix=%q %q", cfg.Memory.PullRole, cfg.Memory.PullAllowSuffix)
 	}
+	if !cfg.Memory.PullContinuous || cfg.Memory.PullConsumer != "tui-local-palace" {
+		t.Fatalf("pull continuous/consumer=%v %q", cfg.Memory.PullContinuous, cfg.Memory.PullConsumer)
+	}
 }
 
 func TestEnv_MemoryPullRoleAndSuffix(t *testing.T) {
@@ -185,6 +190,33 @@ func TestEnv_MemoryPullRoleAndSuffix(t *testing.T) {
 	}
 	if cfg.Memory.PullRole != "custom" || cfg.Memory.PullAllowSuffix != "a,b" {
 		t.Fatalf("got role=%q suffix=%q", cfg.Memory.PullRole, cfg.Memory.PullAllowSuffix)
+	}
+}
+
+func TestEnv_MemoryPullContinuous(t *testing.T) {
+	// Default OFF.
+	cfg0, err := Load(filepath.Join(t.TempDir(), "nope.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg0.Memory.PullContinuous {
+		t.Fatal("pull_continuous default must be false")
+	}
+	t.Setenv("IOMESH_MEMORY_PULL_CONTINUOUS", "1")
+	cfg, err := Load(filepath.Join(t.TempDir(), "nope2.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.Memory.PullContinuous {
+		t.Fatal("IOMESH_MEMORY_PULL_CONTINUOUS=1 must enable")
+	}
+	t.Setenv("IOMESH_MEMORY_PULL_CONTINUOUS", "false")
+	cfgOff, err := Load(filepath.Join(t.TempDir(), "nope3.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfgOff.Memory.PullContinuous {
+		t.Fatal("IOMESH_MEMORY_PULL_CONTINUOUS=false must disable")
 	}
 }
 

@@ -223,6 +223,7 @@ enabled = false
 # pull_filter = ""
 # pull_batch = 8
 # pull_max_wait_ms = 2000
+# pull_continuous = false  # opt-in in-session continuous pull (s1530 P5; default OFF; needs pull_consumer)
 # pull_role = ""           # optional X-IOMesh-Role on mesh auth (s675 Beta; fail-open empty; s678 role-aware default filter)
 # pull_allow_suffix = ""   # optional X-IOMesh-Pull-Allow-Suffix (role=custom comma tokens; s678 single-token default filter)
 # limit = 8
@@ -234,4 +235,4 @@ enabled = false
 # IOMESH_MEMORY=1 · IOMESH_MEMORY_TENANT · IOMESH_MEMORY_ENDPOINT · MEMORY_SIDECAR_URL
 # IOMESH_MEMORY_AUTO_RECALL · IOMESH_MEMORY_AUTO_INGEST · IOMESH_MEMORY_DUAL_WRITE
 # IOMESH_MEMORY_RECALL_SINCE · IOMESH_MEMORY_RECALL_UNTIL · IOMESH_MEMORY_RECALL_SESSION_SEQ
-# IOMESH_MEMORY_PULL_ROLE · IOMESH_MEMORY_PULL_ALLOW_SUFFIX
+# IOMESH_MEMORY_PULL_ROLE · IOMESH_MEMORY_PULL_ALLOW_SUFFIX · IOMESH_MEMORY_PULL_CONTINUOUS

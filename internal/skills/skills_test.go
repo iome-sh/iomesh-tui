@@ -920,6 +920,8 @@ func TestLoadBuiltin_S1526SetupLifecycleAgentSkillDogfood(t *testing.T) {
 		"/setup",
 		"preflight",
 		"iomesh memory pull",
+		"/setup pull",
+		"pull_continuous",
 		"INSTALL_STORE",
 		"secrets",
 	} {

@@ -248,6 +248,10 @@ type MemorySection struct {
 	PullFilter    string `toml:"pull_filter"`      // optional filter_subject
 	PullBatch     int    `toml:"pull_batch"`       // default 8
 	PullMaxWaitMS int    `toml:"pull_max_wait_ms"` // default 2000
+	// PullContinuous opt-in in-session continuous memory pull on agent Runtime (s1530 P5).
+	// Default OFF. Requires pull_consumer. Env: IOMESH_MEMORY_PULL_CONTINUOUS.
+	// pull running ≠ invent install green / Ops Pack GA · dual_write OFF · not Memory GA.
+	PullContinuous bool `toml:"pull_continuous"`
 	// PullRole optional X-IOMesh-Role on mesh auth (operator|admin|agent|auditor|viewer|memory|custom).
 	// Fail-open empty → omit header. Beta federated ACL (s675/s687); not full IdP RBAC.
 	// role=memory → default filter tenant.memory.> (peer aion s686).
@@ -600,7 +604,7 @@ func (c *Config) applyEnvOverrides() {
 			c.Memory.DualWrite = true
 		}
 	}
-	// Memory pull (mesh → local palace) s652.
+	// Memory pull (mesh → local palace) s652 / continuous s1530 P5.
 	if v := os.Getenv("IOMESH_MEMORY_PULL_STREAM"); v != "" {
 		c.Memory.PullStream = v
 	}
@@ -609,6 +613,14 @@ func (c *Config) applyEnvOverrides() {
 	}
 	if v := os.Getenv("IOMESH_MEMORY_PULL_FILTER"); v != "" {
 		c.Memory.PullFilter = v
+	}
+	if v := os.Getenv("IOMESH_MEMORY_PULL_CONTINUOUS"); v != "" {
+		switch strings.ToLower(v) {
+		case "0", "false", "off", "no":
+			c.Memory.PullContinuous = false
+		case "1", "true", "on", "yes":
+			c.Memory.PullContinuous = true
+		}
 	}
 	if v := os.Getenv("IOMESH_MEMORY_PULL_ROLE"); v != "" {
 		c.Memory.PullRole = v

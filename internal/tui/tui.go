@@ -571,11 +571,12 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			fmt.Fprintln(out, text)
 		}
 	case "/setup", "/setup-lifecycle":
-		// s1526 P3 + P4: agent-native setup lifecycle slash (init/preflight/portal/reload).
-		// Residual honesty: dual_write OFF · not Memory GA · catalog ≠ Connected ·
-		// portal HITL · setup PASS ≠ invent install green · continuous pull still CLI.
+		// s1526 P3–P4 + s1530 P5: agent-native setup lifecycle slash
+		// (init/preflight/portal/reload/pull). Residual honesty: dual_write OFF ·
+		// not Memory GA · catalog ≠ Connected · portal HITL · setup PASS ≠ invent
+		// install green · continuous pull opt-in · CLI iomesh memory pull still valid.
 		// P4: /setup reload → runtimewire.ConnectMCP + Runtime.ReplaceMCP (package wire ≠ Connected).
-		// Not in-session continuous pull (later).
+		// P5: /setup pull → Runtime continuous memory pull (opt-in · pull ≠ invent Connected).
 		if len(parts) < 2 {
 			fmt.Fprintln(out, setupHelp())
 			return false, nil
@@ -592,6 +593,8 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			fmt.Fprintln(out, setup.SetupLifecyclePortalHandoff())
 		case "reload", "reattach", "hot-reload":
 			handleSetupReload(out, rt, parts[2:])
+		case "pull":
+			handleSetupPull(out, rt, parts[2:])
 		default:
 			fmt.Fprintf(out, "setup: unknown subcommand %q\n%s\n", parts[1], setupHelp())
 		}
@@ -981,7 +984,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /catalog [query]     list mesh data products (catalog plane)
   /memory [recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · status advanced inventory)
   /integrations [list|plan|signing|status]  connector setup via MCP (catalog+plan+signing discovery+portal HITL; not install CRUD)
-  /setup [init|preflight|portal|reload]  setup lifecycle (managed config · preflight · portal HITL · hot MCP reload; alias /setup-lifecycle; dual_write OFF · not Memory GA · PASS ≠ invent Connected)
+  /setup [init|preflight|portal|reload|pull]  setup lifecycle (managed config · preflight · portal HITL · hot MCP reload · opt-in continuous pull; alias /setup-lifecycle; dual_write OFF · not Memory GA · PASS ≠ invent Connected · pull ≠ invent Connected)
   /gtm [help|checklist]  GTM draft-only guidance or checklist (aliases /gtm-draft /gtm-agent; no auto-send; human publish)
   /onboard [help|checklist|portal|status|next]  TUI agent ↔ aion onboarding guidance, checklist, portal Agent/MCP handoff, offline status, or post-onboard next lanes (aliases /aion-onboard /agent-onboard; residual-honest · portal HITL · settings/agent; next [plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|demo|operator|status|export|human-gates]; next mesh→stream|streams|heartbeat|heartbeats|pull; next planes→three-planes|product-planes|product|pillars|three_planes; next sales→claims|buyer|claim-matrix|sales-claims|buyer-claims; next demo→demo-ready|readiness|demo-readiness|lighthouse|landgrab; next operator→operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix; next status→pulse|board; next export→receipt|stamp|evidence [json]; next aliases after|continue|lanes; pulse stays status board; product/planes stay three-planes; readiness/lighthouse stay demo)
   /plugins [help|list|validate|smoke|status]  residual-honest Agent Plugins soft offline smoke (alias /plugin; smoke aliases dogfood|soft|samples|offline; check→validate; Discover ≠ Connected · soft offline ≠ live smoke · ≠ invent Agent Plugins GA)
@@ -1010,20 +1013,25 @@ honesty: ` + agent.IntegrationsHonestyOneLiner + `
   aion MCP v178 list/plan + v30 signing · browser HITL for OAuth · never invent install green`)
 }
 
-// setupHelp is bare /setup and help/? copy (s1526 P3+P4 residual honesty).
+// setupHelp is bare /setup and help/? copy (s1526 P3+P4 + s1530 P5 residual honesty).
 func setupHelp() string {
-	return strings.TrimSpace(`usage: /setup [init [profiles] [--stdio] [--print-only] [--plugins-dir path] | preflight | portal | reload]
+	return strings.TrimSpace(`usage: /setup [init [profiles] [--stdio] [--print-only] [--plugins-dir path] | preflight | portal | reload | pull …]
   init       write managed config fragment (profiles: local-memory|plugins|mesh|platform-mcp|all; default local-memory)
   preflight  residual-honest probe (aliases status|check) — PASS ≠ invent Connected / Memory GA
   portal     browser HITL URLs (integrations + settings/agent)
   reload     hot-swap MCP from user config (ConnectMCP + ReplaceMCP; package wire ≠ Connected)
+  pull       continuous pull status|start|once|stop (s1530 P5 · opt-in · CLI iomesh memory pull still valid)
   help|?     this residual-honest usage (also bare /setup)
 aliases: /setup-lifecycle
 honesty: ` + setup.SetupLifecycleHonestyOneLiner + `
-  secrets via env names only · portal HITL for OAuth/install · continuous pull still CLI iomesh memory pull
+  secrets via env names only · portal HITL for OAuth/install · continuous pull opt-in via /setup pull or pull_continuous
   skill: read_skill setup-lifecycle-agent · system note <setup-lifecycle> on AttachMCP
-  reload: dual_write OFF · does not invent install green · skills dirs not re-scanned (restart for skill-only)`)
+  reload: dual_write OFF · does not invent install green · skills dirs not re-scanned (restart for skill-only)
+  pull: dual_write OFF · not Memory GA · pull ≠ invent Connected · CLI iomesh memory pull still valid`)
 }
+
+// setupPullHonesty is printed on every /setup pull output (s1530 P5 residual honesty).
+const setupPullHonesty = "honesty: dual_write OFF · not Memory GA · pull ≠ invent Connected · CLI iomesh memory pull still valid"
 
 // handleSetupInit parses simple /setup init args and writes (or prints) managed fragment.
 func handleSetupInit(out io.Writer, args []string) {
@@ -1100,7 +1108,7 @@ func handleSetupInit(out io.Writer, args []string) {
 	fmt.Fprintln(out, "next: ensure iomesh-memory-mcp is running (if local-memory) · set secret env vars")
 	fmt.Fprintln(out, "then: /setup preflight  · /setup reload  (or restart iomesh; CLI: iomesh setup preflight)")
 	fmt.Fprintln(out, "honesty: dual_write OFF · not Memory GA · catalog ≠ Connected · portal HITL for installs")
-	fmt.Fprintln(out, "note: continuous pull still CLI iomesh memory pull · reload = package wire ≠ Connected")
+	fmt.Fprintln(out, "note: continuous pull opt-in via /setup pull start · pull_continuous=true · or CLI iomesh memory pull · reload = package wire ≠ Connected")
 }
 
 // handleSetupReload reloads MCP servers from config without process restart (s1526 P4).
@@ -1156,7 +1164,200 @@ func handleSetupReload(out io.Writer, rt runtimeAdapter, args []string) {
 	}
 	fmt.Fprintf(out, "setup reload: connected=%d tools=%d (package wire · fail-open per server)\n", mgr.Len(), nTools)
 	fmt.Fprintln(out, "honesty: dual_write OFF · package wire ≠ Connected · Discover/map ≠ install APPLY green · not Memory GA")
-	fmt.Fprintln(out, "note: skills catalog not re-scanned on reload · continuous pull still CLI iomesh memory pull")
+	fmt.Fprintln(out, "note: skills catalog not re-scanned on reload · continuous pull opt-in via /setup pull · CLI iomesh memory pull still valid")
+}
+
+// handleSetupPull dispatches /setup pull [status|start|once|stop] (s1530 P5).
+// Bare /setup pull → status. Residual-honest: dual_write OFF · not Memory GA ·
+// pull ≠ invent Connected · CLI iomesh memory pull still valid.
+func handleSetupPull(out io.Writer, rt runtimeAdapter, args []string) {
+	sub := "status"
+	rest := args
+	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
+		sub = strings.ToLower(strings.TrimSpace(args[0]))
+		rest = args[1:]
+	}
+	switch sub {
+	case "status", "st", "":
+		handleSetupPullStatus(out, rt)
+	case "start":
+		handleSetupPullStart(out, rt, rest, false)
+	case "once":
+		handleSetupPullStart(out, rt, rest, true)
+	case "stop":
+		handleSetupPullStop(out, rt)
+	case "help", "?":
+		fmt.Fprintln(out, setupPullHelp())
+	default:
+		fmt.Fprintf(out, "setup pull: unknown subcommand %q\n%s\n", sub, setupPullHelp())
+	}
+}
+
+func setupPullHelp() string {
+	return strings.TrimSpace(`usage: /setup pull [status|start|once|stop]
+  status   residual-honest continuous pull snapshot (default; bare /setup pull)
+  start    start continuous pull (MaxLoops=0; loads [memory] pull_*; --once · --dry-run · --config path)
+  once     single fetch cycle (MaxLoops=1; same knobs as start)
+  stop     cancel in-session continuous pull (no-op when idle)
+honesty: dual_write OFF · not Memory GA · pull ≠ invent Connected · CLI iomesh memory pull still valid
+  opt-in only · pull_continuous=true is config opt-in · setup fragment defaults pull_continuous=false`)
+}
+
+// handleSetupPullStatus prints ContinuousMemoryPullStatus residual-honest (idle ≠ green).
+func handleSetupPullStatus(out io.Writer, rt runtimeAdapter) {
+	if rt.rt == nil {
+		fmt.Fprintln(out, "setup pull status: no agent runtime")
+		fmt.Fprintln(out, "running: false")
+		fmt.Fprintln(out, setupPullHonesty)
+		return
+	}
+	st := rt.rt.ContinuousMemoryPullStatus()
+	fmt.Fprintln(out, "setup pull status (residual-honest · s1530 P5)")
+	fmt.Fprintf(out, "running: %v\n", st.Running)
+	if st.Stream != "" || st.Consumer != "" || st.Filter != "" {
+		fmt.Fprintf(out, "stream: %s\n", st.Stream)
+		fmt.Fprintf(out, "consumer: %s\n", st.Consumer)
+		fmt.Fprintf(out, "filter: %s\n", st.Filter)
+	} else if !st.Running {
+		fmt.Fprintln(out, "stream: (idle · empty)")
+		fmt.Fprintln(out, "consumer: (idle · empty)")
+		fmt.Fprintln(out, "filter: (idle · empty)")
+	}
+	fmt.Fprintf(out, "stats: loops=%d fetched=%d ingested=%d skipped=%d acked=%d errors=%d\n",
+		st.Stats.Loops, st.Stats.Fetched, st.Stats.Ingested, st.Stats.Skipped, st.Stats.Acked, st.Stats.Errors)
+	if le := strings.TrimSpace(st.LastError); le != "" {
+		fmt.Fprintf(out, "last_error: %s\n", le)
+	} else if le := strings.TrimSpace(st.Stats.LastError); le != "" {
+		fmt.Fprintf(out, "last_error: %s\n", le)
+	} else {
+		fmt.Fprintln(out, "last_error: (none)")
+	}
+	if !st.Running {
+		fmt.Fprintln(out, "note: idle · not invent Connected / Memory GA · start with /setup pull start after mesh + pull_consumer")
+	} else {
+		fmt.Fprintln(out, "note: pull running ≠ invent Connected / Ops Pack GA / Memory GA")
+	}
+	fmt.Fprintln(out, setupPullHonesty)
+}
+
+// handleSetupPullStart loads [memory] pull_* and starts continuous or once pull.
+func handleSetupPullStart(out io.Writer, rt runtimeAdapter, args []string, once bool) {
+	if rt.rt == nil {
+		fmt.Fprintln(out, "setup pull start: no agent runtime")
+		fmt.Fprintln(out, setupPullHonesty)
+		return
+	}
+	cfgPath := ""
+	forceOnce := once
+	dryRun := false
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		switch {
+		case a == "--config" && i+1 < len(args):
+			i++
+			cfgPath = strings.TrimSpace(args[i])
+		case strings.HasPrefix(a, "--config="):
+			cfgPath = strings.TrimSpace(strings.TrimPrefix(a, "--config="))
+		case a == "--once":
+			forceOnce = true
+		case a == "--dry-run" || a == "--dry_run":
+			dryRun = true
+		case a == "help" || a == "?":
+			fmt.Fprintln(out, setupPullHelp())
+			return
+		case strings.HasPrefix(a, "-"):
+			fmt.Fprintf(out, "setup pull start: unknown flag %q\n%s\n", a, setupPullHelp())
+			return
+		default:
+			fmt.Fprintf(out, "setup pull start: unexpected arg %q\n%s\n", a, setupPullHelp())
+			return
+		}
+	}
+	var (
+		cfg *config.Config
+		err error
+	)
+	if cfgPath != "" {
+		cfg, err = config.Load(cfgPath)
+	} else {
+		cfg, err = config.LoadUser()
+	}
+	if err != nil {
+		fmt.Fprintf(out, "setup pull start: config: %v\n", err)
+		fmt.Fprintln(out, setupPullHonesty)
+		return
+	}
+	pullCfg := continuousPullConfigFromMemory(cfg, dryRun)
+	// Slash is explicit opt-in even when pull_continuous=false in config.
+	pullCfg.Enabled = true
+
+	label := "start"
+	if forceOnce {
+		label = "once"
+		err = rt.rt.StartContinuousMemoryPullOnce(pullCfg)
+	} else {
+		err = rt.rt.StartContinuousMemoryPull(pullCfg)
+	}
+	if err != nil {
+		fmt.Fprintf(out, "setup pull %s: %v\n", label, err)
+		fmt.Fprintln(out, setupPullHonesty)
+		return
+	}
+	mode := "continuous (MaxLoops=0)"
+	if forceOnce {
+		mode = "once (MaxLoops=1)"
+	}
+	if dryRun {
+		mode += " · dry-run"
+	}
+	fmt.Fprintf(out, "setup pull %s: started %s\n", label, mode)
+	fmt.Fprintf(out, "stream=%s consumer=%s filter=%q batch=%d max_wait_ms=%d server=%s\n",
+		pullCfg.Stream, pullCfg.Consumer, pullCfg.Filter, pullCfg.Batch, pullCfg.MaxWaitMS, pullCfg.Server)
+	fmt.Fprintln(out, "note: pull running ≠ invent Connected · dual_write OFF · not Memory GA")
+	fmt.Fprintln(out, setupPullHonesty)
+}
+
+// continuousPullConfigFromMemory maps [memory] pull_* into agent.ContinuousPullConfig.
+// Default stream EVENTS when empty (matches CLI iomesh memory pull).
+func continuousPullConfigFromMemory(cfg *config.Config, dryRun bool) agent.ContinuousPullConfig {
+	if cfg == nil {
+		return agent.ContinuousPullConfig{Stream: "EVENTS", DryRun: dryRun, Enabled: true}
+	}
+	stream := strings.TrimSpace(cfg.Memory.PullStream)
+	if stream == "" {
+		stream = "EVENTS"
+	}
+	server := strings.TrimSpace(cfg.Memory.Server)
+	batch := cfg.Memory.PullBatch
+	maxWait := cfg.Memory.PullMaxWaitMS
+	return agent.ContinuousPullConfig{
+		Enabled:   true, // slash path is explicit opt-in
+		Stream:    stream,
+		Consumer:  strings.TrimSpace(cfg.Memory.PullConsumer),
+		Filter:    strings.TrimSpace(cfg.Memory.PullFilter),
+		Batch:     batch,
+		MaxWaitMS: maxWait,
+		DryRun:    dryRun,
+		Server:    server,
+		Tenant:    strings.TrimSpace(cfg.Memory.Tenant),
+	}
+}
+
+// handleSetupPullStop cancels in-session continuous pull (no-op when idle).
+func handleSetupPullStop(out io.Writer, rt runtimeAdapter) {
+	if rt.rt == nil {
+		fmt.Fprintln(out, "setup pull stop: no agent runtime")
+		fmt.Fprintln(out, setupPullHonesty)
+		return
+	}
+	was := rt.rt.ContinuousMemoryPullStatus().Running
+	rt.rt.StopContinuousMemoryPull()
+	if was {
+		fmt.Fprintln(out, "setup pull stop: stopped")
+	} else {
+		fmt.Fprintln(out, "setup pull stop: not running (no-op)")
+	}
+	fmt.Fprintln(out, setupPullHonesty)
 }
 
 // handleSetupPreflight runs residual-honest setup.Preflight for /setup preflight|status|check.

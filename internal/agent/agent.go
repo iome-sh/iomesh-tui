@@ -82,6 +82,16 @@ type Runtime struct {
 	mu           sync.Mutex
 	approver     Approver
 	sessionAllow map[string]bool
+
+	// Continuous memory pull (s1530 P5 · opt-in [memory].pull_continuous).
+	// pull running ≠ invent install green / Ops Pack GA · dual_write OFF · not Memory GA.
+	pullMu      sync.Mutex
+	pullCancel  context.CancelFunc
+	pullRunning atomic.Bool
+	pullWG      sync.WaitGroup
+	pullCfg     ContinuousPullConfig
+	pullStats   iomesh.MemoryPullStats
+	pullLastErr string
 }
 
 // New constructs a Runtime. mesh may be nil.
@@ -260,10 +270,13 @@ func (rt *Runtime) ReplaceMCP(mgr *mcp.Manager) {
 }
 
 // Close releases MCP subprocesses and other runtime resources.
+// Stops in-session continuous memory pull (if any) before closing MCP.
 func (rt *Runtime) Close() error {
 	if rt == nil {
 		return nil
 	}
+	// Cancel continuous pull first so LocalIngest does not race a closing MCP.
+	rt.StopContinuousMemoryPull()
 	rt.mu.Lock()
 	mgr := rt.mcp
 	rt.mcp = nil

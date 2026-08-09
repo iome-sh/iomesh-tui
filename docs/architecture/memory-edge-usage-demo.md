@@ -366,12 +366,21 @@ Requires `[iomesh]` credentials + Memory Ops Pack entitlement language when comm
 
 ```bash
 # Terminal A: local MCP host running
-# Terminal B:
+# Terminal B (CLI still valid):
 iomesh memory pull --stream EVENTS --name tui-local-palace --once --dry-run
 # map-only dry-run; drop --dry-run to ingest via MCP memory_ingest_turn
 ```
 
-Mesh is **pull egress** into local palace · dual_write stays OFF · hosted Palace sunset.
+In-session opt-in (s1530 P5 residual-honest · after mesh + `pull_consumer` configured):
+
+```text
+/setup pull status
+/setup pull once
+/setup pull start
+/setup pull stop
+```
+
+Or set `[memory] pull_continuous = true` (setup fragment default **false**). Mesh is **pull egress** into local palace · dual_write stays OFF · pull ≠ invent Connected · hosted Palace sunset · CLI `iomesh memory pull` still valid.
 
 ### 5g. Onboard residual lanes (no live dial)
 
