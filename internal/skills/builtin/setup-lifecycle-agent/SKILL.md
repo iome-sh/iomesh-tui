@@ -3,13 +3,15 @@ name: setup-lifecycle-agent
 description: Residual-honest agent-native setup lifecycle (init/preflight · dual_write OFF · not Memory GA · catalog ≠ Connected · portal HITL · not invent install green · continuous pull/analyze opt-in · drift report-only · guided repair apply --yes)
 ---
 
-# Setup lifecycle agent (residual-honest · s1526 P3 + s1530 P5 + s1534 P6 + s1538 P7 + s1542 closeout)
+# Setup lifecycle agent (residual-honest · s1526 P3 + s1530 P5 + s1534 P6 + s1538 P7 + s1542 closeout + s1558 Wave B first-run)
 
 Agent-native path to **bootstrap** local TUI config planes via managed fragment write + preflight probes + in-session opt-in continuous pull / analyze ticks + report-only drift + **guided repair** (safe steps only with explicit `--yes`) — **not** invent Connected / Memory GA / INSTALL_STORE green.
 
 Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the operator is at a terminal. Use this skill when planning setup steps in chat.
 
 **Onboard companion (s1542):** residual-honest offline map via `/onboard next setup` (aliases `setup-lifecycle` / `wizard` / `lifecycle` / `setup_lifecycle`) → `AionAgentOnboardingNextSetupLane` — consolidates P1–P7 map story · **setup_not_probed** · dual_write OFF · package wire ≠ Connected · repair apply ≠ invent Connected · dual_write never auto ON · E10 Open · offline static ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA.
+
+**Wave B first-run (s1558):** setup is **stage 4** of the 7-stage edge-user-journey. Full first-run map via companion `/onboard next journey` (aliases `edge-journey` / `user-journey` / `first-run` / `edge_user_journey`) → `AionAgentOnboardingNextJourneyLane` — Signup → Download TUI → TUI auth/keys → Setup wizard → Connectors → Local store → Analyze · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · portal HITL · host not auto · no invent TUI portal SSO · free eng **s1558** · free-floor peer **s1560+** mention only · docs `edge-user-journey.md` · `setup-lifecycle.md` · `memory-edge-usage-demo.md`.
 
 ## Workflow
 
@@ -105,11 +107,12 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
 | System note | `<setup-lifecycle>` on AttachMCP |
 | Skill | `read_skill setup-lifecycle-agent` |
 | Onboard map (s1542) | `/onboard next setup` (aliases setup-lifecycle\|wizard\|lifecycle\|setup_lifecycle) |
+| First-run journey (s1558) | `/onboard next journey` (aliases edge-journey\|user-journey\|first-run\|edge_user_journey) |
 
 ## Related
 
-- Docs: `docs/architecture/setup-lifecycle.md` · demo polish `docs/architecture/memory-edge-usage-demo.md`
+- Docs: `docs/architecture/setup-lifecycle.md` · `docs/architecture/edge-user-journey.md` · demo polish `docs/architecture/memory-edge-usage-demo.md`
 - Builtin always merged when skills enabled (`go:embed`)
 - Integrations residual path: skill `connector-integrations-setup` · `/integrations`
 - Memory advanced residual: skill `memory-advanced-agent` · `/memory`
-- Onboarding continuum: skill `aion-agent-onboarding` · `/onboard` · **`/onboard next setup`** (s1542 P1–P7 closeout residual)
+- Onboarding continuum: skill `aion-agent-onboarding` · `/onboard` · **`/onboard next setup`** (s1542 P1–P7 closeout residual · stage 4) · **`/onboard next journey`** (s1558 Wave B first-run map)

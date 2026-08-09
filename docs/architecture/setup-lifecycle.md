@@ -6,7 +6,8 @@
 **Shipped s1542:** residual-honest `/onboard next setup` consolidates P1–P7 map story  
 **Related (s1546):** still-human APPLY reaffirm after closeout — setup residual complete ≠ invent human-gate green / live APPLY / E10 (`/onboard next human-gates`)  
 **Related (s1550):** edge-first human-gates residual pin — knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect · dual_write OFF · Edge Memory GA candidacy only (`/onboard next human-gates`)  
-**Related (s1554):** edge-user-journey SSOT — this doc is **stage 4 (Setup wizard)** in the 7-stage narrative · see [edge-user-journey.md](./edge-user-journey.md)
+**Related (s1554):** edge-user-journey SSOT — this doc is **stage 4 (Setup wizard)** in the 7-stage narrative · see [edge-user-journey.md](./edge-user-journey.md)  
+**Related (s1558 Wave B first-run polish):** setup is stage 4 of edge-user-journey · full first-run map `/onboard next journey` · setup guidance maps stages 1–7 residual-honest · free eng **s1558**
 
 ## Goal
 
@@ -196,9 +197,23 @@ Residual-honest offline static continuum for the full setup lifecycle map (no MC
 | API | `agent.AionAgentOnboardingNextSetupLane()` |
 | Board vocab | `path_ready` · `residual_only` · **`setup_not_probed`** |
 | Map steps | init → memory host/secrets → preflight → reload → portal HITL → optional pull/analyze → drift → repair plan/apply `--yes` → `/memory digest` still valid |
-| Companion | `/onboard next memory` · `memory-pull` · `human-gates` · `operator` · skill `setup-lifecycle-agent` · [memory-edge-usage-demo.md](./memory-edge-usage-demo.md) |
+| Companion | `/onboard next journey` (s1558 first-run map) · `memory` · `memory-pull` · `human-gates` · `operator` · skill `setup-lifecycle-agent` · [edge-user-journey.md](./edge-user-journey.md) · [memory-edge-usage-demo.md](./memory-edge-usage-demo.md) |
 
-**Honesty:** dual_write OFF · not Memory GA · package wire ≠ Connected · PASS ≠ invent Connected · repair apply ≠ invent Connected · dual_write never auto ON · portal HITL still human · still-human APPLY open · **E10 Open** · offline static lane ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA.
+**Honesty:** dual_write OFF · not Memory GA · package wire ≠ Connected · PASS ≠ invent Connected · repair apply ≠ invent Connected · dual_write never auto ON · portal HITL still human · still-human APPLY open · **E10 Open** · offline static lane ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA · stage 4 of edge-user-journey · free eng **s1558**.
+
+## Onboard next journey lane (s1558 Wave B)
+
+Residual-honest offline static first-run map of the 7-stage edge-user-journey (no MCP dial):
+
+| Surface | Detail |
+|---------|--------|
+| Slash | `/onboard next journey` (aliases `edge-journey` · `user-journey` · `first-run` · `edge_user_journey`) |
+| API | `agent.AionAgentOnboardingNextJourneyLane()` |
+| Stages | 1 Signup · 2 Download TUI · 3 TUI auth/keys · 4 Setup wizard · 5 Connectors · 6 Local store · 7 Analyze |
+| Stage 4 detail | `/onboard next setup` · `/setup` · this document |
+| Docs | [edge-user-journey.md](./edge-user-journey.md) · this file · [memory-edge-usage-demo.md](./memory-edge-usage-demo.md) |
+
+**Honesty:** dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · portal HITL · agent MCP cannot write installs · catalog ≠ Connected · book-demo OFF · no invent TUI portal SSO · host not auto · free eng **s1558** · free-floor peer **s1560+** mention only.
 
 ## Preflight states
 
@@ -232,6 +247,7 @@ Skills catalog is **not** re-scanned on `/setup reload` (restart for skill-only 
 - ~~Onboard next setup lane (P1–P7 closeout residual map)~~ **shipped s1542**  
 - ~~Still-human APPLY reaffirm after setup closeout~~ **shipped s1546** (`/onboard next human-gates` · setup residual ≠ invent APPLY)
 - ~~Edge-first human-gates residual pin~~ **shipped s1550** (`/onboard next human-gates` · knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect)
+- ~~Wave B first-run journey polish~~ **shipped s1558 residual** (`/onboard next journey` · setup stage-4 map · guidance first-run · free eng s1558)
 
 See product plan: agent-native MCP/plugin setup wizard + continuous pull/analyze + guided repair.
 

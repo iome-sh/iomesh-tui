@@ -806,7 +806,17 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"setup_lifecycle",
 		"repair apply ≠ invent Connected",
 		"E10 Open",
-		"plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|demo|operator|setup|status|export|human-gates",
+		// s1558 Wave B first-run journey
+		"/onboard next journey",
+		"AionAgentOnboardingNextJourneyLane",
+		"edge-user-journey",
+		"edge-journey",
+		"user-journey",
+		"first-run",
+		"edge_user_journey",
+		"free eng s1558",
+		"Edge Memory GA candidacy only",
+		"plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|demo|operator|setup|journey|status|export|human-gates",
 		// s1413+s1546+s1550 human-gates honesty board (edge-first)
 		"/onboard next human-gates",
 		"AionAgentHumanGatesHonestyBoard",

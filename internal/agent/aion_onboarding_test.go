@@ -74,6 +74,12 @@ func TestAionAgentOnboardingGuidanceNote_HonestyNeedles(t *testing.T) {
 		"knowledge multi-tenant punted",
 		"Slack HMAC punted",
 		"portal HITL when connect",
+		// s1558 Wave B first-run journey
+		"/onboard next journey",
+		"edge-user-journey",
+		"s1558",
+		"Edge Memory GA candidacy only",
+		"free eng s1558",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("guidance missing %q in:\n%s", want, out)
@@ -393,6 +399,16 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"dual_write never auto ON",
 		"E10 Open",
 		"package wire ≠ Connected",
+		// s1558 Wave B edge-user-journey first-run
+		"/onboard next journey",
+		"edge-user-journey first-run map",
+		"edge-journey|user-journey|first-run|edge_user_journey",
+		"free eng s1558",
+		"Edge Memory GA candidacy only",
+		"residual PASS ≠ invent Edge Memory GA",
+		"no invent TUI portal SSO",
+		"host not auto",
+		"free-floor peer s1560+",
 		// pulse stays board (not mesh alias)
 		"pulse stays board",
 		"never invent pull green",
@@ -739,7 +755,7 @@ func TestAionAgentOnboardingNextMemoryPullLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1542: AionAgentOnboardingNextSetupLane residual-honest setup lifecycle P1–P7 closeout map needles.
+// s1542+s1558: AionAgentOnboardingNextSetupLane residual-honest setup lifecycle P1–P7 closeout map needles.
 func TestAionAgentOnboardingNextSetupLane_HonestyNeedles(t *testing.T) {
 	out := AionAgentOnboardingNextSetupLane()
 	if out == "" {
@@ -749,6 +765,8 @@ func TestAionAgentOnboardingNextSetupLane_HonestyNeedles(t *testing.T) {
 		"onboard next setup lane",
 		"no MCP dial",
 		"setup lifecycle P1–P7 closeout residual",
+		"stage 4 of edge-user-journey",
+		"s1558 Wave B",
 		"/setup init",
 		"iomesh setup init",
 		"dual_write OFF",
@@ -779,13 +797,17 @@ func TestAionAgentOnboardingNextSetupLane_HonestyNeedles(t *testing.T) {
 		"setup_not_probed",
 		"offline static lane ≠ live dogfood",
 		"setup closeout residual ≠ invent Edge Memory GA",
+		"Edge Memory GA candidacy only",
+		"free eng s1558",
 		"/onboard next setup",
 		"setup-lifecycle|wizard|lifecycle|setup_lifecycle",
+		"/onboard next journey",
 		"/onboard next memory",
 		"/onboard next memory-pull",
 		"/onboard next human-gates",
 		"/onboard next operator",
 		"docs/architecture/setup-lifecycle.md",
+		"docs/architecture/edge-user-journey.md",
 		"docs/architecture/memory-edge-usage-demo.md",
 		"agent MCP cannot write installs",
 		"never invent install green",
@@ -802,6 +824,86 @@ func TestAionAgentOnboardingNextSetupLane_HonestyNeedles(t *testing.T) {
 	}
 	if strings.Contains(out, "E10 closed") || strings.Contains(out, "APPLY green") {
 		t.Fatalf("must not invent E10 closed / APPLY green: %s", out)
+	}
+}
+
+// s1558 Wave B: AionAgentOnboardingNextJourneyLane residual-honest 7-stage first-run map needles.
+func TestAionAgentOnboardingNextJourneyLane_HonestyNeedles(t *testing.T) {
+	out := AionAgentOnboardingNextJourneyLane()
+	if out == "" {
+		t.Fatal("empty journey lane")
+	}
+	for _, want := range []string{
+		"onboard next journey lane",
+		"no MCP dial",
+		"s1558 Wave B",
+		"edge-user-journey first-run map",
+		"free eng s1558",
+		"free-floor peer s1560+",
+		// 7 stages
+		"1. Signup",
+		"2. Download TUI",
+		"3. TUI auth/keys",
+		"4. Setup wizard",
+		"5. Connectors",
+		"6. Local store",
+		"7. Analyze",
+		"console.iome.sh",
+		"optional pure local",
+		"go install",
+		"Ollama",
+		"no invent TUI portal SSO",
+		"/setup",
+		"/onboard next setup",
+		"iomesh setup",
+		"/integrations list|plan|status",
+		"/onboard next agentic",
+		"portal HITL",
+		"iomesh-memory-mcp",
+		"host not auto",
+		"/onboard next memory",
+		"/memory digest",
+		"/setup analyze",
+		// honesty locks
+		"dual_write OFF",
+		"not Memory GA",
+		"Edge Memory GA candidacy only",
+		"residual PASS ≠ invent Edge Memory GA",
+		"agent MCP cannot write installs",
+		"catalog ≠ Connected",
+		"book-demo OFF",
+		// residual gaps
+		"no SSO invent",
+		"host not auto",
+		// docs
+		"docs/architecture/edge-user-journey.md",
+		"docs/architecture/setup-lifecycle.md",
+		"docs/architecture/memory-edge-usage-demo.md",
+		// slash + companions
+		"/onboard next journey",
+		"edge-journey|user-journey|first-run|edge_user_journey",
+		"/onboard next setup",
+		"/onboard next agentic",
+		"/onboard next memory",
+		"/onboard next human-gates",
+		"/onboard next operator",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("journey lane missing %q in:\n%s", want, out)
+		}
+	}
+	// Must not invent product success language.
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
+	}
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "Edge Memory GA declared") {
+		t.Fatalf("must not invent Memory GA / Edge Memory GA declared: %s", out)
+	}
+	if strings.Contains(out, "TUI portal SSO shipped") || strings.Contains(out, "auto memory host") {
+		t.Fatalf("must not invent SSO / auto host: %s", out)
+	}
+	if strings.Contains(out, "book-demo ON") || strings.Contains(out, "INSTALL_STORE APPLY green") {
+		t.Fatalf("must not invent book-demo ON / APPLY green: %s", out)
 	}
 }
 
