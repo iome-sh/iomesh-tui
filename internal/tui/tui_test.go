@@ -2269,9 +2269,10 @@ func TestHandleSlash_OnboardNextThreePlanes(t *testing.T) {
 	}
 }
 
-// s1417: /onboard next agentic|agentic-integrations|integrations|portal-hitl|list-plan|hitl —
-// residual-honest product plane 3 agentic integrations (MCP list/plan + portal HITL).
+// s1417: /onboard next agentic|agentic-integrations|integrations|list-plan —
+// residual-honest product plane 3 agentic integrations (MCP list/plan residual-honest).
 // bare mcp stays memory; bare portal stays portal handoff; bare pull stays mesh.
+// portal-hitl|hitl are s1562 portal HITL lane (not agentic).
 func TestHandleSlash_OnboardNextAgenticLane(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -2305,18 +2306,17 @@ func TestHandleSlash_OnboardNextAgenticLane(t *testing.T) {
 		"Portal HITL polish",
 		"list_plan_soft_not_run",
 		"/onboard next agentic dogfood",
+		// s1562 companion
+		"/onboard next portal-hitl",
 	}
 
 	for _, line := range []string{
 		"/onboard next agentic",
 		"/onboard next agentic-integrations",
 		"/onboard next integrations",
-		"/onboard next portal-hitl",
 		"/onboard next list-plan",
-		"/onboard next hitl",
 		"/aion-onboard after agentic",
 		"/agent-onboard continue integrations",
-		"/onboard lanes portal-hitl",
 	} {
 		out.Reset()
 		_, err := handleSlash(&out, adapter, line)
@@ -2429,7 +2429,7 @@ func TestHandleSlash_OnboardNextAgenticDualAuthCandidacy(t *testing.T) {
 		"/onboard next agentic-integrations dual-auth",
 		"/onboard next integrations candidacy",
 		"/aion-onboard after agentic list-org",
-		"/agent-onboard continue portal-hitl org-installs",
+		"/agent-onboard continue integrations org-installs",
 	} {
 		out.Reset()
 		_, err := handleSlash(&out, adapter, line)
@@ -2527,7 +2527,7 @@ func TestHandleSlash_OnboardNextAgenticListPlanSoftDogfood(t *testing.T) {
 		"/onboard next agentic-integrations dogfood",
 		"/onboard next integrations soft",
 		"/aion-onboard after agentic offline",
-		"/agent-onboard continue portal-hitl list-plan-soft",
+		"/agent-onboard continue list-plan list-plan-soft",
 	} {
 		agent.ResetAgenticListPlanSoftDogfoodSessionState()
 		out.Reset()
@@ -2599,6 +2599,147 @@ func TestHandleSlash_OnboardNextAgenticListPlanSoftDogfood(t *testing.T) {
 	}
 	if strings.Contains(pluginsOut, "agentic list/plan soft offline dogfood") {
 		t.Fatalf("bare next dogfood must not run agentic soft dogfood:\n%s", pluginsOut)
+	}
+}
+
+// s1562: /onboard next portal-hitl|hitl|portal_hitl|portal-dogfood|stage5|connectors-hitl —
+// residual-honest journey stage-5 portal HITL board (bare = board, not auto dogfood).
+func TestHandleSlash_OnboardNextPortalHITLLane(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+	agent.ResetPortalHITLSoftDogfoodSessionState()
+	t.Cleanup(agent.ResetPortalHITLSoftDogfoodSessionState)
+
+	needles := []string{
+		"onboard next portal-hitl lane",
+		"journey stage 5",
+		"portal HITL when connect",
+		"agent MCP cannot write installs",
+		"catalog ≠ Connected",
+		"template= ≠ install APPLY",
+		"/integrations/{id}",
+		"/integrations/add?template={id}",
+		"console.iome.sh/integrations",
+		"console.iome.sh/settings/agent",
+		"dual_write OFF",
+		"not Memory GA",
+		"Edge Memory GA candidacy only",
+		"soft offline ≠ invent Connected",
+		"portal_hitl_soft_not_run",
+		"/onboard next portal-hitl dogfood",
+		"free eng s1562",
+	}
+
+	for _, line := range []string{
+		"/onboard next portal-hitl",
+		"/onboard next hitl",
+		"/onboard next portal_hitl",
+		"/onboard next portal-dogfood",
+		"/onboard next stage5",
+		"/onboard next connectors-hitl",
+		"/aion-onboard after portal-hitl",
+		"/agent-onboard continue hitl",
+		"/onboard lanes stage5",
+	} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		// Bare portal-hitl must be board, not auto soft dogfood runner.
+		if strings.Contains(s, "portal HITL soft offline dogfood") {
+			t.Fatalf("%s must not auto-run soft dogfood (bare portal-hitl = board):\n%s", line, s)
+		}
+		if strings.Contains(s, "onboard next agentic lane") {
+			t.Fatalf("%s must not emit agentic lane body:\n%s", line, s)
+		}
+		if strings.Contains(s, "portal Agent/MCP handoff") {
+			t.Fatalf("%s must not emit portal handoff body:\n%s", line, s)
+		}
+		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Connected: yes") {
+			t.Fatalf("%s must not invent dual_write ON / Connected:\n%s", line, s)
+		}
+	}
+}
+
+// s1562: /onboard next portal-hitl dogfood|soft|offline|portal-hitl-soft|samples — soft offline portal HITL dogfood.
+func TestHandleSlash_OnboardNextPortalHITLSoftDogfood(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+	agent.ResetPortalHITLSoftDogfoodSessionState()
+	agent.ResetAgenticListPlanSoftDogfoodSessionState()
+	t.Cleanup(func() {
+		agent.ResetPortalHITLSoftDogfoodSessionState()
+		agent.ResetAgenticListPlanSoftDogfoodSessionState()
+	})
+
+	needles := []string{
+		"portal HITL soft offline dogfood",
+		"no MCP dial",
+		"not live dogfood",
+		"result: PASS",
+		"soft_offline_portal_hitl_session_pass",
+		"journey stage 5",
+		"/integrations/{id}",
+		"soft offline ≠ invent Connected",
+		"session soft ≠ live dogfood",
+		"portal HITL still",
+		"agent MCP cannot write installs",
+		"dual_write OFF",
+		"free eng s1562",
+	}
+
+	for _, line := range []string{
+		"/onboard next portal-hitl dogfood",
+		"/onboard next portal-hitl soft",
+		"/onboard next portal-hitl offline",
+		"/onboard next portal-hitl portal-hitl-soft",
+		"/onboard next portal-hitl samples",
+		"/onboard next hitl dogfood",
+		"/onboard next stage5 soft",
+		"/aion-onboard after portal-hitl offline",
+		"/agent-onboard continue connectors-hitl portal-hitl-soft",
+	} {
+		agent.ResetPortalHITLSoftDogfoodSessionState()
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		if strings.Contains(s, "Connected: yes") || strings.Contains(s, "dual_write ON") {
+			t.Fatalf("%s must not invent Connected/dual_write ON:\n%s", line, s)
+		}
+		// Must not run agentic list/plan soft instead.
+		if strings.Contains(s, "agentic list/plan soft offline dogfood") {
+			t.Fatalf("%s must not run agentic soft dogfood:\n%s", line, s)
+		}
+		if got := agent.PortalHITLSoftSessionLabel(); got != agent.PortalHITLSoftPass {
+			t.Fatalf("%s session label: got %q want %q", line, got, agent.PortalHITLSoftPass)
+		}
+		// Agentic soft stays independent not_run.
+		if got := agent.AgenticListPlanSoftSessionLabel(); got != agent.AgenticListPlanSoftNotRun {
+			t.Fatalf("%s agentic soft must stay not_run, got %q", line, got)
+		}
 	}
 }
 

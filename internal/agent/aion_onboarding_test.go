@@ -331,7 +331,10 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"MCP list/plan residual-honest",
 		"plan_connector_setup",
 		"/onboard next agentic",
-		"agentic-integrations|integrations|portal-hitl|list-plan|hitl",
+		"agentic-integrations|integrations|list-plan",
+		"/onboard next portal-hitl",
+		"hitl|portal_hitl|portal-dogfood|stage5|connectors-hitl",
+		"free eng s1562",
 		"list_plan_not_connected",
 		// portal HITL still
 		"7.",
@@ -857,8 +860,10 @@ func TestAionAgentOnboardingNextJourneyLane_HonestyNeedles(t *testing.T) {
 		"/onboard next setup",
 		"iomesh setup",
 		"/integrations list|plan|status",
+		"/onboard next portal-hitl",
 		"/onboard next agentic",
 		"portal HITL",
+		"/onboard next portal-hitl dogfood",
 		"iomesh-memory-mcp",
 		"host not auto",
 		"/onboard next memory",
@@ -883,6 +888,7 @@ func TestAionAgentOnboardingNextJourneyLane_HonestyNeedles(t *testing.T) {
 		"/onboard next journey",
 		"edge-journey|user-journey|first-run|edge_user_journey",
 		"/onboard next setup",
+		"/onboard next portal-hitl",
 		"/onboard next agentic",
 		"/onboard next memory",
 		"/onboard next human-gates",
@@ -904,6 +910,67 @@ func TestAionAgentOnboardingNextJourneyLane_HonestyNeedles(t *testing.T) {
 	}
 	if strings.Contains(out, "book-demo ON") || strings.Contains(out, "INSTALL_STORE APPLY green") {
 		t.Fatalf("must not invent book-demo ON / APPLY green: %s", out)
+	}
+}
+
+// s1562: AionAgentOnboardingNextPortalHITLLane residual-honest journey stage-5 portal HITL needles.
+func TestAionAgentOnboardingNextPortalHITLLane_HonestyNeedles(t *testing.T) {
+	ResetPortalHITLSoftDogfoodSessionState()
+	t.Cleanup(ResetPortalHITLSoftDogfoodSessionState)
+
+	out := AionAgentOnboardingNextPortalHITLLane()
+	if out == "" {
+		t.Fatal("empty portal-hitl lane")
+	}
+	for _, want := range []string{
+		"onboard next portal-hitl lane",
+		"no MCP dial",
+		"journey stage 5",
+		"portal HITL when connect",
+		"MCP list/plan",
+		"browser portal HITL",
+		"human finishes OAuth/install",
+		"/integrations/{id}",
+		"/integrations/add?template={id}",
+		"/integrations",
+		"agent MCP cannot write installs",
+		"catalog ≠ Connected",
+		"never invent Connected",
+		"template= ≠ install APPLY",
+		"portal HITL still",
+		"portal_hitl_still",
+		"dual_write OFF",
+		"book-demo OFF",
+		"not Memory GA",
+		"Edge Memory GA candidacy only",
+		"residual PASS ≠ invent Edge Memory GA",
+		"residual PASS ≠ live dogfood",
+		"soft offline ≠ invent Connected",
+		"session soft ≠ live dogfood",
+		"console.iome.sh/integrations",
+		"console.iome.sh/settings/agent",
+		"portal_hitl_soft_not_run",
+		"/onboard next portal-hitl dogfood",
+		"soft|samples|offline|portal-hitl-soft",
+		"hitl|portal_hitl|portal-dogfood|stage5|connectors-hitl",
+		"/onboard next agentic",
+		"/onboard next journey",
+		"/onboard next agentic dogfood",
+		"free eng s1562",
+		"free-floor peer s1564+",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("portal-hitl lane missing %q in:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
+	}
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "INSTALL_STORE APPLY success") {
+		t.Fatalf("must not invent Memory GA / APPLY green: %s", out)
+	}
+	if strings.Contains(out, "live dogfood green") || strings.Contains(out, "book-demo ON") {
+		t.Fatalf("must not invent live dogfood green / book-demo ON: %s", out)
 	}
 }
 
@@ -949,7 +1016,7 @@ func TestAionAgentOnboardingNextAgenticLane_HonestyNeedles(t *testing.T) {
 		"portal_hitl_still",
 		"list_plan_not_connected",
 		"/onboard next agentic",
-		"agentic-integrations|integrations|portal-hitl|list-plan|hitl",
+		"agentic-integrations|integrations|list-plan",
 		"bare mcp",
 		"memory lane",
 		"portal handoff",
@@ -964,6 +1031,9 @@ func TestAionAgentOnboardingNextAgenticLane_HonestyNeedles(t *testing.T) {
 		"session soft ≠ live dogfood",
 		"soft offline ≠ live dogfood",
 		"/onboard portal mint/copy/probe",
+		// s1562 companion portal HITL residual
+		"/onboard next portal-hitl",
+		"/onboard next portal-hitl dogfood",
 		// s1427 dual-auth candidacy tip on main board
 		"dual_auth_candidacy_open",
 		"/onboard next agentic dual-auth",
