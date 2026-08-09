@@ -1,8 +1,8 @@
 # Setup lifecycle (agent-native wizard foundation)
 
-**Serial:** free eng **s1525** P1–P2 · **s1526** P3 · residual-honest  
-**Status:** foundation + agent-native slash/skill — config write · `iomesh setup init|preflight` · `/setup` · builtin skill · system note  
-**Not yet:** in-session continuous pull, hot MCP reattach (P4), analyze ticks (later PRs)
+**Serial:** free eng **s1525** P1–P2 · **s1526** P3–P4 · residual-honest  
+**Status:** foundation + agent-native slash/skill + package wire + `ReplaceMCP`  
+**Not yet:** in-session continuous pull, analyze ticks (later PRs)
 
 ## Goal
 
@@ -61,6 +61,7 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 /setup init --stdio            # stdio iomesh-memory-mcp instead of HTTP URL
 /setup preflight               # aliases status|check — FormatPreflightText
 /setup portal                  # console.iome.sh/integrations + settings/agent
+/setup reload                  # hot-swap MCP from config (P4 · package wire ≠ Connected)
 ```
 
 | Subcommand | Behavior |
@@ -69,10 +70,11 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 | `init` | `setup.BuildManagedFragment` + `config.WriteSetupManagedUser` (or `--print-only`) |
 | `preflight` / `status` / `check` | `setup.Preflight` + `FormatPreflightText` |
 | `portal` | browser HITL URLs only |
+| `reload` | `runtimewire.ConnectMCP` + `Runtime.ReplaceMCP` (optional `--config path`) |
 
 Simple flags on slash `init`: `--stdio` · `--print-only` · `--plugins-dir path` · `--memory-url URL`. Full flag set remains on CLI `iomesh setup init`.
 
-After init: start memory host (if needed) · set secret env vars · **restart TUI** (hot MCP reattach is P4, not this ship).
+After init: start memory host (if needed) · set secret env vars · `/setup reload` (or restart TUI).
 
 ## Agent surfaces (s1526 P3)
 
@@ -104,10 +106,23 @@ Skill + note + slash share honesty locks; skill is the full playbook.
 | `awaiting_memory_host` | Memory configured but healthz/PATH fail |
 | `local_memory_probe_ok` | Memory host healthz OK (or stdio binary on PATH) |
 
+## Hot reload (s1526 P4)
+
+Shared package wire (`internal/runtimewire`):
+
+| API | Role |
+|-----|------|
+| `Wire(cfg, workspace, logger)` | skill dirs + `[]mcp.ServerConfig` (TOML then plugins) |
+| `ConnectMCP(ctx, cfg, workspace, logger)` | `*mcp.Manager` when MCP feature on |
+| `Runtime.ReplaceMCP(mgr)` | close previous · unregister `mcp__*` · re-attach |
+
+**Honesty:** package wire ≠ Connected · dual_write OFF · Discover/map ≠ install APPLY green.  
+Skills catalog is **not** re-scanned on `/setup reload` (restart for skill-only path changes).
+
 ## Next phases (plan)
 
 - ~~`/setup` slash + `setup-lifecycle-agent` skill~~ **shipped s1526 P3**  
-- `ReplaceMCP` / reload after apply (P4)  
+- ~~`ReplaceMCP` / package wire / `/setup reload`~~ **shipped s1526 P4**  
 - In-session continuous pull + analyze ticks  
 - Maintenance drift repair  
 

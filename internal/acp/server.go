@@ -18,6 +18,7 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/iomesh"
 	"github.com/iome-sh/iomesh-tui/internal/mcp"
 	"github.com/iome-sh/iomesh-tui/internal/router"
+	"github.com/iome-sh/iomesh-tui/internal/runtimewire"
 	"github.com/iome-sh/iomesh-tui/internal/session"
 	"github.com/iome-sh/iomesh-tui/internal/skills"
 )
@@ -434,18 +435,18 @@ func (s *Server) newRuntime(cwd string) (*agent.Runtime, *session.Store, error) 
 		return nil, nil, err
 	}
 	rt.AttachMeshTools()
-	if cfg.Skills.Enabled && cfg.Features.Skills {
-		dirs := skills.DefaultDirs(abs)
-		dirs = append(dirs, cfg.Skills.Dirs...)
+	// s1526 P4: shared config→runtime wire (plugins skill dirs + MCP append).
+	// package wire ≠ Connected · dual_write OFF · Discover ≠ install APPLY green.
+	wired := runtimewire.Wire(&cfg, abs, s.logger)
+	if runtimewire.SkillsFeatureOn(&cfg) {
 		// Builtin always merged (s1251 connector-integrations-setup).
-		if cat, err := skills.LoadWithBuiltin(dirs...); err == nil && cat.Len() > 0 {
+		if cat, err := skills.LoadWithBuiltin(wired.SkillDirs...); err == nil && cat.Len() > 0 {
 			rt.AttachSkills(cat)
 		}
 	}
-	if cfg.MCP.Enabled && cfg.Features.MCP && len(cfg.MCP.Servers) > 0 {
-		// BuildMCPServerConfig applies s1267 inject_iomesh_context (opt-in HTTP headers).
-		servers := cfg.BuildMCPServerConfigs()
-		mgr := mcp.NewManager(context.Background(), servers, s.logger)
+	if runtimewire.MCPFeatureOn(&cfg) && len(wired.MCPServers) > 0 {
+		// Wire applies s1267 inject_iomesh_context via BuildMCPServerConfig.
+		mgr := mcp.NewManager(context.Background(), wired.MCPServers, s.logger)
 		rt.AttachMCP(mgr)
 	}
 	if cfg.Memory.Enabled {

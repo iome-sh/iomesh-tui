@@ -13,6 +13,7 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/agent"
 	"github.com/iome-sh/iomesh-tui/internal/agentplugins"
 	"github.com/iome-sh/iomesh-tui/internal/router"
+	"os"
 )
 
 func testRuntime(t *testing.T) *agent.Runtime {
@@ -3260,6 +3261,7 @@ func TestHandleSlash_SetupLifecycle(t *testing.T) {
 		"Connected",
 		"preflight",
 		"portal",
+		"reload",
 		"init",
 		"setup-lifecycle-agent",
 	} {
@@ -3344,5 +3346,24 @@ func TestHandleSlash_SetupLifecycle(t *testing.T) {
 	_, _ = handleSlash(&out, adapter, "/setup apply")
 	if !strings.Contains(out.String(), "unknown subcommand") {
 		t.Fatalf("unknown sub: %s", out.String())
+	}
+
+	// s1526 P4: /setup reload (nil-safe when MCP off / no servers) residual honesty
+	out.Reset()
+	// Point at empty temp config so Load succeeds with defaults (MCP off).
+	emptyCfg := filepath.Join(t.TempDir(), "reload.toml")
+	if err := os.WriteFile(emptyCfg, []byte("# empty\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, _ = handleSlash(&out, adapter, "/setup reload --config "+emptyCfg)
+	rel := out.String()
+	if !strings.Contains(rel, "setup reload") {
+		t.Fatalf("reload output: %s", rel)
+	}
+	if !strings.Contains(rel, "dual_write OFF") || !strings.Contains(rel, "Connected") {
+		t.Fatalf("reload honesty: %s", rel)
+	}
+	if strings.Contains(rel, "Connected green") || strings.Contains(rel, "install APPLY green shipped") {
+		t.Fatalf("reload must not invent green: %s", rel)
 	}
 }

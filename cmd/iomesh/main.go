@@ -22,6 +22,7 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/iomesh"
 	"github.com/iome-sh/iomesh-tui/internal/mcp"
 	"github.com/iome-sh/iomesh-tui/internal/router"
+	"github.com/iome-sh/iomesh-tui/internal/runtimewire"
 	"github.com/iome-sh/iomesh-tui/internal/session"
 	"github.com/iome-sh/iomesh-tui/internal/setup"
 	"github.com/iome-sh/iomesh-tui/internal/skills"
@@ -174,31 +175,17 @@ func run(args []string) int {
 	// Mesh catalog tools (list_mesh_catalog / mesh_status) when catalog plane on.
 	rt.AttachMeshTools()
 
-	// Agent Plugins package wire (s1331): opt-in discovery → skill dirs + MCP configs.
-	// package wire ≠ Agent Plugins GA · dual_write OFF · fail-open per plugin/server.
-	// Discover success ≠ Connected / install APPLY green.
-	var discoveredPlugins []*agentplugins.Plugin
-	if cfg.Plugins.Enabled && len(cfg.Plugins.Dirs) > 0 {
-		var pw []string
-		discoveredPlugins, pw = agentplugins.DiscoverAll(cfg.Plugins.Dirs)
-		for _, w := range pw {
-			logger.Warn("plugins discover", "warn", w)
-		}
-		logger.Info("plugins discovered", "count", len(discoveredPlugins), "dirs", len(cfg.Plugins.Dirs))
-	}
+	// Config→runtime package wire (s1331 + s1526 P4): plugins DiscoverAll → skill dirs +
+	// MCP server configs (TOML primary, plugins append). package wire ≠ Connected / GA.
+	// dual_write OFF · Discover success ≠ install APPLY green.
+	wired := runtimewire.Wire(cfg, rt.Workspace().Root(), logger)
 
 	// Skills: builtin (s1251 connector-integrations-setup) + workspace + user dirs.
 	// Builtin always present when skills enabled so residual-honest connector setup
 	// guidance appears even if user/workspace skill dirs are empty.
 	// Plugin skills (s1331) append after [skills].dirs when plugins enabled.
-	if cfg.Skills.Enabled && cfg.Features.Skills {
-		dirs := skills.DefaultDirs(rt.Workspace().Root())
-		dirs = append(dirs, cfg.Skills.Dirs...)
-		if skillDirs := agentplugins.SkillDirs(discoveredPlugins); len(skillDirs) > 0 {
-			dirs = append(dirs, skillDirs...)
-			logger.Info("plugins skill dirs", "count", len(skillDirs))
-		}
-		if cat, err := skills.LoadWithBuiltin(dirs...); err != nil {
+	if runtimewire.SkillsFeatureOn(cfg) {
+		if cat, err := skills.LoadWithBuiltin(wired.SkillDirs...); err != nil {
 			logger.Warn("skills load", "err", err)
 		} else if cat.Len() > 0 {
 			rt.AttachSkills(cat)
@@ -209,26 +196,9 @@ func run(args []string) int {
 	// MCP stdio/HTTP servers (opt-in). Fail-open per server inside manager.
 	// TOML [[mcp.servers]] remains primary; plugin MCP servers append after TOML.
 	// Plugins-only MCP is allowed when [mcp] enabled and TOML servers empty.
-	if cfg.MCP.Enabled && cfg.Features.MCP {
-		var servers []mcp.ServerConfig
-		for _, s := range cfg.MCP.Servers {
-			servers = append(servers, mcpServerFromTOML(s, cfg))
-		}
-		if len(discoveredPlugins) > 0 {
-			dataRoot := agentplugins.DefaultPluginDataRoot(rt.Workspace().Root(), cfg.Plugins.DataDir)
-			pluginServers, mw := agentplugins.MCPServersFromPlugins(discoveredPlugins, dataRoot)
-			for _, w := range mw {
-				logger.Warn("plugins mcp map", "warn", w)
-			}
-			if len(pluginServers) > 0 {
-				servers = append(servers, pluginServers...)
-				logger.Info("plugins mcp servers mapped", "count", len(pluginServers), "data_root", dataRoot)
-			}
-		}
-		if len(servers) > 0 {
-			mgr := mcp.NewManager(ctx, servers, logger)
-			rt.AttachMCP(mgr)
-		}
+	if runtimewire.MCPFeatureOn(cfg) && len(wired.MCPServers) > 0 {
+		mgr := mcp.NewManager(ctx, wired.MCPServers, logger)
+		rt.AttachMCP(mgr)
 	}
 
 	// Memory Palace hooks (MCP server and/or dual-write MEMORY_INGEST).
@@ -379,25 +349,20 @@ func cmdSkills(args []string) int {
 		}
 		ws = wd
 	}
-	dirs := skills.DefaultDirs(ws)
-	dirs = append(dirs, cfg.Skills.Dirs...)
-	// s1331: append plugin skill dirs when [plugins] enabled (mirrors agent path).
-	if cfg.Plugins.Enabled && len(cfg.Plugins.Dirs) > 0 {
-		plugins, pw := agentplugins.DiscoverAll(cfg.Plugins.Dirs)
-		for _, w := range pw {
-			fmt.Fprintf(os.Stderr, "plugins: %s\n", w)
-		}
-		dirs = append(dirs, agentplugins.SkillDirs(plugins)...)
+	// s1331 + s1526 P4: shared wire (DefaultDirs + [skills].dirs + plugin skill dirs).
+	wired := runtimewire.Wire(cfg, ws, slog.Default())
+	for _, w := range wired.Warnings {
+		fmt.Fprintf(os.Stderr, "plugins: %s\n", w)
 	}
 	// Include builtin skills (s1251 connector-integrations-setup) so CLI mirrors agent.
-	cat, err := skills.LoadWithBuiltin(dirs...)
+	cat, err := skills.LoadWithBuiltin(wired.SkillDirs...)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "skills: %v\n", err)
 		return 1
 	}
 	if cat.Len() == 0 {
 		fmt.Println("no skills found")
-		fmt.Fprintf(os.Stderr, "searched: builtin + %s\n", strings.Join(dirs, ", "))
+		fmt.Fprintf(os.Stderr, "searched: builtin + %s\n", strings.Join(wired.SkillDirs, ", "))
 		return 0
 	}
 	fmt.Printf("%-24s  %s\n", "NAME", "DESCRIPTION")
@@ -423,27 +388,18 @@ func cmdMCP(args []string) int {
 		fmt.Fprintf(os.Stderr, "config: %v\n", err)
 		return 1
 	}
-	// TOML primary; plugin MCP appended (s1331) when [plugins] enabled.
-	var pluginServers []mcp.ServerConfig
-	if cfg.Plugins.Enabled && len(cfg.Plugins.Dirs) > 0 {
-		plugins, pw := agentplugins.DiscoverAll(cfg.Plugins.Dirs)
-		for _, w := range pw {
-			fmt.Fprintf(os.Stderr, "plugins: %s\n", w)
-		}
-		ws := cfg.Agent.Workspace
-		if ws == "" {
-			if wd, err := os.Getwd(); err == nil {
-				ws = wd
-			}
-		}
-		dataRoot := agentplugins.DefaultPluginDataRoot(ws, cfg.Plugins.DataDir)
-		var mw []string
-		pluginServers, mw = agentplugins.MCPServersFromPlugins(plugins, dataRoot)
-		for _, w := range mw {
-			fmt.Fprintf(os.Stderr, "plugins mcp: %s\n", w)
+	// TOML primary; plugin MCP appended (s1331 / s1526 P4 shared wire).
+	ws := cfg.Agent.Workspace
+	if ws == "" {
+		if wd, err := os.Getwd(); err == nil {
+			ws = wd
 		}
 	}
-	if len(cfg.MCP.Servers) == 0 && len(pluginServers) == 0 {
+	wired := runtimewire.Wire(cfg, ws, slog.Default())
+	for _, w := range wired.Warnings {
+		fmt.Fprintf(os.Stderr, "plugins: %s\n", w)
+	}
+	if wired.TOMLServerCount == 0 && wired.PluginServerCount == 0 {
 		fmt.Println("no MCP servers configured ([mcp] / [[mcp.servers]] / [plugins] in config.toml)")
 		return 0
 	}
@@ -464,7 +420,8 @@ func cmdMCP(args []string) int {
 		}
 		fmt.Printf("%-24s %-8v %-8v %-6s %s\n", s.Name, en, mut, mode, strings.TrimSpace(ep))
 	}
-	for _, s := range pluginServers {
+	// Plugin-mapped servers (after TOML slice in wired.MCPServers).
+	for _, s := range wired.MCPServers[wired.TOMLServerCount:] {
 		mode, ep := "stdio", s.Command+" "+strings.Join(s.Args, " ")
 		if s.URL != "" {
 			mode, ep = "http", s.URL
@@ -478,14 +435,9 @@ func cmdMCP(args []string) int {
 		}
 		return 0
 	}
-	var servers []mcp.ServerConfig
-	for _, s := range cfg.MCP.Servers {
-		servers = append(servers, mcpServerFromTOML(s, cfg))
-	}
-	servers = append(servers, pluginServers...)
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
-	mgr := mcp.NewManager(ctx, servers, slog.Default())
+	mgr := mcp.NewManager(ctx, wired.MCPServers, slog.Default())
 	defer mgr.Close()
 	fmt.Printf("\nconnected=%d\n", mgr.Len())
 	for _, b := range mgr.Bindings() {
@@ -498,6 +450,7 @@ func cmdMCP(args []string) int {
 }
 
 // mcpServerFromTOML maps config TOML to mcp.ServerConfig (s1267 inject via BuildMCPServerConfig).
+// Kept for memory-pull path; agent/mcp/skills bootstrap use runtimewire.Wire.
 func mcpServerFromTOML(s config.MCPServerTOML, cfg *config.Config) mcp.ServerConfig {
 	if cfg == nil {
 		cfg = &config.Config{}
