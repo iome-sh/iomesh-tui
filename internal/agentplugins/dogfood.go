@@ -12,13 +12,14 @@ import (
 // not Memory GA · PATH residual for binary · book-demo OFF.
 const ResidualDogfoodHonesty = "honesty: dogfood PASS ≠ invent Agent Plugins GA · dual_write OFF · Discover ≠ Connected · not Memory GA · PATH residual for binary · book-demo OFF"
 
-// SamplePluginRelPaths returns the in-repo sample package paths relative to module root (s1357).
-// Order is stable: skills-only hello-iome, then stdio-map aion-memory-mcp.
-// PATH residual: aion-memory-mcp binary is not required for discover/validate dogfood.
+// SamplePluginRelPaths returns the in-repo sample package paths relative to module root (s1357+s1478).
+// Order is stable: skills-only hello-iome, then product stdio-map iomesh-memory-mcp.
+// Residual aion-memory-mcp sample remains under examples/agent-plugins (optional · not dogfood-required).
+// PATH residual: iomesh-memory-mcp binary is not required for discover/validate dogfood.
 func SamplePluginRelPaths() []string {
 	return []string{
 		filepath.Join("examples", "agent-plugins", "hello-iome"),
-		filepath.Join("examples", "agent-plugins", "aion-memory-mcp"),
+		filepath.Join("examples", "agent-plugins", "iomesh-memory-mcp"),
 	}
 }
 
@@ -69,9 +70,9 @@ func FindModuleRoot(start string) (string, error) {
 	}
 }
 
-// DogfoodSamples validates both in-repo sample packages offline (s1357).
+// DogfoodSamples validates both in-repo product sample packages offline (s1357+s1478).
 // Discover/validate only — does not Dial MCP, spawn processes, or require
-// aion-memory-mcp on PATH (PATH residual; connect skip).
+// iomesh-memory-mcp on PATH (PATH residual; connect skip).
 //
 // When moduleRoot is empty, FindModuleRoot("") is used (cwd walk-up).
 // Returns ValidateDirs outcomes for each sample path; missing roots surface as FAIL.
@@ -114,11 +115,11 @@ func DogfoodSamples(moduleRoot string) (outcomes []ValidateOutcome, warnings []s
 	}
 	// PATH residual note is a warning only — never a fatal for dogfood discover.
 	warnings = append(warnings,
-		"dogfood: PATH residual — aion-memory-mcp binary not required for discover/validate (connect skip)")
+		"dogfood: PATH residual — iomesh-memory-mcp binary not required for discover/validate (connect skip)")
 	return outcomes, warnings, nil
 }
 
-// DogfoodPass reports whether dogfood is residual-honest PASS: both samples OK,
+// DogfoodPass reports whether dogfood is residual-honest PASS: both product samples OK,
 // no fatals, expected sample count present.
 func DogfoodPass(outcomes []ValidateOutcome) bool {
 	if ValidateHasFatal(outcomes) {
@@ -127,8 +128,8 @@ func DogfoodPass(outcomes []ValidateOutcome) bool {
 	if ValidateOKCount(outcomes) != len(SamplePluginRelPaths()) {
 		return false
 	}
-	// Ensure expected names when OK (stable sample pins).
-	want := map[string]bool{"hello-iome": false, "aion-memory-mcp": false}
+	// Ensure expected names when OK (stable product sample pins · s1478).
+	want := map[string]bool{"hello-iome": false, "iomesh-memory-mcp": false}
 	for _, o := range outcomes {
 		if o.OK {
 			if _, ok := want[o.Name]; ok {
@@ -157,8 +158,8 @@ func FormatDogfoodSummary(outcomes []ValidateOutcome) string {
 		status, ok, total, want)
 }
 
-// SamplesSoftState soft-checks in-repo sample package dirs (s1382/s1392).
-// Returns "samples_ok" when both hello-iome + aion-memory-mcp dirs exist under
+// SamplesSoftState soft-checks in-repo sample package dirs (s1382/s1392/s1478).
+// Returns "samples_ok" when both hello-iome + iomesh-memory-mcp dirs exist under
 // moduleRoot; "samples_missing" otherwise (including when module root cannot
 // be resolved). When moduleRoot is empty, FindModuleRoot("") is used.
 // Soft path check only — ≠ dogfood run · ≠ invent Agent Plugins GA · ≠ Connected · ≠ live dogfood.

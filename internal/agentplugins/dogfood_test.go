@@ -15,7 +15,7 @@ func TestSamplePluginRelPaths(t *testing.T) {
 	if !strings.Contains(rels[0], "hello-iome") {
 		t.Fatalf("first sample: %s", rels[0])
 	}
-	if !strings.Contains(rels[1], "aion-memory-mcp") {
+	if !strings.Contains(rels[1], "iomesh-memory-mcp") {
 		t.Fatalf("second sample: %s", rels[1])
 	}
 }
@@ -28,7 +28,7 @@ func TestDefaultSamplePluginDirs(t *testing.T) {
 	if got[0] != filepath.Join("/mod", "examples", "agent-plugins", "hello-iome") {
 		t.Fatal(got[0])
 	}
-	if got[1] != filepath.Join("/mod", "examples", "agent-plugins", "aion-memory-mcp") {
+	if got[1] != filepath.Join("/mod", "examples", "agent-plugins", "iomesh-memory-mcp") {
 		t.Fatal(got[1])
 	}
 	// Empty module root → relative paths only.
@@ -80,8 +80,8 @@ func TestFindModuleRoot(t *testing.T) {
 	}
 }
 
-// TestDogfoodSamples_BothOK pins s1357 offline residual-honest dogfood of both
-// in-repo samples when run from module root. Does not require aion-memory-mcp
+// TestDogfoodSamples_BothOK pins s1357+s1478 offline residual-honest dogfood of both
+// product samples when run from module root. Does not require iomesh-memory-mcp
 // binary on PATH (PATH residual; connect skip · Discover ≠ Connected).
 func TestDogfoodSamples_BothOK(t *testing.T) {
 	root := moduleRoot(t)
@@ -108,9 +108,9 @@ func TestDogfoodSamples_BothOK(t *testing.T) {
 	if !ok || hi.Skills != 1 || hi.MCP != 0 {
 		t.Fatalf("hello-iome: %+v", hi)
 	}
-	am, ok := byName["aion-memory-mcp"]
+	am, ok := byName["iomesh-memory-mcp"]
 	if !ok || am.Skills != 1 || am.MCP != 1 {
-		t.Fatalf("aion-memory-mcp: %+v", am)
+		t.Fatalf("iomesh-memory-mcp: %+v", am)
 	}
 	// PATH residual warning present; never a fatal.
 	sawPATH := false

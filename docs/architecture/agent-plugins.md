@@ -4,10 +4,11 @@
 **Pin:** free eng **s1331** — **opt-in runtime wire** of package skills + MCP into existing Skills / MCP runtimes.  
 **Pin:** free eng **s1336** — operator DX CLI `iomesh plugins list|validate`.
 **Pin:** free eng **s1337** — residual-honest **sample package** [`examples/agent-plugins/hello-iome`](../../examples/agent-plugins/hello-iome) (skills-only dogfood).
-**Pin:** free eng **s1346** — residual-honest **sample package** [`examples/agent-plugins/aion-memory-mcp`](../../examples/agent-plugins/aion-memory-mcp) (stdio map of local-primary `aion-memory-mcp` · not Memory GA).
-**Pin:** free eng **s1357** — offline residual-honest `iomesh plugins dogfood` (validates **both** in-repo samples; no MCP dial · PATH residual for binary).
+**Pin:** free eng **s1346** — residual-honest **sample package** [`examples/agent-plugins/aion-memory-mcp`](../../examples/agent-plugins/aion-memory-mcp) (stdio map of private platform residual `aion-memory-mcp` · not product naming · not Memory GA).
+**Pin:** free eng **s1357** — offline residual-honest `iomesh plugins dogfood` (validates **both** product samples; no MCP dial · PATH residual for binary).
+**Pin:** free eng **s1478** — product sample [`examples/agent-plugins/iomesh-memory-mcp`](../../examples/agent-plugins/iomesh-memory-mcp) (public product host stdio map · dogfood primary with hello-iome).
 
-Residual-honest: **package wire ≠ invent Agent Plugins GA**. Not Memory GA. Discover/load success ≠ Connected / install APPLY green. dual_write **OFF** (unchanged). book-demo **OFF**. Sample package ≠ GA. list/validate/dogfood ≠ invent Agent Plugins GA. dogfood PASS ≠ Connected / Memory GA · PATH residual for `aion-memory-mcp` binary.
+Residual-honest: **package wire ≠ invent Agent Plugins GA**. Not Memory GA. Discover/load success ≠ Connected / install APPLY green. dual_write **OFF** (unchanged). book-demo **OFF**. Sample package ≠ GA. list/validate/dogfood ≠ invent Agent Plugins GA. dogfood PASS ≠ Connected / Memory GA · PATH residual for `iomesh-memory-mcp` binary.
 
 ## What this is
 
@@ -26,8 +27,9 @@ Residual-honest: **package wire ≠ invent Agent Plugins GA**. Not Memory GA. Di
 | Approval gates on mutating MCP tools | **still apply** (plugin servers default Mutating=true) |
 | Install / marketplace / enable UX | **out of scope** |
 | Full Agent Plugins client GA | **not claimed** |
-| Sample skills-only package (`hello-iome`) | **done** (s1337 · dogfood only · opt-in `[plugins]`) |
-| Sample stdio memory map (`aion-memory-mcp`) | **done** (s1346 · map only · binary on PATH for connect · not Memory GA · dual_write OFF) |
+| Sample skills-only package (`hello-iome`) | **done** (s1337 · dogfood primary · opt-in `[plugins]`) |
+| Sample product stdio memory map (`iomesh-memory-mcp`) | **done** (s1478 · public product map · binary on PATH for connect · not Memory GA · dual_write OFF) |
+| Sample residual stdio memory map (`aion-memory-mcp`) | **done** (s1346 · private platform residual · not product naming · not Memory GA · dual_write OFF) |
 
 Package API entrypoint:
 
@@ -56,17 +58,29 @@ In-repo dogfood package (skills-only; no MCP server, no secrets):
 - Loading requires `enabled = true` + `dirs` pointing at the package root (or parent of package roots)
 - Discover/map of the sample ≠ install Connected / Agent Plugins GA
 
-### `aion-memory-mcp` (s1346 · stdio map)
+### `iomesh-memory-mcp` (s1478 · product stdio map · dogfood primary)
 
-In-repo dogfood package that **maps** local-primary Memory MCP via stdio (no secrets; binary not shipped):
+In-repo **product** dogfood package that **maps** public product edge Memory MCP via stdio (no secrets; binary not shipped):
+
+- Path: [`examples/agent-plugins/iomesh-memory-mcp`](../../examples/agent-plugins/iomesh-memory-mcp)
+- `mcp.json`: server key `memory`, type `stdio`, command `iomesh-memory-mcp` (skill `iomesh-memory-local`)
+- Public install: `go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main` · **no GOPRIVATE**
+- Operator must put binary on **PATH**; connect is fail-open if missing
+- Mapped runtime name: `iomesh-memory-mcp-memory` (`<manifest.name>-<serverName>`)
+- Enable via opt-in `[plugins]` — see that package's [README](../../examples/agent-plugins/iomesh-memory-mcp/README.md)
+- Discover/map success ≠ process Connected / install APPLY / **Memory GA** · dual_write **OFF** · not freemium hosted palace
+- TOML `[[mcp.servers]]` remains the **primary** attach path; package map is portable dogfood
+
+### `aion-memory-mcp` (s1346 · residual private stdio map · not product)
+
+Residual in-repo sample that **maps** private monorepo platform Memory MCP via stdio (not product edge naming):
 
 - Path: [`examples/agent-plugins/aion-memory-mcp`](../../examples/agent-plugins/aion-memory-mcp)
 - `mcp.json`: server key `memory`, type `stdio`, command `aion-memory-mcp` (optional skill `aion-memory-local`)
-- Operator must install the binary and put it on **PATH**; connect is fail-open if missing
+- Operator must install the private monorepo binary and put it on **PATH**; connect is fail-open if missing
 - Mapped runtime name: `aion-memory-mcp-memory` (`<manifest.name>-<serverName>`)
-- Enable via opt-in `[plugins]` — see that package's [README](../../examples/agent-plugins/aion-memory-mcp/README.md)
-- Discover/map success ≠ process Connected / install APPLY / **Memory GA** · dual_write **OFF** · not freemium hosted palace
-- TOML `[[mcp.servers]]` remains the **primary** attach path; package map is portable dogfood
+- **Not** required for `iomesh plugins dogfood` (product samples are hello-iome + iomesh-memory-mcp)
+- Discover/map success ≠ process Connected / install APPLY / **Memory GA** · dual_write **OFF**
 
 ## Package layout (Agent Plugins 1.0.0)
 
@@ -167,7 +181,7 @@ iomesh plugins help
 |------------|----------|
 | **list** | `DiscoverAll` on merged dirs; stdout table; stderr per-dir / per-plugin warnings + residual honesty footer. Fail-open (empty table / residual footer, exit 0). |
 | **validate** | `ValidateDirs` (Discover per package root); stdout `OK` / `FAIL` lines; stderr plugin warnings + honesty. **Exit 1** if any fatal FAIL **or** zero plugins OK when dirs were specified. |
-| **dogfood** | Resolves both sample dirs (`hello-iome` + `aion-memory-mcp`) under module root; `ValidateDirs` per sample; stdout `OK`/`FAIL` + summary; stderr PATH residual + honesty. **Exit 1** if any fatal, missing sample, or not both expected samples OK. **No** MCP Dial / process connect · **does not** require `aion-memory-mcp` on PATH. |
+| **dogfood** | Resolves both product sample dirs (`hello-iome` + `iomesh-memory-mcp`) under module root; `ValidateDirs` per sample; stdout `OK`/`FAIL` + summary; stderr PATH residual + honesty. **Exit 1** if any fatal, missing sample, or not both expected samples OK. **No** MCP Dial / process connect · **does not** require `iomesh-memory-mcp` on PATH. Residual `aion-memory-mcp` sample is optional (not dogfood-required). |
 
 Helpers: `SamplePluginRelPaths` / `DefaultSamplePluginDirs` / `FindModuleRoot` / `DogfoodSamples` / `DogfoodPass` in `internal/agentplugins/dogfood.go` (unit-tested).
 
@@ -187,7 +201,7 @@ Pure format helpers live in `internal/agentplugins/cli_format.go` (unit-tested).
 |-------|--------|
 | package client candidacy | discover/validate + opt-in runtime wire + operator CLI + samples dogfood |
 | ≠ Agent Plugins GA | no marketplace/install UX · no product “plugins green” |
-| ≠ Memory GA | orthogonal surface · aion-memory-mcp sample is map only |
+| ≠ Memory GA | orthogonal surface · iomesh-memory-mcp / aion-memory-mcp samples are map only |
 | dual_write | **OFF** (unchanged default; not a package concern) |
 | book-demo | **OFF** |
 | fail-open | per dir / component / entry (list); validate/dogfood surfaces fatals |
@@ -195,7 +209,7 @@ Pure format helpers live in `internal/agentplugins/cli_format.go` (unit-tested).
 | MCP risk | higher than skills — approval gates still apply (mutating default true) |
 | TOML MCP | still primary attach path; plugins append |
 | install / Connected green | **not invented** from Discover, list, validate, dogfood, or map success |
-| PATH residual | dogfood does **not** require `aion-memory-mcp` binary; connect remains separate |
+| PATH residual | dogfood does **not** require `iomesh-memory-mcp` binary; connect remains separate |
 
 Peer: [Agent Plugins specification](https://agent-plugins.org/specification) v1.0.0 · related local docs [skills.md](./skills.md) · [mcp.md](./mcp.md).
 

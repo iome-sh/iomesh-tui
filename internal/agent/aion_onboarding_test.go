@@ -262,11 +262,13 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"aion-memory-mcp",
 		"iomesh-memory-mcp",
 		"github.com/iome-sh/iomesh-memory-mcp",
-		"M2 lean host",
-		"M3 edge dogfood",
-		"docker compose",
+		"public product attach",
+		"s1478",
+		"go install",
+		"no GOPRIVATE",
+		"docker compose still valid",
 		"aion broker private",
-		"OSS path ≠ invent public flip complete",
+		"flip complete residual ≠ invent Memory GA",
 		"local-primary",
 		"dual_write OFF",
 		"package load ≠ Memory GA",
@@ -400,7 +402,7 @@ func TestAionAgentOnboardingNextPluginsLane_HonestyNeedles(t *testing.T) {
 		"offline sample validate",
 		"examples/agent-plugins",
 		"hello-iome",
-		"aion-memory-mcp",
+		"iomesh-memory-mcp",
 		"iomesh plugins list",
 		"iomesh plugins validate",
 		"iomesh plugins dogfood",
@@ -480,7 +482,7 @@ func TestAionAgentOnboardingNextGtmLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1377+s1453+s1458+s1463+s1469: AionAgentOnboardingNextMemoryLane residual-honest memory local + edge OSS + M2 lean + M3 edge dogfood + M4 public flip readiness needles.
+// s1377+s1453+s1458+s1463+s1469+s1478: AionAgentOnboardingNextMemoryLane residual-honest memory local + edge OSS + public product attach needles.
 func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 	out := AionAgentOnboardingNextMemoryLane()
 	if out == "" {
@@ -489,38 +491,32 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 	for _, want := range []string{
 		"onboard next memory lane",
 		"no MCP dial",
-		"s1377+s1453+s1458+s1463+s1469",
+		"s1377+s1453+s1458+s1463+s1469+s1478",
 		"local-primary",
 		"github.com/iome-sh/memory",
 		"github.com/iome-sh/iomesh-memory-mcp",
 		"iomesh-memory-mcp",
-		"aion-memory-mcp", // residual attach path still documented
+		"aion-memory-mcp", // residual private monorepo attach still documented
 		"aion broker private",
-		"OSS path ≠ invent public flip complete",
+		"aion still private",
+		"public",
+		"s1478",
+		"no GOPRIVATE",
+		"go install",
+		"go get github.com/iome-sh/memory@main",
+		"github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main",
 		"Edge OSS",
 		"Option A",
 		"streamable HTTP",
 		"http://127.0.0.1:8080/mcp",
 		"stdio",
-		"M2 lean",
-		"scaffold/M2",
-		"s1463",
-		"M3 edge dogfood",
-		"edge dogfood",
 		"docker compose",
 		"iomesh-memory-mcp:local",
 		"healthz",
 		"edge-dogfood-gate",
 		"offline dogfood tip ≠ invent live dogfood as green",
-		"residual PASS ≠ public flip",
-		"M3 after M2",
-		"s1469",
-		"M4 public flip readiness",
-		"public flip readiness",
-		"kernel first",
-		"readiness tip ≠ invent public flip complete",
-		"M5 signing later after flip",
-		"still private",
+		"flip complete residual ≠ invent Memory GA",
+		"public OSS ≠ invent platform GA",
 		"PASS ≠ invent full platform sidecar parity",
 		"tool parity may be lean",
 		"Palace sunset",
@@ -549,6 +545,8 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 		"~$88/$119",
 		"/onboard next",
 		"mesh ≠ memory",
+		"private monorepo",
+		"not product naming",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("memory lane missing %q in:\n%s", want, out)
@@ -560,14 +558,15 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "freemium palace GA") {
 		t.Fatalf("must not invent Memory GA / freemium palace: %s", out)
 	}
-	if strings.Contains(out, "public flip complete: yes") || strings.Contains(out, "OSS public flip complete") {
-		t.Fatalf("must not invent public OSS flip complete: %s", out)
-	}
 	if strings.Contains(out, "full platform sidecar parity: yes") || strings.Contains(out, "platform sidecar parity complete") {
 		t.Fatalf("must not invent full platform sidecar parity: %s", out)
 	}
 	if strings.Contains(out, "live dogfood green: yes") || strings.Contains(out, "live dogfood: green") {
 		t.Fatalf("must not invent live dogfood green: %s", out)
+	}
+	// Edge packs are public; do not keep the obsolete "repos still private" claim.
+	if strings.Contains(out, "repos still private") {
+		t.Fatalf("must not claim edge repos still private after s1478 public flip: %s", out)
 	}
 }
 
@@ -1406,7 +1405,7 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"no auto-send",
 		"GTM agent GA",
 		"GTM checklist ≠ invent GTM agent GA",
-		// memory honesty (+ s1453+s1458+s1463+s1469 edge OSS + M2 lean + M3 edge dogfood + M4 public flip readiness tip)
+		// memory honesty (+ s1453+s1458+s1463+s1469+s1478 edge OSS + public product attach)
 		"dual_write OFF",
 		"package load ≠ Memory GA",
 		"local-primary",
@@ -1416,16 +1415,15 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"Palace sunset",
 		"mesh optional for pull",
 		"iomesh-memory-mcp",
-		"M2 lean attach",
-		"M3 edge dogfood",
-		"docker compose",
-		"M4 public flip readiness",
-		"kernel first",
+		"public product attach",
+		"go install",
+		"no GOPRIVATE",
+		"docker compose still valid",
 		"offline dogfood tip ≠ invent live dogfood as green",
-		"residual PASS ≠ public flip",
+		"flip complete residual ≠ invent Memory GA",
+		"public OSS ≠ invent platform GA",
 		"PASS ≠ invent full platform sidecar parity",
 		"aion broker private",
-		"OSS path ≠ invent public flip complete",
 		// mesh honesty (s1402)
 		"streaming org heartbeats",
 		"not OTel/APM",
@@ -1633,18 +1631,17 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 		"pull_not_probed",
 		"portal_hitl_still",
 		"list_plan_not_connected",
-		// memory edge OSS tip (s1453+s1458+s1463+s1469 M2 lean + M3 edge dogfood + M4 public flip readiness)
+		// memory edge OSS tip (s1453+s1458+s1463+s1469+s1478 public product attach)
 		"iomesh-memory-mcp",
-		"M2 lean attach",
-		"M3 edge dogfood",
-		"docker compose",
-		"M4 public flip readiness",
-		"kernel first",
+		"public product attach",
+		"go install",
+		"no GOPRIVATE",
+		"docker compose still valid",
 		"offline dogfood tip ≠ invent live dogfood as green",
-		"residual PASS ≠ public flip",
+		"flip complete residual ≠ invent Memory GA",
+		"public OSS ≠ invent platform GA",
 		"PASS ≠ invent full platform sidecar parity",
 		"aion broker private",
-		"OSS path ≠ invent public flip complete",
 		"Palace sunset",
 		"mesh optional for pull",
 		// honesty locks

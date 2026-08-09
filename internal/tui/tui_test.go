@@ -1268,7 +1268,7 @@ func TestHandleSlash_OnboardNextGtmLane(t *testing.T) {
 	}
 }
 
-// s1377+s1453+s1458+s1463+s1469: /onboard next memory|mcp|palace — residual-honest memory local + edge OSS + M2 lean + M3 edge dogfood + M4 public flip readiness drill.
+// s1377+s1453+s1458+s1463+s1469+s1478: /onboard next memory|mcp|palace — residual-honest memory local + public product attach drill.
 func TestHandleSlash_OnboardNextMemoryLane(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -1281,24 +1281,18 @@ func TestHandleSlash_OnboardNextMemoryLane(t *testing.T) {
 		"github.com/iome-sh/iomesh-memory-mcp",
 		"http://127.0.0.1:8080/mcp",
 		"stdio",
-		"M2 lean",
-		"scaffold/M2",
-		"s1463",
-		"M3 edge dogfood",
-		"edge dogfood",
+		"s1478",
+		"public",
+		"no GOPRIVATE",
+		"go install",
 		"docker compose",
 		"healthz",
-		"s1469",
-		"M4 public flip readiness",
-		"public flip readiness",
-		"kernel first",
-		"still private",
-		"readiness tip ≠ invent public flip complete",
 		"offline dogfood tip ≠ invent live dogfood as green",
 		"PASS ≠ invent full platform sidecar parity",
-		"residual PASS ≠ public flip",
+		"flip complete residual ≠ invent Memory GA",
+		"public OSS ≠ invent platform GA",
 		"aion broker private",
-		"OSS path ≠ invent public flip complete",
+		"aion still private",
 		"Memory Ops Pack",
 		"local-primary",
 		"dual_write OFF",

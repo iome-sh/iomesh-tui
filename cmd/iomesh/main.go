@@ -554,9 +554,9 @@ Honesty: list/validate/dogfood ≠ invent Agent Plugins GA · dual_write OFF · 
 `)
 }
 
-// cmdPluginsDogfood runs offline residual-honest dogfood of both in-repo sample packages
-// (hello-iome + aion-memory-mcp). Discover/validate only — does not Dial MCP or require
-// aion-memory-mcp on PATH (PATH residual; connect skip). s1357.
+// cmdPluginsDogfood runs offline residual-honest dogfood of both in-repo product sample packages
+// (hello-iome + iomesh-memory-mcp). Discover/validate only — does not Dial MCP or require
+// iomesh-memory-mcp on PATH (PATH residual; connect skip). s1357+s1478.
 func cmdPluginsDogfood(args []string) int {
 	fs := flag.NewFlagSet("plugins dogfood", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
