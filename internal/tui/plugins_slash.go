@@ -21,17 +21,17 @@ func markPluginsSlashDogfoodSession(pass bool) {
 
 // pluginsHelp is bare /plugins and help/? copy (s1392 residual honesty).
 func pluginsHelp() string {
-	return strings.TrimSpace(`usage: /plugins [help|list|validate|dogfood|status]  (alias /plugin)
+	return strings.TrimSpace(`usage: /plugins [help|list|validate|smoke|status]  (alias /plugin)
   help|?              this residual-honest usage (also bare /plugins)
   list [dir...]       DiscoverAll fail-open residual (Discover ≠ Connected)
   validate [dir...]   ValidateDirs fail-open residual (OK ≠ install green)
-  dogfood             soft offline dogfood both in-repo samples (aliases soft|samples|offline)
+  smoke               soft offline smoke both in-repo samples (aliases dogfood|soft|samples|offline)
   status              residual plugins pulse: samples_ok|samples_missing · dogfood_not_run
 
-dogfood = discover/validate only · no MCP dial · PATH residual · soft offline ≠ live dogfood
-Discover/list ≠ Connected · package load ≠ Memory GA · soft offline dogfood ≠ invent Agent Plugins GA
+smoke = discover/validate only · no MCP dial · PATH residual · soft offline ≠ live smoke
+Discover/list ≠ Connected · package load ≠ Memory GA · soft offline smoke ≠ invent Agent Plugins GA
 never invent install green / Connected / INSTALL_STORE APPLY · dual_write OFF · book-demo OFF · portal HITL
-CLI twin: iomesh plugins list|validate|dogfood · continuum: /onboard next plugins · /onboard next status
+CLI twin: iomesh plugins list|validate|smoke · continuum: /onboard next plugins · /onboard next status
 ` + agentplugins.ResidualSlashHonesty)
 }
 
@@ -43,7 +43,7 @@ func handlePluginsList(out io.Writer, args []string) {
 		// No dirs: residual-honest offline opt-in message (not invent empty-as-none / Connected).
 		fmt.Fprintln(out, agentplugins.FormatListEmptyFooter(false, false))
 		fmt.Fprintln(out, "tip: pass package roots: /plugins list examples/agent-plugins/hello-iome")
-		fmt.Fprintln(out, "or soft offline dogfood: /plugins dogfood (both in-repo samples)")
+		fmt.Fprintln(out, "or soft offline smoke: /plugins smoke (both in-repo samples)")
 		fmt.Fprintln(out, agentplugins.ResidualSlashHonesty)
 		return
 	}
@@ -74,7 +74,7 @@ func handlePluginsValidate(out io.Writer, args []string) {
 	if len(dirs) == 0 {
 		fmt.Fprintln(out, agentplugins.FormatListEmptyFooter(false, false))
 		fmt.Fprintln(out, "tip: pass package roots: /plugins validate examples/agent-plugins/hello-iome")
-		fmt.Fprintln(out, "or soft offline dogfood: /plugins dogfood (both in-repo samples)")
+		fmt.Fprintln(out, "or soft offline smoke: /plugins smoke (both in-repo samples)")
 		fmt.Fprintln(out, agentplugins.ResidualSlashHonesty)
 		return
 	}
@@ -111,17 +111,17 @@ func handlePluginsDogfood(out io.Writer) {
 		// Fallback: treat cwd as module root (operator may have samples without go.mod walk).
 		cwd, cwdErr := os.Getwd()
 		if cwdErr != nil {
-			fmt.Fprintf(out, "dogfood: find module root: %v\n", err)
+			fmt.Fprintf(out, "smoke: find module root: %v\n", err)
 			fmt.Fprintln(out, agentplugins.ResidualDogfoodHonesty)
 			markPluginsSlashDogfoodSession(false)
 			return
 		}
 		root = cwd
-		fmt.Fprintf(out, "dogfood: go.mod not found above cwd; using cwd as module root (%s)\n", cwd)
+		fmt.Fprintf(out, "smoke: go.mod not found above cwd; using cwd as module root (%s)\n", cwd)
 	}
 	outcomes, warns, err := agentplugins.DogfoodSamples(root)
 	if err != nil {
-		fmt.Fprintf(out, "dogfood: %v\n", err)
+		fmt.Fprintf(out, "smoke: %v\n", err)
 		fmt.Fprintln(out, agentplugins.ResidualDogfoodHonesty)
 		markPluginsSlashDogfoodSession(false)
 		return
@@ -143,10 +143,10 @@ func handlePluginsDogfood(out io.Writer) {
 	pass := agentplugins.DogfoodPass(outcomes)
 	markPluginsSlashDogfoodSession(pass)
 	// Residual-honest framing: soft offline ≠ live dogfood ≠ Agent Plugins GA.
-	fmt.Fprintln(out, "note: soft offline dogfood PASS ≠ invent Agent Plugins GA · residual PASS ≠ live dogfood · Discover ≠ Connected · package load ≠ Memory GA")
+	fmt.Fprintln(out, "note: soft offline smoke PASS ≠ invent Agent Plugins GA · residual PASS ≠ live dogfood · Discover ≠ Connected · package load ≠ Memory GA")
 	fmt.Fprintln(out, "session marker: "+agentplugins.SoftDogfoodSessionLabel()+" · session soft ≠ live dogfood · board/export evidence ≠ invent Connected")
 	// s1397: tip re-run status board + export so session soft state refreshes residual evidence.
-	fmt.Fprintln(out, "tip: re-run /onboard next status then /onboard next export — session soft dogfood refreshes plugins lane (≠ invent Agent Plugins GA · ≠ live dogfood · board ≠ invent Connected)")
+	fmt.Fprintln(out, "tip: re-run /onboard next status then /onboard next export — session soft smoke refreshes plugins lane (≠ invent Agent Plugins GA · ≠ live dogfood · board ≠ invent Connected)")
 	fmt.Fprintln(out, agentplugins.ResidualDogfoodHonesty)
 	fmt.Fprintln(out, agentplugins.ResidualSlashHonesty)
 }
@@ -158,14 +158,14 @@ func handlePluginsStatus(out io.Writer) {
 	samples := agentplugins.SamplesSoftState("")
 	// Session SSOT in agentplugins (s1397) — shared with /onboard next status + export.
 	dogfoodState := agentplugins.SoftDogfoodSessionLabel()
-	fmt.Fprintln(out, strings.TrimSpace(fmt.Sprintf(`plugins status (residual-honest · s1392 · soft offline · no MCP dial · not live dogfood):
+	fmt.Fprintln(out, strings.TrimSpace(fmt.Sprintf(`plugins status (residual-honest · s1392+s1521 · soft offline · no MCP dial · not live dogfood):
   samples: %s
-  dogfood: %s
+  smoke: %s
   note: samples soft-check only · dogfood_not_run default · session soft marker ≠ live dogfood
   · soft offline dogfood ≠ invent Agent Plugins GA · Discover ≠ Connected · package load ≠ Memory GA
   · never invent install green / Connected / INSTALL_STORE APPLY · dual_write OFF · book-demo OFF
-  slash: /plugins dogfood (aliases soft|samples|offline) · /plugins list · /plugins validate
-  continuum: /onboard next plugins · /onboard next status · /onboard next export · iomesh plugins dogfood
+  slash: /plugins smoke (aliases dogfood|soft|samples|offline) · /plugins list · /plugins validate
+  continuum: /onboard next plugins · /onboard next status · /onboard next export · iomesh plugins smoke
 %s`, samples, dogfoodState, agentplugins.ResidualSlashHonesty)))
 }
 

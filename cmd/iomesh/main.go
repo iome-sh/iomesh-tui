@@ -519,7 +519,8 @@ func cmdPlugins(args []string) int {
 		return cmdPluginsList(rest)
 	case "validate":
 		return cmdPluginsValidate(rest)
-	case "dogfood":
+	case "smoke", "dogfood":
+		// Public name: smoke. dogfood = legacy alias (compat · s1521).
 		return cmdPluginsDogfood(rest)
 	case "help", "-h", "--help":
 		printPluginsUsage()
@@ -532,11 +533,12 @@ func cmdPlugins(args []string) int {
 }
 
 func printPluginsUsage() {
-	fmt.Fprint(os.Stderr, `iomesh plugins — Agent Plugins package operator DX (s1336 · s1357 dogfood)
+	fmt.Fprint(os.Stderr, `iomesh plugins — Agent Plugins package operator DX (s1336 · s1357 · s1521 public smoke)
 
   iomesh plugins [list]           discover packages; table NAME VERSION SKILLS MCP WARN ROOT
   iomesh plugins validate         OK/FAIL per package root; exit 1 on fatal or zero found
-  iomesh plugins dogfood          offline residual-honest validate of both in-repo samples
+  iomesh plugins smoke            offline residual-honest validate of both in-repo samples (public name)
+  iomesh plugins dogfood          legacy alias for smoke (compat)
   iomesh plugins help
 
 Flags (list|validate):
@@ -544,13 +546,13 @@ Flags (list|validate):
   -dir path             package root or parent of roots (repeatable; comma-separated OK)
                         supplements [plugins].dirs for one-shot list/validate without enable
 
-Flags (dogfood):
+Flags (smoke):
   -module-root path     module root containing examples/agent-plugins/* (default: walk up from cwd for go.mod)
 
-Honesty: list/validate/dogfood ≠ invent Agent Plugins GA · dual_write OFF · Discover ≠ Connected ·
+Honesty: list/validate/smoke ≠ invent Agent Plugins GA · dual_write OFF · Discover ≠ Connected ·
   not Memory GA · PATH residual for binary · book-demo OFF. [plugins] is opt-in (default enabled=false).
-  Fail-open discover (list); validate surfaces fatals and exits non-zero. Dogfood = discover/validate
-  only (no MCP dial / connect). Runtime wire is separate (s1331).
+  Fail-open discover (list); validate surfaces fatals and exits non-zero. Smoke = discover/validate
+  only (no MCP dial / connect). Runtime wire is separate (s1331). dogfood remains a legacy alias.
 `)
 }
 
@@ -558,7 +560,7 @@ Honesty: list/validate/dogfood ≠ invent Agent Plugins GA · dual_write OFF · 
 // (hello-iome + iomesh-memory-mcp). Discover/validate only — does not Dial MCP or require
 // iomesh-memory-mcp on PATH (PATH residual; connect skip). s1357+s1478.
 func cmdPluginsDogfood(args []string) int {
-	fs := flag.NewFlagSet("plugins dogfood", flag.ContinueOnError)
+	fs := flag.NewFlagSet("plugins smoke", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	moduleRoot := fs.String("module-root", "", "module root with examples/agent-plugins (default: find go.mod from cwd)")
 	if err := fs.Parse(args); err != nil {
@@ -571,19 +573,19 @@ func cmdPluginsDogfood(args []string) int {
 			// Fallback: treat cwd as module root (operator may have samples without go.mod walk).
 			cwd, cwdErr := os.Getwd()
 			if cwdErr != nil {
-				fmt.Fprintf(os.Stderr, "dogfood: find module root: %v\n", err)
+				fmt.Fprintf(os.Stderr, "smoke: find module root: %v\n", err)
 				fmt.Fprintln(os.Stderr, agentplugins.ResidualDogfoodHonesty)
 				return 1
 			}
 			root = cwd
-			fmt.Fprintf(os.Stderr, "dogfood: go.mod not found above cwd; using cwd as module root (%s)\n", cwd)
+			fmt.Fprintf(os.Stderr, "smoke: go.mod not found above cwd; using cwd as module root (%s)\n", cwd)
 		} else {
 			root = found
 		}
 	}
 	outcomes, warns, err := agentplugins.DogfoodSamples(root)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "dogfood: %v\n", err)
+		fmt.Fprintf(os.Stderr, "smoke: %v\n", err)
 		fmt.Fprintln(os.Stderr, agentplugins.ResidualDogfoodHonesty)
 		return 1
 	}
@@ -735,11 +737,12 @@ func cmdModels(args []string) int {
 
 func cmdMesh(args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: iomesh mesh dogfood|probe|usage|catalog|streams|kv|pub|consumer|wait|status [flags]")
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh smoke|probe|dogfood|usage|catalog|streams|kv|pub|consumer|wait|status [flags]")
 		return 2
 	}
 	switch args[0] {
-	case "dogfood", "probe":
+	case "smoke", "probe", "dogfood":
+		// Public name: smoke. probe/dogfood = legacy aliases (compat · s1521).
 		return cmdMeshDogfood(args[1:])
 	case "usage":
 		return cmdMeshUsage(args[1:])
@@ -760,8 +763,9 @@ func cmdMesh(args []string) int {
 	case "help", "-h", "--help":
 		fmt.Fprintln(os.Stderr, `iomesh mesh — I/O Mesh platform probes
 
-  iomesh mesh dogfood   stage smoke (health → ready → context → emit → [pub] → policy → catalog → streams → [consumer] → [kv] → memory_*)
-  iomesh mesh probe     alias for dogfood
+  iomesh mesh smoke     stage smoke (health → ready → context → emit → [pub] → policy → catalog → streams → [consumer] → [kv] → memory_*)
+  iomesh mesh probe     alias for smoke
+  iomesh mesh dogfood   legacy alias for smoke (compat)
   iomesh mesh usage     local LLM metering rollup for this process (UsagePrint always-emit --json)
   iomesh mesh catalog   list/detail governed data products (--id detail; CatalogPrint / CatalogProductPrint --json)
   iomesh mesh streams   list/get/delete/messages broker streams (GET|DELETE /v1/streams; explicit errors)
@@ -780,7 +784,7 @@ Flags (status):
   Identity always-emits pull_role / pull_allow_suffix from [memory].pull_role / pull_allow_suffix
   (empty when unset; Beta federated ACL; fail-open; not full mesh RBAC GA; dual_write default OFF).
 
-Flags (dogfood):
+Flags (smoke · legacy dogfood/probe):
   --config path           config.toml
   --strict                require context + emit + ready (+ policy/catalog/memory/streams/kv/pub/consumer when on)
   --skip-context          skip context plane
@@ -2048,7 +2052,7 @@ func cmdMeshUsage(args []string) int {
 }
 
 func cmdMeshDogfood(args []string) int {
-	fs := flag.NewFlagSet("mesh dogfood", flag.ContinueOnError)
+	fs := flag.NewFlagSet("mesh smoke", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	var (
 		configPath        = fs.String("config", "", "config.toml path")
@@ -2069,7 +2073,7 @@ func cmdMeshDogfood(args []string) int {
 		waitReady         = fs.Duration("wait-ready", 0, "soft WaitReady preflight budget before ready (0=off)")
 		waitInterval      = fs.Duration("wait-interval", 0, "WaitReady poll interval (default 500ms when --wait-ready set)")
 		waitRequireHealth = fs.Bool("wait-require-health", false, "WaitReady requires Health OK each attempt")
-		jsonOut           = fs.Bool("json", false, "print dogfood report as JSON (stage CI evidence)")
+		jsonOut           = fs.Bool("json", false, "print smoke report as JSON (stage CI evidence)")
 		verbose           = fs.Bool("v", false, "verbose logs")
 		endpoint          = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
 		memoryEndpoint    = fs.String("memory-endpoint", "", "memory sidecar base (IOMESH_MEMORY_ENDPOINT / MEMORY_SIDECAR_URL)")
@@ -2604,8 +2608,8 @@ Usage:
   iomesh sessions                list sessions in workspace
   iomesh skills                  list SKILL.md catalogs
   iomesh mcp [--connect]         list configured MCP servers
-  iomesh plugins [list|validate|dogfood] Agent Plugins package discover/validate/dogfood (opt-in; ≠ GA)
-  iomesh mesh dogfood            stage I/O Mesh smoke (health/context/emit/pub/memory)
+  iomesh plugins [list|validate|smoke] Agent Plugins package discover/validate/smoke (opt-in; ≠ GA)
+  iomesh mesh smoke              I/O Mesh smoke (health/context/emit/pub/memory; needs IOMESH_ENDPOINT)
   iomesh mesh pub                ephemeral POST /v1/pub (--subject --payload|--payload-file --yes; PubPrint always-emit)
   iomesh mesh consumer create    durable pull consumer create (--stream --name --yes)
   iomesh mesh consumer delete    durable pull consumer delete (--stream --name --yes)

@@ -397,15 +397,15 @@ func TestAionAgentOnboardingNextPluginsLane_HonestyNeedles(t *testing.T) {
 	for _, want := range []string{
 		"onboard next plugins lane",
 		"no MCP dial",
-		"iomesh plugins dogfood",
-		"/plugins dogfood",
+		"iomesh plugins smoke",
+		"/plugins smoke",
+		"iomesh plugins dogfood", // legacy alias residual
 		"offline sample validate",
 		"examples/agent-plugins",
 		"hello-iome",
 		"iomesh-memory-mcp",
 		"iomesh plugins list",
 		"iomesh plugins validate",
-		"iomesh plugins dogfood",
 		"plugins dogfood ≠ invent Agent Plugins GA",
 		"Agent Plugins GA",
 		"residual PASS ≠ live dogfood",

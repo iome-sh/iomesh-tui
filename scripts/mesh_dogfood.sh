@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Stage I/O Mesh dogfood for iomesh-tui.
+# Stage I/O Mesh smoke for iomesh-tui (public CLI: iomesh mesh smoke; legacy dogfood).
 #
 # Probes: health → ready → context plane → dept emit.
 # Exit 0 when RESULT=PASS (or mesh disabled SKIP offline-first).

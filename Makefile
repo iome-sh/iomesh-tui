@@ -3,7 +3,7 @@ BIN     := iomesh
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 COVER   ?= coverage.out
 
-.PHONY: all build test test-race cover vet fmt tidy vuln run models clean check ci dogfood dogfood-unit release-snapshot
+.PHONY: all build test test-race cover vet fmt tidy vuln run models clean check ci smoke smoke-unit smoke-strict dogfood dogfood-unit dogfood-strict release-snapshot
 
 all: check build
 
@@ -52,16 +52,22 @@ models:
 smoke-prompt:
 	go run ./cmd/iomesh -p "Reply with exactly: pong" -m deepseek-v4-flash
 
-# Stage I/O Mesh dogfood (requires IOMESH_ENDPOINT for live PASS on health+)
-dogfood:
+# Stage I/O Mesh smoke (requires IOMESH_ENDPOINT for live PASS on health+)
+# Public name: smoke. dogfood* targets remain legacy aliases (s1521).
+smoke:
 	./scripts/mesh_dogfood.sh
 
-dogfood-strict:
+smoke-strict:
 	./scripts/mesh_dogfood.sh --strict
 
-# Offline dogfood (CI-safe unit tests)
-dogfood-unit:
+# Offline smoke (CI-safe unit tests)
+smoke-unit:
 	./scripts/mesh_dogfood.sh --unit
+
+# Legacy aliases (compat)
+dogfood: smoke
+dogfood-strict: smoke-strict
+dogfood-unit: smoke-unit
 
 # Local GoReleaser snapshot (no GitHub publish). Requires goreleaser (+ syft for SBOM).
 # Skips cosign (no OIDC on laptop). Tag releases sign checksums via GitHub Actions.

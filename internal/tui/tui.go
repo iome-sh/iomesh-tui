@@ -797,9 +797,9 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 				if len(parts) >= 3 {
 					lane := strings.ToLower(parts[2])
 					switch lane {
-					case "plugins", "plugin", "dogfood":
+					case "plugins", "plugin", "smoke", "dogfood":
 						fmt.Fprintln(out, agent.AionAgentOnboardingNextPluginsLane())
-						fmt.Fprintln(out, "— residual: plugins dogfood lane · dual_write OFF · not Memory GA · plugins dogfood ≠ Agent Plugins GA · residual PASS ≠ live dogfood · package load ≠ Memory GA · portal HITL")
+						fmt.Fprintln(out, "— residual: plugins smoke lane · dual_write OFF · not Memory GA · plugins dogfood ≠ Agent Plugins GA · plugins smoke ≠ invent Agent Plugins GA · residual PASS ≠ live dogfood · package load ≠ Memory GA · portal HITL")
 						return false, nil
 					case "gtm", "drafts":
 						fmt.Fprintln(out, agent.AionAgentOnboardingNextGtmLane())
@@ -930,7 +930,8 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			handlePluginsList(out, parts[2:])
 		case "validate", "check":
 			handlePluginsValidate(out, parts[2:])
-		case "dogfood", "soft", "samples", "offline":
+		case "smoke", "dogfood", "soft", "samples", "offline":
+			// Public name: smoke. dogfood = legacy alias (s1521). check stays validate.
 			handlePluginsDogfood(out)
 		case "status", "st", "pulse":
 			handlePluginsStatus(out)
@@ -954,7 +955,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /integrations [list|plan|signing|status]  connector setup via MCP (catalog+plan+signing discovery+portal HITL; not install CRUD)
   /gtm [help|checklist]  GTM draft-only guidance or checklist (aliases /gtm-draft /gtm-agent; no auto-send; human publish)
   /onboard [help|checklist|portal|status|next]  TUI agent ↔ aion onboarding guidance, checklist, portal Agent/MCP handoff, offline status, or post-onboard next lanes (aliases /aion-onboard /agent-onboard; residual-honest · portal HITL · settings/agent; next [plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|demo|operator|status|export|human-gates]; next mesh→stream|streams|heartbeat|heartbeats|pull; next planes→three-planes|product-planes|product|pillars|three_planes; next sales→claims|buyer|claim-matrix|sales-claims|buyer-claims; next demo→demo-ready|readiness|demo-readiness|lighthouse|landgrab; next operator→operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix; next status→pulse|board; next export→receipt|stamp|evidence [json]; next aliases after|continue|lanes; pulse stays status board; product/planes stay three-planes; readiness/lighthouse stay demo)
-  /plugins [help|list|validate|dogfood|status]  residual-honest Agent Plugins soft offline dogfood (alias /plugin; dogfood aliases soft|samples|offline; Discover ≠ Connected · soft offline ≠ live dogfood · ≠ invent Agent Plugins GA)
+  /plugins [help|list|validate|smoke|status]  residual-honest Agent Plugins soft offline smoke (alias /plugin; smoke aliases dogfood|soft|samples|offline; check→validate; Discover ≠ Connected · soft offline ≠ live smoke · ≠ invent Agent Plugins GA)
   /quit                exit
 
 Fullscreen keys: enter send · ctrl+j newline · pgup/pgdn scroll

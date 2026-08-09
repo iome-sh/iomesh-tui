@@ -214,22 +214,23 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ liv
 // Static offline — iomesh plugins dogfood + /plugins dogfood path. Never invents Agent Plugins GA,
 // install Connected, dual_write ON, or live dogfood green.
 func AionAgentOnboardingNextPluginsLane() string {
-	return strings.TrimSpace(`aion onboard next plugins lane (residual-honest · s1377+s1392 · no MCP dial):
-  Path: iomesh plugins dogfood · /plugins dogfood — offline sample validate only
+	return strings.TrimSpace(`aion onboard next plugins lane (residual-honest · s1377+s1392+s1521 · no MCP dial):
+  Path: iomesh plugins smoke · /plugins smoke — offline sample validate only (legacy: iomesh plugins dogfood)
   Samples: examples/agent-plugins/{hello-iome,iomesh-memory-mcp} (product primary)
   Steps:
     1. iomesh plugins list · /plugins list — closed-manifest discovery map (≠ invent install green / Connected)
     2. iomesh plugins validate <path> · /plugins validate — offline package shape residual
-    3. iomesh plugins dogfood · /plugins dogfood — both in-repo samples offline (residual PASS ≠ live dogfood)
+    3. iomesh plugins smoke · /plugins smoke — both in-repo samples offline (legacy: plugins dogfood · residual PASS ≠ live dogfood)
   Honesty:
-    · plugins dogfood ≠ invent Agent Plugins GA · soft offline dogfood ≠ invent Agent Plugins GA
-    · residual PASS ≠ live dogfood · never invent install green / Connected / INSTALL_STORE APPLY
+    · plugins smoke ≠ invent Agent Plugins GA · plugins dogfood ≠ invent Agent Plugins GA (legacy name)
+    · soft offline dogfood ≠ invent Agent Plugins GA · residual PASS ≠ live dogfood
+    · never invent install green / Connected / INSTALL_STORE APPLY
     · catalog ≠ Connected · agent MCP cannot write installs · portal HITL still for OAuth/install
     · package load ≠ Memory GA · rates ~$88/$119 optional
-  Slash: /plugins dogfood (aliases soft|samples|offline) · /plugins list · /plugins validate · /plugins status
+  Slash: /plugins smoke (aliases dogfood|soft|samples|offline) · /plugins list · /plugins validate · /plugins status
   Back: /onboard next · companion samples offline only
 
-Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · never invent install green / Connected / INSTALL_STORE APPLY · plugins dogfood ≠ invent Agent Plugins GA · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · package load ≠ Memory GA · rates ~$88/$119 optional`)
+Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · never invent install green / Connected / INSTALL_STORE APPLY · plugins dogfood ≠ invent Agent Plugins GA · plugins smoke ≠ invent Agent Plugins GA · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · package load ≠ Memory GA · rates ~$88/$119 optional`)
 }
 
 // AionAgentOnboardingNextGtmLane residual-honest GTM draft-only drill for /onboard next gtm (s1377).
