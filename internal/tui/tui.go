@@ -571,12 +571,14 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			fmt.Fprintln(out, text)
 		}
 	case "/setup", "/setup-lifecycle":
-		// s1526 P3–P4 + s1530 P5: agent-native setup lifecycle slash
-		// (init/preflight/portal/reload/pull). Residual honesty: dual_write OFF ·
+		// s1526 P3–P4 + s1530 P5 + s1534 P6: agent-native setup lifecycle slash
+		// (init/preflight/portal/reload/pull/analyze/drift). Residual honesty: dual_write OFF ·
 		// not Memory GA · catalog ≠ Connected · portal HITL · setup PASS ≠ invent
-		// install green · continuous pull opt-in · CLI iomesh memory pull still valid.
+		// install green · continuous pull/analyze opt-in · CLI iomesh memory pull still valid ·
+		// /memory digest still valid · drift report-only ≠ invent install green.
 		// P4: /setup reload → runtimewire.ConnectMCP + Runtime.ReplaceMCP (package wire ≠ Connected).
 		// P5: /setup pull → Runtime continuous memory pull (opt-in · pull ≠ invent Connected).
+		// P6: /setup analyze → Runtime analyze ticks; /setup drift|maintain → report-only drift.
 		if len(parts) < 2 {
 			fmt.Fprintln(out, setupHelp())
 			return false, nil
@@ -595,6 +597,10 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			handleSetupReload(out, rt, parts[2:])
 		case "pull":
 			handleSetupPull(out, rt, parts[2:])
+		case "analyze", "tick", "ticks":
+			handleSetupAnalyze(out, rt, parts[2:])
+		case "drift", "maintain", "maintenance":
+			handleSetupDrift(out, rt, parts[2:])
 		default:
 			fmt.Fprintf(out, "setup: unknown subcommand %q\n%s\n", parts[1], setupHelp())
 		}
@@ -1013,21 +1019,25 @@ honesty: ` + agent.IntegrationsHonestyOneLiner + `
   aion MCP v178 list/plan + v30 signing · browser HITL for OAuth · never invent install green`)
 }
 
-// setupHelp is bare /setup and help/? copy (s1526 P3+P4 + s1530 P5 residual honesty).
+// setupHelp is bare /setup and help/? copy (s1526 P3+P4 + s1530 P5 + s1534 P6 residual honesty).
 func setupHelp() string {
-	return strings.TrimSpace(`usage: /setup [init [profiles] [--stdio] [--print-only] [--plugins-dir path] | preflight | portal | reload | pull …]
+	return strings.TrimSpace(`usage: /setup [init [profiles] [--stdio] [--print-only] [--plugins-dir path] | preflight | portal | reload | pull … | analyze … | drift|maintain]
   init       write managed config fragment (profiles: local-memory|plugins|mesh|platform-mcp|all; default local-memory)
   preflight  residual-honest probe (aliases status|check) — PASS ≠ invent Connected / Memory GA
   portal     browser HITL URLs (integrations + settings/agent)
   reload     hot-swap MCP from user config (ConnectMCP + ReplaceMCP; package wire ≠ Connected)
   pull       continuous pull status|start|once|stop (s1530 P5 · opt-in · CLI iomesh memory pull still valid)
+  analyze    analyze tick status|start|once|stop (s1534 P6 · opt-in · /memory digest still valid)
+  drift      report-only config vs runtime drift (alias maintain · no auto-repair)
   help|?     this residual-honest usage (also bare /setup)
 aliases: /setup-lifecycle
 honesty: ` + setup.SetupLifecycleHonestyOneLiner + `
-  secrets via env names only · portal HITL for OAuth/install · continuous pull opt-in via /setup pull or pull_continuous
+  secrets via env names only · portal HITL for OAuth/install · continuous pull/analyze opt-in
   skill: read_skill setup-lifecycle-agent · system note <setup-lifecycle> on AttachMCP
   reload: dual_write OFF · does not invent install green · skills dirs not re-scanned (restart for skill-only)
-  pull: dual_write OFF · not Memory GA · pull ≠ invent Connected · CLI iomesh memory pull still valid`)
+  pull: dual_write OFF · not Memory GA · pull ≠ invent Connected · CLI iomesh memory pull still valid
+  analyze: dual_write OFF · not Memory GA · analyze tick ≠ invent Connected · /memory digest still valid
+  drift: dual_write OFF · not Memory GA · drift report ≠ invent install green · package wire ≠ Connected`)
 }
 
 // setupPullHonesty is printed on every /setup pull output (s1530 P5 residual honesty).
@@ -1108,7 +1118,7 @@ func handleSetupInit(out io.Writer, args []string) {
 	fmt.Fprintln(out, "next: ensure iomesh-memory-mcp is running (if local-memory) · set secret env vars")
 	fmt.Fprintln(out, "then: /setup preflight  · /setup reload  (or restart iomesh; CLI: iomesh setup preflight)")
 	fmt.Fprintln(out, "honesty: dual_write OFF · not Memory GA · catalog ≠ Connected · portal HITL for installs")
-	fmt.Fprintln(out, "note: continuous pull opt-in via /setup pull start · pull_continuous=true · or CLI iomesh memory pull · reload = package wire ≠ Connected")
+	fmt.Fprintln(out, "note: continuous pull opt-in via /setup pull · analyze ticks via /setup analyze · drift report /setup drift · CLI iomesh memory pull · /memory digest still valid · reload = package wire ≠ Connected")
 }
 
 // handleSetupReload reloads MCP servers from config without process restart (s1526 P4).
@@ -1164,7 +1174,7 @@ func handleSetupReload(out io.Writer, rt runtimeAdapter, args []string) {
 	}
 	fmt.Fprintf(out, "setup reload: connected=%d tools=%d (package wire · fail-open per server)\n", mgr.Len(), nTools)
 	fmt.Fprintln(out, "honesty: dual_write OFF · package wire ≠ Connected · Discover/map ≠ install APPLY green · not Memory GA")
-	fmt.Fprintln(out, "note: skills catalog not re-scanned on reload · continuous pull opt-in via /setup pull · CLI iomesh memory pull still valid")
+	fmt.Fprintln(out, "note: skills catalog not re-scanned on reload · continuous pull/analyze opt-in via /setup pull · /setup analyze · drift /setup drift · CLI iomesh memory pull · /memory digest still valid")
 }
 
 // handleSetupPull dispatches /setup pull [status|start|once|stop] (s1530 P5).
@@ -1358,6 +1368,330 @@ func handleSetupPullStop(out io.Writer, rt runtimeAdapter) {
 		fmt.Fprintln(out, "setup pull stop: not running (no-op)")
 	}
 	fmt.Fprintln(out, setupPullHonesty)
+}
+
+// setupAnalyzeHonesty is printed on every /setup analyze output (s1534 P6 residual honesty).
+const setupAnalyzeHonesty = "honesty: dual_write OFF · not Memory GA · analyze tick ≠ invent Connected · /memory digest still valid"
+
+// handleSetupAnalyze dispatches /setup analyze [status|start|once|stop] (s1534 P6).
+// Bare /setup analyze → status. Residual-honest: dual_write OFF · not Memory GA ·
+// analyze tick ≠ invent Connected · /memory digest still valid.
+func handleSetupAnalyze(out io.Writer, rt runtimeAdapter, args []string) {
+	sub := "status"
+	rest := args
+	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
+		sub = strings.ToLower(strings.TrimSpace(args[0]))
+		rest = args[1:]
+	}
+	switch sub {
+	case "status", "st", "":
+		handleSetupAnalyzeStatus(out, rt)
+	case "start":
+		handleSetupAnalyzeStart(out, rt, rest, false)
+	case "once":
+		handleSetupAnalyzeStart(out, rt, rest, true)
+	case "stop":
+		handleSetupAnalyzeStop(out, rt)
+	case "help", "?":
+		fmt.Fprintln(out, setupAnalyzeHelp())
+	default:
+		fmt.Fprintf(out, "setup analyze: unknown subcommand %q\n%s\n", sub, setupAnalyzeHelp())
+	}
+}
+
+func setupAnalyzeHelp() string {
+	return strings.TrimSpace(`usage: /setup analyze [status|start|once|stop]
+  status   residual-honest analyze tick snapshot (default; bare /setup analyze)
+  start    start continuous analyze ticks (loads [memory] analyze_*; --mode status|digest · --interval N · --window day|week · --config path)
+  once     single analyze tick then exit (same knobs as start)
+  stop     cancel in-session analyze tick loop (no-op when idle)
+honesty: dual_write OFF · not Memory GA · analyze tick ≠ invent Connected · /memory digest still valid
+  opt-in only · analyze_continuous=true is config opt-in · setup fragment defaults analyze_continuous=false`)
+}
+
+// handleSetupAnalyzeStatus prints AnalyzeTickStatus residual-honest (idle ≠ green).
+func handleSetupAnalyzeStatus(out io.Writer, rt runtimeAdapter) {
+	if rt.rt == nil {
+		fmt.Fprintln(out, "setup analyze status: no agent runtime")
+		fmt.Fprintln(out, "running: false")
+		fmt.Fprintln(out, setupAnalyzeHonesty)
+		return
+	}
+	st := rt.rt.AnalyzeTickStatus()
+	fmt.Fprintln(out, "setup analyze status (residual-honest · s1534 P6)")
+	fmt.Fprintf(out, "running: %v\n", st.Running)
+	if st.Mode != "" || st.IntervalSec > 0 || st.TickCount > 0 {
+		fmt.Fprintf(out, "mode: %s\n", st.Mode)
+		fmt.Fprintf(out, "interval_sec: %d\n", st.IntervalSec)
+		fmt.Fprintf(out, "tick_count: %d\n", st.TickCount)
+	} else if !st.Running {
+		fmt.Fprintln(out, "mode: (idle · empty)")
+		fmt.Fprintln(out, "interval_sec: (idle · 0)")
+		fmt.Fprintln(out, "tick_count: 0")
+	}
+	if !st.LastAt.IsZero() {
+		fmt.Fprintf(out, "last_at: %s\n", st.LastAt.Format(time.RFC3339))
+	} else {
+		fmt.Fprintln(out, "last_at: (none)")
+	}
+	if sum := strings.TrimSpace(st.LastSummary); sum != "" {
+		fmt.Fprintf(out, "last_summary: %s\n", sum)
+	} else {
+		fmt.Fprintln(out, "last_summary: (none)")
+	}
+	if le := strings.TrimSpace(st.LastError); le != "" {
+		fmt.Fprintf(out, "last_error: %s\n", le)
+	} else {
+		fmt.Fprintln(out, "last_error: (none)")
+	}
+	if !st.Running {
+		fmt.Fprintln(out, "note: idle · not invent Connected / Memory GA · start with /setup analyze start · /memory digest still valid")
+	} else {
+		fmt.Fprintln(out, "note: analyze running ≠ invent Connected / Ops Pack GA / Memory GA · /memory digest still valid")
+	}
+	fmt.Fprintln(out, setupAnalyzeHonesty)
+}
+
+// handleSetupAnalyzeStart loads [memory] analyze_* + flags and starts continuous or once tick.
+func handleSetupAnalyzeStart(out io.Writer, rt runtimeAdapter, args []string, once bool) {
+	if rt.rt == nil {
+		fmt.Fprintln(out, "setup analyze start: no agent runtime")
+		fmt.Fprintln(out, setupAnalyzeHonesty)
+		return
+	}
+	cfgPath := ""
+	forceOnce := once
+	modeFlag := ""
+	intervalFlag := 0
+	windowFlag := ""
+	horizonFlag := ""
+	limitFlag := 0
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		switch {
+		case a == "--config" && i+1 < len(args):
+			i++
+			cfgPath = strings.TrimSpace(args[i])
+		case strings.HasPrefix(a, "--config="):
+			cfgPath = strings.TrimSpace(strings.TrimPrefix(a, "--config="))
+		case a == "--mode" && i+1 < len(args):
+			i++
+			modeFlag = strings.TrimSpace(args[i])
+		case strings.HasPrefix(a, "--mode="):
+			modeFlag = strings.TrimSpace(strings.TrimPrefix(a, "--mode="))
+		case a == "--interval" && i+1 < len(args):
+			i++
+			n, err := strconv.Atoi(strings.TrimSpace(args[i]))
+			if err != nil {
+				fmt.Fprintf(out, "setup analyze start: --interval requires int seconds: %v\n", err)
+				fmt.Fprintln(out, setupAnalyzeHonesty)
+				return
+			}
+			intervalFlag = n
+		case strings.HasPrefix(a, "--interval="):
+			n, err := strconv.Atoi(strings.TrimSpace(strings.TrimPrefix(a, "--interval=")))
+			if err != nil {
+				fmt.Fprintf(out, "setup analyze start: --interval requires int seconds: %v\n", err)
+				fmt.Fprintln(out, setupAnalyzeHonesty)
+				return
+			}
+			intervalFlag = n
+		case a == "--window" && i+1 < len(args):
+			i++
+			windowFlag = strings.TrimSpace(args[i])
+		case strings.HasPrefix(a, "--window="):
+			windowFlag = strings.TrimSpace(strings.TrimPrefix(a, "--window="))
+		case a == "--horizon" && i+1 < len(args):
+			i++
+			horizonFlag = strings.TrimSpace(args[i])
+		case strings.HasPrefix(a, "--horizon="):
+			horizonFlag = strings.TrimSpace(strings.TrimPrefix(a, "--horizon="))
+		case a == "--limit" && i+1 < len(args):
+			i++
+			n, err := strconv.Atoi(strings.TrimSpace(args[i]))
+			if err != nil {
+				fmt.Fprintf(out, "setup analyze start: --limit requires int: %v\n", err)
+				fmt.Fprintln(out, setupAnalyzeHonesty)
+				return
+			}
+			limitFlag = n
+		case strings.HasPrefix(a, "--limit="):
+			n, err := strconv.Atoi(strings.TrimSpace(strings.TrimPrefix(a, "--limit=")))
+			if err != nil {
+				fmt.Fprintf(out, "setup analyze start: --limit requires int: %v\n", err)
+				fmt.Fprintln(out, setupAnalyzeHonesty)
+				return
+			}
+			limitFlag = n
+		case a == "--once":
+			forceOnce = true
+		case a == "help" || a == "?":
+			fmt.Fprintln(out, setupAnalyzeHelp())
+			return
+		case strings.HasPrefix(a, "-"):
+			fmt.Fprintf(out, "setup analyze start: unknown flag %q\n%s\n", a, setupAnalyzeHelp())
+			return
+		default:
+			fmt.Fprintf(out, "setup analyze start: unexpected arg %q\n%s\n", a, setupAnalyzeHelp())
+			return
+		}
+	}
+	var (
+		cfg *config.Config
+		err error
+	)
+	if cfgPath != "" {
+		cfg, err = config.Load(cfgPath)
+	} else {
+		cfg, err = config.LoadUser()
+	}
+	if err != nil {
+		fmt.Fprintf(out, "setup analyze start: config: %v\n", err)
+		fmt.Fprintln(out, setupAnalyzeHonesty)
+		return
+	}
+	tickCfg := analyzeTickConfigFromMemory(cfg)
+	// Slash is explicit opt-in even when analyze_continuous=false in config.
+	tickCfg.Enabled = true
+	if modeFlag != "" {
+		tickCfg.Mode = modeFlag
+	}
+	if intervalFlag > 0 {
+		tickCfg.IntervalSec = intervalFlag
+	}
+	if windowFlag != "" {
+		tickCfg.Window = windowFlag
+	}
+	if horizonFlag != "" {
+		tickCfg.Horizon = horizonFlag
+	}
+	if limitFlag > 0 {
+		tickCfg.Limit = limitFlag
+	}
+
+	label := "start"
+	if forceOnce {
+		label = "once"
+		err = rt.rt.StartAnalyzeTickOnce(tickCfg)
+	} else {
+		err = rt.rt.StartAnalyzeTick(tickCfg)
+	}
+	if err != nil {
+		fmt.Fprintf(out, "setup analyze %s: %v\n", label, err)
+		fmt.Fprintln(out, setupAnalyzeHonesty)
+		return
+	}
+	mode := "continuous"
+	if forceOnce {
+		mode = "once"
+	}
+	fmt.Fprintf(out, "setup analyze %s: started %s mode=%s interval_sec=%d window=%q\n",
+		label, mode, tickCfg.Mode, tickCfg.IntervalSec, tickCfg.Window)
+	fmt.Fprintln(out, "note: analyze running ≠ invent Connected · dual_write OFF · not Memory GA · /memory digest still valid")
+	fmt.Fprintln(out, setupAnalyzeHonesty)
+}
+
+// analyzeTickConfigFromMemory maps [memory] analyze_* into agent.AnalyzeTickConfig.
+// Default mode "status" when empty (matches Runtime startAnalyzeTick).
+func analyzeTickConfigFromMemory(cfg *config.Config) agent.AnalyzeTickConfig {
+	if cfg == nil {
+		return agent.AnalyzeTickConfig{Enabled: true, Mode: "status"}
+	}
+	mode := strings.TrimSpace(cfg.Memory.AnalyzeMode)
+	if mode == "" {
+		mode = "status"
+	}
+	return agent.AnalyzeTickConfig{
+		Enabled:     true, // slash path is explicit opt-in
+		IntervalSec: cfg.Memory.AnalyzeIntervalSec,
+		Mode:        mode,
+	}
+}
+
+// handleSetupAnalyzeStop cancels in-session analyze ticks (no-op when idle).
+func handleSetupAnalyzeStop(out io.Writer, rt runtimeAdapter) {
+	if rt.rt == nil {
+		fmt.Fprintln(out, "setup analyze stop: no agent runtime")
+		fmt.Fprintln(out, setupAnalyzeHonesty)
+		return
+	}
+	was := rt.rt.AnalyzeTickStatus().Running
+	rt.rt.StopAnalyzeTick()
+	if was {
+		fmt.Fprintln(out, "setup analyze stop: stopped")
+	} else {
+		fmt.Fprintln(out, "setup analyze stop: not running (no-op)")
+	}
+	fmt.Fprintln(out, setupAnalyzeHonesty)
+}
+
+// handleSetupDrift prints residual-honest FormatDriftText(BuildDriftReport(...)).
+// /setup maintain is an alias (report-only residual next steps · no auto-repair).
+func handleSetupDrift(out io.Writer, rt runtimeAdapter, args []string) {
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		if a == "help" || a == "?" {
+			fmt.Fprintln(out, setupDriftHelp())
+			return
+		}
+	}
+	cfgPath := ""
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		switch {
+		case a == "--config" && i+1 < len(args):
+			i++
+			cfgPath = strings.TrimSpace(args[i])
+		case strings.HasPrefix(a, "--config="):
+			cfgPath = strings.TrimSpace(strings.TrimPrefix(a, "--config="))
+		case strings.HasPrefix(a, "-"):
+			fmt.Fprintf(out, "setup drift: unknown flag %q\n%s\n", a, setupDriftHelp())
+			return
+		default:
+			// tolerate unknown tokens lightly (aliases already consumed at switch)
+		}
+	}
+	var (
+		cfg *config.Config
+		err error
+	)
+	if cfgPath != "" {
+		cfg, err = config.Load(cfgPath)
+	} else {
+		cfg, err = config.LoadUser()
+	}
+	// Fail-open: continue with nil cfg so report remains residual-honest (config absent).
+	if err != nil {
+		fmt.Fprintf(out, "setup drift: config note: %v (continuing with empty config intent)\n", err)
+		cfg = nil
+	}
+	var snap setup.DriftSnapshot
+	if rt.rt != nil {
+		as := rt.rt.DriftSnapshot()
+		snap = setup.DriftSnapshot{
+			MCPAttached:    as.MCPAttached,
+			MCPServerCount: as.MCPServerCount,
+			MemoryServerOK: as.MemoryServerOK,
+			MemoryServer:   as.MemoryServer,
+			MeshEnabled:    as.MeshEnabled,
+			PullRunning:    as.PullRunning,
+			PullConsumer:   as.PullConsumer,
+			AnalyzeRunning: as.AnalyzeRunning,
+			DualWrite:      as.DualWrite,
+			MemoryEnabled:  as.MemoryEnabled,
+		}
+	}
+	// nil/no runtime → zero snap residual-honest (not invent green).
+	rep := setup.BuildDriftReport(cfg, snap)
+	// FormatDriftText always includes DriftHonestyFooter (dual_write OFF · package wire ≠ Connected).
+	fmt.Fprint(out, setup.FormatDriftText(rep))
+}
+
+func setupDriftHelp() string {
+	return strings.TrimSpace(`usage: /setup drift [--config path]
+  report-only config intent vs runtime snapshot (alias: /setup maintain)
+  no auto-repair · residual next-steps notes only
+honesty: dual_write OFF · not Memory GA · drift report ≠ invent install green · package wire ≠ Connected`)
 }
 
 // handleSetupPreflight runs residual-honest setup.Preflight for /setup preflight|status|check.

@@ -220,6 +220,75 @@ func TestEnv_MemoryPullContinuous(t *testing.T) {
 	}
 }
 
+func TestLoad_MemoryAnalyzeSection(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.toml")
+	content := `
+[memory]
+enabled = true
+analyze_continuous = true
+analyze_interval_sec = 120
+analyze_mode = "digest"
+`
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.Memory.AnalyzeContinuous {
+		t.Fatal("analyze_continuous must load true")
+	}
+	if cfg.Memory.AnalyzeIntervalSec != 120 {
+		t.Fatalf("analyze_interval_sec=%d", cfg.Memory.AnalyzeIntervalSec)
+	}
+	if cfg.Memory.AnalyzeMode != "digest" {
+		t.Fatalf("analyze_mode=%q", cfg.Memory.AnalyzeMode)
+	}
+}
+
+func TestEnv_MemoryAnalyzeContinuous(t *testing.T) {
+	// Default OFF / empty mode / 0 interval.
+	cfg0, err := Load(filepath.Join(t.TempDir(), "nope.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg0.Memory.AnalyzeContinuous {
+		t.Fatal("analyze_continuous default must be false")
+	}
+	if cfg0.Memory.AnalyzeIntervalSec != 0 {
+		t.Fatalf("analyze_interval_sec default must be 0 (treat as 300 at Runtime): %d", cfg0.Memory.AnalyzeIntervalSec)
+	}
+	if cfg0.Memory.AnalyzeMode != "" {
+		t.Fatalf("analyze_mode default empty: %q", cfg0.Memory.AnalyzeMode)
+	}
+	t.Setenv("IOMESH_MEMORY_ANALYZE_CONTINUOUS", "1")
+	t.Setenv("IOMESH_MEMORY_ANALYZE_INTERVAL_SEC", "90")
+	t.Setenv("IOMESH_MEMORY_ANALYZE_MODE", "status")
+	cfg, err := Load(filepath.Join(t.TempDir(), "nope2.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.Memory.AnalyzeContinuous {
+		t.Fatal("IOMESH_MEMORY_ANALYZE_CONTINUOUS=1 must enable")
+	}
+	if cfg.Memory.AnalyzeIntervalSec != 90 {
+		t.Fatalf("interval env=%d", cfg.Memory.AnalyzeIntervalSec)
+	}
+	if cfg.Memory.AnalyzeMode != "status" {
+		t.Fatalf("mode env=%q", cfg.Memory.AnalyzeMode)
+	}
+	t.Setenv("IOMESH_MEMORY_ANALYZE_CONTINUOUS", "false")
+	cfgOff, err := Load(filepath.Join(t.TempDir(), "nope3.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfgOff.Memory.AnalyzeContinuous {
+		t.Fatal("IOMESH_MEMORY_ANALYZE_CONTINUOUS=false must disable")
+	}
+}
+
 func TestLoad_MemoryEndpointEnv(t *testing.T) {
 	t.Setenv("IOMESH_MEMORY_ENDPOINT", "http://sidecar:8765")
 	cfg, err := Load(filepath.Join(t.TempDir(), "nope.toml"))

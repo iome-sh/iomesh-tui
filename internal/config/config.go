@@ -259,6 +259,16 @@ type MemorySection struct {
 	// PullAllowSuffix optional X-IOMesh-Pull-Allow-Suffix (comma-separated tokens for role=custom).
 	// Fail-open empty → omit. s675 / aion s671 peer.
 	PullAllowSuffix string `toml:"pull_allow_suffix"`
+	// AnalyzeContinuous opt-in in-session analyze ticks on agent Runtime (s1534 P6).
+	// Default OFF. Env: IOMESH_MEMORY_ANALYZE_CONTINUOUS.
+	// analyze tick ≠ invent Connected / Memory GA · dual_write OFF · not Memory GA.
+	AnalyzeContinuous bool `toml:"analyze_continuous"`
+	// AnalyzeIntervalSec tick period seconds (default 0 → treat as 300; Runtime floors at 30).
+	// Env: IOMESH_MEMORY_ANALYZE_INTERVAL_SEC.
+	AnalyzeIntervalSec int `toml:"analyze_interval_sec"`
+	// AnalyzeMode "status" | "digest" (default "status" when empty).
+	// Env: IOMESH_MEMORY_ANALYZE_MODE.
+	AnalyzeMode string `toml:"analyze_mode"`
 }
 
 // SubagentsSection tunes child-session orchestration.
@@ -627,6 +637,23 @@ func (c *Config) applyEnvOverrides() {
 	}
 	if v := os.Getenv("IOMESH_MEMORY_PULL_ALLOW_SUFFIX"); v != "" {
 		c.Memory.PullAllowSuffix = v
+	}
+	// Analyze ticks (s1534 P6 · opt-in; default OFF).
+	if v := os.Getenv("IOMESH_MEMORY_ANALYZE_CONTINUOUS"); v != "" {
+		switch strings.ToLower(v) {
+		case "0", "false", "off", "no":
+			c.Memory.AnalyzeContinuous = false
+		case "1", "true", "on", "yes":
+			c.Memory.AnalyzeContinuous = true
+		}
+	}
+	if v := os.Getenv("IOMESH_MEMORY_ANALYZE_INTERVAL_SEC"); v != "" {
+		if n, err := strconv.Atoi(strings.TrimSpace(v)); err == nil {
+			c.Memory.AnalyzeIntervalSec = n
+		}
+	}
+	if v := os.Getenv("IOMESH_MEMORY_ANALYZE_MODE"); v != "" {
+		c.Memory.AnalyzeMode = v
 	}
 	// Memory sidecar base for sync retrieve (stage warm plane). Prefer explicit IOMESH_*.
 	if v := os.Getenv("IOMESH_MEMORY_ENDPOINT"); v != "" {

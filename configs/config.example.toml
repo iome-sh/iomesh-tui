@@ -226,6 +226,9 @@ enabled = false
 # pull_continuous = false  # opt-in in-session continuous pull (s1530 P5; default OFF; needs pull_consumer)
 # pull_role = ""           # optional X-IOMesh-Role on mesh auth (s675 Beta; fail-open empty; s678 role-aware default filter)
 # pull_allow_suffix = ""   # optional X-IOMesh-Pull-Allow-Suffix (role=custom comma tokens; s678 single-token default filter)
+# analyze_continuous = false  # opt-in in-session analyze ticks (s1534 P6; default OFF; status|digest)
+# analyze_interval_sec = 0    # 0 → 300s; Runtime min floor 30; IOMESH_MEMORY_ANALYZE_INTERVAL_SEC
+# analyze_mode = "status"     # "status" | "digest"; digest needs [memory] enabled; analyze ≠ invent Connected
 # limit = 8
 # max_snippet_bytes = 6000
 # recall_since = ""          # optional RFC3339 auto-recall lower bound (s1068 temporal retrieve)
@@ -236,3 +239,4 @@ enabled = false
 # IOMESH_MEMORY_AUTO_RECALL · IOMESH_MEMORY_AUTO_INGEST · IOMESH_MEMORY_DUAL_WRITE
 # IOMESH_MEMORY_RECALL_SINCE · IOMESH_MEMORY_RECALL_UNTIL · IOMESH_MEMORY_RECALL_SESSION_SEQ
 # IOMESH_MEMORY_PULL_ROLE · IOMESH_MEMORY_PULL_ALLOW_SUFFIX · IOMESH_MEMORY_PULL_CONTINUOUS
+# IOMESH_MEMORY_ANALYZE_CONTINUOUS · IOMESH_MEMORY_ANALYZE_INTERVAL_SEC · IOMESH_MEMORY_ANALYZE_MODE

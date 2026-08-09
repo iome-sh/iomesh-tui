@@ -382,6 +382,19 @@ In-session opt-in (s1530 P5 residual-honest · after mesh + `pull_consumer` conf
 
 Or set `[memory] pull_continuous = true` (setup fragment default **false**). Mesh is **pull egress** into local palace · dual_write stays OFF · pull ≠ invent Connected · hosted Palace sunset · CLI `iomesh memory pull` still valid.
 
+In-session analyze ticks + drift (s1534 P6 residual-honest · opt-in · report-only):
+
+```text
+/setup analyze status
+/setup analyze once --mode status
+/setup analyze start --mode digest --window day --interval 300
+/setup analyze stop
+/setup drift
+/setup maintain
+```
+
+Or set `[memory] analyze_continuous = true` (setup fragment default **false**). **`/memory digest` still valid** as one-shot ops pulse · analyze tick ≠ invent Connected · drift report ≠ invent install green · package wire ≠ Connected · dual_write OFF · not Memory GA · no auto-repair.
+
 ### 5g. Onboard residual lanes (no live dial)
 
 Offline residual boards (docs-shaped, no invent green):

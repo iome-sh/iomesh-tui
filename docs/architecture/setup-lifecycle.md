@@ -1,8 +1,8 @@
 # Setup lifecycle (agent-native wizard foundation)
 
-**Serial:** free eng **s1525** P1–P2 · **s1526** P3–P4 · **s1530** P5 · residual-honest  
-**Status:** foundation + agent-native slash/skill + package wire + `ReplaceMCP` + in-session opt-in continuous pull  
-**Not yet:** analyze auto-ticks (later PRs)
+**Serial:** free eng **s1525** P1–P2 · **s1526** P3–P4 · **s1530** P5 · **s1534** P6 · residual-honest  
+**Status:** foundation + agent-native slash/skill + package wire + `ReplaceMCP` + in-session opt-in continuous pull + analyze ticks + report-only drift  
+**Not yet:** auto-repair from drift (report-only residual next steps)
 
 ## Goal
 
@@ -11,7 +11,9 @@ Enable the map story without inventing Connected / Memory GA:
 ```text
 setup init → write managed config → start memory host → preflight probe
   → /setup reload (or restart TUI) → optional portal HITL integrations
-  → /setup pull start (or CLI iomesh memory pull) → /memory digest
+  → /setup pull start (or CLI iomesh memory pull)
+  → /setup analyze start (or /memory digest one-shot)
+  → /setup drift (report-only)
 ```
 
 ## CLI
@@ -37,7 +39,7 @@ iomesh memory pull --stream EVENTS --name tui-local-palace --once --dry-run
 
 | Profile | Writes |
 |---------|--------|
-| `local-memory` | `[mcp]` + memory server URL/stdio + `[memory]` dual_write=false · pull_continuous=false |
+| `local-memory` | `[mcp]` + memory server URL/stdio + `[memory]` dual_write=false · pull_continuous=false · analyze_continuous=false |
 | `plugins` | `[plugins] enabled` + dirs |
 | `mesh` | `[iomesh]` endpoint/tenant placeholders + `api_key_env` |
 | `platform-mcp` | platform `[[mcp.servers]]` + `oauth_token_env` |
@@ -53,7 +55,7 @@ Managed block markers:
 
 User edits **outside** the block are preserved on re-init.
 
-## Slash `/setup` (s1526 P3 + s1530 P5)
+## Slash `/setup` (s1526 P3 + s1530 P5 + s1534 P6)
 
 Agent-native operator surface (alias `/setup-lifecycle`):
 
@@ -70,20 +72,29 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 /setup pull start [--once] [--config path]
 /setup pull once [--config path]
 /setup pull stop
+/setup analyze                 # analyze tick status (alias status)
+/setup analyze status
+/setup analyze start [--mode status|digest] [--interval N] [--window day|week] [--config path]
+/setup analyze once …
+/setup analyze stop
+/setup drift [--config path]   # report-only FormatDriftText
+/setup maintain                # alias of drift (no auto-repair)
 ```
 
 | Subcommand | Behavior |
 |------------|----------|
-| bare / `help` | usage + honesty one-liner (dual_write OFF · not Memory GA · pull opt-in) |
+| bare / `help` | usage + honesty one-liner (dual_write OFF · not Memory GA · pull/analyze opt-in · drift report-only) |
 | `init` | `setup.BuildManagedFragment` + `config.WriteSetupManagedUser` (or `--print-only`) |
 | `preflight` / `status` / `check` | `setup.Preflight` + `FormatPreflightText` |
 | `portal` | browser HITL URLs only |
 | `reload` | `runtimewire.ConnectMCP` + `Runtime.ReplaceMCP` (optional `--config path`) |
 | `pull` | in-session continuous pull status/start/once/stop (s1530 P5) |
+| `analyze` | in-session analyze tick status/start/once/stop (s1534 P6) |
+| `drift` / `maintain` | report-only `BuildDriftReport` + `FormatDriftText` (s1534 P6 · no auto-repair) |
 
 Simple flags on slash `init`: `--stdio` · `--print-only` · `--plugins-dir path` · `--memory-url URL`. Full flag set remains on CLI `iomesh setup init`.
 
-After init: start memory host (if needed) · set secret env vars · `/setup reload` (or restart TUI) · optional `/setup pull start` when mesh + consumer configured.
+After init: start memory host (if needed) · set secret env vars · `/setup reload` (or restart TUI) · optional `/setup pull start` when mesh + consumer configured · optional `/setup analyze start` · `/setup drift` for residual next steps.
 
 ## Continuous pull (s1530 P5)
 
@@ -99,15 +110,38 @@ Config knobs reused: `pull_stream` (default `EVENTS`) · `pull_consumer` · `pul
 
 **Honesty:** dual_write OFF · not Memory GA · pull ≠ invent Connected · idle/status must not invent green · CLI still valid.
 
-Analyze auto-ticks remain a later phase (`/memory digest` is the current residual ops pulse).
+## Analyze ticks (s1534 P6)
 
-## Agent surfaces (s1526 P3 + s1530 P5)
+In-session opt-in status/digest pulse on agent Runtime:
+
+| Path | How |
+|------|-----|
+| Slash | `/setup analyze start` · `/setup analyze once` · `/setup analyze stop` · `/setup analyze status` |
+| Config | `[memory] analyze_continuous = true` (setup fragment default **false**) · `analyze_interval_sec` · `analyze_mode` |
+| One-shot | `/memory digest` still valid |
+
+Flags: `--mode status|digest` · `--interval N` (seconds; Runtime default 300, floor 30) · `--window day|week` (digest) · `--config path`.
+
+**Honesty:** dual_write OFF · not Memory GA · analyze tick ≠ invent Connected · `/memory digest` still valid · idle/status must not invent green.
+
+## Drift / maintain (s1534 P6)
+
+Report-only config intent vs runtime snapshot:
+
+| Path | How |
+|------|-----|
+| Slash | `/setup drift` · `/setup maintain` (alias) |
+| API | `setup.BuildDriftReport(cfg, snap)` · `setup.FormatDriftText(rep)` · `Runtime.DriftSnapshot()` |
+
+**Honesty:** dual_write OFF · not Memory GA · drift report ≠ invent install green · package wire ≠ Connected · **no auto-repair**.
+
+## Agent surfaces (s1526 P3 + s1530 P5 + s1534 P6)
 
 | Surface | Detail |
 |---------|--------|
 | Builtin skill | `setup-lifecycle-agent` via `go:embed` under `internal/skills/builtin/` — always merged when skills enabled |
 | System note | `<setup-lifecycle>` via `setup.SetupLifecycleAgentGuidanceNote()` on `AttachMCP` |
-| Slash | `/setup` / `/setup-lifecycle` including `pull` |
+| Slash | `/setup` / `/setup-lifecycle` including `pull` · `analyze` · `drift` |
 
 Skill + note + slash share honesty locks; skill is the full playbook.
 
@@ -121,6 +155,8 @@ Skill + note + slash share honesty locks; skill is the full playbook.
 | secrets | Env **names** only (`api_key_env`, `oauth_token_env`) |
 | portal HITL | OAuth/install still browser |
 | continuous pull opt-in | `/setup pull` · `pull_continuous` · CLI `iomesh memory pull` still valid · pull ≠ invent Connected |
+| analyze ticks opt-in | `/setup analyze` · `analyze_continuous` · `/memory digest` still valid · analyze tick ≠ invent Connected |
+| drift report-only | `/setup drift` · `/setup maintain` · no auto-repair · drift ≠ invent install green · package wire ≠ Connected |
 
 ## Preflight states
 
@@ -149,8 +185,8 @@ Skills catalog is **not** re-scanned on `/setup reload` (restart for skill-only 
 - ~~`/setup` slash + `setup-lifecycle-agent` skill~~ **shipped s1526 P3**  
 - ~~`ReplaceMCP` / package wire / `/setup reload`~~ **shipped s1526 P4**  
 - ~~In-session continuous pull (`/setup pull` · `pull_continuous`)~~ **shipped s1530 P5**  
-- Analyze auto-ticks (later)  
-- Maintenance drift repair  
+- ~~Analyze auto-ticks (`/setup analyze` · `analyze_continuous`) + drift report~~ **shipped s1534 P6**  
+- Maintenance auto-repair (later · drift remains report-only for now)
 
 See product plan: agent-native MCP/plugin setup wizard + continuous pull/analyze.
 

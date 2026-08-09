@@ -92,6 +92,18 @@ type Runtime struct {
 	pullCfg     ContinuousPullConfig
 	pullStats   iomesh.MemoryPullStats
 	pullLastErr string
+
+	// Analyze ticks (s1534 P6 · opt-in [memory].analyze_continuous).
+	// analyze tick ≠ invent Connected / Memory GA · dual_write OFF · not Memory GA.
+	analyzeMu      sync.Mutex
+	analyzeCancel  context.CancelFunc
+	analyzeRunning atomic.Bool
+	analyzeWG      sync.WaitGroup
+	analyzeCfg     AnalyzeTickConfig
+	analyzeLastAt  time.Time
+	analyzeLastSum string
+	analyzeLastErr string
+	analyzeTicks   int
 }
 
 // New constructs a Runtime. mesh may be nil.
@@ -270,13 +282,15 @@ func (rt *Runtime) ReplaceMCP(mgr *mcp.Manager) {
 }
 
 // Close releases MCP subprocesses and other runtime resources.
-// Stops in-session continuous memory pull (if any) before closing MCP.
+// Stops in-session continuous memory pull and analyze ticks (if any) before closing MCP.
 func (rt *Runtime) Close() error {
 	if rt == nil {
 		return nil
 	}
 	// Cancel continuous pull first so LocalIngest does not race a closing MCP.
 	rt.StopContinuousMemoryPull()
+	// Cancel analyze ticks (status/digest) so Close does not hang on ticker loop.
+	rt.StopAnalyzeTick()
 	rt.mu.Lock()
 	mgr := rt.mcp
 	rt.mcp = nil

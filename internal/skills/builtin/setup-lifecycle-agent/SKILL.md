@@ -1,11 +1,11 @@
 ---
 name: setup-lifecycle-agent
-description: Residual-honest agent-native setup lifecycle (init/preflight · dual_write OFF · not Memory GA · catalog ≠ Connected · portal HITL · not invent install green · continuous pull opt-in)
+description: Residual-honest agent-native setup lifecycle (init/preflight · dual_write OFF · not Memory GA · catalog ≠ Connected · portal HITL · not invent install green · continuous pull/analyze opt-in · drift report-only)
 ---
 
-# Setup lifecycle agent (residual-honest · s1526 P3 + s1530 P5)
+# Setup lifecycle agent (residual-honest · s1526 P3 + s1530 P5 + s1534 P6)
 
-Agent-native path to **bootstrap** local TUI config planes via managed fragment write + preflight probes + in-session opt-in continuous pull — **not** invent Connected / Memory GA / INSTALL_STORE green.
+Agent-native path to **bootstrap** local TUI config planes via managed fragment write + preflight probes + in-session opt-in continuous pull / analyze ticks + report-only drift — **not** invent Connected / Memory GA / INSTALL_STORE green.
 
 Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the operator is at a terminal. Use this skill when planning setup steps in chat.
 
@@ -18,6 +18,7 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
    - Managed block markers: `# BEGIN iomesh-setup-managed` … `# END iomesh-setup-managed`
    - **dual_write = false always** — setup path refuses `dual_write = true`
    - **pull_continuous = false** default — continuous pull is opt-in only
+   - **analyze_continuous = false** default — analyze ticks are opt-in only
    - Secrets as **env names only** (`api_key_env`, `oauth_token_env`) — never commit secret values
    - After write: start memory host if local-memory · set env vars · **`/setup reload`** (hot-swaps MCP · package wire ≠ Connected · skills may still need restart)
 
@@ -39,8 +40,17 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
    - Loads `[memory] pull_stream` / `pull_consumer` / `pull_filter` / batch / max wait
    - **pull ≠ invent Connected** · dual_write OFF · not Memory GA · idle/status must not invent green
 
-5. **Analyze** — ops pulse after data exists (auto-ticks still later).
-   - `/memory digest` (and advanced memory skill) — residual · not Memory GA
+5. **Analyze ticks (s1534 P6 · residual-honest opt-in)** — in-session status/digest pulse.
+   - Slash: `/setup analyze` · `/setup analyze status` · `/setup analyze start` · `/setup analyze once` · `/setup analyze stop`
+   - Flags: `--mode status|digest` · `--interval N` · `--window day|week` (digest) · `--config path`
+   - Config opt-in: `[memory] analyze_continuous = true` (default **false**) · `analyze_interval_sec` · `analyze_mode`
+   - **`/memory digest` still valid** as one-shot residual ops pulse
+   - **analyze tick ≠ invent Connected** · dual_write OFF · not Memory GA
+
+6. **Drift / maintain (s1534 P6 · report-only)** — config intent vs runtime snapshot.
+   - Slash: `/setup drift` · `/setup maintain` (alias)
+   - Report-only residual next steps · **no auto-repair**
+   - **drift report ≠ invent install green** · package wire ≠ Connected
 
 ## Honesty locks (never violate)
 
@@ -52,26 +62,32 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
 | portal HITL | OAuth / INSTALL_STORE APPLY stay browser |
 | secrets env names only | `api_key_env` / `oauth_token_env` — no secret values in config |
 | continuous pull opt-in | `/setup pull` · `pull_continuous` · CLI `iomesh memory pull` still valid · pull ≠ invent Connected |
+| analyze ticks opt-in | `/setup analyze` · `analyze_continuous` · `/memory digest` still valid · analyze tick ≠ invent Connected |
+| drift report-only | `/setup drift` · `/setup maintain` · no auto-repair · drift ≠ invent install green · package wire ≠ Connected |
 | never invent green | No Connected / INSTALL_STORE green / Memory GA from setup alone |
 
 ## Non-goals (never do)
 
-- Do **not** invent Connected / INSTALL_STORE APPLY green from setup PASS or pull status.
+- Do **not** invent Connected / INSTALL_STORE APPLY green from setup PASS, pull status, analyze ticks, or drift OK.
 - Do **not** claim Memory GA or dual_write ON.
 - Do **not** mint OAuth tokens or write connector installs from agent MCP.
 - Do **not** auto-start continuous pull without opt-in (`/setup pull start` · `pull_continuous=true` · or CLI).
+- Do **not** auto-start analyze ticks without opt-in (`/setup analyze start` · `analyze_continuous=true`).
+- Do **not** auto-repair from drift report (report-only residual next steps).
 - Do **not** treat catalog Beta/available as org Connected counts.
-- Do **not** claim analyze auto-ticks are shipped (still later).
 
 ## Operator surfaces
 
 | Surface | Action |
 |---------|--------|
-| Slash `/setup` | help · init · preflight · portal · reload · **pull** |
+| Slash `/setup` | help · init · preflight · portal · reload · **pull** · **analyze** · **drift** |
 | Alias `/setup-lifecycle` | same |
 | `/setup pull` | status · start · once · stop (s1530 P5 residual-honest) |
+| `/setup analyze` | status · start · once · stop (s1534 P6 residual-honest) |
+| `/setup drift` / `/setup maintain` | report-only FormatDriftText (s1534 P6) |
 | CLI `iomesh setup` | init · preflight (s1525 P1–P2) |
 | CLI `iomesh memory pull` | still valid continuous / once pull path |
+| `/memory digest` | still valid one-shot ops pulse |
 | System note | `<setup-lifecycle>` on AttachMCP |
 | Skill | `read_skill setup-lifecycle-agent` |
 

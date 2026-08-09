@@ -29,6 +29,13 @@ func TestBuildManagedFragment_LocalMemoryDualWriteOff(t *testing.T) {
 	if strings.Contains(frag, "pull_continuous = true") {
 		t.Fatal("must not set pull_continuous true by default")
 	}
+	// s1534 P6: analyze_continuous default false (opt-in analyze ticks · drift report-only).
+	if !strings.Contains(frag, "analyze_continuous = false") {
+		t.Fatalf("missing analyze_continuous = false:\n%s", frag)
+	}
+	if strings.Contains(frag, "analyze_continuous = true") {
+		t.Fatal("must not set analyze_continuous true by default")
+	}
 }
 
 func TestBuildManagedFragment_All(t *testing.T) {
