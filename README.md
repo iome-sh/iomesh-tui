@@ -8,11 +8,11 @@
 
 Official open-source tooling from [IOMesh](https://iome.sh) (**IOMesh Technology Ltd.**).
 
-> **Status:** public open-source **v0.71.x** (pre-1.0). Agent loop, subagents, full-screen TUI, permissions, ACP, skills, MCP, local Memory Palace (MCP + mesh pull; dual-write optional audit default OFF · not hosted cloud GPU palace) + sync retrieve / sidecar auto-recall, stage mesh dogfood, deeper mesh (lineage · policy · catalog · metering), multi-model catalog (DeepSeek · Grok · Gemini · Vertex · Ollama local). Not a multi-tenant remote sandbox — see [SECURITY.md](SECURITY.md).
+> **Status:** public open-source **v0.71.x** (pre-1.0). Agent loop, subagents, full-screen TUI, permissions, ACP, skills, MCP, local Memory Palace (MCP + mesh pull; dual-write optional audit default OFF · not hosted cloud GPU palace) + sync retrieve / sidecar auto-recall, stage mesh smoke, deeper mesh (lineage · policy · catalog · metering), multi-model catalog (DeepSeek · Grok · Gemini · Vertex · Ollama local). Not a multi-tenant remote sandbox — see [SECURITY.md](SECURITY.md).
 
 ### Open source / local-primary
 
-MIT OSS **agent harness** + optional mesh client surface — **not** the hosted multi-tenant mesh control plane. The TUI is a **local agent on the org pulse plane**: optional mesh hooks publish/pull organizational **heartbeats / pulses** (`dept.*` work events — not host/APM metrics · public copy = heartbeat/pulse only). Memory is **local-primary** (local Memory Palace via MCP + mesh **pull** egress; not freemium hosted palace). Optional **Ollama** local AI ≠ platform GPU. Platform **$119** language (if any) = **Memory Ops Pack** (pull / retain / audit / support) — not cloud GPU palace. dual_write default OFF · hosted Palace sunset · no invent GA · Beta. Buyer claim pin: [memory-mcp.md](docs/architecture/memory-mcp.md#buyer-claim-pin-s774) · org-pulse edge framing: [mesh-dogfood.md](docs/architecture/mesh-dogfood.md#org-pulse-edge-framing-s785-pin).
+MIT OSS **agent harness** + optional mesh client surface — **not** the hosted multi-tenant mesh control plane. The TUI is a **local agent on the org pulse plane**: optional mesh hooks publish/pull organizational **heartbeats / pulses** (`dept.*` work events — not host/APM metrics · public copy = heartbeat/pulse only). Memory is **local-primary** (local Memory Palace via MCP + mesh **pull** egress; not freemium hosted palace). Optional **Ollama** local AI ≠ platform GPU. Platform **$119** language (if any) = **Memory Ops Pack** (pull / retain / audit / support) — not cloud GPU palace. dual_write default OFF · hosted Palace sunset · no invent GA · Beta. Buyer claim pin: [memory-mcp.md](docs/architecture/memory-mcp.md#buyer-claim-pin-s774) · org-pulse edge framing: [mesh smoke / org-pulse](docs/architecture/mesh-dogfood.md#org-pulse-edge-framing-s785-pin).
 
 ## Table of contents
 
@@ -95,9 +95,9 @@ export DEEPSEEK_API_KEY=…          # required for default cascade
 ./bin/iomesh -c                    # continue latest session
 ./bin/iomesh sessions | skills | mcp
 ./bin/iomesh agent serve           # ACP WebSocket (127.0.0.1:7400/acp)
-./bin/iomesh mesh dogfood          # mesh smoke (needs IOMESH_ENDPOINT)
+./bin/iomesh mesh smoke            # mesh smoke (needs IOMESH_ENDPOINT)
 ./bin/iomesh mesh usage --json     # local process meter (JSON)
-make dogfood-unit                  # offline mesh tests
+make smoke-unit                    # offline mesh tests (alias: dogfood-unit)
 ```
 
 Optional: copy [`.env.example`](.env.example) for local env vars (iomesh reads the **process environment**; it does not auto-load `.env` files yet). Copy [`configs/config.example.toml`](configs/config.example.toml) to `~/.iomesh/config.toml` to customize.
@@ -124,7 +124,7 @@ iomesh -C <dir>             workspace root
 iomesh --yolo               auto-approve mutating tools (full trust)
 iomesh --config <path>      config.toml
 iomesh models | sessions | skills | mcp | version
-iomesh mesh dogfood         I/O Mesh smoke (needs IOMESH_ENDPOINT)
+iomesh mesh smoke           I/O Mesh smoke (needs IOMESH_ENDPOINT; legacy: dogfood|probe)
 iomesh agent stdio          ACP JSON-RPC over stdio
 iomesh agent serve          ACP WebSocket (default 127.0.0.1:7400/acp)
 ```
@@ -167,7 +167,7 @@ Details: [docs/security.md](docs/security.md) · [docs/architecture/permissions.
 
 ## Documentation
 
-Index: **[docs/README.md](docs/README.md)** (architecture, MCP, ACP, TUI, mesh dogfood, …).
+Index: **[docs/README.md](docs/README.md)** (architecture, MCP, ACP, TUI, mesh smoke, …).
 
 Open-source process: [CONTRIBUTING](CONTRIBUTING.md) · [SUPPORT](SUPPORT.md) · [RELEASING](RELEASING.md) · [CHANGELOG](CHANGELOG.md) · [docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md).
 
@@ -182,14 +182,14 @@ internal/
   subagent/           explore/plan/gp, parallel, worktrees
   workspace/          rooted FS + path jail
   security/           redaction, env scrub, shell/URL policy
-  iomesh/             I/O Mesh client + dogfood
+  iomesh/             I/O Mesh client + smoke suite
   tui/                full-screen Bubble Tea + classic REPL
   skills/             SKILL.md catalog
   mcp/                MCP stdio/HTTP, resources, prompts, OAuth
   acp/                Agent Client Protocol (stdio + WebSocket)
   session/            transcript persistence
 configs/              example config.toml
-scripts/              mesh dogfood helper
+scripts/              mesh smoke helper
 docs/                 architecture + security
 ```
 

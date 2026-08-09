@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Public mesh/plugins smoke rename (s1521)** — public CLI prefers `iomesh mesh smoke` and `iomesh plugins smoke` (also `check`); `dogfood` / `probe` remain **legacy aliases**. README, CONTRIBUTING, Makefile (`smoke` / `smoke-unit`), and mesh smoke docs updated so public copy no longer leads with internal “dogfood”. dual_write OFF · not Memory GA · smoke ≠ invent Connected/GA.
 - **Drop residual aion Memory sample (s1517)** — remove in-tree `examples/agent-plugins/aion-memory-mcp` and retarget product Memory attach/docs/onboard/config/skills to **`iomesh-memory-mcp` only**. Dogfood samples remain `hello-iome` + `iomesh-memory-mcp`. **Honesty:** dual_write OFF · not Memory GA · aion broker/CP private · no invent platform GA · s1517 product-only sample. See [docs/architecture/memory-mcp.md](docs/architecture/memory-mcp.md) · [docs/architecture/agent-plugins.md](docs/architecture/agent-plugins.md).
 
 ### Added

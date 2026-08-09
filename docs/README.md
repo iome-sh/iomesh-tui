@@ -12,7 +12,7 @@
 | [architecture/acp.md](architecture/acp.md) | ACP stdio + WebSocket |
 | [architecture/skills.md](architecture/skills.md) | SKILL.md loader |
 | [architecture/mcp.md](architecture/mcp.md) | MCP stdio/HTTP, resources, prompts, OAuth |
-| [architecture/mesh-dogfood.md](architecture/mesh-dogfood.md) | Stage mesh smoke |
+| [architecture/mesh-dogfood.md](architecture/mesh-dogfood.md) | Stage mesh smoke (`iomesh mesh smoke`; legacy dogfood) |
 | [architecture/mesh-deeper.md](architecture/mesh-deeper.md) | Lineage context, policy gates, local metering, portal catalog |
 | [architecture/memory-mcp.md](architecture/memory-mcp.md) | Memory Palace + temporal MCP integration plan |
 | [architecture/memory-edge-usage-demo.md](architecture/memory-edge-usage-demo.md) | Residual-honest signup → integrations → local memory (kernel + MCP) → show usage demo |

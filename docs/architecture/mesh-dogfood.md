@@ -1,8 +1,10 @@
-# Stage mesh dogfood
+# Stage mesh smoke
 
-Operator smoke for **I/O Mesh** integration from the public `iomesh-tui` harness.
+Operator **smoke** for **I/O Mesh** integration from the public `iomesh-tui` harness.
 
-Frame dogfood as a **heartbeat probe** on the org pulse plane (docs framing only — same wire paths; **does not** re-claim always-emit product bodies):
+**Public CLI:** `iomesh mesh smoke` (legacy aliases: `probe`, `dogfood`). This file keeps the historical path name for link stability.
+
+Frame smoke as a **heartbeat probe** on the org pulse plane (docs framing only — same wire paths; **does not** re-claim always-emit product bodies):
 
 | Dogfood step | Org-pulse framing | Wire (unchanged) |
 |--------------|-------------------|------------------|
@@ -35,7 +37,7 @@ iomesh mesh wait [--timeout 30s] [--interval 500ms] [--require-health] [--json]
 Optional **in-suite** soft preflight after health and before the single-shot ready step:
 
 ```bash
-iomesh mesh dogfood --wait-ready 10s --wait-interval 500ms --wait-require-health
+iomesh mesh smoke --wait-ready 10s --wait-interval 500ms --wait-require-health
 # wait_ready PASS when Ready (and optional Health) succeed within budget
 # timeout → SKIP wait_ready (soft) unless --strict (then FAIL)
 # single-shot ready still runs after wait for latency evidence
@@ -227,15 +229,15 @@ export IOMESH_ENDPOINT=https://mesh.stage.example   # health, streams, catalog
 export IOMESH_MEMORY_ENDPOINT=http://127.0.0.1:8765 # or stage memory sidecar URL
 # legacy / platform-compatible alias: MEMORY_SIDECAR_URL=…
 
-iomesh mesh dogfood --json
+iomesh mesh smoke --json
 # top-level memory_endpoint set; memory_retrieve detail ends with memory_base=sidecar
 ```
 
-CLI override: `iomesh mesh dogfood --memory-endpoint http://127.0.0.1:8765`.
+CLI override: `iomesh mesh smoke --memory-endpoint http://127.0.0.1:8765`.
 
 ## JSON report (`--json`)
 
-`iomesh mesh dogfood --json` / `FormatReportJSON` emits indented JSON for stage CI evidence. Top-level fields:
+`iomesh mesh smoke --json` / `FormatReportJSON` emits indented JSON for stage CI evidence. Top-level fields:
 
 | Field | Type | Notes |
 |-------|------|-------|
@@ -318,16 +320,16 @@ export IOMESH_TENANT=acme        # optional
 # Warm memory plane (optional; required for memory_retrieve PASS when broker has no /v1/memory/*):
 # export IOMESH_MEMORY_ENDPOINT=http://127.0.0.1:8765
 
-iomesh mesh dogfood
-iomesh mesh dogfood --strict
-iomesh mesh dogfood --json       # stage CI evidence
-iomesh mesh dogfood --wait-ready 10s --wait-interval 500ms   # soft ready preflight
-iomesh mesh dogfood --endpoint "$IOMESH_ENDPOINT" --tenant acme
-iomesh mesh dogfood --memory-endpoint "$IOMESH_MEMORY_ENDPOINT"
-iomesh mesh dogfood --skip-context --skip-emit --skip-memory --skip-streams   # health-only-ish
-iomesh mesh dogfood --kv-bucket config   # soft KV list-keys probe + kv_bucket / kv_key_count / kv_ensured evidence
-iomesh mesh dogfood --kv-bucket config --kv-ensure   # best-effort create bucket before list (soft fail-open)
-iomesh mesh dogfood --pub-subject dept.agent.ping   # soft ephemeral Pub + pub_probed / pub_ok evidence
+iomesh mesh smoke
+iomesh mesh smoke --strict
+iomesh mesh smoke --json       # stage CI evidence
+iomesh mesh smoke --wait-ready 10s --wait-interval 500ms   # soft ready preflight
+iomesh mesh smoke --endpoint "$IOMESH_ENDPOINT" --tenant acme
+iomesh mesh smoke --memory-endpoint "$IOMESH_MEMORY_ENDPOINT"
+iomesh mesh smoke --skip-context --skip-emit --skip-memory --skip-streams   # health-only-ish
+iomesh mesh smoke --kv-bucket config   # soft KV list-keys probe + kv_bucket / kv_key_count / kv_ensured evidence
+iomesh mesh smoke --kv-bucket config --kv-ensure   # best-effort create bucket before list (soft fail-open)
+iomesh mesh smoke --pub-subject dept.agent.ping   # soft ephemeral Pub + pub_probed / pub_ok evidence
 iomesh mesh catalog              # broker then portal paths
 iomesh mesh streams [--name] [--json] [--delete --yes]  # lean list/get/delete (delete destructive); dogfood probes list + streams_names
 iomesh mesh kv --bucket NAME --list|--get|--put|--delete|--create-bucket  # put/delete/create-bucket require --yes

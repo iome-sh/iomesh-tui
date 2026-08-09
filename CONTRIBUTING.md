@@ -67,7 +67,7 @@ This repo is **public**. Keep private program material out of the tree and PR su
 
 - Do **not** put private SR&ED / ledger serials (`s###`) in PR titles, commit subjects, or CHANGELOG  
 - Do **not** reference private monorepos, internal pending-todos paths, or unpublished stage URLs  
-- **dogfood** means the public mesh smoke CLI/tests only (`iomesh mesh dogfood`, `make dogfood`) — not internal org program status  
+- Public smoke CLI: `iomesh mesh smoke` / `make smoke` (legacy aliases: `dogfood`, `probe`) — means **smoke tests only**, not an internal org program  
 - Prefer **I/O Mesh broker / platform** over private codenames in new docs  
 
 Binary or package names that operators actually run (e.g. platform Memory MCP) may appear when documenting install/wire-up; do not document “clone the private monorepo” build paths.

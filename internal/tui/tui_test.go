@@ -1173,8 +1173,9 @@ func TestHandleSlash_OnboardNextPluginsLane(t *testing.T) {
 
 	needles := []string{
 		"onboard next plugins lane",
-		"iomesh plugins dogfood",
-		"/plugins dogfood",
+		"iomesh plugins smoke",
+		"/plugins smoke",
+		"iomesh plugins dogfood", // legacy alias residual
 		"offline sample validate",
 		"examples/agent-plugins",
 		"Agent Plugins GA",
@@ -2786,7 +2787,7 @@ func TestHandleSlash_OnboardNextStatusExport_SessionSoftDogfood(t *testing.T) {
 
 	// Run soft offline dogfood (sets session marker)
 	out.Reset()
-	_, err = handleSlash(&out, adapter, "/plugins dogfood")
+	_, err = handleSlash(&out, adapter, "/plugins smoke")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2921,7 +2922,7 @@ func TestHandleSlash_Plugins(t *testing.T) {
 	s = out.String()
 	for _, want := range []string{
 		"[plugins] is opt-in",
-		"/plugins dogfood",
+		"/plugins smoke",
 		"Agent Plugins GA",
 	} {
 		if !strings.Contains(s, want) {
@@ -2954,7 +2955,7 @@ func TestHandleSlash_Plugins(t *testing.T) {
 		"dogfood_not_run",
 		"not live dogfood",
 		"soft offline dogfood ≠ invent Agent Plugins GA",
-		"/plugins dogfood",
+		"/plugins smoke",
 		"dual_write OFF",
 		"package load ≠ Memory GA",
 	} {
@@ -2978,7 +2979,7 @@ func TestHandleSlash_Plugins(t *testing.T) {
 
 	// dogfood soft offline (uses FindModuleRoot from cwd — repo has samples)
 	out.Reset()
-	_, err = handleSlash(&out, adapter, "/plugins dogfood")
+	_, err = handleSlash(&out, adapter, "/plugins smoke")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3018,16 +3019,16 @@ func TestHandleSlash_Plugins(t *testing.T) {
 		}
 	}
 
-	// After dogfood, status may show session soft marker (≠ live dogfood).
-	// Note prose still mentions "dogfood_not_run default" — check the dogfood: state line.
+	// After smoke, status may show session soft marker (≠ live dogfood).
+	// Note prose still mentions "dogfood_not_run default" — check the smoke: state line (s1521).
 	out.Reset()
 	_, _ = handleSlash(&out, adapter, "/plugins status")
 	s = out.String()
-	if !strings.Contains(s, "dogfood: soft_offline_dogfood_session") {
-		t.Fatalf("after dogfood, want dogfood: soft_offline_dogfood_session_* marker:\n%s", s)
+	if !strings.Contains(s, "smoke: soft_offline_dogfood_session") {
+		t.Fatalf("after smoke, want smoke: soft_offline_dogfood_session_* marker:\n%s", s)
 	}
-	if strings.Contains(s, "dogfood: dogfood_not_run") {
-		t.Fatalf("after dogfood, dogfood state line should not be dogfood_not_run:\n%s", s)
+	if strings.Contains(s, "smoke: dogfood_not_run") {
+		t.Fatalf("after smoke, smoke state line should not be dogfood_not_run:\n%s", s)
 	}
 	if strings.Contains(s, "live dogfood green") || strings.Contains(s, "Agent Plugins GA shipped") {
 		t.Fatalf("session marker must not invent live GA: %s", s)
