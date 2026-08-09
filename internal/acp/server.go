@@ -502,6 +502,23 @@ func (s *Server) newRuntime(cwd string) (*agent.Runtime, *session.Store, error) 
 		}
 	}
 
+	// s1534 P6: opt-in in-session analyze ticks (default OFF).
+	// Fail-open log warn on start error — do not fail ACP session create.
+	// analyze tick ≠ invent Connected / Memory GA · dual_write OFF.
+	if cfg.Memory.AnalyzeContinuous {
+		mode := strings.TrimSpace(cfg.Memory.AnalyzeMode)
+		if err := rt.StartAnalyzeTick(agent.AnalyzeTickConfig{
+			Enabled:     true,
+			IntervalSec: cfg.Memory.AnalyzeIntervalSec,
+			Mode:        mode,
+		}); err != nil {
+			s.logger.Warn("analyze tick auto-start failed", "err", err)
+		} else {
+			s.logger.Info("analyze tick started",
+				"mode", mode, "interval_sec", cfg.Memory.AnalyzeIntervalSec)
+		}
+	}
+
 	store, err := session.Open(abs)
 	if err != nil {
 		return nil, nil, err

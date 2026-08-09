@@ -170,6 +170,8 @@ func Preflight(ctx context.Context, cfgPath string) (*PreflightReport, error) {
 		"preflight PASS ≠ invent Connected / INSTALL_STORE green / Memory GA",
 		"portal HITL still required for connector OAuth/install",
 		"continuous pull: opt-in /setup pull start|once or pull_continuous=true · CLI iomesh memory pull still valid · after mesh + consumer configured · pull ≠ invent Connected",
+		"continuous analyze: opt-in /setup analyze start or analyze_continuous=true (default false) · analyze ≠ invent Connected",
+		"maintenance drift (report-only): /setup drift · no auto-repair · drift ≠ invent install green",
 	)
 	return rep, nil
 }

@@ -257,6 +257,23 @@ func run(args []string) int {
 		}
 	}
 
+	// s1534 P6: opt-in in-session analyze ticks (default OFF).
+	// Fail-open log warn on start error — do not fail process start.
+	// analyze tick ≠ invent Connected / Memory GA · dual_write OFF.
+	if cfg.Memory.AnalyzeContinuous {
+		mode := strings.TrimSpace(cfg.Memory.AnalyzeMode)
+		if err := rt.StartAnalyzeTick(agent.AnalyzeTickConfig{
+			Enabled:     true,
+			IntervalSec: cfg.Memory.AnalyzeIntervalSec,
+			Mode:        mode,
+		}); err != nil {
+			logger.Warn("analyze tick auto-start failed", "err", err)
+		} else {
+			logger.Info("analyze tick started",
+				"mode", mode, "interval_sec", cfg.Memory.AnalyzeIntervalSec)
+		}
+	}
+
 	store, err := session.Open(rt.Workspace().Root())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "session store: %v\n", err)

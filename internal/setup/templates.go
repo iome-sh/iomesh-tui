@@ -183,6 +183,8 @@ func BuildManagedFragment(profiles []Profile, opt InitOptions) (string, error) {
 		// pull_continuous default false: in-session opt-in via /setup pull start or set true + reload/restart.
 		// CLI iomesh memory pull remains a valid path either way.
 		b.WriteString("pull_continuous = false  # opt-in continuous pull · /setup pull start or set true · CLI iomesh memory pull still valid\n")
+		// analyze_continuous default false: in-session opt-in via /setup analyze start (s1534 P6).
+		b.WriteString("analyze_continuous = false  # opt-in continuous analyze ticks · /setup analyze start or set true · drift: /setup drift\n")
 		b.WriteString("\n")
 	}
 

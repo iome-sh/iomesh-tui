@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// s1526 P3: SetupLifecycleAgentGuidanceNote residual-honest needles.
+// s1526 P3 / s1530 P5 / s1534 P6: SetupLifecycleAgentGuidanceNote residual-honest needles.
 func TestSetupLifecycleAgentGuidanceNote_HonestyNeedles(t *testing.T) {
 	out := SetupLifecycleAgentGuidanceNote()
 	if out == "" {
@@ -22,6 +22,10 @@ func TestSetupLifecycleAgentGuidanceNote_HonestyNeedles(t *testing.T) {
 		"iomesh memory pull",
 		"pull_continuous",
 		"/setup pull",
+		"analyze_continuous",
+		"/setup analyze",
+		"/setup drift",
+		"/memory digest",
 		"never invent",
 		"INSTALL_STORE",
 		"secrets",
@@ -64,6 +68,10 @@ func TestSetupLifecycleHonestyOneLiner(t *testing.T) {
 		"iomesh memory pull",
 		"pull_continuous",
 		"/setup pull",
+		"analyze_continuous",
+		"/setup analyze",
+		"/setup drift",
+		"/memory digest",
 	} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("one-liner missing %q: %s", want, s)

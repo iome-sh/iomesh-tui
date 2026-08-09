@@ -3263,9 +3263,12 @@ func TestHandleSlash_SetupLifecycle(t *testing.T) {
 		"portal",
 		"reload",
 		"pull",
+		"analyze",
+		"drift",
 		"init",
 		"setup-lifecycle-agent",
 		"iomesh memory pull",
+		"/memory digest",
 	} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("help missing %q in:\n%s", want, s)
@@ -3476,6 +3479,178 @@ func TestHandleSlash_SetupPull(t *testing.T) {
 	for _, want := range []string{"status", "start", "once", "stop", "iomesh memory pull"} {
 		if !strings.Contains(helpOut, want) {
 			t.Fatalf("pull help missing %q: %s", want, helpOut)
+		}
+	}
+}
+
+// s1534 P6: /setup analyze — residual-honest status/start/stop without inventing Connected.
+func TestHandleSlash_SetupAnalyze(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	// bare /setup analyze → status idle residual-honest
+	_, err := handleSlash(&out, adapter, "/setup analyze")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := out.String()
+	for _, want := range []string{
+		"setup analyze status",
+		"running: false",
+		"dual_write OFF",
+		"not Memory GA",
+		"analyze tick ≠ invent Connected",
+		"/memory digest still valid",
+	} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("analyze status missing %q in:\n%s", want, s)
+		}
+	}
+	if strings.Contains(s, "running: true") {
+		t.Fatalf("idle must not invent running true:\n%s", s)
+	}
+	if strings.Contains(s, "Connected: yes") || strings.Contains(s, "Memory GA shipped") {
+		t.Fatalf("must not invent green:\n%s", s)
+	}
+
+	// explicit status alias
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/setup analyze status")
+	if !strings.Contains(out.String(), "running: false") {
+		t.Fatalf("status alias: %s", out.String())
+	}
+
+	// start once with status mode should succeed residual-honest (MemoryStatusLine always available)
+	out.Reset()
+	emptyCfg := filepath.Join(t.TempDir(), "analyze.toml")
+	if err := os.WriteFile(emptyCfg, []byte("# empty — defaults · no analyze_continuous invent\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, err = handleSlash(&out, adapter, "/setup analyze once --mode status --config "+emptyCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	onceOut := out.String()
+	if !strings.Contains(onceOut, "setup analyze once") {
+		t.Fatalf("once path: %s", onceOut)
+	}
+	if !strings.Contains(onceOut, "dual_write OFF") || !strings.Contains(onceOut, "not Memory GA") {
+		t.Fatalf("once missing honesty: %s", onceOut)
+	}
+	if strings.Contains(onceOut, "Connected green") || strings.Contains(onceOut, "Memory GA shipped") {
+		t.Fatalf("once must not invent green: %s", onceOut)
+	}
+
+	// stop when idle or after once → residual-honest
+	out.Reset()
+	// ensure loop not running (once exits quickly)
+	rt.StopAnalyzeTick()
+	_, _ = handleSlash(&out, adapter, "/setup analyze stop")
+	stopOut := out.String()
+	if !strings.Contains(stopOut, "setup analyze stop") {
+		t.Fatalf("stop: %s", stopOut)
+	}
+	if !strings.Contains(stopOut, "dual_write OFF") {
+		t.Fatalf("stop honesty: %s", stopOut)
+	}
+
+	// start continuous with bad mode → residual-honest error
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/setup analyze start --mode bogus --config "+emptyCfg)
+	badOut := out.String()
+	if !strings.Contains(badOut, "setup analyze start:") {
+		t.Fatalf("bad mode path: %s", badOut)
+	}
+	if !strings.Contains(badOut, "dual_write OFF") {
+		t.Fatalf("bad mode honesty: %s", badOut)
+	}
+
+	// no runtime → residual-honest not invent green
+	out.Reset()
+	_, _ = handleSlash(&out, runtimeAdapter{}, "/setup analyze status")
+	nilOut := out.String()
+	if !strings.Contains(nilOut, "no agent runtime") && !strings.Contains(nilOut, "running: false") {
+		t.Fatalf("nil runtime status: %s", nilOut)
+	}
+	if !strings.Contains(nilOut, "dual_write OFF") {
+		t.Fatalf("nil runtime honesty: %s", nilOut)
+	}
+
+	// help lists analyze subcommands
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/setup analyze help")
+	helpOut := out.String()
+	for _, want := range []string{"status", "start", "once", "stop", "/memory digest"} {
+		if !strings.Contains(helpOut, want) {
+			t.Fatalf("analyze help missing %q: %s", want, helpOut)
+		}
+	}
+}
+
+// s1534 P6: /setup drift|maintain — report-only residual-honest (no invent install green).
+func TestHandleSlash_SetupDrift(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	// /setup drift with empty config residual-honest
+	emptyCfg := filepath.Join(t.TempDir(), "drift.toml")
+	if err := os.WriteFile(emptyCfg, []byte("# empty\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, err := handleSlash(&out, adapter, "/setup drift --config "+emptyCfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := out.String()
+	for _, want := range []string{
+		"setup drift",
+		"dual_write OFF",
+		"not Memory GA",
+		"≠ invent install green",
+		"package wire ≠ Connected",
+		"report-only",
+	} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("drift missing %q in:\n%s", want, s)
+		}
+	}
+	if strings.Contains(s, "Connected: yes") || strings.Contains(s, "Memory GA shipped") || strings.Contains(s, "auto-repair applied") {
+		t.Fatalf("must not invent green/auto-repair:\n%s", s)
+	}
+
+	// maintain alias
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/setup maintain --config "+emptyCfg)
+	if !strings.Contains(out.String(), "setup drift") {
+		t.Fatalf("maintain alias: %s", out.String())
+	}
+	if !strings.Contains(out.String(), "dual_write OFF") {
+		t.Fatalf("maintain honesty: %s", out.String())
+	}
+
+	// nil / no runtime → residual-honest zero snap (not invent green)
+	out.Reset()
+	_, _ = handleSlash(&out, runtimeAdapter{}, "/setup drift --config "+emptyCfg)
+	nilOut := out.String()
+	if !strings.Contains(nilOut, "setup drift") {
+		t.Fatalf("nil runtime drift: %s", nilOut)
+	}
+	if !strings.Contains(nilOut, "dual_write OFF") || !strings.Contains(nilOut, "package wire ≠ Connected") {
+		t.Fatalf("nil runtime drift honesty: %s", nilOut)
+	}
+	if strings.Contains(nilOut, "Connected: yes") || strings.Contains(nilOut, "install green shipped") {
+		t.Fatalf("nil runtime must not invent green: %s", nilOut)
+	}
+
+	// help
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/setup drift help")
+	helpOut := out.String()
+	for _, want := range []string{"report-only", "dual_write OFF", "package wire ≠ Connected"} {
+		if !strings.Contains(helpOut, want) {
+			t.Fatalf("drift help missing %q: %s", want, helpOut)
 		}
 	}
 }
