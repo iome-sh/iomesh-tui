@@ -253,18 +253,20 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ liv
 }
 
 // AionAgentOnboardingNextMemoryLane residual-honest memory local drill for /onboard next memory
-// (s1377+s1453+s1458+s1463+s1469+s1478).
+// (s1377+s1453+s1458+s1463+s1469+s1478+s1508).
 // Static offline — local-primary Memory edge (TUI + Memory MCP + github.com/iome-sh/memory kernel + local palace).
 // Naming honesty (s1453 Option A): product MCP host = iomesh-memory-mcp (not aion-memory-mcp for product edge);
 // aion = private cloud broker. s1458–s1469: M2 lean / M3 dogfood / M4 readiness history. s1478: both product edge
 // repos are PUBLIC — go install / go get without GOPRIVATE · attach HTTP :8080/mcp or stdio · docker compose still
 // valid · flip complete residual ≠ invent Memory GA · dual_write OFF · aion broker still private · not freemium
 // palace · residual monorepo aion-memory-mcp remains private platform residual (not product edge naming).
+// s1508: E4 full MCP client attach dogfood tip residual (connected=1 · tools=6 stamp) · Edge Memory GA candidacy
+// only · E10 Open · tip ≠ invent Edge Memory GA declared · tip ≠ invent forever-green product dogfood.
 // Never invents Memory GA, freemium palace, dual_write ON, install Connected, or live dogfood green.
 func AionAgentOnboardingNextMemoryLane() string {
-	return strings.TrimSpace(`aion onboard next memory lane (residual-honest · s1377+s1453+s1458+s1463+s1469+s1478 · no MCP dial):
+	return strings.TrimSpace(`aion onboard next memory lane (residual-honest · s1377+s1453+s1458+s1463+s1469+s1478+s1508 · no MCP dial):
   Path: local-primary Memory edge — TUI + Memory MCP + github.com/iome-sh/memory kernel + local palace — dual_write OFF
-  Edge OSS (Option A · s1453+s1458+s1463+s1469+s1478 · public product attach continuum):
+  Edge OSS (Option A · s1453+s1458+s1463+s1469+s1478+s1508 · public product attach continuum):
     · product MCP host = iomesh-memory-mcp (not aion-memory-mcp for product naming)
     · s1478 PUBLIC product path (both edge repos public · no GOPRIVATE / PAT required):
         go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main
@@ -273,6 +275,7 @@ func AionAgentOnboardingNextMemoryLane() string {
         attach: streamable HTTP http://127.0.0.1:8080/mcp or stdio command iomesh-memory-mcp
         docker compose still valid: docker compose up --build → image iomesh-memory-mcp:local → http://127.0.0.1:8080/mcp · healthz
     · history (s1458–s1469 residual): M2 lean host · M3 edge dogfood tip · M4 public flip readiness (kernel first · then iomesh-memory-mcp) — flip is now complete for edge packs; readiness tip ≠ invent Memory GA
+    · s1508 E4 MCP client attach dogfood tip: lean host HTTP → iomesh mcp --connect · connected=1 · tools=6 stamp residual · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · dual_write OFF · not bare Memory GA · not hosted Memory GA · docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md
     · offline gate mention: peer mcp make edge-dogfood-gate (mention only) · TUI docs docs/architecture/memory-mcp.md
     · dual_write OFF · not Memory GA · aion broker private (cloud CP stays private · not OSS edge pack) · aion still private
     · flip complete residual: public OSS edge ≠ invent Memory GA · ≠ freemium palace · dual_write OFF · package load ≠ Memory GA
@@ -289,21 +292,23 @@ func AionAgentOnboardingNextMemoryLane() string {
     6. Optional: read_skill memory-advanced-agent (opt-in advanced · still dual_write OFF · not Memory GA)
     7. Optional mesh pull only: /onboard next memory-pull · Memory Ops Pack optional (~$119 pull/retain) · mesh optional for pull · dual_write OFF
     8. Operator pulse: /memory status · /onboard status · /onboard next operator (fail-open offline · never invent tool green)
+    9. Optional E4 client attach dogfood (s1508): iomesh mcp --connect after lean host HTTP — stamp residual · Edge Memory GA candidacy only · E10 Open · tip ≠ invent forever-green product dogfood
   Honesty:
     · package load ≠ Memory GA · ≠ freemium palace · dual_write OFF · Palace sunset
     · residual PASS ≠ live dogfood · offline dogfood tip ≠ invent live dogfood as green · test invoke = probe only ≠ Memory GA · PASS ≠ live APPLY
     · PASS ≠ invent full platform sidecar parity · tool parity may be lean vs platform residual
     · public product attach (s1478) · no GOPRIVATE · go install · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA
+    · E4 client attach (s1508) · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · not bare Memory GA · not hosted Memory GA
     · kernel first history · then iomesh-memory-mcp · aion broker private · aion still private
     · never invent install green / Connected / INSTALL_STORE APPLY
     · catalog ≠ Connected · portal HITL · agent MCP cannot write installs
     · mesh ≠ memory · mesh optional for pull only · memory lane is local-edge palace, not streaming org heartbeats
     · iomesh-memory-mcp naming honesty · residual aion-memory-mcp private monorepo only · not product naming
     · rates ~$88 mesh / ~$119 Memory Ops Pack optional · package load ≠ Memory GA
-  Companion: /onboard next memory-pull · /onboard next operator · docs/architecture/memory-mcp.md Edge OSS Option A · public product attach (s1478)
+  Companion: /onboard next memory-pull · /onboard next operator · docs/architecture/memory-mcp.md Edge OSS Option A · public product attach (s1478) · E4 client attach (s1508)
   Back: /onboard next · /memory status · portal Agent/MCP https://console.iome.sh/settings/agent
 
-Locks: dual_write OFF · book-demo OFF · not Memory GA · Palace sunset · residual PASS ≠ live dogfood · offline dogfood tip ≠ invent live dogfood as green · PASS ≠ live APPLY · PASS ≠ invent full platform sidecar parity · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · no GOPRIVATE · go install · package load ≠ Memory GA · ≠ freemium palace · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · rates ~$88/$119 optional · Memory Ops Pack optional · mesh ≠ memory · mesh optional for pull · iomesh-memory-mcp · aion broker private · aion still private · residual aion-memory-mcp private monorepo only`)
+Locks: dual_write OFF · book-demo OFF · not Memory GA · Palace sunset · residual PASS ≠ live dogfood · offline dogfood tip ≠ invent live dogfood as green · PASS ≠ live APPLY · PASS ≠ invent full platform sidecar parity · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · no GOPRIVATE · go install · package load ≠ Memory GA · ≠ freemium palace · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · rates ~$88/$119 optional · Memory Ops Pack optional · mesh ≠ memory · mesh optional for pull · iomesh-memory-mcp · aion broker private · aion still private · residual aion-memory-mcp private monorepo only`)
 }
 
 // AionAgentOnboardingNextMeshLane residual-honest mesh streaming lane for /onboard next mesh (s1402).
@@ -775,7 +780,7 @@ func AionAgentOnboardingNextLaneStatus() string {
   memory: path_ready · residual_only
     · dual_write OFF · local-primary · package load ≠ Memory GA · ≠ freemium palace · Palace sunset
     · not Memory GA · book-demo OFF · rates ~$88/$119 optional · mesh ≠ memory · mesh optional for pull
-    · edge OSS tip (s1453+s1458+s1463+s1469+s1478): iomesh-memory-mcp product host · public product attach · go install · no GOPRIVATE · HTTP 8080/mcp or stdio · docker compose still valid · dual_write OFF · not Memory GA · aion broker private · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · PASS ≠ invent full platform sidecar parity · offline dogfood tip ≠ invent live dogfood as green
+    · edge OSS tip (s1453+s1458+s1463+s1469+s1478+s1508): iomesh-memory-mcp product host · public product attach · go install · no GOPRIVATE · HTTP 8080/mcp or stdio · docker compose still valid · dual_write OFF · not Memory GA · aion broker private · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · PASS ≠ invent full platform sidecar parity · offline dogfood tip ≠ invent live dogfood as green · E4 client attach (s1508) · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood
     · drill: /onboard next memory (aliases mcp|palace)
 
   mesh: path_ready · residual_only · streams_not_probed
@@ -861,7 +866,7 @@ gtm: skill_ready · path_ready · residual_only
 memory: path_ready · residual_only
   · dual_write OFF · local-primary · package load ≠ Memory GA · ≠ freemium palace · Palace sunset
   · not Memory GA · book-demo OFF · rates ~$88/$119 optional · mesh ≠ memory · mesh optional for pull
-  · edge OSS tip (s1453+s1458+s1463+s1469+s1478): iomesh-memory-mcp product host · public product attach · go install · no GOPRIVATE · HTTP 8080/mcp or stdio · docker compose still valid · dual_write OFF · not Memory GA · aion broker private · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · PASS ≠ invent full platform sidecar parity · offline dogfood tip ≠ invent live dogfood as green
+  · edge OSS tip (s1453+s1458+s1463+s1469+s1478+s1508): iomesh-memory-mcp product host · public product attach · go install · no GOPRIVATE · HTTP 8080/mcp or stdio · docker compose still valid · dual_write OFF · not Memory GA · aion broker private · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · PASS ≠ invent full platform sidecar parity · offline dogfood tip ≠ invent live dogfood as green · E4 client attach (s1508) · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood
   · drill: /onboard next memory (aliases mcp|palace)
 
 mesh: path_ready · residual_only · streams_not_probed
