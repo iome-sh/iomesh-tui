@@ -23,6 +23,7 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/mcp"
 	"github.com/iome-sh/iomesh-tui/internal/router"
 	"github.com/iome-sh/iomesh-tui/internal/session"
+	"github.com/iome-sh/iomesh-tui/internal/setup"
 	"github.com/iome-sh/iomesh-tui/internal/skills"
 	"github.com/iome-sh/iomesh-tui/internal/tui"
 )
@@ -59,6 +60,8 @@ func run(args []string) int {
 			return cmdMesh(args[1:])
 		case "memory":
 			return cmdMemory(args[1:])
+		case "setup":
+			return cmdSetup(args[1:])
 		case "agent":
 			return cmdAgent(args[1:])
 		case "help", "-h", "--help":
@@ -500,6 +503,196 @@ func mcpServerFromTOML(s config.MCPServerTOML, cfg *config.Config) mcp.ServerCon
 		cfg = &config.Config{}
 	}
 	return cfg.BuildMCPServerConfig(s)
+}
+
+// cmdSetup is setup lifecycle CLI (s1525 P1–P2): init managed config + residual-honest preflight.
+// dual_write OFF · not Memory GA · catalog ≠ Connected · portal HITL · PASS ≠ invent install green.
+func cmdSetup(args []string) int {
+	if len(args) == 0 {
+		printSetupUsage()
+		return 2
+	}
+	switch args[0] {
+	case "init":
+		return cmdSetupInit(args[1:])
+	case "preflight", "check", "status":
+		return cmdSetupPreflight(args[1:])
+	case "help", "-h", "--help":
+		printSetupUsage()
+		return 0
+	default:
+		fmt.Fprintf(os.Stderr, "unknown setup subcommand %q\n", args[0])
+		printSetupUsage()
+		return 2
+	}
+}
+
+func printSetupUsage() {
+	fmt.Fprint(os.Stderr, `iomesh setup — agent-native setup lifecycle (s1525 · residual-honest)
+
+  iomesh setup init [profiles]   write managed config fragment (default: local-memory)
+  iomesh setup preflight         probe config + local memory healthz (not invent Connected)
+  iomesh setup help
+
+Profiles: local-memory | plugins | mesh | platform-mcp | all
+  (positional and/or --profiles csv)
+
+Flags (init):
+  --config path           config.toml (default: user config path)
+  --profiles list         csv profiles (alternative to positionals)
+  --stdio                 local-memory via stdio command iomesh-memory-mcp
+  --memory-url URL        default http://127.0.0.1:8080/mcp
+  --plugins-dir path      repeatable [plugins].dirs entry
+  --mesh-endpoint URL     optional mesh base
+  --mesh-tenant id        optional tenant
+  --platform-mcp-url URL  portal Agent/MCP streamable HTTP URL
+  --print-only            print fragment only (do not write)
+
+Flags (preflight):
+  --config path
+  --json                  always-emit PreflightReport JSON
+
+Honesty: dual_write OFF · not Memory GA · secrets via env refs only ·
+  portal HITL for OAuth/install · setup PASS ≠ invent Connected / INSTALL_STORE green.
+  Continuous pull: iomesh memory pull (in-session pull later). Analyze: /memory digest.
+`)
+}
+
+func cmdSetupInit(args []string) int {
+	fs := flag.NewFlagSet("setup init", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	configPath := fs.String("config", "", "config.toml path (default user path)")
+	profilesFlag := fs.String("profiles", "", "comma-separated profiles (local-memory|plugins|mesh|platform-mcp|all)")
+	stdio := fs.Bool("stdio", false, "use stdio iomesh-memory-mcp instead of HTTP URL")
+	memoryURL := fs.String("memory-url", "", "memory MCP HTTP URL")
+	meshEP := fs.String("mesh-endpoint", "", "mesh endpoint URL")
+	meshTenant := fs.String("mesh-tenant", "", "mesh tenant")
+	platformURL := fs.String("platform-mcp-url", "", "platform MCP URL from portal")
+	printOnly := fs.Bool("print-only", false, "print managed fragment only")
+	var pluginDirs multiFlag
+	fs.Var(&pluginDirs, "plugins-dir", "plugins package dir (repeatable)")
+	// Allow flags after profile tokens: scan flags first by moving all -flags to front.
+	args = hoistFlags(args)
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	var profiles []setup.Profile
+	if p := strings.TrimSpace(*profilesFlag); p != "" {
+		profiles = setup.ParseProfiles(p)
+	} else if len(fs.Args()) > 0 {
+		profiles = setup.ParseProfiles(strings.Join(fs.Args(), ","))
+	} else {
+		profiles = []setup.Profile{setup.ProfileLocalMemory}
+	}
+
+	opt := setup.DefaultInitOptions()
+	opt.UseStdioMemory = *stdio
+	if strings.TrimSpace(*memoryURL) != "" {
+		opt.MemoryHTTPURL = strings.TrimSpace(*memoryURL)
+	}
+	opt.MeshEndpoint = strings.TrimSpace(*meshEP)
+	opt.MeshTenant = strings.TrimSpace(*meshTenant)
+	opt.PlatformMCPURL = strings.TrimSpace(*platformURL)
+	opt.PluginsDirs = append([]string{}, pluginDirs...)
+
+	frag, err := setup.BuildManagedFragment(profiles, opt)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "setup init: %v\n", err)
+		return 1
+	}
+	if *printOnly {
+		fmt.Print(frag)
+		if !strings.HasSuffix(frag, "\n") {
+			fmt.Println()
+		}
+		return 0
+	}
+	path := strings.TrimSpace(*configPath)
+	if path == "" {
+		path, err = config.UserConfigPath()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "setup init: config path: %v\n", err)
+			return 1
+		}
+	}
+	if err := config.WriteSetupManagedFragment(path, frag); err != nil {
+		fmt.Fprintf(os.Stderr, "setup init: write: %v\n", err)
+		return 1
+	}
+	fmt.Printf("setup init: wrote managed fragment → %s\n", path)
+	fmt.Println("profiles:", profiles)
+	fmt.Println("next: ensure iomesh-memory-mcp is running (if local-memory) · set secret env vars · restart iomesh")
+	fmt.Println("then: iomesh setup preflight")
+	fmt.Println("honesty: dual_write OFF · not Memory GA · catalog ≠ Connected · portal HITL for installs")
+	return 0
+}
+
+func cmdSetupPreflight(args []string) int {
+	fs := flag.NewFlagSet("setup preflight", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	configPath := fs.String("config", "", "config.toml path")
+	jsonOut := fs.Bool("json", false, "JSON PreflightReport")
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+	rep, err := setup.Preflight(ctx, strings.TrimSpace(*configPath))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "setup preflight: %v\n", err)
+		return 1
+	}
+	if *jsonOut {
+		fmt.Print(setup.FormatPreflightJSON(rep))
+	} else {
+		fmt.Print(setup.FormatPreflightText(rep))
+	}
+	if !rep.OK {
+		return 1
+	}
+	return 0
+}
+
+// multiFlag collects repeatable string flags.
+type multiFlag []string
+
+func (m *multiFlag) String() string { return strings.Join(*m, ",") }
+func (m *multiFlag) Set(v string) error {
+	*m = append(*m, v)
+	return nil
+}
+
+// hoistFlags moves -flag and -flag=val / -flag val pairs before positionals so
+// `setup init local-memory --config path` works with the stdlib flag package.
+func hoistFlags(args []string) []string {
+	var flags, pos []string
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		if a == "--" {
+			pos = append(pos, args[i+1:]...)
+			break
+		}
+		if strings.HasPrefix(a, "-") {
+			flags = append(flags, a)
+			// boolean flags and --flag=value need no extra arg
+			if strings.Contains(a, "=") {
+				continue
+			}
+			// known flags that take a value
+			name := strings.TrimLeft(a, "-")
+			switch name {
+			case "config", "profiles", "memory-url", "mesh-endpoint", "mesh-tenant",
+				"platform-mcp-url", "plugins-dir":
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					flags = append(flags, args[i])
+				}
+			}
+			continue
+		}
+		pos = append(pos, a)
+	}
+	return append(flags, pos...)
 }
 
 // cmdPlugins is operator DX for Agent Plugins packages (s1336 list/validate · s1357 dogfood).
@@ -2609,6 +2802,7 @@ Usage:
   iomesh skills                  list SKILL.md catalogs
   iomesh mcp [--connect]         list configured MCP servers
   iomesh plugins [list|validate|smoke] Agent Plugins package discover/validate/smoke (opt-in; ≠ GA)
+  iomesh setup init|preflight    setup lifecycle (write managed config · residual-honest preflight)
   iomesh mesh smoke              I/O Mesh smoke (health/context/emit/pub/memory; needs IOMESH_ENDPOINT)
   iomesh mesh pub                ephemeral POST /v1/pub (--subject --payload|--payload-file --yes; PubPrint always-emit)
   iomesh mesh consumer create    durable pull consumer create (--stream --name --yes)

@@ -1,0 +1,114 @@
+package setup
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/iome-sh/iomesh-tui/internal/config"
+)
+
+func TestPreflight_NoConfig(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "missing.toml")
+	rep, err := Preflight(context.Background(), path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rep.OK {
+		t.Fatal("ok should be false without config")
+	}
+	if rep.State != "not_started" {
+		t.Fatalf("state=%s", rep.State)
+	}
+	if strings.Contains(strings.ToLower(rep.Honesty), "connected") && strings.Contains(rep.Honesty, "invent Connected") {
+		// honesty must mention never invent Connected
+	}
+	if !strings.Contains(rep.Honesty, "Connected") {
+		t.Fatalf("honesty missing Connected needle: %s", rep.Honesty)
+	}
+}
+
+func TestPreflight_MemoryHealthz(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/healthz" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"status":"ok","dual_write":"off","not_memory_ga":true,"embeddings":"hash","qdrant":"off"}`))
+	}))
+	t.Cleanup(srv.Close)
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.toml")
+	frag := `
+[mcp]
+enabled = true
+[[mcp.servers]]
+name = "iomesh-memory-mcp"
+url = "` + srv.URL + `/mcp"
+allow_loopback = true
+mutating = true
+[memory]
+enabled = true
+server = "iomesh-memory-mcp"
+dual_write = false
+`
+	if err := config.WriteSetupManagedFragment(path, frag); err != nil {
+		t.Fatal(err)
+	}
+	// WriteSetupManagedFragment only writes managed block - need valid file for Load
+	// Load can parse managed content if it's valid TOML - but markers are comments so OK
+	// Actually full file is markers + toml - Load unmarshals whole file; comments ignored.
+	rep, err := Preflight(context.Background(), path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !rep.MemoryHealthOK {
+		t.Fatalf("health: %+v err=%s", rep, rep.MemoryHealthErr)
+	}
+	if !rep.OK {
+		t.Fatalf("ok false: %+v notes=%v", rep, rep.Notes)
+	}
+	if rep.State != "local_memory_probe_ok" {
+		t.Fatalf("state=%s", rep.State)
+	}
+	if rep.DualWrite {
+		t.Fatal("dual_write must be false")
+	}
+}
+
+func TestWriteInitAndPreflight_LocalMemoryOffline(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.toml")
+	opt := DefaultInitOptions()
+	opt.MemoryHTTPURL = "http://127.0.0.1:1/mcp" // nothing listening
+	frag, err := BuildManagedFragment([]Profile{ProfileLocalMemory}, opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := config.WriteSetupManagedFragment(path, frag); err != nil {
+		t.Fatal(err)
+	}
+	rep, err := Preflight(context.Background(), path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rep.OK {
+		t.Fatal("expected ok false when healthz down")
+	}
+	if !rep.ConfigPresent {
+		t.Fatal("config should be present")
+	}
+	// ensure no invent Connected as success
+	text := FormatPreflightText(rep)
+	if strings.Contains(text, "Connected: yes") {
+		t.Fatal(text)
+	}
+	_ = os.Remove(path)
+}
