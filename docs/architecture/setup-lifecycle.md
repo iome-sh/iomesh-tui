@@ -5,7 +5,8 @@
 **Shipped P7:** `/setup repair` plan + apply `--yes` (safe steps only · notes stay human)  
 **Shipped s1542:** residual-honest `/onboard next setup` consolidates P1–P7 map story  
 **Related (s1546):** still-human APPLY reaffirm after closeout — setup residual complete ≠ invent human-gate green / live APPLY / E10 (`/onboard next human-gates`)  
-**Related (s1550):** edge-first human-gates residual pin — knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect · dual_write OFF · Edge Memory GA candidacy only (`/onboard next human-gates`)
+**Related (s1550):** edge-first human-gates residual pin — knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect · dual_write OFF · Edge Memory GA candidacy only (`/onboard next human-gates`)  
+**Related (s1554):** edge-user-journey SSOT — this doc is **stage 4 (Setup wizard)** in the 7-stage narrative · see [edge-user-journey.md](./edge-user-journey.md)
 
 ## Goal
 
@@ -236,6 +237,7 @@ See product plan: agent-native MCP/plugin setup wizard + continuous pull/analyze
 
 ## Related
 
+- [edge-user-journey.md](./edge-user-journey.md) — 7-stage edge-first SSOT (s1554); this file = stage 4  
 - [memory-advanced-install.md](./memory-advanced-install.md)  
 - [memory-edge-usage-demo.md](./memory-edge-usage-demo.md)  
 - [agent-plugins.md](./agent-plugins.md)  

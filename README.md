@@ -76,6 +76,7 @@ Public **edge** path only — MIT harness + public memory kernel/MCP. Serial sta
 | Local Docker Memory MCP | Product host [`iomesh-memory-mcp`](https://github.com/iome-sh/iomesh-memory-mcp) · dual_write OFF · not Memory GA · aion/broker **private** | [memory-mcp.md Local-edge Docker](docs/architecture/memory-mcp.md#local-edge-docker-memory-mcp-s1308--product-host-preferred--s1517) |
 | Public edge install | `go install …/iomesh-memory-mcp@main` · `go get github.com/iome-sh/memory@main` · **no GOPRIVATE** · public OSS ≠ invent platform GA | [memory-mcp.md Edge OSS](docs/architecture/memory-mcp.md#edge-oss-option-a-s1453--m2-lean-attach-s1458--m3-edge-dogfood-s1463--m4-public-flip-readiness-s1469--s1478-public-product-attach) |
 | Advanced Memory install | ONNX optional · Qdrant not required for lean TUI | [memory-advanced-install.md](docs/architecture/memory-advanced-install.md) |
+| Edge user journey (SSOT) | 7 stages · edge-first · dual_write OFF · not Memory GA · portal HITL when connect | [edge-user-journey.md](docs/architecture/edge-user-journey.md) |
 | Usage / demo walkthrough | Signup optional · integrations list/plan + portal HITL · local memory not fully automatic | [memory-edge-usage-demo.md](docs/architecture/memory-edge-usage-demo.md) |
 | Setup lifecycle | Agent-native `/setup` · residual-honest · dual_write OFF | [setup-lifecycle.md](docs/architecture/setup-lifecycle.md) |
 
