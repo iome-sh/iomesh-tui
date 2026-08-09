@@ -259,7 +259,7 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"GTM agent GA",
 		"/onboard next gtm",
 		"3.",
-		"aion-memory-mcp",
+		"iomesh-memory-mcp", // product host (s1517: residual aion sample removed)
 		"iomesh-memory-mcp",
 		"github.com/iome-sh/iomesh-memory-mcp",
 		"public product attach",
@@ -482,7 +482,7 @@ func TestAionAgentOnboardingNextGtmLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1377+s1453+s1458+s1463+s1469+s1478+s1508: AionAgentOnboardingNextMemoryLane residual-honest memory local + edge OSS + public product attach + E4 client attach needles.
+// s1377+s1453+s1458+s1463+s1469+s1478+s1508+s1517: AionAgentOnboardingNextMemoryLane residual-honest memory local + edge OSS + public product attach + E4 client attach + product-only sample needles.
 func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 	out := AionAgentOnboardingNextMemoryLane()
 	if out == "" {
@@ -491,12 +491,13 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 	for _, want := range []string{
 		"onboard next memory lane",
 		"no MCP dial",
-		"s1377+s1453+s1458+s1463+s1469+s1478+s1508",
+		"s1377+s1453+s1458+s1463+s1469+s1478+s1508+s1517",
 		"local-primary",
 		"github.com/iome-sh/memory",
 		"github.com/iome-sh/iomesh-memory-mcp",
 		"iomesh-memory-mcp",
-		"aion-memory-mcp", // residual private monorepo attach still documented
+		"s1517", // product-only memory sample (iomesh-memory-mcp); aion residual sample removed
+		"product-only memory sample",
 		"aion broker private",
 		"aion still private",
 		"public",
@@ -551,8 +552,8 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 		"~$88/$119",
 		"/onboard next",
 		"mesh ≠ memory",
-		"private monorepo",
-		"not product naming",
+		"product-only memory sample",
+		"iomesh-memory-mcp only",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("memory lane missing %q in:\n%s", want, out)

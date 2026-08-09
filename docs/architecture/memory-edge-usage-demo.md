@@ -25,7 +25,7 @@ This is a **runbook-style example**, not a product claim that every step is auto
 | **not Memory GA** | Public OSS edge + TUI attach ≠ invent bare Memory GA |
 | **Edge Memory GA candidacy only** | Residual candidacy · **PASS ≠ invent Edge Memory GA declared** |
 | **E10 Open** | Founder/GTM sign-off remains open · tip ≠ invent E10 closed |
-| **aion broker private** | Cloud control plane / monorepo `aion-memory-mcp` stay private · not OSS edge pack |
+| **aion broker private** | Cloud control plane stays private · not OSS edge pack · product host is `iomesh-memory-mcp` only |
 | **integrations ≠ install APPLY** | MCP `list` / `plan` + portal deep links · human finishes OAuth/install in browser |
 | **memory install ≠ fully automatic** | TUI does **not** auto-download/start the MCP host on signup · operator installs host |
 | **kernel “automatic?”** | Kernel is a **library dep** of `iomesh-memory-mcp` at build/install · no separate palace product install for binary path · still not “signup auto-provisions Memory” |
@@ -224,7 +224,7 @@ curl -fsS http://127.0.0.1:8080/healthz
 iomesh-memory-mcp -palace-root ./data/memory-palaces -tenant demo
 ```
 
-Residual private monorepo name `aion-memory-mcp` is **platform residual only** — **not** product edge naming.
+s1517: TUI product path is **`iomesh-memory-mcp` only** (in-tree residual aion Memory sample removed) · aion broker/CP stays private.
 
 ---
 

@@ -48,7 +48,7 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conver
 
 ## Workflow (agent)
 
-1. **Discover memory MCP** — ensure `aion-memory-mcp` (or configured `[memory].server`) is attached. Offline → residual-honest fail-open; **never invent** hits / superseded_count / digests.
+1. **Discover memory MCP** — ensure product host `iomesh-memory-mcp` (or configured `[memory].server`) is attached. Offline → residual-honest fail-open; **never invent** hits / superseded_count / digests.
 
 2. **Default recall** — use `memory_retrieve` / `/memory recall` (single-hop). Do **not** auto-run multi-hop related.
 

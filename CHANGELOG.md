@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Drop residual aion Memory sample (s1517)** — remove in-tree `examples/agent-plugins/aion-memory-mcp` and retarget product Memory attach/docs/onboard/config/skills to **`iomesh-memory-mcp` only**. Dogfood samples remain `hello-iome` + `iomesh-memory-mcp`. **Honesty:** dual_write OFF · not Memory GA · aion broker/CP private · no invent platform GA · s1517 product-only sample. See [docs/architecture/memory-mcp.md](docs/architecture/memory-mcp.md) · [docs/architecture/agent-plugins.md](docs/architecture/agent-plugins.md).
+
 ### Added
 
 - **Memory edge usage / demo example (s1513)** — residual-honest operator walkthrough: portal signup (optional) → TUI install → MCP integrations list/plan + portal HITL → local memory install (kernel + `iomesh-memory-mcp`; **not fully automatic**) → TUI attach → show `/memory` + `iomesh mcp --connect` usage. **Honesty:** dual_write OFF · not Memory GA · Edge Memory GA candidacy only · E10 Open · install ≠ signup auto-provision · catalog ≠ Connected · aion broker private. See [docs/architecture/memory-edge-usage-demo.md](docs/architecture/memory-edge-usage-demo.md).

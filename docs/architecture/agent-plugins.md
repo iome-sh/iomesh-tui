@@ -4,7 +4,7 @@
 **Pin:** free eng **s1331** — **opt-in runtime wire** of package skills + MCP into existing Skills / MCP runtimes.  
 **Pin:** free eng **s1336** — operator DX CLI `iomesh plugins list|validate`.
 **Pin:** free eng **s1337** — residual-honest **sample package** [`examples/agent-plugins/hello-iome`](../../examples/agent-plugins/hello-iome) (skills-only dogfood).
-**Pin:** free eng **s1346** — residual-honest **sample package** [`examples/agent-plugins/aion-memory-mcp`](../../examples/agent-plugins/aion-memory-mcp) (stdio map of private platform residual `aion-memory-mcp` · not product naming · not Memory GA).
+**Pin:** free eng **s1478** / **s1517** — product sample [`examples/agent-plugins/iomesh-memory-mcp`](../../examples/agent-plugins/iomesh-memory-mcp) (stdio map of public product host · dual_write OFF · not Memory GA). Residual aion Memory sample **removed** (s1517).
 **Pin:** free eng **s1357** — offline residual-honest `iomesh plugins dogfood` (validates **both** product samples; no MCP dial · PATH residual for binary).
 **Pin:** free eng **s1478** — product sample [`examples/agent-plugins/iomesh-memory-mcp`](../../examples/agent-plugins/iomesh-memory-mcp) (public product host stdio map · dogfood primary with hello-iome).
 
@@ -29,7 +29,7 @@ Residual-honest: **package wire ≠ invent Agent Plugins GA**. Not Memory GA. Di
 | Full Agent Plugins client GA | **not claimed** |
 | Sample skills-only package (`hello-iome`) | **done** (s1337 · dogfood primary · opt-in `[plugins]`) |
 | Sample product stdio memory map (`iomesh-memory-mcp`) | **done** (s1478 · public product map · binary on PATH for connect · not Memory GA · dual_write OFF) |
-| Sample residual stdio memory map (`aion-memory-mcp`) | **done** (s1346 · private platform residual · not product naming · not Memory GA · dual_write OFF) |
+| Sample residual stdio memory map (`aion-memory-mcp`) | **removed (s1517)** — product sample is `iomesh-memory-mcp` only |
 
 Package API entrypoint:
 
@@ -71,16 +71,10 @@ In-repo **product** dogfood package that **maps** public product edge Memory MCP
 - Discover/map success ≠ process Connected / install APPLY / **Memory GA** · dual_write **OFF** · not freemium hosted palace
 - TOML `[[mcp.servers]]` remains the **primary** attach path; package map is portable dogfood
 
-### `aion-memory-mcp` (s1346 · residual private stdio map · not product)
+### `aion-memory-mcp` residual sample — **removed (s1517)**
 
-Residual in-repo sample that **maps** private monorepo platform Memory MCP via stdio (not product edge naming):
+The in-tree residual private sample under `examples/agent-plugins/aion-memory-mcp` was **removed**. Product Memory MCP sample is [`iomesh-memory-mcp`](../../examples/agent-plugins/iomesh-memory-mcp) only. aion cloud broker/CP stays private (not OSS edge pack).
 
-- Path: [`examples/agent-plugins/aion-memory-mcp`](../../examples/agent-plugins/aion-memory-mcp)
-- `mcp.json`: server key `memory`, type `stdio`, command `aion-memory-mcp` (optional skill `aion-memory-local`)
-- Operator must install the private monorepo binary and put it on **PATH**; connect is fail-open if missing
-- Mapped runtime name: `aion-memory-mcp-memory` (`<manifest.name>-<serverName>`)
-- **Not** required for `iomesh plugins dogfood` (product samples are hello-iome + iomesh-memory-mcp)
-- Discover/map success ≠ process Connected / install APPLY / **Memory GA** · dual_write **OFF**
 
 ## Package layout (Agent Plugins 1.0.0)
 
@@ -181,7 +175,7 @@ iomesh plugins help
 |------------|----------|
 | **list** | `DiscoverAll` on merged dirs; stdout table; stderr per-dir / per-plugin warnings + residual honesty footer. Fail-open (empty table / residual footer, exit 0). |
 | **validate** | `ValidateDirs` (Discover per package root); stdout `OK` / `FAIL` lines; stderr plugin warnings + honesty. **Exit 1** if any fatal FAIL **or** zero plugins OK when dirs were specified. |
-| **dogfood** | Resolves both product sample dirs (`hello-iome` + `iomesh-memory-mcp`) under module root; `ValidateDirs` per sample; stdout `OK`/`FAIL` + summary; stderr PATH residual + honesty. **Exit 1** if any fatal, missing sample, or not both expected samples OK. **No** MCP Dial / process connect · **does not** require `iomesh-memory-mcp` on PATH. Residual `aion-memory-mcp` sample is optional (not dogfood-required). |
+| **dogfood** | Resolves both product sample dirs (`hello-iome` + `iomesh-memory-mcp`) under module root; `ValidateDirs` per sample; stdout `OK`/`FAIL` + summary; stderr PATH residual + honesty. **Exit 1** if any fatal, missing sample, or not both expected samples OK. **No** MCP Dial / process connect · **does not** require `iomesh-memory-mcp` on PATH. Product dogfood samples are `hello-iome` + `iomesh-memory-mcp` only (s1517). |
 
 Helpers: `SamplePluginRelPaths` / `DefaultSamplePluginDirs` / `FindModuleRoot` / `DogfoodSamples` / `DogfoodPass` in `internal/agentplugins/dogfood.go` (unit-tested).
 
@@ -201,7 +195,7 @@ Pure format helpers live in `internal/agentplugins/cli_format.go` (unit-tested).
 |-------|--------|
 | package client candidacy | discover/validate + opt-in runtime wire + operator CLI + samples dogfood |
 | ≠ Agent Plugins GA | no marketplace/install UX · no product “plugins green” |
-| ≠ Memory GA | orthogonal surface · iomesh-memory-mcp / aion-memory-mcp samples are map only |
+| ≠ Memory GA | orthogonal surface · iomesh-memory-mcp sample is map only |
 | dual_write | **OFF** (unchanged default; not a package concern) |
 | book-demo | **OFF** |
 | fail-open | per dir / component / entry (list); validate/dogfood surfaces fatals |

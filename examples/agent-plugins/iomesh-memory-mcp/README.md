@@ -14,7 +14,6 @@ Residual-honest **stdio map** sample package for operator dogfood of iomesh-tui 
 | secrets in package JSON | **none** — portable map only |
 | public install | `go install …@main` · **no GOPRIVATE** / PAT |
 | connect | requires **`iomesh-memory-mcp` on PATH** · fail-open if missing |
-| residual aion-memory-mcp | private monorepo platform residual · **not** product naming |
 
 This package **maps** a stdio server entry named `memory` → command `iomesh-memory-mcp`. It does **not** ship the binary, mint secrets, or invent attach green. Runtime attach still fail-opens inside `mcp.NewManager` when the binary is absent.
 
@@ -106,6 +105,6 @@ iomesh plugins dogfood   # hello-iome + iomesh-memory-mcp product samples
 - No freemium hosted palace claim
 - No auto dual_write
 - No bundled binary
-- Residual `aion-memory-mcp` sample is **not** product edge naming
+- s1517: product-only sample in TUI (no residual aion Memory sample tree)
 
 See [docs/architecture/agent-plugins.md](../../../docs/architecture/agent-plugins.md), [memory-mcp.md](../../../docs/architecture/memory-mcp.md), and the end-to-end [memory-edge-usage-demo.md](../../../docs/architecture/memory-edge-usage-demo.md) (s1513).
