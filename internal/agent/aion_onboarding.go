@@ -46,7 +46,7 @@ Portal Agent/MCP lane (complementary · s1368 · credential → copy connection 
 Memory + operator:
 5. Memory: dual_write OFF · local-primary · not Memory GA · optional plugins dogfood ≠ invent Agent Plugins GA (rates ~$88/$119 optional)
 6. Operator pulse: /integrations status · /onboard checklist · /onboard portal · portal HITL
-7. Post-onboard continuum: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|demo|operator|status|export|human-gates] (plugins dogfood · /gtm checklist · aion-memory-mcp local · mesh streaming heartbeats · Ops Pack pull path · agentic integrations MCP list/plan + portal HITL · three product planes board · sales/buyer claims · demo readiness · operator readiness matrix · lane status board · status export receipt · human-gates still-required vs offline)
+7. Post-onboard continuum: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|planes|sales|demo|operator|status|export|human-gates] (plugins dogfood · /gtm checklist · iomesh-memory-mcp local · mesh streaming heartbeats · Ops Pack pull path · agentic integrations MCP list/plan + portal HITL · three product planes board · sales/buyer claims · demo readiness · operator readiness matrix · lane status board · status export receipt · human-gates still-required vs offline)
 8. Human gates (s1413): /onboard next human-gates — still human Slack HMAC · Stripe Customers:Write · H1/H2 INSTALL_STORE · D1–D5 · book-demo OFF · ON_SIGNAL unset · offline residual ≠ invent APPLY
 9. Agentic integrations (s1417 · product plane 3): /onboard next agentic — MCP list/plan residual-honest · plan_connector_setup → portal deep links · browser HITL only · list_org fail-open ≠ empty-as-none · never invent Connected
 10. Three product planes (s1432): /onboard next planes — mesh · memory-pull · agentic residual-honest consolidate · streams_not_probed · pull_not_probed · list_plan_not_connected · dual_auth_candidacy_open · never invent Connected
@@ -187,7 +187,7 @@ func AionAgentOnboardingNextLanes() string {
      drill: /onboard next plugins (aliases plugin|dogfood) · slash: /plugins dogfood
   2. /gtm checklist + skill gtm-draft-only-agent — drafts only · no auto-send · human publish · GTM checklist ≠ invent GTM agent GA
      drill: /onboard next gtm (alias drafts)
-  3. local-primary Memory edge (TUI + Memory MCP + memory kernel + local palace) — dual_write OFF · package load ≠ Memory GA · ≠ freemium palace · product host iomesh-memory-mcp · aion broker private · public product attach (s1478): go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main · go get github.com/iome-sh/memory@main · no GOPRIVATE · HTTP http://127.0.0.1:8080/mcp or stdio · docker compose still valid · flip complete residual ≠ invent Memory GA · residual aion-memory-mcp private monorepo only (not product naming)
+  3. local-primary Memory edge (TUI + Memory MCP + memory kernel + local palace) — dual_write OFF · package load ≠ Memory GA · ≠ freemium palace · product host iomesh-memory-mcp · aion broker private · public product attach (s1478): go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main · go get github.com/iome-sh/memory@main · no GOPRIVATE · HTTP http://127.0.0.1:8080/mcp or stdio · docker compose still valid · flip complete residual ≠ invent Memory GA
      drill: /onboard next memory (aliases mcp|palace)
   4. I/O Mesh streaming org heartbeats on dept.* — mesh ≠ memory · not OTel/APM · not hosted Memory Palace · empty streams honest
      drill: /onboard next mesh (aliases stream|streams|heartbeat|heartbeats|pull) · residual soft: /mesh · iomesh mesh status|streams|consumer
@@ -216,7 +216,7 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ liv
 func AionAgentOnboardingNextPluginsLane() string {
 	return strings.TrimSpace(`aion onboard next plugins lane (residual-honest · s1377+s1392 · no MCP dial):
   Path: iomesh plugins dogfood · /plugins dogfood — offline sample validate only
-  Samples: examples/agent-plugins/{hello-iome,iomesh-memory-mcp} (product primary · residual aion-memory-mcp optional)
+  Samples: examples/agent-plugins/{hello-iome,iomesh-memory-mcp} (product primary)
   Steps:
     1. iomesh plugins list · /plugins list — closed-manifest discovery map (≠ invent install green / Connected)
     2. iomesh plugins validate <path> · /plugins validate — offline package shape residual
@@ -253,21 +253,21 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ liv
 }
 
 // AionAgentOnboardingNextMemoryLane residual-honest memory local drill for /onboard next memory
-// (s1377+s1453+s1458+s1463+s1469+s1478+s1508).
+// (s1377+s1453+s1458+s1463+s1469+s1478+s1508+s1517).
 // Static offline — local-primary Memory edge (TUI + Memory MCP + github.com/iome-sh/memory kernel + local palace).
-// Naming honesty (s1453 Option A): product MCP host = iomesh-memory-mcp (not aion-memory-mcp for product edge);
-// aion = private cloud broker. s1458–s1469: M2 lean / M3 dogfood / M4 readiness history. s1478: both product edge
-// repos are PUBLIC — go install / go get without GOPRIVATE · attach HTTP :8080/mcp or stdio · docker compose still
-// valid · flip complete residual ≠ invent Memory GA · dual_write OFF · aion broker still private · not freemium
-// palace · residual monorepo aion-memory-mcp remains private platform residual (not product edge naming).
+// Naming honesty (s1453 Option A · s1517 cleanup): product MCP host = iomesh-memory-mcp only (public edge);
+// aion = private cloud broker/CP (not OSS edge pack; s1517 dropped in-tree residual memory sample). s1458–s1469: M2 lean /
+// M3 dogfood / M4 readiness history. s1478: both product edge repos are PUBLIC — go install / go get without
+// GOPRIVATE · attach HTTP :8080/mcp or stdio · docker compose still valid · flip complete residual ≠ invent
+// Memory GA · dual_write OFF · aion broker still private · not freemium palace.
 // s1508: E4 full MCP client attach dogfood tip residual (connected=1 · tools=6 stamp) · Edge Memory GA candidacy
 // only · E10 Open · tip ≠ invent Edge Memory GA declared · tip ≠ invent forever-green product dogfood.
 // Never invents Memory GA, freemium palace, dual_write ON, install Connected, or live dogfood green.
 func AionAgentOnboardingNextMemoryLane() string {
-	return strings.TrimSpace(`aion onboard next memory lane (residual-honest · s1377+s1453+s1458+s1463+s1469+s1478+s1508 · no MCP dial):
+	return strings.TrimSpace(`aion onboard next memory lane (residual-honest · s1377+s1453+s1458+s1463+s1469+s1478+s1508+s1517 · no MCP dial):
   Path: local-primary Memory edge — TUI + Memory MCP + github.com/iome-sh/memory kernel + local palace — dual_write OFF
-  Edge OSS (Option A · s1453+s1458+s1463+s1469+s1478+s1508 · public product attach continuum):
-    · product MCP host = iomesh-memory-mcp (not aion-memory-mcp for product naming)
+  Edge OSS (Option A · s1453+s1458+s1463+s1469+s1478+s1508+s1517 · public product attach continuum):
+    · product MCP host = iomesh-memory-mcp only (public · go install / compose)
     · s1478 PUBLIC product path (both edge repos public · no GOPRIVATE / PAT required):
         go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main
         (or clone github.com/iome-sh/iomesh-memory-mcp and go build)
@@ -282,7 +282,7 @@ func AionAgentOnboardingNextMemoryLane() string {
     · residual: tool parity may be lean vs platform residual · PASS ≠ invent full platform sidecar parity
     · offline dogfood tip ≠ invent live dogfood as green · public product attach ≠ invent platform GA
     · kernel = github.com/iome-sh/memory (public) · product host github.com/iome-sh/iomesh-memory-mcp (public)
-    · Also residual attach: monorepo aion-memory-mcp remains private platform residual (not product edge naming) · package load ≠ Memory GA
+    · product attach path is iomesh-memory-mcp only (s1517) · package load ≠ Memory GA
   Steps:
     1. Public install product host: go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main — no GOPRIVATE · package load ≠ Memory GA · ≠ freemium palace
     2. Kernel (public): go get github.com/iome-sh/memory@main — no GOPRIVATE
@@ -303,12 +303,12 @@ func AionAgentOnboardingNextMemoryLane() string {
     · never invent install green / Connected / INSTALL_STORE APPLY
     · catalog ≠ Connected · portal HITL · agent MCP cannot write installs
     · mesh ≠ memory · mesh optional for pull only · memory lane is local-edge palace, not streaming org heartbeats
-    · iomesh-memory-mcp naming honesty · residual aion-memory-mcp private monorepo only · not product naming
+    · iomesh-memory-mcp product host only · aion broker private · s1517 product-only memory sample
     · rates ~$88 mesh / ~$119 Memory Ops Pack optional · package load ≠ Memory GA
   Companion: /onboard next memory-pull · /onboard next operator · docs/architecture/memory-mcp.md Edge OSS Option A · public product attach (s1478) · E4 client attach (s1508)
   Back: /onboard next · /memory status · portal Agent/MCP https://console.iome.sh/settings/agent
 
-Locks: dual_write OFF · book-demo OFF · not Memory GA · Palace sunset · residual PASS ≠ live dogfood · offline dogfood tip ≠ invent live dogfood as green · PASS ≠ live APPLY · PASS ≠ invent full platform sidecar parity · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · no GOPRIVATE · go install · package load ≠ Memory GA · ≠ freemium palace · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · rates ~$88/$119 optional · Memory Ops Pack optional · mesh ≠ memory · mesh optional for pull · iomesh-memory-mcp · aion broker private · aion still private · residual aion-memory-mcp private monorepo only`)
+Locks: dual_write OFF · book-demo OFF · not Memory GA · Palace sunset · residual PASS ≠ live dogfood · offline dogfood tip ≠ invent live dogfood as green · PASS ≠ live APPLY · PASS ≠ invent full platform sidecar parity · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · no GOPRIVATE · go install · package load ≠ Memory GA · ≠ freemium palace · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · rates ~$88/$119 optional · Memory Ops Pack optional · mesh ≠ memory · mesh optional for pull · iomesh-memory-mcp · aion broker private · aion still private · s1517 product-only memory sample (iomesh-memory-mcp)`)
 }
 
 // AionAgentOnboardingNextMeshLane residual-honest mesh streaming lane for /onboard next mesh (s1402).
@@ -1045,7 +1045,7 @@ func AionAgentOnboardingNextLaneStatusExportJSON() string {
 }
 
 // nextLanePluginsSamplesSoftState soft-checks in-repo sample package dirs (s1382/s1387/s1392).
-// samples_ok when both hello-iome + aion-memory-mcp dirs exist under module root;
+// samples_ok when both hello-iome + iomesh-memory-mcp dirs exist under module root;
 // samples_missing otherwise (including when module root is not found).
 // Does not run dogfood, Dial MCP, or invent Agent Plugins GA / Connected.
 func nextLanePluginsSamplesSoftState() string {

@@ -104,7 +104,7 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|mesh|me
 
 #### D1. Plugins dogfood lane (`/onboard next plugins`)
 
-1. **`iomesh plugins dogfood`** / **`/plugins dogfood`** — offline sample validate (`examples/agent-plugins/{hello-iome,iomesh-memory-mcp}` product primary; residual `aion-memory-mcp` optional).
+1. **`iomesh plugins dogfood`** / **`/plugins dogfood`** — offline sample validate (`examples/agent-plugins/{hello-iome,iomesh-memory-mcp}` product primary · s1517).
    - Steps: `iomesh plugins list` → `validate <path>` → `dogfood` (both in-repo product samples offline).
    - Offline validate only · **≠ invent Agent Plugins GA** · soft offline dogfood ≠ invent Agent Plugins GA.
    - residual PASS ≠ live dogfood · rates ~$88/$119 optional · package load ≠ Memory GA.
@@ -125,10 +125,10 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|mesh|me
 
 3. **local-primary Memory edge** — TUI + Memory MCP + `github.com/iome-sh/memory` kernel + local palace · dual_write **OFF**.
    - Package load ≠ Memory GA · ≠ freemium palace · local-primary only · **Palace sunset**.
-   - **Edge OSS Option A (s1453):** product MCP host = **`iomesh-memory-mcp`** (not `aion-memory-mcp` for product naming) · aion = **private** cloud broker · kernel module `github.com/iome-sh/memory`.
+   - **Edge OSS Option A (s1453):** product MCP host = **`iomesh-memory-mcp` only** · aion = **private** cloud broker/CP · kernel module `github.com/iome-sh/memory` · s1517 no in-tree residual aion Memory sample.
    - **Public product attach (s1478):** both edge repos **public** · `go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main` · `go get github.com/iome-sh/memory@main` · **no GOPRIVATE** · attach streamable HTTP `http://127.0.0.1:8080/mcp` or stdio · docker compose still valid · dual_write **OFF** · not Memory GA · aion broker private · **flip complete residual ≠ invent Memory GA** · **public OSS ≠ invent platform GA** · **PASS ≠ invent full platform sidecar parity**.
    - History: M2 lean attach (s1458) · M3 edge dogfood (s1463) · M4 public flip readiness (s1469) — superseded for operator tip by s1478 public install.
-   - **Also residual attach:** monorepo `aion-memory-mcp` remains **private platform residual** (not product naming).
+   - **Product-only sample:** `examples/agent-plugins/iomesh-memory-mcp` (s1517 · aion broker private).
    - Mesh **optional for pull only** · companion `/onboard next memory-pull` · `/onboard next operator`.
    - Optional advanced memory via `memory-advanced-agent` skill (opt-in).
    - Operator pulse: `/memory status` · `/onboard status`.
@@ -323,14 +323,14 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|mesh|me
 | agent MCP cannot write installs | Portal session owns install plane; MCP is residual list/plan |
 | plugins dogfood ≠ Agent Plugins GA | Sample/offline dogfood is not product GA; rates ~$88/$119 optional |
 | drafts only · no auto-send | GTM / post-onboard lanes never auto-send or auto-publish; human publish |
-| package load ≠ Memory GA | Loading iomesh-memory-mcp / residual aion-memory-mcp / Ops Pack local ≠ invent Memory Palace GA / freemium palace |
-| iomesh-memory-mcp | Product edge MCP host naming (s1453 Option A) · not `aion-memory-mcp` for public product host |
+| package load ≠ Memory GA | Loading iomesh-memory-mcp / Ops Pack local ≠ invent Memory Palace GA / freemium palace |
+| iomesh-memory-mcp | Product edge MCP host only (s1453 Option A · s1517) |
 | public product attach (s1478) | Both edge repos public · go install · no GOPRIVATE · HTTP `http://127.0.0.1:8080/mcp` or stdio · docker compose still valid |
 | flip complete residual ≠ invent Memory GA | Public edge packs ≠ invent Memory GA / freemium palace |
 | public OSS ≠ invent platform GA | Public MIT edge modules ≠ invent multi-tenant platform Memory GA |
 | PASS ≠ invent full platform sidecar parity | Lean tool surface may lag platform residual · attach residual ≠ invent full parity |
 | aion broker private | aion stays private cloud broker/CP · not OSS edge pack |
-| residual aion-memory-mcp private monorepo only | Platform residual binary/sample · not product edge naming |
+| s1517 product-only | In-tree residual aion Memory sample removed · aion broker private |
 | mesh optional for pull | Mesh is optional feed via pull only · not required for local-primary Memory |
 | GTM checklist ≠ GTM agent GA | `/gtm checklist` residual-honest draft path only — not invent GTM agent GA |
 | board/export evidence ≠ invent Connected | Lane status board + export receipt are offline residual evidence only — never invent Connected / GA / APPLY |
@@ -369,7 +369,7 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|mesh|me
 - Do **not** treat portal test invoke / mint key as Memory GA or install Connected.
 - Do **not** invent Agent Plugins GA from `iomesh plugins dogfood` offline validate.
 - Do **not** invent GTM agent GA from `/gtm checklist` / draft-only skill.
-- Do **not** invent Memory GA / freemium palace from local `iomesh-memory-mcp` or residual `aion-memory-mcp` package load.
+- Do **not** invent Memory GA / freemium palace from local `iomesh-memory-mcp` package load.
 - Do **not** invent Memory GA / platform GA from public product attach residual (`iomesh-memory-mcp` go install · no GOPRIVATE · dual_write OFF · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · aion broker private · s1478).
 - Do **not** invent full platform sidecar parity / Memory GA from lean edge host attach residual (`iomesh-memory-mcp` · dual_write OFF · PASS ≠ invent full platform sidecar parity).
 - Do **not** invent live dogfood green / Memory GA from M3 edge dogfood tip residual (`iomesh-memory-mcp` compose/HTTP · offline dogfood tip ≠ invent live dogfood as green · s1463).

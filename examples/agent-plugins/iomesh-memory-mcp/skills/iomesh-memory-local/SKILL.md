@@ -56,11 +56,11 @@ Attach after install:
 | public OSS = platform GA | Public edge packages ≠ invent Memory GA / freemium palace |
 | Secrets in plugin.json / mcp.json | Portable package fields must not carry secrets |
 | Map success = tools always available | Connect needs binary on PATH; MCP tools stay **approval-gated** |
-| residual aion-memory-mcp = product | Monorepo `aion-memory-mcp` is **private platform residual** · not product edge naming |
+| residual aion Memory sample | **Removed** from TUI tree (s1517) · product host is `iomesh-memory-mcp` only |
 
 ## Related
 
 - Package README: `examples/agent-plugins/iomesh-memory-mcp/README.md`
-- Residual private sample: `examples/agent-plugins/aion-memory-mcp` (platform residual · not product naming)
+- s1517 product-only: this package is the in-tree Memory sample (hello-iome is skills-only)
 - Architecture: `docs/architecture/agent-plugins.md` · `docs/architecture/memory-mcp.md` (s1478 public product attach)
 - Spec peer: [Agent Plugins 1.0.0](https://agent-plugins.org/specification)

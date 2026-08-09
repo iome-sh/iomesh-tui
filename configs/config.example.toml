@@ -181,7 +181,7 @@ enabled = false
 # # allow_loopback = true
 # # mutating = true
 
-# --- Memory Palace (product edge: iomesh-memory-mcp · residual aion-memory-mcp) ---
+# --- Memory Palace (product edge: iomesh-memory-mcp · s1517 product-only) ---
 # See docs/architecture/memory-mcp.md · Edge OSS Option A · public product attach (s1478).
 # Honesty: dual_write OFF · not Memory GA · package load ≠ Memory GA · offline dogfood tip ≠ invent live dogfood as green ·
 # flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · aion broker private ·
@@ -204,19 +204,15 @@ enabled = false
 # # command = "iomesh-memory-mcp"
 # # args = ["-palace-root", "./data/memory-palaces", "-tenant", "default"]
 #
-# Residual platform attach (aion-memory-mcp · private monorepo only · not product edge naming):
-# # name = "memory"
-# # url = "http://127.0.0.1:8080/mcp"
-# # command = "aion-memory-mcp"
-# # args = ["-palace-root", "/data/memory-palaces"]
-# # env = { "MEMORY_TENANT" = "dept.research" }
+# Product [memory].server should match [[mcp.servers]].name (e.g. "iomesh-memory-mcp").
+# aion cloud broker/CP stays private · no in-tree residual aion Memory sample (s1517).
 
 # [memory] hooks: auto-recall prefers sync POST /v1/memory/retrieve when [iomesh]
 # is enabled or endpoint (sidecar) is set; falls back to MCP server above.
 # Optional dual_write also publishes async MEMORY_INGEST when [iomesh] is enabled.
 # [memory]
 # enabled = true
-# server = "memory"
+# server = "iomesh-memory-mcp"
 # tenant = "dept.research"
 # endpoint = "http://127.0.0.1:8765"  # memory sidecar (stage warm plane); IOMESH_MEMORY_ENDPOINT
 # auto_recall = true     # inject <memory-context> each turn (fail-open; sync then MCP)

@@ -14,7 +14,6 @@ const ResidualDogfoodHonesty = "honesty: dogfood PASS ≠ invent Agent Plugins G
 
 // SamplePluginRelPaths returns the in-repo sample package paths relative to module root (s1357+s1478).
 // Order is stable: skills-only hello-iome, then product stdio-map iomesh-memory-mcp.
-// Residual aion-memory-mcp sample remains under examples/agent-plugins (optional · not dogfood-required).
 // PATH residual: iomesh-memory-mcp binary is not required for discover/validate dogfood.
 func SamplePluginRelPaths() []string {
 	return []string{
