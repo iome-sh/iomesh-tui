@@ -1,8 +1,9 @@
 # Setup lifecycle (agent-native wizard foundation)
 
-**Serial:** free eng **s1525** P1–P2 · **s1526** P3–P4 · **s1530** P5 · **s1534** P6 · **s1538** P7 · residual-honest  
-**Status:** foundation + agent-native slash/skill + package wire + `ReplaceMCP` + in-session opt-in continuous pull + analyze ticks + report-only drift + **guided repair** (safe steps · explicit `--yes`)  
-**Shipped P7:** `/setup repair` plan + apply `--yes` (safe steps only · notes stay human)
+**Serial:** free eng **s1525** P1–P2 · **s1526** P3–P4 · **s1530** P5 · **s1534** P6 · **s1538** P7 · **s1542** closeout residual · residual-honest  
+**Status:** foundation + agent-native slash/skill + package wire + `ReplaceMCP` + in-session opt-in continuous pull + analyze ticks + report-only drift + **guided repair** (safe steps · explicit `--yes`) + **onboard next setup** lane  
+**Shipped P7:** `/setup repair` plan + apply `--yes` (safe steps only · notes stay human)  
+**Shipped s1542:** residual-honest `/onboard next setup` consolidates P1–P7 map story
 
 ## Goal
 
@@ -138,7 +139,7 @@ Report-only config intent vs runtime snapshot:
 | Slash | `/setup drift` · `/setup maintain` (alias) |
 | API | `setup.BuildDriftReport(cfg, snap)` · `setup.FormatDriftText(rep)` · `Runtime.DriftSnapshot()` |
 
-**Honesty:** dual_write OFF · not Memory GA · drift report ≠ invent install green · package wire ≠ Connected · residual next-steps notes (guided repair is separate P7).
+**Honesty:** dual_write OFF · not Memory GA · drift report ≠ invent install green · package wire ≠ Connected · residual next-steps notes point at guided `/setup repair plan` · `/setup repair apply --yes` (safe steps only · dual_write never auto ON).
 
 ## Guided repair (s1538 P7)
 
@@ -180,6 +181,21 @@ Skill + note + slash share honesty locks; skill is the full playbook.
 | analyze ticks opt-in | `/setup analyze` · `analyze_continuous` · `/memory digest` still valid · analyze tick ≠ invent Connected |
 | drift report-only | `/setup drift` · `/setup maintain` · residual next steps · drift ≠ invent install green · package wire ≠ Connected |
 | guided repair explicit | `/setup repair` · `apply --yes` only · safe steps · repair apply ≠ invent Connected · no auto-repair without `--yes` |
+| onboard next setup (s1542) | `/onboard next setup` offline map · `setup_not_probed` · offline static ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA · E10 Open |
+
+## Onboard next setup lane (s1542)
+
+Residual-honest offline static continuum for the full setup lifecycle map (no MCP dial):
+
+| Surface | Detail |
+|---------|--------|
+| Slash | `/onboard next setup` (aliases `setup-lifecycle` · `wizard` · `lifecycle` · `setup_lifecycle`) |
+| API | `agent.AionAgentOnboardingNextSetupLane()` |
+| Board vocab | `path_ready` · `residual_only` · **`setup_not_probed`** |
+| Map steps | init → memory host/secrets → preflight → reload → portal HITL → optional pull/analyze → drift → repair plan/apply `--yes` → `/memory digest` still valid |
+| Companion | `/onboard next memory` · `memory-pull` · `human-gates` · `operator` · skill `setup-lifecycle-agent` · [memory-edge-usage-demo.md](./memory-edge-usage-demo.md) |
+
+**Honesty:** dual_write OFF · not Memory GA · package wire ≠ Connected · PASS ≠ invent Connected · repair apply ≠ invent Connected · dual_write never auto ON · portal HITL still human · still-human APPLY open · **E10 Open** · offline static lane ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA.
 
 ## Preflight states
 
@@ -209,7 +225,8 @@ Skills catalog is **not** re-scanned on `/setup reload` (restart for skill-only 
 - ~~`ReplaceMCP` / package wire / `/setup reload`~~ **shipped s1526 P4**  
 - ~~In-session continuous pull (`/setup pull` · `pull_continuous`)~~ **shipped s1530 P5**  
 - ~~Analyze auto-ticks (`/setup analyze` · `analyze_continuous`) + drift report~~ **shipped s1534 P6**  
-- ~~Guided repair (`/setup repair` plan · `apply --yes` safe steps)~~ **shipped s1538 P7**
+- ~~Guided repair (`/setup repair` plan · `apply --yes` safe steps)~~ **shipped s1538 P7**  
+- ~~Onboard next setup lane (P1–P7 closeout residual map)~~ **shipped s1542**
 
 See product plan: agent-native MCP/plugin setup wizard + continuous pull/analyze + guided repair.
 

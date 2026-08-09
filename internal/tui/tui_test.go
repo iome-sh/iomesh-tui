@@ -1506,7 +1506,75 @@ func TestHandleSlash_OnboardNextMemoryPullLane(t *testing.T) {
 	}
 }
 
-// s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447: unknown /onboard next <lane> → overview + usage hint listing lanes.
+// s1542: /onboard next setup|setup-lifecycle|wizard|lifecycle|setup_lifecycle — residual-honest setup lifecycle P1–P7 closeout.
+func TestHandleSlash_OnboardNextSetupLane(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	needles := []string{
+		"onboard next setup lane",
+		"setup lifecycle P1–P7 closeout residual",
+		"/setup init",
+		"/setup preflight",
+		"/setup reload",
+		"/setup portal",
+		"/setup pull start",
+		"/setup analyze start",
+		"/setup drift",
+		"/setup repair plan",
+		"/setup repair apply --yes",
+		"dual_write OFF",
+		"not Memory GA",
+		"package wire ≠ Connected",
+		"repair apply ≠ invent Connected",
+		"dual_write never auto ON",
+		"E10 Open",
+		"setup_not_probed",
+		"offline static lane ≠ live dogfood",
+		"setup closeout residual ≠ invent Edge Memory GA",
+		"portal HITL",
+		"catalog ≠ Connected",
+		"never invent install green",
+	}
+
+	for _, line := range []string{
+		"/onboard next setup",
+		"/onboard next setup-lifecycle",
+		"/onboard next wizard",
+		"/onboard next lifecycle",
+		"/onboard next setup_lifecycle",
+		"/aion-onboard after setup",
+		"/agent-onboard continue wizard",
+		"/onboard lanes lifecycle",
+	} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Memory GA shipped") {
+			t.Fatalf("%s must not invent dual_write ON / Memory GA: %s", line, s)
+		}
+		if strings.Contains(s, "Connected: yes") || strings.Contains(s, "E10 closed") {
+			t.Fatalf("%s must not invent Connected / E10 closed: %s", line, s)
+		}
+		if strings.Contains(s, "onboard next lane status (") {
+			t.Fatalf("%s must not emit status board: %s", line, s)
+		}
+	}
+}
+
+// s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542: unknown /onboard next <lane> → overview + usage hint listing lanes.
 func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -1531,6 +1599,7 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 		"sales",
 		"demo",
 		"operator",
+		"setup",
 		"status",
 		"export",
 		"human-gates",

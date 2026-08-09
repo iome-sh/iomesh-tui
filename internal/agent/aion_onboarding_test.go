@@ -59,6 +59,12 @@ func TestAionAgentOnboardingGuidanceNote_HonestyNeedles(t *testing.T) {
 		"drafts only",
 		"no auto-send",
 		"package load ≠ Memory GA",
+		// s1542 setup lifecycle map
+		"/onboard next setup",
+		"setup lifecycle",
+		"setup_not_probed",
+		"repair apply ≠ invent Connected",
+		"E10 Open",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("guidance missing %q in:\n%s", want, out)
@@ -225,6 +231,12 @@ func TestAionAgentOnboardingStatus_HonestyNeedles(t *testing.T) {
 		"pull_not_probed",
 		"Ops Pack ≠ GPU fleet",
 		"pull ≠ freemium hosted palace",
+		// s1542 setup lifecycle map
+		"/onboard next setup",
+		"setup_not_probed",
+		"package wire ≠ Connected",
+		"repair apply ≠ invent Connected",
+		"E10 Open",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("status missing %q in:\n%s", want, out)
@@ -359,6 +371,15 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"still_human",
 		"policy_off",
 		"not_ready",
+		// s1542 setup lifecycle P1–P7 closeout residual
+		"/onboard next setup",
+		"setup lifecycle map",
+		"setup-lifecycle|wizard|lifecycle|setup_lifecycle",
+		"setup_not_probed",
+		"repair apply ≠ invent Connected",
+		"dual_write never auto ON",
+		"E10 Open",
+		"package wire ≠ Connected",
 		// pulse stays board (not mesh alias)
 		"pulse stays board",
 		"never invent pull green",
@@ -702,6 +723,72 @@ func TestAionAgentOnboardingNextMemoryPullLane_HonestyNeedles(t *testing.T) {
 	}
 	if strings.Contains(out, "GPU fleet green") || strings.Contains(out, "freemium hosted palace ON") {
 		t.Fatalf("must not invent GPU fleet / freemium palace: %s", out)
+	}
+}
+
+// s1542: AionAgentOnboardingNextSetupLane residual-honest setup lifecycle P1–P7 closeout map needles.
+func TestAionAgentOnboardingNextSetupLane_HonestyNeedles(t *testing.T) {
+	out := AionAgentOnboardingNextSetupLane()
+	if out == "" {
+		t.Fatal("empty setup lane")
+	}
+	for _, want := range []string{
+		"onboard next setup lane",
+		"no MCP dial",
+		"setup lifecycle P1–P7 closeout residual",
+		"/setup init",
+		"iomesh setup init",
+		"dual_write OFF",
+		"managed fragment",
+		"start memory host",
+		"/setup preflight",
+		"PASS ≠ invent Connected",
+		"/setup reload",
+		"package wire ≠ Connected",
+		"/setup portal",
+		"portal HITL",
+		"/setup pull start",
+		"pull ≠ invent Connected",
+		"/setup analyze start",
+		"tick ≠ invent green",
+		"/setup drift",
+		"report-only",
+		"/setup repair plan",
+		"/setup repair apply --yes",
+		"safe steps only",
+		"dual_write never auto ON",
+		"repair apply ≠ invent Connected",
+		"/memory digest",
+		"not Memory GA",
+		"catalog ≠ Connected",
+		"still-human APPLY open",
+		"E10 Open",
+		"setup_not_probed",
+		"offline static lane ≠ live dogfood",
+		"setup closeout residual ≠ invent Edge Memory GA",
+		"/onboard next setup",
+		"setup-lifecycle|wizard|lifecycle|setup_lifecycle",
+		"/onboard next memory",
+		"/onboard next memory-pull",
+		"/onboard next human-gates",
+		"/onboard next operator",
+		"docs/architecture/setup-lifecycle.md",
+		"docs/architecture/memory-edge-usage-demo.md",
+		"agent MCP cannot write installs",
+		"never invent install green",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("setup lane missing %q in:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
+	}
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "Edge Memory GA declared") {
+		t.Fatalf("must not invent Memory GA / Edge Memory GA declared: %s", out)
+	}
+	if strings.Contains(out, "E10 closed") || strings.Contains(out, "APPLY green") {
+		t.Fatalf("must not invent E10 closed / APPLY green: %s", out)
 	}
 }
 
@@ -1400,6 +1487,7 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"memory:",
 		"mesh:",
 		"memory-pull:",
+		"setup:",
 		"agentic:",
 		"portal:",
 		// honest state vocabulary (never invent connected/ga/apply/stream/pull green as success)
@@ -1410,6 +1498,7 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"residual_only",
 		"streams_not_probed",
 		"pull_not_probed",
+		"setup_not_probed",
 		"portal_hitl_still",
 		"list_plan_not_connected",
 		// plugins honesty
@@ -1457,6 +1546,13 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"never invent pull green",
 		"/onboard next memory-pull",
 		"package load ≠ Ops Pack entitlement",
+		// setup honesty (s1542)
+		"setup lifecycle P1–P7",
+		"/onboard next setup",
+		"setup-lifecycle|wizard|lifecycle|setup_lifecycle",
+		"package wire ≠ Connected",
+		"repair apply ≠ invent Connected",
+		"dual_write never auto ON",
 		// agentic honesty (s1417+s1427)
 		"product plane 3",
 		"MCP list/plan residual-honest",
@@ -1642,6 +1738,7 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 		"memory:",
 		"mesh:",
 		"memory-pull:",
+		"setup:",
 		"agentic:",
 		"portal:",
 		"dogfood_not_run",
@@ -1651,6 +1748,7 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 		"residual_only",
 		"streams_not_probed",
 		"pull_not_probed",
+		"setup_not_probed",
 		"portal_hitl_still",
 		"list_plan_not_connected",
 		// memory edge OSS tip (s1453+s1458+s1463+s1469+s1478+s1508 public product attach + E4)
@@ -1765,11 +1863,13 @@ func TestAionAgentOnboardingNextLaneStatusExportJSON_HonestyNeedles(t *testing.T
 		"residual_only",
 		"streams_not_probed",
 		"pull_not_probed",
+		"setup_not_probed",
 		"portal_hitl_still",
 		"list_plan_not_connected",
 		`"mesh":`,
 		`"memory-pull":`,
 		`"ops_pack":`,
+		`"setup":`,
 		`"agentic":`,
 		"dual_write OFF",
 		"not Memory GA",
@@ -1783,12 +1883,15 @@ func TestAionAgentOnboardingNextLaneStatusExportJSON_HonestyNeedles(t *testing.T
 		"Ops Pack ≠ GPU fleet",
 		"never invent pull green",
 		"pull ≠ freemium hosted palace",
+		"package wire ≠ Connected",
+		"repair apply ≠ invent Connected",
 		"plan deep links = browser HITL only",
 		"template= ≠ install APPLY",
 		"/onboard next export",
 		"/onboard next mesh",
 		"/onboard next agentic dogfood",
 		"/onboard next memory-pull",
+		"/onboard next setup",
 		"/onboard next agentic",
 		"/plugins dogfood",
 		"/plugins status",

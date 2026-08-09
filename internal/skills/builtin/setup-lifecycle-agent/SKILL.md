@@ -3,11 +3,13 @@ name: setup-lifecycle-agent
 description: Residual-honest agent-native setup lifecycle (init/preflight · dual_write OFF · not Memory GA · catalog ≠ Connected · portal HITL · not invent install green · continuous pull/analyze opt-in · drift report-only · guided repair apply --yes)
 ---
 
-# Setup lifecycle agent (residual-honest · s1526 P3 + s1530 P5 + s1534 P6 + s1538 P7)
+# Setup lifecycle agent (residual-honest · s1526 P3 + s1530 P5 + s1534 P6 + s1538 P7 + s1542 closeout)
 
 Agent-native path to **bootstrap** local TUI config planes via managed fragment write + preflight probes + in-session opt-in continuous pull / analyze ticks + report-only drift + **guided repair** (safe steps only with explicit `--yes`) — **not** invent Connected / Memory GA / INSTALL_STORE green.
 
 Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the operator is at a terminal. Use this skill when planning setup steps in chat.
+
+**Onboard companion (s1542):** residual-honest offline map via `/onboard next setup` (aliases `setup-lifecycle` / `wizard` / `lifecycle` / `setup_lifecycle`) → `AionAgentOnboardingNextSetupLane` — consolidates P1–P7 map story · **setup_not_probed** · dual_write OFF · package wire ≠ Connected · repair apply ≠ invent Connected · dual_write never auto ON · E10 Open · offline static ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA.
 
 ## Workflow
 
@@ -50,7 +52,8 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
 6. **Drift / maintain (s1534 P6 · report-only)** — config intent vs runtime snapshot.
    - Slash: `/setup drift` · `/setup maintain` (alias)
    - Report-only residual next steps · **drift report ≠ invent install green** · package wire ≠ Connected
-   - After drift, optional guided repair (P7) — not automatic
+   - Notes point at guided repair: `/setup repair plan` · `/setup repair apply --yes` (safe steps only · dual_write never auto ON)
+   - After drift, optional guided repair (P7) — not automatic without explicit `--yes`
 
 7. **Guided repair (s1538 P7 · explicit --yes only)** — plan from drift · apply safe steps only.
    - Slash: `/setup repair` · `/setup repair plan` — `PlanRepair` + `FormatRepairPlan` (dry plan · no side effects)
@@ -101,11 +104,12 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
 | `/memory digest` | still valid one-shot ops pulse |
 | System note | `<setup-lifecycle>` on AttachMCP |
 | Skill | `read_skill setup-lifecycle-agent` |
+| Onboard map (s1542) | `/onboard next setup` (aliases setup-lifecycle\|wizard\|lifecycle\|setup_lifecycle) |
 
 ## Related
 
-- Docs: `docs/architecture/setup-lifecycle.md`
+- Docs: `docs/architecture/setup-lifecycle.md` · demo polish `docs/architecture/memory-edge-usage-demo.md`
 - Builtin always merged when skills enabled (`go:embed`)
 - Integrations residual path: skill `connector-integrations-setup` · `/integrations`
 - Memory advanced residual: skill `memory-advanced-agent` · `/memory`
-- Onboarding continuum: skill `aion-agent-onboarding` · `/onboard`
+- Onboarding continuum: skill `aion-agent-onboarding` · `/onboard` · **`/onboard next setup`** (s1542 P1–P7 closeout residual)

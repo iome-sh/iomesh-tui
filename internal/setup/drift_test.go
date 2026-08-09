@@ -39,6 +39,11 @@ func TestBuildDriftReport_HonestyNeedles(t *testing.T) {
 		"≠ invent install green",
 		"package wire ≠ Connected",
 		"report-only",
+		// s1542: guided repair tip (not pure “no auto-repair” alone)
+		"/setup repair plan",
+		"/setup repair apply --yes",
+		"safe steps only",
+		"guided repair",
 	} {
 		if !strings.Contains(text, needle) {
 			t.Fatalf("format missing honesty needle %q:\n%s", needle, text)
