@@ -1268,7 +1268,7 @@ func TestHandleSlash_OnboardNextGtmLane(t *testing.T) {
 	}
 }
 
-// s1377+s1453+s1458+s1463+s1469+s1478: /onboard next memory|mcp|palace — residual-honest memory local + public product attach drill.
+// s1377+s1453+s1458+s1463+s1469+s1478+s1508: /onboard next memory|mcp|palace — residual-honest memory local + public product attach + E4 drill.
 func TestHandleSlash_OnboardNextMemoryLane(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -1282,6 +1282,12 @@ func TestHandleSlash_OnboardNextMemoryLane(t *testing.T) {
 		"http://127.0.0.1:8080/mcp",
 		"stdio",
 		"s1478",
+		"s1508",
+		"E4 client attach",
+		"Edge Memory GA candidacy only",
+		"residual PASS ≠ invent Edge Memory GA declared",
+		"E10 Open",
+		"tip ≠ invent forever-green product dogfood",
 		"public",
 		"no GOPRIVATE",
 		"go install",

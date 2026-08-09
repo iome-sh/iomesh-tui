@@ -482,7 +482,7 @@ func TestAionAgentOnboardingNextGtmLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1377+s1453+s1458+s1463+s1469+s1478: AionAgentOnboardingNextMemoryLane residual-honest memory local + edge OSS + public product attach needles.
+// s1377+s1453+s1458+s1463+s1469+s1478+s1508: AionAgentOnboardingNextMemoryLane residual-honest memory local + edge OSS + public product attach + E4 client attach needles.
 func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 	out := AionAgentOnboardingNextMemoryLane()
 	if out == "" {
@@ -491,7 +491,7 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 	for _, want := range []string{
 		"onboard next memory lane",
 		"no MCP dial",
-		"s1377+s1453+s1458+s1463+s1469+s1478",
+		"s1377+s1453+s1458+s1463+s1469+s1478+s1508",
 		"local-primary",
 		"github.com/iome-sh/memory",
 		"github.com/iome-sh/iomesh-memory-mcp",
@@ -501,6 +501,12 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 		"aion still private",
 		"public",
 		"s1478",
+		"s1508",
+		"E4 MCP client attach",
+		"Edge Memory GA candidacy only",
+		"residual PASS ≠ invent Edge Memory GA declared",
+		"E10 Open",
+		"tip ≠ invent forever-green product dogfood",
 		"no GOPRIVATE",
 		"go install",
 		"go get github.com/iome-sh/memory@main",
@@ -567,6 +573,16 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 	// Edge packs are public; do not keep the obsolete "repos still private" claim.
 	if strings.Contains(out, "repos still private") {
 		t.Fatalf("must not claim edge repos still private after s1478 public flip: %s", out)
+	}
+	// Positive claims only — honesty needles contain "≠ invent Edge Memory GA declared" / "E10 Open".
+	if strings.Contains(out, "Edge Memory GA declared: yes") || strings.Contains(out, "Edge Memory GA: shipped") || strings.Contains(out, "Edge Memory GA shipped") {
+		t.Fatalf("must not invent Edge Memory GA declared: %s", out)
+	}
+	if strings.Contains(out, "E10 closed") || strings.Contains(out, "E10: closed") {
+		t.Fatalf("must not invent E10 closed: %s", out)
+	}
+	if strings.Contains(out, "forever-green product dogfood: yes") || strings.Contains(out, "forever-green: yes") {
+		t.Fatalf("must not invent forever-green product dogfood: %s", out)
 	}
 }
 
@@ -1405,7 +1421,7 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"no auto-send",
 		"GTM agent GA",
 		"GTM checklist ≠ invent GTM agent GA",
-		// memory honesty (+ s1453+s1458+s1463+s1469+s1478 edge OSS + public product attach)
+		// memory honesty (+ s1453+s1458+s1463+s1469+s1478+s1508 edge OSS + public product attach + E4)
 		"dual_write OFF",
 		"package load ≠ Memory GA",
 		"local-primary",
@@ -1424,6 +1440,11 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"public OSS ≠ invent platform GA",
 		"PASS ≠ invent full platform sidecar parity",
 		"aion broker private",
+		"s1508",
+		"Edge Memory GA candidacy only",
+		"residual PASS ≠ invent Edge Memory GA declared",
+		"E10 Open",
+		"tip ≠ invent forever-green product dogfood",
 		// mesh honesty (s1402)
 		"streaming org heartbeats",
 		"not OTel/APM",
@@ -1631,7 +1652,7 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 		"pull_not_probed",
 		"portal_hitl_still",
 		"list_plan_not_connected",
-		// memory edge OSS tip (s1453+s1458+s1463+s1469+s1478 public product attach)
+		// memory edge OSS tip (s1453+s1458+s1463+s1469+s1478+s1508 public product attach + E4)
 		"iomesh-memory-mcp",
 		"public product attach",
 		"go install",
@@ -1642,6 +1663,11 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 		"public OSS ≠ invent platform GA",
 		"PASS ≠ invent full platform sidecar parity",
 		"aion broker private",
+		"s1508",
+		"Edge Memory GA candidacy only",
+		"residual PASS ≠ invent Edge Memory GA declared",
+		"E10 Open",
+		"tip ≠ invent forever-green product dogfood",
 		"Palace sunset",
 		"mesh optional for pull",
 		// honesty locks
