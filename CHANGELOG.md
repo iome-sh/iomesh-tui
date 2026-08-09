@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Portal HITL soft dogfood residual (s1562)** — residual-honest `/onboard next portal-hitl` lane (aliases `hitl` · `portal_hitl` · `portal-dogfood` · `stage5` · `connectors-hitl`) via `AionAgentOnboardingNextPortalHITLLane` — edge-user-journey **stage 5** connectors / portal HITL when connect · path MCP list/plan → browser portal HITL → human OAuth/install · proven paths `/integrations/{id}` · `/integrations/add?template={id}` · `/integrations`. Soft offline dogfood `/onboard next portal-hitl dogfood` (aliases `soft`/`samples`/`offline`/`portal-hitl-soft`) via `RunPortalHITLSoftDogfood` · session labels `portal_hitl_soft_not_run` · `soft_offline_portal_hitl_session_pass|fail` (independent of agentic list/plan soft s1422). Cross-links: journey stage 5 · agentic companion · skill continuum · [edge-user-journey.md](docs/architecture/edge-user-journey.md). Honesty: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · soft offline ≠ invent Connected · session soft ≠ live dogfood · residual PASS ≠ live dogfood · PASS ≠ live APPLY · free eng **s1562** · free-floor peer **s1564+** mention only.
+
 ### Changed
 
 - **README OSS boundary (edge-first honesty)** — lead with **MIT OSS agent harness + optional mesh client surface — not the hosted multi-tenant mesh control plane**; table of what this public repo is / is not; status line separates shipped harness from **internal roadmap** (private control plane, install-store fleet APPLY, knowledge multi-tenant INSTALL_STORE punted for edge-first); edge install docs table; residual serial stamps framed as deep-doc labels not control-plane claims. dual_write OFF · not Memory GA · public OSS ≠ invent platform GA.

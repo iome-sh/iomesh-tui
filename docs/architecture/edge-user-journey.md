@@ -1,7 +1,7 @@
 # Edge user journey (7-stage SSOT)
 
-**Serial:** free eng **s1554** (Wave A docs SSOT) · **s1558** (Wave B first-run polish residual) · residual-honest **edge-first product narrative**  
-**Status:** Wave A docs SSOT **shipped** · Wave B first-run polish **partially in product** (`/onboard next journey` + setup stage-4 map · residual-honest)  
+**Serial:** free eng **s1554** (Wave A docs SSOT) · **s1558** (Wave B first-run polish residual) · **s1562** (stage-5 portal HITL soft dogfood residual) · residual-honest **edge-first product narrative**  
+**Status:** Wave A docs SSOT **shipped** · Wave B first-run polish **partially in product** (`/onboard next journey` + setup stage-4 map · stage-5 `/onboard next portal-hitl` soft dogfood residual · residual-honest)  
 **Audience:** operators, demo hosts, residual eng, GTM-adjacent claims review  
 **Planes:** local TUI + public edge Memory (`iomesh-memory-mcp` + kernel) · optional portal/mesh · **aion private**
 
@@ -13,9 +13,9 @@
 This document is the **single source of truth** for the edge-user journey narrative.  
 Demo runbooks, setup lifecycle, and integrations docs **map into** these stages — they do not invent a different product path.
 
-**Operator surface (s1558 Wave B):** `/onboard next journey` (aliases `edge-journey` · `user-journey` · `first-run` · `edge_user_journey`) — residual-honest first-run map of the 7 stages · companion stage-4 detail `/onboard next setup` · setup guidance notes stages 1–7 with in-session focus on 4–7.
+**Operator surface (s1558 Wave B):** `/onboard next journey` (aliases `edge-journey` · `user-journey` · `first-run` · `edge_user_journey`) — residual-honest first-run map of the 7 stages · companion stage-4 detail `/onboard next setup` · stage-5 portal HITL `/onboard next portal-hitl` (s1562 · soft dogfood residual `/onboard next portal-hitl dogfood`) · setup guidance notes stages 1–7 with in-session focus on 4–7.
 
-**Honesty one-liner:** drafts only · dual_write **OFF** · not Memory GA · Edge Memory GA **candidacy only** · edge-first · knowledge multi-tenant **punted** · Slack HMAC **punted** · H1/H2 **not** launch gate · portal HITL when connect · book-demo **OFF** · agent MCP **cannot** write installs · catalog ≠ Connected · residual PASS ≠ invent Edge Memory GA · rates ~$88/$119 · aion private · Palace sunset · free eng **s1554** / Wave B **s1558**.
+**Honesty one-liner:** drafts only · dual_write **OFF** · not Memory GA · Edge Memory GA **candidacy only** · edge-first · knowledge multi-tenant **punted** · Slack HMAC **punted** · H1/H2 **not** launch gate · portal HITL when connect · book-demo **OFF** · agent MCP **cannot** write installs · catalog ≠ Connected · residual PASS ≠ invent Edge Memory GA · rates ~$88/$119 · aion private · Palace sunset · free eng **s1554** / Wave B **s1558** / stage-5 soft residual **s1562** · free-floor peer **s1564+** mention only.
 
 ---
 
@@ -25,6 +25,7 @@ Demo runbooks, setup lifecycle, and integrations docs **map into** these stages 
 |------|----------|--------------------------------------|
 | **A (s1554)** | Docs SSOT for 7 stages · cross-links + phase mapping · residual-honest maturity stamps · ownership map · honesty locks + residual gaps | Auto memory host · TUI portal SSO · Connected invent · dual_write ON · book-demo ON · Memory GA |
 | **B (s1558 · residual shipped)** | `/onboard next journey` first-run map · setup lane stage-4 mapping · setup guidance first-run polish · skill/docs stamps | Deeper interactive wizard UX beyond residual map · invent auto host / SSO / APPLY / dual_write ON |
+| **s1562 free eng** | Stage-5 portal HITL board `/onboard next portal-hitl` · soft offline dogfood residual · proven path honesty needles · independent session soft labels | Live OAuth/Connected invent · live dogfood · agent install APPLY · free-floor rewrite |
 
 **Still out of scope (all waves until residual closes):** TUI portal SSO / full console login in TUI · Memory host auto-provision on signup · Agent MCP INSTALL_STORE APPLY / Connected invent · dual_write ON · book-demo ON · Memory GA declared.
 
@@ -40,7 +41,7 @@ Demo runbooks, setup lifecycle, and integrations docs **map into** these stages 
 | **2** | **Download TUI** | This repo / releases · `go install` / `make build` | Install `iomesh` binary | Binary install ≠ platform control plane · public OSS ≠ invent multi-tenant mesh | **Shipped** (MIT harness) |
 | **3** | **TUI auth / keys** | TUI local env/config | Set **LLM API keys** (default cascade) · optional **Ollama** local · optional portal/mesh credentials | LLM keys ≠ platform SSO · Ollama = local only · **not** platform-bundled weights · optional mesh keys ≠ dual_write ON | **Shipped** (keys/env) · **no** invent TUI portal SSO |
 | **4** | **Setup wizard** | TUI `/setup` · `/onboard next setup` · CLI `iomesh setup` | `init` → managed config · start host · `preflight` · optional reload · opt-in pull/analyze · drift · repair | setup PASS ≠ invent Connected · repair apply ≠ invent install green · dual_write never auto ON · portal HITL still human | **Shipped** P1–P7 + closeout residual (s1525–s1542) · human-gates reaffirm s1546/s1550 |
-| **5** | **Connectors / events on mesh** | TUI agent MCP + **portal HITL** | `/integrations` list/plan · open portal deep links · human finishes OAuth/install · events land on mesh when installed | agent MCP **cannot** write installs · catalog ≠ Connected · knowledge multi-tenant **punted** · Slack HMAC **punted** · H1/H2 not launch gate · book-demo OFF | **Shipped** list/plan/status residual · **still human** for OAuth/install APPLY |
+| **5** | **Connectors / events on mesh** | TUI agent MCP + **portal HITL** | `/integrations` list/plan · `/onboard next portal-hitl` · open portal deep links · human finishes OAuth/install · events land on mesh when installed · soft residual `/onboard next portal-hitl dogfood` (s1562 · soft offline ≠ invent Connected) | agent MCP **cannot** write installs · catalog ≠ Connected · knowledge multi-tenant **punted** · Slack HMAC **punted** · H1/H2 not launch gate · book-demo OFF · residual PASS ≠ live dogfood · session soft ≠ live dogfood | **Shipped** list/plan/status residual · **still human** for OAuth/install APPLY · soft dogfood residual **s1562** |
 | **6** | **Local store** | `iomesh-memory-mcp` + memory kernel · TUI attach | Install/run host · attach MCP · local FS palace · dual_write **OFF** | not Memory GA · Edge Memory GA **candidacy only** · residual PASS ≠ invent Edge Memory GA · host **not** auto on signup · aion broker private · Palace sunset (hosted) | **Shipped** public edge attach path · **candidacy only** for Edge Memory GA |
 | **7** | **Analyze** | TUI `/memory digest` · `/setup analyze` · optional mesh pull | Digest / analyze ticks · optional Ops Pack pull into local palace | analyze ≠ invent Connected · pull ≠ invent Memory GA · mesh base ~**$88** · Memory Ops Pack ~**$119** · local-primary still holds | **Shipped** digest + opt-in analyze/pull surfaces · rates language residual-honest |
 
@@ -87,7 +88,7 @@ Demo runbooks, setup lifecycle, and integrations docs **map into** these stages 
 
 1. **No TUI portal SSO invent** — stage 3 is LLM keys + optional mesh credentials · not full console SSO inside the TUI for v1.
 2. **Memory host not auto on signup** — stage 6 requires operator install/run of `iomesh-memory-mcp` (kernel as dep) · signup does not provision a palace.
-3. **Events need portal install HITL** — stage 5 list/plan is not install complete · connectors become Connected only after human portal OAuth/install.
+3. **Events need portal install HITL** — stage 5 list/plan is not install complete · connectors become Connected only after human portal OAuth/install · operator map `/onboard next portal-hitl` · soft offline dogfood residual **s1562** (soft offline ≠ invent Connected · residual PASS ≠ live dogfood).
 4. **Still-human APPLY / E10** — setup closeout and residual PASS do not close human-gate APPLY or founder E10 Edge Memory GA sign-off.
 5. **Continuous pull / analyze are opt-in** — not silent default green paths · dual_write stays OFF.
 
