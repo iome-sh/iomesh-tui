@@ -171,7 +171,8 @@ func Preflight(ctx context.Context, cfgPath string) (*PreflightReport, error) {
 		"portal HITL still required for connector OAuth/install",
 		"continuous pull: opt-in /setup pull start|once or pull_continuous=true · CLI iomesh memory pull still valid · after mesh + consumer configured · pull ≠ invent Connected",
 		"continuous analyze: opt-in /setup analyze start or analyze_continuous=true (default false) · analyze ≠ invent Connected",
-		"maintenance drift (report-only): /setup drift · no auto-repair · drift ≠ invent install green",
+		"maintenance drift (report-only): /setup drift · residual next steps · drift ≠ invent install green",
+		"guided repair: /setup repair plan · /setup repair apply --yes (safe steps only · refuse without --yes) · repair apply ≠ invent Connected · dual_write never auto-flipped ON · portal HITL still human",
 	)
 	return rep, nil
 }

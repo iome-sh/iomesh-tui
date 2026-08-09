@@ -1,11 +1,11 @@
 ---
 name: setup-lifecycle-agent
-description: Residual-honest agent-native setup lifecycle (init/preflight · dual_write OFF · not Memory GA · catalog ≠ Connected · portal HITL · not invent install green · continuous pull/analyze opt-in · drift report-only)
+description: Residual-honest agent-native setup lifecycle (init/preflight · dual_write OFF · not Memory GA · catalog ≠ Connected · portal HITL · not invent install green · continuous pull/analyze opt-in · drift report-only · guided repair apply --yes)
 ---
 
-# Setup lifecycle agent (residual-honest · s1526 P3 + s1530 P5 + s1534 P6)
+# Setup lifecycle agent (residual-honest · s1526 P3 + s1530 P5 + s1534 P6 + s1538 P7)
 
-Agent-native path to **bootstrap** local TUI config planes via managed fragment write + preflight probes + in-session opt-in continuous pull / analyze ticks + report-only drift — **not** invent Connected / Memory GA / INSTALL_STORE green.
+Agent-native path to **bootstrap** local TUI config planes via managed fragment write + preflight probes + in-session opt-in continuous pull / analyze ticks + report-only drift + **guided repair** (safe steps only with explicit `--yes`) — **not** invent Connected / Memory GA / INSTALL_STORE green.
 
 Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the operator is at a terminal. Use this skill when planning setup steps in chat.
 
@@ -49,8 +49,16 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
 
 6. **Drift / maintain (s1534 P6 · report-only)** — config intent vs runtime snapshot.
    - Slash: `/setup drift` · `/setup maintain` (alias)
-   - Report-only residual next steps · **no auto-repair**
-   - **drift report ≠ invent install green** · package wire ≠ Connected
+   - Report-only residual next steps · **drift report ≠ invent install green** · package wire ≠ Connected
+   - After drift, optional guided repair (P7) — not automatic
+
+7. **Guided repair (s1538 P7 · explicit --yes only)** — plan from drift · apply safe steps only.
+   - Slash: `/setup repair` · `/setup repair plan` — `PlanRepair` + `FormatRepairPlan` (dry plan · no side effects)
+   - Slash: `/setup repair apply --yes` — `ApplyRepairPlan` safe steps only (`reload_mcp` · `start_pull` · `start_analyze`)
+   - **`/setup repair apply` without `--yes` refuses** (residual-honest · no auto-repair)
+   - Notes (never auto-applied): dual_write manual flip · memory host start · mesh `[iomesh]` config
+   - **repair apply ≠ invent Connected** · dual_write never auto-flipped ON · portal HITL still human
+   - dual_write OFF · not Memory GA · package wire ≠ Connected
 
 ## Honesty locks (never violate)
 
@@ -63,28 +71,31 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
 | secrets env names only | `api_key_env` / `oauth_token_env` — no secret values in config |
 | continuous pull opt-in | `/setup pull` · `pull_continuous` · CLI `iomesh memory pull` still valid · pull ≠ invent Connected |
 | analyze ticks opt-in | `/setup analyze` · `analyze_continuous` · `/memory digest` still valid · analyze tick ≠ invent Connected |
-| drift report-only | `/setup drift` · `/setup maintain` · no auto-repair · drift ≠ invent install green · package wire ≠ Connected |
+| drift report-only | `/setup drift` · `/setup maintain` · residual next steps · drift ≠ invent install green · package wire ≠ Connected |
+| guided repair explicit | `/setup repair` · `/setup repair apply --yes` only · safe steps · repair apply ≠ invent Connected · no auto-repair without `--yes` |
 | never invent green | No Connected / INSTALL_STORE green / Memory GA from setup alone |
 
 ## Non-goals (never do)
 
-- Do **not** invent Connected / INSTALL_STORE APPLY green from setup PASS, pull status, analyze ticks, or drift OK.
+- Do **not** invent Connected / INSTALL_STORE APPLY green from setup PASS, pull status, analyze ticks, drift OK, or repair apply.
 - Do **not** claim Memory GA or dual_write ON.
 - Do **not** mint OAuth tokens or write connector installs from agent MCP.
 - Do **not** auto-start continuous pull without opt-in (`/setup pull start` · `pull_continuous=true` · or CLI).
 - Do **not** auto-start analyze ticks without opt-in (`/setup analyze start` · `analyze_continuous=true`).
-- Do **not** auto-repair from drift report (report-only residual next steps).
+- Do **not** auto-repair without explicit `/setup repair apply --yes` (plan is dry; notes stay human).
+- Do **not** auto-flip dual_write ON or invent host/mesh green from repair.
 - Do **not** treat catalog Beta/available as org Connected counts.
 
 ## Operator surfaces
 
 | Surface | Action |
 |---------|--------|
-| Slash `/setup` | help · init · preflight · portal · reload · **pull** · **analyze** · **drift** |
+| Slash `/setup` | help · init · preflight · portal · reload · **pull** · **analyze** · **drift** · **repair** |
 | Alias `/setup-lifecycle` | same |
 | `/setup pull` | status · start · once · stop (s1530 P5 residual-honest) |
 | `/setup analyze` | status · start · once · stop (s1534 P6 residual-honest) |
 | `/setup drift` / `/setup maintain` | report-only FormatDriftText (s1534 P6) |
+| `/setup repair` | plan (default) · apply --yes (s1538 P7 guided safe steps) |
 | CLI `iomesh setup` | init · preflight (s1525 P1–P2) |
 | CLI `iomesh memory pull` | still valid continuous / once pull path |
 | `/memory digest` | still valid one-shot ops pulse |

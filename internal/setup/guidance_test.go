@@ -25,6 +25,8 @@ func TestSetupLifecycleAgentGuidanceNote_HonestyNeedles(t *testing.T) {
 		"analyze_continuous",
 		"/setup analyze",
 		"/setup drift",
+		"/setup repair",
+		"repair apply",
 		"/memory digest",
 		"never invent",
 		"INSTALL_STORE",
@@ -71,6 +73,8 @@ func TestSetupLifecycleHonestyOneLiner(t *testing.T) {
 		"analyze_continuous",
 		"/setup analyze",
 		"/setup drift",
+		"/setup repair",
+		"repair apply ≠ invent Connected",
 		"/memory digest",
 	} {
 		if !strings.Contains(s, want) {
