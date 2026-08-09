@@ -18,7 +18,7 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
    - Managed block markers: `# BEGIN iomesh-setup-managed` … `# END iomesh-setup-managed`
    - **dual_write = false always** — setup path refuses `dual_write = true`
    - Secrets as **env names only** (`api_key_env`, `oauth_token_env`) — never commit secret values
-   - After write: start memory host if local-memory · set env vars · **restart TUI** (hot MCP reattach is a later PR)
+   - After write: start memory host if local-memory · set env vars · **restart TUI** (`/setup reload` hot-swaps MCP · package wire ≠ Connected · skills may still need restart)
 
 2. **Preflight probe** — residual-honest state, never invent install green.
    - CLI: `iomesh setup preflight [--json]`
