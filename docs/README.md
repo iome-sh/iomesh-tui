@@ -16,6 +16,7 @@
 | [architecture/mesh-deeper.md](architecture/mesh-deeper.md) | Lineage context, policy gates, local metering, portal catalog |
 | [architecture/memory-mcp.md](architecture/memory-mcp.md) | Memory Palace + temporal MCP integration plan |
 | [architecture/edge-user-journey.md](architecture/edge-user-journey.md) | **SSOT** edge-first 7-stage user journey (signup → download → auth → setup → connectors → local store → analyze) |
+| [architecture/oss-packaging-boundary.md](architecture/oss-packaging-boundary.md) | **SSOT** MIT OSS packaging boundary (harness vs control plane · Edge path first · residual-check anti-claims · free eng s1582) |
 | [architecture/memory-edge-usage-demo.md](architecture/memory-edge-usage-demo.md) | Residual-honest signup → integrations → local memory (kernel + MCP) → show usage demo |
 | [architecture/memory-advanced-install.md](architecture/memory-advanced-install.md) | Advanced Memory install ladder: ONNX optional · Qdrant residual · maximize TUI benefit |
 | [architecture/setup-lifecycle.md](architecture/setup-lifecycle.md) | Setup lifecycle: `iomesh setup init\|preflight` · `/setup` slash · skill · managed config · residual honesty |
