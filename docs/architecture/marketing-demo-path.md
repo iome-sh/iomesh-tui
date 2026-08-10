@@ -1,6 +1,6 @@
 # Marketing demo path (local agent + local memory)
 
-**Serial:** free eng **s1590** · sales talk track **s1594** · GTM claim-support **s1598** · operator GTM boundary **s1602** · GTM wave 6 **s1606** · GTM wave 7 **s1610** · GTM wave 8 **s1614**  
+**Serial:** free eng **s1590** · sales talk track **s1594** · GTM claim-support **s1598** · operator GTM boundary **s1602** · GTM wave 6 **s1606** · GTM wave 7 **s1610** · GTM wave 8 **s1614** · GTM wave 9 **s1618**  
 **Audience:** demo hosts, sales eng, GTM video capture  
 **Operator surface:** `/onboard next marketing-demo`  
 **Aliases:** `marketing` · `sales-demo` · `demo-script` · `gtm-demo`
@@ -57,7 +57,7 @@ Short spoken path for a **local agent + local memory** demo (follow the script a
 6. **Publish path** — draft → human approve → Hermes handoff/bind is **operator** tooling; the TUI does **not** auto-post.
 7. **CRM** — Closed-loop metrics are recorded after human CRM actions — the TUI is **not** the CRM.
 
-### Operator GTM boundary (s1602 · s1606 · s1610 · s1614)
+### Operator GTM boundary (s1602 · s1606 · s1610 · s1614 · s1618)
 
 Where secrets and writes live — keep demos honest:
 
@@ -73,6 +73,9 @@ Where secrets and writes live — keep demos honest:
 - **Real Hermes daemon** (s1614) is **operator-run on the operator box** — the public TUI does **not** host or start it.
 - **Live HubSpot / Twenty writes** (s1614) need **dual control + tokens on the operator box** (default dry). The marketing-demo path stays **local agent + local memory** only.
 - **Operator GTM status** (s1614) is **private tooling** for operators — **not** a product dashboard claim.
+- **Scheduled GTM dogfood** (s1618) is **operator cron / offline tooling** — not the public TUI. The demo path is not a GTM scheduler.
+- **Mesh outbox ingest** (s1618) is **private aion when wired** (dry-run default) — the demo does **not** invent mesh GTM fleet GA.
+- **Smoke / status tools** (s1618 · e.g. `gtm_smoke`) are **private operator GTM** — **not** a customer dashboard.
 
 Keep the demo local-first. Skip mesh unless the room already has it configured. Do not invent Memory GA, Connected, dual_write ON, book-demo ON, or mesh GTM fleet GA.
 
@@ -94,4 +97,4 @@ Keep the demo local-first. Skip mesh unless the room already has it configured. 
 
 ## Free-floor
 
-free eng **s1590** · sales talk track **s1594** · GTM claim-support **s1598** · operator GTM boundary **s1602** · GTM wave 6 **s1606** · GTM wave 7 **s1610** · GTM wave 8 **s1614** · free-floor peer **s1592+** mention only (do not rewrite free-floor ownership from this doc).
+free eng **s1590** · sales talk track **s1594** · GTM claim-support **s1598** · operator GTM boundary **s1602** · GTM wave 6 **s1606** · GTM wave 7 **s1610** · GTM wave 8 **s1614** · GTM wave 9 **s1618** · free-floor peer **s1592+** mention only (do not rewrite free-floor ownership from this doc).
