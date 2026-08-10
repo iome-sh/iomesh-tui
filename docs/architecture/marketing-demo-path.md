@@ -1,6 +1,6 @@
 # Marketing demo path (local agent + local memory)
 
-**Serial:** free eng **s1590** · sales talk track **s1594** · GTM claim-support **s1598**  
+**Serial:** free eng **s1590** · sales talk track **s1594** · GTM claim-support **s1598** · operator GTM boundary **s1602**  
 **Audience:** demo hosts, sales eng, GTM video capture  
 **Operator surface:** `/onboard next marketing-demo`  
 **Aliases:** `marketing` · `sales-demo` · `demo-script` · `gtm-demo`
@@ -57,6 +57,14 @@ Short spoken path for a **local agent + local memory** demo (follow the script a
 6. **Publish path** — draft → human approve → Hermes handoff/bind is **operator** tooling; the TUI does **not** auto-post.
 7. **CRM** — Closed-loop metrics are recorded after human CRM actions — the TUI is **not** the CRM.
 
+### Operator GTM boundary (s1602)
+
+Where secrets and writes live — keep demos honest:
+
+- **Search Console credentials** stay on the **operator machine** (no secrets in git). Demos use offline exports / local tooling — not live API keys in the public TUI.
+- **Hermes exec** for publish runs **outside** the public TUI with operator-held secrets; the TUI does **not** hold social tokens and never auto-posts.
+- **CRM vendor adapters / metrics** are operator GTM (dry-run / human-gated stub). Commercial CRM writes stay **human** — the TUI is not the CRM of record.
+
 Keep the demo local-first. Skip mesh unless the room already has it configured. Do not invent Memory GA, Connected, dual_write ON, or book-demo ON.
 
 ---
@@ -77,4 +85,4 @@ Keep the demo local-first. Skip mesh unless the room already has it configured. 
 
 ## Free-floor
 
-free eng **s1590** · sales talk track **s1594** · GTM claim-support **s1598** · free-floor peer **s1592+** mention only (do not rewrite free-floor ownership from this doc).
+free eng **s1590** · sales talk track **s1594** · GTM claim-support **s1598** · operator GTM boundary **s1602** · free-floor peer **s1592+** mention only (do not rewrite free-floor ownership from this doc).
