@@ -1423,6 +1423,17 @@ func TestAionAgentOnboardingNextMarketingDemoLane_HonestyNeedles(t *testing.T) {
 		"Operator GTM status",
 		"private tooling",
 		"not a product dashboard claim",
+		// s1618 GTM wave 9 (scheduled dogfood · mesh outbox ingest · smoke/status operator boundary)
+		"s1618",
+		"Scheduled GTM dogfood",
+		"operator cron",
+		"not a GTM scheduler",
+		"Mesh outbox ingest",
+		"private aion when wired",
+		"dry-run default",
+		"Smoke / status tools",
+		"gtm_smoke",
+		"not a customer dashboard",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("marketing-demo lane missing %q in:\n%s", want, out)
