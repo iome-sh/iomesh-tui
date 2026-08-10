@@ -1395,6 +1395,15 @@ func TestAionAgentOnboardingNextMarketingDemoLane_HonestyNeedles(t *testing.T) {
 		"outside the public TUI",
 		"no social tokens",
 		"commercial CRM writes stay human",
+		// s1606 GTM wave 6 (Hermes network · HubSpot/Twenty operator-box · no tokens in public harness)
+		"s1606",
+		"Hermes network dispatch",
+		"operator webhook",
+		"private runner",
+		"HubSpot / Twenty",
+		"operator-box OAuth",
+		"human approve",
+		"No social or CRM tokens in the public harness",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("marketing-demo lane missing %q in:\n%s", want, out)

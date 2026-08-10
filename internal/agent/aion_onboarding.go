@@ -801,7 +801,8 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candid
 }
 
 // AionAgentOnboardingNextMarketingDemoLane plain-language marketing demo path for
-// /onboard next marketing-demo (s1590 + s1594 sales talk track + s1598 GTM claim-support + s1602 operator GTM boundary).
+// /onboard next marketing-demo (s1590 + s1594 sales talk track + s1598 GTM claim-support +
+// s1602 operator GTM boundary + s1606 GTM wave 6 network/CRM operator paths).
 // Short operator script for videos/sales demos of local agent + local memory. Prefer clear
 // steps over residual continuum jargon walls. Static offline board — no MCP dial · never starts host.
 //
@@ -813,24 +814,27 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candid
 //  5. Show /memory ingest + recall
 //  6. Optional mesh only if configured — clearly optional
 //
-// Sales talk track (s1594 + s1598 + s1602, optional spoken bullets): local agent + memory beat ·
+// Sales talk track (s1594 + s1598 + s1602 + s1606, optional spoken bullets): local agent + memory beat ·
 // private tool-marketing claims catalog for demoable vs do-not-claim · win-back /
 // closed-lost are human/HITL sales process (not auto-CRM from TUI) · SEO exports scored
 // offline (no auto rank claims) · publish draft→HITL→Hermes is operator tooling (TUI
 // does not auto-post) · CRM closed-loop metrics after human actions (TUI is not the CRM) ·
 // operator GTM boundary: GSC credentials on operator machine · Hermes exec outside public TUI
-// (no social tokens) · CRM vendor adapters human-gated (commercial writes stay human).
+// (no social tokens) · CRM vendor adapters human-gated (commercial writes stay human) ·
+// s1606: Hermes network dispatch = operator webhook / private runner (not public TUI) ·
+// HubSpot / Twenty = operator-box OAuth + human approve · no social or CRM tokens in public harness.
 //
 // Constraints (do not overclaim): dual_write OFF · local memory · not Memory GA ·
 // never invent Connected · book-demo OFF · mesh optional.
 // Aliases: marketing|sales-demo|demo-script|gtm-demo
 // Do NOT steal: bare demo (demo readiness s1442) · bare sales (sales claims) · bare gtm (GTM drafts).
 // Companion: /onboard next memory · e4 · setup · demo (readiness packaging) · sales (claims).
-// free eng s1590 · s1594 sales talk track · s1598 GTM claim-support · s1602 operator GTM boundary · free-floor peer s1592+ mention only.
+// free eng s1590 · s1594 sales talk track · s1598 GTM claim-support · s1602 operator GTM boundary ·
+// s1606 GTM wave 6 · free-floor peer s1592+ mention only.
 func AionAgentOnboardingNextMarketingDemoLane() string {
 	return strings.TrimSpace(`aion onboard next marketing-demo path (s1590 · plain-language operator script · local agent + local memory · videos/sales):
   Purpose: short demo path operators can run for videos and sales walkthroughs — show local agent + local memory working end-to-end
-  Audience: demo hosts · sales eng · GTM video capture · free eng s1590 · s1594 sales talk track · s1598 GTM claim-support · s1602 operator GTM boundary · free-floor peer s1592+ mention only
+  Audience: demo hosts · sales eng · GTM video capture · free eng s1590 · s1594 sales talk track · s1598 GTM claim-support · s1602 operator GTM boundary · s1606 GTM wave 6 · free-floor peer s1592+ mention only
 
   Demo script (follow in order):
     1. Install / build iomesh
@@ -856,7 +860,7 @@ func AionAgentOnboardingNextMarketingDemoLane() string {
        · if mesh credentials exist: /mesh status · optional /onboard next memory-pull
        · never require mesh for the core local agent + memory story
 
-  Sales talk track (optional spoken bullets · s1594 · s1598 · s1602):
+  Sales talk track (optional spoken bullets · s1594 · s1598 · s1602 · s1606):
     · Beat: local agent + local memory — ingest a fact, recall it on the laptop (dual_write OFF)
     · Claims: check private tool-marketing claims catalog for demoable vs do-not-claim (github.com/iome-sh/tool-marketing · operator-only)
     · Win-back / closed-lost: sales process (humans / HITL) — TUI does not auto-CRM follow-ups
@@ -864,6 +868,9 @@ func AionAgentOnboardingNextMarketingDemoLane() string {
     · CRM: closed-loop metrics after human CRM actions — TUI is not the CRM
     · Operator GTM boundary (s1602): Search Console credentials stay on the operator machine — demos use offline exports / local tooling · Hermes exec for publish is outside the public TUI (no social tokens · never auto-post)
     · CRM vendor adapters / metrics are operator GTM (human-gated) — commercial CRM writes stay human
+    · Hermes network dispatch (s1606): operator webhook / private runner — not the public TUI (secrets outside git)
+    · HubSpot / Twenty CRM (s1606): operator-box OAuth + human approve — TUI is not the CRM
+    · No social or CRM tokens in the public harness
 
   What this supports (honest claims):
     · Local agent harness with multi-provider LLM / Ollama
@@ -890,7 +897,7 @@ func AionAgentOnboardingNextMarketingDemoLane() string {
     · NOT bare gtm|drafts (GTM draft lane)
   Back: /onboard next · /onboard next memory · /onboard next demo · /onboard next sales
 
-Locks: dual_write OFF · book-demo OFF · not Memory GA · local memory · local-primary · iomesh-memory-mcp · mesh optional · never invent Connected · never invent install green / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · free eng s1590 · s1594 sales talk track · s1598 GTM claim-support · s1602 operator GTM boundary · free-floor peer s1592+ mention only`)
+Locks: dual_write OFF · book-demo OFF · not Memory GA · local memory · local-primary · iomesh-memory-mcp · mesh optional · never invent Connected · never invent install green / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · free eng s1590 · s1594 sales talk track · s1598 GTM claim-support · s1602 operator GTM boundary · s1606 GTM wave 6 · free-floor peer s1592+ mention only`)
 }
 
 // AionAgentOnboardingNextAgenticLane residual-honest product plane 3 agentic integrations
