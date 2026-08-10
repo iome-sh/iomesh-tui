@@ -1,6 +1,6 @@
 # Marketing demo path (local agent + local memory)
 
-**Serial:** free eng **s1590** · sales talk track **s1594**  
+**Serial:** free eng **s1590** · sales talk track **s1594** · GTM claim-support **s1598**  
 **Audience:** demo hosts, sales eng, GTM video capture  
 **Operator surface:** `/onboard next marketing-demo`  
 **Aliases:** `marketing` · `sales-demo` · `demo-script` · `gtm-demo`
@@ -53,6 +53,9 @@ Short spoken path for a **local agent + local memory** demo (follow the script a
 2. **The beat** — “Tell the agent something once; show `/memory` ingest and recall so it comes back from local storage — not a cloud CRM.”
 3. **Claims guardrail** — Before customer-facing wording, check the private GTM **claims catalog** for what is demoable vs do-not-claim: [github.com/iome-sh/tool-marketing](https://github.com/iome-sh/tool-marketing) (private · operator-only · not customer docs).
 4. **Win-back / closed-lost** — Follow-ups are **sales process** (humans / HITL loops). The TUI does **not** auto-push CRM win-back or closed-lost sequences.
+5. **SEO** — We import Search Console exports and score opportunities offline — **no auto rank claims**.
+6. **Publish path** — draft → human approve → Hermes handoff/bind is **operator** tooling; the TUI does **not** auto-post.
+7. **CRM** — Closed-loop metrics are recorded after human CRM actions — the TUI is **not** the CRM.
 
 Keep the demo local-first. Skip mesh unless the room already has it configured. Do not invent Memory GA, Connected, dual_write ON, or book-demo ON.
 
@@ -74,4 +77,4 @@ Keep the demo local-first. Skip mesh unless the room already has it configured. 
 
 ## Free-floor
 
-free eng **s1590** · sales talk track **s1594** · free-floor peer **s1592+** mention only (do not rewrite free-floor ownership from this doc).
+free eng **s1590** · sales talk track **s1594** · GTM claim-support **s1598** · free-floor peer **s1592+** mention only (do not rewrite free-floor ownership from this doc).

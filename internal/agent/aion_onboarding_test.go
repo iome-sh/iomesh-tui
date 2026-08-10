@@ -1381,6 +1381,14 @@ func TestAionAgentOnboardingNextMarketingDemoLane_HonestyNeedles(t *testing.T) {
 		"sales process",
 		"auto-CRM",
 		"s1594",
+		// s1598 GTM claim-support (SEO / publish / CRM honesty)
+		"s1598",
+		"Search Console",
+		"no auto rank claims",
+		"Hermes handoff",
+		"does not auto-post",
+		"closed-loop metrics",
+		"not the CRM",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("marketing-demo lane missing %q in:\n%s", want, out)
