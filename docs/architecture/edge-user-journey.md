@@ -1,7 +1,7 @@
 # Edge user journey (7-stage SSOT)
 
-**Serial:** free eng **s1554** (Wave A docs SSOT) · **s1558** (Wave B first-run polish residual) · **s1562** (stage-5 portal HITL soft dogfood residual) · **s1566** (stage-6 E4 client-attach soft dogfood residual) · residual-honest **edge-first product narrative**  
-**Status:** Wave A docs SSOT **shipped** · Wave B first-run polish **partially in product** (`/onboard next journey` + setup stage-4 map · stage-5 `/onboard next portal-hitl` soft dogfood residual · stage-6 `/onboard next e4` soft dogfood residual · residual-honest)  
+**Serial:** free eng **s1554** (Wave A docs SSOT) · **s1558** (Wave B first-run polish residual) · **s1562** (stage-5 portal HITL soft dogfood residual) · **s1566** (stage-6 E4 client-attach soft dogfood residual) · **s1570** (Wave C first-run wizard residual) · residual-honest **edge-first product narrative**  
+**Status:** Wave A docs SSOT **shipped** · Wave B first-run polish **partially in product** · Wave C guided wizard residual **shipped residual-honest** (`/onboard next journey` + setup stage-4 map · stage-5 `/onboard next portal-hitl` soft dogfood residual · stage-6 `/onboard next e4` soft dogfood residual · Wave C `/onboard next wizard` + soft dogfood residual)  
 **Audience:** operators, demo hosts, residual eng, GTM-adjacent claims review  
 **Planes:** local TUI + public edge Memory (`iomesh-memory-mcp` + kernel) · optional portal/mesh · **aion private**
 
@@ -13,9 +13,9 @@
 This document is the **single source of truth** for the edge-user journey narrative.  
 Demo runbooks, setup lifecycle, and integrations docs **map into** these stages — they do not invent a different product path.
 
-**Operator surface (s1558 Wave B):** `/onboard next journey` (aliases `edge-journey` · `user-journey` · `first-run` · `edge_user_journey`) — residual-honest first-run map of the 7 stages · companion stage-4 detail `/onboard next setup` · stage-5 portal HITL `/onboard next portal-hitl` (s1562 · soft dogfood residual `/onboard next portal-hitl dogfood`) · stage-6 E4 client-attach `/onboard next e4` (s1566 · soft dogfood residual `/onboard next e4 dogfood`) · setup guidance notes stages 1–7 with in-session focus on 4–7.
+**Operator surface (s1558 Wave B · s1570 Wave C):** `/onboard next journey` (aliases `edge-journey` · `user-journey` · `first-run` · `edge_user_journey`) — residual-honest first-run map of the 7 stages · Wave C guided residual `/onboard next wizard` (aliases `first-run-wizard` · `guided` · `wave-c` · `wave_c` · `wizard-residual` · soft `/onboard next wizard dogfood`) · companion stage-4 detail `/onboard next setup` · stage-5 portal HITL `/onboard next portal-hitl` (s1562 · soft dogfood residual `/onboard next portal-hitl dogfood`) · stage-6 E4 client-attach `/onboard next e4` (s1566 · soft dogfood residual `/onboard next e4 dogfood`) · setup guidance notes stages 1–7 with in-session focus on 4–7.
 
-**Honesty one-liner:** drafts only · dual_write **OFF** · not Memory GA · Edge Memory GA **candidacy only** · edge-first · knowledge multi-tenant **punted** · Slack HMAC **punted** · H1/H2 **not** launch gate · portal HITL when connect · book-demo **OFF** · agent MCP **cannot** write installs · catalog ≠ Connected · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · rates ~$88/$119 · aion private · Palace sunset · free eng **s1554** / Wave B **s1558** / stage-5 soft residual **s1562** / stage-6 E4 soft residual **s1566** · free-floor peer **s1568+** mention only.
+**Honesty one-liner:** drafts only · dual_write **OFF** · not Memory GA · Edge Memory GA **candidacy only** · edge-first · knowledge multi-tenant **punted** · Slack HMAC **punted** · H1/H2 **not** launch gate · portal HITL when connect · book-demo **OFF** · agent MCP **cannot** write installs · catalog ≠ Connected · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · rates ~$88/$119 · aion private · Palace sunset · free eng **s1554** / Wave B **s1558** / stage-5 soft residual **s1562** / stage-6 E4 soft residual **s1566** / Wave C wizard residual **s1570** · free-floor peer **s1572+** mention only.
 
 ---
 
@@ -27,10 +27,11 @@ Demo runbooks, setup lifecycle, and integrations docs **map into** these stages 
 | **B (s1558 · residual shipped)** | `/onboard next journey` first-run map · setup lane stage-4 mapping · setup guidance first-run polish · skill/docs stamps | Deeper interactive wizard UX beyond residual map · invent auto host / SSO / APPLY / dual_write ON |
 | **s1562 free eng** | Stage-5 portal HITL board `/onboard next portal-hitl` · soft offline dogfood residual · proven path honesty needles · independent session soft labels | Live OAuth/Connected invent · live dogfood · agent install APPLY · free-floor rewrite |
 | **s1566 free eng** | Stage-6 E4 client-attach board `/onboard next e4` · soft offline dogfood residual · tools=6 / `iomesh mcp --connect` honesty needles · independent session soft labels | Edge Memory GA declared invent · forever-green product dogfood · E10 closed · dual_write ON · live host start · free-floor rewrite |
+| **C (s1570 · residual shipped)** | `/onboard next wizard` guided first-run residual map · soft offline dogfood residual · per-stage primary next actions · independent session soft labels | Full interactive auto wizard invent · TUI portal SSO · auto host · dual_write ON · Edge Memory GA declared · live dogfood · free-floor rewrite |
 
 **Still out of scope (all waves until residual closes):** TUI portal SSO / full console login in TUI · Memory host auto-provision on signup · Agent MCP INSTALL_STORE APPLY / Connected invent · dual_write ON · book-demo ON · Memory GA declared · Edge Memory GA declared · forever-green full product dogfood · E10 closed.
 
-**Free-floor peer:** free-floor ownership remains **s1556+** / Wave B mention **s1560+** / stage-6 E4 mention **s1568+** (mention only). Residual product narrative **does not** rewrite free-floor.
+**Free-floor peer:** free-floor ownership remains **s1556+** / Wave B mention **s1560+** / stage-6 E4 mention **s1568+** / Wave C mention **s1572+** (mention only). Residual product narrative **does not** rewrite free-floor.
 
 ---
 
@@ -129,5 +130,5 @@ Demo runbooks, setup lifecycle, and integrations docs **map into** these stages 
 - dual_write ON as primary path  
 - Auto Memory provision on signup  
 - Rewrite free-floor (peer **s1556+** / **s1560+** mention) from residual product docs  
-- Claim full interactive first-run wizard beyond residual map lanes (Wave B ships residual-honest map + setup stage-4 polish only)  
+- Claim full interactive first-run wizard beyond residual map lanes (Wave B ships residual-honest map + setup stage-4 polish; Wave C ships deeper guided residual map + soft dogfood only — **not** full interactive auto wizard UX)  
 - Invent auto Memory host · TUI portal SSO · Connected · dual_write ON · Memory GA declared  

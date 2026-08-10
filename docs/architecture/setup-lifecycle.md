@@ -193,11 +193,11 @@ Residual-honest offline static continuum for the full setup lifecycle map (no MC
 
 | Surface | Detail |
 |---------|--------|
-| Slash | `/onboard next setup` (aliases `setup-lifecycle` · `wizard` · `lifecycle` · `setup_lifecycle`) |
+| Slash | `/onboard next setup` (aliases `setup-lifecycle` · `lifecycle` · `setup_lifecycle`) |
 | API | `agent.AionAgentOnboardingNextSetupLane()` |
 | Board vocab | `path_ready` · `residual_only` · **`setup_not_probed`** |
 | Map steps | init → memory host/secrets → preflight → reload → portal HITL → optional pull/analyze → drift → repair plan/apply `--yes` → `/memory digest` still valid |
-| Companion | `/onboard next journey` (s1558 first-run map) · `memory` · `memory-pull` · `human-gates` · `operator` · skill `setup-lifecycle-agent` · [edge-user-journey.md](./edge-user-journey.md) · [memory-edge-usage-demo.md](./memory-edge-usage-demo.md) |
+| Companion | `/onboard next journey` (s1558 first-run map) · `/onboard next wizard` (s1570 Wave C guided residual) · `memory` · `memory-pull` · `human-gates` · `operator` · skill `setup-lifecycle-agent` · [edge-user-journey.md](./edge-user-journey.md) · [memory-edge-usage-demo.md](./memory-edge-usage-demo.md) |
 
 **Honesty:** dual_write OFF · not Memory GA · package wire ≠ Connected · PASS ≠ invent Connected · repair apply ≠ invent Connected · dual_write never auto ON · portal HITL still human · still-human APPLY open · **E10 Open** · offline static lane ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA · stage 4 of edge-user-journey · free eng **s1558**.
 
@@ -214,6 +214,21 @@ Residual-honest offline static first-run map of the 7-stage edge-user-journey (n
 | Docs | [edge-user-journey.md](./edge-user-journey.md) · this file · [memory-edge-usage-demo.md](./memory-edge-usage-demo.md) |
 
 **Honesty:** dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · portal HITL · agent MCP cannot write installs · catalog ≠ Connected · book-demo OFF · no invent TUI portal SSO · host not auto · free eng **s1558** · free-floor peer **s1560+** mention only.
+
+## Onboard next wizard lane (s1570 Wave C)
+
+Residual-honest offline guided first-run wizard residual after Wave B journey map (no MCP dial · never invent full interactive auto wizard):
+
+| Surface | Detail |
+|---------|--------|
+| Slash | `/onboard next wizard` (aliases `first-run-wizard` · `guided` · `wave-c` · `wave_c` · `wizard-residual`) |
+| Soft dogfood | `/onboard next wizard dogfood` (aliases `soft` · `samples` · `offline` · `wizard-soft`) → `RunFirstRunWizardSoftDogfood` |
+| API | `agent.AionAgentOnboardingNextWizardLane()` |
+| Scope | Deeper guided residual map + soft dogfood · **not** full interactive auto wizard UX |
+| Companion | `/onboard next journey` (Wave B) · setup · portal-hitl · e4 · human-gates |
+| Docs | [edge-user-journey.md](./edge-user-journey.md) Wave C row · this file |
+
+**Honesty:** dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · no invent TUI portal SSO · host not auto · residual PASS ≠ invent full interactive auto wizard · free eng **s1570** · free-floor peer **s1572+** mention only.
 
 ## Preflight states
 

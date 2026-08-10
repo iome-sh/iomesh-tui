@@ -9,9 +9,11 @@ Agent-native path to **bootstrap** local TUI config planes via managed fragment 
 
 Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the operator is at a terminal. Use this skill when planning setup steps in chat.
 
-**Onboard companion (s1542):** residual-honest offline map via `/onboard next setup` (aliases `setup-lifecycle` / `wizard` / `lifecycle` / `setup_lifecycle`) → `AionAgentOnboardingNextSetupLane` — consolidates P1–P7 map story · **setup_not_probed** · dual_write OFF · package wire ≠ Connected · repair apply ≠ invent Connected · dual_write never auto ON · E10 Open · offline static ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA.
+**Onboard companion (s1542):** residual-honest offline map via `/onboard next setup` (aliases `setup-lifecycle` / `lifecycle` / `setup_lifecycle`) → `AionAgentOnboardingNextSetupLane` — consolidates P1–P7 map story · **setup_not_probed** · dual_write OFF · package wire ≠ Connected · repair apply ≠ invent Connected · dual_write never auto ON · E10 Open · offline static ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA.
 
 **Wave B first-run (s1558):** setup is **stage 4** of the 7-stage edge-user-journey. Full first-run map via companion `/onboard next journey` (aliases `edge-journey` / `user-journey` / `first-run` / `edge_user_journey`) → `AionAgentOnboardingNextJourneyLane` — Signup → Download TUI → TUI auth/keys → Setup wizard → Connectors → Local store → Analyze · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · portal HITL · host not auto · no invent TUI portal SSO · free eng **s1558** · free-floor peer **s1560+** mention only · docs `edge-user-journey.md` · `setup-lifecycle.md` · `memory-edge-usage-demo.md`.
+
+**Wave C first-run wizard residual (s1570):** deeper guided residual via companion `/onboard next wizard` (aliases `first-run-wizard` / `guided` / `wave-c` / `wave_c` / `wizard-residual`) → `AionAgentOnboardingNextWizardLane` · soft `/onboard next wizard dogfood` · NOT invent full interactive auto wizard · free eng **s1570** · free-floor peer **s1572+** mention only.
 
 ## Workflow
 
@@ -106,7 +108,7 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
 | `/memory digest` | still valid one-shot ops pulse |
 | System note | `<setup-lifecycle>` on AttachMCP |
 | Skill | `read_skill setup-lifecycle-agent` |
-| Onboard map (s1542) | `/onboard next setup` (aliases setup-lifecycle\|wizard\|lifecycle\|setup_lifecycle) |
+| Onboard map (s1542) | `/onboard next setup` (aliases setup-lifecycle\|lifecycle\|setup_lifecycle) |
 | First-run journey (s1558) | `/onboard next journey` (aliases edge-journey\|user-journey\|first-run\|edge_user_journey) |
 
 ## Related

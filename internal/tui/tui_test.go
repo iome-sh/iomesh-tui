@@ -1506,7 +1506,8 @@ func TestHandleSlash_OnboardNextMemoryPullLane(t *testing.T) {
 	}
 }
 
-// s1542+s1558: /onboard next setup|setup-lifecycle|wizard|lifecycle|setup_lifecycle — residual-honest setup lifecycle P1–P7 closeout.
+// s1542+s1558: /onboard next setup|setup-lifecycle|lifecycle|setup_lifecycle — residual-honest setup lifecycle P1–P7 closeout.
+// Note: wizard alias is s1570 Wave C first-run wizard residual (not setup).
 func TestHandleSlash_OnboardNextSetupLane(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -1543,11 +1544,10 @@ func TestHandleSlash_OnboardNextSetupLane(t *testing.T) {
 	for _, line := range []string{
 		"/onboard next setup",
 		"/onboard next setup-lifecycle",
-		"/onboard next wizard",
 		"/onboard next lifecycle",
 		"/onboard next setup_lifecycle",
 		"/aion-onboard after setup",
-		"/agent-onboard continue wizard",
+		"/agent-onboard continue setup-lifecycle",
 		"/onboard lanes lifecycle",
 	} {
 		out.Reset()
@@ -1572,6 +1572,169 @@ func TestHandleSlash_OnboardNextSetupLane(t *testing.T) {
 		}
 		if strings.Contains(s, "onboard next lane status (") {
 			t.Fatalf("%s must not emit status board: %s", line, s)
+		}
+	}
+}
+
+// s1570 Wave C: /onboard next wizard|first-run-wizard|guided|wave-c|wave_c|wizard-residual —
+// residual-honest guided first-run wizard residual board (bare = board, not auto dogfood).
+func TestHandleSlash_OnboardNextWizardLane(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+	agent.ResetWizardSoftDogfoodSessionState()
+	t.Cleanup(agent.ResetWizardSoftDogfoodSessionState)
+
+	needles := []string{
+		"onboard next wizard lane",
+		"Wave C",
+		"first-run wizard residual",
+		"1. Signup",
+		"2. Download TUI",
+		"3. TUI auth/keys",
+		"4. Setup",
+		"5. Connectors",
+		"6. Local store",
+		"7. Analyze",
+		"/onboard next setup",
+		"/onboard next portal-hitl",
+		"/onboard next e4",
+		"/onboard next journey",
+		"dual_write OFF",
+		"not Memory GA",
+		"Edge Memory GA candidacy only",
+		"residual PASS ≠ invent Edge Memory GA declared",
+		"E10 Open",
+		"portal HITL when connect",
+		"agent MCP cannot write installs",
+		"catalog ≠ Connected",
+		"no invent TUI portal SSO",
+		"host not auto",
+		"wizard_soft_not_run",
+		"/onboard next wizard dogfood",
+		"free eng s1570",
+	}
+
+	for _, line := range []string{
+		"/onboard next wizard",
+		"/onboard next first-run-wizard",
+		"/onboard next guided",
+		"/onboard next wave-c",
+		"/onboard next wave_c",
+		"/onboard next wizard-residual",
+		"/aion-onboard after wizard",
+		"/agent-onboard continue guided",
+		"/onboard lanes wave-c",
+	} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		// Bare wizard must be board, not auto soft dogfood runner.
+		if strings.Contains(s, "first-run wizard soft offline dogfood") {
+			t.Fatalf("%s must not auto-run soft dogfood (bare wizard = board):\n%s", line, s)
+		}
+		if strings.Contains(s, "onboard next setup lane") {
+			t.Fatalf("%s must not emit setup lane body:\n%s", line, s)
+		}
+		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Connected: yes") {
+			t.Fatalf("%s must not invent dual_write ON / Connected:\n%s", line, s)
+		}
+		if strings.Contains(s, "Edge Memory GA is declared") || strings.Contains(s, "E10 is closed") {
+			t.Fatalf("%s must not invent Edge Memory GA is declared / E10 is closed:\n%s", line, s)
+		}
+	}
+}
+
+// s1570 Wave C: /onboard next wizard dogfood|soft|offline|wizard-soft|samples — soft offline wizard dogfood.
+func TestHandleSlash_OnboardNextWizardSoftDogfood(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+	agent.ResetWizardSoftDogfoodSessionState()
+	agent.ResetE4SoftDogfoodSessionState()
+	agent.ResetPortalHITLSoftDogfoodSessionState()
+	agent.ResetAgenticListPlanSoftDogfoodSessionState()
+	t.Cleanup(func() {
+		agent.ResetWizardSoftDogfoodSessionState()
+		agent.ResetE4SoftDogfoodSessionState()
+		agent.ResetPortalHITLSoftDogfoodSessionState()
+		agent.ResetAgenticListPlanSoftDogfoodSessionState()
+	})
+
+	needles := []string{
+		"first-run wizard soft offline dogfood",
+		"no MCP dial",
+		"never start host",
+		"not live dogfood",
+		"result: PASS",
+		"soft_offline_wizard_session_pass",
+		"Wave C",
+		"first-run wizard residual",
+		"soft offline ≠ invent Connected",
+		"session soft ≠ live dogfood",
+		"residual PASS ≠ invent Edge Memory GA declared",
+		"E10 Open",
+		"dual_write OFF",
+		"free eng s1570",
+	}
+
+	for _, line := range []string{
+		"/onboard next wizard dogfood",
+		"/onboard next wizard soft",
+		"/onboard next wizard offline",
+		"/onboard next wizard wizard-soft",
+		"/onboard next wizard samples",
+		"/onboard next first-run-wizard dogfood",
+		"/onboard next guided soft",
+		"/aion-onboard after wizard offline",
+		"/agent-onboard continue wave-c wizard-soft",
+	} {
+		agent.ResetWizardSoftDogfoodSessionState()
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		if strings.Contains(s, "Connected: yes") || strings.Contains(s, "dual_write ON") {
+			t.Fatalf("%s must not invent Connected/dual_write ON:\n%s", line, s)
+		}
+		if strings.Contains(s, "E4 client-attach soft offline dogfood") {
+			t.Fatalf("%s must not run E4 soft dogfood:\n%s", line, s)
+		}
+		if strings.Contains(s, "portal HITL soft offline dogfood") {
+			t.Fatalf("%s must not run portal HITL soft dogfood:\n%s", line, s)
+		}
+		if got := agent.WizardSoftSessionLabel(); got != agent.WizardSoftPass {
+			t.Fatalf("%s session label: got %q want %q", line, got, agent.WizardSoftPass)
+		}
+		if got := agent.E4SoftSessionLabel(); got != agent.E4SoftNotRun {
+			t.Fatalf("%s E4 soft must stay not_run, got %q", line, got)
+		}
+		if got := agent.PortalHITLSoftSessionLabel(); got != agent.PortalHITLSoftNotRun {
+			t.Fatalf("%s portal HITL soft must stay not_run, got %q", line, got)
+		}
+		if got := agent.AgenticListPlanSoftSessionLabel(); got != agent.AgenticListPlanSoftNotRun {
+			t.Fatalf("%s agentic soft must stay not_run, got %q", line, got)
 		}
 	}
 }
@@ -1647,9 +1810,9 @@ func TestHandleSlash_OnboardNextJourneyLane(t *testing.T) {
 		if strings.Contains(s, "onboard next lane status (") {
 			t.Fatalf("%s must not emit status board: %s", line, s)
 		}
-		// wizard alias must stay setup lane (not journey).
-		if strings.Contains(s, "onboard next setup lane") && strings.Contains(line, "journey") {
-			// journey board may mention setup companion; do not fail solely on that.
+		// journey board may mention setup/wizard companions; do not fail solely on that.
+		if strings.Contains(s, "onboard next setup lane") && !strings.Contains(s, "onboard next journey lane") {
+			t.Fatalf("%s must not emit setup lane as primary body:\n%s", line, s)
 		}
 	}
 }
@@ -1681,6 +1844,7 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 		"operator",
 		"setup",
 		"journey",
+		"wizard",
 		"status",
 		"export",
 		"human-gates",
