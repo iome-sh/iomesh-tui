@@ -1389,6 +1389,12 @@ func TestAionAgentOnboardingNextMarketingDemoLane_HonestyNeedles(t *testing.T) {
 		"does not auto-post",
 		"closed-loop metrics",
 		"not the CRM",
+		// s1602 operator GTM boundary (credentials · Hermes outside TUI · CRM human-gated)
+		"s1602",
+		"operator machine",
+		"outside the public TUI",
+		"no social tokens",
+		"commercial CRM writes stay human",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("marketing-demo lane missing %q in:\n%s", want, out)
