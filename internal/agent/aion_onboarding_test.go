@@ -1404,6 +1404,16 @@ func TestAionAgentOnboardingNextMarketingDemoLane_HonestyNeedles(t *testing.T) {
 		"operator-box OAuth",
 		"human approve",
 		"No social or CRM tokens in the public harness",
+		// s1610 GTM wave 7 (Hermes mock dogfood · HubSpot dual control · sales-loop outbox · not fleet GA)
+		"s1610",
+		"Hermes dogfood",
+		"operator mock",
+		"not Hermes control plane",
+		"HubSpot dual control",
+		"write allow flags",
+		"Sales-loop mesh outbox",
+		"local envelope",
+		"mesh GTM fleet GA",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("marketing-demo lane missing %q in:\n%s", want, out)
@@ -1416,6 +1426,8 @@ func TestAionAgentOnboardingNextMarketingDemoLane_HonestyNeedles(t *testing.T) {
 		"book-demo ON",
 		"INSTALL_STORE APPLY success",
 		"live dogfood green",
+		"mesh GTM fleet GA shipped",
+		"freemium palace",
 	} {
 		if strings.Contains(out, bad) {
 			t.Fatalf("must not invent %q:\n%s", bad, out)
