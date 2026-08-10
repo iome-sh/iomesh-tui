@@ -70,8 +70,11 @@ Any other **OpenAI-compatible** chat endpoint can be added under `[model.<name>]
 
 Public **edge** path only — MIT harness + public memory kernel/MCP. Serial stamps in deep docs are **internal residual/roadmap labels**, not a claim that this repo hosts the multi-tenant control plane.
 
+Packaging SSOT: [oss-packaging-boundary.md](docs/architecture/oss-packaging-boundary.md) (MIT OSS harness vs private control plane · Edge OSS path first · optional residual-check rails).
+
 | Topic | Honesty | Doc |
 |-------|---------|-----|
+| OSS packaging boundary | MIT harness · not control plane · Edge path first · residual-check ≠ live dogfood | [oss-packaging-boundary.md](docs/architecture/oss-packaging-boundary.md) |
 | Local AI (Ollama) | Local only · not platform GPU · not invent GA | [memory-mcp.md](docs/architecture/memory-mcp.md#local-primary-lt-honesty-s768-pin) |
 | Local Docker Memory MCP | Product host [`iomesh-memory-mcp`](https://github.com/iome-sh/iomesh-memory-mcp) · dual_write OFF · not Memory GA · aion/broker **private** | [memory-mcp.md Local-edge Docker](docs/architecture/memory-mcp.md#local-edge-docker-memory-mcp-s1308--product-host-preferred--s1517) |
 | Public edge install | `go install …/iomesh-memory-mcp@main` · `go get github.com/iome-sh/memory@main` · **no GOPRIVATE** · public OSS ≠ invent platform GA | [memory-mcp.md Edge OSS](docs/architecture/memory-mcp.md#edge-oss-option-a-s1453--m2-lean-attach-s1458--m3-edge-dogfood-s1463--m4-public-flip-readiness-s1469--s1478-public-product-attach) |
@@ -79,6 +82,10 @@ Public **edge** path only — MIT harness + public memory kernel/MCP. Serial sta
 | Edge user journey (SSOT) | 7 stages · edge-first · dual_write OFF · not Memory GA · portal HITL when connect | [edge-user-journey.md](docs/architecture/edge-user-journey.md) |
 | Usage / demo walkthrough | Signup optional · integrations list/plan + portal HITL · local memory not fully automatic | [memory-edge-usage-demo.md](docs/architecture/memory-edge-usage-demo.md) |
 | Setup lifecycle | Agent-native `/setup` · residual-honest · dual_write OFF | [setup-lifecycle.md](docs/architecture/setup-lifecycle.md) |
+
+### Platform residual honesty (optional)
+
+Optional **anti-claim residual rails** inside this harness (human-gates boards, soft residual-check slash `… dogfood`, book-demo **OFF** locks, internal serial stamps) exist so residual PASS does **not** invent platform green. They are **not** the multi-tenant control plane, **not** live customer dogfood, and **not** Memory GA / Connected / dual_write ON. Prefer the user-facing phrase **residual-check** (slash token `dogfood` kept for compatibility). Details: [oss-packaging-boundary.md](docs/architecture/oss-packaging-boundary.md).
 
 **Internal roadmap (private platform · not this MIT surface):** multi-tenant mesh control plane, connector install-store fleet APPLY, knowledge multi-tenant INSTALL_STORE (punted for edge-first), live Cloud Run/image residual gates, portal billing fleet. Those live in private `aion` / ops residual docs — **not** shipped as open control-plane code here.
 

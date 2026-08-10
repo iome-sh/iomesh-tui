@@ -779,6 +779,12 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"deeper-e4",
 		"e4-tools",
 		"ingest-retrieve",
+		// s1582 OSS packaging residual stamp
+		"oss-packaging-boundary.md",
+		"OSS packaging boundary",
+		"free eng s1582",
+		"free-floor peer s1584+",
+		"residual PASS ≠ invent control plane in MIT repo",
 		// s1570 Wave C first-run wizard residual + soft dogfood
 		"/onboard next wizard",
 		"AionAgentOnboardingNextWizardLane",

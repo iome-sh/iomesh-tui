@@ -272,6 +272,39 @@ func TestAionAgentOnboardingStatus_HonestyNeedles(t *testing.T) {
 	}
 }
 
+// s1582: OSS packaging residual honesty one-liner needles.
+func TestOSSPackagingHonestyOneLiner_Needles(t *testing.T) {
+	out := OSSPackagingHonestyOneLiner
+	if out == "" {
+		t.Fatal("empty OSS packaging one-liner")
+	}
+	for _, want := range []string{
+		"MIT OSS harness",
+		"not control plane",
+		"dual_write OFF",
+		"not Memory GA",
+		"Edge Memory GA candidacy only",
+		"book-demo OFF",
+		"residual PASS ≠ invent control plane in MIT repo",
+		"residual-check",
+		"session soft ≠ live dogfood",
+		"≠ invent platform green",
+		"free eng s1582",
+		"free-floor peer s1584+",
+		"oss-packaging-boundary.md",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("OSS packaging one-liner missing %q in:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "book-demo ON") {
+		t.Fatalf("must not invent dual_write/book-demo ON: %s", out)
+	}
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent Memory GA / Connected: %s", out)
+	}
+}
+
 // s1372+s1377+s1382+s1402+s1407+s1413+s1417: AionAgentOnboardingNextLanes residual-honest post-onboard continuum needles.
 func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 	out := AionAgentOnboardingNextLanes()
@@ -282,6 +315,17 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"onboard next lanes",
 		"post-onboard continuum",
 		"no MCP dial",
+		// s1582 OSS packaging residual groups
+		"Edge OSS path",
+		"Platform residual honesty",
+		"optional · anti-claims · offline residual checks",
+		"residual-check",
+		"not control plane",
+		"OSS harness",
+		"residual PASS ≠ invent control plane in MIT repo",
+		"free eng s1582",
+		"free-floor peer s1584+",
+		"oss-packaging-boundary.md",
 		"1.",
 		"iomesh plugins dogfood",
 		"offline sample validate",
