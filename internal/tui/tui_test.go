@@ -3056,6 +3056,158 @@ func TestHandleSlash_OnboardNextToolCallLane(t *testing.T) {
 	}
 }
 
+// s1586: /onboard next e10|e10-open|edge-memory-e10|ga-signoff|e10_open — residual-honest E10 Open reaffirm board.
+func TestHandleSlash_OnboardNextE10Lane(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+	agent.ResetE10SoftDogfoodSessionState()
+	t.Cleanup(agent.ResetE10SoftDogfoodSessionState)
+
+	needles := []string{
+		"onboard next e10 lane",
+		"E10 Open",
+		"E10 Open reaffirm",
+		"residual PASS ≠ invent E10 closed",
+		"residual PASS ≠ invent Edge Memory GA declared",
+		"Edge Memory GA candidacy only",
+		"founder sign-off only if declaring Edge Memory GA",
+		"candidacy allowed without E10",
+		"PASS ≠ live APPLY",
+		"dual_write OFF",
+		"not Memory GA",
+		"book-demo OFF",
+		"residual-check",
+		"soft offline ≠ invent Connected",
+		"e10_soft_not_run",
+		"/onboard next e10 dogfood",
+		"free eng s1586",
+	}
+
+	for _, line := range []string{
+		"/onboard next e10",
+		"/onboard next e10-open",
+		"/onboard next edge-memory-e10",
+		"/onboard next ga-signoff",
+		"/onboard next e10_open",
+		"/aion-onboard after e10",
+		"/agent-onboard continue e10-open",
+		"/onboard lanes edge-memory-e10",
+	} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		// Bare e10 must be board, not auto soft residual-check runner.
+		if strings.Contains(s, "E10 Open soft offline residual-check") && strings.Contains(s, "result: PASS") {
+			// board may mention residual-check text; ensure soft runner header is not the primary body.
+			if strings.Contains(s, "aion onboard next E10 Open soft offline residual-check") {
+				t.Fatalf("%s must not auto-run soft residual-check (bare e10 = board):\n%s", line, s)
+			}
+		}
+		if strings.Contains(s, "onboard next e4 lane") {
+			t.Fatalf("%s must not emit e4 lane body:\n%s", line, s)
+		}
+		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Connected: yes") {
+			t.Fatalf("%s must not invent dual_write ON / Connected:\n%s", line, s)
+		}
+		if strings.Contains(s, "Edge Memory GA is declared") || strings.Contains(s, "E10 is closed") {
+			t.Fatalf("%s must not invent Edge Memory GA is declared / E10 is closed:\n%s", line, s)
+		}
+		if strings.Contains(s, "live APPLY green") {
+			t.Fatalf("%s must not invent live APPLY green:\n%s", line, s)
+		}
+	}
+}
+
+// s1586: /onboard next e10 dogfood|soft|offline|e10-soft|residual-check|samples — soft offline E10 residual-check.
+func TestHandleSlash_OnboardNextE10SoftDogfood(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+	agent.ResetE10SoftDogfoodSessionState()
+	agent.ResetE4SoftDogfoodSessionState()
+	agent.ResetToolCallSoftDogfoodSessionState()
+	agent.ResetStillHumanSoftDogfoodSessionState()
+	t.Cleanup(func() {
+		agent.ResetE10SoftDogfoodSessionState()
+		agent.ResetE4SoftDogfoodSessionState()
+		agent.ResetToolCallSoftDogfoodSessionState()
+		agent.ResetStillHumanSoftDogfoodSessionState()
+	})
+
+	needles := []string{
+		"E10 Open soft offline residual-check",
+		"no MCP dial",
+		"never start host",
+		"not live dogfood",
+		"result: PASS",
+		"soft_offline_e10_session_pass",
+		"residual PASS ≠ invent E10 closed",
+		"residual PASS ≠ invent Edge Memory GA declared",
+		"soft offline ≠ invent Connected",
+		"session soft ≠ live dogfood",
+		"E10 Open",
+		"dual_write OFF",
+		"PASS ≠ live APPLY",
+		"free eng s1586",
+	}
+
+	for _, line := range []string{
+		"/onboard next e10 dogfood",
+		"/onboard next e10 soft",
+		"/onboard next e10 offline",
+		"/onboard next e10 e10-soft",
+		"/onboard next e10 residual-check",
+		"/onboard next e10 samples",
+		"/onboard next e10-open dogfood",
+		"/aion-onboard after e10 offline",
+		"/agent-onboard continue ga-signoff residual-check",
+	} {
+		agent.ResetE10SoftDogfoodSessionState()
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		if strings.Contains(s, "Connected: yes") || strings.Contains(s, "dual_write ON") {
+			t.Fatalf("%s must not invent Connected / dual_write ON:\n%s", line, s)
+		}
+		if strings.Contains(s, "Edge Memory GA is declared") || strings.Contains(s, "E10 is closed") {
+			t.Fatalf("%s must not invent Edge Memory GA is declared / E10 is closed:\n%s", line, s)
+		}
+		// Soft residual-check must not flip peer soft markers.
+		if got := agent.E4SoftSessionLabel(); got != agent.E4SoftNotRun {
+			t.Fatalf("%s flipped E4 soft marker to %q", line, got)
+		}
+		if got := agent.ToolCallSoftSessionLabel(); got != agent.ToolCallSoftNotRun {
+			t.Fatalf("%s flipped tool-call soft marker to %q", line, got)
+		}
+		if got := agent.StillHumanSoftSessionLabel(); got != agent.StillHumanSoftNotRun {
+			t.Fatalf("%s flipped still-human soft marker to %q", line, got)
+		}
+	}
+}
+
 // s1578: /onboard next tool-call dogfood|soft|offline|tool-call-soft|samples — soft offline deeper tool-call dogfood.
 func TestHandleSlash_OnboardNextToolCallSoftDogfood(t *testing.T) {
 	rt := testRuntime(t)

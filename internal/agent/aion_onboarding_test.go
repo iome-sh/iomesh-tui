@@ -476,6 +476,13 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"first-run-wizard|guided|wave-c|wave_c|wizard-residual",
 		"free eng s1570",
 		"free-floor peer s1572+",
+		// s1586 E10 Open reaffirm residual-check (Platform residual honesty)
+		"/onboard next e10",
+		"E10 Open reaffirm",
+		"e10-open|edge-memory-e10|ga-signoff|e10_open",
+		"residual PASS ≠ invent E10 closed",
+		"free eng s1586",
+		"free-floor peer s1588+",
 		// pulse stays board (not mesh alias)
 		"pulse stays board",
 		"never invent pull green",
@@ -1233,6 +1240,7 @@ func TestAionAgentOnboardingNextToolCallLane_HonestyNeedles(t *testing.T) {
 		"tool-calls|deeper-e4|e4-tools|ingest-retrieve|tool_call",
 		"/onboard next memory",
 		"/onboard next journey",
+		"/onboard next e10",
 		"free eng s1578",
 		"free-floor peer s1580+",
 	} {
@@ -1246,6 +1254,66 @@ func TestAionAgentOnboardingNextToolCallLane_HonestyNeedles(t *testing.T) {
 		"Edge Memory GA is declared",
 		"E10 is closed",
 		"forever-green product dogfood green",
+		"live dogfood green",
+		"INSTALL_STORE APPLY success",
+		"book-demo ON",
+		"Memory GA shipped",
+	} {
+		if strings.Contains(out, bad) {
+			t.Fatalf("must not invent %q:\n%s", bad, out)
+		}
+	}
+}
+
+// s1586: AionAgentOnboardingNextE10Lane residual-honest E10 Open reaffirm residual-check needles.
+func TestAionAgentOnboardingNextE10Lane_HonestyNeedles(t *testing.T) {
+	ResetE10SoftDogfoodSessionState()
+	t.Cleanup(ResetE10SoftDogfoodSessionState)
+
+	out := AionAgentOnboardingNextE10Lane()
+	if out == "" {
+		t.Fatal("empty e10 lane")
+	}
+	for _, want := range []string{
+		"onboard next e10 lane",
+		"no MCP dial",
+		"E10 Open",
+		"E10 Open reaffirm",
+		"residual-check",
+		"residual PASS ≠ invent E10 closed",
+		"residual PASS ≠ invent Edge Memory GA declared",
+		"Edge Memory GA candidacy only",
+		"not Memory GA",
+		"dual_write OFF",
+		"book-demo OFF",
+		"founder sign-off only if declaring Edge Memory GA",
+		"candidacy allowed without E10",
+		"PASS ≠ live APPLY",
+		"session soft ≠ live dogfood",
+		"residual PASS ≠ live dogfood",
+		"soft offline ≠ invent Connected",
+		"e10_soft_not_run",
+		"/onboard next e10 dogfood",
+		"soft|samples|offline|e10-soft|residual-check",
+		"e10-open|edge-memory-e10|ga-signoff|e10_open",
+		"/onboard next e4",
+		"/onboard next human-gates",
+		"OSS packaging",
+		"MIT harness",
+		"not control plane",
+		"free eng s1586",
+		"free-floor peer s1588+",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("e10 lane missing %q in:\n%s", want, out)
+		}
+	}
+	for _, bad := range []string{
+		"dual_write ON",
+		"Connected: yes",
+		"Edge Memory GA is declared",
+		"E10 is closed",
+		"live APPLY green",
 		"live dogfood green",
 		"INSTALL_STORE APPLY success",
 		"book-demo ON",

@@ -54,12 +54,15 @@ These rails exist so residual eng and operators **do not invent** platform green
 | **Soft residual-check** (`dogfood` slash token) | Offline string/board honesty check; never dial MCP / never start host | `/onboard next <lane> dogfood` (aliases `soft`/`samples`/`offline`/…) |
 | **Still-human APPLY soft residual** | Reaffirm open boxes after Wave A–C continuum | `/onboard next human-gates dogfood` |
 | **Tool-call residual** | Deeper E4 path map residual (ingest→retrieve→list→as-of) without inventing GA | `/onboard next tool-call` · soft residual-check |
+| **E10 Open reaffirm (s1586)** | Pin E10 Open after packaging continuum; residual PASS ≠ invent E10 closed / Edge Memory GA declared | `/onboard next e10` · soft residual-check `/onboard next e10 dogfood` |
 | **Book-demo OFF locks** | Never invent book-demo ON / public booking live | boards: demo · sales · human-gates · Locks lines |
 | **Serial stamps (`sNNNN`)** | Internal residual/roadmap labels in CHANGELOG/docs | free eng serials · free-floor peer mention only |
 
-**Locks shared with Edge path:** dual_write **OFF** · not Memory GA · Edge Memory GA **candidacy only** · book-demo **OFF** · residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent control plane in MIT repo · E10 Open · catalog ≠ Connected · portal HITL when connect.
+**Locks shared with Edge path:** dual_write **OFF** · not Memory GA · Edge Memory GA **candidacy only** · book-demo **OFF** · residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent E10 closed · residual PASS ≠ invent control plane in MIT repo · E10 Open · catalog ≠ Connected · portal HITL when connect.
 
 Keep soft residual-check harnesses — they are **anti-claim rails**, not live customer dogfood.
+
+**Future / opt-in documentation only (not implemented as a hiding gate):** operators or residual eng may set `IOMESH_PLATFORM_RESIDUAL=1` as a future label when filtering platform residual-check surfaces in tooling. Continuum labeling already splits **Edge OSS path** vs **Platform residual honesty**; soft residual-checks remain available. Prefer document-only until an env helper can ship without hiding lanes or breaking tests.
 
 ---
 
@@ -96,7 +99,7 @@ Example: free eng **s1582** = this OSS packaging residual · free-floor peer **s
 `/onboard next` continuum help is labeled in two groups:
 
 1. **Edge OSS path** — setup · journey · wizard · memory · e4 attach · portal HITL for connectors when used  
-2. **Platform residual honesty (optional · anti-claims · offline residual checks)** — human-gates · soft residual-check (`dogfood` slash) · still-human APPLY · tool-call residual  
+2. **Platform residual honesty (optional · anti-claims · offline residual checks)** — human-gates · soft residual-check (`dogfood` slash) · still-human APPLY · tool-call residual · E10 Open reaffirm (`/onboard next e10` · s1586)  
 
 Bare `/onboard` residual packaging line: `OSSPackagingHonestyOneLiner` in `internal/agent`  
 API continuum overview: `AionAgentOnboardingNextLanes`
