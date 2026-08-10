@@ -2,6 +2,8 @@
 
 Residual-honest **observed stamp only** for free eng **s1508** (TUI tip ↔ lean product host full MCP client attach).
 
+**Soft offline residual (s1566):** optional E4 client-attach soft dogfood for journey **stage 6** local store / MCP attach — `/onboard next e4` · soft `/onboard next e4 dogfood` · session labels `e4_soft_not_run` · `soft_offline_e4_session_pass|fail` · **never dial MCP / never start host** from soft residual · residual PASS ≠ invent Edge Memory GA declared · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · session soft ≠ live dogfood · dual_write OFF · E10 Open · free eng **s1566** · free-floor peer **s1568+** mention only.
+
 **Not claimed:** Edge Memory GA declared · bare Memory GA · hosted Memory GA · E10 closed · forever-green product dogfood · dual_write ON · freemium palace · full platform sidecar parity.
 
 ## Pin (do not invent more)

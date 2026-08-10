@@ -1641,8 +1641,8 @@ func TestHandleSlash_OnboardNextJourneyLane(t *testing.T) {
 		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Memory GA shipped") {
 			t.Fatalf("%s must not invent dual_write ON / Memory GA: %s", line, s)
 		}
-		if strings.Contains(s, "Connected: yes") || strings.Contains(s, "Edge Memory GA declared") {
-			t.Fatalf("%s must not invent Connected / Edge Memory GA declared: %s", line, s)
+		if strings.Contains(s, "Connected: yes") || strings.Contains(s, "Edge Memory GA is declared") {
+			t.Fatalf("%s must not invent Connected / Edge Memory GA is declared: %s", line, s)
 		}
 		if strings.Contains(s, "onboard next lane status (") {
 			t.Fatalf("%s must not emit status board: %s", line, s)
@@ -2737,6 +2737,156 @@ func TestHandleSlash_OnboardNextPortalHITLSoftDogfood(t *testing.T) {
 			t.Fatalf("%s session label: got %q want %q", line, got, agent.PortalHITLSoftPass)
 		}
 		// Agentic soft stays independent not_run.
+		if got := agent.AgenticListPlanSoftSessionLabel(); got != agent.AgenticListPlanSoftNotRun {
+			t.Fatalf("%s agentic soft must stay not_run, got %q", line, got)
+		}
+	}
+}
+
+// s1566: /onboard next e4|e4-dogfood|client-attach|edge-memory-e4|e4_attach —
+// residual-honest journey stage-6 E4 client-attach board (bare = board, not auto dogfood).
+func TestHandleSlash_OnboardNextE4Lane(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+	agent.ResetE4SoftDogfoodSessionState()
+	t.Cleanup(agent.ResetE4SoftDogfoodSessionState)
+
+	needles := []string{
+		"onboard next e4 lane",
+		"journey stage 6",
+		"E4 client attach",
+		"tools=6",
+		"iomesh mcp --connect",
+		"iomesh-memory-mcp",
+		"local-primary",
+		"docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md",
+		"dual_write OFF",
+		"not Memory GA",
+		"Edge Memory GA candidacy only",
+		"residual PASS ≠ invent Edge Memory GA declared",
+		"E10 Open",
+		"tip ≠ invent forever-green product dogfood",
+		"soft offline ≠ invent Connected",
+		"e4_soft_not_run",
+		"/onboard next e4 dogfood",
+		"free eng s1566",
+	}
+
+	for _, line := range []string{
+		"/onboard next e4",
+		"/onboard next e4-dogfood",
+		"/onboard next client-attach",
+		"/onboard next edge-memory-e4",
+		"/onboard next e4_attach",
+		"/aion-onboard after e4",
+		"/agent-onboard continue client-attach",
+		"/onboard lanes edge-memory-e4",
+	} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		// Bare e4 must be board, not auto soft dogfood runner.
+		if strings.Contains(s, "E4 client-attach soft offline dogfood") {
+			t.Fatalf("%s must not auto-run soft dogfood (bare e4 = board):\n%s", line, s)
+		}
+		if strings.Contains(s, "onboard next memory lane") {
+			t.Fatalf("%s must not emit memory lane body:\n%s", line, s)
+		}
+		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Connected: yes") {
+			t.Fatalf("%s must not invent dual_write ON / Connected:\n%s", line, s)
+		}
+		if strings.Contains(s, "Edge Memory GA is declared") || strings.Contains(s, "E10 is closed") {
+			t.Fatalf("%s must not invent Edge Memory GA is declared / E10 is closed:\n%s", line, s)
+		}
+	}
+}
+
+// s1566: /onboard next e4 dogfood|soft|offline|e4-soft|samples — soft offline E4 dogfood.
+func TestHandleSlash_OnboardNextE4SoftDogfood(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+	agent.ResetE4SoftDogfoodSessionState()
+	agent.ResetPortalHITLSoftDogfoodSessionState()
+	agent.ResetAgenticListPlanSoftDogfoodSessionState()
+	t.Cleanup(func() {
+		agent.ResetE4SoftDogfoodSessionState()
+		agent.ResetPortalHITLSoftDogfoodSessionState()
+		agent.ResetAgenticListPlanSoftDogfoodSessionState()
+	})
+
+	needles := []string{
+		"E4 client-attach soft offline dogfood",
+		"no MCP dial",
+		"never start host",
+		"not live dogfood",
+		"result: PASS",
+		"soft_offline_e4_session_pass",
+		"journey stage 6",
+		"tools=6",
+		"iomesh mcp --connect",
+		"soft offline ≠ invent Connected",
+		"session soft ≠ live dogfood",
+		"residual PASS ≠ invent Edge Memory GA declared",
+		"E10 Open",
+		"tip ≠ invent forever-green product dogfood",
+		"dual_write OFF",
+		"free eng s1566",
+	}
+
+	for _, line := range []string{
+		"/onboard next e4 dogfood",
+		"/onboard next e4 soft",
+		"/onboard next e4 offline",
+		"/onboard next e4 e4-soft",
+		"/onboard next e4 samples",
+		"/onboard next client-attach dogfood",
+		"/onboard next edge-memory-e4 soft",
+		"/aion-onboard after e4 offline",
+		"/agent-onboard continue e4_attach e4-soft",
+	} {
+		agent.ResetE4SoftDogfoodSessionState()
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		if strings.Contains(s, "Connected: yes") || strings.Contains(s, "dual_write ON") {
+			t.Fatalf("%s must not invent Connected/dual_write ON:\n%s", line, s)
+		}
+		if strings.Contains(s, "portal HITL soft offline dogfood") {
+			t.Fatalf("%s must not run portal HITL soft dogfood:\n%s", line, s)
+		}
+		if strings.Contains(s, "agentic list/plan soft offline dogfood") {
+			t.Fatalf("%s must not run agentic soft dogfood:\n%s", line, s)
+		}
+		if got := agent.E4SoftSessionLabel(); got != agent.E4SoftPass {
+			t.Fatalf("%s session label: got %q want %q", line, got, agent.E4SoftPass)
+		}
+		if got := agent.PortalHITLSoftSessionLabel(); got != agent.PortalHITLSoftNotRun {
+			t.Fatalf("%s portal HITL soft must stay not_run, got %q", line, got)
+		}
 		if got := agent.AgenticListPlanSoftSessionLabel(); got != agent.AgenticListPlanSoftNotRun {
 			t.Fatalf("%s agentic soft must stay not_run, got %q", line, got)
 		}
