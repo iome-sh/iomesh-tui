@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **README open-source boundary (local-first)** — refresh “this public repo is / is not” for OSS readers: first-class **local memory** (MCP host + kernel), multi-provider LLMs / Ollama, optional mesh client. Drop residual-internal “freemium palace / invent Memory GA” framing from the public is/is-not table. Simplify Edge install docs table and “Why this project”. Align packaging SSOT table. dual_write default OFF unchanged.
+
 ### Added
 
 - **OSS packaging residual (s1582)** — residual-honest **public MIT packaging boundary** so OSS readers see Edge harness first; platform residual honesty is labeled optional anti-claim rails (not control plane). New SSOT [docs/architecture/oss-packaging-boundary.md](docs/architecture/oss-packaging-boundary.md) (MIT harness vs private control plane table · Edge OSS path · residual-check glossary · CHANGELOG serial reading · free eng **s1582** · free-floor peer **s1584+** mention only). README Edge install table + short **Platform residual honesty (optional)** subsection · `docs/README` index. Operator surface: `OSSPackagingHonestyOneLiner` on bare `/onboard` · `/onboard next` continuum split into **Edge OSS path** vs **Platform residual honesty (optional · anti-claims · offline residual checks)** · user-facing **residual-check** alongside slash token `dogfood` (compat). Soft residual-check harnesses **kept** (anti-claims). Honesty: MIT OSS · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · book-demo OFF · residual PASS ≠ invent control plane in MIT repo · session soft ≠ live dogfood · free eng **s1582** · free-floor peer **s1584+** mention only.
