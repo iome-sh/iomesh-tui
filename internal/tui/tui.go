@@ -804,6 +804,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		// next memory-pull (s1407): memory-pull|ops-pack|pull-path|memorypull|ops_pack (NOT bare pull — pull stays mesh).
 		// next agentic (s1417): agentic|agentic-integrations|integrations|list-plan (NOT bare mcp/portal/pull · NOT portal-hitl|hitl — s1562).
 		// next portal-hitl (s1562): portal-hitl|hitl|portal_hitl|portal-dogfood|stage5|connectors-hitl (journey stage 5 · soft dogfood residual).
+		// next e4 (s1566): e4|e4-dogfood|client-attach|edge-memory-e4|e4_attach (journey stage 6 · E4 client-attach soft dogfood residual).
 		// next planes (s1432): planes|three-planes|product-planes|product|pillars|three_planes (NOT pulse/board · pull · mcp).
 		// next sales (s1437): sales|claims|buyer|claim-matrix|sales-claims|buyer-claims (NOT product/planes · gtm · pulse/board).
 		// next operator (s1447): operator|operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix (NOT demo/readiness/lighthouse/landgrab · sales/claims · planes/product · pulse/board · export/receipt).
@@ -834,6 +835,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 				// s1407: memory-pull|ops-pack|pull-path|memorypull|ops_pack Ops Pack pull path;
 				// s1417: agentic|agentic-integrations|integrations|list-plan plane-3 agentic integrations;
 				// s1562: portal-hitl|hitl|portal_hitl|portal-dogfood|stage5|connectors-hitl journey stage-5 portal HITL;
+				// s1566: e4|e4-dogfood|client-attach|edge-memory-e4|e4_attach journey stage-6 E4 client-attach;
 				// s1432: planes|three-planes|product-planes|product|pillars|three_planes three product planes board;
 				// s1437: sales|claims|buyer|claim-matrix|sales-claims|buyer-claims sales/buyer claims board;
 				// s1442: demo|demo-ready|readiness|demo-readiness|lighthouse|landgrab demo readiness board;
@@ -921,6 +923,22 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 						fmt.Fprintln(out, agent.AionAgentOnboardingNextPortalHITLLane())
 						fmt.Fprintln(out, "— residual: portal HITL lane · s1562 · journey stage 5 · no MCP dial · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · template= ≠ install APPLY · dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ live dogfood · soft offline ≠ invent Connected · free eng s1562 · free-floor peer s1564+ mention only · soft dogfood: /onboard next portal-hitl dogfood")
 						return false, nil
+					case "e4", "e4-dogfood", "client-attach", "edge-memory-e4", "e4_attach":
+						// s1566: journey stage-6 E4 client-attach board + soft offline dogfood residual.
+						// Bare /onboard next e4 stays board (not auto dogfood · never start host · never dial MCP).
+						// NOT bare mcp|palace (memory lane) · NOT invent dual_write ON / Edge Memory GA declared / E10 closed.
+						if len(parts) >= 4 {
+							sub := strings.ToLower(parts[3])
+							switch sub {
+							case "dogfood", "soft", "samples", "offline", "e4-soft":
+								fmt.Fprintln(out, agent.RunE4SoftDogfood())
+								fmt.Fprintln(out, "— residual: E4 client-attach soft offline dogfood · s1566 · no MCP dial · never start host · soft offline ≠ invent Connected · residual PASS ≠ live dogfood · session soft ≠ live dogfood · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · free eng s1566 · free-floor peer s1568+ mention only")
+								return false, nil
+							}
+						}
+						fmt.Fprintln(out, agent.AionAgentOnboardingNextE4Lane())
+						fmt.Fprintln(out, "— residual: E4 client-attach lane · s1566 · journey stage 6 · no MCP dial · never start host · E4 client attach · tools=6 · iomesh mcp --connect residual · iomesh-memory-mcp · local-primary · dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · soft offline ≠ invent Connected · free eng s1566 · free-floor peer s1568+ mention only · soft dogfood: /onboard next e4 dogfood")
+						return false, nil
 					case "agentic", "agentic-integrations", "integrations", "list-plan":
 						// s1417: product plane 3 agentic integrations (MCP list/plan residual-honest).
 						// s1422: optional 4th token dogfood|soft|samples|offline|list-plan-soft → soft offline list/plan dogfood.
@@ -971,19 +989,19 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 					default:
 						// Unknown next sub → overview + usage hint listing lanes.
 						fmt.Fprintln(out, agent.AionAgentOnboardingNextLanes())
-						fmt.Fprintln(out, "— residual: post-onboard next lanes · dual_write OFF · not Memory GA · plugins dogfood ≠ Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · mesh ≠ memory · portal HITL · board/export evidence ≠ invent Connected · pull_not_probed · list_plan_not_connected · setup_not_probed · PASS ≠ invent human-gate green · Edge Memory GA candidacy only · free eng s1558 · free eng s1562")
-						fmt.Fprintln(out, "usage: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|planes|sales|demo|operator|setup|journey|status|export|human-gates]  (lane aliases: plugins→plugin|dogfood · gtm→drafts · memory→mcp|palace · mesh→stream|streams|heartbeat|heartbeats|pull · memory-pull→ops-pack|pull-path|memorypull|ops_pack · agentic→agentic-integrations|integrations|list-plan · portal-hitl→hitl|portal_hitl|portal-dogfood|stage5|connectors-hitl · planes→three-planes|product-planes|product|pillars|three_planes · sales→claims|buyer|claim-matrix|sales-claims|buyer-claims · demo→demo-ready|readiness|demo-readiness|lighthouse|landgrab · operator→operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix · setup→setup-lifecycle|wizard|lifecycle|setup_lifecycle · journey→edge-journey|user-journey|first-run|edge_user_journey · status→pulse|board · export→receipt|stamp|evidence · human-gates→human|gates|apply-gates; parent aliases after|continue|lanes; export json for JSON receipt; pulse stays status board; bare pull stays mesh; bare mcp stays memory; bare portal stays portal handoff; product/planes stay three-planes; landgrab stays Landgrab NOT READY honesty; readiness/lighthouse stay demo board)")
+						fmt.Fprintln(out, "— residual: post-onboard next lanes · dual_write OFF · not Memory GA · plugins dogfood ≠ Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · mesh ≠ memory · portal HITL · board/export evidence ≠ invent Connected · pull_not_probed · list_plan_not_connected · setup_not_probed · PASS ≠ invent human-gate green · Edge Memory GA candidacy only · free eng s1558 · free eng s1562 · free eng s1566")
+						fmt.Fprintln(out, "usage: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|e4|planes|sales|demo|operator|setup|journey|status|export|human-gates]  (lane aliases: plugins→plugin|dogfood · gtm→drafts · memory→mcp|palace · mesh→stream|streams|heartbeat|heartbeats|pull · memory-pull→ops-pack|pull-path|memorypull|ops_pack · agentic→agentic-integrations|integrations|list-plan · portal-hitl→hitl|portal_hitl|portal-dogfood|stage5|connectors-hitl · e4→e4-dogfood|client-attach|edge-memory-e4|e4_attach · planes→three-planes|product-planes|product|pillars|three_planes · sales→claims|buyer|claim-matrix|sales-claims|buyer-claims · demo→demo-ready|readiness|demo-readiness|lighthouse|landgrab · operator→operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix · setup→setup-lifecycle|wizard|lifecycle|setup_lifecycle · journey→edge-journey|user-journey|first-run|edge_user_journey · status→pulse|board · export→receipt|stamp|evidence · human-gates→human|gates|apply-gates; parent aliases after|continue|lanes; export json for JSON receipt; pulse stays status board; bare pull stays mesh; bare mcp stays memory; bare portal stays portal handoff; product/planes stay three-planes; landgrab stays Landgrab NOT READY honesty; readiness/lighthouse stay demo board)")
 						return false, nil
 					}
 				}
 				fmt.Fprintln(out, agent.AionAgentOnboardingNextLanes())
-				fmt.Fprintln(out, "— residual: post-onboard next lanes · dual_write OFF · not Memory GA · plugins dogfood ≠ Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · mesh ≠ memory · portal HITL · board/export evidence ≠ invent Connected · pull_not_probed · list_plan_not_connected · setup_not_probed · PASS ≠ invent human-gate green · Edge Memory GA candidacy only · free eng s1558 · free eng s1562")
+				fmt.Fprintln(out, "— residual: post-onboard next lanes · dual_write OFF · not Memory GA · plugins dogfood ≠ Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · mesh ≠ memory · portal HITL · board/export evidence ≠ invent Connected · pull_not_probed · list_plan_not_connected · setup_not_probed · PASS ≠ invent human-gate green · Edge Memory GA candidacy only · free eng s1558 · free eng s1562 · free eng s1566")
 				return false, nil
 			}
 			// Unknown subcommand: still print guidance + usage hint.
 			fmt.Fprintln(out, agent.AionAgentOnboardingGuidanceNote())
 			fmt.Fprintln(out, "— residual: TUI ↔ aion onboarding · dual_write OFF · not Memory GA · never invent Connected · portal HITL · skill aion-agent-onboarding via read_skill")
-			fmt.Fprintln(out, "usage: /onboard [help|checklist|portal|status|next]  (aliases /aion-onboard /agent-onboard; portal aliases agent-mcp|mcp; next aliases after|continue|lanes; next lanes: plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|planes|sales|demo|operator|setup|journey|status|export|human-gates)")
+			fmt.Fprintln(out, "usage: /onboard [help|checklist|portal|status|next]  (aliases /aion-onboard /agent-onboard; portal aliases agent-mcp|mcp; next aliases after|continue|lanes; next lanes: plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|e4|planes|sales|demo|operator|setup|journey|status|export|human-gates)")
 			return false, nil
 		}
 		fmt.Fprintln(out, agent.AionAgentOnboardingGuidanceNote())
@@ -1031,7 +1049,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /integrations [list|plan|signing|status]  connector setup via MCP (catalog+plan+signing discovery+portal HITL; not install CRUD)
   /setup [init|preflight|portal|reload|pull|analyze|drift|repair]  setup lifecycle (managed config · preflight · portal HITL · hot MCP reload · opt-in continuous pull/analyze · drift report · guided repair; alias /setup-lifecycle; dual_write OFF · not Memory GA · PASS ≠ invent Connected · pull/analyze/repair ≠ invent Connected)
   /gtm [help|checklist]  GTM draft-only guidance or checklist (aliases /gtm-draft /gtm-agent; no auto-send; human publish)
-  /onboard [help|checklist|portal|status|next]  TUI agent ↔ aion onboarding guidance, checklist, portal Agent/MCP handoff, offline status, or post-onboard next lanes (aliases /aion-onboard /agent-onboard; residual-honest · portal HITL · settings/agent; next [plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|planes|sales|demo|operator|setup|journey|status|export|human-gates]; next mesh→stream|streams|heartbeat|heartbeats|pull; next planes→three-planes|product-planes|product|pillars|three_planes; next sales→claims|buyer|claim-matrix|sales-claims|buyer-claims; next demo→demo-ready|readiness|demo-readiness|lighthouse|landgrab; next operator→operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix; next setup→setup-lifecycle|wizard|lifecycle|setup_lifecycle; next status→pulse|board; next export→receipt|stamp|evidence [json]; next aliases after|continue|lanes; pulse stays status board; product/planes stay three-planes; readiness/lighthouse stay demo)
+  /onboard [help|checklist|portal|status|next]  TUI agent ↔ aion onboarding guidance, checklist, portal Agent/MCP handoff, offline status, or post-onboard next lanes (aliases /aion-onboard /agent-onboard; residual-honest · portal HITL · settings/agent; next [plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|e4|planes|sales|demo|operator|setup|journey|status|export|human-gates]; next mesh→stream|streams|heartbeat|heartbeats|pull; next e4→e4-dogfood|client-attach|edge-memory-e4|e4_attach; next planes→three-planes|product-planes|product|pillars|three_planes; next sales→claims|buyer|claim-matrix|sales-claims|buyer-claims; next demo→demo-ready|readiness|demo-readiness|lighthouse|landgrab; next operator→operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix; next setup→setup-lifecycle|wizard|lifecycle|setup_lifecycle; next status→pulse|board; next export→receipt|stamp|evidence [json]; next aliases after|continue|lanes; pulse stays status board; product/planes stay three-planes; readiness/lighthouse stay demo)
   /plugins [help|list|validate|smoke|status]  residual-honest Agent Plugins soft offline smoke (alias /plugin; smoke aliases dogfood|soft|samples|offline; check→validate; Discover ≠ Connected · soft offline ≠ live smoke · ≠ invent Agent Plugins GA)
   /quit                exit
 

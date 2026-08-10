@@ -341,8 +341,16 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"portal HITL",
 		"agent MCP cannot write installs",
 		"catalog ≠ Connected",
-		// s1413 human-gates
+		// s1566 E4 client attach journey stage 6
 		"8.",
+		"E4 client attach",
+		"/onboard next e4",
+		"e4-dogfood|client-attach|edge-memory-e4|e4_attach",
+		"free eng s1566",
+		"tools=6",
+		"iomesh mcp --connect",
+		// s1413 human-gates
+		"9.",
 		"human-gates",
 		"/onboard next human-gates",
 		"human|gates|apply-gates",
@@ -867,6 +875,8 @@ func TestAionAgentOnboardingNextJourneyLane_HonestyNeedles(t *testing.T) {
 		"iomesh-memory-mcp",
 		"host not auto",
 		"/onboard next memory",
+		"/onboard next e4",
+		"/onboard next e4 dogfood",
 		"/memory digest",
 		"/setup analyze",
 		// honesty locks
@@ -884,11 +894,13 @@ func TestAionAgentOnboardingNextJourneyLane_HonestyNeedles(t *testing.T) {
 		"docs/architecture/edge-user-journey.md",
 		"docs/architecture/setup-lifecycle.md",
 		"docs/architecture/memory-edge-usage-demo.md",
+		"docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md",
 		// slash + companions
 		"/onboard next journey",
 		"edge-journey|user-journey|first-run|edge_user_journey",
 		"/onboard next setup",
 		"/onboard next portal-hitl",
+		"/onboard next e4",
 		"/onboard next agentic",
 		"/onboard next memory",
 		"/onboard next human-gates",
@@ -902,8 +914,8 @@ func TestAionAgentOnboardingNextJourneyLane_HonestyNeedles(t *testing.T) {
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
 		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
 	}
-	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "Edge Memory GA declared") {
-		t.Fatalf("must not invent Memory GA / Edge Memory GA declared: %s", out)
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "Edge Memory GA is declared") {
+		t.Fatalf("must not invent Memory GA / Edge Memory GA is declared: %s", out)
 	}
 	if strings.Contains(out, "TUI portal SSO shipped") || strings.Contains(out, "auto memory host") {
 		t.Fatalf("must not invent SSO / auto host: %s", out)
@@ -971,6 +983,67 @@ func TestAionAgentOnboardingNextPortalHITLLane_HonestyNeedles(t *testing.T) {
 	}
 	if strings.Contains(out, "live dogfood green") || strings.Contains(out, "book-demo ON") {
 		t.Fatalf("must not invent live dogfood green / book-demo ON: %s", out)
+	}
+}
+
+// s1566: AionAgentOnboardingNextE4Lane residual-honest journey stage-6 E4 client-attach needles.
+func TestAionAgentOnboardingNextE4Lane_HonestyNeedles(t *testing.T) {
+	ResetE4SoftDogfoodSessionState()
+	t.Cleanup(ResetE4SoftDogfoodSessionState)
+
+	out := AionAgentOnboardingNextE4Lane()
+	if out == "" {
+		t.Fatal("empty e4 lane")
+	}
+	for _, want := range []string{
+		"onboard next e4 lane",
+		"no MCP dial",
+		"journey stage 6",
+		"E4 client attach",
+		"client attach",
+		"tools=6",
+		"iomesh mcp --connect",
+		"iomesh-memory-mcp",
+		"local-primary",
+		"docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md",
+		"dual_write OFF",
+		"book-demo OFF",
+		"not Memory GA",
+		"Edge Memory GA candidacy only",
+		"residual PASS ≠ invent Edge Memory GA declared",
+		"E10 Open",
+		"tip ≠ invent forever-green product dogfood",
+		"residual PASS ≠ live dogfood",
+		"PASS ≠ live APPLY",
+		"soft offline ≠ invent Connected",
+		"session soft ≠ live dogfood",
+		"e4_soft_not_run",
+		"/onboard next e4 dogfood",
+		"soft|samples|offline|e4-soft",
+		"e4-dogfood|client-attach|edge-memory-e4|e4_attach",
+		"/onboard next memory",
+		"/onboard next journey",
+		"free eng s1566",
+		"free-floor peer s1568+",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("e4 lane missing %q in:\n%s", want, out)
+		}
+	}
+	for _, bad := range []string{
+		"dual_write ON",
+		"Connected: yes",
+		"Edge Memory GA is declared",
+		"E10 is closed",
+		"forever-green product dogfood green",
+		"live dogfood green",
+		"INSTALL_STORE APPLY success",
+		"book-demo ON",
+		"Memory GA shipped",
+	} {
+		if strings.Contains(out, bad) {
+			t.Fatalf("must not invent %q:\n%s", bad, out)
+		}
 	}
 }
 

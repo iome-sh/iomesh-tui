@@ -31,10 +31,11 @@ import (
 // s1550: edge-first human-gates residual pin — knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect.
 // s1558 Wave B: /onboard next journey residual-honest 7-stage edge-user-journey first-run map (setup = stage 4).
 // s1562: /onboard next portal-hitl residual-honest journey stage-5 portal HITL board + soft offline dogfood.
+// s1566: /onboard next e4 residual-honest journey stage-6 E4 client-attach board + soft offline dogfood.
 // Unit-tested for honesty needles. Molds IntegrationsAgentGuidanceNote /
 // GtmDraftOnlyAgentGuidanceNote / MemoryAdvancedAgentGuidanceNote.
 func AionAgentOnboardingGuidanceNote() string {
-	return strings.TrimSpace(`aion agent onboarding (residual-honest TUI ↔ aion CP/MCP · s1363+s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1546+s1550+s1558):
+	return strings.TrimSpace(`aion agent onboarding (residual-honest TUI ↔ aion CP/MCP · s1363+s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1546+s1550+s1558+s1562+s1566):
 Point IOMESH/MCP at aion tools — fail-open offline (never invent tool green).
 
 Connector path (integrations portal HITL · product plane 3 agentic integrations):
@@ -51,7 +52,7 @@ Portal Agent/MCP lane (complementary · s1368 · credential → copy connection 
 Memory + operator:
 5. Memory: dual_write OFF · local-primary · not Memory GA · optional plugins dogfood ≠ invent Agent Plugins GA (rates ~$88/$119 optional)
 6. Operator pulse: /integrations status · /onboard checklist · /onboard portal · portal HITL
-7. Post-onboard continuum: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|planes|sales|demo|operator|setup|journey|status|export|human-gates] (plugins dogfood · /gtm checklist · iomesh-memory-mcp local · mesh streaming heartbeats · Ops Pack pull path · agentic integrations MCP list/plan · portal HITL stage-5 connectors · three product planes board · sales/buyer claims · demo readiness · operator readiness matrix · setup lifecycle P1–P7 map · edge-user-journey first-run map · lane status board · status export receipt · human-gates still-required vs offline)
+7. Post-onboard continuum: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|e4|planes|sales|demo|operator|setup|journey|status|export|human-gates] (plugins dogfood · /gtm checklist · iomesh-memory-mcp local · mesh streaming heartbeats · Ops Pack pull path · agentic integrations MCP list/plan · portal HITL stage-5 connectors · E4 client-attach stage-6 · three product planes board · sales/buyer claims · demo readiness · operator readiness matrix · setup lifecycle P1–P7 map · edge-user-journey first-run map · lane status board · status export receipt · human-gates still-required vs offline)
 8. Human gates (s1413+s1546+s1550 edge-first): /onboard next human-gates — edge-first · knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect · book-demo OFF · ON_SIGNAL unset · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · never invent Connected
 9. Agentic integrations (s1417 · product plane 3): /onboard next agentic — MCP list/plan residual-honest · plan_connector_setup → portal deep links · browser HITL only · list_org fail-open ≠ empty-as-none · never invent Connected
 10. Three product planes (s1432): /onboard next planes — mesh · memory-pull · agentic residual-honest consolidate · streams_not_probed · pull_not_probed · list_plan_not_connected · dual_auth_candidacy_open · never invent Connected
@@ -61,6 +62,7 @@ Memory + operator:
 14. Setup lifecycle map (s1542+s1558 · stage 4 of edge-user-journey · P1–P7 closeout residual): /onboard next setup — init → preflight → reload → portal HITL → pull → analyze → drift → repair plan/apply --yes · setup_not_probed · offline static ≠ live dogfood · never invent Connected
 15. Edge-user-journey first-run map (s1558 Wave B · 7 stages): /onboard next journey — Signup → Download TUI → TUI auth/keys → Setup wizard → Connectors → Local store → Analyze · dual_write OFF · Edge Memory GA candidacy only · free eng s1558
 16. Portal HITL connectors (s1562 · journey stage 5): /onboard next portal-hitl — MCP list/plan → browser portal HITL → human OAuth/install · soft dogfood residual · free eng s1562
+17. E4 client attach (s1566 · journey stage 6): /onboard next e4 — iomesh-memory-mcp local-primary · client attach · tools=6 · iomesh mcp --connect residual · soft dogfood residual · free eng s1566
 
 Skill: read_skill aion-agent-onboarding when available
 
@@ -86,7 +88,8 @@ Locks (never violate):
 - operator matrix: residual_only · path_ready · still_human · policy_off · not_ready · portal_hitl_still · dual_auth_candidacy_open · never invent Connected / GA / dual-auth live
 - setup lifecycle: dual_write OFF · not Memory GA · PASS ≠ invent Connected · package wire ≠ Connected · repair apply ≠ invent Connected · dual_write never auto ON · E10 Open · setup_not_probed · offline static lane ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA
 - edge-user-journey (s1558): dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · portal HITL · no invent TUI portal SSO · host not auto · book-demo OFF · free eng s1558 · free-floor peer s1560+ mention only
-- portal HITL stage 5 (s1562): portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · soft offline ≠ invent Connected · session soft ≠ live dogfood · residual PASS ≠ live dogfood · free eng s1562 · free-floor peer s1564+ mention only`)
+- portal HITL stage 5 (s1562): portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · soft offline ≠ invent Connected · session soft ≠ live dogfood · residual PASS ≠ live dogfood · free eng s1562 · free-floor peer s1564+ mention only
+- E4 client attach stage 6 (s1566): dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · session soft ≠ live dogfood · soft offline ≠ invent Connected · free eng s1566 · free-floor peer s1568+ mention only`)
 }
 
 // AionAgentOnboardingChecklist residual-honest numbered onboarding checklist (s1363 + s1368 + s1372 + s1377 + s1382 + s1387 + s1402 + s1407 + s1413 + s1417 + s1432 + s1437 + s1442 + s1447 + s1542).
@@ -108,8 +111,9 @@ Locks (never violate):
 // s1542: /onboard next setup residual-honest setup lifecycle P1–P7 closeout map.
 // s1558 Wave B: /onboard next journey residual-honest 7-stage edge-user-journey first-run map.
 // s1562: /onboard next portal-hitl residual-honest journey stage-5 portal HITL + soft offline dogfood.
+// s1566: /onboard next e4 residual-honest journey stage-6 E4 client-attach + soft offline dogfood.
 func AionAgentOnboardingChecklist() string {
-	return strings.TrimSpace(`aion agent onboarding checklist (residual-honest · s1363+s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1558+s1562 · TUI ↔ aion):
+	return strings.TrimSpace(`aion agent onboarding checklist (residual-honest · s1363+s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1558+s1562+s1566 · TUI ↔ aion):
   1. Point IOMESH/MCP at aion tools (fail-open offline)
   2. list_connector_catalog — catalog status ≠ Connected
   3. plan_connector_setup → portal deep links (browser HITL · template= ≠ install APPLY)
@@ -118,7 +122,7 @@ func AionAgentOnboardingChecklist() string {
   6. TUI: [[mcp.servers]] streamable HTTP → /onboard · /integrations status (agent MCP cannot write installs)
   7. Memory dual_write OFF · local-primary · not Memory GA · optional plugins dogfood ≠ Agent Plugins GA
   8. Operator: /integrations status · /onboard checklist · /onboard portal · portal https://console.iome.sh/integrations
-  9. Post-onboard: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|planes|sales|demo|operator|setup|journey|status|export|human-gates] (plugins · gtm · memory local · mesh streaming heartbeats · Ops Pack pull path · agentic integrations MCP list/plan · portal HITL stage-5 connectors · three product planes board · sales/buyer claims · demo readiness · operator readiness matrix · setup lifecycle P1–P7 map · edge-user-journey first-run map · lane status board · status export receipt · human-gates still-required vs offline)
+  9. Post-onboard: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|e4|planes|sales|demo|operator|setup|journey|status|export|human-gates] (plugins · gtm · memory local · mesh streaming heartbeats · Ops Pack pull path · agentic integrations MCP list/plan · portal HITL stage-5 connectors · E4 client-attach stage-6 · three product planes board · sales/buyer claims · demo readiness · operator readiness matrix · setup lifecycle P1–P7 map · edge-user-journey first-run map · lane status board · status export receipt · human-gates still-required vs offline)
   10. Human gates: /onboard next human-gates — still human Slack HMAC · Stripe Customers:Write · H1/H2 INSTALL_STORE · D1–D5 · book-demo OFF · ON_SIGNAL unset · PASS ≠ invent human-gate green · never invent APPLY
   11. Agentic integrations (product plane 3): /onboard next agentic — MCP list/plan residual-honest · plan_connector_setup → portal deep links · browser HITL only · list_org fail-open ≠ empty-as-none · catalog ≠ Connected · never invent Connected
   12. Three product planes (s1432): /onboard next planes — mesh · memory-pull · agentic residual-honest consolidate · streams_not_probed · pull_not_probed · list_plan_not_connected · dual_auth_candidacy_open · never invent Connected
@@ -128,7 +132,8 @@ func AionAgentOnboardingChecklist() string {
   16. Setup lifecycle map (s1542+s1558 · stage 4 of edge-user-journey): /onboard next setup (aliases setup-lifecycle|wizard|lifecycle|setup_lifecycle) — init → preflight → reload → portal HITL → pull → analyze → drift → repair plan/apply --yes · setup_not_probed · repair apply ≠ invent Connected · dual_write never auto ON · E10 Open
   17. Edge-user-journey first-run map (s1558 Wave B): /onboard next journey (aliases edge-journey|user-journey|first-run|edge_user_journey) — 7 stages residual-honest · dual_write OFF · Edge Memory GA candidacy only · free eng s1558
   18. Portal HITL connectors (s1562 · journey stage 5): /onboard next portal-hitl (aliases hitl|portal_hitl|portal-dogfood|stage5|connectors-hitl) — MCP list/plan → browser portal HITL · soft dogfood residual · free eng s1562
-  Locks: never invent install green / Connected / INSTALL_STORE APPLY · book-demo OFF · Landgrab NOT READY · residual PASS ≠ live dogfood · PASS ≠ live APPLY · rates ~$88/$119 optional · no invent GA knowledge/analytical · catalog status ≠ Connected · portal HITL · drafts only · no auto-send · package load ≠ Memory GA · board/export evidence ≠ invent Connected · mesh = streaming org heartbeats · mesh ≠ memory · never invent stream green · pull ≠ freemium hosted palace · Ops Pack ≠ GPU fleet · pull_not_probed · open boxes stay open · Knowledge Beta→GA cannot invent H1/H2 offline · leave ON_SIGNAL unset · list_plan_not_connected · plan deep links = browser HITL only · template= ≠ install APPLY · dual_auth_candidacy_open · sales claims residual-honest only · residual PASS ≠ logos met · setup_not_probed · package wire ≠ Connected · repair apply ≠ invent Connected · dual_write never auto ON · E10 Open · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · free eng s1558 · free eng s1562 · soft offline ≠ invent Connected · free-floor peer s1564+ mention only`)
+  19. E4 client attach (s1566 · journey stage 6): /onboard next e4 (aliases e4-dogfood|client-attach|edge-memory-e4|e4_attach) — iomesh-memory-mcp local-primary · tools=6 · iomesh mcp --connect residual · soft dogfood residual · free eng s1566
+  Locks: never invent install green / Connected / INSTALL_STORE APPLY · book-demo OFF · Landgrab NOT READY · residual PASS ≠ live dogfood · PASS ≠ live APPLY · rates ~$88/$119 optional · no invent GA knowledge/analytical · catalog status ≠ Connected · portal HITL · drafts only · no auto-send · package load ≠ Memory GA · board/export evidence ≠ invent Connected · mesh = streaming org heartbeats · mesh ≠ memory · never invent stream green · pull ≠ freemium hosted palace · Ops Pack ≠ GPU fleet · pull_not_probed · open boxes stay open · Knowledge Beta→GA cannot invent H1/H2 offline · leave ON_SIGNAL unset · list_plan_not_connected · plan deep links = browser HITL only · template= ≠ install APPLY · dual_auth_candidacy_open · sales claims residual-honest only · residual PASS ≠ logos met · setup_not_probed · package wire ≠ Connected · repair apply ≠ invent Connected · dual_write never auto ON · E10 Open · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ invent Edge Memory GA declared · free eng s1558 · free eng s1562 · free eng s1566 · soft offline ≠ invent Connected · free-floor peer s1564+ mention only · free-floor peer s1568+ mention only`)
 }
 
 // AionAgentOnboardingPortalHandoff residual-honest short block for /onboard portal (s1368).
@@ -150,8 +155,9 @@ TUI half (local config · streamable HTTP):
   8. Human-gates companion after setup (s1546): /onboard next human-gates — setup closeout residual ≠ invent APPLY · open boxes stay open
   9. First-run journey map (s1558 Wave B): /onboard next journey — 7-stage edge-user-journey residual-honest · free eng s1558
   10. Portal HITL connectors (s1562 · journey stage 5): /onboard next portal-hitl — browser portal HITL when connect · soft dogfood residual · free eng s1562
+  11. E4 client attach (s1566 · journey stage 6): /onboard next e4 — iomesh-memory-mcp local-primary · client attach residual · soft dogfood residual · free eng s1566
 
-Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · never invent install green / Connected / INSTALL_STORE APPLY · list_org fail-open ≠ empty-as-none · catalog ≠ Connected · portal HITL · plugins dogfood ≠ invent Agent Plugins GA · setup closeout residual ≠ invent Edge Memory GA · still-human APPLY open · setup closeout residual ≠ invent APPLY · Edge Memory GA candidacy only · free eng s1562 · free-floor peer s1564+ mention only`)
+Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · never invent install green / Connected / INSTALL_STORE APPLY · list_org fail-open ≠ empty-as-none · catalog ≠ Connected · portal HITL · plugins dogfood ≠ invent Agent Plugins GA · setup closeout residual ≠ invent Edge Memory GA · still-human APPLY open · setup closeout residual ≠ invent APPLY · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · free eng s1562 · free eng s1566 · free-floor peer s1564+ mention only · free-floor peer s1568+ mention only`)
 }
 
 // AionAgentOnboardingStatus residual-honest static offline status lines for /onboard status (s1368 + s1372 + s1377 + s1382 + s1387 + s1402 + s1407 + s1413 + s1417 + s1432 + s1437 + s1442 + s1447 + s1542).
@@ -189,8 +195,9 @@ func AionAgentOnboardingStatus() string {
   setup lifecycle (s1542+s1558 · stage 4): /onboard next setup — P1–P7 map · setup_not_probed · package wire ≠ Connected · repair apply ≠ invent Connected · dual_write never auto ON · E10 Open · offline static ≠ live dogfood
   edge-user-journey first-run (s1558 Wave B): /onboard next journey — 7 stages residual-honest · dual_write OFF · Edge Memory GA candidacy only · free eng s1558
   portal HITL stage 5 (s1562): /onboard next portal-hitl — MCP list/plan → browser portal HITL · soft dogfood residual · free eng s1562
+  E4 client attach stage 6 (s1566): /onboard next e4 — iomesh-memory-mcp local-primary · client attach · tools=6 · iomesh mcp --connect residual · soft dogfood residual · free eng s1566
   human-gates: still human Slack HMAC · Stripe Customers:Write · H1/H2 INSTALL_STORE · D1–D5 · open boxes stay open · Knowledge Beta→GA cannot invent H1/H2 offline
-  slash: /onboard portal · /onboard checklist · /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|planes|sales|demo|operator|setup|journey|status|export|human-gates] · /onboard next status · /onboard next export · /onboard next mesh · /onboard next memory-pull · /onboard next agentic · /onboard next portal-hitl · /onboard next planes · /onboard next sales · /onboard next demo · /onboard next operator · /onboard next setup · /onboard next journey · /onboard next human-gates · /integrations status`)
+  slash: /onboard portal · /onboard checklist · /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|e4|planes|sales|demo|operator|setup|journey|status|export|human-gates] · /onboard next status · /onboard next export · /onboard next mesh · /onboard next memory-pull · /onboard next agentic · /onboard next portal-hitl · /onboard next e4 · /onboard next planes · /onboard next sales · /onboard next demo · /onboard next operator · /onboard next setup · /onboard next journey · /onboard next human-gates · /integrations status`)
 }
 
 // AionAgentOnboardingNextLanes residual-honest post-onboard continuum for /onboard next (s1372 + s1377 + s1382 + s1387 + s1402 + s1407 + s1413 + s1417 + s1432 + s1437 + s1442 + s1447 + s1542).
@@ -204,6 +211,7 @@ func AionAgentOnboardingStatus() string {
 // s1413: human-gates honesty board via /onboard next human-gates (aliases human|gates|apply-gates).
 // s1417: agentic integrations product plane 3 via /onboard next agentic (aliases agentic-integrations|integrations|list-plan).
 // s1562: portal HITL journey stage 5 via /onboard next portal-hitl (aliases hitl|portal_hitl|portal-dogfood|stage5|connectors-hitl) · soft dogfood residual.
+// s1566: E4 client attach journey stage 6 via /onboard next e4 (aliases e4-dogfood|client-attach|edge-memory-e4|e4_attach) · soft dogfood residual.
 // s1432: three product planes board via /onboard next planes (aliases three-planes|product-planes|product|pillars|three_planes).
 // s1437: sales/buyer claims board via /onboard next sales (aliases claims|buyer|claim-matrix|sales-claims|buyer-claims).
 // s1442: demo readiness board via /onboard next demo (aliases demo-ready|readiness|demo-readiness|lighthouse|landgrab).
@@ -212,13 +220,13 @@ func AionAgentOnboardingStatus() string {
 // s1558 Wave B: edge-user-journey first-run map via /onboard next journey (aliases edge-journey|user-journey|first-run|edge_user_journey).
 // Never invents Agent Plugins GA, Memory GA, auto-send, install Connected, stream green, pull green, or human-gate green.
 func AionAgentOnboardingNextLanes() string {
-	return strings.TrimSpace(`aion onboard next lanes (residual-honest · post-onboard continuum · s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1558+s1562 · no MCP dial):
+	return strings.TrimSpace(`aion onboard next lanes (residual-honest · post-onboard continuum · s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1558+s1562+s1566 · no MCP dial):
   1. iomesh plugins dogfood · /plugins dogfood — offline sample validate (examples/agent-plugins) · ≠ invent Agent Plugins GA
      drill: /onboard next plugins (aliases plugin|dogfood) · slash: /plugins dogfood
   2. /gtm checklist + skill gtm-draft-only-agent — drafts only · no auto-send · human publish · GTM checklist ≠ invent GTM agent GA
      drill: /onboard next gtm (alias drafts)
   3. local-primary Memory edge (TUI + Memory MCP + memory kernel + local palace) — dual_write OFF · package load ≠ Memory GA · ≠ freemium palace · product host iomesh-memory-mcp · aion broker private · public product attach (s1478): go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main · go get github.com/iome-sh/memory@main · no GOPRIVATE · HTTP http://127.0.0.1:8080/mcp or stdio · docker compose still valid · flip complete residual ≠ invent Memory GA
-     drill: /onboard next memory (aliases mcp|palace)
+     drill: /onboard next memory (aliases mcp|palace) · companion E4: /onboard next e4 (s1566)
   4. I/O Mesh streaming org heartbeats on dept.* — mesh ≠ memory · not OTel/APM · not hosted Memory Palace · empty streams honest
      drill: /onboard next mesh (aliases stream|streams|heartbeat|heartbeats|pull) · residual soft: /mesh · iomesh mesh status|streams|consumer
   5. Memory Ops Pack pull path — iomesh memory pull = mesh → local palace egress · dual_write OFF · Ops Pack ≠ GPU fleet · pull_not_probed
@@ -227,21 +235,24 @@ func AionAgentOnboardingNextLanes() string {
      drill: /onboard next agentic (aliases agentic-integrations|integrations|list-plan) · NOT bare mcp (memory lane) · NOT bare portal (portal handoff) · NOT portal-hitl|hitl (those are s1562 portal HITL lane)
   7. portal HITL connectors (s1562 · journey stage 5) — MCP list/plan → browser portal HITL → human OAuth/install · agent MCP cannot write installs · catalog ≠ Connected · portal_hitl_still
      drill: /onboard next portal-hitl (aliases hitl|portal_hitl|portal-dogfood|stage5|connectors-hitl) · soft: /onboard next portal-hitl dogfood · free eng s1562
-  8. human-gates still-required vs offline residual — Slack HMAC · Stripe Customers:Write · H1/H2 INSTALL_STORE · D1–D5 · book-demo OFF · ON_SIGNAL unset
+  8. E4 client attach (s1566 · journey stage 6 local store / MCP attach) — iomesh-memory-mcp · local-primary · client attach · tools=6 · iomesh mcp --connect residual · dual_write OFF · Edge Memory GA candidacy only
+     drill: /onboard next e4 (aliases e4-dogfood|client-attach|edge-memory-e4|e4_attach) · soft: /onboard next e4 dogfood · free eng s1566
+  9. human-gates still-required vs offline residual — Slack HMAC · Stripe Customers:Write · H1/H2 INSTALL_STORE · D1–D5 · book-demo OFF · ON_SIGNAL unset
      drill: /onboard next human-gates (aliases human|gates|apply-gates) · PASS ≠ invent human-gate green · PASS ≠ live APPLY · open boxes stay open
   three product planes: /onboard next planes (aliases three-planes|product-planes|product|pillars|three_planes) — mesh · memory-pull · agentic residual-honest consolidate · streams_not_probed · pull_not_probed · list_plan_not_connected · dual_auth_candidacy_open · never invent Connected (s1432)
   sales/buyer claims: /onboard next sales (aliases claims|buyer|claim-matrix|sales-claims|buyer-claims) — may claim / must not claim residual-honest · three-planes grounded · never invent Connected / Memory GA / dual-auth live (s1437) · NOT product/planes (those stay three-planes) · NOT gtm (drafts) · NOT pulse/board (status)
   demo readiness: /onboard next demo (aliases demo-ready|readiness|demo-readiness|lighthouse|landgrab) — Lighthouse beachhead packaging · book-demo OFF · Landgrab NOT READY · three planes · sales claims · human gates still open · residual PASS ≠ logos met (s1442) · NOT sales/claims (sales claims) · NOT product/planes (three-planes) · NOT pulse/board (status) · NOT gtm/drafts
   operator readiness matrix: /onboard next operator (aliases operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix) — consolidate demo · sales · planes · human-gates · dual-auth candidacy · policy locks residual-honest · residual_only · path_ready · still_human · policy_off · not_ready · portal_hitl_still (s1447) · NOT demo/readiness/lighthouse/landgrab (demo board) · NOT sales/claims · NOT product/planes · NOT pulse/board · NOT export/receipt
   setup lifecycle map (s1542+s1558 · stage 4 of edge-user-journey · P1–P7 closeout residual): /onboard next setup (aliases setup-lifecycle|wizard|lifecycle|setup_lifecycle) — init → preflight → reload → portal HITL → pull → analyze → drift → repair plan/apply --yes · setup_not_probed · dual_write OFF · package wire ≠ Connected · repair apply ≠ invent Connected · dual_write never auto ON · E10 Open · offline static ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA · companion /onboard next journey · memory · memory-pull · human-gates · operator · docs/architecture/setup-lifecycle.md
-  edge-user-journey first-run map (s1558 Wave B · 7 stages): /onboard next journey (aliases edge-journey|user-journey|first-run|edge_user_journey) — Signup → Download TUI → TUI auth/keys → Setup wizard → Connectors → Local store → Analyze · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · portal HITL · no invent TUI portal SSO · host not auto · free eng s1558 · free-floor peer s1560+ mention only · companion stage 5 /onboard next portal-hitl · docs/architecture/edge-user-journey.md · setup-lifecycle · memory-edge-usage-demo
+  edge-user-journey first-run map (s1558 Wave B · 7 stages): /onboard next journey (aliases edge-journey|user-journey|first-run|edge_user_journey) — Signup → Download TUI → TUI auth/keys → Setup wizard → Connectors → Local store → Analyze · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · portal HITL · no invent TUI portal SSO · host not auto · free eng s1558 · free-floor peer s1560+ mention only · companion stage 5 /onboard next portal-hitl · stage 6 /onboard next e4 · docs/architecture/edge-user-journey.md · setup-lifecycle · memory-edge-usage-demo
   status board: /onboard next status (aliases pulse|board) — residual-honest lane states only (never invent connected/ga/apply as success · pulse stays board)
   export receipt: /onboard next export (aliases receipt|stamp|evidence) — offline markdown evidence of board (board/export evidence ≠ invent Connected)
   human-gates board: /onboard next human-gates — still human vs offline residual only vs shipped/policy (local memory / dual_write OFF / agent MCP list/plan do not close human APPLY gates)
   agentic lane: /onboard next agentic — product plane 3 MCP list/plan residual-honest · list_plan_not_connected · companion portal HITL /onboard next portal-hitl (s1562) · never invent Connected / install green
   portal-hitl lane: /onboard next portal-hitl — journey stage 5 connectors · portal HITL when connect · soft dogfood residual (s1562) · free eng s1562 · free-floor peer s1564+ mention only
+  e4 lane: /onboard next e4 — journey stage 6 local store / MCP attach · E4 client attach soft dogfood residual (s1566) · free eng s1566 · free-floor peer s1568+ mention only
 
-Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · PASS ≠ invent human-gate green · open boxes stay open · leave ON_SIGNAL unset · Knowledge Beta→GA cannot invent H1/H2 offline · never invent install green / Connected / INSTALL_STORE APPLY · list_org fail-open ≠ empty-as-none · plugins dogfood ≠ invent Agent Plugins GA · drafts only · no auto-send · rates ~$88/$119 optional · package load ≠ Memory GA · board/export evidence ≠ invent Connected · mesh = streaming org heartbeats · mesh ≠ memory · never invent stream green / Connected · not OTel/APM · streams_not_probed honest · pull ≠ freemium hosted palace · Ops Pack ≠ GPU fleet · pull_not_probed honest · never invent pull green · list_plan_not_connected · dual_auth_candidacy_open · plan deep links = browser HITL only · template= ≠ install APPLY · sales claims residual-honest only · demo readiness residual-honest only · Landgrab NOT READY · residual PASS ≠ logos met · operator matrix residual-honest only · setup_not_probed · package wire ≠ Connected · repair apply ≠ invent Connected · dual_write never auto ON · E10 Open · setup closeout residual ≠ invent Edge Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · free eng s1558 · free-floor peer s1560+ mention only · no invent TUI portal SSO · host not auto · free eng s1562 · free-floor peer s1564+ mention only · soft offline ≠ invent Connected · session soft ≠ live dogfood · portal HITL when connect`)
+Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · PASS ≠ invent human-gate green · open boxes stay open · leave ON_SIGNAL unset · Knowledge Beta→GA cannot invent H1/H2 offline · never invent install green / Connected / INSTALL_STORE APPLY · list_org fail-open ≠ empty-as-none · plugins dogfood ≠ invent Agent Plugins GA · drafts only · no auto-send · rates ~$88/$119 optional · package load ≠ Memory GA · board/export evidence ≠ invent Connected · mesh = streaming org heartbeats · mesh ≠ memory · never invent stream green / Connected · not OTel/APM · streams_not_probed honest · pull ≠ freemium hosted palace · Ops Pack ≠ GPU fleet · pull_not_probed honest · never invent pull green · list_plan_not_connected · dual_auth_candidacy_open · plan deep links = browser HITL only · template= ≠ install APPLY · sales claims residual-honest only · demo readiness residual-honest only · Landgrab NOT READY · residual PASS ≠ logos met · operator matrix residual-honest only · setup_not_probed · package wire ≠ Connected · repair apply ≠ invent Connected · dual_write never auto ON · E10 Open · setup closeout residual ≠ invent Edge Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ invent Edge Memory GA declared · free eng s1558 · free-floor peer s1560+ mention only · no invent TUI portal SSO · host not auto · free eng s1562 · free-floor peer s1564+ mention only · free eng s1566 · free-floor peer s1568+ mention only · soft offline ≠ invent Connected · session soft ≠ live dogfood · portal HITL when connect · tip ≠ invent forever-green product dogfood`)
 }
 
 // AionAgentOnboardingNextPluginsLane residual-honest plugins dogfood drill for /onboard next plugins (s1377+s1392).
@@ -340,10 +351,10 @@ func AionAgentOnboardingNextMemoryLane() string {
     · mesh ≠ memory · mesh optional for pull only · memory lane is local-edge palace, not streaming org heartbeats
     · iomesh-memory-mcp product host only · aion broker private · s1517 product-only memory sample
     · rates ~$88 mesh / ~$119 Memory Ops Pack optional · package load ≠ Memory GA
-  Companion: /onboard next memory-pull · /onboard next operator · docs/architecture/memory-mcp.md Edge OSS Option A · public product attach (s1478) · E4 client attach (s1508)
+  Companion: /onboard next e4 (s1566 · journey stage 6 E4 client-attach soft dogfood residual) · /onboard next e4 dogfood · /onboard next memory-pull · /onboard next operator · docs/architecture/memory-mcp.md Edge OSS Option A · public product attach (s1478) · E4 client attach (s1508) · docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md
   Back: /onboard next · /memory status · portal Agent/MCP https://console.iome.sh/settings/agent
 
-Locks: dual_write OFF · book-demo OFF · not Memory GA · Palace sunset · residual PASS ≠ live dogfood · offline dogfood tip ≠ invent live dogfood as green · PASS ≠ live APPLY · PASS ≠ invent full platform sidecar parity · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · no GOPRIVATE · go install · package load ≠ Memory GA · ≠ freemium palace · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · rates ~$88/$119 optional · Memory Ops Pack optional · mesh ≠ memory · mesh optional for pull · iomesh-memory-mcp · aion broker private · aion still private · s1517 product-only memory sample (iomesh-memory-mcp)`)
+Locks: dual_write OFF · book-demo OFF · not Memory GA · Palace sunset · residual PASS ≠ live dogfood · offline dogfood tip ≠ invent live dogfood as green · PASS ≠ live APPLY · PASS ≠ invent full platform sidecar parity · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · no GOPRIVATE · go install · package load ≠ Memory GA · ≠ freemium palace · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · rates ~$88/$119 optional · Memory Ops Pack optional · mesh ≠ memory · mesh optional for pull · iomesh-memory-mcp · aion broker private · aion still private · s1517 product-only memory sample (iomesh-memory-mcp) · companion E4 soft residual s1566`)
 }
 
 // AionAgentOnboardingNextMeshLane residual-honest mesh streaming lane for /onboard next mesh (s1402).
@@ -473,8 +484,9 @@ func AionAgentOnboardingNextJourneyLane() string {
     5. Connectors MCP list/plan + portal HITL (journey stage 5) — /integrations list|plan|status · /onboard next portal-hitl · /onboard next agentic · browser OAuth/install only
        primary: /integrations list|plan|status · /onboard next portal-hitl · /onboard next agentic · portal HITL @ https://console.iome.sh/integrations
        soft residual: /onboard next portal-hitl dogfood (s1562 · soft offline ≠ invent Connected · session soft ≠ live dogfood)
-    6. Local store iomesh-memory-mcp — install/run host + kernel · attach HTTP/stdio · dual_write OFF · host not auto on signup
-       primary: /onboard next memory · /memory status · go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main
+    6. Local store iomesh-memory-mcp (journey stage 6) — install/run host + kernel · attach HTTP/stdio · dual_write OFF · host not auto on signup
+       primary: /onboard next memory · /onboard next e4 · /memory status · go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main
+       soft residual: /onboard next e4 dogfood (s1566 · soft offline ≠ invent Connected · residual PASS ≠ invent Edge Memory GA declared · session soft ≠ live dogfood)
     7. Analyze — /memory digest · /setup analyze · optional mesh Ops Pack pull (~$119) · analyze ≠ invent Connected
        primary: /memory digest · /setup analyze · /onboard next memory-pull (optional)
   Honesty one-liner locks:
@@ -484,12 +496,12 @@ func AionAgentOnboardingNextJourneyLane() string {
   Residual gaps (do not invent closed):
     · no SSO invent · host not auto · portal HITL still human · dual_write OFF · Edge Memory GA candidacy only
     · free-floor peer s1560+ mention only (do not rewrite free-floor)
-  Docs: docs/architecture/edge-user-journey.md · docs/architecture/setup-lifecycle.md · docs/architecture/memory-edge-usage-demo.md
-  Companion: /onboard next setup (stage 4 P1–P7) · /onboard next portal-hitl (stage 5) · /onboard next portal-hitl dogfood · /onboard next agentic · /onboard next memory · /onboard next human-gates · /onboard next operator
+  Docs: docs/architecture/edge-user-journey.md · docs/architecture/setup-lifecycle.md · docs/architecture/memory-edge-usage-demo.md · docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md
+  Companion: /onboard next setup (stage 4 P1–P7) · /onboard next portal-hitl (stage 5) · /onboard next portal-hitl dogfood · /onboard next e4 (stage 6) · /onboard next e4 dogfood · /onboard next agentic · /onboard next memory · /onboard next human-gates · /onboard next operator
   Slash: /onboard next journey (aliases edge-journey|user-journey|first-run|edge_user_journey)
   Back: /onboard next · /onboard next status · /onboard next export
 
-Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · portal HITL · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · no invent TUI portal SSO · host not auto · never invent install green / Connected / INSTALL_STORE APPLY · free eng s1558 · free-floor peer s1560+ mention only · stage 5 soft residual s1562`)
+Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ invent Edge Memory GA declared · portal HITL · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · no invent TUI portal SSO · host not auto · never invent install green / Connected / INSTALL_STORE APPLY · free eng s1558 · free-floor peer s1560+ mention only · stage 5 soft residual s1562 · stage 6 E4 soft residual s1566`)
 }
 
 // AionAgentOnboardingNextPortalHITLLane residual-honest journey stage-5 portal HITL connectors
@@ -538,6 +550,48 @@ func AionAgentOnboardingNextPortalHITLLane() string {
   Docs: docs/architecture/edge-user-journey.md stage 5 · docs/architecture/agent-integrations-setup.md
 
 Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · template= ≠ install APPLY · agent MCP cannot write installs · portal HITL when connect · portal HITL still · portal_hitl_still · soft offline ≠ invent Connected · session soft ≠ live dogfood · free eng s1562 · free-floor peer s1564+ mention only · %s`, softLabel, softLabel))
+}
+
+// AionAgentOnboardingNextE4Lane residual-honest journey stage-6 E4 client-attach board
+// for /onboard next e4 (s1566). Static offline — no MCP dial · never start host.
+// Path: lean iomesh-memory-mcp HTTP host → iomesh mcp --connect · tools=6 stamp residual (s1508 evidence).
+// Stage 6 of edge-user-journey (local store / MCP attach).
+// Soft offline dogfood: /onboard next e4 dogfood (session soft ≠ live dogfood · soft offline ≠ invent Connected).
+// Honesty: dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared ·
+// E10 Open · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood.
+// Aliases: e4-dogfood|client-attach|edge-memory-e4|e4_attach.
+// Companion: /onboard next memory · /onboard next journey · /onboard next memory-pull · soft dogfood residual.
+// free eng s1566 · free-floor peer s1568+ mention only (do not rewrite free-floor).
+func AionAgentOnboardingNextE4Lane() string {
+	softLabel := E4SoftSessionLabel()
+	return strings.TrimSpace(fmt.Sprintf(`aion onboard next e4 lane (residual-honest · s1566 · journey stage 6 · E4 client attach · no MCP dial):
+  Path: local-primary iomesh-memory-mcp lean host HTTP → iomesh mcp --connect · tools=6 stamp residual — never start host from this board
+  Product: edge-user-journey stage 6 local store / MCP attach residual — E4 client attach · free eng s1566 · free-floor peer s1568+ mention only
+  Steps:
+    1. Product host local-primary — iomesh-memory-mcp only (public · go install / compose) · dual_write OFF · not Memory GA
+    2. E4 client attach residual — lean host HTTP → iomesh mcp --connect · tools=6 stamp residual · Edge Memory GA candidacy only
+    3. Evidence stamp (static offline) — docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md · residual PASS ≠ invent Edge Memory GA declared · E10 Open
+    4. Soft offline E4 dogfood residual — /onboard next e4 dogfood · soft offline ≠ invent Connected · session soft ≠ live dogfood · residual PASS ≠ live dogfood
+    5. Companion memory lane — /onboard next memory · /memory status · tip ≠ invent forever-green product dogfood
+  Soft offline E4 dogfood (s1566 · session soft ≠ live dogfood):
+    · session soft state: %s (default e4_soft_not_run · after run soft_offline_e4_session_pass|fail)
+    · slash: /onboard next e4 dogfood (aliases soft|samples|offline|e4-soft) · bare /onboard next e4 stays this board
+    · soft offline ≠ invent Connected · residual PASS ≠ live dogfood · session soft ≠ live dogfood · residual PASS ≠ invent Edge Memory GA declared
+  Honesty:
+    · journey stage 6 · E4 client attach · client attach · tools=6 · iomesh mcp --connect
+    · iomesh-memory-mcp · local-primary · dual_write OFF · book-demo OFF · not Memory GA
+    · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open
+    · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · PASS ≠ live APPLY
+    · soft offline ≠ invent Connected · session soft ≠ live dogfood · open boxes stay open
+    · free eng s1566 · free-floor peer s1568+ mention only (do not rewrite free-floor)
+  Companion: /onboard next memory · /onboard next journey · /onboard next memory-pull · /onboard next e4 dogfood · /memory status · /onboard next human-gates
+  Slash: /onboard next e4 (aliases e4-dogfood|client-attach|edge-memory-e4|e4_attach)
+    · dogfood: /onboard next e4 dogfood (aliases soft|samples|offline|e4-soft)
+    · NOT bare mcp|palace under /onboard next (memory lane) · NOT live host start · dual_write stays OFF (never invent primary ON)
+  Back: /onboard next · /onboard next journey · /onboard next memory · /onboard next status · /onboard next export
+  Docs: docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md · docs/architecture/edge-user-journey.md stage 6 · docs/architecture/memory-mcp.md
+
+Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · E10 stays Open (never invent closed) · soft offline ≠ invent Connected · session soft ≠ live dogfood · free eng s1566 · free-floor peer s1568+ mention only · %s`, softLabel, softLabel))
 }
 
 // AionAgentOnboardingNextAgenticLane residual-honest product plane 3 agentic integrations
