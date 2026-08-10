@@ -1,6 +1,6 @@
 # Marketing demo path (local agent + local memory)
 
-**Serial:** free eng **s1590**  
+**Serial:** free eng **s1590** · sales talk track **s1594**  
 **Audience:** demo hosts, sales eng, GTM video capture  
 **Operator surface:** `/onboard next marketing-demo`  
 **Aliases:** `marketing` · `sales-demo` · `demo-script` · `gtm-demo`
@@ -45,6 +45,19 @@ Slash: `/onboard next marketing-demo` (or any alias above).
 
 ---
 
+## Sales talk track
+
+Short spoken path for a **local agent + local memory** demo (follow the script above live).
+
+1. **Setup story** — “On your laptop: install `iomesh`, set an LLM key or Ollama, `/setup init` with local-memory (dual_write stays **OFF**), attach `iomesh-memory-mcp`.”
+2. **The beat** — “Tell the agent something once; show `/memory` ingest and recall so it comes back from local storage — not a cloud CRM.”
+3. **Claims guardrail** — Before customer-facing wording, check the private GTM **claims catalog** for what is demoable vs do-not-claim: [github.com/iome-sh/tool-marketing](https://github.com/iome-sh/tool-marketing) (private · operator-only · not customer docs).
+4. **Win-back / closed-lost** — Follow-ups are **sales process** (humans / HITL loops). The TUI does **not** auto-push CRM win-back or closed-lost sequences.
+
+Keep the demo local-first. Skip mesh unless the room already has it configured. Do not invent Memory GA, Connected, dual_write ON, or book-demo ON.
+
+---
+
 ## Companion surfaces
 
 | Surface | Role |
@@ -61,4 +74,4 @@ Slash: `/onboard next marketing-demo` (or any alias above).
 
 ## Free-floor
 
-free eng **s1590** · free-floor peer **s1592+** mention only (do not rewrite free-floor ownership from this doc).
+free eng **s1590** · sales talk track **s1594** · free-floor peer **s1592+** mention only (do not rewrite free-floor ownership from this doc).

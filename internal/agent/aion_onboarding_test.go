@@ -1371,6 +1371,16 @@ func TestAionAgentOnboardingNextMarketingDemoLane_HonestyNeedles(t *testing.T) {
 		"free eng s1590",
 		"free-floor peer s1592+",
 		"docs/architecture/marketing-demo-path.md",
+		// s1594 sales talk track (optional spoken bullets)
+		"Sales talk track",
+		"tool-marketing",
+		"claims catalog",
+		"demoable vs do-not-claim",
+		"Win-back",
+		"closed-lost",
+		"sales process",
+		"auto-CRM",
+		"s1594",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("marketing-demo lane missing %q in:\n%s", want, out)
