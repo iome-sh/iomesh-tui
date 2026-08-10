@@ -483,6 +483,14 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"residual PASS ≠ invent E10 closed",
 		"free eng s1586",
 		"free-floor peer s1588+",
+		// s1590 marketing demo path (Edge OSS / demo-oriented)
+		"/onboard next marketing-demo",
+		"marketing demo path",
+		"marketing|sales-demo|demo-script|gtm-demo",
+		"local agent + local memory",
+		"mesh optional",
+		"free eng s1590",
+		"free-floor peer s1592+",
 		// pulse stays board (not mesh alias)
 		"pulse stays board",
 		"never invent pull green",
@@ -1318,6 +1326,63 @@ func TestAionAgentOnboardingNextE10Lane_HonestyNeedles(t *testing.T) {
 		"INSTALL_STORE APPLY success",
 		"book-demo ON",
 		"Memory GA shipped",
+	} {
+		if strings.Contains(out, bad) {
+			t.Fatalf("must not invent %q:\n%s", bad, out)
+		}
+	}
+}
+
+// s1590: AionAgentOnboardingNextMarketingDemoLane plain-language marketing demo path needles.
+func TestAionAgentOnboardingNextMarketingDemoLane_HonestyNeedles(t *testing.T) {
+	out := AionAgentOnboardingNextMarketingDemoLane()
+	if out == "" {
+		t.Fatal("empty marketing-demo lane")
+	}
+	for _, want := range []string{
+		"onboard next marketing-demo path",
+		"plain-language operator script",
+		"local agent + local memory",
+		"videos/sales",
+		// script steps
+		"Install / build iomesh",
+		"LLM key or Ollama",
+		"/setup init",
+		"local-memory",
+		"preflight",
+		"iomesh-memory-mcp",
+		"/memory",
+		"ingest",
+		"recall",
+		"mesh optional",
+		// local memory honesty
+		"local memory",
+		"local-primary",
+		"dual_write OFF",
+		"not Memory GA",
+		"never invent Connected",
+		"book-demo OFF",
+		// aliases + non-steal
+		"marketing|sales-demo|demo-script|gtm-demo",
+		"NOT bare demo",
+		"NOT bare sales",
+		"NOT bare gtm",
+		"/onboard next marketing-demo",
+		"free eng s1590",
+		"free-floor peer s1592+",
+		"docs/architecture/marketing-demo-path.md",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("marketing-demo lane missing %q in:\n%s", want, out)
+		}
+	}
+	for _, bad := range []string{
+		"dual_write ON",
+		"Connected: yes",
+		"Memory GA shipped",
+		"book-demo ON",
+		"INSTALL_STORE APPLY success",
+		"live dogfood green",
 	} {
 		if strings.Contains(out, bad) {
 			t.Fatalf("must not invent %q:\n%s", bad, out)

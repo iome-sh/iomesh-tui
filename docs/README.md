@@ -18,6 +18,7 @@
 | [architecture/edge-user-journey.md](architecture/edge-user-journey.md) | **SSOT** edge-first 7-stage user journey (signup → download → auth → setup → connectors → local store → analyze) |
 | [architecture/oss-packaging-boundary.md](architecture/oss-packaging-boundary.md) | **SSOT** MIT OSS packaging boundary (harness vs control plane · Edge path first · residual-check anti-claims · free eng s1582) |
 | [architecture/memory-edge-usage-demo.md](architecture/memory-edge-usage-demo.md) | Residual-honest signup → integrations → local memory (kernel + MCP) → show usage demo |
+| [architecture/marketing-demo-path.md](architecture/marketing-demo-path.md) | Plain-language marketing demo path (s1590) · `/onboard next marketing-demo` · local agent + memory for videos/sales |
 | [architecture/memory-advanced-install.md](architecture/memory-advanced-install.md) | Advanced Memory install ladder: ONNX optional · Qdrant residual · maximize TUI benefit |
 | [architecture/setup-lifecycle.md](architecture/setup-lifecycle.md) | Setup lifecycle: `iomesh setup init\|preflight` · `/setup` slash · skill · managed config · residual honesty |
 | [architecture/agent-integrations-setup.md](architecture/agent-integrations-setup.md) | `/integrations` MCP catalog/plan + portal HITL |

@@ -104,6 +104,7 @@ Demo runbooks, setup lifecycle, and integrations docs **map into** these stages 
 | Doc | Role relative to this SSOT |
 |-----|----------------------------|
 | [memory-edge-usage-demo.md](./memory-edge-usage-demo.md) | Runbook walkthrough · phase numbering maps to stages (see mapping there) |
+| [marketing-demo-path.md](./marketing-demo-path.md) | s1590 plain-language marketing demo path · `/onboard next marketing-demo` · local agent + local memory for videos/sales |
 | [setup-lifecycle.md](./setup-lifecycle.md) | Stage **4** detail — P1–P7 · `/setup` · repair honesty |
 | [agent-integrations-setup.md](./agent-integrations-setup.md) | Stage **5** detail — `/integrations` MCP list/plan + portal HITL |
 | [memory-mcp.md](./memory-mcp.md) | Stage **6–7** depth — edge attach · pull · slash surfaces · buyer claim pins |
