@@ -3057,17 +3057,23 @@ func TestHandleSlash_OnboardNextE4SoftDogfood(t *testing.T) {
 	}
 }
 
-// s1413+s1546+s1550: /onboard next human-gates|human|gates|apply-gates — residual-honest edge-first.
+// s1413+s1546+s1550+s1574: /onboard next human-gates|human|gates|apply-gates|still-human|apply-residual — residual-honest edge-first.
 // s1550: edge-first · knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect.
+// s1574: Wave C continuum still-human APPLY soft residual · open boxes stay open.
 func TestHandleSlash_OnboardNextHumanGates(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
 	adapter := runtimeAdapter{rt: rt}
+	agent.ResetStillHumanSoftDogfoodSessionState()
+	t.Cleanup(agent.ResetStillHumanSoftDogfoodSessionState)
 
 	needles := []string{
 		"human-gates honesty board",
 		"edge-first",
 		"s1550",
+		"s1574",
+		"Wave C continuum",
+		"still-human APPLY",
 		"architecture",
 		"still_human_or_policy",
 		"punted_or_demoted",
@@ -3083,12 +3089,19 @@ func TestHandleSlash_OnboardNextHumanGates(t *testing.T) {
 		"not Memory GA",
 		"Edge Memory GA candidacy only",
 		"residual PASS ≠ invent Edge Memory GA",
+		"residual PASS ≠ invent Edge Memory GA declared",
 		"PASS ≠ invent Connected",
+		"PASS ≠ invent human-gate green",
+		"PASS ≠ live APPLY",
+		"open boxes stay open",
+		"E10 Open",
 		"catalog ≠ Connected",
 		"agent MCP cannot write installs",
 		"never invent Connected",
 		"/onboard next human-gates",
+		"/onboard next human-gates dogfood",
 		"/integrations list|plan|status",
+		"free eng s1574",
 	}
 
 	for _, line := range []string{
@@ -3096,6 +3109,8 @@ func TestHandleSlash_OnboardNextHumanGates(t *testing.T) {
 		"/onboard next human",
 		"/onboard next gates",
 		"/onboard next apply-gates",
+		"/onboard next still-human",
+		"/onboard next apply-residual",
 		"/aion-onboard after human-gates",
 		"/agent-onboard continue gates",
 		"/onboard lanes human",
@@ -3126,6 +3141,101 @@ func TestHandleSlash_OnboardNextHumanGates(t *testing.T) {
 		}
 		if strings.Contains(s, "onboard next mesh lane") {
 			t.Fatalf("%s must not emit mesh lane body: %s", line, s)
+		}
+		// Bare board must not auto-run soft dogfood body title.
+		if strings.Contains(s, "still-human APPLY soft offline dogfood") {
+			t.Fatalf("%s bare board must not auto-run soft dogfood: %s", line, s)
+		}
+	}
+}
+
+// s1574: /onboard next human-gates dogfood|soft|offline|still-human-soft|apply-soft|samples — soft offline still-human APPLY dogfood.
+func TestHandleSlash_OnboardNextStillHumanSoftDogfood(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+	agent.ResetStillHumanSoftDogfoodSessionState()
+	agent.ResetWizardSoftDogfoodSessionState()
+	agent.ResetE4SoftDogfoodSessionState()
+	agent.ResetPortalHITLSoftDogfoodSessionState()
+	agent.ResetAgenticListPlanSoftDogfoodSessionState()
+	t.Cleanup(func() {
+		agent.ResetStillHumanSoftDogfoodSessionState()
+		agent.ResetWizardSoftDogfoodSessionState()
+		agent.ResetE4SoftDogfoodSessionState()
+		agent.ResetPortalHITLSoftDogfoodSessionState()
+		agent.ResetAgenticListPlanSoftDogfoodSessionState()
+	})
+
+	needles := []string{
+		"still-human APPLY soft offline dogfood",
+		"no MCP dial",
+		"never start host",
+		"not live dogfood",
+		"result: PASS",
+		"soft_offline_still_human_session_pass",
+		"Wave C continuum",
+		"still-human APPLY",
+		"open boxes stay open",
+		"PASS ≠ live APPLY",
+		"PASS ≠ invent human-gate green",
+		"dual_write OFF",
+		"book-demo OFF",
+		"not Memory GA",
+		"Edge Memory GA candidacy only",
+		"residual PASS ≠ invent Edge Memory GA declared",
+		"E10 Open",
+		"portal HITL when connect",
+		"session soft ≠ live dogfood",
+		"soft offline ≠ invent Connected",
+		"/onboard next human-gates dogfood",
+		"soft|samples|offline|still-human-soft|apply-soft",
+		"free eng s1574",
+		"free-floor peer s1576+",
+	}
+
+	for _, line := range []string{
+		"/onboard next human-gates dogfood",
+		"/onboard next human-gates soft",
+		"/onboard next human-gates samples",
+		"/onboard next human-gates offline",
+		"/onboard next human-gates still-human-soft",
+		"/onboard next human-gates apply-soft",
+		"/onboard next still-human dogfood",
+		"/onboard next apply-residual soft",
+		"/aion-onboard after human-gates dogfood",
+	} {
+		out.Reset()
+		agent.ResetStillHumanSoftDogfoodSessionState()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "book-demo ON") {
+			t.Fatalf("%s must not invent dual_write ON / book-demo ON: %s", line, s)
+		}
+		if strings.Contains(s, "human-gate green: yes") || strings.Contains(s, "Connected: yes") {
+			t.Fatalf("%s must not invent human-gate green / Connected: %s", line, s)
+		}
+		// Must not emit bare board title as primary path.
+		if strings.Contains(s, "onboard next lane status (") {
+			t.Fatalf("%s must not emit status board: %s", line, s)
+		}
+		if got := agent.StillHumanSoftSessionLabel(); got != agent.StillHumanSoftPass {
+			t.Fatalf("%s session label: got %q want %q", line, got, agent.StillHumanSoftPass)
+		}
+		// Peer soft markers stay independent.
+		if got := agent.WizardSoftSessionLabel(); got != agent.WizardSoftNotRun {
+			t.Fatalf("%s wizard soft must stay not_run, got %q", line, got)
 		}
 	}
 }

@@ -862,7 +862,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"free eng s1558",
 		"Edge Memory GA candidacy only",
 		"plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|e4|planes|sales|demo|operator|setup|journey|wizard|status|export|human-gates",
-		// s1413+s1546+s1550 human-gates honesty board (edge-first)
+		// s1413+s1546+s1550+s1574 human-gates honesty board + still-human APPLY soft dogfood
 		"/onboard next human-gates",
 		"AionAgentHumanGatesHonestyBoard",
 		"edge-first",
@@ -879,6 +879,22 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		// s1550 edge-first residual pin
 		"s1550",
 		"H1/H2 not launch gate",
+		// s1574 still-human APPLY soft dogfood residual
+		"s1574",
+		"RunStillHumanApplySoftDogfood",
+		"/onboard next human-gates dogfood",
+		"still_human_soft_not_run",
+		"soft_offline_still_human_session_pass",
+		"soft_offline_still_human_session_fail",
+		"still-human",
+		"apply-residual",
+		"still-human-soft",
+		"apply-soft",
+		"PASS ≠ invent human-gate green",
+		"PASS ≠ live APPLY",
+		"open boxes stay open",
+		"free eng s1574",
+		"free-floor peer s1576+",
 		// s1382 lane status board
 		"/onboard next status",
 		"AionAgentOnboardingNextLaneStatus",

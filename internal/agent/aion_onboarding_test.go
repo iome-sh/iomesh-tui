@@ -1752,9 +1752,13 @@ func TestAionAgentOnboardingNextLaneStatus_AgenticListPlanSoftDogfood(t *testing
 	}
 }
 
-// s1413+s1546+s1550: AionAgentHumanGatesHonestyBoard residual-honest edge-first needles.
+// s1413+s1546+s1550+s1574: AionAgentHumanGatesHonestyBoard residual-honest edge-first needles.
 // s1550: edge-first pin — knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect.
+// s1574: Wave C continuum still-human APPLY soft residual reaffirm · open boxes stay open.
 func TestAionAgentHumanGatesHonestyBoard_HonestyNeedles(t *testing.T) {
+	ResetStillHumanSoftDogfoodSessionState()
+	t.Cleanup(ResetStillHumanSoftDogfoodSessionState)
+
 	out := AionAgentHumanGatesHonestyBoard()
 	if out == "" {
 		t.Fatal("empty human-gates honesty board")
@@ -1763,13 +1767,17 @@ func TestAionAgentHumanGatesHonestyBoard_HonestyNeedles(t *testing.T) {
 		"human-gates honesty board",
 		"no MCP dial",
 		"s1550",
+		"s1574",
 		"edge-first",
+		"Wave C continuum",
+		"still-human APPLY",
 		// sections
 		"architecture",
 		"still_human_or_policy",
 		"punted_or_demoted",
 		"offline_residual_only",
 		"shipped_or_policy",
+		"open inventory residual-honest",
 		// architecture locked
 		"dual_write OFF",
 		"knowledge multi-tenant",
@@ -1782,7 +1790,10 @@ func TestAionAgentHumanGatesHonestyBoard_HonestyNeedles(t *testing.T) {
 		"book-demo OFF",
 		"leave ON_SIGNAL unset",
 		"Edge Memory GA",
-		"E10",
+		"E10 Open",
+		"PASS ≠ invent human-gate green",
+		"PASS ≠ live APPLY",
+		"open boxes stay open",
 		// punted
 		"knowledge multi-tenant punted",
 		"H1/H2",
@@ -1793,18 +1804,27 @@ func TestAionAgentHumanGatesHonestyBoard_HonestyNeedles(t *testing.T) {
 		"not Memory GA",
 		"Edge Memory GA candidacy only",
 		"residual PASS ≠ invent Edge Memory GA",
+		"residual PASS ≠ invent Edge Memory GA declared",
 		"PASS ≠ invent Connected",
+		// soft dogfood
+		"still_human_soft_not_run",
+		"/onboard next human-gates dogfood",
+		"soft|samples|offline|still-human-soft|apply-soft",
+		"free eng s1574",
+		"free-floor peer s1576+",
 		// operator
 		"/onboard next human-gates",
 		"/onboard next setup",
+		"/onboard next wizard",
 		"/integrations list|plan|status",
 		"never invent Connected",
-		"human|gates|apply-gates",
+		"human|gates|apply-gates|still-human|apply-residual",
 		// locks
 		"agent MCP cannot write installs",
 		"portal HITL when connect",
 		"Slack HMAC punted",
 		"open policy boxes stay honest",
+		"session soft ≠ live dogfood",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("human-gates board missing %q in:\n%s", want, out)
@@ -1823,7 +1843,7 @@ func TestAionAgentHumanGatesHonestyBoard_HonestyNeedles(t *testing.T) {
 	if strings.Contains(out, "human-gate green: yes") || strings.Contains(out, "ON_SIGNAL=1") {
 		t.Fatalf("must not invent human-gate green / ON_SIGNAL set: %s", out)
 	}
-	if strings.Contains(out, "Edge Memory GA declared") && strings.Contains(out, "Edge Memory GA declared: yes") {
+	if strings.Contains(out, "Edge Memory GA declared: yes") {
 		t.Fatalf("must not invent Edge Memory GA declared: %s", out)
 	}
 }
