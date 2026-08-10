@@ -4,7 +4,9 @@ Residual-honest **observed stamp only** for free eng **s1508** (TUI tip ↔ lean
 
 **Soft offline residual (s1566):** optional E4 client-attach soft dogfood for journey **stage 6** local store / MCP attach — `/onboard next e4` · soft `/onboard next e4 dogfood` · session labels `e4_soft_not_run` · `soft_offline_e4_session_pass|fail` · **never dial MCP / never start host** from soft residual · residual PASS ≠ invent Edge Memory GA declared · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · session soft ≠ live dogfood · dual_write OFF · E10 Open · free eng **s1566** · free-floor peer **s1568+** mention only.
 
-**Not claimed:** Edge Memory GA declared · bare Memory GA · hosted Memory GA · E10 closed · forever-green product dogfood · dual_write ON · freemium palace · full platform sidecar parity.
+**Deeper tool-call soft residual (s1578):** optional deeper tool path soft dogfood after E4 attach (tools=6 stamp residual) — journey **stage 6/7** depth · operator map ingest → retrieve → list → as-of/status · `/onboard next tool-call` · soft `/onboard next tool-call dogfood` · session labels `tool_call_soft_not_run` · `soft_offline_tool_call_session_pass|fail` · tool names `memory_ingest_turn` · `memory_retrieve` · `memory_search_semantic` · `memory_list` · `memory_compact_status` · `memory_facts_as_of` · **never dial MCP / never start host** from soft residual · Partial→client-attach-evidence · deeper tool-call residual candidacy only · residual PASS ≠ invent Edge Memory GA declared · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · session soft ≠ live dogfood · dual_write OFF · E10 Open · free eng **s1578** · free-floor peer **s1580+** mention only.
+
+**Not claimed:** Edge Memory GA declared · bare Memory GA · hosted Memory GA · E10 closed · forever-green product dogfood · dual_write ON · freemium palace · full platform sidecar parity · live tool-call dogfood green.
 
 ## Pin (do not invent more)
 
