@@ -3208,6 +3208,103 @@ func TestHandleSlash_OnboardNextE10SoftDogfood(t *testing.T) {
 	}
 }
 
+// s1590: /onboard next marketing-demo|marketing|sales-demo|demo-script|gtm-demo — plain-language marketing demo path.
+func TestHandleSlash_OnboardNextMarketingDemoLane(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	needles := []string{
+		"onboard next marketing-demo path",
+		"plain-language operator script",
+		"local agent + local memory",
+		"iomesh-memory-mcp",
+		"/setup init",
+		"/memory",
+		"dual_write OFF",
+		"not Memory GA",
+		"mesh optional",
+		"never invent Connected",
+		"book-demo OFF",
+		"free eng s1590",
+	}
+
+	for _, line := range []string{
+		"/onboard next marketing-demo",
+		"/onboard next marketing",
+		"/onboard next sales-demo",
+		"/onboard next demo-script",
+		"/onboard next gtm-demo",
+		"/aion-onboard after marketing-demo",
+		"/agent-onboard continue marketing",
+		"/onboard lanes sales-demo",
+	} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "marketing-demo:") {
+			t.Fatalf("%s missing marketing-demo footer: %s", line, s)
+		}
+		// Must not steal demo readiness / sales claims / GTM draft boards.
+		if strings.Contains(s, "onboard next demo readiness") {
+			t.Fatalf("%s must not open demo readiness board:\n%s", line, s)
+		}
+		if strings.Contains(s, "onboard next sales/buyer claims") || strings.Contains(s, "onboard next sales claims") {
+			t.Fatalf("%s must not open sales claims board:\n%s", line, s)
+		}
+		if strings.Contains(s, "onboard next gtm lane") {
+			t.Fatalf("%s must not open gtm draft lane:\n%s", line, s)
+		}
+		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Connected: yes") {
+			t.Fatalf("%s must not invent dual_write ON / Connected:\n%s", line, s)
+		}
+		if strings.Contains(s, "Memory GA shipped") || strings.Contains(s, "book-demo ON") {
+			t.Fatalf("%s must not invent Memory GA shipped / book-demo ON:\n%s", line, s)
+		}
+	}
+
+	// Bare demo still opens demo readiness (not marketing-demo).
+	out.Reset()
+	if _, err := handleSlash(&out, adapter, "/onboard next demo"); err != nil {
+		t.Fatalf("demo: %v", err)
+	}
+	demoOut := out.String()
+	if !strings.Contains(demoOut, "onboard next demo readiness") {
+		t.Fatalf("bare demo must stay demo readiness: %s", demoOut)
+	}
+	if strings.Contains(demoOut, "onboard next marketing-demo path") {
+		t.Fatalf("bare demo must not open marketing-demo: %s", demoOut)
+	}
+
+	// Bare sales still opens sales claims.
+	out.Reset()
+	if _, err := handleSlash(&out, adapter, "/onboard next sales"); err != nil {
+		t.Fatalf("sales: %v", err)
+	}
+	salesOut := out.String()
+	if strings.Contains(salesOut, "onboard next marketing-demo path") {
+		t.Fatalf("bare sales must not open marketing-demo: %s", salesOut)
+	}
+
+	// Bare gtm still opens GTM drafts.
+	out.Reset()
+	if _, err := handleSlash(&out, adapter, "/onboard next gtm"); err != nil {
+		t.Fatalf("gtm: %v", err)
+	}
+	gtmOut := out.String()
+	if strings.Contains(gtmOut, "onboard next marketing-demo path") {
+		t.Fatalf("bare gtm must not open marketing-demo: %s", gtmOut)
+	}
+}
+
 // s1578: /onboard next tool-call dogfood|soft|offline|tool-call-soft|samples — soft offline deeper tool-call dogfood.
 func TestHandleSlash_OnboardNextToolCallSoftDogfood(t *testing.T) {
 	rt := testRuntime(t)
