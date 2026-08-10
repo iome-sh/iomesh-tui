@@ -16,12 +16,12 @@ Edge harness and local-primary path come first. Platform residual honesty rails 
 
 | This public MIT repo **is** | This public MIT repo is **not** |
 |-----------------------------|-------------------------------|
-| Local agent loop (TUI / headless / ACP), tools, subagents, skills, MCP **client** | Hosted multi-tenant control plane, broker fleet, portal backend, billing, install-store CRUD |
-| Optional **mesh client** hooks against a broker you run or subscribe to | Free access to IOMesh Cloud / private `aion` platform services |
-| **Local-primary** memory via public [`memory`](https://github.com/iome-sh/memory) + [`iomesh-memory-mcp`](https://github.com/iome-sh/iomesh-memory-mcp) | Freemium hosted Memory Palace / platform GPU / invent **Memory GA** |
-| Optional mesh **pull** into local palace; dual_write default **OFF** | Push-to-cloud-palace product path · dual_write ON product claim |
-| Residual-honest operator boards + **offline residual-check** harnesses (anti-claims) | Live customer dogfood green · Connected invent · book-demo ON · forever-green platform product dogfood |
-| Internal residual serial stamps (`sNNNN`) in deep docs / CHANGELOG | Claim that this repo ships or is the multi-tenant control plane |
+| Local agent loop (TUI / headless / ACP), tools, subagents, skills, permissions | Hosted multi-tenant mesh control plane or cloud admin UI |
+| Multi-provider LLM router (API keys + optional **Ollama** local models) | A cloud GPU / managed model product |
+| **Local memory** setup, attach, and use via public [`iomesh-memory-mcp`](https://github.com/iome-sh/iomesh-memory-mcp) + [`memory`](https://github.com/iome-sh/memory) | Hosted multi-tenant memory-as-a-service |
+| Optional **mesh client** hooks against a broker you run or subscribe to | Free access to IOMesh Cloud / private platform backends |
+| Optional mesh **pull** into local store; dual_write default **OFF** | A product that requires dual_write ON or cloud palace as the primary store |
+| Residual-honest operator boards + offline residual-check harnesses (maintainers) | A claim that offline residual PASS is live platform green |
 
 **Public OSS ≠ invent platform GA.** Residual monorepo / private `aion` paths stay private.
 

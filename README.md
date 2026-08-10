@@ -4,26 +4,28 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/github/go-mod/go-version/iome-sh/iomesh-tui)](go.mod)
 
-**I/O Mesh TUI** — a Go coding-agent harness inspired by [xAI Grok Build](https://github.com/xai-org/grok-build), with a **multi-provider LLM router** and optional **I/O Mesh** client hooks (publish/pull heartbeats, local memory attach).
+**I/O Mesh TUI** — a Go coding-agent harness inspired by [xAI Grok Build](https://github.com/xai-org/grok-build), with a **multi-provider LLM router**, tools/subagents, and **local memory** (public MCP host + kernel). Optional **I/O Mesh** client hooks (heartbeats / catalog / pull) when you point at a broker.
 
 Official open-source tooling from [IOMesh](https://iome.sh) (**IOMesh Technology Ltd.**).
 
-### Open source / local-primary
+### Open source / local-first
 
-**MIT OSS agent harness + optional mesh client surface — not the hosted multi-tenant mesh control plane.**
+**MIT coding-agent harness** with multi-provider LLMs, tools/subagents, and **first-class local memory** (public MCP host + kernel). Optional mesh client hooks if you point at a broker — this repo is **not** a hosted multi-tenant cloud control plane.
 
-| This public repo is | This public repo is **not** |
-|---------------------|-----------------------------|
-| Local agent loop (TUI / headless / ACP), tools, subagents, skills, MCP client | Hosted multi-tenant control plane, broker fleet, portal, billing, install-store CRUD |
-| Optional **mesh client** hooks against a broker you run or subscribe to | Free access to IOMesh Cloud / `aion` platform services |
-| **Local-primary** memory via public [`memory`](https://github.com/iome-sh/memory) + [`iomesh-memory-mcp`](https://github.com/iome-sh/iomesh-memory-mcp) | Freemium hosted Memory Palace / platform GPU / invent **Memory GA** |
-| Optional mesh **pull** into local palace; dual_write default **OFF** | Push-to-cloud-palace product path |
+| This public repo **is** | This public repo is **not** |
+|-------------------------|-----------------------------|
+| Local agent loop (TUI / headless / ACP), tools, subagents, skills, permissions | Hosted multi-tenant mesh control plane or cloud admin UI |
+| Multi-provider LLM router (API keys + optional **Ollama** local models) | A cloud GPU / managed model product |
+| **Local memory** setup, attach, and use via public [`iomesh-memory-mcp`](https://github.com/iome-sh/iomesh-memory-mcp) + [`memory`](https://github.com/iome-sh/memory) | Hosted multi-tenant memory-as-a-service |
+| Optional **mesh client** (heartbeats / catalog / policy / pull) when `IOMESH_ENDPOINT` is set | Free access to IOMesh Cloud or private platform backends |
 
-The TUI is a **local agent on the org pulse plane**: optional mesh hooks publish/pull organizational **heartbeats / pulses** (`dept.*` work events — not host/APM metrics · public copy = heartbeat/pulse only). Optional **Ollama** local AI ≠ platform GPU. Platform **$119** language (if any) = **Memory Ops Pack** (pull / retain / audit / support) — not cloud GPU palace. dual_write default OFF · hosted Palace sunset · no invent GA · **Beta** / pre-1.0. Not a multi-tenant remote sandbox — see [SECURITY.md](SECURITY.md).
+**Local path (default mental model):** install `iomesh` → set an LLM key (or pin Ollama) → `/setup` for managed config + memory host preflight → attach local MCP memory → agent turns with recall/ingest. Mesh and portal are **optional**.
 
-Buyer claim pin: [memory-mcp.md](docs/architecture/memory-mcp.md#buyer-claim-pin-s774) · org-pulse edge framing: [mesh smoke / org-pulse](docs/architecture/mesh-dogfood.md#org-pulse-edge-framing-s785-pin).
+- Local memory docs: [memory-mcp.md](docs/architecture/memory-mcp.md) · [setup-lifecycle.md](docs/architecture/setup-lifecycle.md) · [edge-user-journey.md](docs/architecture/edge-user-journey.md)
+- Security model (local sandbox defaults): [SECURITY.md](SECURITY.md)
+- Packaging boundary (MIT vs private platform): [oss-packaging-boundary.md](docs/architecture/oss-packaging-boundary.md)
 
-> **Status:** public open-source **v0.71.x** (pre-1.0, **Beta**). Shipped in this harness: agent loop · subagents · full-screen TUI · permissions · ACP · skills · MCP client · local Memory Palace attach · multi-model catalog (DeepSeek · Grok · Gemini · Vertex · Ollama local). Optional client mesh smoke / catalog / policy / metering hooks when pointed at a broker. **Internal roadmap** items (serial residual stamps, platform install-plane, knowledge multi-tenant INSTALL_STORE, live fleet APPLY) live in private platform docs — they are **not** claims that this MIT repo is the control plane.
+> **Status:** public open-source **v0.71.x** (pre-1.0, **Beta**). Shipped: agent loop · subagents · full-screen TUI · permissions · ACP · skills · MCP client · **local memory attach** · multi-model catalog (DeepSeek · Grok · Gemini · Vertex · Ollama). Optional mesh client when pointed at a broker you run or subscribe to.
 
 ## Table of contents
 
@@ -46,7 +48,8 @@ Buyer claim pin: [memory-mcp.md](docs/architecture/memory-mcp.md#buyer-claim-pin
 | Multi-provider agents | Built-in **DeepSeek**, **xAI Grok**, **Gemini**, **Vertex Gemini**, **Ollama** (local pin); pin any logical name or add OpenAI-compatible endpoints |
 | Sustainable defaults | Auto-cascade prefers **DeepSeek V4 Flash → Pro → Grok 4.5** for price/performance (override anytime; Ollama is pin-only) |
 | Integration simplicity | Pure-Go OpenAI-compatible HTTP + SSE (`internal/router`) |
-| Optional mesh client | Opt-in client hooks for heartbeats / policy / catalog when `IOMESH_ENDPOINT` (or config) points at a broker — **not** shipping the multi-tenant control plane in this repo |
+| Local memory | First-class attach to public `iomesh-memory-mcp` + kernel · `/setup` + `/memory` · dual_write default **OFF** |
+| Optional mesh client | Opt-in heartbeats / catalog / policy / pull when `IOMESH_ENDPOINT` points at a broker you control or subscribe to |
 | Familiar agent UX | TUI / headless / ACP, tools, subagents, workspace root, slash commands |
 
 ## Supported models
@@ -68,26 +71,19 @@ Any other **OpenAI-compatible** chat endpoint can be added under `[model.<name>]
 
 ## Edge install & docs
 
-Public **edge** path only — MIT harness + public memory kernel/MCP. Serial stamps in deep docs are **internal residual/roadmap labels**, not a claim that this repo hosts the multi-tenant control plane.
+Local-first path: this MIT harness + public memory kernel/MCP. Optional mesh/portal clients are extra, not required for local agent + local memory.
 
-Packaging SSOT: [oss-packaging-boundary.md](docs/architecture/oss-packaging-boundary.md) (MIT OSS harness vs private control plane · Edge OSS path first · optional residual-check rails).
-
-| Topic | Honesty | Doc |
+| Topic | Summary | Doc |
 |-------|---------|-----|
-| OSS packaging boundary | MIT harness · not control plane · Edge path first · residual-check ≠ live dogfood | [oss-packaging-boundary.md](docs/architecture/oss-packaging-boundary.md) |
-| Local AI (Ollama) | Local only · not platform GPU · not invent GA | [memory-mcp.md](docs/architecture/memory-mcp.md#local-primary-lt-honesty-s768-pin) |
-| Local Docker Memory MCP | Product host [`iomesh-memory-mcp`](https://github.com/iome-sh/iomesh-memory-mcp) · dual_write OFF · not Memory GA · aion/broker **private** | [memory-mcp.md Local-edge Docker](docs/architecture/memory-mcp.md#local-edge-docker-memory-mcp-s1308--product-host-preferred--s1517) |
-| Public edge install | `go install …/iomesh-memory-mcp@main` · `go get github.com/iome-sh/memory@main` · **no GOPRIVATE** · public OSS ≠ invent platform GA | [memory-mcp.md Edge OSS](docs/architecture/memory-mcp.md#edge-oss-option-a-s1453--m2-lean-attach-s1458--m3-edge-dogfood-s1463--m4-public-flip-readiness-s1469--s1478-public-product-attach) |
-| Advanced Memory install | ONNX optional · Qdrant not required for lean TUI | [memory-advanced-install.md](docs/architecture/memory-advanced-install.md) |
-| Edge user journey (SSOT) | 7 stages · edge-first · dual_write OFF · not Memory GA · portal HITL when connect | [edge-user-journey.md](docs/architecture/edge-user-journey.md) |
-| Usage / demo walkthrough | Signup optional · integrations list/plan + portal HITL · local memory not fully automatic | [memory-edge-usage-demo.md](docs/architecture/memory-edge-usage-demo.md) |
-| Setup lifecycle | Agent-native `/setup` · residual-honest · dual_write OFF | [setup-lifecycle.md](docs/architecture/setup-lifecycle.md) |
+| Local memory (MCP host + kernel) | Install/attach `iomesh-memory-mcp` · dual_write default **OFF** | [memory-mcp.md](docs/architecture/memory-mcp.md) |
+| Setup lifecycle | Agent-native `/setup` init · preflight · reload · opt-in pull/analyze | [setup-lifecycle.md](docs/architecture/setup-lifecycle.md) |
+| User journey | Signup (optional) → TUI → keys → setup → connectors (optional) → local store → analyze | [edge-user-journey.md](docs/architecture/edge-user-journey.md) |
+| Usage / demo walkthrough | Operator example end-to-end | [memory-edge-usage-demo.md](docs/architecture/memory-edge-usage-demo.md) |
+| Local AI (Ollama) | Local models only · pin via `-m ollama-…` | [llm-cascade.md](docs/architecture/llm-cascade.md) |
+| Advanced memory install | Optional ONNX / extra host knobs · lean path does not require Qdrant | [memory-advanced-install.md](docs/architecture/memory-advanced-install.md) |
+| Packaging boundary | MIT harness vs private platform surfaces | [oss-packaging-boundary.md](docs/architecture/oss-packaging-boundary.md) |
 
-### Platform residual honesty (optional)
-
-Optional **anti-claim residual rails** inside this harness (human-gates boards, soft residual-check slash `… dogfood`, book-demo **OFF** locks, internal serial stamps) exist so residual PASS does **not** invent platform green. They are **not** the multi-tenant control plane, **not** live customer dogfood, and **not** Memory GA / Connected / dual_write ON. Prefer the user-facing phrase **residual-check** (slash token `dogfood` kept for compatibility). Details: [oss-packaging-boundary.md](docs/architecture/oss-packaging-boundary.md).
-
-**Internal roadmap (private platform · not this MIT surface):** multi-tenant mesh control plane, connector install-store fleet APPLY, knowledge multi-tenant INSTALL_STORE (punted for edge-first), live Cloud Run/image residual gates, portal billing fleet. Those live in private `aion` / ops residual docs — **not** shipped as open control-plane code here.
+Optional mesh client docs (broker you run or subscribe to): [mesh smoke](docs/architecture/mesh-dogfood.md).
 
 ## Quick start
 
