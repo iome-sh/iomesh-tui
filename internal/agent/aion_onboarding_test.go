@@ -1119,11 +1119,81 @@ func TestAionAgentOnboardingNextE4Lane_HonestyNeedles(t *testing.T) {
 		"e4-dogfood|client-attach|edge-memory-e4|e4_attach",
 		"/onboard next memory",
 		"/onboard next journey",
+		"/onboard next tool-call",
 		"free eng s1566",
 		"free-floor peer s1568+",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("e4 lane missing %q in:\n%s", want, out)
+		}
+	}
+	for _, bad := range []string{
+		"dual_write ON",
+		"Connected: yes",
+		"Edge Memory GA is declared",
+		"E10 is closed",
+		"forever-green product dogfood green",
+		"live dogfood green",
+		"INSTALL_STORE APPLY success",
+		"book-demo ON",
+		"Memory GA shipped",
+	} {
+		if strings.Contains(out, bad) {
+			t.Fatalf("must not invent %q:\n%s", bad, out)
+		}
+	}
+}
+
+// s1578: AionAgentOnboardingNextToolCallLane residual-honest deeper tool-call needles.
+func TestAionAgentOnboardingNextToolCallLane_HonestyNeedles(t *testing.T) {
+	ResetToolCallSoftDogfoodSessionState()
+	t.Cleanup(ResetToolCallSoftDogfoodSessionState)
+
+	out := AionAgentOnboardingNextToolCallLane()
+	if out == "" {
+		t.Fatal("empty tool-call lane")
+	}
+	for _, want := range []string{
+		"onboard next tool-call lane",
+		"no MCP dial",
+		"deeper tool-call residual",
+		"journey stage 6/7",
+		"memory_ingest_turn",
+		"memory_retrieve",
+		"memory_search_semantic",
+		"memory_list",
+		"memory_compact_status",
+		"memory_facts_as_of",
+		"Partial→client-attach-evidence",
+		"/onboard next e4",
+		"tools=6",
+		"iomesh mcp --connect",
+		"s1508",
+		"s1566",
+		"iomesh-memory-mcp",
+		"docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md",
+		"dual_write OFF",
+		"book-demo OFF",
+		"not Memory GA",
+		"Edge Memory GA candidacy only",
+		"residual PASS ≠ invent Edge Memory GA declared",
+		"E10 Open",
+		"tip ≠ invent forever-green product dogfood",
+		"residual PASS ≠ live dogfood",
+		"PASS ≠ live APPLY",
+		"soft offline ≠ invent Connected",
+		"session soft ≠ live dogfood",
+		"tool_call_soft_not_run",
+		"/onboard next tool-call dogfood",
+		"soft|samples|offline|tool-call-soft",
+		"tool-calls|deeper-e4|e4-tools|ingest-retrieve|tool_call",
+		"/onboard next memory",
+		"/onboard next journey",
+		"free eng s1578",
+		"free-floor peer s1580+",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("tool-call lane missing %q in:\n%s", want, out)
 		}
 	}
 	for _, bad := range []string{

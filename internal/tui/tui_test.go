@@ -2977,6 +2977,158 @@ func TestHandleSlash_OnboardNextE4Lane(t *testing.T) {
 	}
 }
 
+// s1578: /onboard next tool-call|tool-calls|deeper-e4|e4-tools|ingest-retrieve|tool_call — residual-honest deeper tool-call board.
+func TestHandleSlash_OnboardNextToolCallLane(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+	agent.ResetToolCallSoftDogfoodSessionState()
+	agent.ResetE4SoftDogfoodSessionState()
+	t.Cleanup(func() {
+		agent.ResetToolCallSoftDogfoodSessionState()
+		agent.ResetE4SoftDogfoodSessionState()
+	})
+
+	needles := []string{
+		"onboard next tool-call lane",
+		"deeper tool-call residual",
+		"journey stage 6/7",
+		"memory_ingest_turn",
+		"memory_retrieve",
+		"memory_search_semantic",
+		"memory_list",
+		"memory_compact_status",
+		"memory_facts_as_of",
+		"Partial→client-attach-evidence",
+		"/onboard next e4",
+		"tools=6",
+		"iomesh mcp --connect",
+		"dual_write OFF",
+		"not Memory GA",
+		"Edge Memory GA candidacy only",
+		"residual PASS ≠ invent Edge Memory GA declared",
+		"E10 Open",
+		"tip ≠ invent forever-green product dogfood",
+		"soft offline ≠ invent Connected",
+		"tool_call_soft_not_run",
+		"/onboard next tool-call dogfood",
+		"free eng s1578",
+	}
+
+	for _, line := range []string{
+		"/onboard next tool-call",
+		"/onboard next tool-calls",
+		"/onboard next deeper-e4",
+		"/onboard next e4-tools",
+		"/onboard next ingest-retrieve",
+		"/onboard next tool_call",
+		"/aion-onboard after tool-call",
+		"/agent-onboard continue deeper-e4",
+		"/onboard lanes e4-tools",
+	} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		// Bare tool-call must be board, not auto soft dogfood runner.
+		if strings.Contains(s, "deeper tool-call soft offline dogfood") {
+			t.Fatalf("%s must not auto-run soft dogfood (bare tool-call = board):\n%s", line, s)
+		}
+		if strings.Contains(s, "onboard next e4 lane") {
+			t.Fatalf("%s must not emit e4 lane body:\n%s", line, s)
+		}
+		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Connected: yes") {
+			t.Fatalf("%s must not invent dual_write ON / Connected:\n%s", line, s)
+		}
+		if strings.Contains(s, "Edge Memory GA is declared") || strings.Contains(s, "E10 is closed") {
+			t.Fatalf("%s must not invent Edge Memory GA is declared / E10 is closed:\n%s", line, s)
+		}
+	}
+}
+
+// s1578: /onboard next tool-call dogfood|soft|offline|tool-call-soft|samples — soft offline deeper tool-call dogfood.
+func TestHandleSlash_OnboardNextToolCallSoftDogfood(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+	agent.ResetToolCallSoftDogfoodSessionState()
+	agent.ResetE4SoftDogfoodSessionState()
+	agent.ResetStillHumanSoftDogfoodSessionState()
+	t.Cleanup(func() {
+		agent.ResetToolCallSoftDogfoodSessionState()
+		agent.ResetE4SoftDogfoodSessionState()
+		agent.ResetStillHumanSoftDogfoodSessionState()
+	})
+
+	needles := []string{
+		"deeper tool-call soft offline dogfood",
+		"no MCP dial",
+		"never start host",
+		"not live dogfood",
+		"result: PASS",
+		"soft_offline_tool_call_session_pass",
+		"memory_ingest_turn",
+		"memory_retrieve",
+		"memory_facts_as_of",
+		"Partial→client-attach-evidence",
+		"soft offline ≠ invent Connected",
+		"session soft ≠ live dogfood",
+		"residual PASS ≠ invent Edge Memory GA declared",
+		"E10 Open",
+		"tip ≠ invent forever-green product dogfood",
+		"dual_write OFF",
+		"free eng s1578",
+	}
+
+	for _, line := range []string{
+		"/onboard next tool-call dogfood",
+		"/onboard next tool-call soft",
+		"/onboard next tool-call offline",
+		"/onboard next tool-call tool-call-soft",
+		"/onboard next tool-call samples",
+		"/onboard next tool-calls dogfood",
+		"/onboard next deeper-e4 soft",
+		"/aion-onboard after tool-call offline",
+		"/agent-onboard continue e4-tools tool-call-soft",
+	} {
+		agent.ResetToolCallSoftDogfoodSessionState()
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		if !strings.Contains(s, "residual:") {
+			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		if strings.Contains(s, "Connected: yes") || strings.Contains(s, "dual_write ON") {
+			t.Fatalf("%s must not invent Connected / dual_write ON:\n%s", line, s)
+		}
+		if strings.Contains(s, "Edge Memory GA is declared") || strings.Contains(s, "E10 is closed") {
+			t.Fatalf("%s must not invent Edge Memory GA is declared / E10 is closed:\n%s", line, s)
+		}
+		// Soft dogfood must not flip E4 soft marker.
+		if got := agent.E4SoftSessionLabel(); got != agent.E4SoftNotRun {
+			t.Fatalf("%s flipped E4 soft marker to %q", line, got)
+		}
+	}
+}
+
 // s1566: /onboard next e4 dogfood|soft|offline|e4-soft|samples — soft offline E4 dogfood.
 func TestHandleSlash_OnboardNextE4SoftDogfood(t *testing.T) {
 	rt := testRuntime(t)
