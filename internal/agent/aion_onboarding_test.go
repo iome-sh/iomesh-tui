@@ -80,6 +80,12 @@ func TestAionAgentOnboardingGuidanceNote_HonestyNeedles(t *testing.T) {
 		"s1558",
 		"Edge Memory GA candidacy only",
 		"free eng s1558",
+		// s1570 Wave C first-run wizard residual
+		"/onboard next wizard",
+		"first-run wizard residual",
+		"s1570",
+		"free eng s1570",
+		"free-floor peer s1572+",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("guidance missing %q in:\n%s", want, out)
@@ -404,7 +410,7 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		// s1542 setup lifecycle P1–P7 closeout residual
 		"/onboard next setup",
 		"setup lifecycle map",
-		"setup-lifecycle|wizard|lifecycle|setup_lifecycle",
+		"setup-lifecycle|lifecycle|setup_lifecycle",
 		"setup_not_probed",
 		"repair apply ≠ invent Connected",
 		"dual_write never auto ON",
@@ -420,6 +426,12 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"no invent TUI portal SSO",
 		"host not auto",
 		"free-floor peer s1560+",
+		// s1570 Wave C first-run wizard residual
+		"/onboard next wizard",
+		"first-run wizard residual",
+		"first-run-wizard|guided|wave-c|wave_c|wizard-residual",
+		"free eng s1570",
+		"free-floor peer s1572+",
 		// pulse stays board (not mesh alias)
 		"pulse stays board",
 		"never invent pull green",
@@ -811,7 +823,7 @@ func TestAionAgentOnboardingNextSetupLane_HonestyNeedles(t *testing.T) {
 		"Edge Memory GA candidacy only",
 		"free eng s1558",
 		"/onboard next setup",
-		"setup-lifecycle|wizard|lifecycle|setup_lifecycle",
+		"setup-lifecycle|lifecycle|setup_lifecycle",
 		"/onboard next journey",
 		"/onboard next memory",
 		"/onboard next memory-pull",
@@ -835,6 +847,88 @@ func TestAionAgentOnboardingNextSetupLane_HonestyNeedles(t *testing.T) {
 	}
 	if strings.Contains(out, "E10 closed") || strings.Contains(out, "APPLY green") {
 		t.Fatalf("must not invent E10 closed / APPLY green: %s", out)
+	}
+}
+
+// s1570 Wave C: AionAgentOnboardingNextWizardLane residual-honest guided first-run wizard residual needles.
+func TestAionAgentOnboardingNextWizardLane_HonestyNeedles(t *testing.T) {
+	ResetWizardSoftDogfoodSessionState()
+	t.Cleanup(ResetWizardSoftDogfoodSessionState)
+
+	out := AionAgentOnboardingNextWizardLane()
+	if out == "" {
+		t.Fatal("empty wizard lane")
+	}
+	for _, want := range []string{
+		"onboard next wizard lane",
+		"no MCP dial",
+		"s1570 Wave C",
+		"first-run wizard residual",
+		"Wave C",
+		"free eng s1570",
+		"free-floor peer s1572+",
+		// 7 stages
+		"1. Signup",
+		"2. Download TUI",
+		"3. TUI auth/keys",
+		"4. Setup",
+		"5. Connectors",
+		"6. Local store",
+		"7. Analyze",
+		"console.iome.sh",
+		"optional pure local",
+		"go install",
+		"Ollama",
+		"no invent TUI portal SSO",
+		"/onboard next setup",
+		"/setup init",
+		"/setup preflight",
+		"/onboard next portal-hitl",
+		"/integrations list|plan|status",
+		"portal HITL when connect",
+		"/onboard next e4",
+		"iomesh-memory-mcp",
+		"host not auto",
+		"/setup analyze",
+		"/memory digest",
+		// honesty locks
+		"dual_write OFF",
+		"not Memory GA",
+		"Edge Memory GA candidacy only",
+		"residual PASS ≠ invent Edge Memory GA declared",
+		"E10 Open",
+		"agent MCP cannot write installs",
+		"catalog ≠ Connected",
+		"book-demo OFF",
+		"residual PASS ≠ invent full interactive auto wizard",
+		"wizard_soft_not_run",
+		"/onboard next wizard dogfood",
+		"soft|samples|offline|wizard-soft",
+		// slash + companions
+		"/onboard next wizard",
+		"first-run-wizard|guided|wave-c|wave_c|wizard-residual",
+		"/onboard next journey",
+		"/onboard next setup",
+		"/onboard next portal-hitl",
+		"/onboard next e4",
+		"/onboard next human-gates",
+		"docs/architecture/edge-user-journey.md",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("wizard lane missing %q in:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
+	}
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "Edge Memory GA is declared") {
+		t.Fatalf("must not invent Memory GA / Edge Memory GA is declared: %s", out)
+	}
+	if strings.Contains(out, "TUI portal SSO shipped") || strings.Contains(out, "auto memory host") {
+		t.Fatalf("must not invent SSO / auto host: %s", out)
+	}
+	if strings.Contains(out, "full interactive auto wizard shipped") {
+		t.Fatalf("must not invent full interactive wizard: %s", out)
 	}
 }
 
@@ -905,6 +999,8 @@ func TestAionAgentOnboardingNextJourneyLane_HonestyNeedles(t *testing.T) {
 		"/onboard next memory",
 		"/onboard next human-gates",
 		"/onboard next operator",
+		"/onboard next wizard",
+		"s1570 Wave C",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("journey lane missing %q in:\n%s", want, out)
@@ -1818,7 +1914,7 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		// setup honesty (s1542)
 		"setup lifecycle P1–P7",
 		"/onboard next setup",
-		"setup-lifecycle|wizard|lifecycle|setup_lifecycle",
+		"setup-lifecycle|lifecycle|setup_lifecycle",
 		"package wire ≠ Connected",
 		"repair apply ≠ invent Connected",
 		"dual_write never auto ON",
