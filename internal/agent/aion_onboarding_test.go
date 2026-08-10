@@ -1414,6 +1414,15 @@ func TestAionAgentOnboardingNextMarketingDemoLane_HonestyNeedles(t *testing.T) {
 		"Sales-loop mesh outbox",
 		"local envelope",
 		"mesh GTM fleet GA",
+		// s1614 GTM wave 8 (real Hermes daemon path · live dual-control dogfood · operator GTM status)
+		"s1614",
+		"Real Hermes daemon",
+		"TUI does not host it",
+		"Live HubSpot / Twenty",
+		"dual control + tokens",
+		"Operator GTM status",
+		"private tooling",
+		"not a product dashboard claim",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("marketing-demo lane missing %q in:\n%s", want, out)
