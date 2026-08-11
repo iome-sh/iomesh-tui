@@ -73,7 +73,7 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 /setup init --stdio            # stdio iomesh-memory-mcp instead of HTTP URL
 /setup preflight               # aliases status|check — FormatPreflightText
 /setup portal                  # console.iome.sh/integrations + settings/agent
-/setup reload                  # hot-swap MCP from config (P4 · package wire ≠ Connected)
+/setup reload                  # hot-swap MCP + re-scan skills (P4 + s1670 · package wire ≠ Connected)
 /setup pull                    # continuous pull status (alias status)
 /setup pull status
 /setup pull start [--once] [--config path]
@@ -97,7 +97,7 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 | `init` | `setup.BuildManagedFragment` + `config.WriteSetupManagedUser` (or `--print-only`) |
 | `preflight` / `status` / `check` | `setup.Preflight` + `FormatPreflightText` |
 | `portal` | browser HITL URLs only |
-| `reload` | `runtimewire.ConnectMCP` + `Runtime.ReplaceMCP` (optional `--config path`) |
+| `reload` | `Wire` + `ReplaceSkills` + `ConnectMCP` + `ReplaceMCP` (s1670 skills re-scan · optional `--config path`) |
 | `pull` | in-session continuous pull status/start/once/stop (s1530 P5) |
 | `analyze` | in-session analyze tick status/start/once/stop (s1534 P6) |
 | `drift` / `maintain` | report-only `BuildDriftReport` + `FormatDriftText` (s1534 P6) |
@@ -240,7 +240,7 @@ Residual-honest offline guided first-run wizard residual after Wave B journey ma
 | `awaiting_memory_host` | Memory configured but healthz/PATH fail |
 | `local_memory_probe_ok` | Memory host healthz OK (or stdio binary on PATH) |
 
-## Hot reload (s1526 P4)
+## Hot reload (s1526 P4 · s1670 skills re-scan)
 
 Shared package wire (`internal/runtimewire`):
 
@@ -249,9 +249,10 @@ Shared package wire (`internal/runtimewire`):
 | `Wire(cfg, workspace, logger)` | skill dirs + `[]mcp.ServerConfig` (TOML then plugins) |
 | `ConnectMCP(ctx, cfg, workspace, logger)` | `*mcp.Manager` when MCP feature on |
 | `Runtime.ReplaceMCP(mgr)` | close previous · unregister `mcp__*` · re-attach |
+| `Runtime.ReplaceSkills(cat)` | unregister `list_skills`/`read_skill` · re-attach (s1670) |
 
-**Honesty:** package wire ≠ Connected · dual_write OFF · Discover/map ≠ install APPLY green.  
-Skills catalog is **not** re-scanned on `/setup reload` (restart for skill-only path changes).
+**Honesty:** package wire ≠ Connected · dual_write OFF · Discover/map ≠ install APPLY green · skills re-scan ≠ invent Connected.  
+Skills catalog **is** re-scanned on `/setup reload` via `Wire` SkillDirs + `LoadWithBuiltin` + `ReplaceSkills` (s1670 · no process restart for skill path changes after `/setup init`).
 
 ## Phases (plan)
 

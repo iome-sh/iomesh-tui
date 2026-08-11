@@ -4475,9 +4475,10 @@ func TestHandleSlash_SetupLifecycle(t *testing.T) {
 		t.Fatalf("unknown sub: %s", out.String())
 	}
 
-	// s1526 P4: /setup reload (nil-safe when MCP off / no servers) residual honesty
+	// s1526 P4 + s1670: /setup reload (nil-safe when MCP off / no servers) residual honesty
+	// skills re-scanned · package wire ≠ Connected · not invent green.
 	out.Reset()
-	// Point at empty temp config so Load succeeds with defaults (MCP off).
+	// Point at empty temp config so Load succeeds with defaults (MCP off; skills on by default).
 	emptyCfg := filepath.Join(t.TempDir(), "reload.toml")
 	if err := os.WriteFile(emptyCfg, []byte("# empty\n"), 0o644); err != nil {
 		t.Fatal(err)
@@ -4489,6 +4490,12 @@ func TestHandleSlash_SetupLifecycle(t *testing.T) {
 	}
 	if !strings.Contains(rel, "dual_write OFF") || !strings.Contains(rel, "Connected") {
 		t.Fatalf("reload honesty: %s", rel)
+	}
+	if !strings.Contains(rel, "skills re-scanned") && !strings.Contains(rel, "skills re-scan") {
+		t.Fatalf("reload must claim skills re-scan residual: %s", rel)
+	}
+	if strings.Contains(rel, "skills catalog not re-scanned") || strings.Contains(rel, "skills dirs not re-scanned") {
+		t.Fatalf("reload must not claim skills need restart residual: %s", rel)
 	}
 	if strings.Contains(rel, "Connected green") || strings.Contains(rel, "install APPLY green shipped") {
 		t.Fatalf("reload must not invent green: %s", rel)
