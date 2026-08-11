@@ -76,9 +76,9 @@ func IntegrationsNextStepLines() []string {
 // IntegrationsOfflineMessage is printed when MCP manager is missing or tools are not connected.
 func IntegrationsOfflineMessage() string {
 	return strings.TrimSpace(`integrations: MCP connector tools unavailable (fail-open).
-  portal HITL: ` + integrationsPortalURL + `
+  portal HITL: `+integrationsPortalURL+`
   aion MCP tools list_connector_catalog / plan_connector_setup (v178/s1237) · get_webhook_signing_headers (v30) · TUI wire parity s1242/s1243.
-  ` + IntegrationsHonestyOneLiner) + "\n" + strings.Join(IntegrationsNextStepLines(), "\n")
+  `+IntegrationsHonestyOneLiner) + "\n" + strings.Join(IntegrationsNextStepLines(), "\n")
 }
 
 // IntegrationsToolMissingMessage is printed when MCP is up but the named tool is absent.
@@ -949,8 +949,8 @@ func statusHonestyFooter() string {
 	return strings.TrimSpace(`honesty:
   never invent install green · catalog ≠ installs · browser HITL for OAuth complete · stub ≠ live
   dual_write OFF · book-demo OFF · signing discovery only · no invent GA
-  catalog count ≠ install Connected · portal HITL ` + integrationsPortalURL + `
-  ` + IntegrationsHonestyOneLiner) + "\n" + strings.Join(IntegrationsNextStepLines(), "\n")
+  catalog count ≠ install Connected · portal HITL `+integrationsPortalURL+`
+  `+IntegrationsHonestyOneLiner) + "\n" + strings.Join(IntegrationsNextStepLines(), "\n")
 }
 
 // orgInstallsSnapshotPayload matches aion v179 list_org_connector_installs residual wire.
