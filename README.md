@@ -25,7 +25,7 @@ Official open-source tooling from [IOMesh](https://iome.sh) (**IOMesh Technology
 - Security model (local sandbox defaults): [SECURITY.md](SECURITY.md)
 - Packaging boundary (MIT vs private platform): [oss-packaging-boundary.md](docs/architecture/oss-packaging-boundary.md)
 
-> **Status:** public open-source **v0.72.x** (pre-1.0, **Beta**). Shipped: agent loop · subagents · full-screen TUI · permissions · ACP · skills · MCP client · **local memory attach** · multi-model catalog (DeepSeek · Grok · Gemini · Vertex · Ollama). Optional mesh client when pointed at a broker you run or subscribe to.
+> **Status:** public open-source **v0.73.x** (pre-1.0, **Beta**). Shipped: agent loop · subagents · full-screen TUI · permissions · ACP · skills · MCP client · **local memory attach** · multi-model catalog (DeepSeek · Grok · Gemini · Vertex · Ollama). Optional mesh client when pointed at a broker you run or subscribe to.
 
 ## Table of contents
 
@@ -96,7 +96,7 @@ cd iomesh-tui
 make build
 
 # Or install a released version (Go toolchain)
-go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v0.72.0
+go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v0.73.0
 # Pin matches latest known tag at docs write; GitHub Releases may be newer — see RELEASING.md
 # Multi-platform archives: GitHub Releases (GoReleaser on v* tags)
 # Or tip of main: go install github.com/iome-sh/iomesh-tui/cmd/iomesh@latest  (pre-1.0 Beta)
