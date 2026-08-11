@@ -84,8 +84,31 @@ All scan connected MCP servers for the bare tool name (same fail-open spirit as 
      - Surfaces `reason`, `portal_url`, honesty notes from wire
    - Call failure → fail-open residual (no invent rows)
 5. **Honesty footer always** (`statusHonestyFooter`) — never invent install green · catalog ≠ installs · browser HITL · stub ≠ live · dual_write OFF · book-demo OFF · signing discovery only · portal `https://console.iome.sh/integrations`
+6. **Next-step residual (s1727)** — always after honesty (see [After /integrations (s1727)](#after-integrations-s1727))
 
 Offline / empty MCP → residual message, **no invented counts**. Never invents org install Connected / INSTALL_STORE green / GA / empty-as-none installs.
+
+## After /integrations (s1727)
+
+Residual-honest **next-step footers** after `/integrations` list|plan|status|signing (and offline / tool-missing fail-open) — peer of setup next-step continuum (s1686–s1723).
+
+Helper `IntegrationsNextStepLines()` is appended by:
+
+| Surface | Footer / message |
+|---------|------------------|
+| `list` | `catalogHonestyFooter` |
+| `plan` | `planHonestyFooter` (+ notes path still appends next-step) |
+| `signing` | `signingHonestyFooter` |
+| `status` | `statusHonestyFooter` |
+| MCP offline / tool missing | `IntegrationsOfflineMessage` · `IntegrationsToolMissingMessage` |
+
+Post-surface dual path:
+
+1. **Complete OAuth/install in browser portal HITL** → https://console.iome.sh/integrations (agent MCP **cannot write installs**)
+2. **If TUI/session running** → `/setup preflight` · `/setup reload` · optional `/onboard next portal-hitl`
+3. **Else cold start** → restart `iomesh` · `iomesh setup preflight` (CLI has **no** invent install green)
+
+**Honesty:** catalog ≠ Connected · template= ≠ install APPLY · dual_write **OFF** · not Memory GA · free eng **s1727**.
 
 ## aion v178 / v30 wire (TUI parse parity · s1242)
 

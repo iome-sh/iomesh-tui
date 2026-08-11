@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Integrations residual-honest next-step after list/plan/status/signing (s1727)** — after `/integrations` list|plan|status|signing (and offline/tool-missing fail-open), residual next-step footers via `IntegrationsNextStepLines`: browser portal HITL for OAuth/install (agent MCP **cannot write installs**) → in-session `/setup preflight` · `/setup reload` · optional `/onboard next portal-hitl`; cold start → restart iomesh · `iomesh setup preflight`. Appended to catalog/plan/signing/status honesty footers + offline messages. Peer of setup next-step continuum (s1686–s1723). Docs: [agent-integrations-setup.md](docs/architecture/agent-integrations-setup.md) · skill `connector-integrations-setup`. catalog ≠ Connected · template= ≠ install APPLY · dual_write **OFF** · not Memory GA · free eng **s1727**.
 - **Setup init slash next-step parity + portal next-step + IOMESH_PLATFORM_RESIDUAL label (s1723)** — slash `/setup init` uses `SetupInitNextStepLines` (CLI parity with s1686). `/setup portal` appends `SetupPortalNextStepLines` (browser HITL → preflight/reload dual path · agent MCP cannot write installs · catalog ≠ Connected). Optional `IOMESH_PLATFORM_RESIDUAL=1` env labels platform residual honesty only (does **not** hide Edge OSS lanes · residual PASS ≠ invent control plane). dual_write **OFF** · package wire ≠ Connected · not Memory GA · free eng **s1723**.
 
 ## [0.74.0] — 2026-08-11
