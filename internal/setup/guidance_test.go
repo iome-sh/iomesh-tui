@@ -149,6 +149,80 @@ func TestSetupRepairNextStepLines_HonestyNeedles(t *testing.T) {
 	}
 }
 
+// s1711: setup reload next-step (in-session only; CLI has no setup reload).
+func TestSetupReloadNextStepLines_HonestyNeedles(t *testing.T) {
+	lines := SetupReloadNextStepLines()
+	if len(lines) == 0 {
+		t.Fatal("empty reload next-step lines")
+	}
+	out := strings.Join(lines, "\n")
+	for _, want := range []string{
+		"dual_write OFF",
+		"not Memory GA",
+		"s1711",
+		"package wire",
+		"CLI has no",
+		"setup reload",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("reload next-step missing %q in:\n%s", want, out)
+		}
+	}
+	// Must not invent a CLI setup reload subcommand as a real command path.
+	if strings.Contains(out, "iomesh setup reload") && !strings.Contains(out, "CLI has no") {
+		t.Fatalf("must not advertise CLI setup reload without honesty:\n%s", out)
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
+		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", out)
+	}
+}
+
+// s1711: setup pull next-step dual path (in-session /setup pull vs CLI iomesh memory pull).
+func TestSetupPullNextStepLines_HonestyNeedles(t *testing.T) {
+	lines := SetupPullNextStepLines()
+	if len(lines) == 0 {
+		t.Fatal("empty pull next-step lines")
+	}
+	out := strings.Join(lines, "\n")
+	for _, want := range []string{
+		"dual_write OFF",
+		"not Memory GA",
+		"s1711",
+		"pull ≠ invent Connected",
+		"iomesh memory pull",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("pull next-step missing %q in:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
+		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", out)
+	}
+}
+
+// s1711: setup analyze next-step dual path (in-session /setup analyze vs /memory digest).
+func TestSetupAnalyzeNextStepLines_HonestyNeedles(t *testing.T) {
+	lines := SetupAnalyzeNextStepLines()
+	if len(lines) == 0 {
+		t.Fatal("empty analyze next-step lines")
+	}
+	out := strings.Join(lines, "\n")
+	for _, want := range []string{
+		"dual_write OFF",
+		"not Memory GA",
+		"s1711",
+		"analyze tick ≠ invent Connected",
+		"/memory digest",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("analyze next-step missing %q in:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
+		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", out)
+	}
+}
+
 // s1526 P3 / s1530 P5 / s1534 P6 / s1558 Wave B: SetupLifecycleAgentGuidanceNote residual-honest needles.
 func TestSetupLifecycleAgentGuidanceNote_HonestyNeedles(t *testing.T) {
 	out := SetupLifecycleAgentGuidanceNote()
