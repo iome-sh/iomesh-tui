@@ -47,21 +47,34 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
    - URLs: https://console.iome.sh/integrations · https://console.iome.sh/settings/agent
    - Agent MCP **cannot write installs**
 
-4. **Continuous pull (s1530 P5 · residual-honest opt-in)** — in-session slash **or** CLI.
+4. **Hot reload (s1526 P4 · s1670 skills re-scan · s1711 next-step)** — in-session only.
+   - Slash: `/setup reload` (hot-swap MCP + re-scan skills · package wire ≠ Connected)
+   - **CLI has no `iomesh setup reload`** — in-session only (peers s1686/s1699)
+   - After reload (s1711 · `SetupReloadNextStepLines`):
+     - optional `/setup pull start` · `/setup analyze start` · `/setup drift` · `/memory digest`
+     - package wire ≠ Connected · dual_write OFF · not Memory GA · skills re-scan ≠ invent Connected · free eng **s1711**
+
+5. **Continuous pull (s1530 P5 · residual-honest opt-in · s1711 next-step)** — in-session slash **or** CLI.
    - Slash: `/setup pull` · `/setup pull status` · `/setup pull start` · `/setup pull once` · `/setup pull stop`
    - Config opt-in: `[memory] pull_continuous = true` (default **false** in setup fragment)
    - CLI still valid: `iomesh memory pull` (requires mesh + consumer configured)
    - Loads `[memory] pull_stream` / `pull_consumer` / `pull_filter` / batch / max wait
-   - **pull ≠ invent Connected** · dual_write OFF · not Memory GA · idle/status must not invent green
+   - After pull (s1711 dual path · `SetupPullNextStepLines`):
+     - **In-session** → `/setup pull status` · optional `/setup analyze start` · `/setup drift` · `/memory digest`
+     - **CLI** → `iomesh memory pull` (once or continuous · mesh + consumer required)
+     - **pull ≠ invent Connected** · dual_write OFF · not Memory GA · free eng **s1711**
 
-5. **Analyze ticks (s1534 P6 · residual-honest opt-in)** — in-session status/digest pulse.
+6. **Analyze ticks (s1534 P6 · residual-honest opt-in · s1711 next-step)** — in-session status/digest pulse.
    - Slash: `/setup analyze` · `/setup analyze status` · `/setup analyze start` · `/setup analyze once` · `/setup analyze stop`
    - Flags: `--mode status|digest` · `--interval N` · `--window day|week` (digest) · `--config path`
    - Config opt-in: `[memory] analyze_continuous = true` (default **false**) · `analyze_interval_sec` · `analyze_mode`
    - **`/memory digest` still valid** as one-shot residual ops pulse
-   - **analyze tick ≠ invent Connected** · dual_write OFF · not Memory GA
+   - After analyze (s1711 dual path · `SetupAnalyzeNextStepLines`):
+     - **In-session** → `/setup analyze status` · optional `/setup pull start` · `/setup drift` · re-run analyze
+     - **One-shot digest** → **`/memory digest`** (still valid · not invent Connected)
+     - **analyze tick ≠ invent Connected** · dual_write OFF · not Memory GA · free eng **s1711**
 
-6. **Drift / maintain (s1534 P6 · report-only · s1707 dual-path next-step)** — config intent vs runtime snapshot.
+7. **Drift / maintain (s1534 P6 · report-only · s1707 dual-path next-step)** — config intent vs runtime snapshot.
    - Slash: `/setup drift` · `/setup maintain` (alias)
    - Report-only residual next steps · **drift report ≠ invent install green** · package wire ≠ Connected
    - Notes point at guided repair: `/setup repair plan` · `/setup repair apply --yes` (safe steps only · dual_write never auto ON)
@@ -71,7 +84,7 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
      - dual_write OFF · package wire ≠ Connected · not Memory GA · free eng **s1707**
    - After drift, optional guided repair (P7) — not automatic without explicit `--yes`
 
-7. **Guided repair (s1538 P7 · explicit --yes only · s1707 dual-path next-step)** — plan from drift · apply safe steps only.
+8. **Guided repair (s1538 P7 · explicit --yes only · s1707 dual-path next-step)** — plan from drift · apply safe steps only.
    - Slash: `/setup repair` · `/setup repair plan` — `PlanRepair` + `FormatRepairPlan` (dry plan · no side effects)
    - Slash: `/setup repair apply --yes` — `ApplyRepairPlan` safe steps only (`reload_mcp` · `start_pull` · `start_analyze`)
    - **`/setup repair apply` without `--yes` refuses** (residual-honest · no auto-repair)
@@ -92,8 +105,9 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
 | catalog ≠ Connected | Setup PASS / probe_ok ≠ invent install Connected |
 | portal HITL | OAuth / INSTALL_STORE APPLY stay browser |
 | secrets env names only | `api_key_env` / `oauth_token_env` — no secret values in config |
-| continuous pull opt-in | `/setup pull` · `pull_continuous` · CLI `iomesh memory pull` still valid · pull ≠ invent Connected |
-| analyze ticks opt-in | `/setup analyze` · `analyze_continuous` · `/memory digest` still valid · analyze tick ≠ invent Connected |
+| continuous pull opt-in | `/setup pull` · `pull_continuous` · CLI `iomesh memory pull` still valid · pull ≠ invent Connected · s1711 dual-path next-step |
+| analyze ticks opt-in | `/setup analyze` · `analyze_continuous` · `/memory digest` still valid · analyze tick ≠ invent Connected · s1711 dual-path next-step |
+| reload in-session only | `/setup reload` · CLI has **no** setup reload · package wire ≠ Connected · s1711 next-step |
 | drift report-only | `/setup drift` · `/setup maintain` · residual next steps · drift ≠ invent install green · package wire ≠ Connected |
 | guided repair explicit | `/setup repair` · `/setup repair apply --yes` only · safe steps · repair apply ≠ invent Connected · no auto-repair without `--yes` |
 | never invent green | No Connected / INSTALL_STORE green / Memory GA from setup alone |
@@ -115,13 +129,14 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
 |---------|--------|
 | Slash `/setup` | help · init · preflight · portal · reload · **pull** · **analyze** · **drift** · **repair** |
 | Alias `/setup-lifecycle` | same |
-| `/setup pull` | status · start · once · stop (s1530 P5 residual-honest) |
-| `/setup analyze` | status · start · once · stop (s1534 P6 residual-honest) |
+| `/setup reload` | hot-swap MCP + skills (s1670 · s1711 next-step · in-session only) |
+| `/setup pull` | status · start · once · stop (s1530 P5 residual-honest · s1711 dual-path next-step) |
+| `/setup analyze` | status · start · once · stop (s1534 P6 residual-honest · s1711 dual-path next-step) |
 | `/setup drift` / `/setup maintain` | report-only FormatDriftText (s1534 P6 · s1707 dual-path next-step) |
 | `/setup repair` | plan (default) · apply --yes (s1538 P7 guided safe steps · s1707 dual-path next-step) |
-| CLI `iomesh setup` | init · preflight only (s1525 P1–P2 · s1686/s1699/s1707: **no** CLI `setup reload`/`drift`/`repair` · dual-path next-step after init · preflight · drift · repair) |
-| CLI `iomesh memory pull` | still valid continuous / once pull path |
-| `/memory digest` | still valid one-shot ops pulse |
+| CLI `iomesh setup` | init · preflight only (s1525 P1–P2 · s1686/s1699/s1707/s1711: **no** CLI `setup reload`/`drift`/`repair` · dual-path next-step after init · preflight · drift · repair · reload/pull/analyze) |
+| CLI `iomesh memory pull` | still valid continuous / once pull path (s1711 pull dual path peer) |
+| `/memory digest` | still valid one-shot ops pulse (s1711 analyze dual path peer) |
 | System note | `<setup-lifecycle>` on AttachMCP |
 | Skill | `read_skill setup-lifecycle-agent` |
 | Onboard map (s1542) | `/onboard next setup` (aliases setup-lifecycle\|lifecycle\|setup_lifecycle) |
