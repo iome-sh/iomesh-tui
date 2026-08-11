@@ -10,6 +10,24 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/skills"
 )
 
+// skillToolNames are registry names for skill meta tools (list/read).
+var skillToolNames = []string{
+	"list_skills",
+	"read_skill",
+}
+
+// UnregisterSkillsTools removes list_skills and read_skill from the registry.
+// Used by Runtime.ReplaceSkills before re-attach (s1670 /setup reload skills re-scan).
+func (r *ToolRegistry) UnregisterSkillsTools() {
+	if r == nil || r.funcs == nil {
+		return
+	}
+	for _, name := range skillToolNames {
+		delete(r.funcs, name)
+		delete(r.meta, name)
+	}
+}
+
 // RegisterSkillsTools adds list_skills / read_skill (read-only).
 func (r *ToolRegistry) RegisterSkillsTools(cat *skills.Catalog) {
 	if cat == nil || cat.Len() == 0 {

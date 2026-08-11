@@ -490,7 +490,7 @@ func AionAgentOnboardingNextSetupLane() string {
     1. /setup init · iomesh setup init — dual_write OFF · managed fragment (local-memory default · secrets as env names only)
     2. start memory host · set secret env names (api_key_env · oauth_token_env) — never commit secret values
     3. /setup preflight — PASS ≠ invent Connected · states residual-honest only (not_started · config_present · awaiting_memory_host · local_memory_probe_ok)
-    4. /setup reload — package wire ≠ Connected · hot MCP re-attach residual · skills may still need restart
+    4. /setup reload — package wire ≠ Connected · hot MCP re-attach residual · skills re-scanned on /setup reload (s1670 · LoadWithBuiltin + ReplaceSkills) · skills re-scan ≠ invent Connected · package wire ≠ Connected
     5. portal HITL /setup portal — OAuth/install still browser · agent MCP cannot write installs · catalog ≠ Connected
     6. optional /setup pull start when mesh+consumer — pull ≠ invent Connected · pull_continuous opt-in · CLI iomesh memory pull still valid
     7. optional /setup analyze start — tick ≠ invent green · analyze_continuous opt-in · dual_write OFF

@@ -9,7 +9,7 @@ Minimal [Model Context Protocol](https://modelcontextprotocol.io) client support
 
 If both `url` and `command` are set, **URL wins**.
 
-**Agent Plugins package MCP (s1326):** root `mcp.json` closed parse + server map structs live in `internal/agentplugins` (discovery only — **no** process attach). TOML `[[mcp.servers]]` remains the primary runtime path until package load is wired. See [agent-plugins.md](./agent-plugins.md).
+**Agent Plugins package MCP (s1326 + s1331):** root `mcp.json` closed parse + server map live in `internal/agentplugins`. **s1331 runtime wire:** opt-in `[plugins]` → `runtimewire.Wire` / `ConnectMCP` builds TOML `[[mcp.servers]]` **primary**, then appends plugin-mapped servers (fail-open Discover/map). Map ≠ Connected / process attach green · package wire ≠ install APPLY · not Agent Plugins GA · dual_write OFF · not Memory GA. See [agent-plugins.md](./agent-plugins.md) · [setup-lifecycle.md](./setup-lifecycle.md).
 
 ## Methods
 

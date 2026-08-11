@@ -187,6 +187,103 @@ func TestUnregisterMCPTools_Idempotent(t *testing.T) {
 	reg.UnregisterMCPTools()
 }
 
+// s1670: ReplaceSkills hot-swaps catalog tools without process restart.
+func TestReplaceSkills_HotSwap(t *testing.T) {
+	root := t.TempDir()
+	dirA := filepath.Join(root, "skills-a", "skill-a")
+	dirB := filepath.Join(root, "skills-b", "skill-b")
+	if err := os.MkdirAll(dirA, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(dirB, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	_ = os.WriteFile(filepath.Join(dirA, "SKILL.md"), []byte("---\nname: skill-a\ndescription: Skill A\n---\n\n# A\n\nBody A.\n"), 0o644)
+	_ = os.WriteFile(filepath.Join(dirB, "SKILL.md"), []byte("---\nname: skill-b\ndescription: Skill B\n---\n\n# B\n\nBody B.\n"), 0o644)
+
+	catA, err := skills.LoadDirs(filepath.Join(root, "skills-a"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	catB, err := skills.LoadDirs(filepath.Join(root, "skills-b"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rt := testRT(t, root)
+	rt.AttachSkills(catA)
+	out, err := rt.tools.Execute(context.Background(), "list_skills", `{}`)
+	if err != nil || !strings.Contains(out, "skill-a") {
+		t.Fatalf("list_skills A: %q err=%v", out, err)
+	}
+	if strings.Contains(out, "skill-b") {
+		t.Fatalf("list_skills should not list B yet: %q", out)
+	}
+	sys1 := rt.Messages()[0].Content
+	// defaultSystemPrompt also mentions <skills> as a word; count closed note tags for upsert.
+	if strings.Count(sys1, "</skills>") != 1 {
+		t.Fatalf("expected single skills note after attach, got %d", strings.Count(sys1, "</skills>"))
+	}
+	if strings.Count(sys1, "<gtm-draft-only>") != 1 {
+		t.Fatalf("expected single gtm-draft-only note, got %d", strings.Count(sys1, "<gtm-draft-only>"))
+	}
+
+	// Hot-swap to skill B catalog — skill-a tools must go.
+	rt.ReplaceSkills(catB)
+	if rt.Skills() == nil || rt.Skills().Len() != 1 {
+		t.Fatal("skills not attached after replace")
+	}
+	out, err = rt.tools.Execute(context.Background(), "list_skills", `{}`)
+	if err != nil || !strings.Contains(out, "skill-b") {
+		t.Fatalf("list_skills B after replace: %q err=%v", out, err)
+	}
+	if strings.Contains(out, "skill-a") {
+		t.Fatalf("skill-a must be gone after ReplaceSkills: %q", out)
+	}
+	readOut, err := rt.tools.Execute(context.Background(), "read_skill", `{"name":"skill-b"}`)
+	if err != nil || !strings.Contains(readOut, "Body B") {
+		t.Fatalf("read_skill B: %q err=%v", readOut, err)
+	}
+	if _, err := rt.tools.Execute(context.Background(), "read_skill", `{"name":"skill-a"}`); err == nil {
+		t.Fatal("expected skill-a unknown after ReplaceSkills")
+	}
+	sys2 := rt.Messages()[0].Content
+	if strings.Count(sys2, "</skills>") != 1 {
+		t.Fatalf("skills note duplicated: %d", strings.Count(sys2, "</skills>"))
+	}
+	if strings.Count(sys2, "<gtm-draft-only>") != 1 {
+		t.Fatalf("gtm-draft-only note duplicated: %d", strings.Count(sys2, "<gtm-draft-only>"))
+	}
+	if !strings.Contains(sys2, "skill-b") {
+		t.Fatalf("skills note should reflect new catalog: %s", sys2)
+	}
+	if strings.Contains(sys2, "skill-a") {
+		t.Fatalf("skills note still mentions skill-a after replace: %s", sys2)
+	}
+
+	// Detach via ReplaceSkills(nil).
+	rt.ReplaceSkills(nil)
+	if rt.Skills() != nil {
+		t.Fatal("expected nil skills after detach")
+	}
+	if _, err := rt.tools.Execute(context.Background(), "list_skills", `{}`); err == nil {
+		t.Fatal("expected list_skills unregistered after ReplaceSkills(nil)")
+	}
+	if _, err := rt.tools.Execute(context.Background(), "read_skill", `{"name":"skill-b"}`); err == nil {
+		t.Fatal("expected read_skill unregistered after ReplaceSkills(nil)")
+	}
+	sys3 := rt.Messages()[0].Content
+	if !strings.Contains(sys3, "detached") {
+		t.Fatalf("expected detached skills note: %s", sys3)
+	}
+}
+
+func TestUnregisterSkillsTools_Idempotent(t *testing.T) {
+	reg := ToolRegistry{funcs: map[string]toolFunc{}, meta: map[string]toolMeta{}}
+	reg.UnregisterSkillsTools()
+	reg.UnregisterSkillsTools()
+}
+
 func testRT(t *testing.T, workspace string) *Runtime {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -23,6 +23,7 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/runtimewire"
 	"github.com/iome-sh/iomesh-tui/internal/session"
 	"github.com/iome-sh/iomesh-tui/internal/setup"
+	"github.com/iome-sh/iomesh-tui/internal/skills"
 )
 
 // Runner is the subset of agent.Runtime needed by the TUI.
@@ -578,6 +579,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		// /memory digest still valid · drift report-only ≠ invent install green ·
 		// repair plan/apply safe steps only · repair apply ≠ invent Connected · no auto-repair without apply --yes.
 		// P4: /setup reload → runtimewire.ConnectMCP + Runtime.ReplaceMCP (package wire ≠ Connected).
+		// s1670: /setup reload also Wire + LoadWithBuiltin → Runtime.ReplaceSkills (skills re-scan).
 		// P5: /setup pull → Runtime continuous memory pull (opt-in · pull ≠ invent Connected).
 		// P6: /setup analyze → Runtime analyze ticks; /setup drift|maintain → report-only drift.
 		// P7: /setup repair → PlanRepair / ApplyRepairPlan (safe steps · explicit --yes).
@@ -1162,7 +1164,7 @@ func setupHelp() string {
   init       write managed config fragment (profiles: local-memory|plugins|mesh|platform-mcp|all; default local-memory)
   preflight  residual-honest probe (aliases status|check) — PASS ≠ invent Connected / Memory GA
   portal     browser HITL URLs (integrations + settings/agent)
-  reload     hot-swap MCP from user config (ConnectMCP + ReplaceMCP; package wire ≠ Connected)
+  reload     hot-swap MCP + re-scan skills from user config (Wire · ReplaceSkills · ConnectMCP + ReplaceMCP; package wire ≠ Connected)
   pull       continuous pull status|start|once|stop (s1530 P5 · opt-in · CLI iomesh memory pull still valid)
   analyze    analyze tick status|start|once|stop (s1534 P6 · opt-in · /memory digest still valid)
   drift      report-only config vs runtime drift (alias maintain · residual next steps)
@@ -1172,7 +1174,7 @@ aliases: /setup-lifecycle
 honesty: ` + setup.SetupLifecycleHonestyOneLiner + `
   secrets via env names only · portal HITL for OAuth/install · continuous pull/analyze opt-in
   skill: read_skill setup-lifecycle-agent · system note <setup-lifecycle> on AttachMCP
-  reload: dual_write OFF · does not invent install green · skills dirs not re-scanned (restart for skill-only)
+  reload: dual_write OFF · skills re-scanned · package wire ≠ Connected · does not invent install green · skills re-scan ≠ invent Connected
   pull: dual_write OFF · not Memory GA · pull ≠ invent Connected · CLI iomesh memory pull still valid
   analyze: dual_write OFF · not Memory GA · analyze tick ≠ invent Connected · /memory digest still valid
   drift: dual_write OFF · not Memory GA · drift report ≠ invent install green · package wire ≠ Connected
@@ -1260,8 +1262,9 @@ func handleSetupInit(out io.Writer, args []string) {
 	fmt.Fprintln(out, "note: continuous pull opt-in via /setup pull · analyze ticks via /setup analyze · drift /setup drift · guided repair /setup repair · CLI iomesh memory pull · /memory digest still valid · reload = package wire ≠ Connected")
 }
 
-// handleSetupReload reloads MCP servers from config without process restart (s1526 P4).
-// Uses runtimewire.ConnectMCP + Runtime.ReplaceMCP. Residual-honest: package wire ≠ Connected.
+// handleSetupReload reloads skills catalog + MCP servers from config without process restart
+// (s1526 P4 MCP · s1670 skills re-scan). Uses runtimewire.Wire + LoadWithBuiltin + ReplaceSkills,
+// then ConnectMCP + ReplaceMCP. Residual-honest: package wire ≠ Connected · skills re-scan ≠ invent Connected.
 func handleSetupReload(out io.Writer, rt runtimeAdapter, args []string) {
 	if rt.rt == nil {
 		fmt.Fprintln(out, "setup reload: no agent runtime")
@@ -1293,18 +1296,67 @@ func handleSetupReload(out io.Writer, rt runtimeAdapter, args []string) {
 		fmt.Fprintf(out, "setup reload: config: %v\n", err)
 		return
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
+	defer cancel()
+	reloadRuntimeFromConfig(ctx, out, rt, cfg, true)
+}
+
+// reloadRuntimeFromConfig re-scans skills (when feature on) and hot-swaps MCP from cfg.
+// Shared by /setup reload and setupRepairExecutor.ReloadMCP (s1670).
+// When print is true, writes residual-honest status lines to out (may be nil when silent).
+// Residual honesty: dual_write OFF · package wire ≠ Connected · skills re-scan ≠ invent Connected ·
+// not Memory GA · not Agent Plugins GA · Discover/map ≠ install APPLY green.
+func reloadRuntimeFromConfig(ctx context.Context, out io.Writer, rt runtimeAdapter, cfg *config.Config, print bool) {
+	if rt.rt == nil {
+		if print && out != nil {
+			fmt.Fprintln(out, "setup reload: no agent runtime")
+		}
+		return
+	}
+	if cfg == nil {
+		cfg = &config.Config{}
+	}
 	ws := ""
 	if rt.rt.Workspace() != nil {
 		ws = rt.rt.Workspace().Root()
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
-	defer cancel()
+	logger := slog.Default()
+	wired := runtimewire.Wire(cfg, ws, logger)
+
+	// Skills re-scan when skills feature enabled (s1670).
+	if runtimewire.SkillsFeatureOn(cfg) {
+		cat, err := skills.LoadWithBuiltin(wired.SkillDirs...)
+		if err != nil {
+			if print && out != nil {
+				fmt.Fprintf(out, "setup reload: skills load: %v (residual-honest · not invent green)\n", err)
+			}
+			// Leave prior skills alone on load error — fail-open residual, do not invent green.
+		} else {
+			rt.rt.ReplaceSkills(cat)
+			if print && out != nil {
+				n := 0
+				if cat != nil {
+					n = cat.Len()
+				}
+				fmt.Fprintf(out, "setup reload: skills re-scanned count=%d dirs=%d (package wire · LoadWithBuiltin)\n", n, len(wired.SkillDirs))
+			}
+		}
+	} else {
+		rt.rt.ReplaceSkills(nil) // detach when skills feature off
+		if print && out != nil {
+			fmt.Fprintln(out, "setup reload: skills feature off — catalog detached")
+		}
+	}
+
 	// ConnectMCP returns nil when MCP feature off or no servers — ReplaceMCP detaches.
-	mgr := runtimewire.ConnectMCP(ctx, cfg, ws, slog.Default())
+	mgr := runtimewire.ConnectMCP(ctx, cfg, ws, logger)
 	rt.rt.ReplaceMCP(mgr)
+	if !print || out == nil {
+		return
+	}
 	if mgr == nil {
 		fmt.Fprintln(out, "setup reload: MCP feature off or no servers configured — detached")
-		fmt.Fprintln(out, "honesty: dual_write OFF · package wire ≠ Connected · not Memory GA · portal HITL for installs")
+		fmt.Fprintln(out, "honesty: dual_write OFF · package wire ≠ Connected · skills re-scan ≠ invent Connected · not Memory GA · not Agent Plugins GA · portal HITL for installs")
 		return
 	}
 	nTools := 0
@@ -1312,8 +1364,8 @@ func handleSetupReload(out io.Writer, rt runtimeAdapter, args []string) {
 		nTools++
 	}
 	fmt.Fprintf(out, "setup reload: connected=%d tools=%d (package wire · fail-open per server)\n", mgr.Len(), nTools)
-	fmt.Fprintln(out, "honesty: dual_write OFF · package wire ≠ Connected · Discover/map ≠ install APPLY green · not Memory GA")
-	fmt.Fprintln(out, "note: skills catalog not re-scanned on reload · continuous pull/analyze opt-in via /setup pull · /setup analyze · drift /setup drift · repair /setup repair · CLI iomesh memory pull · /memory digest still valid")
+	fmt.Fprintln(out, "honesty: dual_write OFF · package wire ≠ Connected · skills re-scanned · Discover/map ≠ install APPLY green · skills re-scan ≠ invent Connected · not Memory GA · not Agent Plugins GA")
+	fmt.Fprintln(out, "note: skills re-scanned on reload · continuous pull/analyze opt-in via /setup pull · /setup analyze · drift /setup drift · repair /setup repair · CLI iomesh memory pull · /memory digest still valid")
 }
 
 // handleSetupPull dispatches /setup pull [status|start|once|stop] (s1530 P5).
@@ -1994,7 +2046,7 @@ func buildSetupDriftReport(rt runtimeAdapter, cfg *config.Config) setup.DriftRep
 }
 
 // setupRepairExecutor implements setup.RepairExecutor wrapping runtimeAdapter.
-// ReloadMCP mirrors handleSetupReload; StartPull/StartAnalyze use config knobs.
+// ReloadMCP mirrors handleSetupReload (skills re-scan + MCP hot-swap); StartPull/StartAnalyze use config knobs.
 type setupRepairExecutor struct {
 	rt  runtimeAdapter
 	cfg *config.Config
@@ -2007,14 +2059,9 @@ func (e setupRepairExecutor) ReloadMCP(ctx context.Context) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	ws := ""
-	if e.rt.rt.Workspace() != nil {
-		ws = e.rt.rt.Workspace().Root()
-	}
-	// ConnectMCP returns nil when MCP feature off or no servers — ReplaceMCP detaches.
-	// package wire ≠ Connected (same honesty as /setup reload).
-	mgr := runtimewire.ConnectMCP(ctx, e.cfg, ws, slog.Default())
-	e.rt.rt.ReplaceMCP(mgr)
+	// Same path as /setup reload: Wire + ReplaceSkills + ConnectMCP + ReplaceMCP (s1670).
+	// package wire ≠ Connected · skills re-scan ≠ invent Connected · silent (repair apply prints plan result).
+	reloadRuntimeFromConfig(ctx, nil, e.rt, e.cfg, false)
 	return nil
 }
 

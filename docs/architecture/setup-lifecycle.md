@@ -1,7 +1,7 @@
 # Setup lifecycle (agent-native wizard foundation)
 
-**Serial:** free eng **s1525** P1–P2 · **s1526** P3–P4 · **s1530** P5 · **s1534** P6 · **s1538** P7 · **s1542** closeout residual · **s1546** still-human APPLY reaffirm · **s1550** edge-first human-gates residual pin · **s1574** still-human APPLY soft dogfood residual · residual-honest  
-**Status:** foundation + agent-native slash/skill + package wire + `ReplaceMCP` + in-session opt-in continuous pull + analyze ticks + report-only drift + **guided repair** (safe steps · explicit `--yes`) + **onboard next setup** lane  
+**Serial:** free eng **s1525** P1–P2 · **s1526** P3–P4 · **s1530** P5 · **s1534** P6 · **s1538** P7 · **s1542** closeout residual · **s1546** still-human APPLY reaffirm · **s1550** edge-first human-gates residual pin · **s1574** still-human APPLY soft dogfood residual · **s1670** easy setup: `/setup reload` re-scans skills · residual-honest  
+**Status:** foundation + agent-native slash/skill + package wire + `ReplaceMCP` + **`ReplaceSkills` (s1670)** + in-session opt-in continuous pull + analyze ticks + report-only drift + **guided repair** (safe steps · explicit `--yes`) + **onboard next setup** lane  
 **Shipped P7:** `/setup repair` plan + apply `--yes` (safe steps only · notes stay human)  
 **Shipped s1542:** residual-honest `/onboard next setup` consolidates P1–P7 map story  
 **Related (s1546):** still-human APPLY reaffirm after closeout — setup residual complete ≠ invent human-gate green / live APPLY / E10 (`/onboard next human-gates`)  
@@ -73,7 +73,7 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 /setup init --stdio            # stdio iomesh-memory-mcp instead of HTTP URL
 /setup preflight               # aliases status|check — FormatPreflightText
 /setup portal                  # console.iome.sh/integrations + settings/agent
-/setup reload                  # hot-swap MCP from config (P4 · package wire ≠ Connected)
+/setup reload                  # hot-swap MCP + re-scan skills (P4 + s1670 · package wire ≠ Connected)
 /setup pull                    # continuous pull status (alias status)
 /setup pull status
 /setup pull start [--once] [--config path]
@@ -97,7 +97,7 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 | `init` | `setup.BuildManagedFragment` + `config.WriteSetupManagedUser` (or `--print-only`) |
 | `preflight` / `status` / `check` | `setup.Preflight` + `FormatPreflightText` |
 | `portal` | browser HITL URLs only |
-| `reload` | `runtimewire.ConnectMCP` + `Runtime.ReplaceMCP` (optional `--config path`) |
+| `reload` | `Wire` + `ReplaceSkills` + `ConnectMCP` + `ReplaceMCP` (s1670 skills re-scan · optional `--config path`) |
 | `pull` | in-session continuous pull status/start/once/stop (s1530 P5) |
 | `analyze` | in-session analyze tick status/start/once/stop (s1534 P6) |
 | `drift` / `maintain` | report-only `BuildDriftReport` + `FormatDriftText` (s1534 P6) |
@@ -240,7 +240,7 @@ Residual-honest offline guided first-run wizard residual after Wave B journey ma
 | `awaiting_memory_host` | Memory configured but healthz/PATH fail |
 | `local_memory_probe_ok` | Memory host healthz OK (or stdio binary on PATH) |
 
-## Hot reload (s1526 P4)
+## Hot reload (s1526 P4 · s1670 skills re-scan)
 
 Shared package wire (`internal/runtimewire`):
 
@@ -249,9 +249,10 @@ Shared package wire (`internal/runtimewire`):
 | `Wire(cfg, workspace, logger)` | skill dirs + `[]mcp.ServerConfig` (TOML then plugins) |
 | `ConnectMCP(ctx, cfg, workspace, logger)` | `*mcp.Manager` when MCP feature on |
 | `Runtime.ReplaceMCP(mgr)` | close previous · unregister `mcp__*` · re-attach |
+| `Runtime.ReplaceSkills(cat)` | unregister `list_skills`/`read_skill` · re-attach (s1670) |
 
-**Honesty:** package wire ≠ Connected · dual_write OFF · Discover/map ≠ install APPLY green.  
-Skills catalog is **not** re-scanned on `/setup reload` (restart for skill-only path changes).
+**Honesty:** package wire ≠ Connected · dual_write OFF · Discover/map ≠ install APPLY green · skills re-scan ≠ invent Connected · not Agent Plugins GA.  
+Skills catalog **is** re-scanned on `/setup reload` via `Wire` SkillDirs + `LoadWithBuiltin` + `ReplaceSkills` (s1670 · including plugin skill dirs when `[plugins]` enabled · no process restart for skill-only path changes after reload). Guided repair `reload_mcp` uses the same path.
 
 ## Phases (plan)
 
@@ -265,6 +266,7 @@ Skills catalog is **not** re-scanned on `/setup reload` (restart for skill-only 
 - ~~Edge-first human-gates residual pin~~ **shipped s1550** (`/onboard next human-gates` · knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect)
 - ~~Wave B first-run journey polish~~ **shipped s1558 residual** (`/onboard next journey` · setup stage-4 map · guidance first-run · free eng s1558)
 - ~~Still-human APPLY soft dogfood residual after Wave C continuum~~ **shipped s1574** (`/onboard next human-gates dogfood` · open boxes stay open · free eng s1574)
+- ~~Easy setup skills re-scan on `/setup reload`~~ **shipped s1670** (`ReplaceSkills` · Wire SkillDirs · restart no longer required for skill-only path changes)
 
 See product plan: agent-native MCP/plugin setup wizard + continuous pull/analyze + guided repair.
 

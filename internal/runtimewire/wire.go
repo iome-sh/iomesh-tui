@@ -1,11 +1,16 @@
 // Package runtimewire maps config → agent runtime skill dirs and MCP server configs.
 // Shared by cmd/iomesh agent bootstrap, mcp --connect, skills list, ACP session build,
-// and post-setup hot reload (s1526 P4 ReplaceMCP path).
+// and post-setup hot reload (s1526 P4 ReplaceMCP · s1670 ReplaceSkills / skills re-scan).
+//
+// Wire returns SkillDirs for LoadWithBuiltin on bootstrap and /setup reload.
+// ConnectMCP builds managers from Wire MCPServers. Callers hot-swap via
+// Runtime.ReplaceMCP and Runtime.ReplaceSkills (skills re-scan when SkillsFeatureOn).
 //
 // Residual honesty:
 //   - package wire ≠ Connected / install APPLY green / Agent Plugins GA / Memory GA
 //   - dual_write OFF (not flipped here)
 //   - Discover / map success ≠ process Connected
+//   - skills re-scan ≠ invent Connected
 //   - TOML [[mcp.servers]] remains primary; plugins append after TOML
 package runtimewire
 

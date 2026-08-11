@@ -203,10 +203,18 @@ func (rt *Runtime) AttachMeshTools() {
 // Also injects residual-honest GTM draft-only guidance (s1347) so the agent keeps
 // drafts only / no auto-send / human publish when the skills catalog attaches
 // (builtin gtm-draft-only-agent is always present when skills are enabled).
+// Holds rt.mu for consistency with ReplaceSkills / ReplaceMCP (between-turns).
 func (rt *Runtime) AttachSkills(cat *skills.Catalog) {
 	if rt == nil || cat == nil || cat.Len() == 0 {
 		return
 	}
+	rt.mu.Lock()
+	defer rt.mu.Unlock()
+	rt.attachSkillsLocked(cat)
+}
+
+// attachSkillsLocked assumes rt.mu is held.
+func (rt *Runtime) attachSkillsLocked(cat *skills.Catalog) {
 	rt.skills = cat
 	rt.tools.RegisterSkillsTools(cat)
 	if block := cat.PromptBlock(); block != "" {
@@ -215,6 +223,31 @@ func (rt *Runtime) AttachSkills(cat *skills.Catalog) {
 	// s1347: residual-honest GTM draft-only agent path (skill s1341 parity with
 	// integrations / memory-advanced system notes). Always when skills attached.
 	rt.appendSystemNote("gtm-draft-only", GtmDraftOnlyAgentGuidanceNote())
+}
+
+// ReplaceSkills hot-swaps the skills catalog without a process restart (s1670).
+// Unregisters list_skills / read_skill, clears rt.skills, then re-attaches when
+// cat is non-nil and non-empty. Prefer between-turns use (holds rt.mu).
+//
+// cat may be nil or empty: detaches skill tools and upserts a residual-honest
+// "detached" skills system note (does not invent Connected / Agent Plugins GA).
+//
+// Residual honesty: skills re-scan / package wire ≠ Connected · dual_write OFF ·
+// not Memory GA · not Agent Plugins GA · Discover/map ≠ install APPLY green.
+func (rt *Runtime) ReplaceSkills(cat *skills.Catalog) {
+	if rt == nil {
+		return
+	}
+	rt.mu.Lock()
+	defer rt.mu.Unlock()
+
+	rt.tools.UnregisterSkillsTools()
+	rt.skills = nil
+	if cat == nil || cat.Len() == 0 {
+		rt.appendSystemNote("skills", "Skills: detached (catalog empty or skills feature off). /setup reload re-scans skill dirs when skills enabled · package wire ≠ Connected · not Agent Plugins GA.")
+		return
+	}
+	rt.attachSkillsLocked(cat)
 }
 
 // AttachMCP registers mcp__* tools from connected servers.
