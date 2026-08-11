@@ -1,6 +1,6 @@
 # Marketing demo path (local agent + local memory)
 
-**Serial:** free eng **s1590** · sales talk track **s1594** · GTM claim-support **s1598** · operator GTM boundary **s1602** · GTM wave 6 **s1606** · GTM wave 7 **s1610** · GTM wave 8 **s1614** · GTM wave 9 **s1618**  
+**Serial:** free eng **s1590** · sales talk track **s1594** · GTM claim-support **s1598** · operator GTM boundary **s1602** · GTM wave 6 **s1606** · GTM wave 7 **s1610** · GTM wave 8 **s1614** · GTM wave 9 **s1618** · Python SDK peer **s1666**  
 **Audience:** demo hosts, sales eng, GTM video capture  
 **Operator surface:** `/onboard next marketing-demo`  
 **Aliases:** `marketing` · `sales-demo` · `demo-script` · `gtm-demo`
@@ -79,6 +79,17 @@ Where secrets and writes live — keep demos honest:
 
 Keep the demo local-first. Skip mesh unless the room already has it configured. Do not invent Memory GA, Connected, dual_write ON, book-demo ON, or mesh GTM fleet GA.
 
+### Optional mesh clients outside TUI (s1666)
+
+The marketing-demo path stays **local agent + local memory** (script above unchanged). Operators or services that need mesh I/O from **custom code** (not the TUI harness) should use the public client SDKs:
+
+| Language | Repo | Honesty |
+|----------|------|---------|
+| **Go** | [iomesh-client-sdk-go](https://github.com/iome-sh/iomesh-client-sdk-go) | Official MIT full client surface |
+| **Python** | [iomesh-client-sdk-python](https://github.com/iome-sh/iomesh-client-sdk-python) | **Beta** · tip **v0.10.x** · **v0.10 ≠ invent 1.0** · **GitHub release ≠ invent PyPI green** |
+
+**iomesh-tui stays lean** (no Go SDK module dep · no Python SDK packaging). The marketing-demo script does **not** require either SDK. dual_write **OFF** · not Memory GA · book-demo **OFF** · MIT edge Beta.
+
 ---
 
 ## Companion surfaces
@@ -97,4 +108,4 @@ Keep the demo local-first. Skip mesh unless the room already has it configured. 
 
 ## Free-floor
 
-free eng **s1590** · sales talk track **s1594** · GTM claim-support **s1598** · operator GTM boundary **s1602** · GTM wave 6 **s1606** · GTM wave 7 **s1610** · GTM wave 8 **s1614** · GTM wave 9 **s1618** · free-floor peer **s1592+** mention only (do not rewrite free-floor ownership from this doc).
+free eng **s1590** · sales talk track **s1594** · GTM claim-support **s1598** · operator GTM boundary **s1602** · GTM wave 6 **s1606** · GTM wave 7 **s1610** · GTM wave 8 **s1614** · GTM wave 9 **s1618** · Python SDK peer **s1666** · free-floor peer **s1592+** / **s1666** peer mention only (do not rewrite free-floor ownership from this doc).

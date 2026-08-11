@@ -124,19 +124,26 @@ OSS / buyer-claim boundary pin peer aion **s773** cost-max claim suite expand (t
 
 Peer aion **s773** cost-max claim suite expand · prior TUI **s771** naming · **s768** local-primary. dual_write OFF · Palace sunset · local AI ≠ platform GPU · no invent GA · offline unit ≠ live APPLY · Beta. Unit pin peer: `TestDefault_DualWriteOff` / `TestDefaultMemoryConfig_DualWriteOff` (s768 body + s771/s774 comment peers).
 
-**Non-goals:** private monorepo imports in public TUI; embedding Qdrant/Palace in-process; dependency on `iomesh-client-sdk-go`.
+**Non-goals:** private monorepo imports in public TUI; embedding Qdrant/Palace in-process; dependency on `iomesh-client-sdk-go` or `iomesh-client-sdk-python` (TUI does not package either SDK).
 
-## Public Go SDK
+## Public client SDKs (Go + Python)
 
-Operators who need the **full** client surface (beyond this TUI’s lean HTTP/MCP path) should use the public module **[iomesh-client-sdk-go](https://github.com/iome-sh/iomesh-client-sdk-go)**:
+Operators who need the **full** mesh client surface (beyond this TUI’s lean HTTP/MCP path) should use the official public SDKs — **not** invent a third client inside the TUI:
 
-| Capability | In the SDK | In iomesh-tui |
-|------------|------------|---------------|
+| SDK | Repo | Notes |
+|-----|------|--------|
+| **Go** | **[iomesh-client-sdk-go](https://github.com/iome-sh/iomesh-client-sdk-go)** | Official MIT Go module · full client surface for services / stage-gate jobs |
+| **Python** | **[iomesh-client-sdk-python](https://github.com/iome-sh/iomesh-client-sdk-python)** | Official MIT Python client (`iomeshclient`) · **Beta** · stdlib `urllib` · wire parity with Go for services/agents that need mesh I/O outside the lean TUI · tip **v0.10.x** · **v0.10 ≠ invent 1.0** · **GitHub release ≠ invent PyPI green** |
+
+### Go capability map (vs lean TUI)
+
+| Capability | In the Go SDK | In iomesh-tui |
+|------------|---------------|---------------|
 | **M2** sync retrieve | `RetrieveMemory` / memory helpers | Lean `POST /v1/memory/retrieve` (+ `/v5`) in `internal/iomesh` |
 | **M3** temporal envelope | Full temporal fields on publish | Dual-write mirrors a subset (`event_time`, `session_seq`, …) |
 | Multi-tenant workspace | `WithWorkspace` (and related options) | Optional org/workspace headers when configured |
 
-**iomesh-tui stays lean:** no `github.com/iome-sh/iomesh-client-sdk-go` module dependency. Memory dual-write and sync retrieve mirror SDK wire shapes over plain HTTP so the agent harness remains a thin, zero-SDK client. Prefer the public SDK for custom Go services, stage gate jobs, or anything that should track the full client API.
+**iomesh-tui stays lean:** no `github.com/iome-sh/iomesh-client-sdk-go` module dependency and **no** Python SDK packaging inside TUI. Memory dual-write and sync retrieve mirror SDK wire shapes over plain HTTP so the agent harness remains a thin, zero-SDK client. Prefer the public SDKs for custom services (Go or Python), stage gate jobs, or anything that should track the full client API; keep the TUI lean HTTP/MCP path for the agent harness.
 
 ## Phase 0–1 — MCP hooks (stdio or HTTP)
 
