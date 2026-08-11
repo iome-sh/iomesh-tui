@@ -1434,6 +1434,17 @@ func TestAionAgentOnboardingNextMarketingDemoLane_HonestyNeedles(t *testing.T) {
 		"Smoke / status tools",
 		"gtm_smoke",
 		"not a customer dashboard",
+		// s1666 free eng Python client SDK peer (mesh I/O outside lean TUI · residual-honest)
+		"s1666",
+		"iomesh-client-sdk-python",
+		"iomesh-client-sdk-go",
+		"Python",
+		"Beta",
+		"not invent 1.0",
+		"PyPI",
+		"stays lean",
+		"no SDK dep",
+		"does not require either SDK",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("marketing-demo lane missing %q in:\n%s", want, out)
@@ -1448,6 +1459,10 @@ func TestAionAgentOnboardingNextMarketingDemoLane_HonestyNeedles(t *testing.T) {
 		"live dogfood green",
 		"mesh GTM fleet GA shipped",
 		"freemium palace",
+		"Python SDK 1.0 shipped",
+		"live PyPI green",
+		"PyPI is green",
+		"PyPI published live",
 	} {
 		if strings.Contains(out, bad) {
 			t.Fatalf("must not invent %q:\n%s", bad, out)
