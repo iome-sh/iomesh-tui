@@ -26,10 +26,10 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
    - **pull_continuous = false** default — continuous pull is opt-in only
    - **analyze_continuous = false** default — analyze ticks are opt-in only
    - Secrets as **env names only** (`api_key_env`, `oauth_token_env`) — never commit secret values
-   - After write (s1686 dual path):
+   - After write (s1686 dual path · **s1723 slash parity** · same helper `SetupInitNextStepLines` for CLI **and** slash `/setup init`):
      - **TUI/session already running** → start memory host if local-memory · set env vars · `/setup preflight` · **`/setup reload`** (hot-swaps MCP + re-scans skills via `ReplaceSkills` · s1670 · package wire ≠ Connected · skills re-scan ≠ invent Connected · not Agent Plugins GA · restart no longer required for skill-only path changes)
      - **Cold CLI / no session** → start memory host if local-memory · set env vars · **restart `iomesh`** · `iomesh setup preflight`
-     - **CLI has no `iomesh setup reload`** — in-session `/setup reload` only · free eng **s1686**
+     - **CLI has no `iomesh setup reload`** — in-session `/setup reload` only · free eng **s1686** · slash next-step parity free eng **s1723**
 
 2. **Preflight probe** — residual-honest state, never invent install green.
    - CLI: `iomesh setup preflight [--json]`
@@ -46,6 +46,11 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
    - Slash: `/setup portal`
    - URLs: https://console.iome.sh/integrations · https://console.iome.sh/settings/agent
    - Agent MCP **cannot write installs**
+   - After portal handoff (s1723 · `SetupPortalNextStepLines`):
+     - complete OAuth/install in **browser HITL**
+     - **TUI/session running** → `/setup preflight` · **`/setup reload`** (package wire ≠ Connected)
+     - **Cold CLI / no session** → **restart `iomesh`** · `iomesh setup preflight` (CLI has **no** setup portal/reload)
+     - agent MCP cannot write installs · catalog ≠ Connected · dual_write OFF · not Memory GA · free eng **s1723**
 
 4. **Hot reload (s1526 P4 · s1670 skills re-scan · s1711 next-step)** — in-session only.
    - Slash: `/setup reload` (hot-swap MCP + re-scan skills · package wire ≠ Connected)
@@ -129,14 +134,17 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
 |---------|--------|
 | Slash `/setup` | help · init · preflight · portal · reload · **pull** · **analyze** · **drift** · **repair** |
 | Alias `/setup-lifecycle` | same |
+| `/setup init` | write managed fragment · s1723 next-step via `SetupInitNextStepLines` (CLI parity with s1686) |
+| `/setup portal` | browser HITL URLs · s1723 next-step via `SetupPortalNextStepLines` |
 | `/setup reload` | hot-swap MCP + skills (s1670 · s1711 next-step · in-session only) |
 | `/setup pull` | status · start · once · stop (s1530 P5 residual-honest · s1711 dual-path next-step) |
 | `/setup analyze` | status · start · once · stop (s1534 P6 residual-honest · s1711 dual-path next-step) |
 | `/setup drift` / `/setup maintain` | report-only FormatDriftText (s1534 P6 · s1707 dual-path next-step) |
 | `/setup repair` | plan (default) · apply --yes (s1538 P7 guided safe steps · s1707 dual-path next-step) |
-| CLI `iomesh setup` | init · preflight only (s1525 P1–P2 · s1686/s1699/s1707/s1711: **no** CLI `setup reload`/`drift`/`repair` · dual-path next-step after init · preflight · drift · repair · reload/pull/analyze) |
+| CLI `iomesh setup` | init · preflight only (s1525 P1–P2 · s1686/s1699/s1707/s1711/s1723: **no** CLI `setup reload`/`drift`/`repair`/`portal` · dual-path next-step after init · preflight · drift · repair · reload/pull/analyze · slash init/portal parity) |
 | CLI `iomesh memory pull` | still valid continuous / once pull path (s1711 pull dual path peer) |
 | `/memory digest` | still valid one-shot ops pulse (s1711 analyze dual path peer) |
+| `IOMESH_PLATFORM_RESIDUAL=1` | optional label only (`PlatformResidualEnvOn`) · does **not** hide Edge OSS lanes · residual PASS ≠ invent control plane · free eng **s1723** |
 | System note | `<setup-lifecycle>` on AttachMCP |
 | Skill | `read_skill setup-lifecycle-agent` |
 | Onboard map (s1542) | `/onboard next setup` (aliases setup-lifecycle\|lifecycle\|setup_lifecycle) |
