@@ -112,3 +112,34 @@ func TestWriteInitAndPreflight_LocalMemoryOffline(t *testing.T) {
 	}
 	_ = os.Remove(path)
 }
+
+// s1699: FormatPreflightText appends dual-path next-step after report body.
+func TestFormatPreflightText_DualPathNextStep(t *testing.T) {
+	// Minimal nil-safe path uses empty report; still appends next-step block.
+	text := FormatPreflightText(&PreflightReport{
+		State:   "not_started",
+		OK:      false,
+		Honesty: "dual_write OFF · not Memory GA · catalog ≠ Connected",
+		Notes:   []string{},
+	})
+	for _, want := range []string{
+		"/setup reload",
+		"restart",
+		"CLI has no",
+		"package wire",
+		"dual_write OFF",
+		"not Memory GA",
+		"s1699",
+		"preflight",
+	} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("FormatPreflightText missing dual-path needle %q in:\n%s", want, text)
+		}
+	}
+	if strings.Contains(text, "Connected: yes") {
+		t.Fatalf("must not invent Connected green:\n%s", text)
+	}
+	if strings.Contains(text, "dual_write ON") || strings.Contains(text, "Memory GA shipped") {
+		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", text)
+	}
+}

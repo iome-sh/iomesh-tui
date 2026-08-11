@@ -67,3 +67,15 @@ func SetupInitNextStepLines() []string {
 		"note: CLI has no `iomesh setup reload` · in-session /setup reload only · dual_write OFF · not Memory GA · catalog ≠ Connected · free eng s1686",
 	}
 }
+
+// SetupPreflightNextStepLines residual-honest post-preflight next-step (s1699).
+// Dual path: in-session /setup reload when TUI running · cold CLI → restart.
+// CLI has no iomesh setup reload. dual_write OFF · package wire ≠ Connected · free eng s1699.
+func SetupPreflightNextStepLines() []string {
+	return []string{
+		"next: if preflight ok and TUI/session already running → /setup reload (hot-swap MCP + skills · package wire ≠ Connected)",
+		"      else if host/secrets still missing → start iomesh-memory-mcp · set secret env · re-run preflight",
+		"      else cold start → restart iomesh (CLI has no setup reload) · then /setup reload in session if needed",
+		"note: dual_write OFF · not Memory GA · catalog ≠ Connected · PASS ≠ invent install green · free eng s1699",
+	}
+}

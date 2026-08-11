@@ -1,7 +1,7 @@
 # Setup lifecycle (agent-native wizard foundation)
 
-**Serial:** free eng **s1525** P1–P2 · **s1526** P3–P4 · **s1530** P5 · **s1534** P6 · **s1538** P7 · **s1542** closeout residual · **s1546** still-human APPLY reaffirm · **s1550** edge-first human-gates residual pin · **s1574** still-human APPLY soft dogfood residual · **s1670** easy setup: `/setup reload` re-scans skills · residual-honest · **s1686** CLI `setup init` next-step dual path (`/setup reload` vs cold restart)  
-**Status:** foundation + agent-native slash/skill + package wire + `ReplaceMCP` + **`ReplaceSkills` (s1670)** + in-session opt-in continuous pull + analyze ticks + report-only drift + **guided repair** (safe steps · explicit `--yes`) + **onboard next setup** lane + **CLI init dual-path next-step (s1686)**  
+**Serial:** free eng **s1525** P1–P2 · **s1526** P3–P4 · **s1530** P5 · **s1534** P6 · **s1538** P7 · **s1542** closeout residual · **s1546** still-human APPLY reaffirm · **s1550** edge-first human-gates residual pin · **s1574** still-human APPLY soft dogfood residual · **s1670** easy setup: `/setup reload` re-scans skills · residual-honest · **s1686** CLI `setup init` next-step dual path (`/setup reload` vs cold restart) · **s1699** setup preflight next-step dual path (`/setup reload` vs cold restart)  
+**Status:** foundation + agent-native slash/skill + package wire + `ReplaceMCP` + **`ReplaceSkills` (s1670)** + in-session opt-in continuous pull + analyze ticks + report-only drift + **guided repair** (safe steps · explicit `--yes`) + **onboard next setup** lane + **CLI init dual-path next-step (s1686)** + **preflight dual-path next-step (s1699)**  
 **Shipped P7:** `/setup repair` plan + apply `--yes` (safe steps only · notes stay human)  
 **Shipped s1542:** residual-honest `/onboard next setup` consolidates P1–P7 map story  
 **Related (s1546):** still-human APPLY reaffirm after closeout — setup residual complete ≠ invent human-gate green / live APPLY / E10 (`/onboard next human-gates`)  
@@ -52,6 +52,18 @@ Post-write next steps are residual-honest (helper `setup.SetupInitNextStepLines`
 | **Cold start** | No session / CLI-only | **restart `iomesh`** · `iomesh setup preflight` |
 
 **Honesty:** CLI has **no** `iomesh setup reload` subcommand — in-session `/setup reload` only · dual_write **OFF** · not Memory GA · catalog ≠ Connected · package wire ≠ Connected · free eng **s1686**.
+
+### After `iomesh setup preflight` / `/setup preflight` (s1699 dual path)
+
+Post-probe next steps are residual-honest (helper `setup.SetupPreflightNextStepLines` · appended by `FormatPreflightText`):
+
+| Path | When | Next |
+|------|------|------|
+| **In-session** | Preflight ok · TUI/session already running | **`/setup reload`** (hot-swap MCP + skills · package wire ≠ Connected) |
+| **Host/secrets missing** | Probe not ok · host or env still missing | start `iomesh-memory-mcp` · set secret env · re-run preflight |
+| **Cold start** | Preflight ok · no session / CLI-only | **restart `iomesh`** (CLI has **no** `setup reload`) · then `/setup reload` in session if needed |
+
+**Honesty:** CLI has **no** `iomesh setup reload` · dual_write **OFF** · not Memory GA · catalog ≠ Connected · PASS ≠ invent install green · package wire ≠ Connected · free eng **s1699** (peer of s1686 init next-step).
 
 ### Profiles
 
@@ -106,7 +118,7 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 |------------|----------|
 | bare / `help` | usage + honesty one-liner (dual_write OFF · not Memory GA · pull/analyze opt-in · drift · guided repair) |
 | `init` | `setup.BuildManagedFragment` + `config.WriteSetupManagedUser` (or `--print-only`) |
-| `preflight` / `status` / `check` | `setup.Preflight` + `FormatPreflightText` |
+| `preflight` / `status` / `check` | `setup.Preflight` + `FormatPreflightText` (s1699 dual-path next-step appended) |
 | `portal` | browser HITL URLs only |
 | `reload` | `Wire` + `ReplaceSkills` + `ConnectMCP` + `ReplaceMCP` (s1670 skills re-scan · optional `--config path`) |
 | `pull` | in-session continuous pull status/start/once/stop (s1530 P5) |
@@ -279,6 +291,7 @@ Skills catalog **is** re-scanned on `/setup reload` via `Wire` SkillDirs + `Load
 - ~~Still-human APPLY soft dogfood residual after Wave C continuum~~ **shipped s1574** (`/onboard next human-gates dogfood` · open boxes stay open · free eng s1574)
 - ~~Easy setup skills re-scan on `/setup reload`~~ **shipped s1670** (`ReplaceSkills` · Wire SkillDirs · restart no longer required for skill-only path changes)
 - ~~CLI `setup init` next-step dual path~~ **shipped s1686** (in-session `/setup reload` vs cold restart · no invent CLI `setup reload`)
+- ~~setup preflight next-step dual path~~ **shipped s1699** (`FormatPreflightText` appends `SetupPreflightNextStepLines` · in-session `/setup reload` vs cold restart · no invent CLI `setup reload`)
 
 See product plan: agent-native MCP/plugin setup wizard + continuous pull/analyze + guided repair.
 
