@@ -129,4 +129,5 @@ CLI / TUI / ACP
 48. ~~OSS packaging boundary + marketing demo path + Python SDK peer (s1582/s1590/s1666)~~ **done** — MIT harness vs private control plane honesty · `/onboard next marketing-demo` · Go+Python client SDK peers; see [oss-packaging-boundary.md](oss-packaging-boundary.md) · [marketing-demo-path.md](marketing-demo-path.md)
 49. ~~Easy first-run + skills reload (s1670)~~ **done** — `/setup reload` re-scans skills · README first-run honesty; skills re-scan ≠ invent Connected
 50. ~~Release v0.72.0 packaging cut~~ **done** — setup lifecycle + edge first-run continuum + residual soft checks + OSS packaging honesty
-51. Optional: platform remote multi-tenant metering UI
+51. ~~Setup first-run residual continuum + release v0.73.0 (s1686/s1695/s1699)~~ **done** — CLI init dual-path next-step · preflight dual-path next-step · Memory Ops Pack local-primary honesty (not first-run required) · dual_write OFF · package wire ≠ Connected · Ops Pack optional · CLI has no setup reload
+52. Optional: platform remote multi-tenant metering UI

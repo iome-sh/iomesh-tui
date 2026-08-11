@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.73.0] — 2026-08-11
+
+Minor release: setup first-run residual continuum after v0.72.0 — CLI init dual-path next-step, preflight dual-path next-step, Memory Ops Pack local-primary honesty (not first-run required). **Beta** · dual_write OFF · package wire ≠ Connected · not Memory GA · Ops Pack optional · CLI has no setup reload · E10 Open · book-demo OFF.
+
 ### Added
 
 - **Setup preflight dual-path next-step honesty (s1699)** — after `iomesh setup preflight` / `/setup preflight` report (`FormatPreflightText`), residual-honest dual path: preflight ok + TUI/session running → `/setup reload` (hot-swap MCP + skills · package wire ≠ Connected); host/secrets missing → start host · set env · re-run preflight; cold start → restart `iomesh` (CLI has **no** `setup reload`). Helper `setup.SetupPreflightNextStepLines` unit-tested · peer of s1686 init next-step. Docs: [setup-lifecycle.md](docs/architecture/setup-lifecycle.md) · skill `setup-lifecycle-agent` · README first-run. dual_write **OFF** · package wire ≠ Connected · not Memory GA · catalog ≠ Connected · PASS ≠ invent install green · free eng **s1699**.
