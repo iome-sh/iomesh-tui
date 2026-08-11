@@ -103,3 +103,36 @@ func SetupRepairNextStepLines() []string {
 		"note: repair apply ≠ invent Connected · dual_write OFF · dual_write never auto ON · package wire ≠ Connected · not Memory GA · free eng s1707",
 	}
 }
+
+// SetupReloadNextStepLines residual-honest post-reload next-step (s1711).
+// Reload is in-session only. After hot-swap: optional pull/analyze · drift residual.
+// package wire ≠ Connected · dual_write OFF · not Memory GA · free eng s1711.
+func SetupReloadNextStepLines() []string {
+	return []string{
+		"next: optional /setup pull start (mesh+consumer) · /setup analyze start · /setup drift for residual",
+		"      re-run /setup preflight if host/secrets still missing · portal HITL for installs",
+		"note: reload in-session only · CLI has no `iomesh setup reload` · package wire ≠ Connected · dual_write OFF · not Memory GA · free eng s1711",
+	}
+}
+
+// SetupPullNextStepLines residual-honest post-pull status/start next-step (s1711).
+// Dual path: in-session /setup pull vs cold CLI iomesh memory pull.
+// pull ≠ invent Connected · dual_write OFF · not Memory GA · free eng s1711.
+func SetupPullNextStepLines() []string {
+	return []string{
+		"next: if TUI/session running → /setup pull start|once after mesh+pull_consumer · /setup pull status · optional /setup analyze|drift",
+		"      else cold CLI → iomesh memory pull (still valid) · dual_write OFF · not Memory GA",
+		"note: pull ≠ invent Connected · pull_continuous opt-in · CLI iomesh memory pull still valid · free eng s1711",
+	}
+}
+
+// SetupAnalyzeNextStepLines residual-honest post-analyze status/start next-step (s1711).
+// Dual path: in-session /setup analyze vs one-shot /memory digest.
+// analyze tick ≠ invent Connected · dual_write OFF · not Memory GA · free eng s1711.
+func SetupAnalyzeNextStepLines() []string {
+	return []string{
+		"next: if TUI/session running → /setup analyze start|once · /setup analyze status · optional /setup drift",
+		"      else one-shot → /memory digest still valid · dual_write OFF · not Memory GA",
+		"note: analyze tick ≠ invent Connected · analyze_continuous opt-in · /memory digest still valid · free eng s1711",
+	}
+}

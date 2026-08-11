@@ -1,7 +1,7 @@
 # Setup lifecycle (agent-native wizard foundation)
 
-**Serial:** free eng **s1525** P1–P2 · **s1526** P3–P4 · **s1530** P5 · **s1534** P6 · **s1538** P7 · **s1542** closeout residual · **s1546** still-human APPLY reaffirm · **s1550** edge-first human-gates residual pin · **s1574** still-human APPLY soft dogfood residual · **s1670** easy setup: `/setup reload` re-scans skills · residual-honest · **s1686** CLI `setup init` next-step dual path (`/setup reload` vs cold restart) · **s1699** setup preflight next-step dual path (`/setup reload` vs cold restart) · **s1707** setup drift/repair dual-path next-step  
-**Status:** foundation + agent-native slash/skill + package wire + `ReplaceMCP` + **`ReplaceSkills` (s1670)** + in-session opt-in continuous pull + analyze ticks + report-only drift + **guided repair** (safe steps · explicit `--yes`) + **onboard next setup** lane + **CLI init dual-path next-step (s1686)** + **preflight dual-path next-step (s1699)** + **drift/repair dual-path next-step (s1707)**  
+**Serial:** free eng **s1525** P1–P2 · **s1526** P3–P4 · **s1530** P5 · **s1534** P6 · **s1538** P7 · **s1542** closeout residual · **s1546** still-human APPLY reaffirm · **s1550** edge-first human-gates residual pin · **s1574** still-human APPLY soft dogfood residual · **s1670** easy setup: `/setup reload` re-scans skills · residual-honest · **s1686** CLI `setup init` next-step dual path (`/setup reload` vs cold restart) · **s1699** setup preflight next-step dual path (`/setup reload` vs cold restart) · **s1707** setup drift/repair dual-path next-step · **s1711** setup reload/pull/analyze next-step honesty  
+**Status:** foundation + agent-native slash/skill + package wire + `ReplaceMCP` + **`ReplaceSkills` (s1670)** + in-session opt-in continuous pull + analyze ticks + report-only drift + **guided repair** (safe steps · explicit `--yes`) + **onboard next setup** lane + **CLI init dual-path next-step (s1686)** + **preflight dual-path next-step (s1699)** + **drift/repair dual-path next-step (s1707)** + **reload/pull/analyze next-step (s1711)**  
 **Shipped P7:** `/setup repair` plan + apply `--yes` (safe steps only · notes stay human)  
 **Shipped s1542:** residual-honest `/onboard next setup` consolidates P1–P7 map story  
 **Related (s1546):** still-human APPLY reaffirm after closeout — setup residual complete ≠ invent human-gate green / live APPLY / E10 (`/onboard next human-gates`)  
@@ -120,9 +120,9 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 | `init` | `setup.BuildManagedFragment` + `config.WriteSetupManagedUser` (or `--print-only`) |
 | `preflight` / `status` / `check` | `setup.Preflight` + `FormatPreflightText` (s1699 dual-path next-step appended) |
 | `portal` | browser HITL URLs only |
-| `reload` | `Wire` + `ReplaceSkills` + `ConnectMCP` + `ReplaceMCP` (s1670 skills re-scan · optional `--config path`) |
-| `pull` | in-session continuous pull status/start/once/stop (s1530 P5) |
-| `analyze` | in-session analyze tick status/start/once/stop (s1534 P6) |
+| `reload` | `Wire` + `ReplaceSkills` + `ConnectMCP` + `ReplaceMCP` (s1670 skills re-scan · optional `--config path` · s1711 next-step appended via `SetupReloadNextStepLines`) |
+| `pull` | in-session continuous pull status/start/once/stop (s1530 P5 · s1711 next-step via `SetupPullNextStepLines`) |
+| `analyze` | in-session analyze tick status/start/once/stop (s1534 P6 · s1711 next-step via `SetupAnalyzeNextStepLines`) |
 | `drift` / `maintain` | report-only `BuildDriftReport` + `FormatDriftText` (s1534 P6 · s1707 dual-path next-step appended) |
 | `repair` | guided `PlanRepair` / `ApplyRepairPlan` (s1538 P7 · plan default · apply requires `--yes` · s1707 dual-path next-step on FormatRepair*) |
 
@@ -130,7 +130,7 @@ Simple flags on slash `init`: `--stdio` · `--print-only` · `--plugins-dir path
 
 After init: start memory host (if needed) · set secret env vars · `/setup reload` (or restart TUI) · optional `/setup pull start` when mesh + consumer configured · optional `/setup analyze start` · `/setup drift` for residual next steps · optional `/setup repair apply --yes` for safe guided steps only.
 
-## Continuous pull (s1530 P5)
+## Continuous pull (s1530 P5 + s1711 next-step)
 
 In-session opt-in continuous mesh → local MCP palace pull:
 
@@ -142,9 +142,18 @@ In-session opt-in continuous mesh → local MCP palace pull:
 
 Config knobs reused: `pull_stream` (default `EVENTS`) · `pull_consumer` · `pull_filter` · `pull_batch` · `pull_max_wait_ms` · `server` · `tenant`.
 
-**Honesty:** dual_write OFF · not Memory GA · pull ≠ invent Connected · idle/status must not invent green · CLI still valid.
+### After `/setup pull` (s1711 dual path)
 
-## Analyze ticks (s1534 P6)
+Post-pull status/start/once/stop next steps are residual-honest (helper `setup.SetupPullNextStepLines`):
+
+| Path | When | Next |
+|------|------|------|
+| **In-session** | TUI/session running | `/setup pull status` · optional `/setup analyze start` · `/setup drift` · `/memory digest` |
+| **CLI** | No session / operator prefers CLI | `iomesh memory pull` (once or continuous · mesh + consumer required) |
+
+**Honesty:** dual_write **OFF** · not Memory GA · **pull ≠ invent Connected** · idle/status must not invent green · CLI still valid · free eng **s1711** (peer of s1686 init · s1699 preflight · s1707 drift/repair).
+
+## Analyze ticks (s1534 P6 + s1711 next-step)
 
 In-session opt-in status/digest pulse on agent Runtime:
 
@@ -156,7 +165,16 @@ In-session opt-in status/digest pulse on agent Runtime:
 
 Flags: `--mode status|digest` · `--interval N` (seconds; Runtime default 300, floor 30) · `--window day|week` (digest) · `--config path`.
 
-**Honesty:** dual_write OFF · not Memory GA · analyze tick ≠ invent Connected · `/memory digest` still valid · idle/status must not invent green.
+### After `/setup analyze` (s1711 dual path)
+
+Post-analyze status/start/once/stop next steps are residual-honest (helper `setup.SetupAnalyzeNextStepLines`):
+
+| Path | When | Next |
+|------|------|------|
+| **In-session** | TUI/session running | `/setup analyze status` · optional `/setup pull start` · `/setup drift` · re-run analyze |
+| **One-shot digest** | Prefer residual ops pulse without tick | **`/memory digest`** (still valid · not invent Connected) |
+
+**Honesty:** dual_write **OFF** · not Memory GA · **analyze tick ≠ invent Connected** · `/memory digest` still valid · idle/status must not invent green · free eng **s1711** (peer of s1686 init · s1699 preflight · s1707 drift/repair).
 
 ## Drift / maintain (s1534 P6 + s1707 dual-path next-step)
 
@@ -281,7 +299,7 @@ Residual-honest offline guided first-run wizard residual after Wave B journey ma
 | `awaiting_memory_host` | Memory configured but healthz/PATH fail |
 | `local_memory_probe_ok` | Memory host healthz OK (or stdio binary on PATH) |
 
-## Hot reload (s1526 P4 · s1670 skills re-scan)
+## Hot reload (s1526 P4 · s1670 skills re-scan · s1711 next-step)
 
 Shared package wire (`internal/runtimewire`):
 
@@ -294,6 +312,17 @@ Shared package wire (`internal/runtimewire`):
 
 **Honesty:** package wire ≠ Connected · dual_write OFF · Discover/map ≠ install APPLY green · skills re-scan ≠ invent Connected · not Agent Plugins GA.  
 Skills catalog **is** re-scanned on `/setup reload` via `Wire` SkillDirs + `LoadWithBuiltin` + `ReplaceSkills` (s1670 · including plugin skill dirs when `[plugins]` enabled · no process restart for skill-only path changes after reload). Guided repair `reload_mcp` uses the same path.
+
+### After `/setup reload` (s1711 next-step · in-session only)
+
+Post-reload next steps are residual-honest (helper `setup.SetupReloadNextStepLines`):
+
+| Path | When | Next |
+|------|------|------|
+| **In-session** | After successful hot-swap | optional `/setup pull start` · `/setup analyze start` · `/setup drift` · `/memory digest` |
+| **CLI** | — | **none** — CLI has **no** `iomesh setup reload` (in-session only · peers s1686/s1699) |
+
+**Honesty:** package wire ≠ Connected · dual_write **OFF** · not Memory GA · skills re-scan ≠ invent Connected · CLI has **no** setup reload · free eng **s1711** (peer of s1686 init · s1699 preflight · s1707 drift/repair).
 
 ## Phases (plan)
 
@@ -311,6 +340,7 @@ Skills catalog **is** re-scanned on `/setup reload` via `Wire` SkillDirs + `Load
 - ~~CLI `setup init` next-step dual path~~ **shipped s1686** (in-session `/setup reload` vs cold restart · no invent CLI `setup reload`)
 - ~~setup preflight next-step dual path~~ **shipped s1699** (`FormatPreflightText` appends `SetupPreflightNextStepLines` · in-session `/setup reload` vs cold restart · no invent CLI `setup reload`)
 - ~~setup drift/repair next-step dual path~~ **shipped s1707** (`FormatDriftText` / `FormatRepairPlan` / `FormatRepairResult` append dual-path next-step · in-session slash vs cold restart · no invent CLI setup drift/repair/reload)
+- ~~setup reload/pull/analyze next-step honesty~~ **shipped s1711** (`SetupReloadNextStepLines` · `SetupPullNextStepLines` · `SetupAnalyzeNextStepLines` · reload in-session only · pull dual path slash vs CLI `iomesh memory pull` · analyze dual path slash vs `/memory digest` · package wire ≠ Connected · pull/analyze tick ≠ invent Connected)
 
 See product plan: agent-native MCP/plugin setup wizard + continuous pull/analyze + guided repair.
 

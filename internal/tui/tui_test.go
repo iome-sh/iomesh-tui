@@ -4500,6 +4500,18 @@ func TestHandleSlash_SetupLifecycle(t *testing.T) {
 	if strings.Contains(rel, "Connected green") || strings.Contains(rel, "install APPLY green shipped") {
 		t.Fatalf("reload must not invent green: %s", rel)
 	}
+	// s1711 dual-path next-step footer after honesty
+	for _, want := range []string{
+		"s1711",
+		"package wire",
+		"dual_write OFF",
+		"CLI has no",
+		"/setup pull",
+	} {
+		if !strings.Contains(rel, want) {
+			t.Fatalf("reload s1711 next-step missing %q in:\n%s", want, rel)
+		}
+	}
 }
 
 // s1530 P5: /setup pull — residual-honest status/start/stop without inventing Connected.
@@ -4521,10 +4533,15 @@ func TestHandleSlash_SetupPull(t *testing.T) {
 		"not Memory GA",
 		"pull ≠ invent Connected",
 		"iomesh memory pull",
+		// s1711 dual-path next-step footer
+		"s1711",
 	} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("pull status missing %q in:\n%s", want, s)
 		}
+	}
+	if !strings.Contains(s, "package wire") && !strings.Contains(s, "pull ≠ invent Connected") && !strings.Contains(s, "/memory digest") {
+		t.Fatalf("pull status s1711 must pin package wire or pull ≠ invent Connected or /memory digest:\n%s", s)
 	}
 	if strings.Contains(s, "running: true") {
 		t.Fatalf("idle must not invent running true:\n%s", s)
@@ -4589,6 +4606,10 @@ func TestHandleSlash_SetupPull(t *testing.T) {
 	if !strings.Contains(stopOut, "dual_write OFF") {
 		t.Fatalf("stop honesty: %s", stopOut)
 	}
+	// s1711 next-step on stop output
+	if !strings.Contains(stopOut, "s1711") || !strings.Contains(stopOut, "pull ≠ invent Connected") {
+		t.Fatalf("stop s1711 next-step: %s", stopOut)
+	}
 
 	// no runtime → residual-honest not invent green
 	out.Reset()
@@ -4631,10 +4652,15 @@ func TestHandleSlash_SetupAnalyze(t *testing.T) {
 		"not Memory GA",
 		"analyze tick ≠ invent Connected",
 		"/memory digest still valid",
+		// s1711 dual-path next-step footer
+		"s1711",
 	} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("analyze status missing %q in:\n%s", want, s)
 		}
+	}
+	if !strings.Contains(s, "package wire") && !strings.Contains(s, "analyze tick ≠ invent Connected") && !strings.Contains(s, "/memory digest") {
+		t.Fatalf("analyze status s1711 must pin package wire or invent Connected or /memory digest:\n%s", s)
 	}
 	if strings.Contains(s, "running: true") {
 		t.Fatalf("idle must not invent running true:\n%s", s)
@@ -4670,6 +4696,10 @@ func TestHandleSlash_SetupAnalyze(t *testing.T) {
 	if strings.Contains(onceOut, "Connected green") || strings.Contains(onceOut, "Memory GA shipped") {
 		t.Fatalf("once must not invent green: %s", onceOut)
 	}
+	// s1711 next-step on start success
+	if !strings.Contains(onceOut, "s1711") || !strings.Contains(onceOut, "/memory digest") {
+		t.Fatalf("once s1711 next-step: %s", onceOut)
+	}
 
 	// stop when idle or after once → residual-honest
 	out.Reset()
@@ -4682,6 +4712,10 @@ func TestHandleSlash_SetupAnalyze(t *testing.T) {
 	}
 	if !strings.Contains(stopOut, "dual_write OFF") {
 		t.Fatalf("stop honesty: %s", stopOut)
+	}
+	// s1711 next-step on stop output
+	if !strings.Contains(stopOut, "s1711") || !strings.Contains(stopOut, "analyze tick ≠ invent Connected") {
+		t.Fatalf("stop s1711 next-step: %s", stopOut)
 	}
 
 	// start continuous with bad mode → residual-honest error

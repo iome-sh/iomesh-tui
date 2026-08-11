@@ -1357,6 +1357,9 @@ func reloadRuntimeFromConfig(ctx context.Context, out io.Writer, rt runtimeAdapt
 	if mgr == nil {
 		fmt.Fprintln(out, "setup reload: MCP feature off or no servers configured — detached")
 		fmt.Fprintln(out, "honesty: dual_write OFF · package wire ≠ Connected · skills re-scan ≠ invent Connected · not Memory GA · not Agent Plugins GA · portal HITL for installs")
+		for _, line := range setup.SetupReloadNextStepLines() {
+			fmt.Fprintln(out, line)
+		}
 		return
 	}
 	nTools := 0
@@ -1366,6 +1369,9 @@ func reloadRuntimeFromConfig(ctx context.Context, out io.Writer, rt runtimeAdapt
 	fmt.Fprintf(out, "setup reload: connected=%d tools=%d (package wire · fail-open per server)\n", mgr.Len(), nTools)
 	fmt.Fprintln(out, "honesty: dual_write OFF · package wire ≠ Connected · skills re-scanned · Discover/map ≠ install APPLY green · skills re-scan ≠ invent Connected · not Memory GA · not Agent Plugins GA")
 	fmt.Fprintln(out, "note: skills re-scanned on reload · continuous pull/analyze opt-in via /setup pull · /setup analyze · drift /setup drift · repair /setup repair · CLI iomesh memory pull · /memory digest still valid")
+	for _, line := range setup.SetupReloadNextStepLines() {
+		fmt.Fprintln(out, line)
+	}
 }
 
 // handleSetupPull dispatches /setup pull [status|start|once|stop] (s1530 P5).
@@ -1439,6 +1445,9 @@ func handleSetupPullStatus(out io.Writer, rt runtimeAdapter) {
 		fmt.Fprintln(out, "note: pull running ≠ invent Connected / Ops Pack GA / Memory GA")
 	}
 	fmt.Fprintln(out, setupPullHonesty)
+	for _, line := range setup.SetupPullNextStepLines() {
+		fmt.Fprintln(out, line)
+	}
 }
 
 // handleSetupPullStart loads [memory] pull_* and starts continuous or once pull.
@@ -1516,6 +1525,9 @@ func handleSetupPullStart(out io.Writer, rt runtimeAdapter, args []string, once 
 		pullCfg.Stream, pullCfg.Consumer, pullCfg.Filter, pullCfg.Batch, pullCfg.MaxWaitMS, pullCfg.Server)
 	fmt.Fprintln(out, "note: pull running ≠ invent Connected · dual_write OFF · not Memory GA")
 	fmt.Fprintln(out, setupPullHonesty)
+	for _, line := range setup.SetupPullNextStepLines() {
+		fmt.Fprintln(out, line)
+	}
 }
 
 // continuousPullConfigFromMemory maps [memory] pull_* into agent.ContinuousPullConfig.
@@ -1559,6 +1571,9 @@ func handleSetupPullStop(out io.Writer, rt runtimeAdapter) {
 		fmt.Fprintln(out, "setup pull stop: not running (no-op)")
 	}
 	fmt.Fprintln(out, setupPullHonesty)
+	for _, line := range setup.SetupPullNextStepLines() {
+		fmt.Fprintln(out, line)
+	}
 }
 
 // setupAnalyzeHonesty is printed on every /setup analyze output (s1534 P6 residual honesty).
@@ -1641,6 +1656,9 @@ func handleSetupAnalyzeStatus(out io.Writer, rt runtimeAdapter) {
 		fmt.Fprintln(out, "note: analyze running ≠ invent Connected / Ops Pack GA / Memory GA · /memory digest still valid")
 	}
 	fmt.Fprintln(out, setupAnalyzeHonesty)
+	for _, line := range setup.SetupAnalyzeNextStepLines() {
+		fmt.Fprintln(out, line)
+	}
 }
 
 // handleSetupAnalyzeStart loads [memory] analyze_* + flags and starts continuous or once tick.
@@ -1780,6 +1798,9 @@ func handleSetupAnalyzeStart(out io.Writer, rt runtimeAdapter, args []string, on
 		label, mode, tickCfg.Mode, tickCfg.IntervalSec, tickCfg.Window)
 	fmt.Fprintln(out, "note: analyze running ≠ invent Connected · dual_write OFF · not Memory GA · /memory digest still valid")
 	fmt.Fprintln(out, setupAnalyzeHonesty)
+	for _, line := range setup.SetupAnalyzeNextStepLines() {
+		fmt.Fprintln(out, line)
+	}
 }
 
 // analyzeTickConfigFromMemory maps [memory] analyze_* into agent.AnalyzeTickConfig.
@@ -1814,6 +1835,9 @@ func handleSetupAnalyzeStop(out io.Writer, rt runtimeAdapter) {
 		fmt.Fprintln(out, "setup analyze stop: not running (no-op)")
 	}
 	fmt.Fprintln(out, setupAnalyzeHonesty)
+	for _, line := range setup.SetupAnalyzeNextStepLines() {
+		fmt.Fprintln(out, line)
+	}
 }
 
 // handleSetupDrift prints residual-honest FormatDriftText(BuildDriftReport(...)).
