@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Ops Pack local-primary honesty / not first-run required (s1695)** — residual-honest first-run + memory-lane Memory Ops Pack framing: **OSS first-run complete without mesh** · **Ops Pack not first-run required** · **Memory Ops Pack optional** commercial overlay (~$119 pull/retain/support · local-primary · TUI OSS + mesh pull entitlement) · mesh optional · dual_write **OFF** · not Memory GA · not freemium hosted palace · Ops Pack ≠ GPU fleet · package load ≠ Ops Pack entitlement. Surfaces: `/onboard next memory` · `/onboard next memory-pull` · README First-run · [memory-mcp.md](docs/architecture/memory-mcp.md) buyer claim pin · [edge-user-journey.md](docs/architecture/edge-user-journey.md) stages 6–7 · skill `aion-agent-onboarding` honesty line. free eng **s1695**.
 - **CLI setup init next-step reload/restart honesty (s1686)** — after `iomesh setup init` write, residual-honest dual path: TUI/session already running → `/setup preflight` · `/setup reload` (hot-swap MCP + skills · package wire ≠ Connected); cold start → restart `iomesh` · `iomesh setup preflight`. CLI has **no** `iomesh setup reload` subcommand (in-session only). Helper `setup.SetupInitNextStepLines` unit-tested. Docs: [setup-lifecycle.md](docs/architecture/setup-lifecycle.md) · skill `setup-lifecycle-agent` · README first-run. dual_write **OFF** · package wire ≠ Connected · not Memory GA · catalog ≠ Connected · free eng **s1686**.
 
 ## [0.72.0] — 2026-08-11

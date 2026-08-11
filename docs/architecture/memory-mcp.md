@@ -117,12 +117,13 @@ OSS / buyer-claim boundary pin peer aion **s773** cost-max claim suite expand (t
 |---------|-----------|----------------|
 | **Public MIT `iomesh-tui`** | OSS agent harness + optional mesh **client** surface (SDK elsewhere) | Hosted multi-tenant mesh **control plane** shipped inside free TUI |
 | **Memory** | Local palace via MCP (`iomesh-memory-mcp`); mesh **pull** into local store | Multi-tenant hosted / freemium cloud palace included with free TUI |
-| **$119 / platform SKU** (if mentioned) | **Memory Ops Pack** (pull / retain / audit / support) | Cloud GPU / hosted Palace fleet as the $119 product |
+| **$119 / platform SKU** (if mentioned) | **Memory Ops Pack** (pull / retain / audit / support) — **optional** local-primary commercial overlay · **not first-run required** (s1695) | Cloud GPU / hosted Palace fleet as the $119 product · freemium hosted palace · Ops Pack as first-run gate |
 | **Local AI** | Customer-edge Ollama pin | Platform GPU from Ollama pin |
 | **dual_write** | Optional mesh audit · **default OFF** | dual_write as primary palace path |
 | **Hosted Palace** | Sunset until scale | Invent GA · freemium unlimited palace · full mesh RBAC GA |
+| **First-run (s1695)** | TUI OSS + `iomesh-memory-mcp` local-primary only · mesh optional | Mesh / Ops Pack required for first-run · pay-to-get-memory invent |
 
-Peer aion **s773** cost-max claim suite expand · prior TUI **s771** naming · **s768** local-primary. dual_write OFF · Palace sunset · local AI ≠ platform GPU · no invent GA · offline unit ≠ live APPLY · Beta. Unit pin peer: `TestDefault_DualWriteOff` / `TestDefaultMemoryConfig_DualWriteOff` (s768 body + s771/s774 comment peers).
+Peer aion **s773** cost-max claim suite expand · prior TUI **s771** naming · **s768** local-primary · **s1695** Ops Pack not first-run required. dual_write OFF · Palace sunset · local AI ≠ platform GPU · no invent GA · offline unit ≠ live APPLY · Beta. Unit pin peer: `TestDefault_DualWriteOff` / `TestDefaultMemoryConfig_DualWriteOff` (s768 body + s771/s774 comment peers).
 
 **Non-goals:** private monorepo imports in public TUI; embedding Qdrant/Palace in-process; dependency on `iomesh-client-sdk-go` or `iomesh-client-sdk-python` (TUI does not package either SDK).
 
@@ -290,7 +291,7 @@ Residual-honest **edge Memory OSS install path** for operators (docs + `/onboard
 iomesh-tui (public MIT)  +  Memory MCP (iomesh-memory-mcp product name)  +  github.com/iome-sh/memory kernel  +  local palace
 ```
 
-Optional mesh feed: credentials + platform + **Memory Ops Pack (~$119)** for durable `iomesh memory pull` only — mesh base footprint separate (~$88). Mesh is **optional for pull only**, not required for local-primary Memory.
+Optional mesh feed: credentials + platform + **Memory Ops Pack (~$119)** for durable `iomesh memory pull` only — mesh base footprint separate (~$88). Mesh is **optional for pull only**, not required for local-primary Memory. **First-run (s1695):** OSS local-primary complete **without** mesh · **Ops Pack not first-run required** · Ops Pack = optional commercial overlay (pull/retain/support · not freemium hosted palace · Ops Pack ≠ GPU).
 
 **M2 lean host attach (s1458 · residual-honest · not invent flip complete / GA):**
 
