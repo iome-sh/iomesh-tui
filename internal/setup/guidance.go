@@ -53,3 +53,17 @@ func SetupLifecyclePortalHandoff() string {
   agent MCP cannot write installs · OAuth complete in console session
   honesty: ` + SetupLifecycleHonestyOneLiner)
 }
+
+// SetupInitNextStepLines is the residual-honest post-write next-step block for
+// CLI `iomesh setup init` (s1686). Dual path: in-session /setup reload when a
+// TUI/session is already running · cold start → restart iomesh. CLI has no
+// `iomesh setup reload` subcommand — do not invent it. package wire ≠ Connected ·
+// dual_write OFF · not Memory GA · free eng s1686.
+func SetupInitNextStepLines() []string {
+	return []string{
+		"next: ensure iomesh-memory-mcp is running (if local-memory) · set secret env vars",
+		"then: if TUI/session already running → /setup preflight · /setup reload (hot-swap MCP + skills · package wire ≠ Connected)",
+		"      else cold start → restart iomesh · iomesh setup preflight",
+		"note: CLI has no `iomesh setup reload` · in-session /setup reload only · dual_write OFF · not Memory GA · catalog ≠ Connected · free eng s1686",
+	}
+}

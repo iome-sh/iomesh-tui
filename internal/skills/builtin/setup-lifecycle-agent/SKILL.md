@@ -26,7 +26,10 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
    - **pull_continuous = false** default — continuous pull is opt-in only
    - **analyze_continuous = false** default — analyze ticks are opt-in only
    - Secrets as **env names only** (`api_key_env`, `oauth_token_env`) — never commit secret values
-   - After write: start memory host if local-memory · set env vars · **`/setup reload`** (hot-swaps MCP + re-scans skills via `ReplaceSkills` · s1670 · package wire ≠ Connected · skills re-scan ≠ invent Connected · not Agent Plugins GA · restart no longer required for skill-only path changes)
+   - After write (s1686 dual path):
+     - **TUI/session already running** → start memory host if local-memory · set env vars · `/setup preflight` · **`/setup reload`** (hot-swaps MCP + re-scans skills via `ReplaceSkills` · s1670 · package wire ≠ Connected · skills re-scan ≠ invent Connected · not Agent Plugins GA · restart no longer required for skill-only path changes)
+     - **Cold CLI / no session** → start memory host if local-memory · set env vars · **restart `iomesh`** · `iomesh setup preflight`
+     - **CLI has no `iomesh setup reload`** — in-session `/setup reload` only · free eng **s1686**
 
 2. **Preflight probe** — residual-honest state, never invent install green.
    - CLI: `iomesh setup preflight [--json]`
@@ -103,7 +106,7 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
 | `/setup analyze` | status · start · once · stop (s1534 P6 residual-honest) |
 | `/setup drift` / `/setup maintain` | report-only FormatDriftText (s1534 P6) |
 | `/setup repair` | plan (default) · apply --yes (s1538 P7 guided safe steps) |
-| CLI `iomesh setup` | init · preflight (s1525 P1–P2) |
+| CLI `iomesh setup` | init · preflight only (s1525 P1–P2 · s1686: **no** CLI `setup reload` · dual-path next-step after init) |
 | CLI `iomesh memory pull` | still valid continuous / once pull path |
 | `/memory digest` | still valid one-shot ops pulse |
 | System note | `<setup-lifecycle>` on AttachMCP |

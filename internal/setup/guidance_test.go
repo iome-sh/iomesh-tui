@@ -5,6 +5,36 @@ import (
 	"testing"
 )
 
+// s1686: CLI setup init next-step dual path (in-session /setup reload vs cold restart).
+func TestSetupInitNextStepLines_HonestyNeedles(t *testing.T) {
+	lines := SetupInitNextStepLines()
+	if len(lines) == 0 {
+		t.Fatal("empty next-step lines")
+	}
+	out := strings.Join(lines, "\n")
+	for _, want := range []string{
+		"/setup reload",
+		"restart",
+		"package wire",
+		"CLI has no",
+		"setup reload",
+		"dual_write OFF",
+		"not Memory GA",
+		"s1686",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("next-step missing %q in:\n%s", want, out)
+		}
+	}
+	// Must not invent a CLI setup reload subcommand as a real command path.
+	if strings.Contains(out, "iomesh setup reload") && !strings.Contains(out, "CLI has no") {
+		t.Fatalf("must not advertise CLI setup reload without honesty:\n%s", out)
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
+		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", out)
+	}
+}
+
 // s1526 P3 / s1530 P5 / s1534 P6 / s1558 Wave B: SetupLifecycleAgentGuidanceNote residual-honest needles.
 func TestSetupLifecycleAgentGuidanceNote_HonestyNeedles(t *testing.T) {
 	out := SetupLifecycleAgentGuidanceNote()
