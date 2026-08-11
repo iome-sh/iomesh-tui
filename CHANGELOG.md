@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.74.0] — 2026-08-11
+
+Minor release: setup Format*/next-step honesty continuum after v0.73.0 — drift/repair dual-path next-step (s1707) + reload/pull/analyze next-step (s1711). **Beta** · dual_write OFF · package wire ≠ Connected · not Memory GA · CLI has no setup drift/repair/reload · pull ≠ invent Connected · analyze tick ≠ invent Connected · repair apply ≠ invent Connected · E10 Open · book-demo OFF.
+
 ### Added
 
 - **Setup reload/pull/analyze next-step honesty (s1711)** — after `/setup reload` and `/setup pull` / `/setup analyze` outputs, residual-honest next-step footers via `SetupReloadNextStepLines` · `SetupPullNextStepLines` · `SetupAnalyzeNextStepLines`. **Reload** in-session only (CLI has **no** setup reload) → optional `/setup pull|analyze start` · `/setup drift` · `/memory digest`. **Pull** dual path: in-session slash (`/setup pull status|start|once|stop`) vs CLI `iomesh memory pull`. **Analyze** dual path: in-session slash (`/setup analyze status|start|once|stop`) vs `/memory digest`. Peers of s1686 init / s1699 preflight / s1707 drift/repair. Docs: [setup-lifecycle.md](docs/architecture/setup-lifecycle.md) · skill `setup-lifecycle-agent`. dual_write **OFF** · package wire ≠ Connected · pull ≠ invent Connected · analyze tick ≠ invent Connected · not Memory GA · free eng **s1711**.
