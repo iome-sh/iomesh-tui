@@ -130,4 +130,5 @@ CLI / TUI / ACP
 49. ~~Easy first-run + skills reload (s1670)~~ **done** — `/setup reload` re-scans skills · README first-run honesty; skills re-scan ≠ invent Connected
 50. ~~Release v0.72.0 packaging cut~~ **done** — setup lifecycle + edge first-run continuum + residual soft checks + OSS packaging honesty
 51. ~~Setup first-run residual continuum + release v0.73.0 (s1686/s1695/s1699)~~ **done** — CLI init dual-path next-step · preflight dual-path next-step · Memory Ops Pack local-primary honesty (not first-run required) · dual_write OFF · package wire ≠ Connected · Ops Pack optional · CLI has no setup reload
-52. Optional: platform remote multi-tenant metering UI
+52. ~~Setup drift/repair dual-path next-step honesty (s1707)~~ **done** — `FormatDriftText` / `FormatRepairPlan` / `FormatRepairResult` dual path · in-session slash vs cold restart · CLI has no setup drift/repair/reload · dual_write OFF · package wire ≠ Connected · repair apply ≠ invent Connected; see [setup-lifecycle.md](setup-lifecycle.md)
+53. Optional: platform remote multi-tenant metering UI

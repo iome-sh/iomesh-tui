@@ -61,18 +61,26 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
    - **`/memory digest` still valid** as one-shot residual ops pulse
    - **analyze tick ≠ invent Connected** · dual_write OFF · not Memory GA
 
-6. **Drift / maintain (s1534 P6 · report-only)** — config intent vs runtime snapshot.
+6. **Drift / maintain (s1534 P6 · report-only · s1707 dual-path next-step)** — config intent vs runtime snapshot.
    - Slash: `/setup drift` · `/setup maintain` (alias)
    - Report-only residual next steps · **drift report ≠ invent install green** · package wire ≠ Connected
    - Notes point at guided repair: `/setup repair plan` · `/setup repair apply --yes` (safe steps only · dual_write never auto ON)
+   - After drift report (s1707 dual path · peer of s1686/s1699 · `SetupDriftNextStepLines` / `FormatDriftText`):
+     - **TUI/session running** → `/setup repair plan` · `/setup repair apply --yes` (safe only) · `/setup reload` when MCP drift · optional `/setup pull|analyze start`
+     - **Cold CLI / no session** → fix host/config · `iomesh setup preflight` · **restart `iomesh`** (CLI has **no** setup drift/repair/reload)
+     - dual_write OFF · package wire ≠ Connected · not Memory GA · free eng **s1707**
    - After drift, optional guided repair (P7) — not automatic without explicit `--yes`
 
-7. **Guided repair (s1538 P7 · explicit --yes only)** — plan from drift · apply safe steps only.
+7. **Guided repair (s1538 P7 · explicit --yes only · s1707 dual-path next-step)** — plan from drift · apply safe steps only.
    - Slash: `/setup repair` · `/setup repair plan` — `PlanRepair` + `FormatRepairPlan` (dry plan · no side effects)
    - Slash: `/setup repair apply --yes` — `ApplyRepairPlan` safe steps only (`reload_mcp` · `start_pull` · `start_analyze`)
    - **`/setup repair apply` without `--yes` refuses** (residual-honest · no auto-repair)
    - Notes (never auto-applied): dual_write manual flip · memory host start · mesh `[iomesh]` config
    - **repair apply ≠ invent Connected** · dual_write never auto-flipped ON · portal HITL still human
+   - After repair plan/result (s1707 dual path · `SetupRepairNextStepLines` / `FormatRepairPlan` · `FormatRepairResult`):
+     - **TUI/session running** → re-run `/setup drift` · `/setup reload` after safe apply · optional pull/analyze
+     - **Cold CLI / no session** → **restart `iomesh`** · `iomesh setup preflight` (CLI has **no** setup repair/reload)
+     - repair apply ≠ invent Connected · dual_write never auto ON · package wire ≠ Connected · free eng **s1707**
    - dual_write OFF · not Memory GA · package wire ≠ Connected
 
 ## Honesty locks (never violate)
@@ -109,9 +117,9 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
 | Alias `/setup-lifecycle` | same |
 | `/setup pull` | status · start · once · stop (s1530 P5 residual-honest) |
 | `/setup analyze` | status · start · once · stop (s1534 P6 residual-honest) |
-| `/setup drift` / `/setup maintain` | report-only FormatDriftText (s1534 P6) |
-| `/setup repair` | plan (default) · apply --yes (s1538 P7 guided safe steps) |
-| CLI `iomesh setup` | init · preflight only (s1525 P1–P2 · s1686/s1699: **no** CLI `setup reload` · dual-path next-step after init **and** after preflight) |
+| `/setup drift` / `/setup maintain` | report-only FormatDriftText (s1534 P6 · s1707 dual-path next-step) |
+| `/setup repair` | plan (default) · apply --yes (s1538 P7 guided safe steps · s1707 dual-path next-step) |
+| CLI `iomesh setup` | init · preflight only (s1525 P1–P2 · s1686/s1699/s1707: **no** CLI `setup reload`/`drift`/`repair` · dual-path next-step after init · preflight · drift · repair) |
 | CLI `iomesh memory pull` | still valid continuous / once pull path |
 | `/memory digest` | still valid one-shot ops pulse |
 | System note | `<setup-lifecycle>` on AttachMCP |

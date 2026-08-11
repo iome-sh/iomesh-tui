@@ -397,6 +397,35 @@ func TestFormatRepairPlan_AlwaysHonestyFooter(t *testing.T) {
 	assertHonestyFooter(t, text2)
 }
 
+// s1707: FormatRepairPlan / FormatRepairResult append dual-path next-step after honesty.
+func TestFormatRepairPlan_DualPathNextStep(t *testing.T) {
+	for _, text := range []string{
+		FormatRepairPlan(RepairPlan{}),
+		FormatRepairResult(RepairPlan{}),
+	} {
+		for _, want := range []string{
+			"/setup reload",
+			"restart",
+			"CLI has no",
+			"package wire",
+			"dual_write OFF",
+			"not Memory GA",
+			"s1707",
+			"repair apply",
+		} {
+			if !strings.Contains(text, want) {
+				t.Fatalf("FormatRepair* missing dual-path needle %q in:\n%s", want, text)
+			}
+		}
+		if !strings.Contains(text, "repair apply ≠ invent Connected") {
+			t.Fatalf("must pin repair apply ≠ invent Connected:\n%s", text)
+		}
+		if strings.Contains(text, "Memory GA shipped") {
+			t.Fatalf("must not invent Memory GA shipped:\n%s", text)
+		}
+	}
+}
+
 func TestApplyRepairPlan_NilExecutor(t *testing.T) {
 	plan := RepairPlan{Steps: []RepairStep{
 		{Kind: RepairReloadMCP, Reason: "test", Safe: true},

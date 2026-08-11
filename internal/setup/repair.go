@@ -147,6 +147,10 @@ func FormatRepairPlan(plan RepairPlan) string {
 	fmt.Fprintf(&b, "  note: safe steps may apply with --yes · notes are manual/human · dual_write never auto-flipped ON\n")
 	fmt.Fprintf(&b, "  note: repair apply success ≠ invent Connected / install green · package wire ≠ Connected\n")
 	fmt.Fprintf(&b, "  honesty: %s\n", RepairHonestyFooter)
+	// s1707: residual-honest dual-path next-step after honesty footer.
+	for _, line := range SetupRepairNextStepLines() {
+		fmt.Fprintf(&b, "%s\n", line)
+	}
 	return b.String()
 }
 
@@ -185,6 +189,10 @@ func FormatRepairResult(plan RepairPlan) string {
 	}
 	fmt.Fprintf(&b, "  note: repair apply ≠ invent Connected · package wire ≠ Connected · dual_write stays OFF residual\n")
 	fmt.Fprintf(&b, "  honesty: %s\n", RepairHonestyFooter)
+	// s1707: residual-honest dual-path next-step after honesty footer.
+	for _, line := range SetupRepairNextStepLines() {
+		fmt.Fprintf(&b, "%s\n", line)
+	}
 	return b.String()
 }
 

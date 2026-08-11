@@ -65,6 +65,90 @@ func TestSetupPreflightNextStepLines_HonestyNeedles(t *testing.T) {
 	}
 }
 
+// s1707: setup drift next-step dual path (in-session /setup repair · reload vs cold restart).
+func TestSetupDriftNextStepLines_HonestyNeedles(t *testing.T) {
+	lines := SetupDriftNextStepLines()
+	if len(lines) == 0 {
+		t.Fatal("empty drift next-step lines")
+	}
+	out := strings.Join(lines, "\n")
+	for _, want := range []string{
+		"/setup reload",
+		"/setup repair",
+		"restart",
+		"CLI has no",
+		"package wire",
+		"dual_write OFF",
+		"not Memory GA",
+		"s1707",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("drift next-step missing %q in:\n%s", want, out)
+		}
+	}
+	// Must not invent CLI setup drift/repair/reload as full product without honesty.
+	if strings.Contains(out, "iomesh setup drift") && !strings.Contains(out, "CLI has no") {
+		t.Fatalf("must not advertise CLI setup drift without honesty:\n%s", out)
+	}
+	if strings.Contains(out, "iomesh setup repair") && !strings.Contains(out, "CLI has no") {
+		t.Fatalf("must not advertise CLI setup repair without honesty:\n%s", out)
+	}
+	if strings.Contains(out, "iomesh setup reload") && !strings.Contains(out, "CLI has no") {
+		t.Fatalf("must not advertise CLI setup reload without honesty:\n%s", out)
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
+		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", out)
+	}
+}
+
+// s1707: setup repair next-step dual path (in-session drift/reload vs cold restart).
+func TestSetupRepairNextStepLines_HonestyNeedles(t *testing.T) {
+	lines := SetupRepairNextStepLines()
+	if len(lines) == 0 {
+		t.Fatal("empty repair next-step lines")
+	}
+	out := strings.Join(lines, "\n")
+	for _, want := range []string{
+		"/setup reload",
+		"restart",
+		"CLI has no",
+		"package wire",
+		"dual_write OFF",
+		"not Memory GA",
+		"s1707",
+		"repair apply",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("repair next-step missing %q in:\n%s", want, out)
+		}
+	}
+	// Dual-path slash: /setup reload and/or /setup repair (reload required; repair in CLI honesty).
+	if !strings.Contains(out, "/setup reload") && !strings.Contains(out, "/setup repair") {
+		t.Fatalf("must include /setup reload and/or /setup repair:\n%s", out)
+	}
+	// dual_write never auto ON (explicit residual language).
+	if !strings.Contains(out, "dual_write never auto ON") {
+		t.Fatalf("must pin dual_write never auto ON:\n%s", out)
+	}
+	if strings.Contains(out, "iomesh setup repair") && !strings.Contains(out, "CLI has no") {
+		t.Fatalf("must not advertise CLI setup repair without honesty:\n%s", out)
+	}
+	if strings.Contains(out, "iomesh setup reload") && !strings.Contains(out, "CLI has no") {
+		t.Fatalf("must not advertise CLI setup reload without honesty:\n%s", out)
+	}
+	// Avoid inventing dual_write ON as product state (allow "never auto ON").
+	if strings.Contains(out, "dual_write ON") && !strings.Contains(out, "never auto ON") {
+		t.Fatalf("must not invent dual_write ON:\n%s", out)
+	}
+	if strings.Contains(out, "Memory GA shipped") {
+		t.Fatalf("must not invent Memory GA shipped:\n%s", out)
+	}
+	// repair apply ≠ invent Connected
+	if !strings.Contains(out, "repair apply ≠ invent Connected") {
+		t.Fatalf("must pin repair apply ≠ invent Connected:\n%s", out)
+	}
+}
+
 // s1526 P3 / s1530 P5 / s1534 P6 / s1558 Wave B: SetupLifecycleAgentGuidanceNote residual-honest needles.
 func TestSetupLifecycleAgentGuidanceNote_HonestyNeedles(t *testing.T) {
 	out := SetupLifecycleAgentGuidanceNote()

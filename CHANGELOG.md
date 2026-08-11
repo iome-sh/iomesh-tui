@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Setup drift/repair dual-path next-step honesty (s1707)** — after `/setup drift` / `/setup maintain` (`FormatDriftText`) and `/setup repair` plan/result (`FormatRepairPlan` / `FormatRepairResult`), residual-honest dual path: TUI/session running → in-session slash (`/setup repair` · `/setup reload` · optional pull/analyze · re-run drift); cold start → restart `iomesh` · `iomesh setup preflight` (CLI has **no** setup drift/repair/reload). Helpers `setup.SetupDriftNextStepLines` · `setup.SetupRepairNextStepLines` unit-tested · peers of s1686 init / s1699 preflight. Docs: [setup-lifecycle.md](docs/architecture/setup-lifecycle.md) · skill `setup-lifecycle-agent`. dual_write **OFF** · never auto ON · package wire ≠ Connected · repair apply ≠ invent Connected · not Memory GA · free eng **s1707**.
+
 ## [0.73.0] — 2026-08-11
 
 Minor release: setup first-run residual continuum after v0.72.0 — CLI init dual-path next-step, preflight dual-path next-step, Memory Ops Pack local-primary honesty (not first-run required). **Beta** · dual_write OFF · package wire ≠ Connected · not Memory GA · Ops Pack optional · CLI has no setup reload · E10 Open · book-demo OFF.
