@@ -124,4 +124,9 @@ CLI / TUI / ACP
 43. ~~Gated mesh KV put/delete + soft dogfood kv probe~~ **done** — `KVPut` / `KVDelete` + `--yes` CLI gates + `--kv-bucket` list-keys evidence; see [mesh-deeper.md](mesh-deeper.md) / [mesh-dogfood.md](mesh-dogfood.md)
 44. ~~Lean mesh KV create-bucket~~ **done** — `KVCreateBucket` + `iomesh mesh kv --create-bucket --yes` (idempotent 409); see [mesh-deeper.md](mesh-deeper.md)
 45. ~~Dogfood kv-ensure + ephemeral mesh pub~~ **done** — `--kv-ensure` / `kv_ensured` + `Pub` / `iomesh mesh pub --yes`; see [mesh-dogfood.md](mesh-dogfood.md) / [mesh-deeper.md](mesh-deeper.md)
-46. Optional: platform remote multi-tenant metering UI
+46. ~~Agent-native setup lifecycle `/setup` (s1525–s1542)~~ **done** — init/preflight/portal/reload/pull/analyze/drift/repair; dual_write OFF · package wire ≠ Connected · not Memory GA; see [setup-lifecycle.md](setup-lifecycle.md)
+47. ~~Edge user journey + soft residual-check lanes (s1554–s1586 continuum)~~ **done** — journey/wizard/portal-hitl/e4/tool-call/human-gates/e10 soft residual-checks; E10 Open · book-demo OFF · residual PASS ≠ invent Connected/GA; see [edge-user-journey.md](edge-user-journey.md)
+48. ~~OSS packaging boundary + marketing demo path + Python SDK peer (s1582/s1590/s1666)~~ **done** — MIT harness vs private control plane honesty · `/onboard next marketing-demo` · Go+Python client SDK peers; see [oss-packaging-boundary.md](oss-packaging-boundary.md) · [marketing-demo-path.md](marketing-demo-path.md)
+49. ~~Easy first-run + skills reload (s1670)~~ **done** — `/setup reload` re-scans skills · README first-run honesty; skills re-scan ≠ invent Connected
+50. ~~Release v0.72.0 packaging cut~~ **done** — setup lifecycle + edge first-run continuum + residual soft checks + OSS packaging honesty
+51. Optional: platform remote multi-tenant metering UI
