@@ -536,11 +536,13 @@ func cmdSetup(args []string) int {
 }
 
 func printSetupUsage() {
-	fmt.Fprint(os.Stderr, `iomesh setup — agent-native setup lifecycle (s1525 · residual-honest)
+	fmt.Fprint(os.Stderr, `iomesh setup — agent-native setup lifecycle (s1525 · residual-honest · s1686)
 
   iomesh setup init [profiles]   write managed config fragment (default: local-memory)
   iomesh setup preflight         probe config + local memory healthz (not invent Connected)
   iomesh setup help
+
+  (no iomesh setup reload — in-session /setup reload only · hot-swap MCP + skills · package wire ≠ Connected)
 
 Profiles: local-memory | plugins | mesh | platform-mcp | all
   (positional and/or --profiles csv)
@@ -560,9 +562,13 @@ Flags (preflight):
   --config path
   --json                  always-emit PreflightReport JSON
 
+After init: memory host (if local-memory) · secret env vars ·
+  TUI already running → /setup preflight · /setup reload · else cold start → restart iomesh · iomesh setup preflight.
+
 Honesty: dual_write OFF · not Memory GA · secrets via env refs only ·
-  portal HITL for OAuth/install · setup PASS ≠ invent Connected / INSTALL_STORE green.
-  Continuous pull: iomesh memory pull (in-session pull later). Analyze: /memory digest.
+  portal HITL for OAuth/install · setup PASS ≠ invent Connected / INSTALL_STORE green ·
+  package wire ≠ Connected · free eng s1686.
+  Continuous pull: iomesh memory pull (in-session /setup pull). Analyze: /memory digest.
 `)
 }
 
@@ -629,9 +635,9 @@ func cmdSetupInit(args []string) int {
 	}
 	fmt.Printf("setup init: wrote managed fragment → %s\n", path)
 	fmt.Println("profiles:", profiles)
-	fmt.Println("next: ensure iomesh-memory-mcp is running (if local-memory) · set secret env vars · restart iomesh")
-	fmt.Println("then: iomesh setup preflight")
-	fmt.Println("honesty: dual_write OFF · not Memory GA · catalog ≠ Connected · portal HITL for installs")
+	for _, line := range setup.SetupInitNextStepLines() {
+		fmt.Println(line)
+	}
 	return 0
 }
 

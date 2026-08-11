@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **CLI setup init next-step reload/restart honesty (s1686)** — after `iomesh setup init` write, residual-honest dual path: TUI/session already running → `/setup preflight` · `/setup reload` (hot-swap MCP + skills · package wire ≠ Connected); cold start → restart `iomesh` · `iomesh setup preflight`. CLI has **no** `iomesh setup reload` subcommand (in-session only). Helper `setup.SetupInitNextStepLines` unit-tested. Docs: [setup-lifecycle.md](docs/architecture/setup-lifecycle.md) · skill `setup-lifecycle-agent` · README first-run. dual_write **OFF** · package wire ≠ Connected · not Memory GA · catalog ≠ Connected · free eng **s1686**.
+
 ## [0.72.0] — 2026-08-11
 
 Minor release: agent-native setup lifecycle + edge first-run continuum + residual-honest soft checks + OSS packaging / marketing-demo / Python SDK peer honesty + easy first-run skills reload (s1525–s1670 and post-0.71 Unreleased mesh/print residual on main). **Beta** · dual_write OFF · package wire ≠ Connected · not Memory GA · not Agent Plugins GA · E10 Open · book-demo OFF.
