@@ -212,9 +212,13 @@ func TestFormatConnectorPlan_V178HonestyObject(t *testing.T) {
 	if !strings.Contains(out, "available") {
 		t.Fatalf("status from connector: %s", out)
 	}
-	// must not invent Connected green
-	if strings.Contains(out, "Connected") {
+	// must not invent Connected green (residual copy may say "catalog ≠ Connected")
+	if strings.Contains(out, "Connected: yes") {
 		t.Fatalf("must not invent Connected: %s", out)
+	}
+	// s1727 residual next-step after plan
+	if !strings.Contains(out, "s1727") || !strings.Contains(out, "agent MCP cannot write") {
+		t.Fatalf("s1727 next-step after plan: %s", out)
 	}
 }
 
@@ -473,9 +477,66 @@ func TestStatusHonestyFooter(t *testing.T) {
 		"book-demo OFF",
 		"signing discovery only",
 		"console.iome.sh/integrations",
+		// s1727 residual next-step
+		"s1727",
+		"portal HITL",
+		"agent MCP cannot write installs",
+		"/setup reload",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("missing %q in: %s", want, out)
+		}
+	}
+}
+
+// TestIntegrationsNextStepLines_HonestyNeedles pins s1727 residual-honest next-step
+// after /integrations list|plan|status|signing (peer of setup next-step continuum).
+func TestIntegrationsNextStepLines_HonestyNeedles(t *testing.T) {
+	lines := IntegrationsNextStepLines()
+	if len(lines) == 0 {
+		t.Fatal("empty integrations next-step lines")
+	}
+	out := strings.Join(lines, "\n")
+	for _, want := range []string{
+		"console.iome.sh/integrations",
+		"agent MCP cannot write",
+		"catalog ≠ Connected",
+		"dual_write OFF",
+		"not Memory GA",
+		"s1727",
+		"/setup reload",
+		"portal-hitl",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("integrations next-step missing %q in:\n%s", want, out)
+		}
+	}
+	// portal HITL residual
+	if !strings.Contains(out, "portal HITL") && !strings.Contains(out, "browser portal") {
+		t.Fatalf("next-step must mention portal HITL:\n%s", out)
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
+		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", out)
+	}
+	if strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent Connected green:\n%s", out)
+	}
+}
+
+// TestCatalogPlanSigningHonestyFooters_S1727NextStep pins s1727 next-step on all footers.
+func TestCatalogPlanSigningHonestyFooters_S1727NextStep(t *testing.T) {
+	for name, out := range map[string]string{
+		"catalog": catalogHonestyFooter(),
+		"plan":    planHonestyFooter(),
+		"signing": signingHonestyFooter(),
+		"status":  statusHonestyFooter(),
+		"offline": IntegrationsOfflineMessage(),
+		"missing": IntegrationsToolMissingMessage("list_connector_catalog"),
+	} {
+		for _, want := range []string{"s1727", "portal HITL", "agent MCP cannot write installs", "/setup reload"} {
+			if !strings.Contains(out, want) {
+				t.Fatalf("%s footer missing %q in:\n%s", name, want, out)
+			}
 		}
 	}
 }
@@ -1328,6 +1389,12 @@ func TestS1257PlanHonestyFooterNeverInventInstallGreen(t *testing.T) {
 	// default portal is HITL deep-link shape, not APPLY
 	if !strings.Contains(out, "portal_url:") {
 		t.Fatalf("portal_url: %s", out)
+	}
+	// s1727 residual next-step (portal HITL · cannot write installs)
+	for _, want := range []string{"s1727", "portal HITL", "agent MCP cannot write installs"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("s1727 plan footer missing %q: %s", want, out)
+		}
 	}
 }
 

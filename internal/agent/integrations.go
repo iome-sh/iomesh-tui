@@ -61,12 +61,24 @@ Locks (never violate):
 - agent setup = catalog + plan + signing discovery + residual installs snapshot + portal HITL · not full install CRUD`)
 }
 
+// IntegrationsNextStepLines residual-honest post /integrations list|plan|status|signing (s1727).
+// Dual path: browser portal HITL for OAuth/install · then in-session /setup preflight|reload.
+// agent MCP cannot write installs · catalog ≠ Connected · template= ≠ install APPLY · free eng s1727.
+func IntegrationsNextStepLines() []string {
+	return []string{
+		"next: complete OAuth/install in browser portal HITL → " + integrationsPortalURL + " (agent MCP cannot write installs)",
+		"      then if TUI/session running → /setup preflight · /setup reload · optional /onboard next portal-hitl",
+		"      else cold start → restart iomesh · iomesh setup preflight (CLI has no invent install green)",
+		"note: catalog ≠ Connected · template= ≠ install APPLY · dual_write OFF · not Memory GA · free eng s1727",
+	}
+}
+
 // IntegrationsOfflineMessage is printed when MCP manager is missing or tools are not connected.
 func IntegrationsOfflineMessage() string {
 	return strings.TrimSpace(`integrations: MCP connector tools unavailable (fail-open).
   portal HITL: ` + integrationsPortalURL + `
   aion MCP tools list_connector_catalog / plan_connector_setup (v178/s1237) · get_webhook_signing_headers (v30) · TUI wire parity s1242/s1243.
-  ` + IntegrationsHonestyOneLiner)
+  ` + IntegrationsHonestyOneLiner) + "\n" + strings.Join(IntegrationsNextStepLines(), "\n")
 }
 
 // IntegrationsToolMissingMessage is printed when MCP is up but the named tool is absent.
@@ -74,7 +86,7 @@ func IntegrationsToolMissingMessage(tool string) string {
 	return fmt.Sprintf(strings.TrimSpace(`integrations: MCP tool %q not found on any connected server (fail-open).
   portal HITL: %s
   aion MCP tools list_connector_catalog / plan_connector_setup (v178) · get_webhook_signing_headers (v30).
-  %s`), tool, integrationsPortalURL, IntegrationsHonestyOneLiner)
+  %s`), tool, integrationsPortalURL, IntegrationsHonestyOneLiner) + "\n" + strings.Join(IntegrationsNextStepLines(), "\n")
 }
 
 // IntegrationsCatalog lists connector catalog via MCP list_connector_catalog (s1238/s1242).
@@ -718,6 +730,11 @@ func formatConnectorPlan(raw, requestedID string) string {
 		}
 		// Always pin residual footer even when server sent notes.
 		fmt.Fprintf(&b, "  - %s\n", IntegrationsHonestyOneLiner)
+		// s1727: notes path skips planHonestyFooter — still append residual next-step.
+		for _, line := range IntegrationsNextStepLines() {
+			b.WriteString(line)
+			b.WriteByte('\n')
+		}
 	}
 	return b.String()
 }
@@ -911,18 +928,21 @@ func formatWebhookSigning(raw, layerFilter, clientFilterID string) string {
 }
 
 func catalogHonestyFooter() string {
-	return "honesty: " + IntegrationsHonestyOneLiner + " · browser HITL for OAuth · dual_write OFF · no invent GA"
+	return "honesty: " + IntegrationsHonestyOneLiner + " · browser HITL for OAuth · dual_write OFF · no invent GA" +
+		"\n" + strings.Join(IntegrationsNextStepLines(), "\n")
 }
 
 func planHonestyFooter() string {
-	return "Browser HITL for OAuth complete · stub ≠ live · dual_write OFF · no invent GA · never invent install green · " + IntegrationsHonestyOneLiner
+	return "Browser HITL for OAuth complete · stub ≠ live · dual_write OFF · no invent GA · never invent install green · " + IntegrationsHonestyOneLiner +
+		"\n" + strings.Join(IntegrationsNextStepLines(), "\n")
 }
 
 func signingHonestyFooter() string {
-	return "honesty: discovery only · do not invent secrets mint/rotate · dual_write OFF · book-demo OFF · never invent install green · " + IntegrationsHonestyOneLiner
+	return "honesty: discovery only · do not invent secrets mint/rotate · dual_write OFF · book-demo OFF · never invent install green · " + IntegrationsHonestyOneLiner +
+		"\n" + strings.Join(IntegrationsNextStepLines(), "\n")
 }
 
-// statusHonestyFooter is always appended to /integrations status (s1247).
+// statusHonestyFooter is always appended to /integrations status (s1247 · s1727 next-step).
 // Always residual: never invent install green · catalog ≠ installs · browser HITL ·
 // stub ≠ live · dual_write OFF · book-demo OFF · signing discovery only · portal HITL.
 func statusHonestyFooter() string {
@@ -930,7 +950,7 @@ func statusHonestyFooter() string {
   never invent install green · catalog ≠ installs · browser HITL for OAuth complete · stub ≠ live
   dual_write OFF · book-demo OFF · signing discovery only · no invent GA
   catalog count ≠ install Connected · portal HITL ` + integrationsPortalURL + `
-  ` + IntegrationsHonestyOneLiner)
+  ` + IntegrationsHonestyOneLiner) + "\n" + strings.Join(IntegrationsNextStepLines(), "\n")
 }
 
 // orgInstallsSnapshotPayload matches aion v179 list_org_connector_installs residual wire.

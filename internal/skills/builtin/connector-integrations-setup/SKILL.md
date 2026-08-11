@@ -17,6 +17,7 @@ Agent path for **connector integrations setup** via aion MCP tools — **not** f
 2. **Plan** — call MCP `plan_connector_setup` with `connector_id`.
    - Surfaces `portal_url`, `portal_add_url`, `deep_links` (s1244 proven console routes), `oauth_mode_hint`, `signing_headers_tool`, `next_steps`, `honesty.notes`.
    - Deep links are **browser HITL only** — not install APPLY success.
+   - **After plan (s1727 residual next-step):** complete OAuth/install in browser portal HITL → then if TUI/session running `/setup preflight` · `/setup reload` · optional `/onboard next portal-hitl`; else cold start → restart iomesh · `iomesh setup preflight`. agent MCP **cannot write installs** · catalog ≠ Connected · template= ≠ install APPLY · dual_write OFF · not Memory GA · free eng **s1727**.
 
 3. **Optional signing discovery** — call MCP `get_webhook_signing_headers` (optional `mesh_layer`).
    - Header parity / scheme / primary header names only.
@@ -32,7 +33,7 @@ Agent path for **connector integrations setup** via aion MCP tools — **not** f
    - OAuth authorize/callback and install CRUD live in the **console portal**, not agent MCP.
    - Agent MCP **cannot write installs**.
 
-6. **Operator pulse** — slash `/integrations status|list|plan|signing` mirrors the same residual honesty for humans (status probes `list_org_connector_installs` when present).
+6. **Operator pulse** — slash `/integrations status|list|plan|signing` mirrors the same residual honesty for humans (status probes `list_org_connector_installs` when present). After list|plan|status|signing surfaces, residual next-step footer (s1727) points at portal HITL · `/setup preflight|reload` · not invent install green.
 
 ## Non-goals (never do)
 

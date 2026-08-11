@@ -1156,6 +1156,7 @@ func integrationsHelp() string {
   plan     MCP plan_connector_setup → portal_url · oauth_mode_hint · signing_headers_tool · next_steps · honesty
   signing  MCP get_webhook_signing_headers → header parity (discovery only · not secret mint)
   status   residual-honest operator pulse: MCP path · tools present · catalog honesty counts (≠ install green)
+  after list|plan|status|signing: residual next-step → portal HITL · /setup preflight|reload · free eng s1727
 honesty: ` + agent.IntegrationsHonestyOneLiner + `
   fail-open when MCP unavailable → portal HITL https://console.iome.sh/integrations
   aion MCP v178 list/plan + v30 signing · browser HITL for OAuth · never invent install green`)
