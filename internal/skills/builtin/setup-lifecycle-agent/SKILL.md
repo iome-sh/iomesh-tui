@@ -26,7 +26,7 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
    - **pull_continuous = false** default — continuous pull is opt-in only
    - **analyze_continuous = false** default — analyze ticks are opt-in only
    - Secrets as **env names only** (`api_key_env`, `oauth_token_env`) — never commit secret values
-   - After write: start memory host if local-memory · set env vars · **`/setup reload`** (hot-swaps MCP + re-scans skills catalog · package wire ≠ Connected · skills re-scan ≠ invent Connected · not Agent Plugins GA)
+   - After write: start memory host if local-memory · set env vars · **`/setup reload`** (hot-swaps MCP + re-scans skills via `ReplaceSkills` · s1670 · package wire ≠ Connected · skills re-scan ≠ invent Connected · not Agent Plugins GA · restart no longer required for skill-only path changes)
 
 2. **Preflight probe** — residual-honest state, never invent install green.
    - CLI: `iomesh setup preflight [--json]`

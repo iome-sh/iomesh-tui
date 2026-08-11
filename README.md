@@ -96,8 +96,10 @@ cd iomesh-tui
 make build
 
 # Or install a released version (Go toolchain)
-go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v0.28.0
-# Multi-platform archives: GitHub Releases (GoReleaser on v* tags) — see RELEASING.md
+go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v0.71.0
+# Pin matches latest known tag at docs write; GitHub Releases may be newer — see RELEASING.md
+# Multi-platform archives: GitHub Releases (GoReleaser on v* tags)
+# Or tip of main: go install github.com/iome-sh/iomesh-tui/cmd/iomesh@latest  (pre-1.0 Beta)
 
 export DEEPSEEK_API_KEY=…          # required for default cascade
 # export XAI_API_KEY=…             # optional Grok fallback
@@ -122,6 +124,15 @@ export DEEPSEEK_API_KEY=…          # required for default cascade
 ./bin/iomesh mesh usage --json     # local process meter (JSON)
 make smoke-unit                    # offline mesh tests (alias: dogfood-unit)
 ```
+
+### First-run (agent)
+
+Local agent + local memory path (no invent Connected / Memory GA · dual_write default **OFF**):
+
+1. Set an LLM key (`DEEPSEEK_API_KEY` / `XAI_API_KEY` / …) **or** pin Ollama (`-m ollama-llama3.2`).
+2. Run the TUI: `./bin/iomesh` (or `iomesh` if installed).
+3. In-session setup: `/setup init` `local-memory` · `/setup preflight` · start `iomesh-memory-mcp` if needed · `/setup reload` (hot-swaps MCP **and** re-scans skills · package wire ≠ Connected).
+4. Offline maps when you want a residual-honest board (no MCP dial): `/onboard next journey` · `/onboard next setup` · `/onboard next wizard` · `/onboard next marketing-demo`.
 
 Optional: copy [`.env.example`](.env.example) for local env vars (iomesh reads the **process environment**; it does not auto-load `.env` files yet). Copy [`configs/config.example.toml`](configs/config.example.toml) to `~/.iomesh/config.toml` to customize.
 
@@ -152,7 +163,7 @@ iomesh agent stdio          ACP JSON-RPC over stdio
 iomesh agent serve          ACP WebSocket (default 127.0.0.1:7400/acp)
 ```
 
-Slash commands (TUI/REPL): `/model`, `/theme`, `/permissions`, `/subagents`, `/save`, `/sessions`, `/load`, `/cost`, `/help`, `/quit`.  
+Slash commands (TUI/REPL): `/model`, `/theme`, `/permissions`, `/subagents`, `/setup`, `/onboard`, `/memory`, `/integrations`, `/save`, `/sessions`, `/load`, `/cost`, `/help`, `/quit`.  
 Keys (fullscreen): **Enter** send · **Ctrl+J** newline · **y/n/a** tool approval.
 
 ## Configuration

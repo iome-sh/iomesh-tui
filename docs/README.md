@@ -11,6 +11,7 @@
 | [architecture/tui.md](architecture/tui.md) | Full-screen TUI, themes, multi-line |
 | [architecture/acp.md](architecture/acp.md) | ACP stdio + WebSocket |
 | [architecture/skills.md](architecture/skills.md) | SKILL.md loader |
+| [architecture/agent-plugins.md](architecture/agent-plugins.md) | Agent Plugins package client (discover · opt-in wire · samples · dogfood) |
 | [architecture/mcp.md](architecture/mcp.md) | MCP stdio/HTTP, resources, prompts, OAuth |
 | [architecture/mesh-dogfood.md](architecture/mesh-dogfood.md) | Stage mesh smoke (`iomesh mesh smoke`; legacy dogfood) |
 | [architecture/mesh-deeper.md](architecture/mesh-deeper.md) | Lineage context, policy gates, local metering, portal catalog |

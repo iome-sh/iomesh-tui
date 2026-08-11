@@ -15,7 +15,7 @@ When `[skills] enabled = true` (default):
 
 Load uses `skills.LoadWithBuiltin(dirs...)`: **builtin first**, then workspace/user dirs (user overrides builtin on name collision). Missing directories are skipped. Builtin skills appear even when all dirs are empty.
 
-**Agent Plugins package skills (s1326):** fixed-location discovery of `skills/<name>/SKILL.md` inside a portable plugin package is a library-only slice in `internal/agentplugins` — not yet merged into this loader or agent tools. See [agent-plugins.md](./agent-plugins.md).
+**Agent Plugins package skills (s1326 + s1331 + s1670):** opt-in `[plugins] enabled = true` + `dirs` → `runtimewire.Wire` merges `agentplugins.SkillDirs` into the `skills.LoadWithBuiltin` path (fail-open DiscoverAll). Package wire ≠ Agent Plugins GA · Discover ≠ Connected / install APPLY green. **s1670:** `/setup reload` re-scans skills (including plugin skill dirs when plugins enabled) via `LoadWithBuiltin` + `Runtime.ReplaceSkills` — process restart is no longer required for skill-only path changes after reload. dual_write OFF · not Memory GA. See [agent-plugins.md](./agent-plugins.md) · [setup-lifecycle.md](./setup-lifecycle.md).
 
 ### Builtin: `connector-integrations-setup` (s1251)
 

@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Easy first-run + skills reload residual (s1670)** — README install pin **v0.71.0** + **First-run (agent)** path (`/setup init` · preflight · memory host · `/setup reload` · onboard maps journey/setup/wizard/marketing-demo). `/setup reload` re-scans skills via `runtimewire.Wire` SkillDirs + `skills.LoadWithBuiltin` + `Runtime.ReplaceSkills` (including plugin skill dirs when `[plugins]` enabled) — process restart no longer required for skill-only path changes. Docs honesty flip: [skills.md](docs/architecture/skills.md) / [mcp.md](docs/architecture/mcp.md) residual-honest s1331 package wire truth · [setup-lifecycle.md](docs/architecture/setup-lifecycle.md) reload row · [docs/README](docs/README.md) agent-plugins index. dual_write **OFF** · package wire ≠ Connected · not Agent Plugins GA · skills re-scan ≠ invent Connected · not Memory GA · free eng **s1670**.
+
 ### Changed
 
 - **README open-source boundary (local-first)** — refresh “this public repo is / is not” for OSS readers: first-class **local memory** (MCP host + kernel), multi-provider LLMs / Ollama, optional mesh client. Drop residual-internal “freemium palace / invent Memory GA” framing from the public is/is-not table. Simplify Edge install docs table and “Why this project”. Align packaging SSOT table. dual_write default OFF unchanged.
+- **README install pin + slash surface (s1670)** — `go install …@v0.71.0` (releases may be newer; `@latest` Beta note) · slash list includes `/setup` · `/onboard` · `/memory` · `/integrations`.
 
 ### Added
 
