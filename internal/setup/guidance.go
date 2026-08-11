@@ -79,3 +79,27 @@ func SetupPreflightNextStepLines() []string {
 		"note: dual_write OFF · not Memory GA · catalog ≠ Connected · PASS ≠ invent install green · free eng s1699",
 	}
 }
+
+// SetupDriftNextStepLines residual-honest post-drift next-step (s1707).
+// Dual path: in-session /setup repair · /setup reload vs cold restart.
+// CLI has no setup drift/repair/reload as full product surface. dual_write OFF ·
+// package wire ≠ Connected · not Memory GA · free eng s1707.
+func SetupDriftNextStepLines() []string {
+	return []string{
+		"next: if TUI/session running → /setup repair plan · /setup repair apply --yes (safe only) · /setup reload when MCP drift · optional /setup pull|analyze start",
+		"      else cold start → fix host/config · iomesh setup preflight · restart iomesh (CLI has no setup drift/repair/reload)",
+		"note: drift report-only · dual_write OFF · package wire ≠ Connected · not Memory GA · free eng s1707",
+	}
+}
+
+// SetupRepairNextStepLines residual-honest post-repair plan/result next-step (s1707).
+// Dual path: in-session re-run /setup drift · /setup reload vs cold restart.
+// CLI has no setup repair/reload. repair apply ≠ invent Connected · dual_write never
+// auto ON · package wire ≠ Connected · free eng s1707.
+func SetupRepairNextStepLines() []string {
+	return []string{
+		"next: if TUI/session running → re-run /setup drift · /setup reload after safe apply · optional pull/analyze",
+		"      else cold start → restart iomesh · iomesh setup preflight (CLI has no setup repair/reload)",
+		"note: repair apply ≠ invent Connected · dual_write OFF · dual_write never auto ON · package wire ≠ Connected · not Memory GA · free eng s1707",
+	}
+}

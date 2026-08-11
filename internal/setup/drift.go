@@ -173,6 +173,10 @@ func FormatDriftText(rep DriftReport) string {
 		fmt.Fprintf(&b, "  note: %s\n", n)
 	}
 	fmt.Fprintf(&b, "  honesty: %s\n", DriftHonestyFooter)
+	// s1707: residual-honest dual-path next-step after honesty footer.
+	for _, line := range SetupDriftNextStepLines() {
+		fmt.Fprintf(&b, "%s\n", line)
+	}
 	return b.String()
 }
 

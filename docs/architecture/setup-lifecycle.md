@@ -1,7 +1,7 @@
 # Setup lifecycle (agent-native wizard foundation)
 
-**Serial:** free eng **s1525** P1–P2 · **s1526** P3–P4 · **s1530** P5 · **s1534** P6 · **s1538** P7 · **s1542** closeout residual · **s1546** still-human APPLY reaffirm · **s1550** edge-first human-gates residual pin · **s1574** still-human APPLY soft dogfood residual · **s1670** easy setup: `/setup reload` re-scans skills · residual-honest · **s1686** CLI `setup init` next-step dual path (`/setup reload` vs cold restart) · **s1699** setup preflight next-step dual path (`/setup reload` vs cold restart)  
-**Status:** foundation + agent-native slash/skill + package wire + `ReplaceMCP` + **`ReplaceSkills` (s1670)** + in-session opt-in continuous pull + analyze ticks + report-only drift + **guided repair** (safe steps · explicit `--yes`) + **onboard next setup** lane + **CLI init dual-path next-step (s1686)** + **preflight dual-path next-step (s1699)**  
+**Serial:** free eng **s1525** P1–P2 · **s1526** P3–P4 · **s1530** P5 · **s1534** P6 · **s1538** P7 · **s1542** closeout residual · **s1546** still-human APPLY reaffirm · **s1550** edge-first human-gates residual pin · **s1574** still-human APPLY soft dogfood residual · **s1670** easy setup: `/setup reload` re-scans skills · residual-honest · **s1686** CLI `setup init` next-step dual path (`/setup reload` vs cold restart) · **s1699** setup preflight next-step dual path (`/setup reload` vs cold restart) · **s1707** setup drift/repair dual-path next-step  
+**Status:** foundation + agent-native slash/skill + package wire + `ReplaceMCP` + **`ReplaceSkills` (s1670)** + in-session opt-in continuous pull + analyze ticks + report-only drift + **guided repair** (safe steps · explicit `--yes`) + **onboard next setup** lane + **CLI init dual-path next-step (s1686)** + **preflight dual-path next-step (s1699)** + **drift/repair dual-path next-step (s1707)**  
 **Shipped P7:** `/setup repair` plan + apply `--yes` (safe steps only · notes stay human)  
 **Shipped s1542:** residual-honest `/onboard next setup` consolidates P1–P7 map story  
 **Related (s1546):** still-human APPLY reaffirm after closeout — setup residual complete ≠ invent human-gate green / live APPLY / E10 (`/onboard next human-gates`)  
@@ -123,8 +123,8 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 | `reload` | `Wire` + `ReplaceSkills` + `ConnectMCP` + `ReplaceMCP` (s1670 skills re-scan · optional `--config path`) |
 | `pull` | in-session continuous pull status/start/once/stop (s1530 P5) |
 | `analyze` | in-session analyze tick status/start/once/stop (s1534 P6) |
-| `drift` / `maintain` | report-only `BuildDriftReport` + `FormatDriftText` (s1534 P6) |
-| `repair` | guided `PlanRepair` / `ApplyRepairPlan` (s1538 P7 · plan default · apply requires `--yes`) |
+| `drift` / `maintain` | report-only `BuildDriftReport` + `FormatDriftText` (s1534 P6 · s1707 dual-path next-step appended) |
+| `repair` | guided `PlanRepair` / `ApplyRepairPlan` (s1538 P7 · plan default · apply requires `--yes` · s1707 dual-path next-step on FormatRepair*) |
 
 Simple flags on slash `init`: `--stdio` · `--print-only` · `--plugins-dir path` · `--memory-url URL`. Full flag set remains on CLI `iomesh setup init`.
 
@@ -158,7 +158,7 @@ Flags: `--mode status|digest` · `--interval N` (seconds; Runtime default 300, f
 
 **Honesty:** dual_write OFF · not Memory GA · analyze tick ≠ invent Connected · `/memory digest` still valid · idle/status must not invent green.
 
-## Drift / maintain (s1534 P6)
+## Drift / maintain (s1534 P6 + s1707 dual-path next-step)
 
 Report-only config intent vs runtime snapshot:
 
@@ -167,9 +167,18 @@ Report-only config intent vs runtime snapshot:
 | Slash | `/setup drift` · `/setup maintain` (alias) |
 | API | `setup.BuildDriftReport(cfg, snap)` · `setup.FormatDriftText(rep)` · `Runtime.DriftSnapshot()` |
 
-**Honesty:** dual_write OFF · not Memory GA · drift report ≠ invent install green · package wire ≠ Connected · residual next-steps notes point at guided `/setup repair plan` · `/setup repair apply --yes` (safe steps only · dual_write never auto ON).
+### After `/setup drift` / `/setup maintain` (s1707 dual path)
 
-## Guided repair (s1538 P7)
+Post-report next steps are residual-honest (helper `setup.SetupDriftNextStepLines` · appended by `FormatDriftText`):
+
+| Path | When | Next |
+|------|------|------|
+| **In-session** | TUI/session running | `/setup repair plan` · `/setup repair apply --yes` (safe only) · `/setup reload` when MCP drift · optional `/setup pull\|analyze start` |
+| **Cold start** | No session / CLI-only | fix host/config · `iomesh setup preflight` · **restart `iomesh`** (CLI has **no** setup drift/repair/reload) |
+
+**Honesty:** drift report-only · dual_write **OFF** · package wire ≠ Connected · not Memory GA · CLI has **no** setup drift/repair/reload as full product · free eng **s1707** (peer of s1686 init · s1699 preflight). Residual notes still point at guided `/setup repair plan` · `/setup repair apply --yes` (safe steps only · dual_write never auto ON).
+
+## Guided repair (s1538 P7 + s1707 dual-path next-step)
 
 Plan + optional apply of **safe** residual steps from a drift report:
 
@@ -184,7 +193,16 @@ Plan + optional apply of **safe** residual steps from a drift report:
 
 **Note/manual kinds (never auto-applied):** dual_write flip · memory host start · mesh `[iomesh]` config · noop.
 
-**Honesty:** dual_write OFF · not Memory GA · **repair apply ≠ invent Connected** · package wire ≠ Connected · portal HITL still human · dual_write never auto-flipped ON · no auto-repair without explicit `apply --yes`.
+### After `/setup repair` plan/result (s1707 dual path)
+
+Post-plan / post-apply next steps are residual-honest (helper `setup.SetupRepairNextStepLines` · appended by `FormatRepairPlan` + `FormatRepairResult`):
+
+| Path | When | Next |
+|------|------|------|
+| **In-session** | TUI/session running | re-run `/setup drift` · `/setup reload` after safe apply · optional pull/analyze |
+| **Cold start** | No session / CLI-only | **restart `iomesh`** · `iomesh setup preflight` (CLI has **no** setup repair/reload) |
+
+**Honesty:** dual_write OFF · not Memory GA · **repair apply ≠ invent Connected** · package wire ≠ Connected · portal HITL still human · dual_write never auto-flipped ON · no auto-repair without explicit `apply --yes` · free eng **s1707**.
 
 ## Agent surfaces (s1526 P3 + s1530 P5 + s1534 P6 + s1538 P7)
 
@@ -292,6 +310,7 @@ Skills catalog **is** re-scanned on `/setup reload` via `Wire` SkillDirs + `Load
 - ~~Easy setup skills re-scan on `/setup reload`~~ **shipped s1670** (`ReplaceSkills` · Wire SkillDirs · restart no longer required for skill-only path changes)
 - ~~CLI `setup init` next-step dual path~~ **shipped s1686** (in-session `/setup reload` vs cold restart · no invent CLI `setup reload`)
 - ~~setup preflight next-step dual path~~ **shipped s1699** (`FormatPreflightText` appends `SetupPreflightNextStepLines` · in-session `/setup reload` vs cold restart · no invent CLI `setup reload`)
+- ~~setup drift/repair next-step dual path~~ **shipped s1707** (`FormatDriftText` / `FormatRepairPlan` / `FormatRepairResult` append dual-path next-step · in-session slash vs cold restart · no invent CLI setup drift/repair/reload)
 
 See product plan: agent-native MCP/plugin setup wizard + continuous pull/analyze + guided repair.
 

@@ -220,3 +220,28 @@ func TestFormatDriftText_NonEmpty(t *testing.T) {
 		t.Fatalf("missing honesty line:\n%s", text)
 	}
 }
+
+// s1707: FormatDriftText appends dual-path next-step after honesty footer.
+func TestFormatDriftText_DualPathNextStep(t *testing.T) {
+	text := FormatDriftText(DriftReport{Findings: nil, Notes: nil})
+	for _, want := range []string{
+		"/setup reload",
+		"/setup repair",
+		"restart",
+		"CLI has no",
+		"package wire",
+		"dual_write OFF",
+		"not Memory GA",
+		"s1707",
+	} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("FormatDriftText missing dual-path needle %q in:\n%s", want, text)
+		}
+	}
+	if strings.Contains(text, "Connected: yes") {
+		t.Fatalf("must not invent Connected green:\n%s", text)
+	}
+	if strings.Contains(text, "dual_write ON") || strings.Contains(text, "Memory GA shipped") {
+		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", text)
+	}
+}
