@@ -72,7 +72,7 @@ iomesh mesh usage --json       # UsagePrint always-emit (s738; completeness pin 
 
 When `[iomesh]` is enabled and `emit_dept_streams = true` (default):
 
-1. Each LLM call → local `UsageMeter` **and** `POST /v1/streams/dept/publish` (subject = `dept.agent.llm_call`, base64 JSON envelope — same wire as [iomesh-client-sdk-go](https://github.com/iome-sh/iomesh-client-sdk-go) `EmitLLMCall`)
+1. Each LLM call → local `UsageMeter` **and** `POST /v1/streams/dept/publish` (subject = `dept.agent.llm_call`, base64 JSON envelope — same wire as [iomesh-client-sdk-go](https://github.com/iome-sh/iomesh-client-sdk-go) `EmitLLMCall` / Python SDK peer)
 2. Request headers: `X-IOMesh-Org` / `X-IOMesh-Workspace` when `[iomesh] org` / `workspace` are set (PlanGate / multi-tenant attribution)
 3. Envelope payload includes `tenant`, `org`, `workspace`, token counts, `est_usd`, model ids (errors redacted)
 
@@ -153,7 +153,7 @@ iomesh mesh catalog --id ops-incidents --json # CatalogProductPrint always-emit 
 
 ## Stream discovery (operator list/get/delete/messages)
 
-Operator discovery over **org event streams / heartbeats** (help-blurb level framing — list/get/messages/delete wire unchanged). Lean client surface (no SDK dependency; wire parity with [iomesh-client-sdk-go](https://github.com/iome-sh/iomesh-client-sdk-go) `StreamInfo` / message list intent):
+Operator discovery over **org event streams / heartbeats** (help-blurb level framing — list/get/messages/delete wire unchanged). Lean client surface (no SDK dependency; wire parity with [iomesh-client-sdk-go](https://github.com/iome-sh/iomesh-client-sdk-go) `StreamInfo` / message list intent, or [Python SDK peer](https://github.com/iome-sh/iomesh-client-sdk-python)):
 
 | Method | HTTP | Notes |
 |--------|------|-------|
