@@ -597,6 +597,9 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			handleSetupPreflight(out, parts[2:])
 		case "portal", "hitl", "urls":
 			fmt.Fprintln(out, setup.SetupLifecyclePortalHandoff())
+			for _, line := range setup.SetupPortalNextStepLines() {
+				fmt.Fprintln(out, line)
+			}
 		case "reload", "reattach", "hot-reload":
 			handleSetupReload(out, rt, parts[2:])
 		case "pull":
@@ -1159,8 +1162,9 @@ honesty: ` + agent.IntegrationsHonestyOneLiner + `
 }
 
 // setupHelp is bare /setup and help/? copy (s1526 P3+P4 + s1530 P5 + s1534 P6 + s1538 P7 residual honesty).
+// s1723: when IOMESH_PLATFORM_RESIDUAL is on, append PlatformResidualLabelNote (label only · never hides subcommands).
 func setupHelp() string {
-	return strings.TrimSpace(`usage: /setup [init [profiles] [--stdio] [--print-only] [--plugins-dir path] | preflight | portal | reload | pull … | analyze … | drift|maintain | repair …]
+	base := strings.TrimSpace(`usage: /setup [init [profiles] [--stdio] [--print-only] [--plugins-dir path] | preflight | portal | reload | pull … | analyze … | drift|maintain | repair …]
   init       write managed config fragment (profiles: local-memory|plugins|mesh|platform-mcp|all; default local-memory)
   preflight  residual-honest probe (aliases status|check) — PASS ≠ invent Connected / Memory GA
   portal     browser HITL URLs (integrations + settings/agent)
@@ -1179,6 +1183,10 @@ honesty: ` + setup.SetupLifecycleHonestyOneLiner + `
   analyze: dual_write OFF · not Memory GA · analyze tick ≠ invent Connected · /memory digest still valid
   drift: dual_write OFF · not Memory GA · drift report ≠ invent install green · package wire ≠ Connected
   repair: dual_write OFF · not Memory GA · repair apply ≠ invent Connected · package wire ≠ Connected · portal HITL still human · safe steps only · no auto-repair without apply --yes`)
+	if note := setup.PlatformResidualLabelNote(); note != "" {
+		return base + "\n" + note
+	}
+	return base
 }
 
 // setupPullHonesty is printed on every /setup pull output (s1530 P5 residual honesty).
@@ -1256,10 +1264,10 @@ func handleSetupInit(out io.Writer, args []string) {
 	}
 	fmt.Fprintf(out, "setup init: wrote managed fragment → %s\n", path)
 	fmt.Fprintf(out, "profiles: %v\n", profiles)
-	fmt.Fprintln(out, "next: ensure iomesh-memory-mcp is running (if local-memory) · set secret env vars")
-	fmt.Fprintln(out, "then: /setup preflight  · /setup reload  (or restart iomesh; CLI: iomesh setup preflight)")
-	fmt.Fprintln(out, "honesty: dual_write OFF · not Memory GA · catalog ≠ Connected · portal HITL for installs")
-	fmt.Fprintln(out, "note: continuous pull opt-in via /setup pull · analyze ticks via /setup analyze · drift /setup drift · guided repair /setup repair · CLI iomesh memory pull · /memory digest still valid · reload = package wire ≠ Connected")
+	// s1686 residual-honest dual-path next-step (peer CLI iomesh setup init · free eng s1723 slash parity).
+	for _, line := range setup.SetupInitNextStepLines() {
+		fmt.Fprintln(out, line)
+	}
 }
 
 // handleSetupReload reloads skills catalog + MCP servers from config without process restart

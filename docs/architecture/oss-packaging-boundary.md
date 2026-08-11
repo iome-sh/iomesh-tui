@@ -62,7 +62,7 @@ These rails exist so residual eng and operators **do not invent** platform green
 
 Keep soft residual-check harnesses — they are **anti-claim rails**, not live customer dogfood.
 
-**Future / opt-in documentation only (not implemented as a hiding gate):** operators or residual eng may set `IOMESH_PLATFORM_RESIDUAL=1` as a future label when filtering platform residual-check surfaces in tooling. Continuum labeling already splits **Edge OSS path** vs **Platform residual honesty**; soft residual-checks remain available. Prefer document-only until an env helper can ship without hiding lanes or breaking tests.
+**Optional env label (s1723 · not a hiding gate):** operators or residual eng may set `IOMESH_PLATFORM_RESIDUAL=1` (also `true` / `yes`, case-insensitive) to label platform residual honesty surfaces. Helper `setup.PlatformResidualEnvOn` / `PlatformResidualLabelNote` shipped for **labeling only** — does **not** hide Edge OSS lanes · residual PASS ≠ invent control plane · free eng **s1723**. Continuum labeling already splits **Edge OSS path** vs **Platform residual honesty**; soft residual-checks remain available.
 
 ---
 

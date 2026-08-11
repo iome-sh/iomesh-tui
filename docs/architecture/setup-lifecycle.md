@@ -1,7 +1,7 @@
 # Setup lifecycle (agent-native wizard foundation)
 
-**Serial:** free eng **s1525** P1–P2 · **s1526** P3–P4 · **s1530** P5 · **s1534** P6 · **s1538** P7 · **s1542** closeout residual · **s1546** still-human APPLY reaffirm · **s1550** edge-first human-gates residual pin · **s1574** still-human APPLY soft dogfood residual · **s1670** easy setup: `/setup reload` re-scans skills · residual-honest · **s1686** CLI `setup init` next-step dual path (`/setup reload` vs cold restart) · **s1699** setup preflight next-step dual path (`/setup reload` vs cold restart) · **s1707** setup drift/repair dual-path next-step · **s1711** setup reload/pull/analyze next-step honesty  
-**Status:** foundation + agent-native slash/skill + package wire + `ReplaceMCP` + **`ReplaceSkills` (s1670)** + in-session opt-in continuous pull + analyze ticks + report-only drift + **guided repair** (safe steps · explicit `--yes`) + **onboard next setup** lane + **CLI init dual-path next-step (s1686)** + **preflight dual-path next-step (s1699)** + **drift/repair dual-path next-step (s1707)** + **reload/pull/analyze next-step (s1711)**  
+**Serial:** free eng **s1525** P1–P2 · **s1526** P3–P4 · **s1530** P5 · **s1534** P6 · **s1538** P7 · **s1542** closeout residual · **s1546** still-human APPLY reaffirm · **s1550** edge-first human-gates residual pin · **s1574** still-human APPLY soft dogfood residual · **s1670** easy setup: `/setup reload` re-scans skills · residual-honest · **s1686** CLI `setup init` next-step dual path (`/setup reload` vs cold restart) · **s1699** setup preflight next-step dual path (`/setup reload` vs cold restart) · **s1707** setup drift/repair dual-path next-step · **s1711** setup reload/pull/analyze next-step honesty · **s1723** setup init slash parity + portal next-step + `IOMESH_PLATFORM_RESIDUAL` label  
+**Status:** foundation + agent-native slash/skill + package wire + `ReplaceMCP` + **`ReplaceSkills` (s1670)** + in-session opt-in continuous pull + analyze ticks + report-only drift + **guided repair** (safe steps · explicit `--yes`) + **onboard next setup** lane + **CLI init dual-path next-step (s1686)** + **preflight dual-path next-step (s1699)** + **drift/repair dual-path next-step (s1707)** + **reload/pull/analyze next-step (s1711)** + **slash init parity + portal next-step + PLATFORM_RESIDUAL label (s1723)**  
 **Shipped P7:** `/setup repair` plan + apply `--yes` (safe steps only · notes stay human)  
 **Shipped s1542:** residual-honest `/onboard next setup` consolidates P1–P7 map story  
 **Related (s1546):** still-human APPLY reaffirm after closeout — setup residual complete ≠ invent human-gate green / live APPLY / E10 (`/onboard next human-gates`)  
@@ -42,16 +42,16 @@ iomesh setup preflight --json
 iomesh memory pull --stream EVENTS --name tui-local-palace --once --dry-run
 ```
 
-### After `iomesh setup init` (s1686 dual path)
+### After `iomesh setup init` / `/setup init` (s1686 dual path · s1723 slash parity)
 
-Post-write next steps are residual-honest (helper `setup.SetupInitNextStepLines`):
+Post-write next steps are residual-honest (helper `setup.SetupInitNextStepLines` — **same helper for CLI and slash** `/setup init` after s1723 parity):
 
 | Path | When | Next |
 |------|------|------|
 | **In-session** | TUI/session already running | `/setup preflight` · **`/setup reload`** (hot-swap MCP + re-scan skills · package wire ≠ Connected) |
 | **Cold start** | No session / CLI-only | **restart `iomesh`** · `iomesh setup preflight` |
 
-**Honesty:** CLI has **no** `iomesh setup reload` subcommand — in-session `/setup reload` only · dual_write **OFF** · not Memory GA · catalog ≠ Connected · package wire ≠ Connected · free eng **s1686**.
+**Honesty:** CLI has **no** `iomesh setup reload` subcommand — in-session `/setup reload` only · dual_write **OFF** · not Memory GA · catalog ≠ Connected · package wire ≠ Connected · free eng **s1686** · slash init next-step parity free eng **s1723**.
 
 ### After `iomesh setup preflight` / `/setup preflight` (s1699 dual path)
 
@@ -117,9 +117,9 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 | Subcommand | Behavior |
 |------------|----------|
 | bare / `help` | usage + honesty one-liner (dual_write OFF · not Memory GA · pull/analyze opt-in · drift · guided repair) |
-| `init` | `setup.BuildManagedFragment` + `config.WriteSetupManagedUser` (or `--print-only`) |
+| `init` | `setup.BuildManagedFragment` + `config.WriteSetupManagedUser` (or `--print-only`) · s1723 appends `SetupInitNextStepLines` (CLI parity with s1686) |
 | `preflight` / `status` / `check` | `setup.Preflight` + `FormatPreflightText` (s1699 dual-path next-step appended) |
-| `portal` | browser HITL URLs only |
+| `portal` | browser HITL URLs (`SetupLifecyclePortalHandoff`) · s1723 appends `SetupPortalNextStepLines` |
 | `reload` | `Wire` + `ReplaceSkills` + `ConnectMCP` + `ReplaceMCP` (s1670 skills re-scan · optional `--config path` · s1711 next-step appended via `SetupReloadNextStepLines`) |
 | `pull` | in-session continuous pull status/start/once/stop (s1530 P5 · s1711 next-step via `SetupPullNextStepLines`) |
 | `analyze` | in-session analyze tick status/start/once/stop (s1534 P6 · s1711 next-step via `SetupAnalyzeNextStepLines`) |
@@ -128,7 +128,18 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 
 Simple flags on slash `init`: `--stdio` · `--print-only` · `--plugins-dir path` · `--memory-url URL`. Full flag set remains on CLI `iomesh setup init`.
 
-After init: start memory host (if needed) · set secret env vars · `/setup reload` (or restart TUI) · optional `/setup pull start` when mesh + consumer configured · optional `/setup analyze start` · `/setup drift` for residual next steps · optional `/setup repair apply --yes` for safe guided steps only.
+After init: start memory host (if needed) · set secret env vars · `/setup reload` (or restart TUI) · optional `/setup pull start` when mesh + consumer configured · optional `/setup analyze start` · `/setup drift` for residual next steps · optional `/setup repair apply --yes` for safe guided steps only. Slash `/setup init` uses the **same** `SetupInitNextStepLines` helper as CLI `iomesh setup init` (s1723 parity with s1686).
+
+### After `/setup portal` (s1723 next-step)
+
+Post-portal handoff next steps are residual-honest (helper `setup.SetupPortalNextStepLines` · appended after `SetupLifecyclePortalHandoff`):
+
+| Path | When | Next |
+|------|------|------|
+| **In-session** | Browser OAuth/install complete · TUI/session running | `/setup preflight` · **`/setup reload`** (package wire ≠ Connected) |
+| **Cold start** | No session / CLI-only | **restart `iomesh`** · `iomesh setup preflight` (CLI has **no** setup portal/reload) |
+
+**Honesty:** agent MCP **cannot write installs** · catalog ≠ Connected · dual_write **OFF** · not Memory GA · package wire ≠ Connected · browser HITL only · free eng **s1723**.
 
 ## Continuous pull (s1530 P5 + s1711 next-step)
 
@@ -341,6 +352,7 @@ Post-reload next steps are residual-honest (helper `setup.SetupReloadNextStepLin
 - ~~setup preflight next-step dual path~~ **shipped s1699** (`FormatPreflightText` appends `SetupPreflightNextStepLines` · in-session `/setup reload` vs cold restart · no invent CLI `setup reload`)
 - ~~setup drift/repair next-step dual path~~ **shipped s1707** (`FormatDriftText` / `FormatRepairPlan` / `FormatRepairResult` append dual-path next-step · in-session slash vs cold restart · no invent CLI setup drift/repair/reload)
 - ~~setup reload/pull/analyze next-step honesty~~ **shipped s1711** (`SetupReloadNextStepLines` · `SetupPullNextStepLines` · `SetupAnalyzeNextStepLines` · reload in-session only · pull dual path slash vs CLI `iomesh memory pull` · analyze dual path slash vs `/memory digest` · package wire ≠ Connected · pull/analyze tick ≠ invent Connected)
+- ~~setup init slash parity + portal next-step + PLATFORM_RESIDUAL label~~ **shipped s1723** (slash `/setup init` uses `SetupInitNextStepLines` · CLI parity with s1686 · `/setup portal` appends `SetupPortalNextStepLines` · browser HITL → preflight/reload dual path · agent MCP cannot write installs · catalog ≠ Connected · optional `IOMESH_PLATFORM_RESIDUAL=1` via `PlatformResidualEnvOn` labels only · does **not** hide Edge OSS lanes · residual PASS ≠ invent control plane)
 
 See product plan: agent-native MCP/plugin setup wizard + continuous pull/analyze + guided repair.
 

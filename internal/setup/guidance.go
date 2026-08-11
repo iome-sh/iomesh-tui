@@ -136,3 +136,16 @@ func SetupAnalyzeNextStepLines() []string {
 		"note: analyze tick ≠ invent Connected · analyze_continuous opt-in · /memory digest still valid · free eng s1711",
 	}
 }
+
+// SetupPortalNextStepLines residual-honest post-/setup portal handoff next-step (s1723).
+// Dual path: complete OAuth/install in browser HITL · then TUI/session → /setup preflight ·
+// /setup reload (package wire ≠ Connected) · else cold → restart iomesh · iomesh setup preflight.
+// CLI has no setup portal/reload as product invent. agent MCP cannot write installs ·
+// catalog ≠ Connected · dual_write OFF · not Memory GA · free eng s1723.
+func SetupPortalNextStepLines() []string {
+	return []string{
+		"next: complete OAuth/install in browser HITL · then if TUI/session running → /setup preflight · /setup reload (package wire ≠ Connected)",
+		"      else cold start → restart iomesh · iomesh setup preflight (CLI has no setup portal/reload)",
+		"note: agent MCP cannot write installs · catalog ≠ Connected · dual_write OFF · not Memory GA · free eng s1723",
+	}
+}

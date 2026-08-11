@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Setup init slash next-step parity + portal next-step + IOMESH_PLATFORM_RESIDUAL label (s1723)** — slash `/setup init` uses `SetupInitNextStepLines` (CLI parity with s1686). `/setup portal` appends `SetupPortalNextStepLines` (browser HITL → preflight/reload dual path · agent MCP cannot write installs · catalog ≠ Connected). Optional `IOMESH_PLATFORM_RESIDUAL=1` env labels platform residual honesty only (does **not** hide Edge OSS lanes · residual PASS ≠ invent control plane). dual_write **OFF** · package wire ≠ Connected · not Memory GA · free eng **s1723**.
+
 ## [0.74.0] — 2026-08-11
 
 Minor release: setup Format*/next-step honesty continuum after v0.73.0 — drift/repair dual-path next-step (s1707) + reload/pull/analyze next-step (s1711). **Beta** · dual_write OFF · package wire ≠ Connected · not Memory GA · CLI has no setup drift/repair/reload · pull ≠ invent Connected · analyze tick ≠ invent Connected · repair apply ≠ invent Connected · E10 Open · book-demo OFF.

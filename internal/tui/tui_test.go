@@ -4428,7 +4428,7 @@ func TestHandleSlash_SetupLifecycle(t *testing.T) {
 		t.Fatalf("must not print dual_write = true: %s", initOut)
 	}
 
-	// portal URLs
+	// portal URLs + s1723 next-step footer
 	out.Reset()
 	_, _ = handleSlash(&out, adapter, "/setup portal")
 	portalOut := out.String()
@@ -4440,6 +4440,47 @@ func TestHandleSlash_SetupLifecycle(t *testing.T) {
 	}
 	if !strings.Contains(portalOut, "dual_write OFF") {
 		t.Fatalf("portal honesty: %s", portalOut)
+	}
+	for _, want := range []string{
+		"s1723",
+		"/setup reload",
+		"catalog ≠ Connected",
+		"agent MCP cannot write",
+		"not Memory GA",
+	} {
+		if !strings.Contains(portalOut, want) {
+			t.Fatalf("portal s1723 next-step missing %q in:\n%s", want, portalOut)
+		}
+	}
+
+	// s1723 / s1686: /setup init write path uses SetupInitNextStepLines (CLI has no setup reload honesty).
+	out.Reset()
+	cfgPath := filepath.Join(t.TempDir(), "setup-init-s1723.toml")
+	t.Setenv("IOMESH_CONFIG", cfgPath)
+	_, _ = handleSlash(&out, adapter, "/setup init local-memory")
+	initWrite := out.String()
+	if !strings.Contains(initWrite, "setup init: wrote") {
+		t.Fatalf("init write confirmation missing: %s", initWrite)
+	}
+	if !strings.Contains(initWrite, "profiles:") {
+		t.Fatalf("init write profiles missing: %s", initWrite)
+	}
+	for _, want := range []string{
+		"s1686",
+		"/setup reload",
+		"restart",
+		"CLI has no",
+		"package wire",
+		"dual_write OFF",
+		"not Memory GA",
+	} {
+		if !strings.Contains(initWrite, want) {
+			t.Fatalf("init write s1686 next-step missing %q in:\n%s", want, initWrite)
+		}
+	}
+	// Must not invent CLI setup reload as a real command path without honesty.
+	if strings.Contains(initWrite, "iomesh setup reload") && !strings.Contains(initWrite, "CLI has no") {
+		t.Fatalf("init write must not advertise CLI setup reload without honesty:\n%s", initWrite)
 	}
 
 	// preflight against missing config path (honest not_started / fail path)
@@ -4511,6 +4552,61 @@ func TestHandleSlash_SetupLifecycle(t *testing.T) {
 		if !strings.Contains(rel, want) {
 			t.Fatalf("reload s1711 next-step missing %q in:\n%s", want, rel)
 		}
+	}
+}
+
+// s1723: IOMESH_PLATFORM_RESIDUAL labels bare /setup help only — never hides setup subcommands/lanes.
+func TestHandleSlash_SetupPlatformResidualLabel(t *testing.T) {
+	rt := testRuntime(t)
+	adapter := runtimeAdapter{rt: rt}
+
+	// Off: no residual label note.
+	t.Setenv("IOMESH_PLATFORM_RESIDUAL", "")
+	var out bytes.Buffer
+	_, err := handleSlash(&out, adapter, "/setup")
+	if err != nil {
+		t.Fatal(err)
+	}
+	off := out.String()
+	if strings.Contains(off, "IOMESH_PLATFORM_RESIDUAL=1") || strings.Contains(off, "labels only") {
+		t.Fatalf("bare /setup must not print residual label when env off:\n%s", off)
+	}
+	// Edge/setup subcommands remain listed when off.
+	for _, want := range []string{"init", "preflight", "portal", "reload", "pull", "analyze", "drift", "repair"} {
+		if !strings.Contains(off, want) {
+			t.Fatalf("help missing subcommand %q when residual off:\n%s", want, off)
+		}
+	}
+
+	// On: label appears once; lanes/subcommands still listed (never hidden).
+	t.Setenv("IOMESH_PLATFORM_RESIDUAL", "1")
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/setup help")
+	if err != nil {
+		t.Fatal(err)
+	}
+	on := out.String()
+	for _, want := range []string{
+		"IOMESH_PLATFORM_RESIDUAL",
+		"labels only",
+		"lanes not hidden",
+		"s1723",
+		// still list full setup surface
+		"init",
+		"preflight",
+		"portal",
+		"reload",
+		"pull",
+		"analyze",
+		"drift",
+		"repair",
+	} {
+		if !strings.Contains(on, want) {
+			t.Fatalf("residual-on help missing %q in:\n%s", want, on)
+		}
+	}
+	if strings.Contains(on, "hide lanes") || strings.Contains(on, "hides lanes") {
+		t.Fatalf("must not claim hide-lanes product behavior:\n%s", on)
 	}
 }
 
