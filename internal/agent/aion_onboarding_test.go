@@ -614,7 +614,7 @@ func TestAionAgentOnboardingNextGtmLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1377+s1453+s1458+s1463+s1469+s1478+s1508+s1517: AionAgentOnboardingNextMemoryLane residual-honest memory local + edge OSS + public product attach + E4 client attach + product-only sample needles.
+// s1377+s1453+s1458+s1463+s1469+s1478+s1508+s1517+s1695: AionAgentOnboardingNextMemoryLane residual-honest memory local + edge OSS + public product attach + E4 client attach + product-only sample + Ops Pack first-run honesty needles.
 func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 	out := AionAgentOnboardingNextMemoryLane()
 	if out == "" {
@@ -623,11 +623,12 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 	for _, want := range []string{
 		"onboard next memory lane",
 		"no MCP dial",
-		"s1377+s1453+s1458+s1463+s1469+s1478+s1508+s1517",
+		"s1377+s1453+s1458+s1463+s1469+s1478+s1508+s1517+s1695",
 		"local-primary",
 		"github.com/iome-sh/memory",
 		"github.com/iome-sh/iomesh-memory-mcp",
 		"iomesh-memory-mcp",
+		"TUI OSS",
 		"s1517", // product-only memory sample (iomesh-memory-mcp); aion residual sample removed
 		"product-only memory sample",
 		"aion broker private",
@@ -635,6 +636,7 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 		"public",
 		"s1478",
 		"s1508",
+		"s1695",
 		"E4 MCP client attach",
 		"Edge Memory GA candidacy only",
 		"residual PASS ≠ invent Edge Memory GA declared",
@@ -660,6 +662,12 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 		"tool parity may be lean",
 		"Palace sunset",
 		"mesh optional for pull",
+		"mesh optional",
+		"OSS first-run complete without mesh",
+		"Ops Pack not first-run required",
+		"Memory Ops Pack optional",
+		"not freemium hosted palace",
+		"Ops Pack ≠ GPU",
 		"/onboard next memory-pull",
 		"/onboard next operator",
 		"dual_write OFF",
@@ -686,6 +694,7 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 		"mesh ≠ memory",
 		"product-only memory sample",
 		"iomesh-memory-mcp only",
+		"only when mesh configured",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("memory lane missing %q in:\n%s", want, out)
@@ -781,7 +790,7 @@ func TestAionAgentOnboardingNextMeshLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1407: AionAgentOnboardingNextMemoryPullLane residual-honest Ops Pack pull path needles.
+// s1407+s1695: AionAgentOnboardingNextMemoryPullLane residual-honest Ops Pack pull path + first-run honesty needles.
 func TestAionAgentOnboardingNextMemoryPullLane_HonestyNeedles(t *testing.T) {
 	out := AionAgentOnboardingNextMemoryPullLane()
 	if out == "" {
@@ -803,8 +812,15 @@ func TestAionAgentOnboardingNextMemoryPullLane_HonestyNeedles(t *testing.T) {
 		"~$119",
 		"~$88",
 		"Memory Ops Pack",
+		"local-primary",
+		"TUI OSS",
+		"pull / retain / support",
 		"package load ≠ Ops Pack entitlement",
 		"package load ≠ Memory GA",
+		"not first-run required",
+		"first-run is local OSS only",
+		"Memory Ops Pack optional",
+		"s1695",
 		"pull_not_probed",
 		"never invent pull green",
 		"residual PASS ≠ live dogfood",

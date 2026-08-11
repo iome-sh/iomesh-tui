@@ -144,15 +144,16 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|mesh|me
    - GTM checklist ≠ invent GTM agent GA · no auto-send · human CRM commercial.
    - Companion: `read_skill gtm-draft-only-agent` · slash `/gtm [help|checklist]`.
 
-#### D3. Memory local lane (`/onboard next memory` · s1377+s1453+s1458+s1463+s1469+s1478)
+#### D3. Memory local lane (`/onboard next memory` · s1377+s1453+s1458+s1463+s1469+s1478+s1695)
 
-3. **local-primary Memory edge** — TUI + Memory MCP + `github.com/iome-sh/memory` kernel + local palace · dual_write **OFF**.
-   - Package load ≠ Memory GA · ≠ freemium palace · local-primary only · **Palace sunset**.
+3. **local-primary Memory edge** — TUI OSS + `iomesh-memory-mcp` + `github.com/iome-sh/memory` kernel + local palace · dual_write **OFF**.
+   - Package load ≠ Memory GA · ≠ freemium palace · not freemium hosted palace · local-primary only · **Palace sunset**.
+   - **First-run honesty (s1695):** **OSS first-run complete without mesh** · **Ops Pack not first-run required** · **Memory Ops Pack optional** · **mesh optional** — first-run stays OSS local-primary only; mesh/Ops Pack is a later optional path.
    - **Edge OSS Option A (s1453):** product MCP host = **`iomesh-memory-mcp` only** · aion = **private** cloud broker/CP · kernel module `github.com/iome-sh/memory` · s1517 no in-tree residual aion Memory sample.
    - **Public product attach (s1478):** both edge repos **public** · `go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main` · `go get github.com/iome-sh/memory@main` · **no GOPRIVATE** · attach streamable HTTP `http://127.0.0.1:8080/mcp` or stdio · docker compose still valid · dual_write **OFF** · not Memory GA · aion broker private · **flip complete residual ≠ invent Memory GA** · **public OSS ≠ invent platform GA** · **PASS ≠ invent full platform sidecar parity**.
    - History: M2 lean attach (s1458) · M3 edge dogfood (s1463) · M4 public flip readiness (s1469) — superseded for operator tip by s1478 public install.
    - **Product-only sample:** `examples/agent-plugins/iomesh-memory-mcp` (s1517 · aion broker private).
-   - Mesh **optional for pull only** · companion `/onboard next memory-pull` · `/onboard next e4` (s1566 E4 client-attach soft residual) · `/onboard next operator`.
+   - Mesh **optional** · companion `/onboard next memory-pull` (optional Ops Pack pull path **only when mesh configured** · not first-run required) · `/onboard next e4` (s1566 E4 client-attach soft residual) · `/onboard next operator`.
    - Optional advanced memory via `memory-advanced-agent` skill (opt-in).
    - Operator pulse: `/memory status` · `/onboard status`.
    - **mesh ≠ memory** — memory is local-edge palace; streaming org heartbeats live on the mesh lane (D3b).
@@ -170,18 +171,19 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|mesh|me
    - Slash: `/onboard next mesh` (aliases `stream` / `streams` / `heartbeat` / `heartbeats` / `pull`) — **NOT** `pulse` (pulse stays status board). Bare `pull` stays **mesh**, not memory-pull.
    - API: `AionAgentOnboardingNextMeshLane`.
 
-#### D3c. Memory Ops Pack / pull path lane (`/onboard next memory-pull` · s1407)
+#### D3c. Memory Ops Pack / pull path lane (`/onboard next memory-pull` · s1407+s1695)
 
-3c. **Memory Ops Pack pull path** — residual-honest mesh → local palace **egress** only.
+3c. **Memory Ops Pack pull path** — residual-honest mesh → local palace **egress** only (optional commercial overlay · **not first-run required**).
    - Path: `iomesh memory pull` · CreateConsumer → fetch → map envelope → local MCP `memory_ingest_turn` → ack.
-   - **dual_write OFF** · **not Memory GA** · **Palace sunset** · **pull ≠ freemium hosted palace**.
-   - **Ops Pack ≠ GPU fleet** — Memory Ops Pack **~$119** = pull / audit / Extended retain / support (not hosted GPU palace). Mesh base **~$88** is separate.
+   - **dual_write OFF** · **not Memory GA** · **Palace sunset** · **pull ≠ freemium hosted palace** · **not freemium hosted palace**.
+   - **Ops Pack ≠ GPU fleet** — Memory Ops Pack **~$119** = pull / retain / support · **local-primary** · TUI OSS + mesh pull entitlement (not hosted GPU palace). Mesh base **~$88** is separate.
+   - **First-run honesty (s1695):** **Ops Pack not first-run required** · first-run is local OSS only · Memory Ops Pack optional.
    - **package load ≠ Ops Pack entitlement** · package load ≠ Memory GA.
    - Honest board vocab: `path_ready` · `residual_only` · `pull_not_probed` — **never invent pull green**.
    - residual PASS ≠ live dogfood · PASS ≠ live APPLY.
    - Slash: `/onboard next memory-pull` (aliases `ops-pack` / `pull-path` / `memorypull` / `ops_pack`) — **bare `pull` stays mesh** (s1402).
    - API: `AionAgentOnboardingNextMemoryPullLane`.
-   - Companion: `/onboard next mesh` (streaming heartbeats) · `/onboard next memory` (local-edge attach).
+   - Companion: `/onboard next mesh` (streaming heartbeats) · `/onboard next memory` (local-edge attach · OSS first-run).
 
 #### D3d. Agentic integrations lane (`/onboard next agentic` · s1417+s1422+s1427 · product plane 3)
 
