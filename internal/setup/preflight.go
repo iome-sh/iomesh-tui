@@ -234,6 +234,10 @@ func FormatPreflightText(r *PreflightReport) string {
 	for _, n := range r.Notes {
 		fmt.Fprintf(&b, "  note: %s\n", n)
 	}
+	// s1699: residual-honest dual-path next-step after preflight report body.
+	for _, line := range SetupPreflightNextStepLines() {
+		fmt.Fprintf(&b, "%s\n", line)
+	}
 	return b.String()
 }
 

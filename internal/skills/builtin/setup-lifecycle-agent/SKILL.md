@@ -36,6 +36,11 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
    - Slash: `/setup preflight` (aliases `status` · `check`)
    - States: `not_started` · `config_present` / `config_written` · `awaiting_memory_host` · `local_memory_probe_ok`
    - **PASS ≠ invent Connected / INSTALL_STORE green / Memory GA**
+   - After preflight report (s1699 dual path · peer of s1686 init next-step · `SetupPreflightNextStepLines` / `FormatPreflightText`):
+     - **Preflight ok · TUI/session already running** → **`/setup reload`** (hot-swap MCP + skills · package wire ≠ Connected)
+     - **Host/secrets still missing** → start `iomesh-memory-mcp` · set secret env · re-run preflight
+     - **Cold CLI / no session** → **restart `iomesh`** (CLI has **no** `setup reload`) · then `/setup reload` in session if needed
+     - **CLI has no `iomesh setup reload`** — in-session `/setup reload` only · dual_write OFF · not Memory GA · free eng **s1699**
 
 3. **Portal HITL** — OAuth / connector install still browser session.
    - Slash: `/setup portal`
@@ -106,7 +111,7 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
 | `/setup analyze` | status · start · once · stop (s1534 P6 residual-honest) |
 | `/setup drift` / `/setup maintain` | report-only FormatDriftText (s1534 P6) |
 | `/setup repair` | plan (default) · apply --yes (s1538 P7 guided safe steps) |
-| CLI `iomesh setup` | init · preflight only (s1525 P1–P2 · s1686: **no** CLI `setup reload` · dual-path next-step after init) |
+| CLI `iomesh setup` | init · preflight only (s1525 P1–P2 · s1686/s1699: **no** CLI `setup reload` · dual-path next-step after init **and** after preflight) |
 | CLI `iomesh memory pull` | still valid continuous / once pull path |
 | `/memory digest` | still valid one-shot ops pulse |
 | System note | `<setup-lifecycle>` on AttachMCP |
