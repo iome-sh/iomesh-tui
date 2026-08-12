@@ -1855,6 +1855,11 @@ func (rt *Runtime) MemoryAdvancedStatus(ctx context.Context) (string, error) {
 	b.WriteString("not Memory GA · presence ≠ Connected / product green\n")
 	b.WriteString("integrations: see /integrations status for connector path\n")
 	b.WriteString(advancedStatusHonestyFooter)
+	// s1831: residual-honest dual-path next-step after /memory status inventory.
+	for _, line := range MemoryNextStepLines() {
+		b.WriteString("\n")
+		b.WriteString(line)
+	}
 	return strings.TrimSpace(b.String()), nil
 }
 

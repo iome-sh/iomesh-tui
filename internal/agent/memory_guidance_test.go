@@ -9,6 +9,68 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/mcp"
 )
 
+// TestMemoryNextStepLines_HonestyNeedles pins s1831 residual-honest next-step
+// after /memory status|help|digest (peer of OnboardNextStepLines s1825 · IntegrationsNextStepLines s1727).
+func TestMemoryNextStepLines_HonestyNeedles(t *testing.T) {
+	lines := MemoryNextStepLines()
+	if len(lines) == 0 {
+		t.Fatal("empty memory next-step lines")
+	}
+	out := strings.Join(lines, "\n")
+	for _, want := range []string{
+		"dual path residual-honest after memory surfaces",
+		"TUI/session running",
+		"/setup preflight",
+		"/setup reload",
+		"/memory digest",
+		"/onboard next memory",
+		"memory-pull",
+		"cold start",
+		"restart iomesh",
+		"iomesh setup preflight",
+		"iomesh memory pull",
+		"dual_write OFF",
+		"not Memory GA",
+		"local-primary",
+		"package wire ≠ Connected",
+		"soft ≠ invent live dogfood",
+		"s1831",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("memory next-step missing %q in:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
+		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", out)
+	}
+	if strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent Connected green:\n%s", out)
+	}
+}
+
+// TestMemoryAdvancedStatus_S1831NextStep pins s1831 next-step on /memory status inventory.
+func TestMemoryAdvancedStatus_S1831NextStep(t *testing.T) {
+	rt := testRT(t, t.TempDir())
+	out, err := rt.MemoryAdvancedStatus(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"s1831",
+		"/setup preflight",
+		"/setup reload",
+		"/memory digest",
+		"dual_write OFF",
+		"not Memory GA",
+		"local-primary",
+		"package wire ≠ Connected",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("MemoryAdvancedStatus missing s1831 next-step %q in:\n%s", want, out)
+		}
+	}
+}
+
 // s1291: MemoryAdvancedAgentGuidanceNote residual-honest needles.
 func TestMemoryAdvancedAgentGuidanceNote_HonestyNeedles(t *testing.T) {
 	out := MemoryAdvancedAgentGuidanceNote()
