@@ -185,6 +185,44 @@ func TestSamplesSoftState(t *testing.T) {
 	}
 }
 
+// TestPluginsNextStepLines_HonestyNeedles pins s1829 residual-honest next-step
+// after /plugins list|validate|smoke|status (peer of IntegrationsNextStepLines s1727 ·
+// OnboardNextStepLines s1825).
+func TestPluginsNextStepLines_HonestyNeedles(t *testing.T) {
+	lines := PluginsNextStepLines()
+	if len(lines) == 0 {
+		t.Fatal("empty plugins next-step lines")
+	}
+	out := strings.Join(lines, "\n")
+	for _, want := range []string{
+		"dual path residual-honest after plugins discover/validate/smoke",
+		"TUI/session running",
+		"/setup preflight",
+		"/setup reload",
+		"package wire ≠ Connected",
+		"/onboard next plugins",
+		"cold start",
+		"restart iomesh",
+		"iomesh setup preflight",
+		"iomesh plugins smoke",
+		"Discover ≠ Connected",
+		"Agent Plugins GA",
+		"package load ≠ Memory GA",
+		"dual_write OFF",
+		"s1829",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("plugins next-step missing %q in:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
+		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", out)
+	}
+	if strings.Contains(out, "Connected: yes") || strings.Contains(out, "Agent Plugins GA shipped") {
+		t.Fatalf("must not invent Connected green / Agent Plugins GA shipped:\n%s", out)
+	}
+}
+
 func TestDogfoodSamples_EmptyRootResolves(t *testing.T) {
 	// Empty moduleRoot uses FindModuleRoot(cwd). Chdir to module so both samples OK.
 	root := moduleRoot(t)

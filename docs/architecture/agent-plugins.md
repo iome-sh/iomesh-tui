@@ -189,6 +189,19 @@ Helpers: `SamplePluginRelPaths` / `DefaultSamplePluginDirs` / `FindModuleRoot` /
 
 Pure format helpers live in `internal/agentplugins/cli_format.go` (unit-tested). Dogfood helpers: `dogfood.go`.
 
+## After /plugins (s1829)
+
+Residual-honest **next-step footers** after `/plugins` list|validate|smoke|status|help — peer of integrations next-step (s1727) · onboard next-step (s1825).
+
+Helper `PluginsNextStepLines()` (in `dogfood.go`, alongside `ResidualSlashHonesty`) is appended by TUI handlers in `internal/tui/plugins_slash.go` after ResidualSlashHonesty (and ResidualDogfoodHonesty error paths).
+
+Post-surface dual path:
+
+1. **If TUI/session running** → `/setup preflight` · `/setup reload` (skills/MCP re-scan · package wire ≠ Connected) · optional `/onboard next plugins|status`
+2. **Else cold start** → restart `iomesh` · `iomesh setup preflight` · optional `iomesh plugins smoke`
+
+**Honesty:** Discover ≠ Connected · soft offline smoke ≠ invent Agent Plugins GA · package load ≠ Memory GA · dual_write **OFF** · free eng **s1829**.
+
 ## Residual honesty locks
 
 | Claim | Truth |

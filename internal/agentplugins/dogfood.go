@@ -184,3 +184,17 @@ func SamplesSoftState(moduleRoot string) string {
 // Soft offline dogfood ≠ invent Agent Plugins GA · dual_write OFF · Discover ≠ Connected ·
 // not Memory GA · residual PASS ≠ live dogfood · package load ≠ Memory GA · book-demo OFF.
 const ResidualSlashHonesty = "honesty: soft offline dogfood ≠ invent Agent Plugins GA · dual_write OFF · Discover ≠ Connected · not Memory GA · residual PASS ≠ live dogfood · package load ≠ Memory GA · book-demo OFF · never invent install green / Connected / INSTALL_STORE APPLY"
+
+// PluginsNextStepLines residual-honest post /plugins list|validate|smoke|status (s1829).
+// Dual path after discover/validate/smoke: in-session setup continuum vs cold start.
+// Peer of IntegrationsNextStepLines (s1727) · OnboardNextStepLines (s1825).
+// dual_write OFF · Discover ≠ Connected · soft offline smoke ≠ invent Agent Plugins GA ·
+// package load ≠ Memory GA · free eng s1829.
+func PluginsNextStepLines() []string {
+	return []string{
+		"next: dual path residual-honest after plugins discover/validate/smoke",
+		"      if TUI/session running → /setup preflight · /setup reload (skills/MCP re-scan · package wire ≠ Connected) · optional /onboard next plugins|status",
+		"      else cold start → restart iomesh · iomesh setup preflight · optional iomesh plugins smoke",
+		"note: Discover ≠ Connected · soft offline smoke ≠ invent Agent Plugins GA · package load ≠ Memory GA · dual_write OFF · free eng s1829",
+	}
+}

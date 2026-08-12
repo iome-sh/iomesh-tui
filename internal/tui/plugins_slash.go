@@ -19,7 +19,20 @@ func markPluginsSlashDogfoodSession(pass bool) {
 	agentplugins.SetSoftDogfoodSessionState(pass)
 }
 
-// pluginsHelp is bare /plugins and help/? copy (s1392 residual honesty).
+// writePluginsResidualFooter prints ResidualSlashHonesty + s1829 dual-path next-step.
+func writePluginsResidualFooter(out io.Writer) {
+	fmt.Fprintln(out, agentplugins.ResidualSlashHonesty)
+	fmt.Fprintln(out, strings.Join(agentplugins.PluginsNextStepLines(), "\n"))
+}
+
+// writePluginsDogfoodResidualFooter prints ResidualDogfoodHonesty + s1829 dual-path next-step
+// (error paths that never reach ResidualSlashHonesty).
+func writePluginsDogfoodResidualFooter(out io.Writer) {
+	fmt.Fprintln(out, agentplugins.ResidualDogfoodHonesty)
+	fmt.Fprintln(out, strings.Join(agentplugins.PluginsNextStepLines(), "\n"))
+}
+
+// pluginsHelp is bare /plugins and help/? copy (s1392 residual honesty · s1829 next-step).
 func pluginsHelp() string {
 	return strings.TrimSpace(`usage: /plugins [help|list|validate|smoke|status]  (alias /plugin)
   help|?              this residual-honest usage (also bare /plugins)
@@ -32,10 +45,10 @@ smoke = discover/validate only · no MCP dial · PATH residual · soft offline �
 Discover/list ≠ Connected · package load ≠ Memory GA · soft offline smoke ≠ invent Agent Plugins GA
 never invent install green / Connected / INSTALL_STORE APPLY · dual_write OFF · book-demo OFF · portal HITL
 CLI twin: iomesh plugins list|validate|smoke · continuum: /onboard next plugins · /onboard next status
-` + agentplugins.ResidualSlashHonesty)
+` + agentplugins.ResidualSlashHonesty + "\n" + strings.Join(agentplugins.PluginsNextStepLines(), "\n"))
 }
 
-// handlePluginsList residual-honest /plugins list (s1392).
+// handlePluginsList residual-honest /plugins list (s1392 · s1829 next-step).
 // DiscoverAll fail-open; residual offline message when no dirs.
 func handlePluginsList(out io.Writer, args []string) {
 	dirs := nonEmptyArgs(args)
@@ -44,7 +57,7 @@ func handlePluginsList(out io.Writer, args []string) {
 		fmt.Fprintln(out, agentplugins.FormatListEmptyFooter(false, false))
 		fmt.Fprintln(out, "tip: pass package roots: /plugins list examples/agent-plugins/hello-iome")
 		fmt.Fprintln(out, "or soft offline smoke: /plugins smoke (both in-repo samples)")
-		fmt.Fprintln(out, agentplugins.ResidualSlashHonesty)
+		writePluginsResidualFooter(out)
 		return
 	}
 	plugins, warns := agentplugins.DiscoverAll(dirs)
@@ -53,7 +66,7 @@ func handlePluginsList(out io.Writer, args []string) {
 	}
 	if len(plugins) == 0 {
 		fmt.Fprintln(out, agentplugins.FormatListEmptyFooter(false, true))
-		fmt.Fprintln(out, agentplugins.ResidualSlashHonesty)
+		writePluginsResidualFooter(out)
 		return
 	}
 	fmt.Fprintln(out, agentplugins.FormatListHeader())
@@ -64,10 +77,10 @@ func handlePluginsList(out io.Writer, args []string) {
 		}
 	}
 	fmt.Fprintln(out, "note: Discover ≠ Connected · list ≠ invent Agent Plugins GA · package load ≠ Memory GA")
-	fmt.Fprintln(out, agentplugins.ResidualSlashHonesty)
+	writePluginsResidualFooter(out)
 }
 
-// handlePluginsValidate residual-honest /plugins validate (s1392).
+// handlePluginsValidate residual-honest /plugins validate (s1392 · s1829 next-step).
 // ValidateDirs fail-open for TUI display (exit codes are CLI-only).
 func handlePluginsValidate(out io.Writer, args []string) {
 	dirs := nonEmptyArgs(args)
@@ -75,7 +88,7 @@ func handlePluginsValidate(out io.Writer, args []string) {
 		fmt.Fprintln(out, agentplugins.FormatListEmptyFooter(false, false))
 		fmt.Fprintln(out, "tip: pass package roots: /plugins validate examples/agent-plugins/hello-iome")
 		fmt.Fprintln(out, "or soft offline smoke: /plugins smoke (both in-repo samples)")
-		fmt.Fprintln(out, agentplugins.ResidualSlashHonesty)
+		writePluginsResidualFooter(out)
 		return
 	}
 	outcomes, scanWarns := agentplugins.ValidateDirs(dirs)
@@ -84,7 +97,7 @@ func handlePluginsValidate(out io.Writer, args []string) {
 	}
 	if len(outcomes) == 0 {
 		fmt.Fprintln(out, agentplugins.FormatListEmptyFooter(false, true))
-		fmt.Fprintln(out, agentplugins.ResidualSlashHonesty)
+		writePluginsResidualFooter(out)
 		return
 	}
 	for _, o := range outcomes {
@@ -100,10 +113,10 @@ func handlePluginsValidate(out io.Writer, args []string) {
 	okCount := agentplugins.ValidateOKCount(outcomes)
 	fmt.Fprintf(out, "validate summary: ok=%d/%d (fail-open TUI · OK ≠ Connected / install APPLY · ≠ invent Agent Plugins GA)\n",
 		okCount, len(outcomes))
-	fmt.Fprintln(out, agentplugins.ResidualSlashHonesty)
+	writePluginsResidualFooter(out)
 }
 
-// handlePluginsDogfood residual-honest soft offline /plugins dogfood (s1392).
+// handlePluginsDogfood residual-honest soft offline /plugins dogfood (s1392 · s1829 next-step).
 // Calls DogfoodSamples with FindModuleRoot; never invents GA/Connected/live dogfood.
 func handlePluginsDogfood(out io.Writer) {
 	root, err := agentplugins.FindModuleRoot("")
@@ -112,7 +125,7 @@ func handlePluginsDogfood(out io.Writer) {
 		cwd, cwdErr := os.Getwd()
 		if cwdErr != nil {
 			fmt.Fprintf(out, "smoke: find module root: %v\n", err)
-			fmt.Fprintln(out, agentplugins.ResidualDogfoodHonesty)
+			writePluginsDogfoodResidualFooter(out)
 			markPluginsSlashDogfoodSession(false)
 			return
 		}
@@ -122,7 +135,7 @@ func handlePluginsDogfood(out io.Writer) {
 	outcomes, warns, err := agentplugins.DogfoodSamples(root)
 	if err != nil {
 		fmt.Fprintf(out, "smoke: %v\n", err)
-		fmt.Fprintln(out, agentplugins.ResidualDogfoodHonesty)
+		writePluginsDogfoodResidualFooter(out)
 		markPluginsSlashDogfoodSession(false)
 		return
 	}
@@ -148,10 +161,10 @@ func handlePluginsDogfood(out io.Writer) {
 	// s1397: tip re-run status board + export so session soft state refreshes residual evidence.
 	fmt.Fprintln(out, "tip: re-run /onboard next status then /onboard next export — session soft smoke refreshes plugins lane (≠ invent Agent Plugins GA · ≠ live dogfood · board ≠ invent Connected)")
 	fmt.Fprintln(out, agentplugins.ResidualDogfoodHonesty)
-	fmt.Fprintln(out, agentplugins.ResidualSlashHonesty)
+	writePluginsResidualFooter(out)
 }
 
-// handlePluginsStatus residual-honest /plugins status pulse (s1392 · s1397 shared session SSOT).
+// handlePluginsStatus residual-honest /plugins status pulse (s1392 · s1397 shared session SSOT · s1829 next-step).
 // samples_ok|samples_missing · dogfood_not_run default (session soft marker optional).
 // ≠ live dogfood · ≠ invent Agent Plugins GA.
 func handlePluginsStatus(out io.Writer) {
@@ -166,7 +179,8 @@ func handlePluginsStatus(out io.Writer) {
   · never invent install green / Connected / INSTALL_STORE APPLY · dual_write OFF · book-demo OFF
   slash: /plugins smoke (aliases dogfood|soft|samples|offline) · /plugins list · /plugins validate
   continuum: /onboard next plugins · /onboard next status · /onboard next export · iomesh plugins smoke
-%s`, samples, dogfoodState, agentplugins.ResidualSlashHonesty)))
+%s
+%s`, samples, dogfoodState, agentplugins.ResidualSlashHonesty, strings.Join(agentplugins.PluginsNextStepLines(), "\n"))))
 }
 
 func nonEmptyArgs(args []string) []string {

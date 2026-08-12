@@ -4014,6 +4014,10 @@ func TestHandleSlash_Plugins(t *testing.T) {
 		"dual_write OFF",
 		"not Memory GA",
 		"residual PASS ≠ live dogfood",
+		// s1829 residual-honest dual-path next-step
+		"/setup reload",
+		"package wire ≠ Connected",
+		"s1829",
 	} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("bare /plugins missing %q in:\n%s", want, s)
@@ -4046,6 +4050,8 @@ func TestHandleSlash_Plugins(t *testing.T) {
 		"[plugins] is opt-in",
 		"/plugins smoke",
 		"Agent Plugins GA",
+		"s1829",
+		"/setup preflight",
 	} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("list empty missing %q in:\n%s", want, s)
@@ -4080,6 +4086,8 @@ func TestHandleSlash_Plugins(t *testing.T) {
 		"/plugins smoke",
 		"dual_write OFF",
 		"package load ≠ Memory GA",
+		"s1829",
+		"/setup reload",
 	} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("status missing %q in:\n%s", want, s)
@@ -4112,6 +4120,8 @@ func TestHandleSlash_Plugins(t *testing.T) {
 		"Agent Plugins GA",
 		"dual_write OFF",
 		"Discover ≠ Connected",
+		"s1829",
+		"package wire ≠ Connected",
 	} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("dogfood missing %q in:\n%s", want, s)
