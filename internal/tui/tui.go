@@ -276,12 +276,17 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		if len(parts) < 2 {
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
 			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | trigger-compact --i-confirm | semantic [query|--query ...] [--limit N] | ingest-event --subject <id> --content <text> [--event-time|--session-id|--session-seq|--severity|--source-stream] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | ingest <text> | status]")
+			// s1831: residual-honest dual-path next-step after bare /memory help.
+			for _, line := range agent.MemoryNextStepLines() {
+				fmt.Fprintln(out, line)
+			}
 			return false, nil
 		}
 		sub := strings.ToLower(parts[1])
 		switch sub {
 		case "status", "st":
 			// s1311: base MemoryStatusLine + residual-honest advanced MCP inventory pulse.
+			// s1831 next-step is appended inside MemoryAdvancedStatus.
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
 			adv, aerr := rt.rt.MemoryAdvancedStatus(context.Background())
 			if aerr != nil {
@@ -332,6 +337,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		case "digest", "dig":
 			// s1200: opt-in ops heartbeat digest export (HTTP + MCP ops_digest_export fallback).
 			// ops GA-path · knowledge/analytical Beta · never invent GA · dual_write OFF · not Memory GA.
+			// s1831: residual-honest dual-path next-step after digest (primary honesty surface).
 			dopts, perr := parseMemoryDigestArgs(parts[2:])
 			if perr != "" {
 				fmt.Fprintf(out, "memory digest: %s\nusage: /memory digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N]\n", perr)
@@ -344,9 +350,15 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			}
 			if strings.TrimSpace(text) == "" {
 				fmt.Fprintln(out, "(empty digest)")
+				for _, line := range agent.MemoryNextStepLines() {
+					fmt.Fprintln(out, line)
+				}
 				return false, nil
 			}
 			fmt.Fprintln(out, text)
+			for _, line := range agent.MemoryNextStepLines() {
+				fmt.Fprintln(out, line)
+			}
 		case "facts-as-of", "facts", "as-of", "asof":
 			// s1276: opt-in bi-temporal lite validity listing via MCP memory_facts_as_of
 			// (aion Beta K4 lite). MCP-first — no lean HTTP facts_as_of route today.

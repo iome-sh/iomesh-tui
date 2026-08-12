@@ -701,12 +701,12 @@ See [mesh-dogfood.md](mesh-dogfood.md) for soft vs strict matrix. Unit coverage:
 
 | Command | Behavior |
 |---------|----------|
-| `/memory` | Status: enabled, `mcp=`, `sync_http=`, flags (incl. `dual_write`), tenant |
-| `/memory status\|st` | Base status line + s1311 advanced MCP inventory pulse (`MemoryAdvancedStatus`) |
+| `/memory` | Status: enabled, `mcp=`, `sync_http=`, flags (incl. `dual_write`), tenant · **s1831** residual next-step dual path |
+| `/memory status\|st` | Base status line + s1311 advanced MCP inventory pulse (`MemoryAdvancedStatus`) · **s1831** next-step footer |
 | `/memory recall [query]` | Sync HTTP retrieve when mesh enabled, else MCP (default query = last user text or `"*"`) |
 | `/memory recall --since|--until|--session-seq … [query]` | Same + per-call temporal filters (s1068; override config) |
 | `/memory related --seed <entity> [--query …] [--max-hops N] [--prefer-shorter-hops\|--legacy-sort]` | Opt-in multi-hop lite related recall (s1135 + s1281; HTTP + MCP `memory_related`; PreferShorterHops omit=true; not auto-recall) |
-| `/memory digest [--window day\|week] [--horizon ops\|knowledge\|analytical\|all] [--limit N]` | Opt-in ops heartbeat digest export (s1200; HTTP + MCP `ops_digest_export`) |
+| `/memory digest [--window day\|week] [--horizon ops\|knowledge\|analytical\|all] [--limit N]` | Opt-in ops heartbeat digest export (s1200; HTTP + MCP `ops_digest_export`) · **s1831** next-step footer |
 | `/memory facts-as-of\|facts\|as-of --as-of <RFC3339> [--entity …] [--query …] [--limit N]` | Opt-in bi-temporal lite validity listing (s1276; MCP `memory_facts_as_of`; MCP-first) |
 | `/memory supersede\|super --entity <key> [--as-of RFC3339] --i-confirm` | Opt-in HITL A3 lite supersede (s1282; MCP `memory_supersede_entity`; MCP-first; mutating) |
 | `/memory timeline\|tl […]` | Opt-in temporal timeline (s1296; MCP `memory_timeline`; MCP-first) |
@@ -857,11 +857,30 @@ Opt-in residual-honest mutating compact advisory + operator inventory pulse:
 | `internal/config` | `[memory]` section + env (`dual_write`) |
 | `internal/iomesh/memory.go` | `PublishMemoryIngest`, `PublishMemoryRecall`, `RetrieveMemory` / `RetrieveMemoryWithOptions`, `RetrieveMemoryRelated` (+ PreferShorterHops s1281), `ExportOpsDigest` lean HTTP (no SDK dep; s1068 temporal + s1135 related + s1200 digest; **no** facts_as_of / supersede / patterns HTTP invent) |
 | `internal/agent/memory.go` | Recall (sync prefer → MCP; config + opts temporal filters) / related multi-hop + prefer_shorter_hops (s1135/s1281) / ops digest (s1200) / facts-as-of MCP-first (s1276) / supersede HITL MCP-first (s1282) / patterns+anomalies (s1287) / timeline+compact-status MCP-first (s1296) / trigger-compact HITL + advanced status inventory (s1311) / semantic+ingest-event (s1301) / ingest / dual-write helpers |
-| `internal/agent/memory_guidance.go` | s1291 `MemoryAdvancedAgentGuidanceNote` residual-honest system note (AttachMCP inject; s1296 timeline+compact-status · s1311 trigger-compact HITL) |
+| `internal/agent/memory_guidance.go` | s1291 `MemoryAdvancedAgentGuidanceNote` residual-honest system note (AttachMCP inject; s1296 timeline+compact-status · s1311 trigger-compact HITL) · **s1831** `MemoryNextStepLines` residual dual-path next-step after `/memory` status/help/digest |
 | `internal/agent/agent.go` | `RunTurn` hooks · `AttachMCP` injects integrations (s1251) + memory-advanced (s1291) notes |
 | `internal/tui/tui.go` | `/memory` slash (related · digest · facts-as-of · timeline · compact-status · trigger-compact · status advanced · supersede · patterns · anomalies · …) |
 | `internal/skills/builtin/memory-advanced-agent/` | s1288 residual-honest advanced memory agent skill |
 | `configs/config.example.toml` | Copy-paste wire-up |
+
+## After /memory (s1831)
+
+Residual-honest **next-step footers** after primary `/memory` surfaces — peer of onboard next-step (s1825) · integrations next-step (s1727) · setup continuum (s1686–s1723).
+
+Helper `MemoryNextStepLines()` is appended by:
+
+| Surface | Path |
+|---------|------|
+| bare `/memory` (help) | TUI slash after status line + usage |
+| `/memory status` | end of `MemoryAdvancedStatus` |
+| `/memory digest` | TUI slash after digest body (incl. empty residual) |
+
+Post-surface dual path:
+
+1. **If TUI/session running** → `/setup preflight` · `/setup reload` · optional `/memory digest` · `/onboard next memory|memory-pull`
+2. **Else cold start** → restart `iomesh` · `iomesh setup preflight` · optional `iomesh memory pull`
+
+**Honesty:** dual_write **OFF** · not Memory GA · local-primary · package wire ≠ Connected · soft ≠ invent live dogfood · free eng **s1831**. Advanced slash surfaces (related · facts-as-of · timeline · …) keep their existing honesty footers and are **not** all re-wired in s1831 (fragmented residual).
 
 ## Honesty
 

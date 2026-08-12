@@ -2,6 +2,21 @@ package agent
 
 import "strings"
 
+// MemoryNextStepLines residual-honest post /memory surfaces (s1831).
+// Dual path after status/help/digest (and peer honesty footers): in-session setup continuum
+// vs cold start. Peer of OnboardNextStepLines (s1825) · IntegrationsNextStepLines (s1727) ·
+// setup next-step continuum (s1686–s1723).
+// dual_write OFF · not Memory GA · local-primary · package wire ≠ Connected ·
+// soft ≠ invent live dogfood · free eng s1831. Never invent Connected / Memory GA from memory slash alone.
+func MemoryNextStepLines() []string {
+	return []string{
+		"next: dual path residual-honest after memory surfaces",
+		"      if TUI/session running → /setup preflight · /setup reload · optional /memory digest · /onboard next memory|memory-pull",
+		"      else cold start → restart iomesh · iomesh setup preflight · optional iomesh memory pull",
+		"note: dual_write OFF · not Memory GA · local-primary · package wire ≠ Connected · soft ≠ invent live dogfood · free eng s1831",
+	}
+}
+
 // MemoryAdvancedAgentGuidanceNote residual-honest system note (s1291 + s1296 + s1301 + s1311).
 // Injected on AttachMCP. Does not invent Memory GA / silent supersede / auto multi-hop.
 func MemoryAdvancedAgentGuidanceNote() string {
