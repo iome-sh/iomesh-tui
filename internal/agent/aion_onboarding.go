@@ -272,7 +272,7 @@ func AionAgentOnboardingStatus() string {
 func AionAgentOnboardingNextLanes() string {
 	return strings.TrimSpace(`aion onboard next lanes (residual-honest · post-onboard continuum · s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1558+s1562+s1566+s1570+s1574+s1578+s1582+s1586+s1590 · no MCP dial · OSS packaging residual):
 OSS packaging (s1582 · MIT OSS harness · not control plane · Edge path first · residual PASS ≠ invent control plane in MIT repo):
-  packaging: ` + OSSPackagingHonestyOneLiner + `
+  packaging: `+OSSPackagingHonestyOneLiner+`
   soft … dogfood = offline residual honesty check (user-facing: residual-check) · session soft ≠ live dogfood · ≠ invent platform green · slash token dogfood kept for compatibility
   docs: docs/architecture/oss-packaging-boundary.md
 
