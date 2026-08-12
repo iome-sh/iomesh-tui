@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.76.0] — 2026-08-12
+
+Minor release: residual next-step honesty continuum after v0.75.0 — onboard status/checklist/next/portal next-step (s1825) · plugins list/validate/smoke/status next-step (s1829) · memory status/help/digest next-step (s1831). **Beta** · dual_write OFF · package wire ≠ Connected · catalog ≠ Connected · Discover ≠ Connected · not Memory GA · not invent Agent Plugins GA · packaging ≠ invent GA · E10 Open · book-demo OFF.
+
 ### Added
 
 - **Memory residual-honest next-step after status/help/digest (s1831)** — after bare `/memory` (help) · `/memory status` (`MemoryAdvancedStatus`) · `/memory digest`, residual next-step footers via `MemoryNextStepLines`: dual path — if TUI/session running → `/setup preflight` · `/setup reload` · optional `/memory digest` · `/onboard next memory|memory-pull`; cold start → restart `iomesh` · `iomesh setup preflight` · optional `iomesh memory pull`. Peer of onboard next-step (s1825) · integrations next-step (s1727) · setup next-step continuum (s1686–s1723). Advanced slash surfaces remain honesty-footer fragmented (not all re-wired). dual_write **OFF** · not Memory GA · local-primary · package wire ≠ Connected · soft ≠ invent live dogfood · free eng **s1831**. Never invent Connected / Memory GA from memory slash alone. Docs: [memory-mcp.md](docs/architecture/memory-mcp.md).
