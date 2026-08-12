@@ -2708,3 +2708,75 @@ func TestAttachMCP_InjectsAionOnboardingGuidance(t *testing.T) {
 		t.Fatalf("want builtin aion-agent-onboarding; names=%v", cat.Names())
 	}
 }
+
+// TestOnboardNextStepLines_HonestyNeedles pins s1825 residual-honest next-step
+// after /onboard status|checklist|next|portal (peer of IntegrationsNextStepLines s1727).
+func TestOnboardNextStepLines_HonestyNeedles(t *testing.T) {
+	lines := OnboardNextStepLines()
+	if len(lines) == 0 {
+		t.Fatal("empty onboard next-step lines")
+	}
+	out := strings.Join(lines, "\n")
+	for _, want := range []string{
+		"dual path residual-honest after onboard maps",
+		"TUI/session running",
+		"/setup preflight",
+		"/setup reload",
+		"/integrations list",
+		"portal-hitl",
+		"cold start",
+		"restart iomesh",
+		"iomesh setup preflight",
+		"dual_write OFF",
+		"package wire ≠ Connected",
+		"catalog ≠ Connected",
+		"agent MCP cannot write installs",
+		"not Memory GA",
+		"s1825",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("onboard next-step missing %q in:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
+		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", out)
+	}
+	if strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent Connected green:\n%s", out)
+	}
+	// Family alias returns the same residual block.
+	alias := strings.Join(AionAgentOnboardingNextStepLines(), "\n")
+	if alias != out {
+		t.Fatalf("AionAgentOnboardingNextStepLines alias mismatch:\n got %q\nwant %q", alias, out)
+	}
+}
+
+// TestOnboardSurfaces_S1825NextStep pins s1825 next-step footers on onboard maps.
+func TestOnboardSurfaces_S1825NextStep(t *testing.T) {
+	for name, out := range map[string]string{
+		"status":    AionAgentOnboardingStatus(),
+		"checklist": AionAgentOnboardingChecklist(),
+		"next":      AionAgentOnboardingNextLanes(),
+		"portal":    AionAgentOnboardingPortalHandoff(),
+	} {
+		for _, want := range []string{
+			"s1825",
+			"/setup preflight",
+			"/setup reload",
+			"package wire ≠ Connected",
+			"agent MCP cannot write installs",
+			"dual_write OFF",
+			"not Memory GA",
+		} {
+			if !strings.Contains(out, want) {
+				t.Fatalf("%s surface missing %q in:\n%s", name, want, out)
+			}
+		}
+		if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
+			t.Fatalf("%s must not invent dual_write ON / Memory GA:\n%s", name, out)
+		}
+		if strings.Contains(out, "Connected: yes") {
+			t.Fatalf("%s must not invent Connected green:\n%s", name, out)
+		}
+	}
+}

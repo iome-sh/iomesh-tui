@@ -104,6 +104,17 @@ Example: free eng **s1582** = this OSS packaging residual · free-floor peer **s
 Bare `/onboard` residual packaging line: `OSSPackagingHonestyOneLiner` in `internal/agent`  
 API continuum overview: `AionAgentOnboardingNextLanes`
 
+### After /onboard maps (s1825)
+
+Residual-honest **next-step footers** after `/onboard status` · `/onboard checklist` · `/onboard next` lanes map · `/onboard portal` — peer of integrations next-step (s1727) · setup next-step continuum (s1686–s1723).
+
+Helper `OnboardNextStepLines()` (alias `AionAgentOnboardingNextStepLines`) dual path:
+
+1. **If TUI/session running** → `/setup preflight` · `/setup reload` · optional `/integrations list` · `/onboard next portal-hitl|setup|memory`
+2. **Else cold start** → restart `iomesh` · `iomesh setup preflight`
+
+**Honesty:** dual_write **OFF** · package wire ≠ Connected · catalog ≠ Connected · agent MCP cannot write installs · not Memory GA · free eng **s1825**. Never invent Connected / Memory GA from onboard maps alone.
+
 ---
 
 ## Honesty locks (never invent)
