@@ -60,6 +60,8 @@ YAML frontmatter needs only `name` and `description` (minimal parser; no full YA
 
 A compact catalog is also injected into the system prompt as `<skills>…</skills>`.
 
+**Residual next-step (s1837):** successful `list_skills` / `read_skill` results append `SkillsNextStepLines` — dual path residual-honest after skills list/read or skills reload: if TUI/session running → `/setup preflight` · `/setup reload` (skills re-scan · package wire ≠ Connected) · optional `list_skills` · `/onboard next setup`; cold start → restart `iomesh` · `iomesh setup preflight`. Honesty: skills re-scan ≠ invent Connected · package wire ≠ Connected · dual_write OFF · not Agent Plugins GA · not Memory GA. No dedicated `/skills` slash (catalog + tools + reload only). Errors stay bare (never invent success).
+
 ## CLI
 
 ```bash

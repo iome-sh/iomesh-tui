@@ -16,6 +16,29 @@ var skillToolNames = []string{
 	"read_skill",
 }
 
+// SkillsNextStepLines residual-honest post list_skills / read_skill (s1837).
+// Dual path after skills list/read (and skills re-scan via /setup reload): in-session
+// setup continuum vs cold start. Peer of PluginsNextStepLines (s1829) · OnboardNextStepLines
+// (s1825) · MemoryNextStepLines (s1831) · IntegrationsNextStepLines (s1727).
+// skills re-scan ≠ invent Connected · package wire ≠ Connected · dual_write OFF ·
+// not Agent Plugins GA · not Memory GA · free eng s1837. Never invent success/Connected
+// from list/read alone (no dedicated /skills slash — catalog + tools + reload only).
+func SkillsNextStepLines() []string {
+	return []string{
+		"next: dual path residual-honest after skills list/read or skills reload",
+		"      if TUI/session running → /setup preflight · /setup reload (skills re-scan · package wire ≠ Connected) · optional list_skills tool · /onboard next setup",
+		"      else cold start → restart iomesh · iomesh setup preflight",
+		"note: skills re-scan ≠ invent Connected · package wire ≠ Connected · dual_write OFF · not Agent Plugins GA · not Memory GA · free eng s1837",
+	}
+}
+
+// appendSkillsNextStep appends residual-honest next-step lines to a successful
+// list_skills / read_skill body. Errors stay bare (never invent success).
+func appendSkillsNextStep(body string) string {
+	body = strings.TrimRight(body, "\n")
+	return body + "\n" + strings.Join(SkillsNextStepLines(), "\n") + "\n"
+}
+
 // UnregisterSkillsTools removes list_skills and read_skill from the registry.
 // Used by Runtime.ReplaceSkills before re-attach (s1670 /setup reload skills re-scan).
 func (r *ToolRegistry) UnregisterSkillsTools() {
@@ -45,7 +68,7 @@ func (r *ToolRegistry) RegisterSkillsTools(cat *skills.Catalog) {
 		for _, sk := range cat.List() {
 			fmt.Fprintf(&b, "%s\t%s\n", sk.Name, strings.ReplaceAll(sk.Description, "\n", " "))
 		}
-		return b.String(), nil
+		return appendSkillsNextStep(b.String()), nil
 	})
 
 	r.register("read_skill", false, router.Tool{
@@ -72,6 +95,6 @@ func (r *ToolRegistry) RegisterSkillsTools(cat *skills.Catalog) {
 			fmt.Fprintf(&b, "description: %s\n\n", sk.Description)
 		}
 		b.WriteString(sk.Body)
-		return b.String(), nil
+		return appendSkillsNextStep(b.String()), nil
 	})
 }
