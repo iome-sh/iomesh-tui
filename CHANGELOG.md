@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Onboard residual-honest next-step after status/checklist/next/portal (s1825)** — after `/onboard status` · `/onboard checklist` · `/onboard next` lanes map · `/onboard portal`, residual next-step footers via `OnboardNextStepLines` (alias `AionAgentOnboardingNextStepLines`): dual path — if TUI/session running → `/setup preflight` · `/setup reload` · optional `/integrations list` · `/onboard next portal-hitl|setup|memory`; cold start → restart `iomesh` · `iomesh setup preflight`. Peer of integrations next-step (s1727) · setup next-step continuum (s1686–s1723). dual_write **OFF** · package wire ≠ Connected · catalog ≠ Connected · agent MCP cannot write installs · not Memory GA · free eng **s1825**. Never invent Connected / Memory GA from onboard maps alone.
+
 ## [0.75.0] — 2026-08-11
 
 Minor release: residual next-step honesty continuum after v0.74.0 — setup init slash parity + portal next-step + IOMESH_PLATFORM_RESIDUAL label (s1723) · integrations list/plan/status/signing next-step (s1727). **Beta** · dual_write OFF · package wire ≠ Connected · catalog ≠ Connected · agent MCP cannot write installs · template= ≠ install APPLY · IOMESH_PLATFORM_RESIDUAL labels only (does not hide lanes) · residual PASS ≠ invent control plane · not Memory GA · E10 Open · book-demo OFF.
