@@ -12,6 +12,34 @@ import (
 )
 
 // s1363+s1368+s1372: AionAgentOnboardingGuidanceNote residual-honest needles.
+func TestAionAgentOnboardingStartHere_LeanPath(t *testing.T) {
+	out := AionAgentOnboardingStartHere()
+	if out == "" {
+		t.Fatal("empty start-here")
+	}
+	for _, want := range []string{
+		"start here",
+		"console.iome.sh/settings/agent",
+		"copy MCP connection",
+		"[[mcp.servers]]",
+		"/integrations list",
+		"/integrations plan",
+		"console.iome.sh/integrations",
+		"agent MCP cannot write installs",
+		"/setup init",
+		"/onboard next wizard",
+		"/onboard next",
+		"never invent Connected",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("start-here missing %q in:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
+	}
+}
+
 func TestAionAgentOnboardingGuidanceNote_HonestyNeedles(t *testing.T) {
 	out := AionAgentOnboardingGuidanceNote()
 	if out == "" {

@@ -66,8 +66,22 @@ func OnboardNextStepLines() []string {
 // AionAgentOnboardingNextStepLines is the family-named alias for OnboardNextStepLines (s1825).
 func AionAgentOnboardingNextStepLines() []string { return OnboardNextStepLines() }
 
+// AionAgentOnboardingStartHere is the lean first-run path shown above residual
+// boards (s1982 TUI UX · peer console s1981). Honesty needles stay in the
+// residual body. Never invents Connected / Memory GA / install APPLY.
+func AionAgentOnboardingStartHere() string {
+	return strings.TrimSpace(`start here (TUI agent · MCP · integrations):
+  1. Portal: https://console.iome.sh/settings/agent — mint key → copy MCP connection → test invoke (probe only)
+  2. TUI: add [[mcp.servers]] streamable HTTP → restart / reattach
+  3. Sources: /integrations list · /integrations plan <id> — finish in portal HITL
+     https://console.iome.sh/integrations  (agent MCP cannot write installs)
+  4. Local: /setup init · /setup preflight · /setup reload
+  5. Map: /onboard next wizard · /onboard next journey
+operator notes: /onboard next  (lanes · residual boards · never invent Connected)`)
+}
+
 func AionAgentOnboardingGuidanceNote() string {
-	return strings.TrimSpace(`aion agent onboarding (residual-honest TUI ↔ aion CP/MCP · s1363+s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1546+s1550+s1558+s1562+s1566+s1570+s1574+s1578+s1582+s1586+s1590):
+	return AionAgentOnboardingStartHere() + "\n\n" + strings.TrimSpace(`aion agent onboarding (residual-honest TUI ↔ aion CP/MCP · s1363+s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1546+s1550+s1558+s1562+s1566+s1570+s1574+s1578+s1582+s1586+s1590):
 Point IOMESH/MCP at aion tools — fail-open offline (never invent tool green).
 
 Connector path (integrations portal HITL · product plane 3 agentic integrations):
@@ -155,7 +169,7 @@ Locks (never violate):
 // s1566: /onboard next e4 residual-honest journey stage-6 E4 client-attach + soft offline dogfood.
 // s1570 Wave C: /onboard next wizard residual-honest guided first-run wizard residual + soft offline dogfood.
 func AionAgentOnboardingChecklist() string {
-	return strings.TrimSpace(`aion agent onboarding checklist (residual-honest · s1363+s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1558+s1562+s1566+s1570 · TUI ↔ aion):
+	return AionAgentOnboardingStartHere() + "\n\n" + strings.TrimSpace(`aion agent onboarding checklist (residual-honest · s1363+s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1558+s1562+s1566+s1570 · TUI ↔ aion):
   1. Point IOMESH/MCP at aion tools (fail-open offline)
   2. list_connector_catalog — catalog status ≠ Connected
   3. plan_connector_setup → portal deep links (browser HITL · template= ≠ install APPLY)
@@ -184,7 +198,7 @@ func AionAgentOnboardingChecklist() string {
 // copy MCP connection / test invoke (probe only) + TUI [[mcp.servers]] attach.
 // Never invents install green, Memory GA, or agent write installs.
 func AionAgentOnboardingPortalHandoff() string {
-	return strings.TrimSpace(`aion portal Agent/MCP handoff (residual-honest · s1368+s1542):
+	return AionAgentOnboardingStartHere() + "\n\n" + strings.TrimSpace(`aion portal Agent/MCP handoff (residual-honest · s1368+s1542):
 Portal half (browser HITL · https://console.iome.sh/settings/agent):
   1. Mint API key / agent principal (settings only · not install APPLY)
   2. Settings → Agent/MCP → copy MCP connection (URL + auth env hint)
@@ -222,7 +236,7 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ liv
 // s1558 Wave B: cross-link → /onboard next journey edge-user-journey first-run map.
 // s1570 Wave C: cross-link → /onboard next wizard guided first-run wizard residual.
 func AionAgentOnboardingStatus() string {
-	return strings.TrimSpace(`aion onboard status (residual-honest · offline static · s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1558+s1570):
+	return AionAgentOnboardingStartHere() + "\n\n" + strings.TrimSpace(`aion onboard status (residual-honest · offline static · s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1558+s1570):
   MCP attach: expected for full path · fail-open offline (never invent tool green / install green)
   dual_write OFF · local-primary · not Memory GA · book-demo OFF · leave ON_SIGNAL unset
   portal HITL: Agent/MCP mint/copy/probe @ https://console.iome.sh/settings/agent · connectors @ https://console.iome.sh/integrations
@@ -270,7 +284,7 @@ func AionAgentOnboardingStatus() string {
 // s1590: marketing demo path via /onboard next marketing-demo (aliases marketing|sales-demo|demo-script|gtm-demo) — plain-language local agent + memory for videos/sales.
 // Never invents Agent Plugins GA, Memory GA, auto-send, install Connected, stream green, pull green, or human-gate green.
 func AionAgentOnboardingNextLanes() string {
-	return strings.TrimSpace(`aion onboard next lanes (residual-honest · post-onboard continuum · s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1558+s1562+s1566+s1570+s1574+s1578+s1582+s1586+s1590 · no MCP dial · OSS packaging residual):
+	return AionAgentOnboardingStartHere() + "\n\n" + strings.TrimSpace(`aion onboard next lanes (residual-honest · post-onboard continuum · s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1558+s1562+s1566+s1570+s1574+s1578+s1582+s1586+s1590 · no MCP dial · OSS packaging residual):
 OSS packaging (s1582 · MIT OSS harness · not control plane · Edge path first · residual PASS ≠ invent control plane in MIT repo):
   packaging: `+OSSPackagingHonestyOneLiner+`
   soft … dogfood = offline residual honesty check (user-facing: residual-check) · session soft ≠ live dogfood · ≠ invent platform green · slash token dogfood kept for compatibility
@@ -598,7 +612,7 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candid
 // free eng s1570 · free-floor peer s1572+ mention only (do not rewrite free-floor).
 func AionAgentOnboardingNextWizardLane() string {
 	softLabel := WizardSoftSessionLabel()
-	return strings.TrimSpace(fmt.Sprintf(`aion onboard next wizard lane (residual-honest · s1570 Wave C · first-run wizard residual · guided residual map · no MCP dial):
+	return AionAgentOnboardingStartHere() + "\n\n" + strings.TrimSpace(fmt.Sprintf(`aion onboard next wizard lane (residual-honest · s1570 Wave C · first-run wizard residual · guided residual map · no MCP dial):
   Path: guided first-run wizard residual — deeper residual-honest step map after Wave B journey · NOT invent full interactive auto wizard
   Product: Wave C first-run wizard residual (s1570) after Wave B journey map (s1558) — residual-honest guided residual · free eng s1570 · free-floor peer s1572+ mention only
   Wave C residual scope: deeper guided residual map + soft dogfood · residual PASS ≠ invent full interactive auto wizard · residual PASS ≠ invent Edge Memory GA declared

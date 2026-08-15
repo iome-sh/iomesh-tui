@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **TUI agent / MCP / integrations start-here (s1982)** — `/onboard`, `/onboard portal|status|checklist|next`, `/onboard next wizard`, and the injected `<aion-onboarding>` / `<integrations>` notes now lead with a five-step path (portal MCP copy → TUI `[[mcp.servers]]` attach → `/integrations list|plan` → portal HITL → `/setup` / wizard). Residual boards stay below as operator notes. `/help` and `/integrations` help match. Peer of console **s1981**. Never invent Connected / Memory GA / install APPLY.
+
 ### Added
 
 - **Skills residual-honest next-step after list_skills/read_skill (s1837)** — after agent tools `list_skills` / `read_skill` (no dedicated `/skills` slash; skills load via catalog + tools + `/setup reload` re-scan s1670), residual next-step footers via `SkillsNextStepLines`: dual path — if TUI/session running → `/setup preflight` · `/setup reload` (skills re-scan · package wire ≠ Connected) · optional `list_skills` tool · `/onboard next setup`; cold start → restart `iomesh` · `iomesh setup preflight`. Appended to successful tool return strings only (errors stay bare · never invent success). Peer of plugins next-step (s1829) · memory next-step (s1831) · onboard next-step (s1825) · integrations next-step (s1727). skills re-scan ≠ invent Connected · package wire ≠ Connected · dual_write **OFF** · not Agent Plugins GA · not Memory GA · free eng **s1837**. Docs: [skills.md](docs/architecture/skills.md).

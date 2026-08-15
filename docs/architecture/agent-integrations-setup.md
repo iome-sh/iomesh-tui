@@ -34,6 +34,10 @@ When MCP is attached (`AttachMCP`), the runtime also injects an **`<integrations
 
 **Builtin skill** `connector-integrations-setup` ships via `go:embed` under `internal/skills/builtin/` and is always merged when skills are enabled (`skills.LoadWithBuiltin`), even if user/workspace skill dirs are empty. Agent discovers it via `list_skills` / `read_skill`.
 
+## Start here (s1982)
+
+Operator path (lean): `/integrations list` → `/integrations plan <id>` → finish OAuth/install in portal HITL at https://console.iome.sh/integrations → `/setup preflight` · `/setup reload`. MCP list/plan only — **agent MCP cannot write installs**. Residual boards live under `/onboard next`. Never invent Connected / install APPLY.
+
 ## Slash command
 
 ```text

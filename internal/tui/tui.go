@@ -1143,10 +1143,10 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /mesh                I/O Mesh status + usage
   /catalog [query]     list mesh data products (catalog plane)
   /memory [recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · status advanced inventory)
-  /integrations [list|plan|signing|status]  connector setup via MCP (catalog+plan+signing discovery+portal HITL; not install CRUD)
+  /integrations [list|plan|signing|status]  list/plan a source via MCP, then finish in portal HITL (not install CRUD)
   /setup [init|preflight|portal|reload|pull|analyze|drift|repair]  setup lifecycle (managed config · preflight · portal HITL · hot MCP reload · opt-in continuous pull/analyze · drift report · guided repair; alias /setup-lifecycle; dual_write OFF · not Memory GA · PASS ≠ invent Connected · pull/analyze/repair ≠ invent Connected)
   /gtm [help|checklist]  GTM draft-only guidance or checklist (aliases /gtm-draft /gtm-agent; no auto-send; human publish)
-  /onboard [help|checklist|portal|status|next]  TUI agent ↔ aion onboarding guidance, checklist, portal Agent/MCP handoff, offline status, or post-onboard next lanes (aliases /aion-onboard /agent-onboard; residual-honest · portal HITL · settings/agent; next [plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|e4|tool-call|e10|planes|sales|demo|marketing-demo|operator|setup|journey|wizard|status|export|human-gates]; next mesh→stream|streams|heartbeat|heartbeats|pull; next e4→e4-dogfood|client-attach|edge-memory-e4|e4_attach; next tool-call→tool-calls|deeper-e4|e4-tools|ingest-retrieve|tool_call; next e10→e10-open|edge-memory-e10|ga-signoff|e10_open; next planes→three-planes|product-planes|product|pillars|three_planes; next sales→claims|buyer|claim-matrix|sales-claims|buyer-claims; next demo→demo-ready|readiness|demo-readiness|lighthouse|landgrab; next marketing-demo→marketing|sales-demo|demo-script|gtm-demo; next operator→operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix; next setup→setup-lifecycle|lifecycle|setup_lifecycle; next wizard→first-run-wizard|guided|wave-c|wave_c|wizard-residual; next status→pulse|board; next export→receipt|stamp|evidence [json]; next aliases after|continue|lanes; pulse stays status board; product/planes stay three-planes; readiness/lighthouse stay demo; marketing-demo is plain-language demo script)
+  /onboard [help|checklist|portal|status|next]  start here: portal MCP copy → TUI attach → /integrations list|plan → portal HITL (aliases /aion-onboard /agent-onboard; next wizard|journey|setup|portal-hitl|memory · operator notes /onboard next [plugins|gtm|memory|mesh|export|…])
   /plugins [help|list|validate|smoke|status]  residual-honest Agent Plugins soft offline smoke (alias /plugin; smoke aliases dogfood|soft|samples|offline; check→validate; Discover ≠ Connected · soft offline ≠ live smoke · ≠ invent Agent Plugins GA)
   /quit                exit
 
@@ -1163,7 +1163,8 @@ On mutating tools (write_file, run_shell, apply_worktree, …) you will be promp
 // integrationsHelp is bare /integrations and help/? copy (s1238/s1242/s1243/s1247 residual honesty).
 // status is a separate operator pulse (IntegrationsStatus), not this help text.
 func integrationsHelp() string {
-	return strings.TrimSpace(`usage: /integrations [list [--layer operational|knowledge|analytical] | plan <connector_id> | signing [layer|id] | status]
+	return strings.TrimSpace(`start here: /integrations list → /integrations plan <id> → finish in portal HITL
+usage: /integrations [list [--layer operational|knowledge|analytical] | plan <connector_id> | signing [layer|id] | status]
   list     MCP list_connector_catalog (v178 entries) → id · status · mesh_layer · oauth?
   plan     MCP plan_connector_setup → portal_url · oauth_mode_hint · signing_headers_tool · next_steps · honesty
   signing  MCP get_webhook_signing_headers → header parity (discovery only · not secret mint)
