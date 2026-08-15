@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **TUI heartbeat dashboard (s1989)** — `/dashboard` (aliases `/heartbeat` `/mesh-console`) ports the iome.sh landing MeshConsole: tenancy · pulse · heartbeat live feed · agent tools ALLOW/DENY · kind analysis. REPL prints a snapshot; fullscreen toggles a ticking overlay (esc/q close · tab/1–4 tenancy). Feed is the public **evaluation template**, not a Connected workspace. Badge EVAL (no mesh client) / CLIENT (client configured — still template until a real stream is pulled). `catalog ≠ Connected` · `dual_write OFF` · knowledge/analytics **Beta** · not Memory GA · not live APPLY · demo feed ≠ fleet-GA. Docs: [tui.md](docs/architecture/tui.md).
+
 ### Changed
 
 - **TUI agent / MCP / integrations start-here (s1982)** — `/onboard`, `/onboard portal|status|checklist|next`, `/onboard next wizard`, and the injected `<aion-onboarding>` / `<integrations>` notes now lead with a five-step path (portal MCP copy → TUI `[[mcp.servers]]` attach → `/integrations list|plan` → portal HITL → `/setup` / wizard). Residual boards stay below as operator notes. `/help` and `/integrations` help match. Peer of console **s1981**. Never invent Connected / Memory GA / install APPLY.

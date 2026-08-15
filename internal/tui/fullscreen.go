@@ -84,6 +84,14 @@ type approvalRequestMsg struct {
 	reply chan agent.Approval
 }
 
+type dashboardTickMsg time.Time
+
+func dashboardTick() tea.Cmd {
+	return tea.Tick(dashboardTickEvery, func(t time.Time) tea.Msg {
+		return dashboardTickMsg(t)
+	})
+}
+
 // --- model ---
 
 type fullscreenModel struct {
@@ -116,6 +124,9 @@ type fullscreenModel struct {
 
 	// Approval overlay
 	approval *approvalRequestMsg
+
+	// Landing-page heartbeat dashboard overlay (s1989).
+	dash *dashboardState
 }
 
 func newFullscreenModel(ctx context.Context, cancel context.CancelFunc, rt *agent.Runtime, store *session.Store, logger *slog.Logger, opts UIOptions) *fullscreenModel {
@@ -125,7 +136,7 @@ func newFullscreenModel(ctx context.Context, cancel context.CancelFunc, rt *agen
 	}
 
 	ta := textarea.New()
-	ta.Placeholder = "message or /help  ·  enter send · ctrl+j newline · /theme"
+	ta.Placeholder = "message or /help  ·  enter send · ctrl+j newline · /dashboard · /theme"
 	ta.Focus()
 	ta.CharLimit = 32 * 1024
 	ta.SetWidth(80)
@@ -159,7 +170,7 @@ func newFullscreenModel(ctx context.Context, cancel context.CancelFunc, rt *agen
 		m.appendLine(m.theme.Status.Render("session " + sid))
 	}
 	m.appendLine(m.theme.Status.Render(fmt.Sprintf("model %s  ·  mutating tools prompt y/n/a unless --yolo", displayModel(rt.Router()))))
-	m.appendLine(m.theme.Help.Render("keys: enter send · ctrl+j newline · pgup/pgdn · /theme · ctrl+c quit"))
+	m.appendLine(m.theme.Help.Render("keys: enter send · ctrl+j newline · pgup/pgdn · /dashboard · /theme · ctrl+c quit"))
 	m.appendLine("")
 	return m
 }
@@ -194,6 +205,9 @@ func (m *fullscreenModel) layout() {
 	if m.approval != nil {
 		footerH = 5
 	}
+	if m.dash != nil {
+		footerH = 3
+	}
 	vpH := m.height - headerH - footerH
 	if vpH < 3 {
 		vpH = 3
@@ -224,6 +238,9 @@ func (m *fullscreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Approval takes keyboard focus.
 		if m.approval != nil {
 			return m.handleApprovalKey(msg)
+		}
+		if m.dash != nil {
+			return m.handleDashboardKey(msg)
 		}
 		if m.busy {
 			switch msg.String() {
@@ -282,6 +299,13 @@ func (m *fullscreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case agentEventMsg:
 		m.handleAgentEvent(agent.Event(msg))
 		m.refreshViewport(true)
+		return m, nil
+
+	case dashboardTickMsg:
+		if m.dash != nil {
+			m.dash.Tick()
+			return m, dashboardTick()
+		}
 		return m, nil
 
 	case turnDoneMsg:
@@ -360,6 +384,38 @@ func (m *fullscreenModel) handleApprovalKey(msg tea.KeyMsg) (tea.Model, tea.Cmd)
 	return m, nil
 }
 
+func (m *fullscreenModel) handleDashboardKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if m.dash == nil {
+		return m, nil
+	}
+	switch msg.String() {
+	case "ctrl+c":
+		m.cancel()
+		return m, tea.Quit
+	case "esc", "q":
+		m.dash = nil
+		m.status = "ready"
+		m.layout()
+		return m, nil
+	case "tab":
+		m.dash.CycleFocus()
+		return m, nil
+	case "1":
+		_ = m.dash.SetFocus("sre.incidents")
+		return m, nil
+	case "2":
+		_ = m.dash.SetFocus("eng.ops")
+		return m, nil
+	case "3":
+		_ = m.dash.SetFocus("cs.tickets")
+		return m, nil
+	case "4":
+		_ = m.dash.SetFocus("gtm.pipeline")
+		return m, nil
+	}
+	return m, nil
+}
+
 func (m *fullscreenModel) submitLine(line string) tea.Cmd {
 	if strings.HasPrefix(line, "/") {
 		return m.runSlash(line)
@@ -396,6 +452,9 @@ func (m *fullscreenModel) runSlash(line string) tea.Cmd {
 	if len(parts) > 0 && (parts[0] == "/theme" || parts[0] == "/themes") {
 		return m.handleThemeSlash(parts)
 	}
+	if len(parts) > 0 && isDashboardSlash(parts[0]) {
+		return m.handleDashboardSlash(parts)
+	}
 	adapter := runtimeAdapter{rt: m.rt, store: m.store}
 	var buf strings.Builder
 	quit, err := handleSlash(&buf, adapter, line)
@@ -414,6 +473,45 @@ func (m *fullscreenModel) runSlash(line string) tea.Cmd {
 		return tea.Quit
 	}
 	return nil
+}
+
+func (m *fullscreenModel) handleDashboardSlash(parts []string) tea.Cmd {
+	if len(parts) >= 2 {
+		sub := strings.ToLower(parts[1])
+		if sub == "help" || sub == "?" {
+			m.appendLine(m.theme.Help.Render(dashboardHelp()))
+			m.refreshViewport(true)
+			return nil
+		}
+	}
+	// Toggle overlay (landing MeshConsole). Help stays in transcript.
+	if m.dash != nil && len(parts) < 2 {
+		m.dash = nil
+		m.status = "ready"
+		m.layout()
+		return nil
+	}
+	attached := false
+	if m.rt != nil && m.rt.Mesh() != nil && m.rt.Mesh().Enabled() {
+		attached = true
+	}
+	if m.dash == nil {
+		m.dash = newDashboardState(attached)
+	}
+	if len(parts) >= 2 {
+		want := parts[1]
+		if strings.EqualFold(parts[1], "focus") && len(parts) > 2 {
+			want = parts[2]
+		}
+		if !m.dash.SetFocus(want) {
+			m.appendLine(m.theme.Err.Render("dashboard: unknown tenancy " + want))
+			m.refreshViewport(true)
+			return nil
+		}
+	}
+	m.status = "dashboard"
+	m.layout()
+	return dashboardTick()
 }
 
 func (m *fullscreenModel) handleThemeSlash(parts []string) tea.Cmd {
@@ -504,7 +602,16 @@ func (m *fullscreenModel) View() string {
 	}
 	header := m.renderHeader()
 	footer := m.renderFooter()
-	return lipgloss.JoinVertical(lipgloss.Left, header, m.vp.View(), footer)
+	body := m.vp.View()
+	if m.dash != nil {
+		inner := m.height - 2 - 3 // header + dashboard footer
+		if inner < 8 {
+			inner = 8
+		}
+		m.dash.Height = inner
+		body = m.dash.Render(m.theme, max(40, m.width))
+	}
+	return lipgloss.JoinVertical(lipgloss.Left, header, body, footer)
 }
 
 func (m *fullscreenModel) renderHeader() string {
@@ -527,6 +634,10 @@ func (m *fullscreenModel) renderFooter() string {
 	if m.approval != nil {
 		hint := m.theme.Approve.Render(" APPROVE ") + m.theme.Help.Render(" y=once  n=deny  a=always  ·  tool "+m.approval.tool)
 		return sep + "\n" + hint + "\n" + m.theme.Dim.Render("keyboard focus: approval")
+	}
+	if m.dash != nil {
+		hint := m.theme.Help.Render("esc/q close  ·  tab cycle tenancy  ·  1–4 jump  ·  eval template ≠ Connected")
+		return sep + "\n" + hint
 	}
 	ws := ""
 	if m.rt != nil {

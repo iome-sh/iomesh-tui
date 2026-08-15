@@ -267,3 +267,45 @@ func TestFullscreenModel_InputHeight(t *testing.T) {
 		t.Fatalf("cap height=%d", m.inputHeight())
 	}
 }
+
+func TestFullscreenModel_DashboardOverlay(t *testing.T) {
+	rt := fsTestRuntime(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	m := newFullscreenModel(ctx, cancel, rt, nil, nil, UIOptions{})
+	mod, _ := m.Update(tea.WindowSizeMsg{Width: 100, Height: 36})
+	fm := mod.(*fullscreenModel)
+
+	cmd := fm.submitLine("/dashboard")
+	if fm.dash == nil {
+		t.Fatal("expected dashboard overlay")
+	}
+	if cmd == nil {
+		t.Fatal("expected tick cmd")
+	}
+	view := fm.View()
+	if !strings.Contains(view, "context://mesh") || !strings.Contains(view, "P2 opened") {
+		t.Fatalf("overlay missing live feed:\n%s", view)
+	}
+	if !strings.Contains(view, "catalog ≠ Connected") {
+		t.Fatalf("overlay missing honesty:\n%s", view)
+	}
+
+	mod, _ = fm.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("2")})
+	fm = mod.(*fullscreenModel)
+	if fm.dash.Focus != "eng.ops" {
+		t.Fatalf("key 2 focus=%s", fm.dash.Focus)
+	}
+
+	mod, _ = fm.Update(dashboardTickMsg{})
+	fm = mod.(*fullscreenModel)
+	if fm.dash == nil || fm.dash.Events[0].T == "14:02:11" && fm.dash.idx == 0 {
+		t.Fatalf("tick did not advance: %+v", fm.dash.Events[0])
+	}
+
+	mod, _ = fm.Update(tea.KeyMsg{Type: tea.KeyEsc})
+	fm = mod.(*fullscreenModel)
+	if fm.dash != nil {
+		t.Fatal("esc should close dashboard")
+	}
+}
