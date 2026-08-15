@@ -249,6 +249,9 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		fmt.Fprintf(out, "sample estimate for %s @ 100k in / 4k out: $%.5f\n", name, est.USD)
 		estHit := rt.Router().EstimateCostTokens(name, 100_000, 4_000, 80_000)
 		fmt.Fprintf(out, "sample with 80%% cache hit: $%.5f\n", estHit.USD)
+	case "/dashboard", "/heartbeat", "/mesh-console":
+		// s1989: landing-page MeshConsole heartbeat live-feed analysis (eval template).
+		handleDashboardSlash(out, rt, parts)
 	case "/mesh":
 		m := rt.rt.Mesh()
 		if m == nil {
@@ -1140,6 +1143,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /sessions            list saved sessions
   /load <id>           restore session
   /cost                session usage meter + sample estimate
+  /dashboard [help|focus]  landing-page heartbeat live feed (aliases /heartbeat /mesh-console; eval template · catalog ≠ Connected)
   /mesh                I/O Mesh status + usage
   /catalog [query]     list mesh data products (catalog plane)
   /memory [recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · status advanced inventory)

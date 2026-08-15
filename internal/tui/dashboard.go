@@ -1,0 +1,399 @@
+package tui
+
+import (
+	"fmt"
+	"io"
+	"strings"
+	"time"
+
+	"github.com/charmbracelet/lipgloss"
+)
+
+// Landing-page MeshConsole parity (iome.sh heartbeat live feed).
+// Evaluation template — not a Connected workspace and not live APPLY.
+
+const (
+	dashboardDefaultFocus = "sre.incidents"
+	dashboardMaxEvents    = 7
+	dashboardStartRate    = 18
+	dashboardMaxRate      = 42
+	dashboardTickEvery    = 2600 * time.Millisecond
+)
+
+// DashboardHonestyOneLiner is the residual lock for /dashboard.
+const DashboardHonestyOneLiner = "eval template · same feed as iome.sh MeshConsole · catalog ≠ Connected · dual_write OFF · knowledge/analytics Beta · not Memory GA · demo feed ≠ fleet-GA · not live APPLY"
+
+func dashboardHelp() string {
+	return strings.TrimSpace(`usage: /dashboard [help|focus <tenancy>]
+aliases: /heartbeat /mesh-console
+  (no args)   REPL: print snapshot · fullscreen: toggle live-feed overlay
+  focus       tenancy: sre.incidents | eng.ops | cs.tickets | gtm.pipeline
+fullscreen: esc/q close · tab cycle tenancy · 1-4 jump
+honesty: ` + DashboardHonestyOneLiner)
+}
+
+// HeartbeatKind matches landing MeshConsole kinds.
+type HeartbeatKind string
+
+const (
+	kindOps       HeartbeatKind = "ops"
+	kindKnowledge HeartbeatKind = "knowledge"
+	kindAnalytics HeartbeatKind = "analytics"
+)
+
+// HeartbeatEvent is one row in the landing-page heartbeat feed.
+type HeartbeatEvent struct {
+	T      string
+	Dept   string
+	Kind   HeartbeatKind
+	Title  string
+	Detail string
+}
+
+// MCPCall is a policy-gated tool chip (landing Agent tools column).
+type MCPCall struct {
+	Tool   string
+	Policy string
+	Dept   string
+}
+
+func landingTenancies() []string {
+	return []string{"sre.incidents", "eng.ops", "cs.tickets", "gtm.pipeline"}
+}
+
+func landingSeedEvents() []HeartbeatEvent {
+	return []HeartbeatEvent{
+		{T: "14:02:11", Dept: "sre.incidents", Kind: kindOps, Title: "P2 opened — checkout p95 1.8s", Detail: "Signed from pager. Team tenancy: sre.oncall"},
+		{T: "14:02:18", Dept: "eng.ops", Kind: kindOps, Title: "Deploy v2.14.3 → prod-eu", Detail: "Heartbeat linked to runbook RB-441"},
+		{T: "14:02:24", Dept: "cs.tickets", Kind: kindOps, Title: "Enterprise ticket · latency on checkout", Detail: "Scoped to cs.enterprise — not a global index"},
+		{T: "14:02:31", Dept: "sre.incidents", Kind: kindKnowledge, Title: "Recall: similar p95 in Mar", Detail: "Local memory · dual_write OFF"},
+		{T: "14:02:39", Dept: "gtm.pipeline", Kind: kindAnalytics, Title: "Renewal risk +12% this week", Detail: "Pattern across heartbeats · Beta"},
+	}
+}
+
+func landingMoreEvents() []HeartbeatEvent {
+	return []HeartbeatEvent{
+		{Dept: "eng.ops", Kind: kindOps, Title: "Canary 12% · error budget 97.4%", Detail: "dept.eng tenancy · policy ALLOW"},
+		{Dept: "sre.incidents", Kind: kindKnowledge, Title: "Runbook RB-441 attached", Detail: "Institutional memory of last three pages"},
+		{Dept: "cs.tickets", Kind: kindOps, Title: "CS linked incident INC-2041", Detail: "Same pulse, separate tenancy"},
+		{Dept: "gtm.pipeline", Kind: kindOps, Title: "Stage change · Negotiation", Detail: "Signed CRM webhook · connector gtm"},
+		{Dept: "sre.incidents", Kind: kindAnalytics, Title: "Checkout p95 reverting 14m", Detail: "Short-horizon stream history · GA"},
+		{Dept: "eng.ops", Kind: kindOps, Title: "Feature flag checkout_v3 off", Detail: "Agent proposed · human confirmed"},
+	}
+}
+
+func landingMCPCalls() []MCPCall {
+	return []MCPCall{
+		{Tool: "mesh.ops.pull", Policy: "ALLOW", Dept: "sre.incidents"},
+		{Tool: "mesh.knowledge.search", Policy: "ALLOW", Dept: "sre.incidents"},
+		{Tool: "mesh.gtm.forecast", Policy: "DENY", Dept: "sre.incidents"},
+		{Tool: "mesh.ops.annotate", Policy: "ALLOW", Dept: "eng.ops"},
+	}
+}
+
+// dashboardState is the landing-page MeshConsole, for REPL snapshot + fullscreen overlay.
+type dashboardState struct {
+	Focus        string
+	Rate         int
+	Events       []HeartbeatEvent
+	idx          int
+	phase        int
+	MeshAttached bool
+	Width        int
+	Height       int
+}
+
+func newDashboardState(meshAttached bool) *dashboardState {
+	return &dashboardState{
+		Focus:        dashboardDefaultFocus,
+		Rate:         dashboardStartRate,
+		Events:       landingSeedEvents(),
+		MeshAttached: meshAttached,
+	}
+}
+
+func (d *dashboardState) SetFocus(name string) bool {
+	name = strings.TrimSpace(name)
+	for _, t := range landingTenancies() {
+		if t == name {
+			d.Focus = name
+			return true
+		}
+	}
+	return false
+}
+
+func (d *dashboardState) CycleFocus() {
+	list := landingTenancies()
+	for i, t := range list {
+		if t == d.Focus {
+			d.Focus = list[(i+1)%len(list)]
+			return
+		}
+	}
+	d.Focus = dashboardDefaultFocus
+}
+
+func (d *dashboardState) Calls() []MCPCall {
+	var out []MCPCall
+	for _, c := range landingMCPCalls() {
+		if c.Dept == d.Focus || c.Dept == "eng.ops" {
+			out = append(out, c)
+		}
+		if len(out) == 3 {
+			break
+		}
+	}
+	return out
+}
+
+func (d *dashboardState) Tick() {
+	more := landingMoreEvents()
+	if len(more) == 0 {
+		return
+	}
+	next := more[d.idx%len(more)]
+	next.T = time.Now().Format("15:04:05")
+	d.Events = append([]HeartbeatEvent{next}, d.Events...)
+	if len(d.Events) > dashboardMaxEvents {
+		d.Events = d.Events[:dashboardMaxEvents]
+	}
+	if d.idx%3 == 0 && d.Rate < dashboardMaxRate {
+		d.Rate++
+	}
+	d.idx++
+	d.phase++
+}
+
+func (d *dashboardState) kindCounts() (ops, knowledge, analytics int) {
+	for _, e := range d.Events {
+		switch e.Kind {
+		case kindOps:
+			ops++
+		case kindKnowledge:
+			knowledge++
+		case kindAnalytics:
+			analytics++
+		}
+	}
+	return
+}
+
+func pulseSpark(width, phase int) string {
+	if width < 8 {
+		width = 8
+	}
+	cycle := []rune("▁▁▁▂▃▅█▅▃▂▁▁▁▂▃▆█▆▃▂")
+	var b strings.Builder
+	for i := 0; i < width; i++ {
+		b.WriteRune(cycle[(i+phase)%len(cycle)])
+	}
+	return b.String()
+}
+
+func kindStyle(th Theme, k HeartbeatKind) lipgloss.Style {
+	switch k {
+	case kindOps:
+		return th.OK
+	case kindKnowledge:
+		return th.Tool
+	default:
+		return th.Dim
+	}
+}
+
+func (d *dashboardState) Render(th Theme, width int) string {
+	if width < 40 {
+		width = 40
+	}
+	d.Width = width
+	badge := "EVAL"
+	if d.MeshAttached {
+		badge = "CLIENT"
+	}
+	headLeft := th.Mesh.Render("●") + " " + th.Dim.Render("context://mesh · "+d.Focus+" · policy-gated MCP")
+	headRight := th.OK.Render(badge)
+	gap := width - lipgloss.Width(headLeft) - lipgloss.Width(headRight)
+	if gap < 1 {
+		gap = 1
+	}
+	header := headLeft + strings.Repeat(" ", gap) + headRight
+	rule := th.Dim.Render(strings.Repeat("─", width))
+	spark := th.Mesh.Render(pulseSpark(width, d.phase))
+
+	opsN, knN, anN := d.kindCounts()
+	analysis := th.Dim.Render(fmt.Sprintf(
+		"analysis  ops %d · knowledge %d · analytics %d  ·  knowledge/analytics Beta",
+		opsN, knN, anN,
+	))
+
+	body := d.renderBody(th, width)
+	honesty := th.Dim.Render(DashboardHonestyOneLiner)
+	if d.MeshAttached {
+		honesty = th.Dim.Render("mesh client attached · template feed until a real stream is pulled · " + DashboardHonestyOneLiner)
+	}
+
+	return strings.Join([]string{header, rule, spark, analysis, rule, body, rule, honesty}, "\n")
+}
+
+func (d *dashboardState) renderBody(th Theme, width int) string {
+	if width >= 88 {
+		return d.renderWide(th, width)
+	}
+	return d.renderStacked(th, width)
+}
+
+func (d *dashboardState) renderWide(th Theme, width int) string {
+	leftW := 18
+	rightW := 24
+	sepW := 1
+	midW := width - leftW - rightW - 2*sepW
+	if midW < 28 {
+		return d.renderStacked(th, width)
+	}
+	col := func(s string, w int) string {
+		return lipgloss.NewStyle().Width(w).MaxWidth(w).Render(s)
+	}
+	sep := th.Dim.Render("│")
+	return lipgloss.JoinHorizontal(lipgloss.Top,
+		col(d.renderTenancy(th, leftW), leftW),
+		sep,
+		col(d.renderFeed(th, midW), midW),
+		sep,
+		col(d.renderTools(th, rightW), rightW),
+	)
+}
+
+func (d *dashboardState) renderStacked(th Theme, width int) string {
+	var b strings.Builder
+	b.WriteString(d.renderTenancy(th, width))
+	b.WriteByte('\n')
+	b.WriteString(d.renderFeed(th, width))
+	b.WriteByte('\n')
+	b.WriteString(d.renderTools(th, width))
+	return b.String()
+}
+
+func (d *dashboardState) renderTenancy(th Theme, width int) string {
+	var b strings.Builder
+	b.WriteString(th.Help.Render("Tenancy"))
+	b.WriteByte('\n')
+	for _, t := range landingTenancies() {
+		label := truncate(t, max(1, width-2))
+		if t == d.Focus {
+			b.WriteString(th.Title.Render("▸ " + label))
+		} else {
+			b.WriteString(th.Dim.Render("  " + label))
+		}
+		b.WriteByte('\n')
+	}
+	b.WriteByte('\n')
+	b.WriteString(th.Help.Render("Pulse"))
+	b.WriteByte('\n')
+	b.WriteString(th.Title.Render(fmt.Sprintf("%d", d.Rate)))
+	b.WriteByte('\n')
+	b.WriteString(th.Dim.Render("events / min"))
+	return b.String()
+}
+
+func (d *dashboardState) renderFeed(th Theme, width int) string {
+	var b strings.Builder
+	title := th.Help.Render("Heartbeat")
+	rate := th.Dim.Render(fmt.Sprintf("%d / min", d.Rate))
+	gap := width - lipgloss.Width(title) - lipgloss.Width(rate)
+	if gap < 1 {
+		gap = 1
+	}
+	b.WriteString(title + strings.Repeat(" ", gap) + rate)
+	b.WriteByte('\n')
+	for _, e := range d.Events {
+		b.WriteString(th.Dim.Render(e.T))
+		b.WriteByte(' ')
+		b.WriteString(kindStyle(th, e.Kind).Render(string(e.Kind)))
+		b.WriteByte(' ')
+		b.WriteString(th.Dim.Render(e.Dept))
+		b.WriteByte('\n')
+		b.WriteString(th.Status.Render(truncate(e.Title, width)))
+		b.WriteByte('\n')
+		b.WriteString(th.Dim.Render(truncate(e.Detail, width)))
+		b.WriteByte('\n')
+	}
+	return strings.TrimRight(b.String(), "\n")
+}
+
+func (d *dashboardState) renderTools(th Theme, width int) string {
+	var b strings.Builder
+	b.WriteString(th.Help.Render("Agent tools"))
+	b.WriteByte('\n')
+	for _, c := range d.Calls() {
+		b.WriteString(th.Status.Render(truncate(c.Tool, width)))
+		b.WriteByte('\n')
+		pol := th.OK.Render(c.Policy)
+		if c.Policy == "DENY" {
+			pol = th.Err.Render(c.Policy)
+		}
+		b.WriteString(pol)
+		b.WriteByte('\n')
+	}
+	b.WriteString(th.Dim.Render("Tools resolve under team tenancy."))
+	b.WriteByte('\n')
+	b.WriteString(th.Dim.Render("Cross-department invokes denied by default."))
+	return strings.TrimRight(b.String(), "\n")
+}
+
+func formatDashboardSnapshot(meshAttached bool, focus string) string {
+	d := newDashboardState(meshAttached)
+	if focus != "" {
+		_ = d.SetFocus(focus)
+	}
+	return d.Render(ThemeDefault(), 100)
+}
+
+func meshClientAttached(rt runtimeAdapter) bool {
+	if rt.rt == nil {
+		return false
+	}
+	m := rt.rt.Mesh()
+	return m != nil && m.Enabled()
+}
+
+func handleDashboardSlash(out io.Writer, rt runtimeAdapter, parts []string) {
+	if len(parts) < 2 {
+		fmt.Fprintln(out, formatDashboardSnapshot(meshClientAttached(rt), ""))
+		return
+	}
+	sub := strings.ToLower(parts[1])
+	switch sub {
+	case "help", "?":
+		fmt.Fprintln(out, dashboardHelp())
+	case "focus":
+		want := ""
+		if len(parts) > 2 {
+			want = parts[2]
+		}
+		d := newDashboardState(meshClientAttached(rt))
+		if want == "" || !d.SetFocus(want) {
+			fmt.Fprintf(out, "dashboard: unknown tenancy %q (want %s)\n%s\n",
+				want, strings.Join(landingTenancies(), " | "), dashboardHelp())
+			return
+		}
+		fmt.Fprintln(out, d.Render(ThemeDefault(), 100))
+	default:
+		// Bare tenancy token: /dashboard sre.incidents
+		d := newDashboardState(meshClientAttached(rt))
+		if d.SetFocus(parts[1]) {
+			fmt.Fprintln(out, d.Render(ThemeDefault(), 100))
+			return
+		}
+		fmt.Fprintf(out, "dashboard: unknown subcommand %q\n%s\n", parts[1], dashboardHelp())
+	}
+}
+
+func isDashboardSlash(cmd string) bool {
+	switch strings.ToLower(strings.TrimSpace(cmd)) {
+	case "/dashboard", "/heartbeat", "/mesh-console":
+		return true
+	default:
+		return false
+	}
+}

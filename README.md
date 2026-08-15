@@ -163,7 +163,7 @@ iomesh agent stdio          ACP JSON-RPC over stdio
 iomesh agent serve          ACP WebSocket (default 127.0.0.1:7400/acp)
 ```
 
-Slash commands (TUI/REPL): `/model`, `/theme`, `/permissions`, `/subagents`, `/setup`, `/onboard`, `/memory`, `/integrations`, `/save`, `/sessions`, `/load`, `/cost`, `/help`, `/quit`.  
+Slash commands (TUI/REPL): `/model`, `/theme`, `/dashboard` (heartbeat live feed · aliases `/heartbeat` `/mesh-console`), `/permissions`, `/subagents`, `/setup`, `/onboard`, `/memory`, `/integrations`, `/save`, `/sessions`, `/load`, `/cost`, `/help`, `/quit`.  
 Keys (fullscreen): **Enter** send · **Ctrl+J** newline · **y/n/a** tool approval.
 
 ## Configuration
