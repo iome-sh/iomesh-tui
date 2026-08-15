@@ -44,7 +44,11 @@ const (
 // residual-honest org installs snapshot → browser portal HITL.
 // Unit-tested for honesty needles. Does not invent install green / Connected / GA.
 func IntegrationsAgentGuidanceNote() string {
-	return strings.TrimSpace(`integrations setup (residual-honest agent path · s1251/s1273):
+	return strings.TrimSpace(`start here (integrations · MCP):
+  list → plan <id> → finish OAuth/install in portal HITL (` + integrationsPortalURL + `)
+  agent MCP cannot write installs · catalog status ≠ install Connected
+
+integrations setup (residual-honest agent path · s1251/s1273):
 1. Discover: MCP list_connector_catalog (v178 entries) — catalog status ≠ install Connected
 2. Plan: MCP plan_connector_setup for a connector_id — portal deep links + honesty notes
 3. Optional discovery: get_webhook_signing_headers — discovery only, no secret mint
