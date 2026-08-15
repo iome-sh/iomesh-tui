@@ -2,6 +2,7 @@ package tui
 
 import (
 	"bytes"
+	"os"
 	"strings"
 	"testing"
 )
@@ -134,6 +135,32 @@ func TestPulseSpark_Width(t *testing.T) {
 	s := pulseSpark(20, 0)
 	if len([]rune(s)) != 20 {
 		t.Fatalf("spark width=%d want 20 (%q)", len([]rune(s)), s)
+	}
+}
+
+func TestReadmeDashboardShowcase(t *testing.T) {
+	b, err := os.ReadFile("../../README.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	readme := string(b)
+	for _, n := range []string{
+		"docs/assets/dashboard-eval.svg",
+		"/dashboard",
+		"MeshConsole",
+		"console.iome.sh",
+		"EVAL",
+		"catalog ≠ Connected",
+		"dual_write OFF",
+		"not live APPLY",
+		"eval template",
+	} {
+		if !strings.Contains(readme, n) {
+			t.Fatalf("README showcase missing %q", n)
+		}
+	}
+	if strings.Contains(readme, "tenant GIF") && strings.Contains(readme, "live tenant feed as proof") {
+		t.Fatal("README must not sell a tenant GIF as Connected proof")
 	}
 }
 

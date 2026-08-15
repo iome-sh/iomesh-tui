@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 540" role="img" aria-labelledby="title desc">
+  <title id="title">iomesh-tui /dashboard — landing MeshConsole eval template</title>
+  <desc id="desc">Evaluation template of the heartbeat live-feed dashboard. Same seed as iome.sh MeshConsole. catalog ≠ Connected. dual_write OFF. Not live APPLY.</desc>
+  <defs>
+    <style>
+      .chrome { font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #9aa39b; }
+      .mono { font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .label { font: 600 10px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fill: #7a847c; letter-spacing: 0.12em; text-transform: uppercase; }
+      .fg { fill: #e8e6df; }
+      .dim { fill: #8b938c; }
+      .faint { fill: #5c655e; }
+      .sage { fill: #7f9a88; }
+      .warn { fill: #c4a35a; }
+      .deny { fill: #c45c5c; }
+      .muted { fill: #9aa39b; }
+    </style>
+  </defs>
+  <rect width="920" height="540" rx="16" fill="#161815"/>
+  <rect x="1" y="1" width="918" height="538" rx="15" fill="none" stroke="#2a2e2b"/>
+  <rect width="920" height="36" rx="16" fill="#1c1f1d"/>
+  <rect y="20" width="920" height="16" fill="#1c1f1d"/>
+  <circle cx="22" cy="18" r="5" fill="#3d4440"/>
+  <circle cx="40" cy="18" r="5" fill="#3d4440"/>
+  <circle cx="58" cy="18" r="5" fill="#3d4440"/>
+  <text x="80" y="22" class="chrome">iomesh-tui  ·  /dashboard  ·  eval template</text>
+  <text x="780" y="22" class="chrome">not Connected</text>
+
+  <circle cx="28" cy="58" r="4" fill="#7f9a88"/>
+  <text x="42" y="62" class="mono dim">context://mesh · sre.incidents · policy-gated MCP</text>
+  <rect x="820" y="46" width="72" height="20" rx="10" fill="#243028"/>
+  <text x="856" y="60" class="mono sage" text-anchor="middle">EVAL</text>
+
+  <path d="M24 84 H140 L156 84 L168 70 L184 104 L200 76 L214 84 H340 L356 84 L370 68 L388 108 L406 78 L420 84 H560 L576 84 L590 72 L606 102 L622 78 L636 84 H780 L796 84 L810 70 L826 104 L842 80 L856 84 H896"
+        fill="none" stroke="#7f9a88" stroke-width="1.4" stroke-linejoin="round"/>
+  <text x="24" y="128" class="mono dim">analysis  ops 3 · knowledge 1 · analytics 1  ·  knowledge/analytics Beta</text>
+  <line x1="24" y1="140" x2="896" y2="140" stroke="#2a2e2b"/>
+
+  <text x="24" y="162" class="label">Tenancy</text>
+  <text x="200" y="162" class="label">Heartbeat</text>
+  <text x="820" y="162" class="label" text-anchor="end">18 / min</text>
+  <text x="700" y="162" class="label">Agent tools</text>
+
+  <rect x="20" y="174" width="160" height="20" rx="3" fill="#222622"/>
+  <text x="28" y="188" class="mono fg">▸ sre.incidents</text>
+  <text x="28" y="210" class="mono faint">  eng.ops</text>
+  <text x="28" y="230" class="mono faint">  cs.tickets</text>
+  <text x="28" y="250" class="mono faint">  gtm.pipeline</text>
+  <text x="24" y="286" class="label">Pulse</text>
+  <text x="24" y="314" class="mono fg" style="font-size:28px">18</text>
+  <text x="24" y="334" class="mono faint">events / min</text>
+
+  <text x="200" y="188" class="mono faint">14:02:11</text>
+  <text x="262" y="188" class="mono sage">ops</text>
+  <text x="296" y="188" class="mono faint">sre.incidents</text>
+  <text x="200" y="206" class="mono fg">P2 opened — checkout p95 1.8s</text>
+  <text x="200" y="222" class="mono dim">Signed from pager. Team tenancy: sre.oncall</text>
+
+  <text x="200" y="248" class="mono faint">14:02:18</text>
+  <text x="262" y="248" class="mono sage">ops</text>
+  <text x="296" y="248" class="mono faint">eng.ops</text>
+  <text x="200" y="266" class="mono fg">Deploy v2.14.3 → prod-eu</text>
+  <text x="200" y="282" class="mono dim">Heartbeat linked to runbook RB-441</text>
+
+  <text x="200" y="308" class="mono faint">14:02:24</text>
+  <text x="262" y="308" class="mono sage">ops</text>
+  <text x="296" y="308" class="mono faint">cs.tickets</text>
+  <text x="200" y="326" class="mono fg">Enterprise ticket · latency on checkout</text>
+  <text x="200" y="342" class="mono dim">Scoped to cs.enterprise — not a global index</text>
+
+  <text x="200" y="368" class="mono faint">14:02:31</text>
+  <text x="262" y="368" class="mono warn">knowledge</text>
+  <text x="336" y="368" class="mono faint">sre.incidents</text>
+  <text x="200" y="386" class="mono fg">Recall: similar p95 in Mar</text>
+  <text x="200" y="402" class="mono dim">Local memory · dual_write OFF</text>
+
+  <text x="200" y="428" class="mono faint">14:02:39</text>
+  <text x="262" y="428" class="mono muted">analytics</text>
+  <text x="330" y="428" class="mono faint">gtm.pipeline</text>
+  <text x="200" y="446" class="mono fg">Renewal risk +12% this week</text>
+  <text x="200" y="462" class="mono dim">Pattern across heartbeats · Beta</text>
+
+  <rect x="688" y="174" width="208" height="52" rx="6" fill="#1c1f1d" stroke="#2a2e2b"/>
+  <text x="702" y="196" class="mono fg">mesh.ops.pull</text>
+  <text x="702" y="214" class="mono sage">ALLOW</text>
+  <rect x="688" y="234" width="208" height="52" rx="6" fill="#1c1f1d" stroke="#2a2e2b"/>
+  <text x="702" y="256" class="mono fg">mesh.knowledge.search</text>
+  <text x="702" y="274" class="mono sage">ALLOW</text>
+  <rect x="688" y="294" width="208" height="52" rx="6" fill="#1c1f1d" stroke="#2a2e2b"/>
+  <text x="702" y="316" class="mono fg">mesh.gtm.forecast</text>
+  <text x="702" y="334" class="mono deny">DENY</text>
+  <text x="688" y="372" class="mono faint">Tools resolve under team tenancy.</text>
+  <text x="688" y="388" class="mono faint">Cross-dept invokes denied by default.</text>
+
+  <line x1="24" y1="484" x2="896" y2="484" stroke="#2a2e2b"/>
+  <text x="24" y="508" class="mono faint">eval template · same feed as iome.sh MeshConsole · catalog ≠ Connected · dual_write OFF</text>
+  <text x="24" y="526" class="mono faint">knowledge/analytics Beta · not Memory GA · demo feed ≠ fleet-GA · not live APPLY</text>
+</svg>

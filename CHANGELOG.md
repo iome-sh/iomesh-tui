@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **README dashboard showcase (s1990)** — README hero + [Dashboard](README.md#dashboard-heartbeat-live-feed) section: [docs/assets/dashboard-eval.svg](docs/assets/dashboard-eval.svg) (versionable eval-template image, not a tenant GIF), TUI vs iome.sh MeshConsole vs console.iome.sh table, `/dashboard` example. Same honesty as s1989. Docs: [tui.md](docs/architecture/tui.md).
 - **TUI heartbeat dashboard (s1989)** — `/dashboard` (aliases `/heartbeat` `/mesh-console`) ports the iome.sh landing MeshConsole: tenancy · pulse · heartbeat live feed · agent tools ALLOW/DENY · kind analysis. REPL prints a snapshot; fullscreen toggles a ticking overlay (esc/q close · tab/1–4 tenancy). Feed is the public **evaluation template**, not a Connected workspace. Badge EVAL (no mesh client) / CLIENT (client configured — still template until a real stream is pulled). `catalog ≠ Connected` · `dual_write OFF` · knowledge/analytics **Beta** · not Memory GA · not live APPLY · demo feed ≠ fleet-GA. Docs: [tui.md](docs/architecture/tui.md).
 
 ### Changed

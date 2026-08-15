@@ -62,7 +62,7 @@ iomesh> /theme high-contrast
 
 ## Dashboard (heartbeat live feed)
 
-Landing-page MeshConsole, in the TUI. Same tenancy / pulse / heartbeat / agent-tools analysis as [iome.sh](https://iome.sh) (`/dashboard`, aliases `/heartbeat` `/mesh-console`).
+Landing-page MeshConsole, in the TUI. Same tenancy / pulse / heartbeat / agent-tools analysis as [iome.sh](https://iome.sh) (`/dashboard`, aliases `/heartbeat` `/mesh-console`). README showcase: [dashboard-eval.svg](../assets/dashboard-eval.svg).
 
 ```text
 ● context://mesh · sre.incidents · policy-gated MCP          EVAL
