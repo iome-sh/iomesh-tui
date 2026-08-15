@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.77.0] — 2026-08-15
+
+Minor release: landing-page heartbeat dashboard in the TUI (`/dashboard`) plus README showcase. **Beta** · dual_write OFF · catalog ≠ Connected · not Memory GA · not live APPLY · eval template ≠ Connected.
+
 ### Added
 
 - **README dashboard showcase (s1990)** — README hero + [Dashboard](README.md#dashboard-heartbeat-live-feed) section: [docs/assets/dashboard-eval.svg](docs/assets/dashboard-eval.svg) (versionable eval-template image, not a tenant GIF), TUI vs iome.sh MeshConsole vs console.iome.sh table, `/dashboard` example. Same honesty as s1989. Docs: [tui.md](docs/architecture/tui.md).
