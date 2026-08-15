@@ -1,6 +1,6 @@
 module github.com/iome-sh/iomesh-tui
 
-go 1.26.5
+go 1.26.6
 
 require (
 	github.com/charmbracelet/bubbles v1.0.0
