@@ -8,7 +8,8 @@
 | [architecture/permissions.md](architecture/permissions.md) | Tool approval (y/n/a, yolo) |
 | [architecture/subagents.md](architecture/subagents.md) | Spawn, parallel, worktrees |
 | [architecture/sessions.md](architecture/sessions.md) | Session persistence |
-| [architecture/tui.md](architecture/tui.md) | Full-screen TUI, themes, multi-line |
+| [architecture/tui.md](architecture/tui.md) | Full-screen TUI, themes, multi-line, `/dashboard` |
+| [assets/dashboard-eval.svg](assets/dashboard-eval.svg) | README `/dashboard` showcase (eval template · not Connected) |
 | [architecture/acp.md](architecture/acp.md) | ACP stdio + WebSocket |
 | [architecture/skills.md](architecture/skills.md) | SKILL.md loader |
 | [architecture/agent-plugins.md](architecture/agent-plugins.md) | Agent Plugins package client (discover · opt-in wire · samples · dogfood) |
