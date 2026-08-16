@@ -87,6 +87,7 @@ type IOMeshSection struct {
 	Tenant    string `toml:"tenant"`
 	APIKeyEnv string `toml:"api_key_env"`
 	// Org is optional org id for PlanGate / MEMORY_INGEST entitlements (X-IOMesh-Org).
+	// Prefer the console /me public id (org_ + cuid2). Name slugs remain aliases.
 	Org string `toml:"org"`
 	// Workspace is optional workspace id for memory entitlements (X-IOMesh-Workspace).
 	// Distinct from [agent].workspace (filesystem path).

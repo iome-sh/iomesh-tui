@@ -92,7 +92,7 @@ Opt-in inject of iomesh multi-tenant context into **HTTP** MCP request headers a
 ```toml
 [iomesh]
 tenant = "acme"
-org = "org_dev-org"
+org = "org_…"   # paste from console Agent/MCP (org_ + cuid2)
 workspace = "ws_alpha"
 
 [mcp]
