@@ -37,7 +37,7 @@ Builtin playbook for **onboarding a TUI agent session against aion CP/MCP** — 
      [[mcp.servers]]
      name = "aion"
      url = "https://…/mcp"          # streamable HTTP from portal copy
-     oauth_token_env = "AION_TOKEN" # env only — never commit secrets
+     oauth_token_env = "IOMESH_TOKEN" # env only — never commit secrets
      ```
    - Restart / reattach MCP. Offline / missing tools → residual-honest **fail-open**; **never invent** tool green or Connected.
 

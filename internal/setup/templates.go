@@ -39,7 +39,7 @@ type InitOptions struct {
 	PlatformMCPURL string
 	// PlatformMCPName server name (default aion-platform).
 	PlatformMCPName string
-	// PlatformTokenEnv env name for Bearer (default AION_TOKEN).
+	// PlatformTokenEnv env name for Bearer (default IOMESH_TOKEN).
 	PlatformTokenEnv string
 	// AutoRecall / AutoIngest for [memory].
 	AutoRecall bool
@@ -57,7 +57,7 @@ func DefaultInitOptions() InitOptions {
 		MemoryTenant:     "default",
 		MeshAPIKeyEnv:    "IOMESH_API_KEY",
 		PlatformMCPName:  "aion-platform",
-		PlatformTokenEnv: "AION_TOKEN",
+		PlatformTokenEnv: "IOMESH_TOKEN",
 		AutoRecall:       true,
 		AutoIngest:       false,
 		PullStream:       "EVENTS",
