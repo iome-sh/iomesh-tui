@@ -237,6 +237,12 @@ func TestParseMemoryRelatedArgs(t *testing.T) {
 		t.Fatal("expected invalid --prefer-shorter-hops")
 	}
 
+	// s2006: --seed-query alias for lean host seed_query.
+	_, qLean, _, errLean := parseMemoryRelatedArgs([]string{"--seed", "person:x", "--seed-query", "teammate notes"})
+	if errLean != "" || qLean != "teammate notes" {
+		t.Fatalf("seed-query: q=%q err=%q", qLean, errLean)
+	}
+
 	// Bare flag must not swallow free query tokens that are not bool-like.
 	seed8, q8, o8, err8 := parseMemoryRelatedArgs([]string{
 		"--seed", "person:x",
@@ -288,6 +294,133 @@ func TestParseMemoryDigestArgs(t *testing.T) {
 	_, badFlag := parseMemoryDigestArgs([]string{"--unknown"})
 	if badFlag == "" {
 		t.Fatal("expected unknown flag")
+	}
+}
+
+// s2006: /memory write flag parser for summary/full/tags/tier/entity_key.
+func TestParseMemoryWriteArgs(t *testing.T) {
+	o, errMsg := parseMemoryWriteArgs([]string{
+		"--summary", "Alice owns alpha",
+		"--full", "Alice is the owner of project alpha",
+		"--tags", "project,alpha",
+		"--tier", "2",
+		"--entity-key", "person:alice",
+	})
+	if errMsg != "" {
+		t.Fatalf("errMsg=%q", errMsg)
+	}
+	if o.Summary != "Alice owns alpha" || o.Full != "Alice is the owner of project alpha" {
+		t.Fatalf("text opts=%+v", o)
+	}
+	if len(o.Tags) != 2 || o.Tags[0] != "project" || o.Tags[1] != "alpha" {
+		t.Fatalf("tags=%v", o.Tags)
+	}
+	if o.Tier != 2 || o.EntityKey != "person:alice" {
+		t.Fatalf("tier/entity=%+v", o)
+	}
+	if o.Supersede != nil {
+		t.Fatalf("Supersede must be nil when omitted: %+v", o.Supersede)
+	}
+
+	// Free tokens as summary; --entity_key= form; --no-supersede; repeated --tag.
+	o2, err2 := parseMemoryWriteArgs([]string{
+		"--entity_key=org:acme",
+		"--tag", "ops",
+		"--tags=beta",
+		"--no-supersede",
+		"free", "fact", "text",
+	})
+	if err2 != "" {
+		t.Fatalf("err2=%q", err2)
+	}
+	if o2.Summary != "free fact text" || o2.Full != "" {
+		t.Fatalf("free summary=%q full=%q", o2.Summary, o2.Full)
+	}
+	if o2.EntityKey != "org:acme" {
+		t.Fatalf("entity=%q", o2.EntityKey)
+	}
+	if len(o2.Tags) != 2 || o2.Tags[0] != "ops" || o2.Tags[1] != "beta" {
+		t.Fatalf("tags=%v", o2.Tags)
+	}
+	if o2.Supersede == nil || *o2.Supersede {
+		t.Fatalf("--no-supersede want false, got %+v", o2.Supersede)
+	}
+
+	// --summary + free tokens fill full.
+	o3, err3 := parseMemoryWriteArgs([]string{"--summary", "short", "longer", "body"})
+	if err3 != "" || o3.Summary != "short" || o3.Full != "longer body" {
+		t.Fatalf("summary+free: %+v err=%q", o3, err3)
+	}
+
+	// --supersede explicit true.
+	o4, err4 := parseMemoryWriteArgs([]string{"--summary", "x", "--supersede"})
+	if err4 != "" || o4.Supersede == nil || !*o4.Supersede {
+		t.Fatalf("supersede: %+v err=%q", o4, err4)
+	}
+
+	_, badTier := parseMemoryWriteArgs([]string{"--tier", "nope"})
+	if badTier == "" {
+		t.Fatal("expected invalid --tier")
+	}
+	_, badFlag := parseMemoryWriteArgs([]string{"--unknown"})
+	if badFlag == "" {
+		t.Fatal("expected unknown flag")
+	}
+}
+
+// s2006: /memory write slash routing + residual-honest usage / offline payload.
+func TestHandleSlash_MemoryWriteRouting(t *testing.T) {
+	rt := testRuntime(t)
+	rt.AttachMemory(agent.MemoryConfig{Enabled: true, Server: "memory", Tenant: "dept.research"})
+	adapter := runtimeAdapter{rt: rt}
+
+	var out bytes.Buffer
+	_, _ = handleSlash(&out, adapter, "/memory")
+	got := out.String()
+	if !strings.Contains(got, "write") {
+		t.Fatalf("bare /memory help missing write: %s", got)
+	}
+	if !strings.Contains(got, "dual_write") {
+		t.Fatalf("status should mention dual_write: %s", got)
+	}
+
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/memory write")
+	if !strings.Contains(out.String(), "usage: /memory write") {
+		t.Fatalf("empty write usage: %s", out.String())
+	}
+	if !strings.Contains(out.String(), "not conversation turn") || !strings.Contains(out.String(), "not Memory GA") {
+		t.Fatalf("empty write honesty: %s", out.String())
+	}
+	if !strings.Contains(out.String(), "dual_write OFF") {
+		t.Fatalf("empty write dual_write: %s", out.String())
+	}
+
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/memory write --summary Alice owns alpha --entity-key person:alice")
+	got = out.String()
+	if !strings.Contains(got, "unavailable") || !strings.Contains(got, "not connected") {
+		t.Fatalf("offline write: %s", got)
+	}
+	if !strings.Contains(got, "never invent memory_id") {
+		t.Fatalf("offline write must not invent id: %s", got)
+	}
+	if !strings.Contains(got, "dual_write OFF") || !strings.Contains(got, "not Memory GA") {
+		t.Fatalf("offline write honesty: %s", got)
+	}
+	if strings.Contains(got, "memory_id: mem") || strings.Contains(got, "Memory GA shipped") {
+		t.Fatalf("must not invent success / GA: %s", got)
+	}
+
+	// HITL supersede still requires --i-confirm (mutating stays at the client).
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/memory supersede --entity-key person:alice")
+	got = out.String()
+	if !strings.Contains(got, "refused") || !strings.Contains(got, "HITL") {
+		t.Fatalf("supersede without confirm: %s", got)
+	}
+	if strings.Contains(got, "superseded_count:") {
+		t.Fatalf("must not invent superseded_count without HITL: %s", got)
 	}
 }
 
@@ -343,6 +476,11 @@ func TestParseMemorySupersedeArgs(t *testing.T) {
 	_, badArg := parseMemorySupersedeArgs([]string{"bare-entity"})
 	if badArg == "" {
 		t.Fatal("expected unexpected argument")
+	}
+	// s2006: lean host --entity-key alias.
+	oKey, errKey := parseMemorySupersedeArgs([]string{"--entity-key", "person:alice", "--i-confirm"})
+	if errKey != "" || oKey.Entity != "person:alice" || !oKey.Confirm {
+		t.Fatalf("entity-key: %+v err=%q", oKey, errKey)
 	}
 }
 

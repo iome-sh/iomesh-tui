@@ -88,6 +88,11 @@ var toolCallSoftDogfoodNeedles = []string{
 	"memory_list",
 	"memory_compact_status",
 	"memory_facts_as_of",
+	// Lean host recopy (s2006) — mention only; historical tools=6 stamp stays past
+	"memory_write",
+	"memory_related",
+	"memory_supersede_entity",
+	"not a new live tools=N",
 	// Companion E4 attach stamp residual (s1508/s1566)
 	"/onboard next e4",
 	"tools=6",
@@ -150,6 +155,7 @@ func RunDeeperToolCallSoftDogfood() string {
 	b.WriteString("  Deeper tool-call residual path checked (static offline):\n")
 	b.WriteString("    · memory_ingest_turn · memory_retrieve · memory_search_semantic\n")
 	b.WriteString("    · memory_list · memory_compact_status · memory_facts_as_of\n")
+	b.WriteString("    · lean host recopy (s2006 · not a new live tools=N stamp): memory_write · memory_related · memory_supersede_entity\n")
 	b.WriteString("    · companion /onboard next e4 · tools=6 · iomesh mcp --connect (s1508/s1566 attach stamp residual)\n")
 	b.WriteString("    · Partial→client-attach-evidence · deeper tool-call residual candidacy (not forever-green full product dogfood)\n")
 	b.WriteString("  Honesty locks checked: dual_write OFF · not Memory GA · Edge Memory GA candidacy only\n")

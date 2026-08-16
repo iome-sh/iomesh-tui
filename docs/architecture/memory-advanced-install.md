@@ -115,6 +115,7 @@ Once MCP is attached, use residual-honest advanced inventory:
 
 ```text
 /memory status          # base + advanced tool presence pulse
+/memory write …         # durable fact (MCP memory_write · not a turn)
 /memory semantic …      # tier-4 semantic (MCP memory_search_semantic)
 /memory related --seed …
 /memory facts-as-of --as-of <RFC3339>
@@ -126,7 +127,7 @@ Once MCP is attached, use residual-honest advanced inventory:
 ```
 
 Builtin skill **`memory-advanced-agent`** steers agents; skill-only · dual_write OFF · not Memory GA.  
-Tools available depend on lean host surface (often **tools=6** on product host) — **PASS ≠ invent full platform sidecar parity**.
+Tools available depend on lean host surface. Historical s1508/s1509 attach stamp is **tools=6** (past evidence — do **not** invent a new live tools=N). Lean host recopies `memory_write` / `memory_related` / `memory_supersede_entity` (s2006) when the attached host lists them — **PASS ≠ invent full platform sidecar parity**.
 
 ---
 

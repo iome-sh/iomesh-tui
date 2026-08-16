@@ -7,11 +7,12 @@ Product edge ships **`iomesh-memory-mcp`** (stdio **and** streamable HTTP; publi
 | Tool | Purpose |
 |------|---------|
 | `memory_ingest_turn` | Persist a conversation turn (tiered Palace) |
+| `memory_write` | Durable fact via kernel `Write` / `WriteAndSupersede` (`summary` / `full` / `tags` / `tier` / `entity_key`; **not** a conversation turn · s2006 lean recopy) |
 | `memory_retrieve` | Query memories (optional `session_id`, `since`/`until`, `session_seq`) |
-| `memory_related` | Multi-hop lite related recall (`seed_entity` / `query` / `max_hops`; optional `prefer_shorter_hops` omit=true · s1135 + s1281 / aion s1277) |
+| `memory_related` | Multi-hop lite related recall (`seed_entity` / lean `seed_query` + legacy `query` / `max_hops`; optional `prefer_shorter_hops` omit=true · s1135 + s1281 / aion s1277 · s2006 lean recopy) |
 | `ops_digest_export` | Ops heartbeat digest export (`window` / `horizon` / `limit`; s1200 opt-in; MCP + HTTP) |
 | `memory_facts_as_of` | Bi-temporal lite validity listing (`as_of` required RFC3339; optional `entity` / `query` / `session_id` / `limit`; s1276 opt-in; **MCP-first** — no lean HTTP invent) |
-| `memory_supersede_entity` | A3 lite entity supersession (`entity` required; optional `as_of`; **HITL** · s1282 / aion s640; **MCP-first** — no lean HTTP invent) |
+| `memory_supersede_entity` | A3 lite entity supersession (lean `entity_key` + legacy `entity`; optional `as_of`; **HITL at the client** · s1282 / aion s640 · s2006 lean recopy; **MCP-first** — no lean HTTP invent) |
 | `memory_patterns_list` | Ops pulse Beta pattern list (shipped s1287 · MCP; no lean HTTP invent) |
 | `memory_anomalies_list` | Ops pulse Beta anomaly list (shipped s1287 · MCP; no lean HTTP invent) |
 | `memory_timeline` | Temporal timeline slice (s1296 slash: `/memory timeline`; MCP-first) |
@@ -53,6 +54,7 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 | **3 E4 MCP client attach dogfood (s1508)** | **done (docs + evidence stamp + onboard memory lane tip)** | Residual-honest **E4 full MCP client attach** dogfood: lean host HTTP → TUI `iomesh mcp --connect` **connected=1 · tools=6** (observed stamp) · dual_write OFF · local-primary · **Edge Memory GA candidacy only** · residual PASS ≠ invent Edge Memory GA declared · not bare Memory GA · not hosted Memory GA · aion broker private · **E10 Open** · tip ≠ invent forever-green product dogfood · evidence [EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md](../EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md) |
 | **3 memory edge usage demo (s1513)** | **done (docs only)** | Residual-honest **utilization/demo example**: signup (optional) → TUI MCP integrations list/plan + portal HITL → local memory install (kernel + `iomesh-memory-mcp`; **not fully automatic**) → attach → show `/memory` + `mcp --connect` usage · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · E10 Open · catalog ≠ Connected · aion broker private · walkthrough [memory-edge-usage-demo.md](./memory-edge-usage-demo.md) |
 | **3 trigger-compact HITL + advanced status (s1311)** | **done (opt-in · MCP-first · HITL)** | `/memory trigger-compact --i-confirm` → MCP `memory_trigger_compact` (RecMem advisory · mutating HITL · refuse without confirm); `/memory status` prints `MemoryStatusLine` + `MemoryAdvancedStatus` residual inventory (related · facts-as-of · supersede · timeline · compact-status · semantic · ingest-event · patterns · anomalies · digest · trigger-compact); dual_write OFF · not Memory GA · not invent compaction green · no lean HTTP invent |
+| **3 lean host write + related/supersede recopy (s2006)** | **done (opt-in · MCP-first · HITL supersede)** | `/memory write` → lean MCP `memory_write` (`summary`/`full`/`tags`/`tier`/`entity_key`; not a turn); `/memory related` MCP args send `seed_query` (lean) + `query` (legacy); `/memory supersede` sends `entity_key` (lean) + `entity` (legacy) · HITL stays at the client (`--i-confirm`) · dual_write OFF · not Memory GA · not Edge Memory GA · catalog ≠ Connected · **not a new live tools=N stamp** (historical s1508/s1509 tools=6 stays past) |
 | **4 pull (s652)** | **done (M1)** | `iomesh memory pull` — durable mesh consumer → local MCP `memory_ingest_turn` (cost-max local palace; dual_write remains optional audit) |
 
 **Related (not Memory Palace):** agent connector setup slash `/integrations` (s1238/s1242/s1243) uses MCP `list_connector_catalog` / `plan_connector_setup` (aion v178) + `get_webhook_signing_headers` (v30) with residual honesty — see [agent-integrations-setup.md](./agent-integrations-setup.md).
@@ -705,7 +707,8 @@ See [mesh-dogfood.md](mesh-dogfood.md) for soft vs strict matrix. Unit coverage:
 | `/memory status\|st` | Base status line + s1311 advanced MCP inventory pulse (`MemoryAdvancedStatus`) · **s1831** next-step footer |
 | `/memory recall [query]` | Sync HTTP retrieve when mesh enabled, else MCP (default query = last user text or `"*"`) |
 | `/memory recall --since|--until|--session-seq … [query]` | Same + per-call temporal filters (s1068; override config) |
-| `/memory related --seed <entity> [--query …] [--max-hops N] [--prefer-shorter-hops\|--legacy-sort]` | Opt-in multi-hop lite related recall (s1135 + s1281; HTTP + MCP `memory_related`; PreferShorterHops omit=true; not auto-recall) |
+| `/memory write [--summary\|--full\|--tags\|--tier\|--entity-key] [text]` | Opt-in durable fact write (s2006; MCP `memory_write`; MCP-first; not conversation turn) |
+| `/memory related --seed <entity> [--query …] [--max-hops N] [--prefer-shorter-hops\|--legacy-sort]` | Opt-in multi-hop lite related recall (s1135 + s1281 + s2006 lean recopy; HTTP + MCP `memory_related` with `seed_query`+`query`; PreferShorterHops omit=true; not auto-recall) |
 | `/memory digest [--window day\|week] [--horizon ops\|knowledge\|analytical\|all] [--limit N]` | Opt-in ops heartbeat digest export (s1200; HTTP + MCP `ops_digest_export`) · **s1831** next-step footer |
 | `/memory facts-as-of\|facts\|as-of --as-of <RFC3339> [--entity …] [--query …] [--limit N]` | Opt-in bi-temporal lite validity listing (s1276; MCP `memory_facts_as_of`; MCP-first) |
 | `/memory supersede\|super --entity <key> [--as-of RFC3339] --i-confirm` | Opt-in HITL A3 lite supersede (s1282; MCP `memory_supersede_entity`; MCP-first; mutating) |
@@ -737,7 +740,7 @@ Operators can run **multi-hop lite** related recall without changing default aut
 | Surface | Path |
 |---------|------|
 | Lean HTTP | `iomesh.RetrieveMemoryRelated` → `POST /v1/memory/related` (+ `/v5` fallback); body: `seed_entity` / `query` / `max_hops` / `limit` / `session_id` / optional `prefer_shorter_hops` |
-| MCP fallback | `memory_related` tool args (`seed_entity`, `query`, `max_hops`, `limit`, `session_id`, `tenant`, optional `prefer_shorter_hops`) when sync fails |
+| MCP fallback | `memory_related` tool args (`seed_entity`, lean `seed_query` + legacy `query`, `max_hops`, `limit`, `session_id`, `tenant`, optional `prefer_shorter_hops`) when sync fails |
 | Slash | `/memory related --seed person:alice --query "…" --max-hops 2 [--prefer-shorter-hops\|--legacy-sort]` |
 | Hits | Optional `hop_distance` on `MemoryHit` (hop ranking lite · s1067 kernel); formatted as `[hop=N]` |
 
@@ -775,7 +778,7 @@ Operators can **close open validity windows** for entity-tagged facts only with 
 | Surface | Path |
 |---------|------|
 | Lean HTTP | **None today** — do not invent `POST /v1\|/v5/memory/supersede` |
-| MCP (primary) | `memory_supersede_entity` args (`entity` required; optional `as_of` RFC3339, `tenant`) |
+| MCP (primary) | `memory_supersede_entity` args (lean `entity_key` + legacy `entity` required; optional `as_of` RFC3339, `tenant`) · HITL stays at the client |
 | Slash | `/memory supersede --entity person:alice [--as-of 2026-08-04T12:00:00Z] --i-confirm` |
 | HITL | `--i-confirm` / `--confirm` / `--yes` required; without it residual refuse (no MCP call) |
 | Output | `superseded_count` from wire only · honesty footer; offline / empty → never invent count |
@@ -856,10 +859,10 @@ Opt-in residual-honest mutating compact advisory + operator inventory pulse:
 |------|------|
 | `internal/config` | `[memory]` section + env (`dual_write`) |
 | `internal/iomesh/memory.go` | `PublishMemoryIngest`, `PublishMemoryRecall`, `RetrieveMemory` / `RetrieveMemoryWithOptions`, `RetrieveMemoryRelated` (+ PreferShorterHops s1281), `ExportOpsDigest` lean HTTP (no SDK dep; s1068 temporal + s1135 related + s1200 digest; **no** facts_as_of / supersede / patterns HTTP invent) |
-| `internal/agent/memory.go` | Recall (sync prefer → MCP; config + opts temporal filters) / related multi-hop + prefer_shorter_hops (s1135/s1281) / ops digest (s1200) / facts-as-of MCP-first (s1276) / supersede HITL MCP-first (s1282) / patterns+anomalies (s1287) / timeline+compact-status MCP-first (s1296) / trigger-compact HITL + advanced status inventory (s1311) / semantic+ingest-event (s1301) / ingest / dual-write helpers |
+| `internal/agent/memory.go` | Recall (sync prefer → MCP; config + opts temporal filters) / write durable fact MCP-first (s2006) / related multi-hop + prefer_shorter_hops (s1135/s1281) + lean `seed_query` recopy / ops digest (s1200) / facts-as-of MCP-first (s1276) / supersede HITL MCP-first (s1282) + lean `entity_key` recopy / patterns+anomalies (s1287) / timeline+compact-status MCP-first (s1296) / trigger-compact HITL + advanced status inventory (s1311) / semantic+ingest-event (s1301) / ingest / dual-write helpers |
 | `internal/agent/memory_guidance.go` | s1291 `MemoryAdvancedAgentGuidanceNote` residual-honest system note (AttachMCP inject; s1296 timeline+compact-status · s1311 trigger-compact HITL) · **s1831** `MemoryNextStepLines` residual dual-path next-step after `/memory` status/help/digest |
 | `internal/agent/agent.go` | `RunTurn` hooks · `AttachMCP` injects integrations (s1251) + memory-advanced (s1291) notes |
-| `internal/tui/tui.go` | `/memory` slash (related · digest · facts-as-of · timeline · compact-status · trigger-compact · status advanced · supersede · patterns · anomalies · …) |
+| `internal/tui/tui.go` | `/memory` slash (write · related · digest · facts-as-of · timeline · compact-status · trigger-compact · status advanced · supersede HITL · patterns · anomalies · …) |
 | `internal/skills/builtin/memory-advanced-agent/` | s1288 residual-honest advanced memory agent skill |
 | `configs/config.example.toml` | Copy-paste wire-up |
 
@@ -896,6 +899,7 @@ Post-surface dual path:
 - **s1478:** public product attach continuum — both edge repos **public** · `go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main` · `go get github.com/iome-sh/memory@main` · **no GOPRIVATE** · HTTP `:8080/mcp` or stdio · docker compose still valid · dual_write OFF · not Memory GA · aion broker **still private** · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · aion broker private · s1517 product-only sample · product sample plugin `iomesh-memory-mcp`.
 - **s1508:** E4 full MCP client attach dogfood — lean host HTTP → TUI `iomesh mcp --connect` observed **connected=1 · tools=6** (UTC `2026-08-09T06:23:34Z` · TUI tip `6b3958a…` · MCP tip `f46afe2…`) · dual_write OFF · local-primary · **Edge Memory GA candidacy only** · residual PASS ≠ invent Edge Memory GA declared · not bare Memory GA · not hosted Memory GA · aion broker private · **E10 Open** · tip ≠ invent forever-green product dogfood · evidence [EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md](../EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md).
 - **s1513:** memory edge usage/demo example — residual-honest walkthrough signup (optional) → integrations list/plan + portal HITL → local kernel+MCP install (**not fully automatic**) → attach → show `/memory` usage · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · E10 Open · catalog ≠ Connected · aion broker private · [memory-edge-usage-demo.md](./memory-edge-usage-demo.md).
+- **s2006:** TUI recopy of lean `iomesh-memory-mcp` write/related/supersede — `/memory write` → `memory_write`; related/supersede payloads send lean `seed_query` / `entity_key` plus legacy names · HITL stays at the client · dual_write OFF · not Memory GA · not Edge Memory GA · catalog ≠ Connected · **not a new live tools=N stamp** (historical s1508/s1509 tools=6 stays past).
 
 
 ## s1069 recall efficiency

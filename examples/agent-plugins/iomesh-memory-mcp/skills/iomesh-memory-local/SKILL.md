@@ -42,7 +42,7 @@ Attach after install:
 3. Set `enabled = true` (opt-in only).
 4. Restart / reload the TUI session so skills catalog merge and plugin MCP map can see this package.
 5. Prefer dual_write **OFF** (default). Local-primary palace; not freemium hosted palace.
-6. Mutating tools remain **HITL / approval-gated** — refuse without operator confirm.
+6. Mutating tools remain **HITL / approval-gated** — refuse without operator confirm. Lean host recopies `memory_write` / `memory_related` / `memory_supersede_entity` (s2006 · **not a new live tools=N** stamp · historical s1508/s1509 tools=6 stays past). `/memory write` is a durable fact (not a turn). `/memory supersede` stays HITL at the client.
 
 ## Explicit non-claims
 

@@ -862,6 +862,14 @@ func TestFormatSupersedeJSON_Fixture(t *testing.T) {
 	if !strings.Contains(out0, "superseded_count: 0") || !strings.Contains(out0, "org:acme") {
 		t.Fatalf("zero count: %q", out0)
 	}
+	// s2006 lean host wire: entity_key + updated (not superseded_count).
+	outLean := formatSupersedeJSON(`{"entity_key":"person:alice","as_of":"2026-08-04T12:00:00Z","updated":2,"audited":false,"dual_write":"off"}`)
+	if !strings.Contains(outLean, "supersede entity=person:alice") || !strings.Contains(outLean, "superseded_count: 2") {
+		t.Fatalf("lean wire: %q", outLean)
+	}
+	if !strings.Contains(outLean, "dual_write OFF") || !strings.Contains(outLean, "not Memory GA") {
+		t.Fatalf("lean honesty: %q", outLean)
+	}
 }
 
 // s1282: formatSupersedeJSON returns empty on non-JSON (caller may pass through).
@@ -997,6 +1005,50 @@ func TestMemorySupersede_MockMCPSuccess(t *testing.T) {
 	}
 	if !strings.Contains(out, "person:alice") || !strings.Contains(out, "A3 lite supersede") {
 		t.Fatalf("format: %q", out)
+	}
+}
+
+// s2006: Confirm + lean-host memory_supersede_entity wire {entity_key, updated} + entity_key arg.
+func TestMemorySupersede_LeanHostPayloadHonesty(t *testing.T) {
+	cInR, cInW := io.Pipe()
+	cOutR, cOutW := io.Pipe()
+	got := make(chan map[string]any, 1)
+	go mockMCPRecordCall(cOutW, cInR, "memory_supersede_entity",
+		`{"entity_key":"person:alice","as_of":"2026-08-04T12:00:00Z","updated":1,"audited":false,"dual_write":"off","note":"HITL stays at the client"}`,
+		got)
+
+	mut := true
+	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "memory", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
+	defer cl.Close()
+	if err := cl.InitForTest(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	mgr := mcp.NewManagerEmpty(nil)
+	mgr.Attach(cl)
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "dept.research"},
+		mcp:    mgr,
+	}
+	out, err := rt.MemorySupersede(context.Background(), MemorySupersedeOpts{
+		Entity:  "person:alice",
+		AsOf:    "2026-08-04T12:00:00Z",
+		Confirm: true,
+	})
+	if err != nil {
+		t.Fatalf("err=%v", err)
+	}
+	if !strings.Contains(out, "superseded_count: 1") || !strings.Contains(out, "person:alice") {
+		t.Fatalf("lean format: %q", out)
+	}
+	args := <-got
+	if args["entity_key"] != "person:alice" {
+		t.Fatalf("lean host requires entity_key, got %#v", args)
+	}
+	if args["entity"] != "person:alice" {
+		t.Fatalf("legacy entity also sent, got %#v", args)
+	}
+	if args["tenant"] != "dept.research" {
+		t.Fatalf("tenant: %#v", args)
 	}
 }
 
@@ -1591,6 +1643,237 @@ func TestFormatIngestEventJSON_NonJSON(t *testing.T) {
 	}
 }
 
+// s2006: formatWriteJSON residual-honest fixture {memory_id,tier,superseded,audited,dual_write}.
+func TestFormatWriteJSON_Fixture(t *testing.T) {
+	raw := `{
+		"memory_id": "mem_write_1",
+		"tier": 2,
+		"tenant": "dept.research",
+		"superseded": true,
+		"audited": false,
+		"dual_write": "off"
+	}`
+	out := formatWriteJSON(raw, 6000)
+	if out == "" {
+		t.Fatal("expected formatted output")
+	}
+	for _, want := range []string{
+		"write (durable fact · not conversation turn)",
+		"memory_id: mem_write_1",
+		"tier: 2",
+		"tenant: dept.research",
+		"superseded: true",
+		"audited: false",
+		"dual_write: off",
+		"not Memory GA",
+		"dual_write OFF",
+		"MCP-first",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("missing %q in: %q", want, out)
+		}
+	}
+	out2 := formatWriteJSON(`{}`, 6000)
+	if !strings.Contains(out2, "memory_id: (none from wire)") {
+		t.Fatalf("empty wire memory_id: %q", out2)
+	}
+	if !strings.Contains(out2, writeHonestyFooter) {
+		t.Fatalf("empty wire honesty: %q", out2)
+	}
+}
+
+func TestFormatWriteJSON_NonJSON(t *testing.T) {
+	if got := formatWriteJSON("not json", 100); got != "" {
+		t.Fatalf("got %q", got)
+	}
+	if got := formatWriteJSON("", 100); got != "" {
+		t.Fatalf("got %q", got)
+	}
+}
+
+func TestMemoryWrite_OfflineFailOpen(t *testing.T) {
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "dept.research"},
+		mcp:    mcp.NewManagerEmpty(nil),
+	}
+	out, err := rt.MemoryWrite(context.Background(), MemoryWriteOpts{
+		Summary:   "Alice owns alpha",
+		EntityKey: "person:alice",
+	})
+	if err != nil {
+		t.Fatalf("expected fail-open nil err, got %v", err)
+	}
+	if !strings.Contains(out, "unavailable") || !strings.Contains(out, "not connected") {
+		t.Fatalf("offline: %q", out)
+	}
+	if !strings.Contains(out, "never invent memory_id") || !strings.Contains(out, "not Memory GA") {
+		t.Fatalf("honesty offline: %q", out)
+	}
+	if !strings.Contains(out, "dual_write OFF") {
+		t.Fatalf("dual_write pin: %q", out)
+	}
+	if strings.Contains(out, "memory_id: mem") {
+		t.Fatalf("must not invent memory_id: %q", out)
+	}
+}
+
+func TestMemoryWrite_DisabledAndRequired(t *testing.T) {
+	rt := &Runtime{memory: DefaultMemoryConfig()}
+	_, err := rt.MemoryWrite(context.Background(), MemoryWriteOpts{Summary: "x"})
+	if err == nil || !strings.Contains(err.Error(), "disabled") {
+		t.Fatalf("write disabled err=%v", err)
+	}
+	rt2 := &Runtime{memory: MemoryConfig{Enabled: true, Server: "memory"}}
+	_, err2 := rt2.MemoryWrite(context.Background(), MemoryWriteOpts{})
+	if err2 == nil || !strings.Contains(err2.Error(), "summary or full required") {
+		t.Fatalf("required err=%v", err2)
+	}
+}
+
+// s2006: mock MCP memory_write payload honesty (summary/full/tags/tier/entity_key · dual_write off).
+func TestMemoryWrite_MockMCPPayloadHonesty(t *testing.T) {
+	cInR, cInW := io.Pipe()
+	cOutR, cOutW := io.Pipe()
+	got := make(chan map[string]any, 1)
+	go mockMCPRecordCall(cOutW, cInR, "memory_write",
+		`{"memory_id":"mem_write_1","tier":2,"tenant":"dept.research","superseded":true,"audited":false,"dual_write":"off"}`,
+		got)
+
+	mut := true
+	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "memory", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
+	defer cl.Close()
+	if err := cl.InitForTest(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	mgr := mcp.NewManagerEmpty(nil)
+	mgr.Attach(cl)
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "dept.research"},
+		mcp:    mgr,
+	}
+	noSuper := false
+	out, err := rt.MemoryWrite(context.Background(), MemoryWriteOpts{
+		Summary:   "Alice owns alpha",
+		Full:      "Alice is the owner of project alpha",
+		Tags:      []string{"project", "alpha"},
+		Tier:      2,
+		EntityKey: "person:alice",
+		Supersede: &noSuper,
+	})
+	if err != nil {
+		t.Fatalf("err=%v", err)
+	}
+	if !strings.Contains(out, "memory_id: mem_write_1") || !strings.Contains(out, "dual_write: off") {
+		t.Fatalf("format: %q", out)
+	}
+	if !strings.Contains(out, "audited: false") || !strings.Contains(out, "not Memory GA") {
+		t.Fatalf("honesty: %q", out)
+	}
+	args := <-got
+	if args["summary"] != "Alice owns alpha" || args["full"] != "Alice is the owner of project alpha" {
+		t.Fatalf("text args %#v", args)
+	}
+	if args["entity_key"] != "person:alice" || args["tier"] != float64(2) {
+		t.Fatalf("entity/tier %#v", args)
+	}
+	if args["tenant"] != "dept.research" {
+		t.Fatalf("tenant %#v", args)
+	}
+	if args["supersede"] != false {
+		t.Fatalf("supersede flag %#v", args)
+	}
+	if _, ok := args["dual_write"]; ok {
+		t.Fatalf("must not send dual_write in write args: %#v", args)
+	}
+	tags, ok := args["tags"].([]any)
+	if !ok || len(tags) != 2 || tags[0] != "project" || tags[1] != "alpha" {
+		t.Fatalf("tags %#v", args["tags"])
+	}
+}
+
+// s2006: MCP memory_related sends seed_query (lean) + query (legacy).
+func TestMemoryRelated_MCPSeedQueryPayload(t *testing.T) {
+	cInR, cInW := io.Pipe()
+	cOutR, cOutW := io.Pipe()
+	got := make(chan map[string]any, 1)
+	go mockMCPRecordCall(cOutW, cInR, "memory_related",
+		`{"memories":[{"id":"m1","summary":"alice teammate note"}],"tenant":"dept.research","note":"multi-hop lite; dual_write off; not Memory GA"}`,
+		got)
+
+	mut := false
+	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "memory", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
+	defer cl.Close()
+	if err := cl.InitForTest(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	mgr := mcp.NewManagerEmpty(nil)
+	mgr.Attach(cl)
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "dept.research", Limit: 8, RelatedMaxHops: 2},
+		mcp:    mgr,
+	}
+	out, err := rt.MemoryRelated(context.Background(), "person:alice", "teammate notes")
+	if err != nil {
+		t.Fatalf("err=%v", err)
+	}
+	if !strings.Contains(out, "alice teammate note") {
+		t.Fatalf("hits: %q", out)
+	}
+	if !strings.Contains(out, "not Memory GA") || !strings.Contains(out, "dual_write off") {
+		t.Fatalf("lean note: %q", out)
+	}
+	args := <-got
+	if args["seed_entity"] != "person:alice" {
+		t.Fatalf("seed_entity %#v", args)
+	}
+	if args["seed_query"] != "teammate notes" {
+		t.Fatalf("lean seed_query %#v", args)
+	}
+	if args["query"] != "teammate notes" {
+		t.Fatalf("legacy query %#v", args)
+	}
+}
+
+// mockMCPRecordCall is a minimal MCP server that records the first tools/call arguments.
+func mockMCPRecordCall(w io.WriteCloser, r io.Reader, tool, payload string, got chan<- map[string]any) {
+	defer w.Close()
+	dec := json.NewDecoder(r)
+	sent := false
+	for {
+		var req map[string]any
+		if err := dec.Decode(&req); err != nil {
+			return
+		}
+		id := req["id"]
+		method, _ := req["method"].(string)
+		if method == "notifications/initialized" || id == nil {
+			continue
+		}
+		var result any
+		switch method {
+		case "initialize":
+			result = map[string]any{"protocolVersion": "2024-11-05", "serverInfo": map[string]string{"name": "memory", "version": "1"}}
+		case "tools/list":
+			result = map[string]any{"tools": []map[string]any{{
+				"name": tool, "description": tool,
+				"inputSchema": map[string]any{"type": "object"},
+			}}}
+		case "tools/call":
+			if !sent {
+				if params, ok := req["params"].(map[string]any); ok {
+					if args, ok := params["arguments"].(map[string]any); ok {
+						got <- args
+						sent = true
+					}
+				}
+			}
+			result = map[string]any{"content": []map[string]any{{"type": "text", "text": payload}}}
+		}
+		line, _ := json.Marshal(map[string]any{"jsonrpc": "2.0", "id": id, "result": result})
+		_, _ = w.Write(append(line, '\n'))
+	}
+}
+
 // s1311: without Confirm → residual-honest refusal string; must NOT require MCP (no call).
 func TestMemoryTriggerCompact_RefuseWithoutConfirm(t *testing.T) {
 	rt := &Runtime{
@@ -1772,6 +2055,7 @@ func TestMemoryAdvancedStatus_OfflineResidual(t *testing.T) {
 		"memory advanced status",
 		"s1311",
 		"advanced tools:",
+		"memory_write",
 		"memory_related",
 		"memory_facts_as_of",
 		"memory_supersede_entity",

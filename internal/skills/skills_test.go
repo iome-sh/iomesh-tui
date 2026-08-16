@@ -356,6 +356,8 @@ func TestLoadBuiltin_S1288MemoryAdvancedSkillDogfood(t *testing.T) {
 		"memory_related",
 		"prefer_shorter_hops",
 		"memory_supersede_entity",
+		"memory_write",
+		"/memory write",
 		"--i-confirm",
 		"memory_facts_as_of",
 		"ops_digest_export",
@@ -390,9 +392,11 @@ func TestLoadBuiltin_S1288MemoryAdvancedSkillDogfood(t *testing.T) {
 		"s1296",
 		"s1301",
 		"s1311",
+		"s2006",
 		"not conversation turn",
 		"tier-4 semantic",
 		"not invent compaction green",
+		"not a new live tools=N",
 	} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("skill body missing %q:\n%s", want, body)

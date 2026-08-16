@@ -781,6 +781,7 @@ func AionAgentOnboardingNextToolCallLane() string {
     · memory_ingest_turn · memory_retrieve · memory_search_semantic
     · memory_list · memory_compact_status · memory_facts_as_of
     · path shape: ingest → retrieve → list → as-of/status (soft offline residual candidacy · not forever-green full product dogfood)
+    · lean host recopy (s2006 · not a new live tools=N stamp): memory_write · memory_related · memory_supersede_entity · historical s1508/s1509 tools=6 stamp stays past
   Honesty:
     · deeper tool-call residual · journey stage 6/7 · Partial→client-attach-evidence
     · companion /onboard next e4 · E4 attach tools=6 stamp residual · s1508 · s1566

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **TUI recopy of lean `iomesh-memory-mcp` write/related/supersede (s2006)** — `/memory write` maps to MCP `memory_write` (`summary` / `full` / `tags` / `tier` / `entity_key`; durable fact · **not** a conversation turn). Existing `/memory related` and `/memory supersede` stay in slash style and now send lean-host args (`seed_query` + legacy `query`; `entity_key` + legacy `entity`). HITL stays at the client (`/memory supersede --i-confirm`). Historical s1508/s1509 **tools=6** attach stamp stays a **past** stamp — **not a new live tools=N**. dual_write **OFF** · not Memory GA · not Edge Memory GA · catalog ≠ Connected · do not invent live attach green. Docs: [memory-mcp.md](docs/architecture/memory-mcp.md) · skill `memory-advanced-agent`.
+
 ## [0.77.0] — 2026-08-15
 
 Minor release: landing-page heartbeat dashboard in the TUI (`/dashboard`) plus README showcase. **Beta** · dual_write OFF · catalog ≠ Connected · not Memory GA · not live APPLY · eval template ≠ Connected.

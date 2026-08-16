@@ -1,6 +1,6 @@
 ---
 name: memory-advanced-agent
-description: Residual-honest agent path for advanced memory surfaces (related hops · supersede HITL · facts-as-of · digest · patterns/anomalies · timeline · compact-status · trigger-compact HITL · semantic · ingest-event · status inventory) — not Memory GA · dual_write OFF
+description: Residual-honest agent path for advanced memory surfaces (write durable fact · related hops · supersede HITL · facts-as-of · digest · patterns/anomalies · timeline · compact-status · trigger-compact HITL · semantic · ingest-event · status inventory) — not Memory GA · dual_write OFF
 ---
 
 # Memory advanced agent (residual-honest)
@@ -13,8 +13,9 @@ Agent path for **advanced Memory Palace surfaces** already wired in iomesh-tui (
 
 | Surface | Use when | Do not use for |
 |---------|----------|----------------|
-| **related** (s1135 + s1281) | Operator wants multi-hop lite neighbors of a seed entity / query | Default chat auto-recall; full KG / graph RAG claims |
-| **supersede** (s1282) | Human-confirmed close of open `valid_until` for an entity tag (mutating) | Silent auto-supersede; NLP contradiction detection |
+| **write** (s2006) | Durable fact via lean MCP `memory_write` (`summary` / `full` / `tags` / `tier` / `entity_key`) | Conversation turns (use `/memory ingest` / `memory_ingest_turn`); inventing memory_id offline; inventing a new live tools=N stamp |
+| **related** (s1135 + s1281 · s2006 lean recopy) | Operator wants multi-hop lite neighbors of a seed entity / query | Default chat auto-recall; full KG / graph RAG claims |
+| **supersede** (s1282 · s2006 lean recopy) | Human-confirmed close of open `valid_until` for an entity tag (mutating) | Silent auto-supersede; NLP contradiction detection |
 | **facts-as-of** (s1276) | List facts valid at a point in time (`as_of` RFC3339) | Auto-recall; inventing lean HTTP route; dual-clock KG |
 | **digest** (s1200) | Ops heartbeat day/week pattern + receipts pack | Claiming knowledge/analytical digests as GA |
 | **patterns / anomalies** (shipped s1287) | MCP ops pulse Beta list of patterns or anomalies | Medical diagnosis; inventing GA window engine |
@@ -29,8 +30,9 @@ Agent path for **advanced Memory Palace surfaces** already wired in iomesh-tui (
 
 | Slash | MCP tool(s) | Transport honesty |
 |-------|-------------|-------------------|
-| `/memory related --seed … [--query …] [--max-hops N] [--prefer-shorter-hops\|--legacy-sort]` | `memory_related` | Lean HTTP `POST /v1\|/v5/memory/related` prefer → MCP fallback |
-| `/memory supersede --entity <key> [--as-of RFC3339] --i-confirm` | `memory_supersede_entity` | **MCP-first only** — no lean HTTP supersede invent |
+| `/memory write [--summary\|--full\|--tags\|--tier\|--entity-key] [text]` (s2006) | `memory_write` | **MCP-first only** — durable fact; not conversation turn; dual_write OFF |
+| `/memory related --seed … [--query …] [--max-hops N] [--prefer-shorter-hops\|--legacy-sort]` | `memory_related` | Lean HTTP `POST /v1\|/v5/memory/related` prefer → MCP fallback (`seed_query` lean + `query` legacy) |
+| `/memory supersede --entity <key> [--as-of RFC3339] --i-confirm` | `memory_supersede_entity` | **MCP-first only** — HITL at the client; `entity_key` lean + `entity` legacy |
 | `/memory facts-as-of\|facts\|as-of --as-of <RFC3339> […]` | `memory_facts_as_of` | **MCP-first only** — no lean HTTP facts_as_of invent |
 | `/memory digest [--window day\|week] [--horizon …] [--limit N]` | `ops_digest_export` | Lean HTTP `POST /v1\|/v5/memory/ops_digest` prefer → MCP fallback |
 | `/memory patterns` (shipped s1287) | `memory_patterns_list` | MCP ops pulse Beta — shipped; no invent lean HTTP |
@@ -42,7 +44,7 @@ Agent path for **advanced Memory Palace surfaces** already wired in iomesh-tui (
 | `/memory ingest-event\|event --subject <id> --content <text> […]` (s1301) | `memory_ingest_event` | **MCP-first only** — s138 T1 temporal event telemetry; not conversation turn |
 | `/memory status` (s1311 advanced inventory) | (presence probe only) | Residual inventory of advanced MCP tools · dual_write OFF · not Memory GA |
 
-Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conversation turns via `/memory ingest`) — see architecture docs.
+Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conversation turns via `/memory ingest`), lean host recopy `memory_write` / `memory_related` / `memory_supersede_entity` (s2006 · **not a new live tools=N** stamp · historical s1508/s1509 tools=6 stays past) — see architecture docs.
 
 **s1311 HITL shipped:** `memory_trigger_compact` is wired as `/memory trigger-compact --i-confirm` (aliases `--confirm` / `--yes`). Without HITL → residual-honest refuse (no MCP call).
 
@@ -52,7 +54,7 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conver
 
 2. **Default recall** — use `memory_retrieve` / `/memory recall` (single-hop). Do **not** auto-run multi-hop related.
 
-3. **Multi-hop related (opt-in)** — call `memory_related` with `seed_entity` and/or `query`, optional `max_hops`, `limit`, `tenant`, `session_id`.
+3. **Multi-hop related (opt-in)** — call `memory_related` with `seed_entity` and/or `query` / lean `seed_query`, optional `max_hops`, `limit`, `tenant`, `session_id`.
    - `prefer_shorter_hops`: **omit = kernel default true** (path-aware hop ranking lite · s1067/s1277/s1281).
    - Pass `prefer_shorter_hops: false` only for legacy seed-first sort (`--legacy-sort` / `--no-prefer-shorter-hops`).
    - multi-hop lite ≠ full graph RAG · hop ranking path-aware lite · not Memory GA.
@@ -66,7 +68,14 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conver
 6. **Supersede (opt-in · HITL mutating)** — call `memory_supersede_entity` only after **explicit human confirm**.
    - Slash requires `--i-confirm` (aliases `--confirm` / `--yes`). Agent must refuse residual-honestly without HITL.
    - Mutating A3 lite: closes open `valid_until` windows for entity tags · **not** NLP contradiction · **not** silent.
+   - Lean host arg is `entity_key` (TUI also sends legacy `entity`). HITL stays at the client.
    - Never invent `superseded_count` offline.
+
+6b. **Write durable fact (opt-in · s2006 · MCP-first)** — call `memory_write` with `summary` and/or `full`; optional `tags`, `tier`, `entity_key`.
+   - Slash: `/memory write [--summary|--full|--tags|--tier|--entity-key] [text]`.
+   - **Not** a conversation turn (use `memory_ingest_turn` / `/memory ingest`).
+   - `entity_key` stamps `entity:` tags; host defaults to `WriteAndSupersede` unless `--no-supersede`.
+   - dual_write OFF · never invent memory_id offline · not Memory GA · **not a new live tools=N** stamp.
 
 7. **Patterns / anomalies (shipped s1287 · MCP ops pulse Beta)** — when tools present, list via `memory_patterns_list` / `memory_anomalies_list`.
    - Ops pulse Beta · not medical · not invent GA window engine · dual_write OFF.
@@ -110,6 +119,8 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conver
 | trigger_compact requires HITL (s1311) | `memory_trigger_compact` is mutating RecMem advisory — **HITL shipped** via `/memory trigger-compact --i-confirm` · not invent compaction green |
 | semantic tier-4 residual | `memory_search_semantic` · not Memory GA · empty ≠ invent (s1301) |
 | ingest-event ≠ turn | s138 T1 telemetry event · not conversation turn · never invent memory_id (s1301) |
+| write ≠ turn (s2006) | `memory_write` durable fact · not conversation turn · never invent memory_id · dual_write OFF |
+| lean recopy ≠ live tools=N | s2006 recopy of `memory_write` / `memory_related` / `memory_supersede_entity` · historical s1508/s1509 tools=6 stamp stays past |
 
 ## Non-goals (never do)
 
@@ -123,6 +134,8 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conver
 - Do **not** treat knowledge/analytical digest horizons as ops GA-path.
 - Do **not** invent memories, superseded_count, digests, timeline entries, semantic facts, memory_id, triggered/cluster_size, or compaction green when offline / empty.
 - Do **not** treat `memory_ingest_event` / `/memory ingest-event` as conversation turn ingest (use `memory_ingest_turn` / `/memory ingest`).
+- Do **not** treat `memory_write` / `/memory write` as conversation turn ingest (use `memory_ingest_turn` / `/memory ingest`).
+- Do **not** invent a new live `tools=N` dogfood stamp from this recopy (historical s1508/s1509 tools=6 stays past).
 - Do **not** treat advanced tool presence as product Memory GA green.
 
 ## Related
@@ -134,4 +147,5 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conver
 - Shipped s1296: `/memory timeline|compact-status` MCP-first (read-only compact-status).
 - Shipped s1301: `/memory semantic|ingest-event` MCP-first (tier-4 semantic · s138 T1 event telemetry).
 - Shipped s1311: `/memory trigger-compact --i-confirm` HITL + `/memory status` advanced inventory pulse.
-- Serials: s1135 related · s1281 prefer_shorter_hops · s1282 supersede · s1276 facts-as-of · s1200 digest · s1287 patterns/anomalies · s1288 skill · s1291 system note · s1296 timeline+compact-status · s1301 semantic+ingest-event · s1311 trigger-compact HITL + advanced status · aion s1277 / s640 A3 lite / K4 lite / s138 T1.
+- Shipped s2006: `/memory write` → lean MCP `memory_write`; related/supersede recopied onto lean host (`seed_query` / `entity_key`) · HITL stays at the client · **not a new live tools=N** stamp.
+- Serials: s1135 related · s1281 prefer_shorter_hops · s1282 supersede · s1276 facts-as-of · s1200 digest · s1287 patterns/anomalies · s1288 skill · s1291 system note · s1296 timeline+compact-status · s1301 semantic+ingest-event · s1311 trigger-compact HITL + advanced status · s2006 write + lean related/supersede recopy · aion s1277 / s640 A3 lite / K4 lite / s138 T1.

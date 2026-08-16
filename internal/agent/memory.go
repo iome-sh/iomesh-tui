@@ -749,12 +749,17 @@ type MemorySupersedeOpts struct {
 // dual_write OFF · mutating (valid_until close).
 const supersedeHonestyFooter = "honesty: A3 lite supersede · not NLP contradiction · not full dual-clock Graphiti · not Memory GA · dual_write OFF · mutating (valid_until close)"
 
-// memorySupersedeResult is the aion MCP memory_supersede_entity JSON wire shape (s640).
-// Output: { entity, as_of, superseded_count }.
+// memorySupersedeResult is the MCP memory_supersede_entity JSON wire shape.
+// Platform/aion (s640): { entity, as_of, superseded_count }.
+// Lean iomesh-memory-mcp (s2006 recopy): { entity_key, as_of, updated, dual_write, audited }.
 type memorySupersedeResult struct {
 	Entity          string `json:"entity"`
+	EntityKey       string `json:"entity_key"`
 	AsOf            string `json:"as_of"`
-	SupersededCount int    `json:"superseded_count"`
+	SupersededCount *int   `json:"superseded_count"`
+	Updated         *int   `json:"updated"`
+	DualWrite       string `json:"dual_write"`
+	Audited         *bool  `json:"audited"`
 }
 
 // MemorySupersede closes open validity windows for entity tags (s1282 · aion A3 lite / s640).
@@ -793,8 +798,10 @@ func (rt *Runtime) MemorySupersede(ctx context.Context, opts MemorySupersedeOpts
 		return formatSupersedeOffline(rt.memory.Server, entity, asOf), nil
 	}
 	c := rt.mcp.ClientByName(rt.memory.Server)
+	// Lean host requires entity_key; platform/aion accepts entity. Send both (s2006 recopy).
 	args := map[string]any{
-		"entity": entity,
+		"entity":     entity,
+		"entity_key": entity,
 	}
 	if t := rt.memoryTenant(); t != "" {
 		args["tenant"] = t
@@ -887,8 +894,18 @@ func formatSupersedeJSON(raw string) string {
 	}
 	// Accept zero count (honest empty supersede) when JSON parsed — that is real wire, not invent.
 	entity := strings.TrimSpace(res.Entity)
+	if entity == "" {
+		entity = strings.TrimSpace(res.EntityKey)
+	}
 	asOf := strings.TrimSpace(res.AsOf)
-	return formatSupersede(entity, asOf, res.SupersededCount)
+	count := 0
+	switch {
+	case res.SupersededCount != nil:
+		count = *res.SupersededCount
+	case res.Updated != nil:
+		count = *res.Updated
+	}
+	return formatSupersede(entity, asOf, count)
 }
 
 // MemoryPatternsOpts for opt-in ops-pulse pattern listing (s1287 / aion s138 T2 · s789 Beta).
@@ -1779,6 +1796,7 @@ var advancedMemoryTools = []struct {
 	Slash string // human slash surface label
 	Note  string // residual note (HITL / read-only / etc.)
 }{
+	{"memory_write", "write", "durable fact · not turn"},
 	{"memory_related", "related", "multi-hop lite"},
 	{"memory_facts_as_of", "facts-as-of", "K4 lite"},
 	{"memory_supersede_entity", "supersede", "HITL mutating"},
@@ -1798,7 +1816,7 @@ const advancedStatusHonestyFooter = "honesty: advanced MCP inventory residual ·
 // MemoryAdvancedStatus is the residual-honest advanced MCP tool inventory pulse (s1311).
 // Probes MCP tool presence (same discovery as mcpToolPresence; does not invent) when
 // the memory server path is connected; fail-open offline/missing. Lists key advanced
-// surfaces: related, facts-as-of, supersede, timeline, compact-status, semantic,
+// surfaces: write, related, facts-as-of, supersede, timeline, compact-status, semantic,
 // ingest-event, patterns, anomalies, ops digest, trigger-compact.
 //
 // Always includes dual_write OFF + not Memory GA + integrations one-liner pointer.
@@ -2209,6 +2227,193 @@ func formatIngestEventJSON(raw, subject string, maxBytes int) string {
 	return formatIngestEvent(subject, res, maxBytes)
 }
 
+// MemoryWriteOpts for opt-in durable fact write (s2006 · lean MCP memory_write).
+// Summary or Full required. Tags / Tier / EntityKey optional.
+// Supersede nil → host default (WriteAndSupersede when entity_key set).
+//
+// MCP-first: lean host kernel Write / WriteAndSupersede. This is **not** a conversation
+// turn (use MemoryIngestTurn / /memory ingest for turns). dual_write OFF for this surface.
+// Never invent memory_id when offline / call failed. Not Memory GA · not Edge Memory GA.
+type MemoryWriteOpts struct {
+	Summary   string
+	Full      string
+	Tags      []string
+	EntityKey string
+	Tier      int
+	Supersede *bool // nil = host default; false disables WriteAndSupersede when entity_key set
+}
+
+// writeHonestyFooter is the residual-honest pin for /memory write (s2006).
+// Locked: durable fact · kernel Write / WriteAndSupersede · not conversation turn ·
+// dual_write OFF · not Memory GA · MCP-first.
+const writeHonestyFooter = "honesty: durable fact write · kernel Write / WriteAndSupersede · not conversation turn · dual_write OFF · not Memory GA · MCP-first"
+
+// memoryWriteResult is the lean MCP memory_write JSON wire shape.
+// Only fields present on the wire are shown — never invent memory_id.
+type memoryWriteResult struct {
+	MemoryID   string `json:"memory_id"`
+	Tier       *int   `json:"tier"`
+	Tenant     string `json:"tenant"`
+	Superseded *bool  `json:"superseded"`
+	Audited    *bool  `json:"audited"`
+	DualWrite  string `json:"dual_write"`
+}
+
+// MemoryWrite persists a durable fact via MCP memory_write (s2006 lean host recopy).
+// Prefers MCP tool memory_write on the configured memory server (MCP-first).
+// Summary or Full required. This is **not** a conversation turn — use MemoryIngestTurn for turns.
+// dual_write is intentionally not invoked (MCP-first residual; dual_write OFF for this surface).
+// Offline / tool failure is residual-honest fail-open messaging — never invent memory_id.
+// Opt-in only — not auto-ingest. entity_key stamps entity: tags; host defaults to WriteAndSupersede.
+func (rt *Runtime) MemoryWrite(ctx context.Context, opts MemoryWriteOpts) (string, error) {
+	if rt == nil || !rt.memory.Enabled {
+		return "", fmt.Errorf("memory hooks disabled")
+	}
+	summary := strings.TrimSpace(opts.Summary)
+	full := strings.TrimSpace(opts.Full)
+	if summary == "" && full == "" {
+		return "", fmt.Errorf("summary or full required for memory write")
+	}
+	maxBytes := rt.memory.MaxSnippetBytes
+	if maxBytes <= 0 {
+		maxBytes = 6000
+	}
+
+	// MCP-first — no lean HTTP invent; dual_write OFF for this surface.
+	if !rt.mcpMemoryReady() {
+		return formatWriteOffline(rt.memory.Server, summary, full), nil
+	}
+	c := rt.mcp.ClientByName(rt.memory.Server)
+	args := map[string]any{}
+	if summary != "" {
+		args["summary"] = summary
+	}
+	if full != "" {
+		args["full"] = full
+	}
+	if t := rt.memoryTenant(); t != "" {
+		args["tenant"] = t
+	}
+	if len(opts.Tags) > 0 {
+		tags := make([]string, 0, len(opts.Tags))
+		for _, tag := range opts.Tags {
+			if s := strings.TrimSpace(tag); s != "" {
+				tags = append(tags, s)
+			}
+		}
+		if len(tags) > 0 {
+			args["tags"] = tags
+		}
+	}
+	if opts.Tier > 0 {
+		args["tier"] = opts.Tier
+	}
+	if ek := strings.TrimSpace(opts.EntityKey); ek != "" {
+		args["entity_key"] = ek
+	}
+	if opts.Supersede != nil {
+		args["supersede"] = *opts.Supersede
+	}
+	start := time.Now()
+	out, err := c.CallTool(ctx, "memory_write", args)
+	latMS := int(time.Since(start).Milliseconds())
+	rt.lastMemoryRetrieveMS.Store(int64(latMS))
+	rt.lastMemoryRetrieveCacheHit.Store(false)
+	if err != nil {
+		return formatWriteCallFailed(summary, full, err), nil
+	}
+	if formatted := formatWriteJSON(out, maxBytes); formatted != "" {
+		return formatted, nil
+	}
+	raw := strings.TrimSpace(out)
+	if raw == "" {
+		return formatWrite(memoryWriteResult{}, maxBytes), nil
+	}
+	return truncateBytes(raw+"\n"+writeHonestyFooter, maxBytes), nil
+}
+
+// formatWriteOffline is residual-honest fail-open when MCP memory server is unavailable.
+// Explicitly never invents memory_id.
+func formatWriteOffline(server, summary, full string) string {
+	if server == "" {
+		server = "memory"
+	}
+	label := strings.TrimSpace(summary)
+	if label == "" {
+		label = full
+	}
+	return fmt.Sprintf(
+		"write summary=%s\nstatus: unavailable · mcp server %q not connected · MCP-first (no lean HTTP invent)\n%s · fail-open (never invent memory_id)",
+		emptyDash(label), server, writeHonestyFooter,
+	)
+}
+
+// formatWriteCallFailed is residual-honest fail-open when MCP tool call errors.
+func formatWriteCallFailed(summary, full string, err error) string {
+	msg := "error"
+	if err != nil {
+		msg = err.Error()
+	}
+	label := strings.TrimSpace(summary)
+	if label == "" {
+		label = full
+	}
+	return fmt.Sprintf(
+		"write summary=%s\nstatus: unavailable · mcp call failed: %s\n%s · fail-open (never invent memory_id)",
+		emptyDash(label), msg, writeHonestyFooter,
+	)
+}
+
+// formatWrite turns wire fields into residual-honest lines.
+// Only emits memory_id / tier / superseded / audited / dual_write when present on wire.
+func formatWrite(res memoryWriteResult, maxBytes int) string {
+	var b strings.Builder
+	b.WriteString("write (durable fact · not conversation turn)\n")
+	id := strings.TrimSpace(res.MemoryID)
+	if id != "" {
+		fmt.Fprintf(&b, "memory_id: %s\n", id)
+	} else {
+		b.WriteString("memory_id: (none from wire)\n")
+	}
+	if res.Tier != nil {
+		fmt.Fprintf(&b, "tier: %d\n", *res.Tier)
+	} else {
+		b.WriteString("tier: (unavailable from wire)\n")
+	}
+	if t := strings.TrimSpace(res.Tenant); t != "" {
+		fmt.Fprintf(&b, "tenant: %s\n", t)
+	}
+	if res.Superseded != nil {
+		fmt.Fprintf(&b, "superseded: %t\n", *res.Superseded)
+	}
+	if res.Audited != nil {
+		fmt.Fprintf(&b, "audited: %t\n", *res.Audited)
+	} else {
+		b.WriteString("audited: (unavailable from wire)\n")
+	}
+	if dw := strings.TrimSpace(res.DualWrite); dw != "" {
+		fmt.Fprintf(&b, "dual_write: %s\n", dw)
+	} else {
+		b.WriteString("dual_write: (unavailable from wire)\n")
+	}
+	b.WriteString(writeHonestyFooter)
+	return truncateBytes(b.String(), maxBytes)
+}
+
+// formatWriteJSON parses MCP memory_write JSON into human layout.
+// Returns empty when parse fails (caller may pass through raw).
+func formatWriteJSON(raw string, maxBytes int) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw[0] != '{' {
+		return ""
+	}
+	var res memoryWriteResult
+	if err := json.Unmarshal([]byte(raw), &res); err != nil {
+		return ""
+	}
+	return formatWrite(res, maxBytes)
+}
+
 // MemoryRelated performs opt-in multi-hop lite related recall (s1135).
 // Prefers sync HTTP RetrieveMemoryRelated (POST /v1|/v5/memory/related); falls back
 // to MCP memory_related when sync fails or mesh is unavailable.
@@ -2291,6 +2496,8 @@ func (rt *Runtime) MemoryRelated(ctx context.Context, seedEntity, query string, 
 		args["seed_entity"] = seedEntity
 	}
 	if query != "" {
+		// Lean host (s2006 recopy) requires seed_query; platform/aion accepts query. Send both.
+		args["seed_query"] = query
 		args["query"] = query
 	}
 	if t := rt.memoryTenant(); t != "" {
@@ -2311,7 +2518,35 @@ func (rt *Runtime) MemoryRelated(ctx context.Context, seedEntity, query string, 
 	if err != nil {
 		return "", err
 	}
+	if formatted := formatRelatedJSON(out, maxBytes); formatted != "" {
+		return formatted, nil
+	}
 	return truncateBytes(out, maxBytes), nil
+}
+
+// formatRelatedJSON parses lean-host memory_related JSON {memories:[...], note?} into
+// the same human-readable layout as formatMemoryHits. Returns empty when parse fails
+// or memories are empty (slash then prints honest empty — never invent hits).
+func formatRelatedJSON(raw string, maxBytes int) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw[0] != '{' {
+		return ""
+	}
+	var res struct {
+		Memories []iomesh.MemoryHit `json:"memories"`
+		Note     string             `json:"note"`
+	}
+	if err := json.Unmarshal([]byte(raw), &res); err != nil {
+		return ""
+	}
+	hits := formatMemoryHits(res.Memories, maxBytes)
+	if hits == "" {
+		return ""
+	}
+	if note := strings.TrimSpace(res.Note); note != "" {
+		return truncateBytes(hits+"\n"+note, maxBytes)
+	}
+	return hits
 }
 
 // formatMemoryHits turns sync RetrieveMemory / related hits into a compact recall snippet.

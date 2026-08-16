@@ -107,6 +107,11 @@ func TestMemoryAdvancedAgentGuidanceNote_HonestyNeedles(t *testing.T) {
 		"K4 lite",
 		"A3 lite",
 		"opt-in",
+		"memory_write",
+		"/memory write",
+		"entity_key",
+		"seed_query",
+		"not a new live tools=N",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("guidance missing %q in:\n%s", want, out)

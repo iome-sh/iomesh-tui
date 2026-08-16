@@ -341,6 +341,7 @@ Expect residual-honest status lines (`mcp=true` when attached · `dual_write=fal
 
 ```text
 /memory ingest Demo note: Project alpha ships Friday; owner is Alice.
+/memory write --summary "Alice owns alpha" --entity-key person:alice
 /memory recall alpha
 ```
 
@@ -348,15 +349,18 @@ With `auto_ingest = true` (opt-in), successful agent turns also write user/assis
 
 ### 5c. Optional advanced surfaces (when tools present)
 
-Lean product host may expose a **subset** of platform residual tools. Only call what `iomesh mcp --connect` listed:
+Lean product host recopies write / related / supersede in addition to the historical six-tool attach stamp (s1508/s1509 **tools=6** stays a **past** stamp — **not a new live tools=N**). Only call what `iomesh mcp --connect` listed:
 
 ```text
+/memory write --summary "Alice owns alpha" --entity-key person:alice
+/memory related --seed person:alice --query teammate
+/memory supersede --entity person:alice --i-confirm
 /memory semantic project alpha
 /memory facts-as-of --as-of 2026-08-01T00:00:00Z
 /memory timeline --limit 5
 ```
 
-Platform residual extras (related multi-hop, supersede HITL, patterns, trigger-compact, …) require matching MCP tools — **PASS ≠ invent full platform sidecar parity**. See [memory-mcp.md](./memory-mcp.md) slash table.
+Platform residual extras (patterns, trigger-compact, digest, …) still require matching MCP tools — **PASS ≠ invent full platform sidecar parity** · catalog ≠ Connected · dual_write OFF · not Memory GA · not Edge Memory GA. See [memory-mcp.md](./memory-mcp.md) slash table.
 
 ### 5d. Agent turn with auto-recall
 

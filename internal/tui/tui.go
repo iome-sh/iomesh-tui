@@ -278,7 +278,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 	case "/memory", "/mem":
 		if len(parts) < 2 {
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
-			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | trigger-compact --i-confirm | semantic [query|--query ...] [--limit N] | ingest-event --subject <id> --content <text> [--event-time|--session-id|--session-seq|--severity|--source-stream] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | ingest <text> | status]")
+			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | write [--summary|--full|--tags|--tier|--entity-key] [text] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | trigger-compact --i-confirm | semantic [query|--query ...] [--limit N] | ingest-event --subject <id> --content <text> [--event-time|--session-id|--session-seq|--severity|--source-stream] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | ingest <text> | status]")
 			// s1831: residual-honest dual-path next-step after bare /memory help.
 			for _, line := range agent.MemoryNextStepLines() {
 				fmt.Fprintln(out, line)
@@ -536,9 +536,10 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			fmt.Fprintln(out, text)
 		case "supersede", "super":
 			// s1282: opt-in HITL A3 lite entity supersession via MCP memory_supersede_entity
-			// (aion s640). Mutating: closes open valid_until windows. MCP-first only.
+			// (aion s640 · lean host s2006 recopy). Mutating: closes open valid_until windows. MCP-first only.
 			// Require --i-confirm (HITL) — MemorySupersede refuses residual-honestly without it.
-			// Not NLP contradiction · not full dual-clock Graphiti · not Memory GA · dual_write OFF.
+			// HITL stays at the client. Not NLP contradiction · not full dual-clock Graphiti ·
+			// not Memory GA · dual_write OFF.
 			sopts, perr := parseMemorySupersedeArgs(parts[2:])
 			if perr != "" {
 				fmt.Fprintf(out, "memory supersede: %s\nusage: /memory supersede --entity <key> [--as-of RFC3339] --i-confirm\n", perr)
@@ -556,6 +557,29 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			if strings.TrimSpace(text) == "" {
 				// Residual-honest empty — formatter normally always emits honesty footer.
 				fmt.Fprintln(out, "(supersede empty · not inventing superseded_count)")
+				return false, nil
+			}
+			fmt.Fprintln(out, text)
+		case "write", "w":
+			// s2006: opt-in durable fact write via MCP memory_write (lean host recopy).
+			// MCP-first — not a conversation turn (use /memory ingest for turns).
+			// Not Memory GA · dual_write OFF. Offline fail-open residual-honest (never invent memory_id).
+			wopts, perr := parseMemoryWriteArgs(parts[2:])
+			if perr != "" {
+				fmt.Fprintf(out, "memory write: %s\nusage: /memory write [--summary ...] [--full ...] [--tags a,b] [--tier N] [--entity-key key] [--no-supersede] [text]\n", perr)
+				return false, nil
+			}
+			if strings.TrimSpace(wopts.Summary) == "" && strings.TrimSpace(wopts.Full) == "" {
+				fmt.Fprintln(out, "usage: /memory write [--summary ...] [--full ...] [--tags a,b] [--tier N] [--entity-key key] [--no-supersede] [text]\n  durable fact write (opt-in; not conversation turn; not Memory GA; dual_write OFF)")
+				return false, nil
+			}
+			text, err := rt.rt.MemoryWrite(context.Background(), wopts)
+			if err != nil {
+				fmt.Fprintf(out, "memory write: %v\n", err)
+				return false, nil
+			}
+			if strings.TrimSpace(text) == "" {
+				fmt.Fprintln(out, "(write empty · never invent memory_id · durable fact)")
 				return false, nil
 			}
 			fmt.Fprintln(out, text)
@@ -577,7 +601,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			q, ropts := parseMemoryRecallArgs(parts[1:])
 			text, err := rt.rt.MemoryRecallWithOpts(context.Background(), q, ropts)
 			if err != nil {
-				fmt.Fprintf(out, "memory: %v (try /memory status|recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest)\n", err)
+				fmt.Fprintf(out, "memory: %v (try /memory status|recall|write|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest)\n", err)
 				return false, nil
 			}
 			if strings.TrimSpace(text) == "" {
@@ -1146,7 +1170,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /dashboard [help|focus]  landing-page heartbeat live feed (aliases /heartbeat /mesh-console; eval template · catalog ≠ Connected)
   /mesh                I/O Mesh status + usage
   /catalog [query]     list mesh data products (catalog plane)
-  /memory [recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · status advanced inventory)
+  /memory [recall|write|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|status]  Memory Palace (sync HTTP + MCP; write durable fact · related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · status advanced inventory)
   /integrations [list|plan|signing|status]  list/plan a source via MCP, then finish in portal HITL (not install CRUD)
   /setup [init|preflight|portal|reload|pull|analyze|drift|repair]  setup lifecycle (managed config · preflight · portal HITL · hot MCP reload · opt-in continuous pull/analyze · drift report · guided repair; alias /setup-lifecycle; dual_write OFF · not Memory GA · PASS ≠ invent Connected · pull/analyze/repair ≠ invent Connected)
   /gtm [help|checklist]  GTM draft-only guidance or checklist (aliases /gtm-draft /gtm-agent; no auto-send; human publish)
@@ -2634,8 +2658,92 @@ func parseMemoryAnomaliesArgs(args []string) (opts agent.MemoryAnomaliesOpts, er
 	return opts, ""
 }
 
+// parseMemoryWriteArgs extracts durable-fact write flags (s2006).
+// Supports: --summary / -s, --full / -f / --content / -c, --tags / --tag (comma or repeated),
+// --tier N, --entity-key / --entity_key / --entity, --no-supersede, --supersede.
+// Remaining free tokens fill summary (and full when empty). Returns errMsg when a flag is malformed.
+func parseMemoryWriteArgs(args []string) (opts agent.MemoryWriteOpts, errMsg string) {
+	var free []string
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		key, val, hasEq := splitFlagKV(a)
+		switch key {
+		case "--summary", "-s":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.Summary = strings.TrimSpace(val)
+		case "--full", "-f", "--content", "-c":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.Full = strings.TrimSpace(val)
+		case "--tags", "--tag":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			for _, part := range strings.Split(val, ",") {
+				if t := strings.TrimSpace(part); t != "" {
+					opts.Tags = append(opts.Tags, t)
+				}
+			}
+		case "--tier":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			n, err := strconv.Atoi(strings.TrimSpace(val))
+			if err != nil || n < 0 {
+				return opts, "invalid --tier"
+			}
+			opts.Tier = n
+		case "--entity-key", "--entity_key", "--entity", "-e":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.EntityKey = strings.TrimSpace(val)
+		case "--no-supersede", "--no_supersede":
+			b := false
+			opts.Supersede = &b
+		case "--supersede":
+			b := true
+			opts.Supersede = &b
+		default:
+			if strings.HasPrefix(a, "-") {
+				return opts, "unknown flag " + a
+			}
+			free = append(free, a)
+		}
+	}
+	if len(free) > 0 {
+		joined := strings.Join(free, " ")
+		if opts.Summary == "" {
+			opts.Summary = joined
+		} else if opts.Full == "" {
+			opts.Full = joined
+		} else {
+			return opts, "unexpected argument " + free[0]
+		}
+	}
+	return opts, ""
+}
+
 // parseMemorySupersedeArgs extracts A3 lite supersede HITL flags (s1282).
-// Supports: --entity / -e (required by caller), --as-of / --as_of (optional RFC3339),
+// Supports: --entity / -e / --entity-key (required by caller), --as-of / --as_of (optional RFC3339),
 // --i-confirm / --confirm / --yes → Confirm=true. Rejects unknown flags.
 // Missing confirm parses cleanly with Confirm=false (MemorySupersede refuses residual-honestly).
 func parseMemorySupersedeArgs(args []string) (opts agent.MemorySupersedeOpts, errMsg string) {
@@ -2643,7 +2751,7 @@ func parseMemorySupersedeArgs(args []string) (opts agent.MemorySupersedeOpts, er
 		a := args[i]
 		key, val, hasEq := splitFlagKV(a)
 		switch key {
-		case "--entity", "-e":
+		case "--entity", "-e", "--entity-key", "--entity_key":
 			if !hasEq {
 				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
 					i++
@@ -2787,7 +2895,7 @@ func parseMemoryRelatedArgs(args []string) (seed, query string, opts agent.Memor
 				}
 			}
 			seed = strings.TrimSpace(val)
-		case "--query", "-q":
+		case "--query", "-q", "--seed-query", "--seed_query":
 			if !hasEq {
 				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
 					i++

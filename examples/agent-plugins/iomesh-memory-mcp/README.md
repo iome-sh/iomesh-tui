@@ -109,7 +109,7 @@ To **maximize** TUI Memory quality:
 | Level | Add | Benefit |
 |-------|-----|---------|
 | L1 | durable palace root · `auto_recall` · optional `auto_ingest` | durable multi-session UX |
-| L2 | `/memory status` + advanced slash / builtin `memory-advanced-agent` | related · semantic · HITL surfaces when tools present |
+| L2 | `/memory status` + advanced slash / builtin `memory-advanced-agent` | write · related · semantic · HITL supersede when tools present |
 | L3 | `MEMORY_ONNX_MODEL_PATH` on the **host** process | stronger hybrid / semantic ranking |
 | L4 | optional local Qdrant container | **not** used by lean host search (`qdrant=off`) · kernel VectorStore residual only |
 
