@@ -30,6 +30,8 @@ aliases: /heartbeat /mesh-console
   preview     opt-in eval template (iome.sh MeshConsole — not your org)
   focus       tenancy: sre.incidents | eng.ops | cs.tickets | gtm.pipeline
 fullscreen: esc/q close · tab cycle tenancy · 1-4 jump
+setup:    console Settings → Mesh routing → Streams (OPERATIONAL_EVENTS)
+          then iomesh mesh streams --messages --name OPERATIONAL_EVENTS
 honesty: ` + DashboardHonestyOneLiner)
 }
 
@@ -337,6 +339,10 @@ func (d *dashboardState) renderFeed(th Theme, width int) string {
 	b.WriteByte('\n')
 	if len(d.Events) == 0 {
 		b.WriteString(th.Dim.Render("no consumed messages · mock eval rows hidden"))
+		b.WriteByte('\n')
+		b.WriteString(th.Dim.Render("create a mesh stream: console Settings → Mesh routing → Streams"))
+		b.WriteByte('\n')
+		b.WriteString(th.Dim.Render("then iomesh mesh streams --messages --name OPERATIONAL_EVENTS"))
 		b.WriteByte('\n')
 		b.WriteString(th.Dim.Render("/dashboard preview · eval template on iome.sh (not your org)"))
 		return strings.TrimRight(b.String(), "\n")
