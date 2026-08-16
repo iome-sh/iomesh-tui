@@ -483,6 +483,16 @@ func (m *fullscreenModel) handleDashboardSlash(parts []string) tea.Cmd {
 			m.refreshViewport(true)
 			return nil
 		}
+		if sub == "preview" {
+			attached := false
+			if m.rt != nil && m.rt.Mesh() != nil && m.rt.Mesh().Enabled() {
+				attached = true
+			}
+			m.dash = newDashboardPreviewState(attached)
+			m.status = "dashboard"
+			m.layout()
+			return dashboardTick()
+		}
 	}
 	// Toggle overlay (landing MeshConsole). Help stays in transcript.
 	if m.dash != nil && len(parts) < 2 {
