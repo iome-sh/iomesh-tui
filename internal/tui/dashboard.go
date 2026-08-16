@@ -21,12 +21,13 @@ const (
 )
 
 // DashboardHonestyOneLiner is the residual lock for /dashboard.
-const DashboardHonestyOneLiner = "eval template · same feed as iome.sh MeshConsole · catalog ≠ Connected · dual_write OFF · knowledge/analytics Beta · not Memory GA · demo feed ≠ fleet-GA · not live APPLY"
+const DashboardHonestyOneLiner = "no mock live rows · /dashboard preview is eval template not your org · catalog ≠ Connected · dual_write OFF · knowledge/analytics Beta · not Memory GA · demo feed ≠ fleet-GA · not live APPLY"
 
 func dashboardHelp() string {
-	return strings.TrimSpace(`usage: /dashboard [help|focus <tenancy>]
+	return strings.TrimSpace(`usage: /dashboard [help|preview|focus <tenancy>]
 aliases: /heartbeat /mesh-console
-  (no args)   REPL: print snapshot · fullscreen: toggle live-feed overlay
+  (no args)   empty until consume · fullscreen: toggle overlay (no mock rows)
+  preview     opt-in eval template (iome.sh MeshConsole — not your org)
   focus       tenancy: sre.incidents | eng.ops | cs.tickets | gtm.pipeline
 fullscreen: esc/q close · tab cycle tenancy · 1-4 jump
 honesty: ` + DashboardHonestyOneLiner)
@@ -99,6 +100,7 @@ type dashboardState struct {
 	idx          int
 	phase        int
 	MeshAttached bool
+	Preview      bool
 	Width        int
 	Height       int
 }
@@ -106,9 +108,20 @@ type dashboardState struct {
 func newDashboardState(meshAttached bool) *dashboardState {
 	return &dashboardState{
 		Focus:        dashboardDefaultFocus,
+		Rate:         0,
+		Events:       nil,
+		MeshAttached: meshAttached,
+		Preview:      false,
+	}
+}
+
+func newDashboardPreviewState(meshAttached bool) *dashboardState {
+	return &dashboardState{
+		Focus:        dashboardDefaultFocus,
 		Rate:         dashboardStartRate,
 		Events:       landingSeedEvents(),
 		MeshAttached: meshAttached,
+		Preview:      true,
 	}
 }
 
@@ -148,6 +161,9 @@ func (d *dashboardState) Calls() []MCPCall {
 }
 
 func (d *dashboardState) Tick() {
+	if d == nil || !d.Preview {
+		return
+	}
 	more := landingMoreEvents()
 	if len(more) == 0 {
 		return
@@ -207,11 +223,19 @@ func (d *dashboardState) Render(th Theme, width int) string {
 		width = 40
 	}
 	d.Width = width
-	badge := "EVAL"
-	if d.MeshAttached {
+	badge := "EMPTY"
+	if d.Preview {
+		badge = "EVAL"
+	} else if d.MeshAttached {
 		badge = "CLIENT"
 	}
-	headLeft := th.Mesh.Render("●") + " " + th.Dim.Render("context://mesh · "+d.Focus+" · policy-gated MCP")
+	ctx := "no live heartbeat · consume missing · " + d.Focus
+	if d.Preview {
+		ctx = "eval template preview · not your org · " + d.Focus
+	} else if d.MeshAttached {
+		ctx = "mesh client attached · no consumed preview · " + d.Focus
+	}
+	headLeft := th.Mesh.Render("●") + " " + th.Dim.Render("context://mesh · "+ctx)
 	headRight := th.OK.Render(badge)
 	gap := width - lipgloss.Width(headLeft) - lipgloss.Width(headRight)
 	if gap < 1 {
@@ -229,14 +253,19 @@ func (d *dashboardState) Render(th Theme, width int) string {
 
 	body := d.renderBody(th, width)
 	honesty := th.Dim.Render(DashboardHonestyOneLiner)
-	if d.MeshAttached {
-		honesty = th.Dim.Render("mesh client attached · template feed until a real stream is pulled · " + DashboardHonestyOneLiner)
+	if d.Preview {
+		honesty = th.Dim.Render("eval template preview · not your org · " + DashboardHonestyOneLiner)
+	} else if d.MeshAttached {
+		honesty = th.Dim.Render("mesh client attached · no mock live rows · /dashboard preview for eval template · " + DashboardHonestyOneLiner)
 	}
 
 	return strings.Join([]string{header, rule, spark, analysis, rule, body, rule, honesty}, "\n")
 }
 
 func (d *dashboardState) renderBody(th Theme, width int) string {
+	if !d.Preview {
+		return d.renderFeed(th, width)
+	}
 	if width >= 88 {
 		return d.renderWide(th, width)
 	}
@@ -306,6 +335,12 @@ func (d *dashboardState) renderFeed(th Theme, width int) string {
 	}
 	b.WriteString(title + strings.Repeat(" ", gap) + rate)
 	b.WriteByte('\n')
+	if len(d.Events) == 0 {
+		b.WriteString(th.Dim.Render("no consumed messages · mock eval rows hidden"))
+		b.WriteByte('\n')
+		b.WriteString(th.Dim.Render("/dashboard preview · eval template on iome.sh (not your org)"))
+		return strings.TrimRight(b.String(), "\n")
+	}
 	for _, e := range d.Events {
 		b.WriteString(th.Dim.Render(e.T))
 		b.WriteByte(' ')
@@ -342,7 +377,16 @@ func (d *dashboardState) renderTools(th Theme, width int) string {
 }
 
 func formatDashboardSnapshot(meshAttached bool, focus string) string {
-	d := newDashboardState(meshAttached)
+	return formatDashboardSnapshotMode(meshAttached, focus, false)
+}
+
+func formatDashboardSnapshotMode(meshAttached bool, focus string, preview bool) string {
+	var d *dashboardState
+	if preview {
+		d = newDashboardPreviewState(meshAttached)
+	} else {
+		d = newDashboardState(meshAttached)
+	}
 	if focus != "" {
 		_ = d.SetFocus(focus)
 	}
@@ -366,6 +410,8 @@ func handleDashboardSlash(out io.Writer, rt runtimeAdapter, parts []string) {
 	switch sub {
 	case "help", "?":
 		fmt.Fprintln(out, dashboardHelp())
+	case "preview":
+		fmt.Fprintln(out, formatDashboardSnapshotMode(meshClientAttached(rt), "", true))
 	case "focus":
 		want := ""
 		if len(parts) > 2 {

@@ -11,30 +11,13 @@ func TestDashboardSnapshot_LandingParityAndHonesty(t *testing.T) {
 	out := formatDashboardSnapshot(false, "")
 	needles := []string{
 		"context://mesh",
-		"sre.incidents",
-		"eng.ops",
-		"cs.tickets",
-		"gtm.pipeline",
-		"policy-gated MCP",
-		"EVAL",
+		"no live heartbeat",
+		"EMPTY",
 		"Heartbeat",
-		"Tenancy",
-		"Pulse",
-		"events / min",
-		"P2 opened — checkout p95 1.8s",
-		"Deploy v2.14.3 → prod-eu",
-		"Recall: similar p95 in Mar",
-		"Renewal risk +12% this week",
+		"no consumed messages",
+		"mock eval rows hidden",
+		"/dashboard preview",
 		"dual_write OFF",
-		"mesh.ops.pull",
-		"mesh.knowledge.search",
-		"mesh.gtm.forecast",
-		"ALLOW",
-		"DENY",
-		"analysis",
-		"knowledge",
-		"analytics",
-		"Beta",
 		"catalog ≠ Connected",
 		"not Memory GA",
 		"not live APPLY",
@@ -66,11 +49,27 @@ func TestDashboardSnapshot_MeshAttachedLabel(t *testing.T) {
 	if !strings.Contains(out, "mesh client attached") {
 		t.Fatalf("attached snapshot missing client honesty:\n%s", out)
 	}
-	if !strings.Contains(out, "eng.ops") {
-		t.Fatalf("focus not applied:\n%s", out)
+	if !strings.Contains(out, "CLIENT") {
+		t.Fatalf("attached snapshot missing CLIENT:\n%s", out)
 	}
 	if !strings.Contains(out, "eval template") {
 		t.Fatalf("attached view must keep eval-template honesty:\n%s", out)
+	}
+	if strings.Contains(out, "P2 opened") {
+		t.Fatalf("default attached view must not show mock eval rows:\n%s", out)
+	}
+}
+
+func TestDashboardPreview_OptInEvalTemplate(t *testing.T) {
+	out := formatDashboardSnapshotMode(false, "", true)
+	if !strings.Contains(out, "EVAL") {
+		t.Fatalf("preview missing EVAL:\n%s", out)
+	}
+	if !strings.Contains(out, "P2 opened — checkout p95 1.8s") {
+		t.Fatalf("preview missing eval seed:\n%s", out)
+	}
+	if !strings.Contains(out, "not your org") {
+		t.Fatalf("preview missing not-your-org honesty:\n%s", out)
 	}
 }
 
@@ -103,7 +102,12 @@ func TestDashboardFocus_FiltersMCPCalls(t *testing.T) {
 }
 
 func TestDashboardTick_AdvancesFeed(t *testing.T) {
-	d := newDashboardState(false)
+	empty := newDashboardState(false)
+	empty.Tick()
+	if len(empty.Events) != 0 {
+		t.Fatalf("empty dashboard must not invent mock ticks: %+v", empty.Events)
+	}
+	d := newDashboardPreviewState(false)
 	first := d.Events[0].Title
 	d.Tick()
 	if d.Events[0].Title == first && d.Events[0].T == "14:02:11" {
@@ -173,8 +177,17 @@ func TestHandleSlash_Dashboard(t *testing.T) {
 	if quit || err != nil {
 		t.Fatalf("quit=%v err=%v", quit, err)
 	}
+	if strings.Contains(out.String(), "P2 opened") {
+		t.Fatalf("/dashboard must not show mock eval rows:\n%s", out.String())
+	}
+	if !strings.Contains(out.String(), "no consumed messages") {
+		t.Fatalf("/dashboard missing empty honesty:\n%s", out.String())
+	}
+
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/dashboard preview")
 	if !strings.Contains(out.String(), "P2 opened") {
-		t.Fatalf("/dashboard missing seed event:\n%s", out.String())
+		t.Fatalf("/dashboard preview missing eval seed:\n%s", out.String())
 	}
 
 	out.Reset()

@@ -284,8 +284,14 @@ func TestFullscreenModel_DashboardOverlay(t *testing.T) {
 		t.Fatal("expected tick cmd")
 	}
 	view := fm.View()
-	if !strings.Contains(view, "context://mesh") || !strings.Contains(view, "P2 opened") {
-		t.Fatalf("overlay missing live feed:\n%s", view)
+	if !strings.Contains(view, "context://mesh") {
+		t.Fatalf("overlay missing context:\n%s", view)
+	}
+	if strings.Contains(view, "P2 opened") {
+		t.Fatalf("default overlay must not show mock eval rows:\n%s", view)
+	}
+	if !strings.Contains(view, "no consumed messages") && !strings.Contains(view, "no live heartbeat") {
+		t.Fatalf("overlay missing empty honesty:\n%s", view)
 	}
 	if !strings.Contains(view, "catalog ≠ Connected") {
 		t.Fatalf("overlay missing honesty:\n%s", view)
@@ -299,8 +305,11 @@ func TestFullscreenModel_DashboardOverlay(t *testing.T) {
 
 	mod, _ = fm.Update(dashboardTickMsg{})
 	fm = mod.(*fullscreenModel)
-	if fm.dash == nil || fm.dash.Events[0].T == "14:02:11" && fm.dash.idx == 0 {
-		t.Fatalf("tick did not advance: %+v", fm.dash.Events[0])
+	if fm.dash == nil {
+		t.Fatal("tick closed dashboard")
+	}
+	if len(fm.dash.Events) != 0 {
+		t.Fatalf("empty overlay tick must not invent mock rows: %+v", fm.dash.Events)
 	}
 
 	mod, _ = fm.Update(tea.KeyMsg{Type: tea.KeyEsc})
