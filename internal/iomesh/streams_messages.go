@@ -301,15 +301,15 @@ func formatStreamMessagesHeader(name string, fromSeq, toSeq uint64, limit int, m
 		b.WriteString("(no messages)\n")
 		return b.String()
 	}
-	fmt.Fprintf(&b, "%-8s %-28s %-20s %s\n", "SEQ", "SUBJECT", "TIME", "PREVIEW")
+	fmt.Fprintf(&b, "%-8s %-36s %-20s %s\n", "SEQ", "SUBJECT", "TIME", "PREVIEW")
 	for i, m := range msgs {
 		if i >= 50 {
 			fmt.Fprintf(&b, "… (%d more)\n", len(msgs)-50)
 			break
 		}
-		fmt.Fprintf(&b, "%-8d %-28s %-20s %s\n",
+		fmt.Fprintf(&b, "%-8d %-36s %-20s %s\n",
 			m.Seq,
-			truncateRunes(m.Subject, 28),
+			truncateRunes(m.Subject, 36),
 			truncateRunes(m.Timestamp, 20),
 			truncateRunes(FormatStreamPayloadPreview(m.Payload), 64),
 		)

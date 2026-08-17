@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Start-here / guidance rates (s2045)** — operator-visible Memory line + short guidance lock now say `Base ~$132 · Memory Ops Pack hidden public · local memory free OSS` (not `~$88/$119` as first-run). Residual lane lock dumps stay `~$88/$119`. Pack hidden · no freemium · `~$132` Base.
+- **`mesh streams --messages` SUBJECT column** — 28 → 36 so `dept.engineering.events.github` is not truncated to `git…`.
 - **`mesh streams --messages` preview** — text table peels stacked persist base64 and unwraps `observation.payload` to `event_type · repository` (not `eyJ…`). JSON `--messages` still emits raw payload. Pretty preview ≠ Connected.
 - **Mesh CLI infer broker (all commands)** — `applyInferredBroker` runs on `mesh wait|status|catalog|streams|consumer|pub|kv|smoke` and `memory pull`, not only `mesh streams`. Portal MCP (`apiv1.iome.sh/v7/mcp`) still maps to `hooks.iome.sh` (+ tenant/org from MCP headers). `--endpoint` wins. Empty infer does not invent Enabled. Infer ≠ Connected.
 - **Mesh streams infer broker** — `iomesh mesh streams` without `[iomesh]` still listed if `--endpoint` was set, but `--messages` said `mesh disabled`. Portal MCP (`apiv1.iome.sh/v7/mcp`) is catalog, not the stream broker. CLI now infers `https://hooks.iome.sh` (+ tenant/org from MCP headers) and prints a residual-honest hint. Setup `platform-mcp` writes `[iomesh]` when the portal URL is apiv1. Infer ≠ Connected.

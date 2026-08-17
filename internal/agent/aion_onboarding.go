@@ -96,7 +96,7 @@ Portal Agent/MCP lane (complementary · s1368 · credential → copy connection 
 - Console Agent/MCP: https://console.iome.sh/settings/agent (connectors still /integrations)
 
 Memory + operator:
-5. Memory: dual_write OFF · local-primary · not Memory GA · optional plugins dogfood ≠ invent Agent Plugins GA (rates ~$88/$119 optional)
+5. Memory: dual_write OFF · local-primary · not Memory GA · optional plugins dogfood ≠ invent Agent Plugins GA (Base ~$132 · Memory Ops Pack hidden public · local memory free OSS)
 6. Operator pulse: /integrations status · /onboard checklist · /onboard portal · portal HITL
 7. Post-onboard continuum: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|e4|tool-call|e10|planes|sales|demo|marketing-demo|operator|setup|journey|wizard|status|export|human-gates] (plugins dogfood · /gtm checklist · iomesh-memory-mcp local · mesh streaming heartbeats · Ops Pack pull path · agentic integrations MCP list/plan · portal HITL stage-5 connectors · E4 client-attach stage-6 · deeper tool-call residual · E10 Open reaffirm residual-check · three product planes board · sales/buyer claims · demo readiness · marketing demo path (local agent + memory) · operator readiness matrix · setup lifecycle P1–P7 map · edge-user-journey first-run map · Wave C first-run wizard residual · lane status board · status export receipt · human-gates still-required vs offline)
 8. Human gates (s1413+s1546+s1550+s1574 Wave C continuum): /onboard next human-gates — still-human APPLY open · edge-first · knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect · book-demo OFF · ON_SIGNAL unset · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ invent Edge Memory GA declared · E10 Open · soft /onboard next human-gates dogfood · free eng s1574 · never invent Connected
@@ -122,7 +122,7 @@ Locks (never violate):
 - never invent install green / Connected / INSTALL_STORE APPLY
 - list_org_connector_installs available=false ≠ empty-as-none
 - catalog status ≠ Connected · portal HITL for OAuth/install · agent MCP cannot write installs
-- plugins dogfood ≠ invent Agent Plugins GA · rates ~$88/$119 optional
+- plugins dogfood ≠ invent Agent Plugins GA · Base ~$132 · Memory Ops Pack hidden public · local memory free OSS
 - no invent GA for knowledge/analytical
 - test invoke = stub|live probe ≠ Memory GA · mint iomesh_ag_* ≠ invent install Connected
 - drafts only · no auto-send · package load ≠ Memory GA
