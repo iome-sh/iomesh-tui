@@ -1563,4 +1563,7 @@ func TestFormatStreamPayloadPreview_PeelsStackedObservation(t *testing.T) {
 	if !strings.Contains(text, "PREVIEW") || strings.Contains(text, "eyJ") {
 		t.Fatalf("table:\n%s", text)
 	}
+	if !strings.Contains(text, "dept.engineering.events.github") {
+		t.Fatalf("subject truncated:\n%s", text)
+	}
 }
