@@ -7,7 +7,7 @@ description: Residual-honest TUI agent ↔ aion CP/MCP onboarding (portal Agent/
 
 Builtin playbook for **onboarding a TUI agent session against aion CP/MCP** — residual-honest path only. Molds `connector-integrations-setup` + operator onboarding checklist. **Not** install APPLY, **Not** Memory GA, **Not** Agent Plugins GA, **Not** dual_write ON.
 
-**Start here (s1982):** portal https://console.iome.sh/settings/agent (mint → copy MCP → test invoke) → TUI `[[mcp.servers]]` attach → `/integrations list|plan` → finish in portal HITL at https://console.iome.sh/integrations → `/setup init|preflight|reload` → `/onboard next wizard`. Operator notes: `/onboard next`. Agent MCP cannot write installs · never invent Connected.
+**Start here (s1982):** portal https://console.iome.sh/settings/agent (mint iomesh_ag_* → export IOMESH_TOKEN → copy TUI fragment `[[mcp.servers]]` + `[iomesh]` → test invoke stub|live) → TUI paste both blocks → `/integrations list|plan` → finish in portal HITL at https://console.iome.sh/integrations → `/setup init|preflight|reload` → `/onboard next wizard`. Operator notes: `/onboard next`. Agent MCP cannot write installs · never invent Connected.
 
 **OSS packaging boundary (s1582):** MIT OSS harness vs private control plane · Edge OSS path first · optional platform residual honesty / residual-check anti-claims · see `docs/architecture/oss-packaging-boundary.md` · residual PASS ≠ invent control plane in MIT repo · free eng s1582 · free-floor peer s1584+ mention only.
 
@@ -21,12 +21,12 @@ Builtin playbook for **onboarding a TUI agent session against aion CP/MCP** — 
    - Mint API key / agent principal as needed (settings only).
    - **Not** install APPLY · **not** invent Connected from mint success.
 
-2. **Settings → Agent/MCP → copy MCP connection**
-   - Copy streamable HTTP MCP URL + auth env hint from the portal Agent/MCP panel.
+2. **Settings → Agent/MCP → copy TUI fragment**
+   - Copy `[[mcp.servers]]` (apiv1 /v7/mcp) **and** `[iomesh]` (hooks.iome.sh). Catalog ≠ streams.
    - Connection copy is **handoff only** — not Memory GA, not install green.
 
-3. **Test invoke = probe only ≠ Memory GA**
-   - Portal test invoke is a residual-honest **probe** (latency / tool snippet).
+3. **Test invoke = stub|live** (42ms/no preview = stub · ≠ live tools/call · ≠ consume · ≠ Memory GA)
+   - Portal test invoke is a residual-honest **probe**.
    - **Never invent** tool green, Memory Palace GA, or Connected from a probe.
 
 ### B. TUI half (`[[mcp.servers]]` streamable HTTP · operator pulse)
@@ -35,9 +35,12 @@ Builtin playbook for **onboarding a TUI agent session against aion CP/MCP** — 
    - Example shape (placeholders only — never invent live install green):
      ```toml
      [[mcp.servers]]
-     name = "aion"
-     url = "https://…/mcp"          # streamable HTTP from portal copy
-     oauth_token_env = "IOMESH_TOKEN" # env only — never commit secrets
+     name = "io-mesh"
+     url = "https://apiv1.iome.sh/v7/mcp"
+     oauth_token_env = "IOMESH_TOKEN"
+     [iomesh]
+     enabled = true
+     endpoint = "https://hooks.iome.sh"  # streams; not /v7/mcp
      ```
    - Restart / reattach MCP. Offline / missing tools → residual-honest **fail-open**; **never invent** tool green or Connected.
 

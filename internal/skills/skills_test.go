@@ -646,9 +646,9 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		// s1368 portal Agent/MCP half + TUI half
 		"console.iome.sh/settings/agent",
 		"Agent/MCP",
-		"copy MCP connection",
+		"copy TUI fragment",
 		"test invoke",
-		"probe only",
+		"stub",
 		"[[mcp.servers]]",
 		"streamable HTTP",
 		"/onboard portal",
