@@ -301,7 +301,7 @@ func formatStreamMessagesHeader(name string, fromSeq, toSeq uint64, limit int, m
 		b.WriteString("(no messages)\n")
 		return b.String()
 	}
-	fmt.Fprintf(&b, "%-8s %-28s %-20s %s\n", "SEQ", "SUBJECT", "TIME", "PAYLOAD")
+	fmt.Fprintf(&b, "%-8s %-28s %-20s %s\n", "SEQ", "SUBJECT", "TIME", "PREVIEW")
 	for i, m := range msgs {
 		if i >= 50 {
 			fmt.Fprintf(&b, "… (%d more)\n", len(msgs)-50)
@@ -311,18 +311,133 @@ func formatStreamMessagesHeader(name string, fromSeq, toSeq uint64, limit int, m
 			m.Seq,
 			truncateRunes(m.Subject, 28),
 			truncateRunes(m.Timestamp, 20),
-			truncateRunes(formatPayloadPreview(m.Payload), 64),
+			truncateRunes(FormatStreamPayloadPreview(m.Payload), 64),
 		)
 	}
 	return b.String()
 }
 
-func formatPayloadPreview(payload []byte) string {
+// FormatStreamPayloadPreview peels stacked base64 (rqlite persist) and unwraps
+// observation.payload to event_type · repository (or title/summary).
+// Text table only — JSON --messages still emits raw payload bytes.
+// Pretty preview ≠ Connected / PULSE / live APPLY.
+func FormatStreamPayloadPreview(payload []byte) string {
+	raw := peelJSONPayload(payload)
+	if title := unwrapObservationTitle(raw); title != "" {
+		return title
+	}
+	if len(raw) > 0 && utf8.Valid(raw) && !strings.HasPrefix(strings.TrimSpace(string(raw)), "eyJ") {
+		return string(raw)
+	}
 	if len(payload) == 0 {
 		return ""
 	}
-	if utf8.Valid(payload) {
+	if utf8.Valid(payload) && !strings.HasPrefix(strings.TrimSpace(string(payload)), "eyJ") {
 		return string(payload)
 	}
 	return base64.StdEncoding.EncodeToString(payload)
+}
+
+func peelJSONPayload(payload []byte) []byte {
+	raw := []byte(strings.TrimSpace(string(payload)))
+	if len(raw) == 0 {
+		return nil
+	}
+	for i := 0; i < 4; i++ {
+		if looksLikeJSONObject(raw) {
+			return raw
+		}
+		next, err := decodeStackedBase64(raw)
+		if err != nil || len(next) == 0 {
+			return nil
+		}
+		raw = next
+	}
+	if looksLikeJSONObject(raw) {
+		return raw
+	}
+	return nil
+}
+
+func decodeStackedBase64(raw []byte) ([]byte, error) {
+	s := strings.TrimSpace(string(raw))
+	if decoded, err := base64.StdEncoding.DecodeString(s); err == nil && len(decoded) > 0 {
+		return decoded, nil
+	}
+	return base64.URLEncoding.DecodeString(s)
+}
+
+func looksLikeJSONObject(raw []byte) bool {
+	s := strings.TrimSpace(string(raw))
+	return strings.HasPrefix(s, "{") || strings.HasPrefix(s, "[")
+}
+
+type streamEnvelopeHint struct {
+	Payload json.RawMessage `json:"payload"`
+	Title   string          `json:"title"`
+	Summary string          `json:"summary"`
+	Message string          `json:"message"`
+	Text    string          `json:"text"`
+}
+
+type streamInnerHint struct {
+	Title      string          `json:"title"`
+	Summary    string          `json:"summary"`
+	Message    string          `json:"message"`
+	Text       string          `json:"text"`
+	EventType  string          `json:"event_type"`
+	Repository json.RawMessage `json:"repository"`
+}
+
+func unwrapObservationTitle(raw []byte) string {
+	if len(raw) == 0 {
+		return ""
+	}
+	var env streamEnvelopeHint
+	innerRaw := raw
+	if json.Unmarshal(raw, &env) == nil && len(env.Payload) > 0 && looksLikeJSONObject(env.Payload) {
+		innerRaw = env.Payload
+	}
+	var inner streamInnerHint
+	if len(innerRaw) > 0 {
+		_ = json.Unmarshal(innerRaw, &inner)
+	}
+	repo := repositoryFullName(inner.Repository)
+	event := strings.TrimSpace(inner.EventType)
+	joined := strings.TrimSpace(strings.Trim(event+" · "+repo, " ·"))
+	for _, cand := range []string{
+		strings.TrimSpace(inner.Title),
+		strings.TrimSpace(inner.Summary),
+		strings.TrimSpace(inner.Message),
+		strings.TrimSpace(inner.Text),
+		joined,
+		strings.TrimSpace(env.Title),
+		strings.TrimSpace(env.Summary),
+	} {
+		if cand != "" && !strings.HasPrefix(cand, "eyJ") {
+			return cand
+		}
+	}
+	return ""
+}
+
+func repositoryFullName(raw json.RawMessage) string {
+	if len(raw) == 0 {
+		return ""
+	}
+	var s string
+	if json.Unmarshal(raw, &s) == nil {
+		return strings.TrimSpace(s)
+	}
+	var obj struct {
+		FullName string `json:"full_name"`
+		Name     string `json:"name"`
+	}
+	if json.Unmarshal(raw, &obj) != nil {
+		return ""
+	}
+	if t := strings.TrimSpace(obj.FullName); t != "" {
+		return t
+	}
+	return strings.TrimSpace(obj.Name)
 }
