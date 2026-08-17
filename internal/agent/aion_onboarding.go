@@ -71,8 +71,8 @@ func AionAgentOnboardingNextStepLines() []string { return OnboardNextStepLines()
 // residual body. Never invents Connected / Memory GA / install APPLY.
 func AionAgentOnboardingStartHere() string {
 	return strings.TrimSpace(`start here (TUI agent · MCP · integrations):
-  1. Portal: https://console.iome.sh/settings/agent — mint key → copy MCP connection → test invoke (probe only)
-  2. TUI: add [[mcp.servers]] streamable HTTP → restart / reattach
+  1. Portal: https://console.iome.sh/settings/agent — mint iomesh_ag_* → export IOMESH_TOKEN → copy TUI fragment ([[mcp.servers]] + [iomesh]) → test invoke (stub|live)
+  2. TUI: paste both blocks (apiv1 /v7/mcp catalog ≠ hooks.iome.sh streams) → restart / reattach
   3. Sources: /integrations list · /integrations plan <id> — finish in portal HITL
      https://console.iome.sh/integrations  (agent MCP cannot write installs)
   4. Local: /setup init · /setup preflight · /setup reload
@@ -91,8 +91,8 @@ Connector path (integrations portal HITL · product plane 3 agentic integrations
 4. Complete OAuth/install in portal HITL at https://console.iome.sh/integrations — agent MCP cannot write installs
 
 Portal Agent/MCP lane (complementary · s1368 · credential → copy connection → test invoke):
-- Portal: mint key / Settings → Agent/MCP → copy MCP connection → test invoke (probe only ≠ Memory GA)
-- TUI: configure [[mcp.servers]] streamable HTTP → /onboard · /integrations status
+- Portal: mint iomesh_ag_* → export IOMESH_TOKEN → Settings → Agent/MCP → copy TUI fragment ([[mcp.servers]] + [iomesh]) → test invoke (stub|live · 42ms/no preview = stub · ≠ live tools/call · ≠ consume · ≠ Memory GA)
+- TUI: paste both blocks (streamable HTTP portal MCP + [iomesh] broker) — apiv1.iome.sh/v7/mcp catalog ≠ hooks.iome.sh streams. mesh streams without [iomesh] is mesh disabled, not an MCP failure
 - Console Agent/MCP: https://console.iome.sh/settings/agent (connectors still /integrations)
 
 Memory + operator:
@@ -124,7 +124,7 @@ Locks (never violate):
 - catalog status ≠ Connected · portal HITL for OAuth/install · agent MCP cannot write installs
 - plugins dogfood ≠ invent Agent Plugins GA · rates ~$88/$119 optional
 - no invent GA for knowledge/analytical
-- test invoke = probe only ≠ Memory GA · mint key ≠ invent install Connected
+- test invoke = stub|live probe ≠ Memory GA · mint iomesh_ag_* ≠ invent install Connected
 - drafts only · no auto-send · package load ≠ Memory GA
 - board/export evidence ≠ invent Connected
 - mesh = streaming org heartbeats · mesh ≠ memory · never invent stream green / Connected · not OTel/APM
@@ -174,8 +174,8 @@ func AionAgentOnboardingChecklist() string {
   2. list_connector_catalog — catalog status ≠ Connected
   3. plan_connector_setup → portal deep links (browser HITL · template= ≠ install APPLY)
   4. list_org_connector_installs residual fail-open (available=false ≠ empty-as-none)
-  5. Portal Agent/MCP: mint key → Settings → Agent/MCP → copy MCP connection → test invoke (probe only ≠ Memory GA) at https://console.iome.sh/settings/agent
-  6. TUI: [[mcp.servers]] streamable HTTP → /onboard · /integrations status (agent MCP cannot write installs)
+  5. Portal Agent/MCP: mint iomesh_ag_* → export IOMESH_TOKEN → copy TUI fragment ([[mcp.servers]] + [iomesh]) → test invoke (stub|live · ≠ consume) at https://console.iome.sh/settings/agent
+  6. TUI: paste both blocks (streamable HTTP portal MCP + [iomesh] broker) → /onboard · /integrations status (agent MCP cannot write installs)
   7. Memory dual_write OFF · local-primary · not Memory GA · optional plugins dogfood ≠ Agent Plugins GA
   8. Operator: /integrations status · /onboard checklist · /onboard portal · portal https://console.iome.sh/integrations
   9. Post-onboard: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|e4|planes|sales|demo|operator|setup|journey|wizard|status|export|human-gates] (plugins · gtm · memory local · mesh streaming heartbeats · Ops Pack pull path · agentic integrations MCP list/plan · portal HITL stage-5 connectors · E4 client-attach stage-6 · three product planes board · sales/buyer claims · demo readiness · operator readiness matrix · setup lifecycle P1–P7 map · edge-user-journey first-run map · Wave C first-run wizard residual · lane status board · status export receipt · human-gates still-required vs offline)
@@ -200,12 +200,12 @@ func AionAgentOnboardingChecklist() string {
 func AionAgentOnboardingPortalHandoff() string {
 	return AionAgentOnboardingStartHere() + "\n\n" + strings.TrimSpace(`aion portal Agent/MCP handoff (residual-honest · s1368+s1542):
 Portal half (browser HITL · https://console.iome.sh/settings/agent):
-  1. Mint API key / agent principal (settings only · not install APPLY)
-  2. Settings → Agent/MCP → copy MCP connection (URL + auth env hint)
-  3. Test invoke = probe only ≠ Memory GA · never invent tool green / Connected
+  1. Mint iomesh_ag_* principal (settings only · not install APPLY · export IOMESH_TOKEN)
+  2. Settings → Agent/MCP → copy TUI fragment ([[mcp.servers]] portal MCP + [iomesh] hooks)
+  3. Test invoke = stub|live probe · 42ms/no preview = stub · ≠ live tools/call · ≠ consume · ≠ Memory GA
 
 TUI half (local config · streamable HTTP):
-  4. Configure [[mcp.servers]] with url = streamable HTTP MCP endpoint (+ oauth_token_env if needed)
+  4. Paste both blocks — /v7/mcp is catalog; hooks.iome.sh is streams (mesh disabled without [iomesh])
   5. Restart / reattach MCP → /onboard · /integrations status · /onboard status
   6. Connector OAuth/install still portal HITL at https://console.iome.sh/integrations — agent MCP cannot write installs
   7. Setup lifecycle companion (s1542+s1558 · stage 4): /onboard next setup · /setup portal · map init→preflight→reload→portal HITL→pull→analyze→drift→repair · dual_write OFF · package wire ≠ Connected · repair apply ≠ invent Connected · E10 Open

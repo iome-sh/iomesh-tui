@@ -1028,10 +1028,10 @@ func TestHandleSlash_OnboardPortal(t *testing.T) {
 	needles := []string{
 		"portal Agent/MCP",
 		"console.iome.sh/settings/agent",
-		"Mint API key",
-		"copy MCP connection",
+		"iomesh_ag_*",
+		"copy TUI fragment",
 		"Test invoke",
-		"probe only",
+		"stub",
 		"not Memory GA",
 		"[[mcp.servers]]",
 		"streamable HTTP",
