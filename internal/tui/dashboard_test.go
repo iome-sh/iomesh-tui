@@ -26,6 +26,7 @@ func TestDashboardSnapshot_LandingParityAndHonesty(t *testing.T) {
 		"not Memory GA",
 		"not live APPLY",
 		"eval template",
+		DashboardBetaEmptyHonesty,
 	}
 	for _, n := range needles {
 		if !strings.Contains(out, n) {
@@ -165,6 +166,7 @@ func TestReadmeDashboardShowcase(t *testing.T) {
 		"not live APPLY",
 		"eval template",
 		"empty until consume",
+		"knowledge Beta empty",
 	} {
 		if !strings.Contains(readme, n) {
 			t.Fatalf("README showcase missing %q", n)

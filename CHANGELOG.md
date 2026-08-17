@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Dashboard three-pillar kinds (s2046)** — consume classifies `Kind` from subject tokens (same as CP): `events.docs` / `events.documents` / `notion` / `confluence` / `sharepoint` / `google_drive` / `.docs.` → knowledge; `metric.` / `.cdc` / `embedding` / `warehouse` / `.dbt` → analytics; else ops. GitHub stays ops. When knowledge or analytics count is 0, `/dashboard` adds `knowledge Beta empty · analytics Beta empty · not GA`. Does not invent events or GA. C2 stays OPEN.
 - **Start-here / guidance rates (s2045)** — operator-visible Memory line + short guidance lock now say `Base ~$132 · Memory Ops Pack hidden public · local memory free OSS` (not `~$88/$119` as first-run). Residual lane lock dumps stay `~$88/$119`. Pack hidden · no freemium · `~$132` Base.
 - **`mesh streams --messages` SUBJECT column** — 28 → 36 so `dept.engineering.events.github` is not truncated to `git…`.
 - **`mesh streams --messages` preview** — text table peels stacked persist base64 and unwraps `observation.payload` to `event_type · repository` (not `eyJ…`). JSON `--messages` still emits raw payload. Pretty preview ≠ Connected.

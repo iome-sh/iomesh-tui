@@ -210,6 +210,12 @@ func TestProbeDashboardConsume_OneMessageNoP2(t *testing.T) {
 	if !strings.Contains(out, "dept.engineering.events.github") {
 		t.Fatalf("missing consume row:\n%s", out)
 	}
+	if events[0].Kind != kindOps {
+		t.Fatalf("github consume kind=%q want ops", events[0].Kind)
+	}
+	if !strings.Contains(out, DashboardBetaEmptyHonesty) {
+		t.Fatalf("github-only consume must keep Beta empty pillars:\n%s", out)
+	}
 }
 
 func TestProbeDashboardConsume_BrokerUnavailable(t *testing.T) {
@@ -303,6 +309,115 @@ func TestHeartbeatFromStreamMessage_Conservative(t *testing.T) {
 	}
 	if strings.Contains(ev.Title, "P2") || strings.Contains(ev.Title, "checkout") {
 		t.Fatal("must not invent P2 checkout title")
+	}
+}
+
+func TestHeartbeatFromStreamMessage_DocsNotionIsKnowledge(t *testing.T) {
+	ev := heartbeatFromStreamMessage(iomesh.StreamMessage{
+		Stream:    "OPERATIONAL_EVENTS",
+		Subject:   "dept.x.events.docs.notion",
+		Payload:   []byte(`{"type":"page.updated"}`),
+		Timestamp: time.Date(2026, 8, 17, 12, 0, 0, 0, time.UTC),
+	})
+	if ev.Kind != kindKnowledge {
+		t.Fatalf("kind=%q want knowledge: %+v", ev.Kind, ev)
+	}
+	if ev.Dept != "x" {
+		t.Fatalf("dept=%q want x", ev.Dept)
+	}
+	if ev.Title == "P2 opened — checkout p95 1.8s" {
+		t.Fatal("must not invent eval title")
+	}
+}
+
+func TestHeartbeatFromStreamMessage_GithubStaysOps(t *testing.T) {
+	ev := heartbeatFromStreamMessage(iomesh.StreamMessage{
+		Stream:  "OPERATIONAL_EVENTS",
+		Subject: "dept.engineering.events.github",
+		Payload: []byte(`{"type":"push"}`),
+	})
+	if ev.Kind != kindOps {
+		t.Fatalf("github kind=%q want ops", ev.Kind)
+	}
+}
+
+func TestKindFromSubject_ThreePillarTokens(t *testing.T) {
+	cases := []struct {
+		subject string
+		want    HeartbeatKind
+	}{
+		{"dept.x.events.docs.notion", kindKnowledge},
+		{"dept.engineering.events.docs.confluence", kindKnowledge},
+		{"dept.legal.events.docs.sharepoint", kindKnowledge},
+		{"dept.legal.events.docs.google_drive", kindKnowledge},
+		{"dept.legal.events.documents", kindKnowledge},
+		{"dept.finance.views.metrics.dbt", kindAnalytics},
+		{"dept.finance.cdc.orders", kindAnalytics},
+		{"dept.finance.views.warehouse.snowflake", kindAnalytics},
+		{"dept.ml.events.embedding", kindAnalytics},
+		{"dept.finance.events.metric.observed", kindAnalytics},
+		{"dept.engineering.events.github", kindOps},
+		{"dept.engineering.events.slack", kindOps},
+		{"", kindOps},
+	}
+	for _, tc := range cases {
+		if got := kindFromSubject(tc.subject); got != tc.want {
+			t.Fatalf("kindFromSubject(%q)=%q want %q", tc.subject, got, tc.want)
+		}
+	}
+}
+
+func TestProbeDashboardConsume_DocsNotionKnowledge(t *testing.T) {
+	payload := base64.StdEncoding.EncodeToString([]byte(`{"type":"page.updated"}`))
+	c := testMeshClient(t, func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/v1/streams":
+			_ = json.NewEncoder(w).Encode([]map[string]any{
+				{"name": "OPERATIONAL_EVENTS"},
+			})
+		case strings.HasSuffix(r.URL.Path, "/messages"):
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"messages": []map[string]any{
+					{
+						"stream":    "OPERATIONAL_EVENTS",
+						"seq":       1,
+						"subject":   "dept.x.events.docs.notion",
+						"payload":   payload,
+						"timestamp": time.Date(2026, 8, 17, 12, 0, 0, 0, time.UTC),
+					},
+				},
+			})
+		default:
+			http.NotFound(w, r)
+		}
+	})
+	events, names, reason := probeDashboardConsume(context.Background(), c)
+	if reason != consumeReasonConsumed {
+		t.Fatalf("reason=%q", reason)
+	}
+	if len(names) != 1 || len(events) != 1 {
+		t.Fatalf("names=%v events=%+v", names, events)
+	}
+	if events[0].Kind != kindKnowledge {
+		t.Fatalf("kind=%q want knowledge: %+v", events[0].Kind, events[0])
+	}
+	if events[0].Dept != "x" {
+		t.Fatalf("dept=%q want x", events[0].Dept)
+	}
+	d := newDashboardState(true)
+	d.applyConsume(events, names, reason)
+	out := d.Render(ThemeDefault(), 100)
+	if strings.Contains(out, "P2 opened") {
+		t.Fatalf("must not mix eval seed:\n%s", out)
+	}
+	if !strings.Contains(out, "knowledge") {
+		t.Fatalf("missing knowledge kind:\n%s", out)
+	}
+	if !strings.Contains(out, DashboardBetaEmptyHonesty) {
+		t.Fatalf("notion-only consume still has analytics empty; want Beta empty honesty:\n%s", out)
+	}
+	if strings.Contains(out, " Memory GA shipped") || strings.Contains(out, "knowledge GA") {
+		t.Fatalf("must not invent GA:\n%s", out)
 	}
 }
 
