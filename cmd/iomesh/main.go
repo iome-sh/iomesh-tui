@@ -1102,6 +1102,30 @@ Flags (status):
 	}
 }
 
+// applyInferredBroker fills [iomesh] from portal MCP when unset.
+// Infer ≠ Connected. --endpoint still wins. Empty infer does not invent Enabled.
+func applyInferredBroker(cfg *config.Config) {
+	if cfg == nil {
+		return
+	}
+	if cfg.IOMesh.Enabled && strings.TrimSpace(cfg.IOMesh.Endpoint) != "" {
+		return
+	}
+	inf := cfg.InferBrokerFromPortalMCP()
+	if inf.Endpoint == "" {
+		return
+	}
+	cfg.IOMesh.Enabled = true
+	cfg.IOMesh.Endpoint = inf.Endpoint
+	if strings.TrimSpace(cfg.IOMesh.Tenant) == "" {
+		cfg.IOMesh.Tenant = inf.Tenant
+	}
+	if strings.TrimSpace(cfg.IOMesh.Org) == "" {
+		cfg.IOMesh.Org = inf.Org
+	}
+	fmt.Fprintf(os.Stderr, "note: inferred broker %s from portal MCP (catalog ≠ streams)\n", inf.Endpoint)
+}
+
 func cmdMeshWait(args []string) int {
 	fs := flag.NewFlagSet("mesh wait", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
@@ -1127,6 +1151,7 @@ func cmdMeshWait(args []string) int {
 		cfg.IOMesh.Endpoint = *endpoint
 		cfg.IOMesh.Enabled = true
 	}
+	applyInferredBroker(cfg)
 	// s693: wire [memory].pull_role / pull_allow_suffix onto Client so wait
 	// always-emits pull identity from Config (empty when unset; peers status s690).
 	pullRole := strings.TrimSpace(cfg.Memory.PullRole)
@@ -1229,6 +1254,7 @@ func cmdMeshStatus(args []string) int {
 		cfg.IOMesh.Endpoint = *endpoint
 		cfg.IOMesh.Enabled = true
 	}
+	applyInferredBroker(cfg)
 	// s690: wire [memory].pull_role / pull_allow_suffix onto Client so status
 	// always-emits pull identity from Config (empty when unset; peers dogfood s687).
 	pullRole := strings.TrimSpace(cfg.Memory.PullRole)
@@ -1333,6 +1359,7 @@ func cmdMeshCatalog(args []string) int {
 	if *tenant != "" {
 		cfg.IOMesh.Tenant = *tenant
 	}
+	applyInferredBroker(cfg)
 	cfg.IOMesh.CatalogPlane = true
 	mesh := iomesh.New(iomesh.Config{
 		Enabled:      cfg.IOMesh.Enabled,
@@ -1460,19 +1487,7 @@ func cmdMeshStreams(args []string) int {
 	if *tenant != "" {
 		cfg.IOMesh.Tenant = *tenant
 	}
-	if !cfg.IOMesh.Enabled || strings.TrimSpace(cfg.IOMesh.Endpoint) == "" {
-		if inf := cfg.InferBrokerFromPortalMCP(); inf.Endpoint != "" {
-			cfg.IOMesh.Enabled = true
-			cfg.IOMesh.Endpoint = inf.Endpoint
-			if strings.TrimSpace(cfg.IOMesh.Tenant) == "" {
-				cfg.IOMesh.Tenant = inf.Tenant
-			}
-			if strings.TrimSpace(cfg.IOMesh.Org) == "" {
-				cfg.IOMesh.Org = inf.Org
-			}
-			fmt.Fprintf(os.Stderr, "note: inferred broker %s from portal MCP (catalog ≠ streams)\n", inf.Endpoint)
-		}
-	}
+	applyInferredBroker(cfg)
 	mesh := iomesh.New(iomesh.Config{
 		Enabled:     cfg.IOMesh.Enabled,
 		Endpoint:    cfg.IOMesh.Endpoint,
@@ -1724,6 +1739,7 @@ func cmdMeshConsumerAckNack(args []string, nack bool) int {
 	if *tenant != "" {
 		cfg.IOMesh.Tenant = *tenant
 	}
+	applyInferredBroker(cfg)
 	// s684: same role/suffix auth headers as create/fetch (defense-in-depth; fail-open empty).
 	pullRole, allowSuffix := iomesh.ResolveMeshPullAuth(
 		*role, *pullAllowSuffix, cfg.Memory.PullRole, cfg.Memory.PullAllowSuffix,
@@ -1803,6 +1819,7 @@ func cmdMeshConsumerDelete(args []string) int {
 	if *tenant != "" {
 		cfg.IOMesh.Tenant = *tenant
 	}
+	applyInferredBroker(cfg)
 	// s684: same role/suffix auth headers as create/fetch (defense-in-depth; fail-open empty).
 	pullRole, allowSuffix := iomesh.ResolveMeshPullAuth(
 		*role, *pullAllowSuffix, cfg.Memory.PullRole, cfg.Memory.PullAllowSuffix,
@@ -1877,6 +1894,7 @@ func cmdMeshConsumerCreate(args []string) int {
 	if *tenant != "" {
 		cfg.IOMesh.Tenant = *tenant
 	}
+	applyInferredBroker(cfg)
 	// s681: federated role + allow-suffix (flags override [memory] config) + role-aware default filter.
 	// Tenant is IOMesh tenant (mesh command pattern). Fail-open empty role/suffix → omit headers.
 	meshTenant := strings.TrimSpace(cfg.IOMesh.Tenant)
@@ -1967,6 +1985,7 @@ func cmdMeshConsumerFetch(args []string) int {
 	if *tenant != "" {
 		cfg.IOMesh.Tenant = *tenant
 	}
+	applyInferredBroker(cfg)
 	// s684: federated role + allow-suffix on fetch (flags override [memory] config).
 	// Fail-open empty role/suffix → Client.auth omits headers. Peer aion s683 continuum.
 	pullRole, allowSuffix := iomesh.ResolveMeshPullAuth(
@@ -2054,6 +2073,7 @@ func cmdMeshPub(args []string) int {
 	if *tenant != "" {
 		cfg.IOMesh.Tenant = *tenant
 	}
+	applyInferredBroker(cfg)
 	mesh := iomesh.New(iomesh.Config{
 		Enabled:     cfg.IOMesh.Enabled,
 		Endpoint:    cfg.IOMesh.Endpoint,
@@ -2201,6 +2221,7 @@ func cmdMeshKV(args []string) int {
 	if *tenant != "" {
 		cfg.IOMesh.Tenant = *tenant
 	}
+	applyInferredBroker(cfg)
 	mesh := iomesh.New(iomesh.Config{
 		Enabled:     cfg.IOMesh.Enabled,
 		Endpoint:    cfg.IOMesh.Endpoint,
@@ -2374,6 +2395,7 @@ func cmdMeshDogfood(args []string) int {
 	if *tenant != "" {
 		cfg.IOMesh.Tenant = *tenant
 	}
+	applyInferredBroker(cfg)
 	// Env already applied by config.Load; allow empty endpoint → SKIP report.
 	// s687: wire [memory].pull_role / pull_allow_suffix onto Client so consumer probe
 	// sends federated ACL headers + dogfood report always-emits pull_role/pull_allow_suffix.
@@ -2612,6 +2634,7 @@ func cmdMemoryPull(args []string) int {
 		cfg.IOMesh.Endpoint = *endpoint
 		cfg.IOMesh.Enabled = true
 	}
+	applyInferredBroker(cfg)
 
 	streamName := strings.TrimSpace(*stream)
 	if streamName == "" {
