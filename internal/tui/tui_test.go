@@ -4252,6 +4252,18 @@ func TestHandleSlash_Integrations(t *testing.T) {
 	if !strings.Contains(s, "operator pulse") {
 		t.Fatalf("status help line: %s", s)
 	}
+	for _, want := range []string{
+		"https://console.iome.sh/integrations",
+		"https://console.iome.sh/integrations/{id}",
+		"https://console.iome.sh/integrations/add?template={id}",
+		"browser HITL",
+		"plan ≠ APPLY",
+		"catalog ≠ Connected",
+	} {
+		if !strings.Contains(s, want) {
+			t.Fatalf("help HITL missing %q: %s", want, s)
+		}
+	}
 
 	// help/? still pure help
 	out.Reset()

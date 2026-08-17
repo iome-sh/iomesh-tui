@@ -70,11 +70,34 @@ Locks (never violate):
 // agent MCP cannot write installs · catalog ≠ Connected · template= ≠ install APPLY · free eng s1727.
 func IntegrationsNextStepLines() []string {
 	return []string{
-		"next: complete OAuth/install in browser portal HITL → " + integrationsPortalURL + " (agent MCP cannot write installs)",
+		"next: complete OAuth/install in browser portal HITL (agent MCP cannot write installs)",
+		"      " + integrationsPortalURL,
+		"      " + integrationsPortalURL + "/{id}",
+		"      " + integrationsPortalURL + "/add?template={id}",
+		"      browser HITL · plan ≠ APPLY · catalog ≠ Connected",
 		"      then if TUI/session running → /setup preflight · /setup reload · optional /onboard next portal-hitl",
 		"      else cold start → restart iomesh · iomesh setup preflight (CLI has no invent install green)",
 		"note: catalog ≠ Connected · template= ≠ install APPLY · dual_write OFF · not Memory GA · free eng s1727",
 	}
+}
+
+// IntegrationsHelp is bare /integrations and help/? copy (list · plan · status · signing).
+// Prints proven console HITL URLs only — plan ≠ APPLY · catalog ≠ Connected · HITL stays OPEN.
+func IntegrationsHelp() string {
+	return strings.TrimSpace(`start here: /integrations list → /integrations plan <id> → finish in portal HITL
+usage: /integrations [list [--layer operational|knowledge|analytical] | plan <connector_id> | signing [layer|id] | status]
+  list     MCP list_connector_catalog (v178 entries) → id · catalog · mesh_layer · oauth?
+  plan     MCP plan_connector_setup → portal_url · oauth_mode_hint · signing_headers_tool · next_steps · honesty
+  signing  MCP get_webhook_signing_headers → header parity (discovery only · not secret mint)
+  status   residual-honest operator pulse: MCP path · tools present · catalog honesty counts (≠ install green)
+  after list|plan|status|signing: residual next-step → portal HITL · /setup preflight|reload · free eng s1727
+  HITL     ` + integrationsPortalURL + `
+           ` + integrationsPortalURL + `/{id}
+           ` + integrationsPortalURL + `/add?template={id}
+           browser HITL · plan ≠ APPLY · catalog ≠ Connected
+honesty: ` + IntegrationsHonestyOneLiner + `
+  fail-open when MCP unavailable → portal HITL ` + integrationsPortalURL + `
+  aion MCP v178 list/plan + v30 signing · browser HITL for OAuth · never invent install green`)
 }
 
 // IntegrationsOfflineMessage is printed when MCP manager is missing or tools are not connected.
@@ -241,7 +264,7 @@ func (rt *Runtime) IntegrationsStatus(ctx context.Context) (string, error) {
 	case "available":
 		fmt.Fprintf(&b, "MCP path:     available (%d server(s))\n", nServers)
 	case "empty":
-		b.WriteString("MCP path:     connected-empty (manager present, 0 servers) · fail-open\n")
+		b.WriteString("MCP path:     mcp-manager-empty (0 servers) · fail-open\n")
 	default:
 		b.WriteString("MCP path:     offline (no MCP manager/clients) · fail-open\n")
 	}
@@ -529,7 +552,7 @@ func formatConnectorCatalog(raw, layerFilter string) string {
 		b.WriteString(catalogHonestyFooter())
 		return b.String()
 	}
-	fmt.Fprintf(&b, "%-20s %-12s %-14s %s\n", "ID", "STATUS", "MESH_LAYER", "OAUTH")
+	fmt.Fprintf(&b, "%-20s %-18s %-14s %s\n", "ID", "CATALOG", "MESH_LAYER", "OAUTH")
 	shown := 0
 	for _, it := range items {
 		id := strings.TrimSpace(it.ID)
@@ -543,16 +566,14 @@ func formatConnectorCatalog(raw, layerFilter string) string {
 		if layerFilter != "" && layer != "" && layer != layerFilter {
 			continue
 		}
-		status := strings.TrimSpace(it.Status)
-		if status == "" {
-			status = "-"
-		}
+		status := catalogStatusDisplay(it.Status)
 		if layer == "" {
 			layer = "-"
 		}
 		oauth := oauthYesNoFromItem(it)
-		fmt.Fprintf(&b, "%-20s %-12s %-14s %s\n",
-			truncateRunes(id, 20), truncateRunes(status, 12), truncateRunes(layer, 14), oauth)
+		fmt.Fprintf(&b, "%-20s %-18s %-14s %s\n",
+			truncateRunes(id, 20), truncateRunes(status, 18), truncateRunes(layer, 14), oauth)
+		writeCatalogHITLLine(&b, id, it.PortalPath)
 		shown++
 		if shown >= 80 {
 			fmt.Fprintf(&b, "… (%d more not shown)\n", len(items)-shown)
@@ -564,6 +585,58 @@ func formatConnectorCatalog(raw, layerFilter string) string {
 	}
 	b.WriteString(catalogHonestyFooter())
 	return b.String()
+}
+
+// catalogStatusDisplay remaps install-looking catalog chips so list never prints Connected.
+// Raw connected/Connected → catalog:connected (catalog honesty, not install green).
+func catalogStatusDisplay(raw string) string {
+	st := strings.TrimSpace(raw)
+	if st == "" {
+		return "-"
+	}
+	if strings.EqualFold(st, "connected") {
+		return "catalog:connected"
+	}
+	return st
+}
+
+// catalogPortalAbsolute prefixes a relative portal_path with the console origin.
+// Absolute http(s) paths pass through. Empty → empty (do not invent APPLY).
+func catalogPortalAbsolute(portalPath string) string {
+	p := strings.TrimSpace(portalPath)
+	if p == "" {
+		return ""
+	}
+	if strings.HasPrefix(p, "https://") || strings.HasPrefix(p, "http://") {
+		return p
+	}
+	if !strings.HasPrefix(p, "/") {
+		p = "/" + p
+	}
+	return "https://console.iome.sh" + p
+}
+
+func catalogAddHITLURL(id string) string {
+	id = strings.TrimSpace(id)
+	if id == "" {
+		return ""
+	}
+	return integrationsPortalURL + "/add?template=" + id
+}
+
+// writeCatalogHITLLine prints browser HITL URLs for one catalog row.
+// Always prints add?template={id} (template= ≠ APPLY). PortalPath is extra, never APPLY.
+func writeCatalogHITLLine(b *strings.Builder, id, portalPath string) {
+	addURL := catalogAddHITLURL(id)
+	portal := catalogPortalAbsolute(portalPath)
+	switch {
+	case addURL != "" && portal != "":
+		fmt.Fprintf(b, "  HITL %s  (template= ≠ APPLY · browser HITL) · %s\n", addURL, portal)
+	case addURL != "":
+		fmt.Fprintf(b, "  HITL %s  (template= ≠ APPLY · browser HITL)\n", addURL)
+	case portal != "":
+		fmt.Fprintf(b, "  HITL %s  (browser HITL)\n", portal)
+	}
 }
 
 func oauthYesNoFromItem(it connectorCatalogItem) string {
@@ -652,6 +725,10 @@ func formatConnectorPlan(raw, requestedID string) string {
 	if portalAdd == "" && p.DeepLinks != nil {
 		portalAdd = firstNonEmpty(p.DeepLinks["add_wizard"], p.DeepLinks["portal_add_url"])
 	}
+	if portalAdd == "" && id != "" {
+		// Residual default: add-wizard deep-link (HITL; template= ≠ APPLY).
+		portalAdd = catalogAddHITLURL(id)
+	}
 	steps := p.NextSteps
 	if len(steps) == 0 {
 		steps = p.Steps
@@ -666,7 +743,7 @@ func formatConnectorPlan(raw, requestedID string) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "integrations plan connector=%s\n", id)
 	if status != "" {
-		fmt.Fprintf(&b, "status:     %s  (catalog honesty — not install green)\n", status)
+		fmt.Fprintf(&b, "status:     %s  (catalog honesty — not install green)\n", catalogStatusDisplay(status))
 	}
 	fmt.Fprintf(&b, "portal_url: %s\n", portal)
 	if portalAdd != "" {
@@ -932,7 +1009,7 @@ func formatWebhookSigning(raw, layerFilter, clientFilterID string) string {
 }
 
 func catalogHonestyFooter() string {
-	return "honesty: " + IntegrationsHonestyOneLiner + " · browser HITL for OAuth · dual_write OFF · no invent GA" +
+	return "honesty: " + IntegrationsHonestyOneLiner + " · browser HITL for OAuth · dual_write OFF · no invent GA · catalog available ≠ Connected" +
 		"\n" + strings.Join(IntegrationsNextStepLines(), "\n")
 }
 

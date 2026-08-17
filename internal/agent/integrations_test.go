@@ -115,24 +115,23 @@ func TestFormatConnectorCatalog_V178Entries(t *testing.T) {
 	if !strings.Contains(out, "github") || !strings.Contains(out, "notion") {
 		t.Fatalf("%s", out)
 	}
-	if !strings.Contains(out, "ID") || !strings.Contains(out, "STATUS") {
+	if !strings.Contains(out, "ID") || !strings.Contains(out, "CATALOG") {
 		t.Fatalf("missing header: %s", out)
 	}
-	// oauth_install_supported bool → yes/no
+	// oauth_install_supported bool → yes/no (table rows only; HITL lines also mention id)
 	if !strings.Contains(out, "notion") {
 		t.Fatalf("notion missing: %s", out)
 	}
-	// notion row should show oauth yes
 	for _, line := range strings.Split(out, "\n") {
-		if strings.Contains(line, "notion") {
-			if !strings.Contains(line, "yes") {
-				t.Fatalf("notion oauth want yes: %s", line)
-			}
+		fields := strings.Fields(line)
+		if len(fields) == 0 {
+			continue
 		}
-		if strings.Contains(line, "github") {
-			if !strings.Contains(line, "no") {
-				t.Fatalf("github oauth want no: %s", line)
-			}
+		if fields[0] == "notion" && !strings.Contains(line, "yes") {
+			t.Fatalf("notion oauth want yes: %s", line)
+		}
+		if fields[0] == "github" && !strings.Contains(line, "no") {
+			t.Fatalf("github oauth want no: %s", line)
 		}
 	}
 	if !strings.Contains(out, "honesty:") {
@@ -249,6 +248,12 @@ func TestFormatConnectorPlan_DefaultPortal(t *testing.T) {
 	if !strings.Contains(out, integrationsPortalURL+"/slack") {
 		t.Fatalf("default portal: %s", out)
 	}
+	if !strings.Contains(out, integrationsPortalURL+"/add?template=slack") {
+		t.Fatalf("synthesized portal_add_url: %s", out)
+	}
+	if !strings.Contains(out, "not install APPLY") {
+		t.Fatalf("add wizard honesty: %s", out)
+	}
 }
 
 // s1243: signing header table from aion v30 wire.
@@ -363,9 +368,12 @@ func TestIntegrationsStatus_EmptyManager(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err=%v", err)
 	}
-	// empty manager → empty or offline path; tools offline; no invent counts
-	if !strings.Contains(out, "fail-open") && !strings.Contains(out, "empty") && !strings.Contains(out, "offline") {
-		t.Fatalf("want empty/offline residual: %s", out)
+	// empty manager → mcp-manager-empty residual; never "Connected" as MCP empty state
+	if !strings.Contains(out, "mcp-manager-empty (0 servers) · fail-open") {
+		t.Fatalf("want mcp-manager-empty: %s", out)
+	}
+	if strings.Contains(out, "connected-empty") {
+		t.Fatalf("must not use connected-empty: %s", out)
 	}
 	if strings.Contains(out, "count: ") && !strings.Contains(out, "skipped") {
 		// only fail if we invented a real pulse count without list tool
@@ -499,8 +507,12 @@ func TestIntegrationsNextStepLines_HonestyNeedles(t *testing.T) {
 	out := strings.Join(lines, "\n")
 	for _, want := range []string{
 		"console.iome.sh/integrations",
+		"https://console.iome.sh/integrations/{id}",
+		"https://console.iome.sh/integrations/add?template={id}",
 		"agent MCP cannot write",
 		"catalog ≠ Connected",
+		"plan ≠ APPLY",
+		"browser HITL",
 		"dual_write OFF",
 		"not Memory GA",
 		"s1727",
@@ -1030,21 +1042,21 @@ func TestFormatConnectorCatalog_GoldenFixture(t *testing.T) {
 		t.Fatal("empty catalog format")
 	}
 	// Round-trip: table includes oauth_install_supported → yes/no
-	for _, want := range []string{"github", "notion", "embeddings", "ID", "STATUS", "MESH_LAYER", "OAUTH"} {
+	for _, want := range []string{"github", "notion", "embeddings", "ID", "CATALOG", "MESH_LAYER", "OAUTH"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("missing %q: %s", want, out)
 		}
 	}
 	for _, line := range strings.Split(out, "\n") {
-		if strings.Contains(line, "notion") {
-			if !strings.Contains(line, "yes") {
-				t.Fatalf("notion oauth want yes: %s", line)
-			}
+		fields := strings.Fields(line)
+		if len(fields) == 0 {
+			continue
 		}
-		if strings.Contains(line, "github") {
-			if !strings.Contains(line, "no") {
-				t.Fatalf("github oauth want no: %s", line)
-			}
+		if fields[0] == "notion" && !strings.Contains(line, "yes") {
+			t.Fatalf("notion oauth want yes: %s", line)
+		}
+		if fields[0] == "github" && !strings.Contains(line, "no") {
+			t.Fatalf("github oauth want no: %s", line)
 		}
 	}
 	if !strings.Contains(out, "honesty:") {
@@ -1372,6 +1384,88 @@ func TestFormatConnectorCatalog_S1257PortalPathHonesty(t *testing.T) {
 	}
 	if strings.Contains(out, "Connected: yes") {
 		t.Fatalf("must not invent install green: %s", out)
+	}
+	if !strings.Contains(out, "https://console.iome.sh/integrations/add?template=github") {
+		t.Fatalf("HITL add: %s", out)
+	}
+	if !strings.Contains(out, "https://console.iome.sh/integrations/github") {
+		t.Fatalf("portal_path prefixed: %s", out)
+	}
+	if !strings.Contains(out, "template= ≠ APPLY") || !strings.Contains(out, "browser HITL") {
+		t.Fatalf("HITL honesty: %s", out)
+	}
+	if !strings.Contains(out, "catalog available ≠ Connected") {
+		t.Fatalf("catalog available honesty: %s", out)
+	}
+}
+
+// TestFormatConnectorCatalog_ConnectedIsCatalogNotInstall remaps Connected chips
+// to catalog:connected and prints console HITL URLs (template= ≠ APPLY).
+func TestFormatConnectorCatalog_ConnectedIsCatalogNotInstall(t *testing.T) {
+	raw := `{
+		"entries": [
+			{"id":"github","label":"GitHub","status":"Connected","mesh_layer":"operational",
+			 "oauth_install_supported":false,"portal_path":"/integrations/github"}
+		]
+	}`
+	out := formatConnectorCatalog(raw, "")
+	if !strings.Contains(out, "CATALOG") {
+		t.Fatalf("want CATALOG header: %s", out)
+	}
+	if !strings.Contains(out, "catalog:connected") {
+		t.Fatalf("want catalog:connected remap: %s", out)
+	}
+	for _, line := range strings.Split(out, "\n") {
+		fields := strings.Fields(line)
+		if len(fields) > 0 && fields[0] == "github" {
+			if strings.Contains(line, "Connected") && !strings.Contains(line, "catalog:connected") {
+				t.Fatalf("row must not print bare Connected: %s", line)
+			}
+		}
+	}
+	if !strings.Contains(out, "HITL https://console.iome.sh/integrations/add?template=github") {
+		t.Fatalf("HITL add URL: %s", out)
+	}
+	if !strings.Contains(out, "https://console.iome.sh/integrations/github") {
+		t.Fatalf("portal_path absolute: %s", out)
+	}
+	if !strings.Contains(out, "template= ≠ APPLY") || !strings.Contains(out, "browser HITL") {
+		t.Fatalf("HITL labels: %s", out)
+	}
+	if strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent APPLY: %s", out)
+	}
+}
+
+func TestIntegrationsHelp_HITLURLs(t *testing.T) {
+	out := IntegrationsHelp()
+	for _, want := range []string{
+		"https://console.iome.sh/integrations",
+		"https://console.iome.sh/integrations/{id}",
+		"https://console.iome.sh/integrations/add?template={id}",
+		"browser HITL",
+		"plan ≠ APPLY",
+		"catalog ≠ Connected",
+		"usage: /integrations",
+		"operator pulse",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("help missing %q:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent Connected: %s", out)
+	}
+}
+
+func TestFormatConnectorPlan_SynthesizePortalAddURL(t *testing.T) {
+	raw := `{"connector_id":"github","portal_url":"https://console.iome.sh/integrations/github"}`
+	out := formatConnectorPlan(raw, "github")
+	if !strings.Contains(out, "portal_add_url:") || !strings.Contains(out, "template=github") {
+		t.Fatalf("synthesized portal_add_url: %s", out)
+	}
+	if !strings.Contains(out, "not install APPLY") {
+		t.Fatalf("add honesty: %s", out)
 	}
 }
 
