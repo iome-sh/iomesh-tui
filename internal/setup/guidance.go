@@ -68,6 +68,18 @@ func SetupInitNextStepLines() []string {
 	}
 }
 
+// SetupInitMeshNextStepLines is appended after mesh / platform-mcp init (s2055).
+// IOMESH_TOKEN → reload → create stream → --messages. Create ≠ PULSE.
+// Infer ≠ Connected · catalog MCP ≠ hooks streams · mesh pub ephemeral ≠ consume.
+func SetupInitMeshNextStepLines() []string {
+	return []string{
+		"next (mesh): export IOMESH_TOKEN (env ref · never inline secret) · /setup reload (hot-swap mesh + MCP · infer ≠ Connected)",
+		"then: iomesh mesh streams --create --yes  # create ≠ PULSE",
+		"      iomesh mesh streams --messages --name OPERATIONAL_EVENTS",
+		"note: listed stream + 0 messages is still empty · catalog MCP ≠ hooks streams · mesh pub ephemeral ≠ /dashboard consume · dual_write OFF · not Memory GA",
+	}
+}
+
 // SetupPreflightNextStepLines residual-honest post-preflight next-step (s1699).
 // Dual path: in-session /setup reload when TUI running · cold CLI → restart.
 // CLI has no iomesh setup reload. dual_write OFF · package wire ≠ Connected · free eng s1699.

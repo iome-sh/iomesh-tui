@@ -115,24 +115,11 @@ func run(args []string) int {
 	// s675/s1530: wire [memory].pull_role / pull_allow_suffix onto Client so in-session
 	// continuous pull (and consumer create/fetch) send federated ACL headers.
 	// Fail-open empty → omit. dual_write remains report-only default OFF.
-	mesh := iomesh.New(iomesh.Config{
-		Enabled:         cfg.IOMesh.Enabled,
-		Endpoint:        cfg.IOMesh.Endpoint,
-		Tenant:          cfg.IOMesh.Tenant,
-		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
-		OrgID:           cfg.IOMesh.Org,
-		WorkspaceID:     cfg.IOMesh.Workspace,
-		DualWrite:       cfg.Memory.DualWrite, // report evidence only; does not gate memory_ingest probe
-		MemoryEndpoint:  cfg.Memory.Endpoint,  // optional sidecar for sync retrieve / auto-recall
-		EmitDeptStreams: cfg.IOMesh.EmitDeptStreams,
-		ContextPlane:    cfg.IOMesh.ContextPlane,
-		IncludeLineage:  cfg.IOMesh.IncludeLineage,
-		PolicyMode:      iomesh.PolicyMode(cfg.IOMesh.PolicyMode),
-		CatalogPlane:    cfg.IOMesh.CatalogPlane,
-		InjectCatalog:   cfg.IOMesh.InjectCatalog,
-		Role:            strings.TrimSpace(cfg.Memory.PullRole),
-		PullAllowSuffix: strings.TrimSpace(cfg.Memory.PullAllowSuffix),
-	}, logger)
+	// s2055: infer hooks from portal MCP when [iomesh] unset (infer ≠ Connected).
+	mesh, inf := runtimewire.NewMesh(cfg, logger)
+	if inf.Endpoint != "" {
+		fmt.Fprintf(os.Stderr, "note: inferred broker %s from portal MCP (catalog ≠ streams)\n", inf.Endpoint)
+	}
 	if mesh.Enabled() {
 		metrics = mesh
 	}
@@ -638,6 +625,11 @@ func cmdSetupInit(args []string) int {
 	for _, line := range setup.SetupInitNextStepLines() {
 		fmt.Println(line)
 	}
+	if setup.ProfilesWantMesh(profiles) {
+		for _, line := range setup.SetupInitMeshNextStepLines() {
+			fmt.Println(line)
+		}
+	}
 	return 0
 }
 
@@ -1105,23 +1097,9 @@ Flags (status):
 // applyInferredBroker fills [iomesh] from portal MCP when unset.
 // Infer ≠ Connected. --endpoint still wins. Empty infer does not invent Enabled.
 func applyInferredBroker(cfg *config.Config) {
-	if cfg == nil {
-		return
-	}
-	if cfg.IOMesh.Enabled && strings.TrimSpace(cfg.IOMesh.Endpoint) != "" {
-		return
-	}
-	inf := cfg.InferBrokerFromPortalMCP()
+	inf := config.ApplyInferredBroker(cfg)
 	if inf.Endpoint == "" {
 		return
-	}
-	cfg.IOMesh.Enabled = true
-	cfg.IOMesh.Endpoint = inf.Endpoint
-	if strings.TrimSpace(cfg.IOMesh.Tenant) == "" {
-		cfg.IOMesh.Tenant = inf.Tenant
-	}
-	if strings.TrimSpace(cfg.IOMesh.Org) == "" {
-		cfg.IOMesh.Org = inf.Org
 	}
 	fmt.Fprintf(os.Stderr, "note: inferred broker %s from portal MCP (catalog ≠ streams)\n", inf.Endpoint)
 }
@@ -1215,6 +1193,9 @@ func cmdMeshWait(args []string) int {
 		out = iomesh.FormatMeshWaitResultJSON(ev)
 	} else {
 		out = iomesh.FormatMeshWaitResult(ev)
+	}
+	if !mesh.Enabled() {
+		fmt.Fprintln(os.Stderr, iomesh.MeshDisabledHooksHint())
 	}
 	if ev.OK {
 		fmt.Print(out)
@@ -1327,6 +1308,9 @@ func cmdMeshStatus(args []string) int {
 		fmt.Print(iomesh.FormatMeshStatusJSON(out))
 	} else {
 		fmt.Print(iomesh.FormatMeshStatus(out))
+	}
+	if !mesh.Enabled() {
+		fmt.Fprintln(os.Stderr, iomesh.MeshDisabledHooksHint())
 	}
 	return out.ExitCode
 }
@@ -1498,9 +1482,7 @@ func cmdMeshStreams(args []string) int {
 	}, logger)
 	if !mesh.Enabled() {
 		fmt.Fprintln(os.Stderr, "FAIL mesh streams: mesh disabled")
-		fmt.Fprintln(os.Stderr, "hint: portal MCP (apiv1.iome.sh/v7/mcp) is catalog — streams are hooks.iome.sh")
-		fmt.Fprintln(os.Stderr, "hint: pass --endpoint https://hooks.iome.sh --tenant dept.engineering")
-		fmt.Fprintln(os.Stderr, "hint: or add [iomesh] enabled=true endpoint=\"https://hooks.iome.sh\" (setup mesh profile)")
+		fmt.Fprintln(os.Stderr, iomesh.MeshDisabledHooksHint())
 		return 1
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -1530,6 +1512,9 @@ func cmdMeshStreams(args []string) int {
 		// 409 already-exists is success (idempotent). Create ≠ PULSE.
 		fmt.Print("PASS mesh streams create\n")
 		fmt.Print(iomesh.FormatStreamDetail(*info))
+		for _, line := range iomesh.StreamsInboxNextStepLines() {
+			fmt.Println(line)
+		}
 		return 0
 	}
 
@@ -2098,8 +2083,16 @@ func cmdMeshPub(args []string) int {
 	} else {
 		payload = []byte(*payloadStr)
 	}
+	if !mesh.Enabled() {
+		fmt.Fprintln(os.Stderr, "FAIL mesh pub: mesh disabled")
+		fmt.Fprintln(os.Stderr, iomesh.MeshDisabledHooksHint())
+		return 1
+	}
 	if err := mesh.Pub(ctx, subj, payload, nil); err != nil {
 		fmt.Fprintf(os.Stderr, "FAIL mesh pub: %v\n", err)
+		if strings.Contains(err.Error(), "mesh disabled") {
+			fmt.Fprintln(os.Stderr, iomesh.MeshDisabledHooksHint())
+		}
 		return 1
 	}
 	// s732: always-emit PubPrint on pub success (mold StreamDeletePrint s726 + KVPutPrint s729).

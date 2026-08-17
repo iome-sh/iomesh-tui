@@ -35,6 +35,36 @@ func TestSetupInitNextStepLines_HonestyNeedles(t *testing.T) {
 	}
 }
 
+func TestSetupInitMeshNextStepLines_HonestyNeedles(t *testing.T) {
+	lines := SetupInitMeshNextStepLines()
+	if len(lines) == 0 {
+		t.Fatal("empty mesh next-step")
+	}
+	out := strings.Join(lines, "\n")
+	for _, want := range []string{
+		"IOMESH_TOKEN",
+		"/setup reload",
+		"iomesh mesh streams --create --yes",
+		"--messages",
+		"create ≠ PULSE",
+		"catalog MCP",
+		"hooks streams",
+		"mesh pub",
+		"/dashboard",
+		"dual_write OFF",
+		"not Memory GA",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("mesh next-step missing %q in:\n%s", want, out)
+		}
+	}
+	for _, bad := range []string{"Connected workspace", "dual_write ON", "Memory GA shipped", "HMAC APPLY"} {
+		if strings.Contains(out, bad) {
+			t.Fatalf("must not invent %q:\n%s", bad, out)
+		}
+	}
+}
+
 // s1699: setup preflight next-step dual path (in-session /setup reload vs cold restart).
 func TestSetupPreflightNextStepLines_HonestyNeedles(t *testing.T) {
 	lines := SetupPreflightNextStepLines()

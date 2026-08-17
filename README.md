@@ -185,8 +185,9 @@ knowledge Beta empty · analytics Beta empty · not GA
 
 Heartbeat
 no consumed messages · mock eval rows hidden
-create a mesh stream: console Settings → Mesh routing → Streams
-then iomesh mesh streams --messages --name OPERATIONAL_EVENTS
+add [iomesh] endpoint="https://hooks.iome.sh" or infer from portal MCP
+portal MCP (apiv1.iome.sh/v7/mcp) is catalog — streams are hooks.iome.sh
+infer ≠ Connected · do not invent consume
 /dashboard preview · eval template on iome.sh (not your org)
 ```
 

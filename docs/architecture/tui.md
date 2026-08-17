@@ -72,12 +72,14 @@ analysis  ops 0 · knowledge 0 · analytics 0  ·  Beta
 knowledge Beta empty · analytics Beta empty · not GA
 Heartbeat
 no consumed messages · mock eval rows hidden
+add [iomesh] endpoint="https://hooks.iome.sh" or infer from portal MCP
 ```
 
 - REPL `/dashboard` (no args): empty snapshot; **probe** if a mesh client is attached (`ListStreams` then `ListStreamMessages` on the first 4 names — same path as `iomesh mesh streams --messages` / broker `GET /v1/streams/{name}/messages`). **Not** portal `GET /v52` (cookie-only).
-- Fullscreen toggles an overlay. Tick is a no-op unless `/dashboard preview`. On open (non-preview) the same consume probe runs once if `Mesh()` is available.
+- When **no mesh client** (`consume missing`): tell the operator to add `[iomesh]` or infer hooks from portal MCP. Infer ≠ Connected. Do **not** invent consume.
+- Fullscreen toggles an overlay. Tick is a no-op unless `/dashboard preview`. On open (non-preview) the same consume probe runs once if `Mesh()` is available. `/setup reload` hot-swaps mesh when `[iomesh]` or inferred hooks change.
 - Fail-open reasons: `no_streams` · `empty_stream` · `replay_disabled` · `broker_unavailable`. Errors → empty + reason, never the eval seed.
-- **PULSE**-shaped rows only when ≥1 broker message was decoded. Never invent PULSE from eval or from a stream list alone.
+- **PULSE**-shaped rows only when ≥1 broker message was decoded. Never invent PULSE from eval or from a stream list alone. Create stream ≠ PULSE. Mesh pub is ephemeral and does not fill `/dashboard`.
 - Badge **EMPTY** (no mesh, no consume) / **CLIENT** (mesh attached, no consumed rows) / **PULSE** (≥1 decoded message) / **EVAL** (`/dashboard preview` only).
 - Knowledge / analytics stay **Beta**. Empty knowledge or analytics adds `knowledge Beta empty · analytics Beta empty · not GA`. `catalog ≠ Connected`. `dual_write OFF`. Not Memory GA. Not live APPLY. Kind from subject ≠ GA.
 

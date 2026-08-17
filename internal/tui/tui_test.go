@@ -4505,6 +4505,50 @@ func TestHandleSlash_SetupLifecycle(t *testing.T) {
 		t.Fatalf("init write must not advertise CLI setup reload without honesty:\n%s", initWrite)
 	}
 
+	// s2055: slash /setup init mesh|platform-mcp flags write hooks (not /v7/mcp).
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/setup init mesh --print-only --mesh-endpoint https://hooks.iome.sh --mesh-tenant dept.engineering")
+	meshPrint := out.String()
+	if !strings.Contains(meshPrint, "[iomesh]") || !strings.Contains(meshPrint, "https://hooks.iome.sh") {
+		t.Fatalf("mesh print-only want [iomesh] hooks:\n%s", meshPrint)
+	}
+	if strings.Contains(meshPrint, "apiv1.iome.sh/v7/mcp") && strings.Contains(meshPrint, "endpoint = \"https://apiv1") {
+		t.Fatalf("mesh endpoint must not be portal /v7/mcp:\n%s", meshPrint)
+	}
+	if !strings.Contains(meshPrint, "dept.engineering") {
+		t.Fatalf("mesh print-only want tenant:\n%s", meshPrint)
+	}
+
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/setup init platform-mcp --print-only --platform-mcp-url https://apiv1.iome.sh/v7/mcp")
+	platPrint := out.String()
+	if !strings.Contains(platPrint, "https://hooks.iome.sh") {
+		t.Fatalf("platform-mcp apiv1 must infer hooks:\n%s", platPrint)
+	}
+	if !strings.Contains(platPrint, "https://apiv1.iome.sh/v7/mcp") {
+		t.Fatalf("platform-mcp must still write catalog URL:\n%s", platPrint)
+	}
+
+	out.Reset()
+	meshCfg := filepath.Join(t.TempDir(), "setup-init-s2055.toml")
+	t.Setenv("IOMESH_CONFIG", meshCfg)
+	_, _ = handleSlash(&out, adapter, "/setup init mesh --mesh-endpoint https://hooks.iome.sh --mesh-tenant dept.engineering")
+	meshWrite := out.String()
+	if !strings.Contains(meshWrite, "setup init: wrote") {
+		t.Fatalf("mesh write confirmation missing: %s", meshWrite)
+	}
+	for _, want := range []string{
+		"IOMESH_TOKEN",
+		"--create --yes",
+		"--messages",
+		"create ≠ PULSE",
+		"catalog MCP",
+	} {
+		if !strings.Contains(meshWrite, want) {
+			t.Fatalf("mesh write next-step missing %q in:\n%s", want, meshWrite)
+		}
+	}
+
 	// preflight against missing config path (honest not_started / fail path)
 	out.Reset()
 	missing := filepath.Join(t.TempDir(), "no-such-config.toml")
@@ -4562,6 +4606,9 @@ func TestHandleSlash_SetupLifecycle(t *testing.T) {
 	}
 	if strings.Contains(rel, "Connected green") || strings.Contains(rel, "install APPLY green shipped") {
 		t.Fatalf("reload must not invent green: %s", rel)
+	}
+	if !strings.Contains(rel, "mesh detached") && !strings.Contains(rel, "mesh attached") {
+		t.Fatalf("reload must report mesh attach/detach: %s", rel)
 	}
 	// s1711 dual-path next-step footer after honesty
 	for _, want := range []string{
