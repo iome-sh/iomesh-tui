@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Dashboard consume honesty (#342 / #344 / this)** — `/dashboard` defaults **empty** (no mock P2 / Pulse 18). `/dashboard preview` is the iome.sh **eval template**, not your org. When a mesh client is attached, `/dashboard` probes broker `GET /v1/streams` + `GET /v1/streams/{name}/messages` (same path as `iomesh mesh streams --messages`) — **not** cookie-only `GET /v52`. Fail-open reasons: `no_streams` · `empty_stream` · `replay_disabled` · `broker_unavailable`. PULSE-shaped rows only when ≥1 message was decoded. Never invent PULSE from eval seed or stream list alone. Mesh auth: `IOMESH_TOKEN` then `IOMESH_API_KEY`; Org/Workspace headers on all mesh requests including stream list/messages.
+
 ## [0.77.0] — 2026-08-15
 
 Minor release: landing-page heartbeat dashboard in the TUI (`/dashboard`) plus README showcase. **Beta** · dual_write OFF · catalog ≠ Connected · not Memory GA · not live APPLY · eval template ≠ Connected.

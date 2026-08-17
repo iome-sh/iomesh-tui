@@ -20,6 +20,12 @@ func TestIsSecretEnv(t *testing.T) {
 	if !IsSecretEnv("DEEPSEEK_API_KEY") {
 		t.Fatal("expected secret")
 	}
+	if !IsSecretEnv("IOMESH_TOKEN") {
+		t.Fatal("IOMESH_TOKEN must be scrubbed")
+	}
+	if !IsSecretEnv("IOMESH_API_KEY") {
+		t.Fatal("IOMESH_API_KEY must be scrubbed")
+	}
 	if !IsSecretEnv("MY_CUSTOM_API_KEY") {
 		t.Fatal("suffix heuristic")
 	}

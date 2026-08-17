@@ -29,7 +29,7 @@ Official open-source tooling from [IOMesh](https://iome.sh) (**IOMesh Technology
 
 [![iomesh-tui /dashboard — landing MeshConsole eval template](docs/assets/dashboard-eval.svg)](docs/architecture/tui.md#dashboard-heartbeat-live-feed)
 
-`/dashboard` is the [iome.sh](https://iome.sh) landing MeshConsole, in this TUI. Same tenancy · pulse · heartbeat feed · agent-tool ALLOW/DENY analysis. **Eval template** — not your workspace, not [console.iome.sh](https://console.iome.sh). See [Dashboard](#dashboard-heartbeat-live-feed).
+`/dashboard` is empty until consume (probe broker `/v1` if a mesh client is attached). `/dashboard preview` is the [iome.sh](https://iome.sh) landing MeshConsole **eval template** — not your workspace, not [console.iome.sh](https://console.iome.sh). See [Dashboard](#dashboard-heartbeat-live-feed).
 
 ## Table of contents
 
@@ -137,7 +137,7 @@ Local agent + local memory path (no invent Connected / Memory GA · dual_write d
 1. Set an LLM key (`DEEPSEEK_API_KEY` / `XAI_API_KEY` / …) **or** pin Ollama (`-m ollama-llama3.2`).
 2. Run the TUI: `./bin/iomesh` (or `iomesh` if installed).
 3. In-session setup: `/setup init` `local-memory` · `/setup preflight` · start `iomesh-memory-mcp` if needed · `/setup reload` (hot-swaps MCP **and** re-scans skills · package wire ≠ Connected). Cold CLI path: `iomesh setup init` → restart `iomesh` · `iomesh setup preflight` (CLI has **no** `setup reload` · free eng s1686). After preflight, same dual path is printed on the report (in-session `/setup reload` vs cold restart · free eng **s1699**).
-4. Offline maps when you want a residual-honest board (no MCP dial): `/onboard next journey` · `/onboard next setup` · `/onboard next wizard` · `/onboard next marketing-demo` · `/onboard next memory` (local-primary · Ops Pack not first-run required). Optional peek at the landing heartbeat: `/dashboard` (eval template · see [below](#dashboard-heartbeat-live-feed)).
+4. Offline maps when you want a residual-honest board (no MCP dial): `/onboard next journey` · `/onboard next setup` · `/onboard next wizard` · `/onboard next marketing-demo` · `/onboard next memory` (local-primary · Ops Pack not first-run required). Optional peek at the landing heartbeat: `/dashboard preview` (eval template · `/dashboard` stays empty until consume · see [below](#dashboard-heartbeat-live-feed)).
 
 Optional: copy [`.env.example`](.env.example) for local env vars (iomesh reads the **process environment**; it does not auto-load `.env` files yet). Copy [`configs/config.example.toml`](configs/config.example.toml) to `~/.iomesh/config.toml` to customize.
 
@@ -159,25 +159,40 @@ The marketing site widget and this slash are the **same analysis**, different ch
 | Surface | What it is | What you see |
 |---------|------------|--------------|
 | [iome.sh](https://iome.sh) MeshConsole | Landing-page demo widget | Eval template (HOME_PROOF seed) |
-| **TUI `/dashboard`** | Local harness overlay / REPL snapshot | **Same eval template** |
+| **TUI `/dashboard`** | Local harness overlay / REPL snapshot | **Empty** (probe broker `/v1` if mesh attached) |
+| **TUI `/dashboard preview`** | Opt-in eval template | iome.sh MeshConsole seed — **not** your org |
 | [console.iome.sh](https://console.iome.sh) | Paid Base workspace UI | Your workspace when billed — **not** this slash |
 
-No GIF of a live tenant. The fullscreen overlay ticks the public seed every 2.6s (same cadence as the site). A recorded tenant GIF would invent Connected.
+No GIF of a live tenant. Default `/dashboard` stays **empty** until consume (`ListStreams` + `ListStreamMessages` on the broker — **not** cookie-only `GET /v52`). `/dashboard preview` ticks the public seed every 2.6s (same cadence as the site). A recorded tenant GIF would invent Connected.
 
 ```text
 ./bin/iomesh                 # TTY → full-screen
 # then:
-/dashboard                   # toggle overlay
+/dashboard                   # toggle overlay (empty until consume)
+/dashboard preview           # opt-in eval template (not your org)
 /dashboard focus eng.ops     # tenancy
 /heartbeat help              # aliases: /heartbeat /mesh-console
 ```
 
 Fullscreen keys: **esc** / **q** close · **tab** cycle tenancy · **1–4** jump `sre.incidents` / `eng.ops` / `cs.tickets` / `gtm.pipeline`.
 
-Example (same seed the renderer prints; badge **EVAL** = no mesh client):
+Example (default **EMPTY** — no consume yet; badge **EMPTY** = no mesh client):
 
 ```text
-● context://mesh · sre.incidents · policy-gated MCP          EVAL
+● context://mesh · no live heartbeat · consume missing · sre.incidents     EMPTY
+▁▁▂█▃▁▁▁▂█▃▁▁▁   analysis  ops 0 · knowledge 0 · analytics 0 · Beta
+
+Heartbeat
+no consumed messages · mock eval rows hidden
+create a mesh stream: console Settings → Mesh routing → Streams
+then iomesh mesh streams --messages --name OPERATIONAL_EVENTS
+/dashboard preview · eval template on iome.sh (not your org)
+```
+
+Example (`/dashboard preview` — eval template, not your org; badge **EVAL**):
+
+```text
+● context://mesh · eval template preview · not your org · sre.incidents     EVAL
 ▁▁▂█▃▁▁▁▂█▃▁▁▁   analysis  ops 3 · knowledge 1 · analytics 1 · Beta
 
 Tenancy            Heartbeat                         Agent tools
@@ -188,7 +203,7 @@ Tenancy            Heartbeat                         Agent tools
 Pulse 18 / min     14:02:39  analytics  gtm.pipeline
 ```
 
-Honesty: eval template · `catalog ≠ Connected` · `dual_write OFF` · knowledge/analytics **Beta** · not Memory GA · not live APPLY · **CLIENT** badge only means a mesh client is configured — still this template until you pull a real stream. Full notes: [tui.md](docs/architecture/tui.md#dashboard-heartbeat-live-feed) · asset: [docs/assets/dashboard-eval.svg](docs/assets/dashboard-eval.svg).
+Honesty: default empty until consume · `/dashboard preview` is eval template not your org · `catalog ≠ Connected` · `dual_write OFF` · knowledge/analytics **Beta** · not Memory GA · not live APPLY · **CLIENT** badge only means a mesh client is configured — listed streams ≠ live pulse · **PULSE** only after ≥1 decoded broker message. Full notes: [tui.md](docs/architecture/tui.md#dashboard-heartbeat-live-feed) · asset: [docs/assets/dashboard-eval.svg](docs/assets/dashboard-eval.svg).
 
 ## CLI
 

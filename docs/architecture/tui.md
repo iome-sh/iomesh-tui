@@ -32,7 +32,7 @@ During **approval**, the footer becomes a focused y/n/a bar.
 | **Ctrl+J** / Alt+Enter / Shift+Enter | Insert newline (multi-line edit) |
 | PgUp / Ctrl+U | Scroll transcript up |
 | PgDn / Ctrl+D | Scroll transcript down |
-| `/dashboard` | Toggle landing-page heartbeat live-feed overlay |
+| `/dashboard` | Toggle overlay (empty until consume; probe if mesh attached) |
 | Esc / q | Close dashboard overlay (or dismiss help) |
 | Tab / 1–4 | Dashboard: cycle or jump tenancy |
 | Ctrl+C | Quit |
@@ -62,28 +62,27 @@ iomesh> /theme high-contrast
 
 ## Dashboard (heartbeat live feed)
 
-Landing-page MeshConsole, in the TUI. Same tenancy / pulse / heartbeat / agent-tools analysis as [iome.sh](https://iome.sh) (`/dashboard`, aliases `/heartbeat` `/mesh-console`). README showcase: [dashboard-eval.svg](../assets/dashboard-eval.svg).
+Landing-page MeshConsole chrome, in the TUI (`/dashboard`, aliases `/heartbeat` `/mesh-console`). Default `/dashboard` is **empty until consume**. `/dashboard preview` is the public **evaluation template** (HOME_PROOF / MeshConsole seed) — not your org. README showcase: [dashboard-eval.svg](../assets/dashboard-eval.svg).
 
 ```text
-● context://mesh · sre.incidents · policy-gated MCP          EVAL
+● context://mesh · no live heartbeat · consume missing · sre.incidents     EMPTY
 ──────────────── pulse ────────────────────────────────────────
 ▁▁▂█▃▁▁▁▂█▃▁▁▁
-analysis  ops n · knowledge n · analytics n  ·  Beta
-Tenancy          Heartbeat                     Agent tools
-sre.incidents    14:02:11 ops sre.incidents    mesh.ops.pull
-eng.ops          P2 opened — checkout p95      ALLOW
-…                …                             DENY
-Pulse 18
-events / min
+analysis  ops 0 · knowledge 0 · analytics 0  ·  Beta
+Heartbeat
+no consumed messages · mock eval rows hidden
 ```
 
-- REPL prints a snapshot. Fullscreen toggles a ticking overlay (2.6s, same cadence as the site).
-- Feed is the public **evaluation template** (HOME_PROOF / MeshConsole seed). Not your workspace. `catalog ≠ Connected`.
-- Badge **EVAL** with no mesh client; **CLIENT** only means a mesh client is configured — still a template feed until you pull a real stream.
-- Knowledge / analytics stay **Beta**. `dual_write OFF`. Not Memory GA. Not live APPLY.
+- REPL `/dashboard` (no args): empty snapshot; **probe** if a mesh client is attached (`ListStreams` then `ListStreamMessages` on the first 4 names — same path as `iomesh mesh streams --messages` / broker `GET /v1/streams/{name}/messages`). **Not** portal `GET /v52` (cookie-only).
+- Fullscreen toggles an overlay. Tick is a no-op unless `/dashboard preview`. On open (non-preview) the same consume probe runs once if `Mesh()` is available.
+- Fail-open reasons: `no_streams` · `empty_stream` · `replay_disabled` · `broker_unavailable`. Errors → empty + reason, never the eval seed.
+- **PULSE**-shaped rows only when ≥1 broker message was decoded. Never invent PULSE from eval or from a stream list alone.
+- Badge **EMPTY** (no mesh, no consume) / **CLIENT** (mesh attached, no consumed rows) / **PULSE** (≥1 decoded message) / **EVAL** (`/dashboard preview` only).
+- Knowledge / analytics stay **Beta**. `catalog ≠ Connected`. `dual_write OFF`. Not Memory GA. Not live APPLY.
 
 ```text
 iomesh> /dashboard
+iomesh> /dashboard preview
 iomesh> /dashboard focus eng.ops
 iomesh> /heartbeat help
 ```

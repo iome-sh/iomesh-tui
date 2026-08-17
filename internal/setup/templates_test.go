@@ -49,6 +49,7 @@ func TestBuildManagedFragment_All(t *testing.T) {
 	}
 	for _, needle := range []string{
 		"[iomesh]",
+		`api_key_env = "IOMESH_TOKEN"`,
 		"aion-platform",
 		"[plugins]",
 		"dirs = [\"/tmp/plugins\"]",
