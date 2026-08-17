@@ -758,7 +758,9 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1402: AionAgentOnboardingNextMeshLane residual-honest mesh streaming lane needles.
+// s1402+s2057: AionAgentOnboardingNextMeshLane residual-honest mesh streaming lane needles.
+// s2057 adds integrate-app steps (infer · IOMESH_TOKEN · --create --yes · durable · --messages / /dashboard)
+// without dropping s1402 honesty tokens.
 func TestAionAgentOnboardingNextMeshLane_HonestyNeedles(t *testing.T) {
 	out := AionAgentOnboardingNextMeshLane()
 	if out == "" {
@@ -804,6 +806,17 @@ func TestAionAgentOnboardingNextMeshLane_HonestyNeedles(t *testing.T) {
 		"/onboard next memory",
 		"not medical",
 		"board/export evidence ≠ invent Connected",
+		// s2057 integrate-app steps (create/durable language; no new rate needles)
+		"[iomesh]",
+		"infer from portal MCP",
+		"infer ≠ Connected",
+		"IOMESH_TOKEN",
+		"iomesh mesh streams --create --yes",
+		"create ≠ PULSE",
+		"durable event",
+		"--messages",
+		"/dashboard",
+		"mesh pub ephemeral ≠ consume",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("mesh lane missing %q in:\n%s", want, out)

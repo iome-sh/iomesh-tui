@@ -448,33 +448,40 @@ func AionAgentOnboardingNextMemoryLane() string {
 Locks: dual_write OFF · book-demo OFF · not Memory GA · Palace sunset · residual PASS ≠ live dogfood · offline dogfood tip ≠ invent live dogfood as green · PASS ≠ live APPLY · PASS ≠ invent full platform sidecar parity · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · no GOPRIVATE · go install · package load ≠ Memory GA · ≠ freemium palace · not freemium hosted palace · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · rates ~$88/$119 optional · Memory Ops Pack optional · Ops Pack not first-run required · OSS first-run complete without mesh · mesh ≠ memory · mesh optional · mesh optional for pull · Ops Pack ≠ GPU fleet · TUI OSS · iomesh-memory-mcp · aion broker private · aion still private · s1517 product-only memory sample (iomesh-memory-mcp) · companion E4 soft residual s1566 · deeper tool-call soft residual s1578 · free eng s1695`)
 }
 
-// AionAgentOnboardingNextMeshLane residual-honest mesh streaming lane for /onboard next mesh (s1402).
+// AionAgentOnboardingNextMeshLane residual-honest mesh streaming lane for /onboard next mesh (s1402+s2057).
 // Static offline — I/O Mesh = streaming org heartbeats / governed dept.* (product plane 1).
+// After s2055: buyer/operator steps match shipped CLI ( [iomesh] or infer · IOMESH_TOKEN ·
+// --create --yes · durable event · --messages / /dashboard ).
+// Infer ≠ Connected · create ≠ PULSE · mesh pub ephemeral ≠ consume.
 // NOT hosted Memory Palace · not OTel/APM · not medical · mesh ≠ memory lane.
-// Operator residual soft only (status/streams/consumers) · never invent stream green / Connected.
+// Operator residual soft (status/streams/consumers) · never invent stream green / Connected.
 // Pull honesty: iomesh memory pull = mesh egress into local palace · dual_write OFF · not freemium hosted palace.
-// Rates: mesh base ~$88 · Memory Ops Pack ~$119 pull/retain/support.
+// Rates: existing lock dump ~$88/$119 optional (no new rate needles).
 func AionAgentOnboardingNextMeshLane() string {
-	return strings.TrimSpace(`aion onboard next mesh lane (residual-honest · s1402 · no MCP dial · product plane 1):
+	return strings.TrimSpace(`aion onboard next mesh lane (residual-honest · s1402+s2057 · no MCP dial · product plane 1):
   Path: I/O Mesh = streaming org heartbeats on governed dept.* — NOT hosted Memory Palace · not OTel/APM
   Separation: mesh ≠ memory · mesh lane ≠ plugins/gtm lanes · pull ≠ freemium hosted palace · Palace sunset
-  Steps:
-    1. Residual soft operator: /mesh · iomesh mesh status (fail-open offline · never invent stream green / Connected)
-    2. Streams residual: iomesh mesh streams — empty streams honest · streams_not_probed until operator probes
-    3. Consumers residual: iomesh mesh consumer (durable pull consumers · residual soft · requires --yes when mutating)
-    4. Pull honesty: iomesh memory pull = mesh → local palace egress · dual_write OFF · not freemium hosted palace · not Memory GA
+  Steps (integrate-app · s2055 shipped CLI):
+    1. Wire: add [iomesh] or infer from portal MCP (catalog MCP ≠ hooks streams · infer ≠ Connected)
+    2. Auth: export IOMESH_TOKEN (env ref · never inline secret) · /setup reload (hot-swap mesh · infer ≠ Connected)
+    3. Create: iomesh mesh streams --create --yes  # create ≠ PULSE (listed stream + 0 messages is still empty)
+    4. Durable: wait for a durable event from your app or console tap — empty streams honest · streams_not_probed until operator probes
+    5. Consume: iomesh mesh streams --messages · /dashboard (mesh pub ephemeral ≠ consume)
+    Residual soft: /mesh · iomesh mesh status · iomesh mesh consumer (durable pull consumers · residual soft · requires --yes when mutating) · never invent stream green / Connected
+    Pull honesty: iomesh memory pull = mesh → local palace egress · dual_write OFF · not freemium hosted palace · not Memory GA
   Honesty:
     · mesh = streaming org heartbeats · not OTel/APM · not medical · not hosted Memory Palace
     · mesh ≠ memory · memory lane is local-edge palace; mesh lane is streaming heartbeats
     · never invent stream green / Connected · empty streams honest · streams_not_probed residual
+    · infer ≠ Connected · create ≠ PULSE · mesh pub ephemeral ≠ consume · catalog MCP ≠ hooks streams
     · residual PASS ≠ live dogfood · PASS ≠ live APPLY · dual_write OFF · book-demo OFF
     · pull ≠ freemium hosted palace · package load ≠ Memory GA · rates ~$88 mesh / ~$119 Memory Ops Pack optional
     · catalog ≠ Connected · portal HITL · agent MCP cannot write installs
   Slash: /onboard next mesh (aliases stream|streams|heartbeat|heartbeats|pull) · NOT pulse (pulse stays /onboard next status board)
-  Companion: /mesh · iomesh mesh status|streams|consumer · iomesh memory pull (egress only · dual_write OFF)
+  Companion: /mesh · iomesh mesh status|streams|consumer · iomesh mesh streams --create --yes · --messages · /dashboard · iomesh memory pull (egress only · dual_write OFF)
   Back: /onboard next · /onboard next status · /onboard next memory (separate local-edge lane)
 
-Locks: dual_write OFF · book-demo OFF · not Memory GA · Palace sunset · residual PASS ≠ live dogfood · PASS ≠ live APPLY · mesh = streaming org heartbeats · mesh ≠ memory · not OTel/APM · not medical · never invent stream green / Connected / INSTALL_STORE APPLY · empty streams honest · streams_not_probed · pull ≠ freemium hosted palace · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · rates ~$88/$119 optional · board/export evidence ≠ invent Connected`)
+Locks: dual_write OFF · book-demo OFF · not Memory GA · Palace sunset · residual PASS ≠ live dogfood · PASS ≠ live APPLY · mesh = streaming org heartbeats · mesh ≠ memory · not OTel/APM · not medical · never invent stream green / Connected / INSTALL_STORE APPLY · empty streams honest · streams_not_probed · infer ≠ Connected · create ≠ PULSE · mesh pub ephemeral ≠ consume · pull ≠ freemium hosted palace · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · rates ~$88/$119 optional · board/export evidence ≠ invent Connected`)
 }
 
 // AionAgentOnboardingNextMemoryPullLane residual-honest Memory Ops Pack pull path for
