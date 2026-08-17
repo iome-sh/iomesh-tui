@@ -1460,6 +1460,19 @@ func cmdMeshStreams(args []string) int {
 	if *tenant != "" {
 		cfg.IOMesh.Tenant = *tenant
 	}
+	if !cfg.IOMesh.Enabled || strings.TrimSpace(cfg.IOMesh.Endpoint) == "" {
+		if inf := cfg.InferBrokerFromPortalMCP(); inf.Endpoint != "" {
+			cfg.IOMesh.Enabled = true
+			cfg.IOMesh.Endpoint = inf.Endpoint
+			if strings.TrimSpace(cfg.IOMesh.Tenant) == "" {
+				cfg.IOMesh.Tenant = inf.Tenant
+			}
+			if strings.TrimSpace(cfg.IOMesh.Org) == "" {
+				cfg.IOMesh.Org = inf.Org
+			}
+			fmt.Fprintf(os.Stderr, "note: inferred broker %s from portal MCP (catalog ≠ streams)\n", inf.Endpoint)
+		}
+	}
 	mesh := iomesh.New(iomesh.Config{
 		Enabled:     cfg.IOMesh.Enabled,
 		Endpoint:    cfg.IOMesh.Endpoint,
@@ -1468,6 +1481,13 @@ func cmdMeshStreams(args []string) int {
 		OrgID:       cfg.IOMesh.Org,
 		WorkspaceID: cfg.IOMesh.Workspace,
 	}, logger)
+	if !mesh.Enabled() {
+		fmt.Fprintln(os.Stderr, "FAIL mesh streams: mesh disabled")
+		fmt.Fprintln(os.Stderr, "hint: portal MCP (apiv1.iome.sh/v7/mcp) is catalog — streams are hooks.iome.sh")
+		fmt.Fprintln(os.Stderr, "hint: pass --endpoint https://hooks.iome.sh --tenant dept.engineering")
+		fmt.Fprintln(os.Stderr, "hint: or add [iomesh] enabled=true endpoint=\"https://hooks.iome.sh\" (setup mesh profile)")
+		return 1
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)

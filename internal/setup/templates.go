@@ -3,6 +3,8 @@ package setup
 import (
 	"fmt"
 	"strings"
+
+	"github.com/iome-sh/iomesh-tui/internal/config"
 )
 
 // Profile selects which managed fragment sections to emit.
@@ -126,13 +128,17 @@ func BuildManagedFragment(profiles []Profile, opt InitOptions) (string, error) {
 		b.WriteString("enabled = true\n\n")
 	}
 
-	if want[ProfileMesh] {
+	meshEP := strings.TrimSpace(opt.MeshEndpoint)
+	if meshEP == "" {
+		meshEP = config.InferHooksEndpoint(opt.PlatformMCPURL)
+	}
+	if want[ProfileMesh] || (want[ProfilePlatformMCP] && meshEP != "") {
 		b.WriteString("[iomesh]\n")
 		b.WriteString("enabled = true\n")
-		if ep := strings.TrimSpace(opt.MeshEndpoint); ep != "" {
-			fmt.Fprintf(&b, "endpoint = %q\n", ep)
+		if meshEP != "" {
+			fmt.Fprintf(&b, "endpoint = %q  # broker streams; not portal /v7/mcp\n", meshEP)
 		} else {
-			b.WriteString("# endpoint = \"https://your-mesh.example\"  # set after portal signup\n")
+			b.WriteString("# endpoint = \"https://hooks.iome.sh\"  # broker; portal MCP is catalog only\n")
 		}
 		if t := strings.TrimSpace(opt.MeshTenant); t != "" {
 			fmt.Fprintf(&b, "tenant = %q\n", t)
