@@ -1544,3 +1544,23 @@ func TestStreamsPrint_JSONCompletenessPin(t *testing.T) {
 		t.Fatalf("delete populated must not invent pull_role: %s", delPopJS)
 	}
 }
+
+func TestFormatStreamPayloadPreview_PeelsStackedObservation(t *testing.T) {
+	t.Parallel()
+	inner := []byte(`{"event_type":"create","repository":{"full_name":"iome-sh/aion"}}`)
+	env := []byte(`{"v":1,"type":"observation","payload":` + string(inner) + `}`)
+	stacked := []byte(base64.StdEncoding.EncodeToString(env))
+	got := FormatStreamPayloadPreview(stacked)
+	if strings.HasPrefix(got, "eyJ") {
+		t.Fatalf("still stacked: %q", got)
+	}
+	if !strings.Contains(got, "create") || !strings.Contains(got, "iome-sh/aion") {
+		t.Fatalf("preview=%q", got)
+	}
+	text := FormatStreamMessagesPrint(NewStreamMessagesPrint("OPERATIONAL_EVENTS", 0, 0, 20, []StreamMessage{{
+		Seq: 1, Subject: "dept.engineering.events.github", Payload: stacked,
+	}}))
+	if !strings.Contains(text, "PREVIEW") || strings.Contains(text, "eyJ") {
+		t.Fatalf("table:\n%s", text)
+	}
+}
