@@ -86,6 +86,12 @@ func TestProbeDashboardConsume_NoStreams(t *testing.T) {
 	if strings.Contains(out, "PULSE") {
 		t.Fatalf("must not invent PULSE from empty list:\n%s", out)
 	}
+	if !strings.Contains(out, "or: iomesh mesh streams --create --yes") {
+		t.Fatalf("missing create CTA:\n%s", out)
+	}
+	if !strings.Contains(out, "Mesh routing") {
+		t.Fatalf("must keep console Settings path:\n%s", out)
+	}
 }
 
 func TestProbeDashboardConsume_EmptyStream(t *testing.T) {

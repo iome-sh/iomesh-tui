@@ -130,6 +130,124 @@ func (c *Client) DeleteStream(ctx context.Context, name string) error {
 	return nil
 }
 
+// Console-matching create defaults (Temp 7d limits). Never send retention_tier
+// on the create wire — broker classifies; do not invent unpaid 403.
+const (
+	defaultCreateRetention          = "limits"
+	defaultCreateMaxAgeSec          = int64(604800)
+	defaultCreateMaxMsgs            = int64(1_000_000)
+	defaultOperationalEventsName    = "OPERATIONAL_EVENTS"
+	defaultOperationalEventsSubject = "dept.engineering.events.github"
+)
+
+// StreamCreateConfig is the operator-facing create input. Retention knobs are
+// filled by CreateStream (console defaults). No RetentionTier field — omitted
+// on the wire.
+type StreamCreateConfig struct {
+	Name        string
+	Subjects    []string
+	Description string
+}
+
+// DefaultOperationalEventsCreate returns console defaults for OPERATIONAL_EVENTS.
+// Subject: empty tenant → dept.engineering.events.github; tenant already
+// starting with "dept." → tenant+".events.github"; else "dept."+tenant+".events.github".
+func DefaultOperationalEventsCreate(tenant string) StreamCreateConfig {
+	tenant = strings.TrimSpace(tenant)
+	subject := defaultOperationalEventsSubject
+	if tenant != "" {
+		if strings.HasPrefix(tenant, "dept.") {
+			subject = tenant + ".events.github"
+		} else {
+			subject = "dept." + tenant + ".events.github"
+		}
+	}
+	return StreamCreateConfig{
+		Name:     defaultOperationalEventsName,
+		Subjects: []string{subject},
+	}
+}
+
+// CreateStream registers a broker stream via POST /v1/streams.
+// Body: name, subjects, retention=limits, max_age_sec=604800, max_msgs=1000000,
+// optional description. retention_tier is never sent.
+// 201 decodes StreamInfo. 409 Conflict is success (idempotent): GetStream, or
+// &StreamInfo{Name} if get fails. Empty name / no subjects / other non-2xx → error.
+// Mesh disabled → "mesh disabled". Mutating — CLI gates with --create --yes.
+// Create ≠ PULSE (listed stream with 0 messages is still empty_stream).
+func (c *Client) CreateStream(ctx context.Context, cfg StreamCreateConfig) (*StreamInfo, error) {
+	if c == nil || !c.Enabled() {
+		return nil, fmt.Errorf("mesh disabled")
+	}
+	name := strings.TrimSpace(cfg.Name)
+	if name == "" {
+		return nil, fmt.Errorf("iomesh streams: stream name required")
+	}
+	subjects := make([]string, 0, len(cfg.Subjects))
+	for _, s := range cfg.Subjects {
+		if s = strings.TrimSpace(s); s != "" {
+			subjects = append(subjects, s)
+		}
+	}
+	if len(subjects) == 0 {
+		return nil, fmt.Errorf("iomesh streams: subject required")
+	}
+	reqBody := struct {
+		Name        string   `json:"name"`
+		Subjects    []string `json:"subjects"`
+		Retention   string   `json:"retention"`
+		MaxAgeSec   int64    `json:"max_age_sec"`
+		MaxMsgs     int64    `json:"max_msgs"`
+		Description string   `json:"description,omitempty"`
+	}{
+		Name:        name,
+		Subjects:    subjects,
+		Retention:   defaultCreateRetention,
+		MaxAgeSec:   defaultCreateMaxAgeSec,
+		MaxMsgs:     defaultCreateMaxMsgs,
+		Description: strings.TrimSpace(cfg.Description),
+	}
+	body, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, err
+	}
+	u := strings.TrimRight(c.cfg.Endpoint, "/") + "/v1/streams"
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	c.auth(req)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode == http.StatusConflict {
+		if info, getErr := c.GetStream(ctx, name); getErr == nil && info != nil {
+			return info, nil
+		}
+		return &StreamInfo{Name: name}, nil
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("iomesh streams: http %d", resp.StatusCode)
+	}
+	var info StreamInfo
+	if len(bytes.TrimSpace(raw)) > 0 {
+		if err := json.Unmarshal(raw, &info); err != nil {
+			return nil, err
+		}
+	}
+	if info.Name == "" {
+		info.Name = name
+	}
+	return &info, nil
+}
+
 func decodeStreamsList(raw []byte) ([]StreamInfo, error) {
 	raw = bytes.TrimSpace(raw)
 	if len(raw) == 0 {

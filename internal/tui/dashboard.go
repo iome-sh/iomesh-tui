@@ -33,6 +33,7 @@ fullscreen: esc/q close · tab cycle tenancy · 1-4 jump
 probe:    iomesh mesh streams --messages / broker GET /v1/streams/{name}/messages
           (not portal GET /v52 — cookie-only, TUI must not call it)
 setup:    console Settings → Mesh routing → Streams (OPERATIONAL_EVENTS)
+          or: iomesh mesh streams --create --yes
           then iomesh mesh streams --messages --name OPERATIONAL_EVENTS
 honesty: ` + DashboardHonestyOneLiner)
 }
@@ -372,8 +373,10 @@ func (d *dashboardState) renderFeed(th Theme, width int) string {
 			b.WriteByte('\n')
 			b.WriteString(th.Dim.Render("probe uses mesh streams --messages / broker /v1 · not /v52"))
 		default:
-			// no_streams and consume missing: existing create-stream CTA
+			// no_streams and consume missing: create-stream CTA (create ≠ PULSE)
 			b.WriteString(th.Dim.Render("create a mesh stream: console Settings → Mesh routing → Streams"))
+			b.WriteByte('\n')
+			b.WriteString(th.Dim.Render("or: iomesh mesh streams --create --yes"))
 			b.WriteByte('\n')
 			b.WriteString(th.Dim.Render("then iomesh mesh streams --messages --name OPERATIONAL_EVENTS"))
 		}

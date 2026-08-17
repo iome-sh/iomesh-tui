@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Mesh streams create (s2038)** — lean `CreateStream` (`POST /v1/streams`; console defaults `OPERATIONAL_EVENTS` / `dept.{tenant}.events.github`; `retention=limits` · `max_age_sec=604800` · `max_msgs=1000000`; **no** `retention_tier` on the create wire). 201 decodes `StreamInfo`; **409 Conflict = success** (idempotent — `GetStream` or name-only). CLI `iomesh mesh streams --create --yes` (`--name` defaults `OPERATIONAL_EVENTS`; `--subject` override; incompatible with `--delete` / `--messages`). Text: `PASS mesh streams create` + `FormatStreamDetail`; JSON: `StreamInfoPrint`. Create ≠ PULSE (listed stream + 0 messages is still empty). HITL stays OPEN. Do not invent unpaid 403 (raw `http 403`). Dashboard empty CTA adds `or: iomesh mesh streams --create --yes` (console Settings path kept). Docs: [mesh-deeper.md](docs/architecture/mesh-deeper.md).
+
 ### Changed
 
 - **Dashboard consume honesty (#342 / #344 / this)** — `/dashboard` defaults **empty** (no mock P2 / Pulse 18). `/dashboard preview` is the iome.sh **eval template**, not your org. When a mesh client is attached, `/dashboard` probes broker `GET /v1/streams` + `GET /v1/streams/{name}/messages` (same path as `iomesh mesh streams --messages`) — **not** cookie-only `GET /v52`. Fail-open reasons: `no_streams` · `empty_stream` · `replay_disabled` · `broker_unavailable`. PULSE-shaped rows only when ≥1 message was decoded. Never invent PULSE from eval seed or stream list alone. Mesh auth: `IOMESH_TOKEN` then `IOMESH_API_KEY`; Org/Workspace headers on all mesh requests including stream list/messages.
