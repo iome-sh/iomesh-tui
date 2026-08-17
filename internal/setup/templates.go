@@ -33,7 +33,7 @@ type InitOptions struct {
 	MeshEndpoint string
 	// MeshTenant optional.
 	MeshTenant string
-	// MeshAPIKeyEnv env var name only (default IOMESH_API_KEY).
+	// MeshAPIKeyEnv env var name only (default IOMESH_TOKEN).
 	MeshAPIKeyEnv string
 	// PlatformMCPURL streamable HTTP from portal Agent/MCP panel.
 	PlatformMCPURL string
@@ -55,7 +55,7 @@ func DefaultInitOptions() InitOptions {
 		MemoryHTTPURL:    "http://127.0.0.1:8080/mcp",
 		MemoryServer:     "iomesh-memory-mcp",
 		MemoryTenant:     "default",
-		MeshAPIKeyEnv:    "IOMESH_API_KEY",
+		MeshAPIKeyEnv:    "IOMESH_TOKEN",
 		PlatformMCPName:  "aion-platform",
 		PlatformTokenEnv: "IOMESH_TOKEN",
 		AutoRecall:       true,

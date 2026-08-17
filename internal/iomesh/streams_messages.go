@@ -81,9 +81,33 @@ func (c *Client) ListStreamMessages(ctx context.Context, name string, opts ListS
 		return nil, err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("iomesh streams: http %d", resp.StatusCode)
+		return nil, streamMessagesHTTPError(resp.StatusCode, body)
 	}
 	return decodeStreamMessages(body)
+}
+
+// streamMessagesHTTPError keeps the existing "http N" token (tests + scrapers) and
+// appends a short body snippet so consume can map 403 replay_disabled without
+// inventing a reason from status alone.
+func streamMessagesHTTPError(status int, body []byte) error {
+	snippet := strings.TrimSpace(string(body))
+	if len(snippet) > 160 {
+		snippet = snippet[:160]
+	}
+	if snippet == "" {
+		return fmt.Errorf("iomesh streams: http %d", status)
+	}
+	return fmt.Errorf("iomesh streams: http %d: %s", status, snippet)
+}
+
+// IsReplayDisabled reports whether err is a broker 403 replay_disabled gate
+// (GET /v1/streams/{name}/messages without tenant or AION_MEMORY_REPLAY_ENABLED).
+func IsReplayDisabled(err error) bool {
+	if err == nil {
+		return false
+	}
+	s := err.Error()
+	return strings.Contains(s, "http 403") && strings.Contains(s, "replay_disabled")
 }
 
 type wireStreamMessage struct {

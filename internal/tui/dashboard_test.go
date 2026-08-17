@@ -154,17 +154,23 @@ func TestReadmeDashboardShowcase(t *testing.T) {
 	for _, n := range []string{
 		"docs/assets/dashboard-eval.svg",
 		"/dashboard",
+		"preview",
 		"MeshConsole",
 		"console.iome.sh",
 		"EVAL",
+		"EMPTY",
 		"catalog ≠ Connected",
 		"dual_write OFF",
 		"not live APPLY",
 		"eval template",
+		"empty until consume",
 	} {
 		if !strings.Contains(readme, n) {
 			t.Fatalf("README showcase missing %q", n)
 		}
+	}
+	if strings.Contains(readme, "TUI `/dashboard`") && strings.Contains(readme, "Same eval template") {
+		t.Fatal("README must not claim TUI /dashboard = Same eval template")
 	}
 	if strings.Contains(readme, "tenant GIF") && strings.Contains(readme, "live tenant feed as proof") {
 		t.Fatal("README must not sell a tenant GIF as Connected proof")

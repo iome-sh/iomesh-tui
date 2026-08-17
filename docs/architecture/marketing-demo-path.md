@@ -22,7 +22,7 @@ Plain-language script for **videos and sales demos** of the local agent harness 
 | **4** | Start / attach `iomesh-memory-mcp` | HTTP `http://127.0.0.1:8080/mcp` or stdio · TUI attach |
 | **5** | Show `/memory` ingest + recall | Agent stores a fact · retrieve / digest / recall |
 | **6** | Optional mesh | **Only if configured** · skip for pure local demos |
-| **6b** | Optional `/dashboard` | Landing-page heartbeat live-feed **template** (not Connected · not live APPLY) |
+| **6b** | Optional `/dashboard preview` | Landing-page heartbeat live-feed **eval template** (not your org · not Connected · not live APPLY). Bare `/dashboard` stays empty until consume. |
 
 Slash: `/onboard next marketing-demo` (or any alias above).
 

@@ -15,6 +15,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/iome-sh/iomesh-tui/internal/agent"
+	"github.com/iome-sh/iomesh-tui/internal/iomesh"
 	"github.com/iome-sh/iomesh-tui/internal/session"
 )
 
@@ -86,10 +87,28 @@ type approvalRequestMsg struct {
 
 type dashboardTickMsg time.Time
 
+type dashboardConsumeMsg struct {
+	events []HeartbeatEvent
+	names  []string
+	reason string
+}
+
 func dashboardTick() tea.Cmd {
 	return tea.Tick(dashboardTickEvery, func(t time.Time) tea.Msg {
 		return dashboardTickMsg(t)
 	})
+}
+
+func dashboardConsumeCmd(c *iomesh.Client) tea.Cmd {
+	if c == nil || !c.Enabled() {
+		return nil
+	}
+	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), dashboardConsumeTimeout)
+		defer cancel()
+		events, names, reason := probeDashboardConsume(ctx, c)
+		return dashboardConsumeMsg{events: events, names: names, reason: reason}
+	}
 }
 
 // --- model ---
@@ -308,6 +327,12 @@ func (m *fullscreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
+	case dashboardConsumeMsg:
+		if m.dash != nil && !m.dash.Preview {
+			m.dash.applyConsume(msg.events, msg.names, msg.reason)
+		}
+		return m, nil
+
 	case turnDoneMsg:
 		m.busy = false
 		m.streamOpen = false
@@ -505,6 +530,7 @@ func (m *fullscreenModel) handleDashboardSlash(parts []string) tea.Cmd {
 	if m.rt != nil && m.rt.Mesh() != nil && m.rt.Mesh().Enabled() {
 		attached = true
 	}
+	opened := m.dash == nil
 	if m.dash == nil {
 		m.dash = newDashboardState(attached)
 	}
@@ -521,6 +547,9 @@ func (m *fullscreenModel) handleDashboardSlash(parts []string) tea.Cmd {
 	}
 	m.status = "dashboard"
 	m.layout()
+	if opened && attached && !m.dash.Preview {
+		return tea.Batch(dashboardConsumeCmd(m.rt.Mesh()), dashboardTick())
+	}
 	return dashboardTick()
 }
 

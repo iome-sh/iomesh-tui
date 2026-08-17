@@ -8,6 +8,13 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/router"
 )
 
+func TestDefault_IOMeshTokenEnv(t *testing.T) {
+	cfg := Default()
+	if cfg.IOMesh.APIKeyEnv != "IOMESH_TOKEN" {
+		t.Fatalf("APIKeyEnv=%q want IOMESH_TOKEN", cfg.IOMesh.APIKeyEnv)
+	}
+}
+
 func TestDefault_DeepSeekPrimary(t *testing.T) {
 	cfg := Default()
 	if cfg.Models.Default != router.DefaultModelName {

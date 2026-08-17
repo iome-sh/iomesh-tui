@@ -480,11 +480,19 @@ func (c *Client) auth(req *http.Request) {
 		return
 	}
 	req.Header.Set("User-Agent", userAgent)
-	env := c.cfg.APIKeyEnv
+	// Console-minted secret lives in IOMESH_TOKEN; IOMESH_API_KEY remains a fallback.
+	env := strings.TrimSpace(c.cfg.APIKeyEnv)
 	if env == "" {
-		env = "IOMESH_API_KEY"
+		env = "IOMESH_TOKEN"
 	}
-	if key := os.Getenv(env); key != "" {
+	key := os.Getenv(env)
+	if key == "" && env != "IOMESH_TOKEN" {
+		key = os.Getenv("IOMESH_TOKEN")
+	}
+	if key == "" {
+		key = os.Getenv("IOMESH_API_KEY")
+	}
+	if key != "" {
 		req.Header.Set("Authorization", "Bearer "+key)
 	}
 	if c.cfg.Tenant != "" {
@@ -497,6 +505,8 @@ func (c *Client) auth(req *http.Request) {
 	if suffix := strings.TrimSpace(c.cfg.PullAllowSuffix); suffix != "" {
 		req.Header.Set("X-IOMesh-Pull-Allow-Suffix", suffix)
 	}
+	// Org/Workspace on every request (ListStreams / ListStreamMessages included).
+	c.applyEntitlementHeaders(req)
 }
 
 // Health checks mesh reachability. Returns error if enabled and unhealthy.

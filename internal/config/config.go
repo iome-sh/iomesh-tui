@@ -296,7 +296,7 @@ func Default() *Config {
 		Agent:  AgentSection{SystemPromptLabel: "iomesh-tui"},
 		IOMesh: IOMeshSection{
 			Enabled:         false,
-			APIKeyEnv:       "IOMESH_API_KEY",
+			APIKeyEnv:       "IOMESH_TOKEN",
 			EmitDeptStreams: true,
 			ContextPlane:    true,
 			IncludeLineage:  true,

@@ -11,6 +11,98 @@ import (
 	"time"
 )
 
+func TestListStreams_AuthEntitlementHeadersAndTokenFallback(t *testing.T) {
+	t.Setenv("IOMESH_TOKEN", "tok-from-token")
+	t.Setenv("IOMESH_API_KEY", "tok-from-api-key")
+
+	var gotAuth, gotOrg, gotTenant, gotWS, gotPath string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotAuth = r.Header.Get("Authorization")
+		gotOrg = r.Header.Get("X-IOMesh-Org")
+		gotTenant = r.Header.Get("X-IOMesh-Tenant")
+		gotWS = r.Header.Get("X-IOMesh-Workspace")
+		if r.URL.Path != "/v1/streams" {
+			http.NotFound(w, r)
+			return
+		}
+		_ = json.NewEncoder(w).Encode([]map[string]any{})
+	}))
+	defer srv.Close()
+
+	c := New(Config{
+		Enabled:     true,
+		Endpoint:    srv.URL,
+		Tenant:      "dept.engineering",
+		OrgID:       "org_public1",
+		WorkspaceID: "ws_alpha",
+		APIKeyEnv:   "", // empty → IOMESH_TOKEN then IOMESH_API_KEY
+	}, nil)
+	if _, err := c.ListStreams(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if gotPath != "/v1/streams" {
+		t.Fatalf("path=%q", gotPath)
+	}
+	if gotAuth != "Bearer tok-from-token" {
+		t.Fatalf("Authorization=%q (want IOMESH_TOKEN)", gotAuth)
+	}
+	if gotOrg != "org_public1" {
+		t.Fatalf("X-IOMesh-Org=%q", gotOrg)
+	}
+	if gotTenant != "dept.engineering" {
+		t.Fatalf("X-IOMesh-Tenant=%q", gotTenant)
+	}
+	if gotWS != "ws_alpha" {
+		t.Fatalf("X-IOMesh-Workspace=%q", gotWS)
+	}
+
+	// Configured env empty + IOMESH_TOKEN empty → IOMESH_API_KEY fallback.
+	t.Setenv("IOMESH_TOKEN", "")
+	gotAuth = ""
+	c2 := New(Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "dept.engineering",
+		OrgID: "org_public1", APIKeyEnv: "MISSING_CUSTOM_KEY",
+	}, nil)
+	if _, err := c2.ListStreams(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if gotAuth != "Bearer tok-from-api-key" {
+		t.Fatalf("fallback Authorization=%q (want IOMESH_API_KEY)", gotAuth)
+	}
+}
+
+func TestListStreamMessages_AuthEntitlementHeaders(t *testing.T) {
+	var gotOrg, gotTenant, gotAuth string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotAuth = r.Header.Get("Authorization")
+		gotOrg = r.Header.Get("X-IOMesh-Org")
+		gotTenant = r.Header.Get("X-IOMesh-Tenant")
+		if r.URL.Path != "/v1/streams/OPERATIONAL_EVENTS/messages" {
+			http.NotFound(w, r)
+			return
+		}
+		_ = json.NewEncoder(w).Encode([]any{})
+	}))
+	defer srv.Close()
+
+	t.Setenv("IOMESH_TOKEN", "tok-msg")
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL,
+		Tenant: "dept.engineering", OrgID: "org_x",
+		APIKeyEnv: "IOMESH_TOKEN",
+	}, nil)
+	if _, err := c.ListStreamMessages(context.Background(), "OPERATIONAL_EVENTS", ListStreamMessagesOptions{Limit: 20}); err != nil {
+		t.Fatal(err)
+	}
+	if gotAuth != "Bearer tok-msg" {
+		t.Fatalf("Authorization=%q", gotAuth)
+	}
+	if gotOrg != "org_x" || gotTenant != "dept.engineering" {
+		t.Fatalf("org=%q tenant=%q", gotOrg, gotTenant)
+	}
+}
+
 func TestListStreams_OKAndUserAgent(t *testing.T) {
 	prev := UserAgent()
 	SetUserAgent("iomesh-tui/test-s298")
@@ -709,6 +801,9 @@ func TestListStreamMessages_403(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "http 403") {
 		t.Fatalf("err=%v", err)
+	}
+	if !IsReplayDisabled(err) {
+		t.Fatalf("expected IsReplayDisabled, err=%v", err)
 	}
 }
 

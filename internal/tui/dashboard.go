@@ -26,10 +26,12 @@ const DashboardHonestyOneLiner = "no mock live rows · /dashboard preview is eva
 func dashboardHelp() string {
 	return strings.TrimSpace(`usage: /dashboard [help|preview|focus <tenancy>]
 aliases: /heartbeat /mesh-console
-  (no args)   empty until consume · fullscreen: toggle overlay (no mock rows)
+  (no args)   empty until consume · probe if mesh attached (no mock rows)
   preview     opt-in eval template (iome.sh MeshConsole — not your org)
   focus       tenancy: sre.incidents | eng.ops | cs.tickets | gtm.pipeline
 fullscreen: esc/q close · tab cycle tenancy · 1-4 jump
+probe:    iomesh mesh streams --messages / broker GET /v1/streams/{name}/messages
+          (not portal GET /v52 — cookie-only, TUI must not call it)
 setup:    console Settings → Mesh routing → Streams (OPERATIONAL_EVENTS)
           then iomesh mesh streams --messages --name OPERATIONAL_EVENTS
 honesty: ` + DashboardHonestyOneLiner)
@@ -96,24 +98,27 @@ func landingMCPCalls() []MCPCall {
 
 // dashboardState is the landing-page MeshConsole, for REPL snapshot + fullscreen overlay.
 type dashboardState struct {
-	Focus        string
-	Rate         int
-	Events       []HeartbeatEvent
-	idx          int
-	phase        int
-	MeshAttached bool
-	Preview      bool
-	Width        int
-	Height       int
+	Focus         string
+	Rate          int
+	Events        []HeartbeatEvent
+	idx           int
+	phase         int
+	MeshAttached  bool
+	Preview       bool
+	Width         int
+	Height        int
+	ConsumeReason string
+	StreamNames   []string
 }
 
 func newDashboardState(meshAttached bool) *dashboardState {
 	return &dashboardState{
-		Focus:        dashboardDefaultFocus,
-		Rate:         0,
-		Events:       nil,
-		MeshAttached: meshAttached,
-		Preview:      false,
+		Focus:         dashboardDefaultFocus,
+		Rate:          0,
+		Events:        nil,
+		MeshAttached:  meshAttached,
+		Preview:       false,
+		ConsumeReason: consumeReasonMissing,
 	}
 }
 
@@ -228,14 +233,23 @@ func (d *dashboardState) Render(th Theme, width int) string {
 	badge := "EMPTY"
 	if d.Preview {
 		badge = "EVAL"
+	} else if len(d.Events) > 0 {
+		// PULSE only after ≥1 decoded broker message — never from eval or stream list.
+		badge = "PULSE"
 	} else if d.MeshAttached {
 		badge = "CLIENT"
 	}
-	ctx := "no live heartbeat · consume missing · " + d.Focus
+	reason := strings.TrimSpace(d.ConsumeReason)
+	if reason == "" {
+		reason = consumeReasonMissing
+	}
+	ctx := "no live heartbeat · " + reason + " · " + d.Focus
 	if d.Preview {
 		ctx = "eval template preview · not your org · " + d.Focus
+	} else if len(d.Events) > 0 {
+		ctx = "consumed · " + reason + " · " + d.Focus
 	} else if d.MeshAttached {
-		ctx = "mesh client attached · no consumed preview · " + d.Focus
+		ctx = "mesh client attached · " + reason + " · " + d.Focus
 	}
 	headLeft := th.Mesh.Render("●") + " " + th.Dim.Render("context://mesh · "+ctx)
 	headRight := th.OK.Render(badge)
@@ -340,9 +354,29 @@ func (d *dashboardState) renderFeed(th Theme, width int) string {
 	if len(d.Events) == 0 {
 		b.WriteString(th.Dim.Render("no consumed messages · mock eval rows hidden"))
 		b.WriteByte('\n')
-		b.WriteString(th.Dim.Render("create a mesh stream: console Settings → Mesh routing → Streams"))
-		b.WriteByte('\n')
-		b.WriteString(th.Dim.Render("then iomesh mesh streams --messages --name OPERATIONAL_EVENTS"))
+		switch strings.TrimSpace(d.ConsumeReason) {
+		case consumeReasonEmptyStream:
+			listed := strings.Join(d.StreamNames, ", ")
+			if listed == "" {
+				listed = "(named)"
+			}
+			b.WriteString(th.Dim.Render("empty_stream · listed " + listed + " · 0 messages"))
+			b.WriteByte('\n')
+			b.WriteString(th.Dim.Render("iomesh mesh streams --messages · broker GET /v1 (not /v52)"))
+		case consumeReasonReplayDisabled:
+			b.WriteString(th.Dim.Render("replay_disabled · GET /v1/streams/{name}/messages 403"))
+			b.WriteByte('\n')
+			b.WriteString(th.Dim.Render("needs X-IOMesh-Tenant or AION_MEMORY_REPLAY_ENABLED · not /v52"))
+		case consumeReasonBrokerUnavailable:
+			b.WriteString(th.Dim.Render("broker_unavailable · consume probe failed"))
+			b.WriteByte('\n')
+			b.WriteString(th.Dim.Render("probe uses mesh streams --messages / broker /v1 · not /v52"))
+		default:
+			// no_streams and consume missing: existing create-stream CTA
+			b.WriteString(th.Dim.Render("create a mesh stream: console Settings → Mesh routing → Streams"))
+			b.WriteByte('\n')
+			b.WriteString(th.Dim.Render("then iomesh mesh streams --messages --name OPERATIONAL_EVENTS"))
+		}
 		b.WriteByte('\n')
 		b.WriteString(th.Dim.Render("/dashboard preview · eval template on iome.sh (not your org)"))
 		return strings.TrimRight(b.String(), "\n")
@@ -409,7 +443,9 @@ func meshClientAttached(rt runtimeAdapter) bool {
 
 func handleDashboardSlash(out io.Writer, rt runtimeAdapter, parts []string) {
 	if len(parts) < 2 {
-		fmt.Fprintln(out, formatDashboardSnapshot(meshClientAttached(rt), ""))
+		d := newDashboardState(meshClientAttached(rt))
+		probeDashboardIfAttached(d, rt)
+		fmt.Fprintln(out, d.Render(ThemeDefault(), 100))
 		return
 	}
 	sub := strings.ToLower(parts[1])
@@ -429,11 +465,13 @@ func handleDashboardSlash(out io.Writer, rt runtimeAdapter, parts []string) {
 				want, strings.Join(landingTenancies(), " | "), dashboardHelp())
 			return
 		}
+		probeDashboardIfAttached(d, rt)
 		fmt.Fprintln(out, d.Render(ThemeDefault(), 100))
 	default:
 		// Bare tenancy token: /dashboard sre.incidents
 		d := newDashboardState(meshClientAttached(rt))
 		if d.SetFocus(parts[1]) {
+			probeDashboardIfAttached(d, rt)
 			fmt.Fprintln(out, d.Render(ThemeDefault(), 100))
 			return
 		}
