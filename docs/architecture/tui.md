@@ -69,6 +69,7 @@ Landing-page MeshConsole chrome, in the TUI (`/dashboard`, aliases `/heartbeat` 
 ──────────────── pulse ────────────────────────────────────────
 ▁▁▂█▃▁▁▁▂█▃▁▁▁
 analysis  ops 0 · knowledge 0 · analytics 0  ·  Beta
+knowledge Beta empty · analytics Beta empty · not GA
 Heartbeat
 no consumed messages · mock eval rows hidden
 ```
@@ -78,7 +79,7 @@ no consumed messages · mock eval rows hidden
 - Fail-open reasons: `no_streams` · `empty_stream` · `replay_disabled` · `broker_unavailable`. Errors → empty + reason, never the eval seed.
 - **PULSE**-shaped rows only when ≥1 broker message was decoded. Never invent PULSE from eval or from a stream list alone.
 - Badge **EMPTY** (no mesh, no consume) / **CLIENT** (mesh attached, no consumed rows) / **PULSE** (≥1 decoded message) / **EVAL** (`/dashboard preview` only).
-- Knowledge / analytics stay **Beta**. `catalog ≠ Connected`. `dual_write OFF`. Not Memory GA. Not live APPLY.
+- Knowledge / analytics stay **Beta**. Empty knowledge or analytics adds `knowledge Beta empty · analytics Beta empty · not GA`. `catalog ≠ Connected`. `dual_write OFF`. Not Memory GA. Not live APPLY. Kind from subject ≠ GA.
 
 ```text
 iomesh> /dashboard

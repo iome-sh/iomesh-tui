@@ -140,7 +140,7 @@ func isConsumeReplayDisabled(err error) bool {
 // heartbeatFromStreamMessage maps a broker row conservatively.
 // Time from timestamp, Dept from subject dept.X token, Title from peeled
 // observation.payload (event_type · repository, or title/summary) then subject.
-// Kind=ops. Does not invent P2 checkout titles.
+// Kind from subject tokens (same as CP). Does not invent P2 checkout titles.
 func heartbeatFromStreamMessage(m iomesh.StreamMessage) HeartbeatEvent {
 	t := ""
 	if !m.Timestamp.IsZero() {
@@ -164,10 +164,36 @@ func heartbeatFromStreamMessage(m iomesh.StreamMessage) HeartbeatEvent {
 	return HeartbeatEvent{
 		T:      t,
 		Dept:   dept,
-		Kind:   kindOps,
+		Kind:   kindFromSubject(m.Subject),
 		Title:  title,
 		Detail: detail,
 	}
+}
+
+// kindFromSubject uses the same subject tokens as CP.
+// GitHub stays ops. Knowledge/analytics classification ≠ GA.
+func kindFromSubject(subject string) HeartbeatKind {
+	s := strings.ToLower(strings.TrimSpace(subject))
+	if s == "" || strings.Contains(s, "github") {
+		return kindOps
+	}
+	switch {
+	case containsSubjectToken(s, "events.docs", "events.documents", "notion", "confluence", "sharepoint", "google_drive", ".docs."):
+		return kindKnowledge
+	case containsSubjectToken(s, "metric.", ".cdc", "embedding", "warehouse", ".dbt"):
+		return kindAnalytics
+	default:
+		return kindOps
+	}
+}
+
+func containsSubjectToken(s string, tokens ...string) bool {
+	for _, tok := range tokens {
+		if strings.Contains(s, tok) {
+			return true
+		}
+	}
+	return false
 }
 
 func deptFromSubject(subject string) string {

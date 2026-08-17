@@ -23,6 +23,10 @@ const (
 // DashboardHonestyOneLiner is the residual lock for /dashboard.
 const DashboardHonestyOneLiner = "no mock live rows · /dashboard preview is eval template not your org · catalog ≠ Connected · dual_write OFF · knowledge/analytics Beta · not Memory GA · demo feed ≠ fleet-GA · not live APPLY"
 
+// DashboardBetaEmptyHonesty is shown when knowledge or analytics count is 0.
+// Empty pillars stay Beta — not GA. Do not invent events.
+const DashboardBetaEmptyHonesty = "knowledge Beta empty · analytics Beta empty · not GA"
+
 func dashboardHelp() string {
 	return strings.TrimSpace(`usage: /dashboard [help|preview|focus <tenancy>]
 aliases: /heartbeat /mesh-console
@@ -267,6 +271,9 @@ func (d *dashboardState) Render(th Theme, width int) string {
 		"analysis  ops %d · knowledge %d · analytics %d  ·  knowledge/analytics Beta",
 		opsN, knN, anN,
 	))
+	if knN == 0 || anN == 0 {
+		analysis += "\n" + th.Dim.Render(DashboardBetaEmptyHonesty)
+	}
 
 	body := d.renderBody(th, width)
 	honesty := th.Dim.Render(DashboardHonestyOneLiner)

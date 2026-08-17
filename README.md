@@ -181,6 +181,7 @@ Example (default **EMPTY** — no consume yet; badge **EMPTY** = no mesh client)
 ```text
 ● context://mesh · no live heartbeat · consume missing · sre.incidents     EMPTY
 ▁▁▂█▃▁▁▁▂█▃▁▁▁   analysis  ops 0 · knowledge 0 · analytics 0 · Beta
+knowledge Beta empty · analytics Beta empty · not GA
 
 Heartbeat
 no consumed messages · mock eval rows hidden
