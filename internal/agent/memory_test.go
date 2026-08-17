@@ -1798,6 +1798,29 @@ func TestMemoryAdvancedStatus_OfflineResidual(t *testing.T) {
 	if strings.Contains(out, "Memory GA green") || strings.Contains(out, "Memory GA shipped") {
 		t.Fatalf("must not invent Memory GA claim: %s", out)
 	}
+	if !strings.Contains(out, "mcp-manager-empty (0 servers) · fail-open") {
+		t.Fatalf("want mcp-manager-empty: %s", out)
+	}
+	if strings.Contains(out, "connected-empty") {
+		t.Fatalf("must not use connected-empty: %s", out)
+	}
+}
+
+func TestMemoryAdvancedStatus_EmptyManagerNotConnectedEmpty(t *testing.T) {
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory"},
+		mcp:    mcp.NewManagerEmpty(nil),
+	}
+	out, err := rt.MemoryAdvancedStatus(context.Background())
+	if err != nil {
+		t.Fatalf("err=%v", err)
+	}
+	if !strings.Contains(out, "mcp-manager-empty (0 servers) · fail-open") {
+		t.Fatalf("want mcp-manager-empty: %s", out)
+	}
+	if strings.Contains(out, "connected-empty") {
+		t.Fatalf("must not use connected-empty: %s", out)
+	}
 }
 
 // s1311: MemoryAdvancedStatus with hooks disabled still residual (no invent).

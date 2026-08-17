@@ -305,3 +305,125 @@ func TestHeartbeatFromStreamMessage_Conservative(t *testing.T) {
 		t.Fatal("must not invent P2 checkout title")
 	}
 }
+
+func stackedObservationB64(t *testing.T, eventType, repo string) (wireOuter string, onceDecoded []byte) {
+	t.Helper()
+	raw, err := json.Marshal(map[string]any{
+		"type": "observation",
+		"payload": map[string]any{
+			"event_type": eventType,
+			"repository": repo,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	inner := base64.StdEncoding.EncodeToString(raw)
+	return base64.StdEncoding.EncodeToString([]byte(inner)), []byte(inner)
+}
+
+func TestHeartbeatFromStreamMessage_DoubleB64Envelope(t *testing.T) {
+	outer, once := stackedObservationB64(t, "create", "iome-sh/aion")
+	for _, tc := range []struct {
+		name    string
+		payload []byte
+	}{
+		{name: "once-decoded", payload: once},
+		{name: "double-wire", payload: []byte(outer)},
+		{name: "url-safe-once", payload: []byte(base64.URLEncoding.EncodeToString(
+			[]byte(`{"type":"observation","payload":{"event_type":"create","repository":"iome-sh/aion"}}`),
+		))},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ev := heartbeatFromStreamMessage(iomesh.StreamMessage{
+				Stream:    "OPERATIONAL_EVENTS",
+				Subject:   "dept.engineering.events.github",
+				Payload:   tc.payload,
+				Timestamp: time.Date(2026, 8, 17, 5, 9, 25, 0, time.UTC),
+			})
+			if strings.HasPrefix(ev.Title, "eyJ") || strings.Contains(ev.Title, "eyJ") {
+				t.Fatalf("title still stacked base64: %q", ev.Title)
+			}
+			if !strings.Contains(ev.Title, "create") && !strings.Contains(ev.Title, "iome-sh/aion") {
+				t.Fatalf("title=%q want event_type or repo", ev.Title)
+			}
+			if ev.Title != "create · iome-sh/aion" {
+				t.Fatalf("title=%q want create · iome-sh/aion", ev.Title)
+			}
+			if strings.Contains(ev.Title, "P2") || strings.Contains(ev.Title, "checkout") {
+				t.Fatalf("must not invent P2 checkout: %+v", ev)
+			}
+			if ev.Kind != kindOps || ev.Dept != "engineering" {
+				t.Fatalf("%+v", ev)
+			}
+		})
+	}
+}
+
+func TestHeartbeatFromStreamMessage_TitleSummaryBeatsEnvelope(t *testing.T) {
+	ev := heartbeatFromStreamMessage(iomesh.StreamMessage{
+		Stream:  "OPERATIONAL_EVENTS",
+		Subject: "dept.engineering.events.github",
+		Payload: []byte(`{"type":"observation","payload":{"title":"ship unwrap","summary":"repo note","event_type":"push","repository":"iome-sh/aion"}}`),
+	})
+	if ev.Title != "ship unwrap" {
+		t.Fatalf("title=%q", ev.Title)
+	}
+	if strings.HasPrefix(ev.Title, "eyJ") {
+		t.Fatalf("title stacked: %q", ev.Title)
+	}
+}
+
+func TestProbeDashboardConsume_DoubleB64Envelope(t *testing.T) {
+	outer, _ := stackedObservationB64(t, "create", "iome-sh/aion")
+	c := testMeshClient(t, func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/v1/streams":
+			_ = json.NewEncoder(w).Encode([]map[string]any{
+				{"name": "OPERATIONAL_EVENTS"},
+			})
+		case strings.HasSuffix(r.URL.Path, "/messages"):
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"messages": []map[string]any{
+					{
+						"stream":    "OPERATIONAL_EVENTS",
+						"seq":       9,
+						"subject":   "dept.engineering.events.github",
+						"payload":   outer,
+						"timestamp": time.Date(2026, 8, 17, 5, 9, 25, 0, time.UTC),
+					},
+				},
+			})
+		default:
+			http.NotFound(w, r)
+		}
+	})
+	events, names, reason := probeDashboardConsume(context.Background(), c)
+	if reason != consumeReasonConsumed {
+		t.Fatalf("reason=%q", reason)
+	}
+	if len(names) != 1 || len(events) != 1 {
+		t.Fatalf("names=%v events=%+v", names, events)
+	}
+	if strings.Contains(events[0].Title, "eyJ") {
+		t.Fatalf("title still stacked base64: %q", events[0].Title)
+	}
+	if !strings.Contains(events[0].Title, "create") && !strings.Contains(events[0].Title, "iome-sh/aion") {
+		t.Fatalf("title=%q want event_type or repo", events[0].Title)
+	}
+	if strings.Contains(events[0].Title, "P2") || strings.Contains(events[0].Title, "checkout") {
+		t.Fatalf("must not invent P2 checkout: %+v", events[0])
+	}
+	d := newDashboardState(true)
+	d.applyConsume(events, names, reason)
+	out := d.Render(ThemeDefault(), 100)
+	if strings.Contains(out, "eyJ") {
+		t.Fatalf("dashboard still shows stacked payload:\n%s", out)
+	}
+	if strings.Contains(out, "P2 opened") {
+		t.Fatalf("must not mix eval seed:\n%s", out)
+	}
+	if !strings.Contains(out, "iome-sh/aion") && !strings.Contains(out, "create") {
+		t.Fatalf("missing unwrapped title:\n%s", out)
+	}
+}
