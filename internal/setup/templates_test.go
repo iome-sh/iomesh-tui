@@ -62,6 +62,22 @@ func TestBuildManagedFragment_All(t *testing.T) {
 	}
 }
 
+func TestBuildManagedFragment_PlatformMCPInfersHooks(t *testing.T) {
+	opt := DefaultInitOptions()
+	opt.PlatformMCPURL = "https://apiv1.iome.sh/v7/mcp"
+	opt.MeshTenant = "dept.engineering"
+	frag, err := BuildManagedFragment([]Profile{ProfilePlatformMCP}, opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(frag, "[iomesh]") || !strings.Contains(frag, "https://hooks.iome.sh") {
+		t.Fatalf("want inferred broker in:\n%s", frag)
+	}
+	if !strings.Contains(frag, "not portal /v7/mcp") {
+		t.Fatalf("want honesty comment in:\n%s", frag)
+	}
+}
+
 func TestParseProfiles(t *testing.T) {
 	p := ParseProfiles("local-memory,plugins")
 	if len(p) != 2 {
