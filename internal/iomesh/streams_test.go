@@ -520,6 +520,34 @@ func TestFormatStreams_AlwaysEmitRetentionColumns(t *testing.T) {
 	if !strings.Contains(empty, "count=0") {
 		t.Fatalf("empty list:\n%s", empty)
 	}
+	for _, want := range []string{
+		"(no streams)",
+		"inbox is empty",
+		"first durable event",
+		"iomesh mesh streams --messages",
+		"create ≠ PULSE",
+		"mesh pub is ephemeral",
+		"/dashboard",
+		"catalog MCP",
+	} {
+		if !strings.Contains(empty, want) {
+			t.Fatalf("empty FormatStreams missing %q:\n%s", want, empty)
+		}
+	}
+}
+
+func TestStreamsInboxNextStepAndDisabledHint(t *testing.T) {
+	out := strings.Join(StreamsInboxNextStepLines(), "\n")
+	if !strings.Contains(out, "create ≠ PULSE") || !strings.Contains(out, "does not fill /dashboard") {
+		t.Fatalf("%s", out)
+	}
+	hint := MeshDisabledHooksHint()
+	if !strings.Contains(hint, "apiv1.iome.sh/v7/mcp") || !strings.Contains(hint, "hooks.iome.sh") {
+		t.Fatalf("%s", hint)
+	}
+	if !strings.Contains(hint, "[iomesh]") {
+		t.Fatalf("hint must mention [iomesh]:\n%s", hint)
+	}
 }
 
 func TestGetStream_404(t *testing.T) {

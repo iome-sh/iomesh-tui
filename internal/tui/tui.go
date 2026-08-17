@@ -1173,11 +1173,11 @@ func integrationsHelp() string {
 // setupHelp is bare /setup and help/? copy (s1526 P3+P4 + s1530 P5 + s1534 P6 + s1538 P7 residual honesty).
 // s1723: when IOMESH_PLATFORM_RESIDUAL is on, append PlatformResidualLabelNote (label only · never hides subcommands).
 func setupHelp() string {
-	base := strings.TrimSpace(`usage: /setup [init [profiles] [--stdio] [--print-only] [--plugins-dir path] | preflight | portal | reload | pull … | analyze … | drift|maintain | repair …]
-  init       write managed config fragment (profiles: local-memory|plugins|mesh|platform-mcp|all; default local-memory)
+	base := strings.TrimSpace(`usage: /setup [init [profiles] [--stdio] [--print-only] [--plugins-dir path] [--memory-url URL] [--mesh-endpoint URL] [--mesh-tenant id] [--platform-mcp-url URL] | preflight | portal | reload | pull … | analyze … | drift|maintain | repair …]
+  init       write managed config fragment (profiles: local-memory|plugins|mesh|platform-mcp|all; default local-memory; mesh flags write hooks not /v7/mcp)
   preflight  residual-honest probe (aliases status|check) — PASS ≠ invent Connected / Memory GA
   portal     browser HITL URLs (integrations + settings/agent)
-  reload     hot-swap MCP + re-scan skills from user config (Wire · ReplaceSkills · ConnectMCP + ReplaceMCP; package wire ≠ Connected)
+  reload     hot-swap MCP + mesh + re-scan skills from user config (Wire · ReplaceSkills · NewMesh · ReplaceMesh · ConnectMCP + ReplaceMCP; package wire ≠ Connected · infer ≠ Connected)
   pull       continuous pull status|start|once|stop (s1530 P5 · opt-in · CLI iomesh memory pull still valid)
   analyze    analyze tick status|start|once|stop (s1534 P6 · opt-in · /memory digest still valid)
   drift      report-only config vs runtime drift (alias maintain · residual next steps)
@@ -1232,6 +1232,33 @@ func handleSetupInit(out io.Writer, args []string) {
 			opt.MemoryHTTPURL = strings.TrimSpace(args[i])
 		case strings.HasPrefix(a, "--memory-url="):
 			opt.MemoryHTTPURL = strings.TrimSpace(strings.TrimPrefix(a, "--memory-url="))
+		case a == "--mesh-endpoint" || a == "--mesh_endpoint":
+			if i+1 >= len(args) || strings.HasPrefix(args[i+1], "-") {
+				fmt.Fprintln(out, "setup init: --mesh-endpoint requires a URL")
+				return
+			}
+			i++
+			opt.MeshEndpoint = strings.TrimSpace(args[i])
+		case strings.HasPrefix(a, "--mesh-endpoint="):
+			opt.MeshEndpoint = strings.TrimSpace(strings.TrimPrefix(a, "--mesh-endpoint="))
+		case a == "--mesh-tenant" || a == "--mesh_tenant":
+			if i+1 >= len(args) || strings.HasPrefix(args[i+1], "-") {
+				fmt.Fprintln(out, "setup init: --mesh-tenant requires a tenant")
+				return
+			}
+			i++
+			opt.MeshTenant = strings.TrimSpace(args[i])
+		case strings.HasPrefix(a, "--mesh-tenant="):
+			opt.MeshTenant = strings.TrimSpace(strings.TrimPrefix(a, "--mesh-tenant="))
+		case a == "--platform-mcp-url" || a == "--platform_mcp_url":
+			if i+1 >= len(args) || strings.HasPrefix(args[i+1], "-") {
+				fmt.Fprintln(out, "setup init: --platform-mcp-url requires a URL")
+				return
+			}
+			i++
+			opt.PlatformMCPURL = strings.TrimSpace(args[i])
+		case strings.HasPrefix(a, "--platform-mcp-url="):
+			opt.PlatformMCPURL = strings.TrimSpace(strings.TrimPrefix(a, "--platform-mcp-url="))
 		case a == "--config":
 			// Accept and ignore with note — slash always uses user path unless print-only;
 			// full --config path support stays on CLI iomesh setup init.
@@ -1277,11 +1304,17 @@ func handleSetupInit(out io.Writer, args []string) {
 	for _, line := range setup.SetupInitNextStepLines() {
 		fmt.Fprintln(out, line)
 	}
+	if setup.ProfilesWantMesh(profiles) {
+		for _, line := range setup.SetupInitMeshNextStepLines() {
+			fmt.Fprintln(out, line)
+		}
+	}
 }
 
-// handleSetupReload reloads skills catalog + MCP servers from config without process restart
-// (s1526 P4 MCP · s1670 skills re-scan). Uses runtimewire.Wire + LoadWithBuiltin + ReplaceSkills,
-// then ConnectMCP + ReplaceMCP. Residual-honest: package wire ≠ Connected · skills re-scan ≠ invent Connected.
+// handleSetupReload reloads skills catalog + MCP servers + mesh from config without process restart
+// (s1526 P4 MCP · s1670 skills re-scan · s2055 mesh infer/hot-swap). Uses runtimewire.Wire +
+// LoadWithBuiltin + ReplaceSkills, NewMesh + ReplaceMesh, then ConnectMCP + ReplaceMCP.
+// Residual-honest: package wire ≠ Connected · infer ≠ Connected · skills re-scan ≠ invent Connected.
 func handleSetupReload(out io.Writer, rt runtimeAdapter, args []string) {
 	if rt.rt == nil {
 		fmt.Fprintln(out, "setup reload: no agent runtime")
@@ -1318,11 +1351,12 @@ func handleSetupReload(out io.Writer, rt runtimeAdapter, args []string) {
 	reloadRuntimeFromConfig(ctx, out, rt, cfg, true)
 }
 
-// reloadRuntimeFromConfig re-scans skills (when feature on) and hot-swaps MCP from cfg.
-// Shared by /setup reload and setupRepairExecutor.ReloadMCP (s1670).
+// reloadRuntimeFromConfig re-scans skills (when feature on) and hot-swaps MCP + mesh from cfg.
+// Shared by /setup reload and setupRepairExecutor.ReloadMCP (s1670 · s2055 mesh).
 // When print is true, writes residual-honest status lines to out (may be nil when silent).
 // Residual honesty: dual_write OFF · package wire ≠ Connected · skills re-scan ≠ invent Connected ·
-// not Memory GA · not Agent Plugins GA · Discover/map ≠ install APPLY green.
+// infer ≠ Connected · catalog MCP ≠ hooks streams · not Memory GA · not Agent Plugins GA ·
+// Discover/map ≠ install APPLY green.
 func reloadRuntimeFromConfig(ctx context.Context, out io.Writer, rt runtimeAdapter, cfg *config.Config, print bool) {
 	if rt.rt == nil {
 		if print && out != nil {
@@ -1362,6 +1396,22 @@ func reloadRuntimeFromConfig(ctx context.Context, out io.Writer, rt runtimeAdapt
 		rt.rt.ReplaceSkills(nil) // detach when skills feature off
 		if print && out != nil {
 			fmt.Fprintln(out, "setup reload: skills feature off — catalog detached")
+		}
+	}
+
+	// Hot-swap mesh from [iomesh] or inferred hooks (infer ≠ Connected).
+	mesh, inf := runtimewire.NewMesh(cfg, logger)
+	rt.rt.ReplaceMesh(mesh)
+	if print && out != nil {
+		if mesh != nil && mesh.Enabled() {
+			src := "config [iomesh]"
+			if inf.Endpoint != "" {
+				src = "inferred from portal MCP"
+			}
+			fmt.Fprintf(out, "setup reload: mesh attached endpoint=%s (%s · infer ≠ Connected · catalog ≠ streams)\n",
+				mesh.Endpoint(), src)
+		} else {
+			fmt.Fprintln(out, "setup reload: mesh detached — add [iomesh] or infer from portal MCP · do not invent consume")
 		}
 	}
 

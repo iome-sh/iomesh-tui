@@ -163,3 +163,54 @@ func TestConnectMCP_NilWhenDisabled(t *testing.T) {
 		t.Fatal("disabled must return nil")
 	}
 }
+
+func TestNewMesh_EmptyInferDoesNotInventEnabled(t *testing.T) {
+	c, inf := NewMesh(&config.Config{}, slog.Default())
+	if inf.Endpoint != "" {
+		t.Fatalf("empty infer: %+v", inf)
+	}
+	if c == nil || c.Enabled() {
+		t.Fatal("empty infer must not invent mesh enabled")
+	}
+}
+
+func TestNewMesh_InfersHooksFromPortalMCP(t *testing.T) {
+	cfg := &config.Config{}
+	cfg.MCP.Servers = []config.MCPServerTOML{{
+		Name: "io-mesh",
+		URL:  "https://apiv1.iome.sh/v7/mcp",
+		Headers: map[string]string{
+			"X-IOMesh-Tenant": "dept.engineering",
+			"X-IOMesh-Org":    "org_example",
+		},
+	}}
+	c, inf := NewMesh(cfg, slog.Default())
+	if inf.Endpoint != "https://hooks.iome.sh" {
+		t.Fatalf("infer %+v", inf)
+	}
+	if c == nil || !c.Enabled() || c.Endpoint() != "https://hooks.iome.sh" {
+		t.Fatalf("enabled=%v endpoint=%q", c.Enabled(), c.Endpoint())
+	}
+	if c.Tenant() != "dept.engineering" {
+		t.Fatalf("tenant=%q", c.Tenant())
+	}
+	if !cfg.IOMesh.Enabled || cfg.IOMesh.Endpoint != "https://hooks.iome.sh" {
+		t.Fatalf("cfg not filled: %+v", cfg.IOMesh)
+	}
+}
+
+func TestNewMesh_ExplicitEndpointWins(t *testing.T) {
+	cfg := &config.Config{}
+	cfg.IOMesh.Enabled = true
+	cfg.IOMesh.Endpoint = "https://hooks.example.test"
+	cfg.MCP.Servers = []config.MCPServerTOML{{
+		URL: "https://apiv1.iome.sh/v7/mcp",
+	}}
+	c, inf := NewMesh(cfg, nil)
+	if inf.Endpoint != "" {
+		t.Fatalf("explicit should skip infer: %+v", inf)
+	}
+	if c.Endpoint() != "https://hooks.example.test" {
+		t.Fatalf("endpoint=%q", c.Endpoint())
+	}
+}

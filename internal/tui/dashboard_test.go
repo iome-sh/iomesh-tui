@@ -16,10 +16,11 @@ func TestDashboardSnapshot_LandingParityAndHonesty(t *testing.T) {
 		"Heartbeat",
 		"no consumed messages",
 		"mock eval rows hidden",
-		"create a mesh stream",
-		"Mesh routing",
-		"or: iomesh mesh streams --create --yes",
-		"OPERATIONAL_EVENTS",
+		"add [iomesh]",
+		"infer from portal MCP",
+		"hooks.iome.sh",
+		"infer ≠ Connected",
+		"do not invent consume",
 		"/dashboard preview",
 		"dual_write OFF",
 		"catalog ≠ Connected",
@@ -62,6 +63,19 @@ func TestDashboardSnapshot_MeshAttachedLabel(t *testing.T) {
 	}
 	if strings.Contains(out, "P2 opened") {
 		t.Fatalf("default attached view must not show mock eval rows:\n%s", out)
+	}
+}
+
+func TestDashboardSnapshot_NoMeshTellsInferNotCreate(t *testing.T) {
+	out := formatDashboardSnapshot(false, "")
+	if !strings.Contains(out, "add [iomesh]") || !strings.Contains(out, "infer from portal MCP") {
+		t.Fatalf("unattached must tell operator to add [iomesh] or infer:\n%s", out)
+	}
+	if strings.Contains(out, "create a mesh stream") {
+		t.Fatalf("unattached must not jump to create-stream CTA:\n%s", out)
+	}
+	if strings.Contains(out, "PULSE") && !strings.Contains(out, "create ≠ PULSE") {
+		t.Fatalf("unattached must not invent PULSE:\n%s", out)
 	}
 }
 

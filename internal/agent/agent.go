@@ -190,13 +190,42 @@ func (rt *Runtime) MeshUsage() iomesh.UsageSnapshot {
 	return rt.mesh.Usage()
 }
 
+const meshToolsSystemNote = "I/O Mesh tools: list_mesh_catalog, get_mesh_catalog_product, mesh_status. Catalog tries broker then portal federation. Fail-open when unavailable."
+const meshToolsDetachedNote = "I/O Mesh tools: detached. /setup reload hot-swaps mesh when [iomesh] or inferred hooks change · infer ≠ Connected · catalog MCP ≠ hooks streams."
+
 // AttachMeshTools registers list_mesh_catalog / mesh_status when catalog plane is enabled.
 func (rt *Runtime) AttachMeshTools() {
 	if rt == nil || rt.mesh == nil || !rt.mesh.CatalogEnabled() {
 		return
 	}
 	rt.tools.RegisterMeshTools(rt.mesh)
-	rt.appendSystemNote("iomesh-tools", "I/O Mesh tools: list_mesh_catalog, get_mesh_catalog_product, mesh_status. Catalog tries broker then portal federation. Fail-open when unavailable.")
+	rt.appendSystemNote("iomesh-tools", meshToolsSystemNote)
+}
+
+// ReplaceMesh hot-swaps the I/O Mesh client without a process restart (s2055).
+// Unregisters catalog mesh tools, then re-attaches when the new client has
+// catalog plane on. Prefer between-turns use (holds rt.mu).
+//
+// mesh may be nil or disabled: detaches tools and upserts a residual-honest
+// detached note (does not invent Connected / consume / PULSE).
+//
+// Residual honesty: infer ≠ Connected · catalog MCP ≠ hooks streams ·
+// dual_write OFF · package wire ≠ Connected.
+func (rt *Runtime) ReplaceMesh(mesh *iomesh.Client) {
+	if rt == nil {
+		return
+	}
+	rt.mu.Lock()
+	defer rt.mu.Unlock()
+
+	rt.tools.UnregisterMeshTools()
+	rt.mesh = mesh
+	if mesh != nil && mesh.CatalogEnabled() {
+		rt.tools.RegisterMeshTools(mesh)
+		rt.appendSystemNote("iomesh-tools", meshToolsSystemNote)
+		return
+	}
+	rt.appendSystemNote("iomesh-tools", meshToolsDetachedNote)
 }
 
 // AttachSkills registers list/read skill tools and appends a catalog block to the system prompt.

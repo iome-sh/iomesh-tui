@@ -169,7 +169,7 @@ Wire `StreamInfo` stays lean (`omitempty` on optional knobs including `retention
 |---------|-----------|
 | `FormatStreamDetail` / get text | Always prints `description`, `retention`, `retention_tier`, `partitions`, `max_msgs`, `max_age_sec`, … (empty/`0` when unset) |
 | `StreamInfoPrint` / get+list `--json` | Same knobs without omitempty gaps; list path maps via `NewStreamInfoPrint` |
-| `FormatStreams` table | Columns include MAX_MSGS, MAX_AGE, RETENTION, **TIER** (empty when broker omits) |
+| `FormatStreams` table | Columns include MAX_MSGS, MAX_AGE, RETENTION, **TIER** (empty when broker omits). Empty list appends inbox CTA (`StreamsInboxNextStepLines`: first durable event · mesh pub ≠ `/dashboard`) |
 | `StreamMessagesPrint` / `--messages --json` | Envelope `{stream, from_seq, to_seq, limit, count, messages}` (not bare array; s720; 0 honest); nested `messages[]` are `StreamMessagePrint` (s723); completeness pin s759 |
 | `StreamMessagePrint` / nested message JSON | Always emits `stream`, `seq`, `subject`, `partition`, `payload`, `headers`, `timestamp` (s723; empty/0/`""`/`{}` honest; completeness pin s759) |
 | `FormatStreamMessagesPrint` / `--messages` text | Header includes knobs + count; table of messages (empty → `(no messages)`) |
@@ -204,7 +204,7 @@ iomesh mesh streams --delete --name TEMP --yes
 iomesh mesh streams --delete --name TEMP --yes --json   # StreamDeletePrint {ok,name} (s726; completeness pin s759)
 ```
 
-Mesh disabled / empty endpoint → error `mesh disabled` (non-zero CLI exit). Dogfood probes list only (`streams` step + `streams_count` / `streams_names`); create, delete, and message list are CLI-only. Create uses console defaults (`OPERATIONAL_EVENTS`, Temp 7d `limits`, **no** `retention_tier` on the wire). Create ≠ PULSE (a listed stream with 0 messages is still empty). HITL stays OPEN. Message list does not enable broker replay flags and is not auto-probed by dogfood.
+Mesh disabled / empty endpoint → error `mesh disabled` (non-zero CLI exit) plus hooks-vs-catalog hint (`MeshDisabledHooksHint`; also printed on `mesh pub` / `mesh status` / `mesh wait` when disabled). Dogfood probes list only (`streams` step + `streams_count` / `streams_names`); create, delete, and message list are CLI-only. Create uses console defaults (`OPERATIONAL_EVENTS`, Temp 7d `limits`, **no** `retention_tier` on the wire). Text `--create` prints `StreamsInboxNextStepLines` (empty inbox until the first durable event from the app or console tap · mesh pub ephemeral ≠ `/dashboard` consume). Create ≠ PULSE (a listed stream with 0 messages is still empty). HITL stays OPEN. Message list does not enable broker replay flags and is not auto-probed by dogfood.
 
 ## KV (operator list/get/put/delete/create-bucket)
 

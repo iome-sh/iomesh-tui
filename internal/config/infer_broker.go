@@ -32,6 +32,31 @@ func InferHooksEndpoint(portalMCPURL string) string {
 	}
 }
 
+// ApplyInferredBroker fills [iomesh] from portal MCP when unset.
+// Infer ≠ Connected. Empty infer does not invent Enabled.
+// Returns the inferred values when applied; zero value when skipped.
+func ApplyInferredBroker(c *Config) InferredBroker {
+	if c == nil {
+		return InferredBroker{}
+	}
+	if c.IOMesh.Enabled && strings.TrimSpace(c.IOMesh.Endpoint) != "" {
+		return InferredBroker{}
+	}
+	inf := c.InferBrokerFromPortalMCP()
+	if inf.Endpoint == "" {
+		return InferredBroker{}
+	}
+	c.IOMesh.Enabled = true
+	c.IOMesh.Endpoint = inf.Endpoint
+	if strings.TrimSpace(c.IOMesh.Tenant) == "" {
+		c.IOMesh.Tenant = inf.Tenant
+	}
+	if strings.TrimSpace(c.IOMesh.Org) == "" {
+		c.IOMesh.Org = inf.Org
+	}
+	return inf
+}
+
 // InferBrokerFromPortalMCP scans [[mcp.servers]] for a portal MCP URL and
 // optional X-IOMesh-Tenant / X-IOMesh-Org headers.
 func (c *Config) InferBrokerFromPortalMCP() InferredBroker {

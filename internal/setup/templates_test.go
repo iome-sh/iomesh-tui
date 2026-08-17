@@ -84,3 +84,12 @@ func TestParseProfiles(t *testing.T) {
 		t.Fatalf("%v", p)
 	}
 }
+
+func TestProfilesWantMesh(t *testing.T) {
+	if ProfilesWantMesh([]Profile{ProfileLocalMemory}) {
+		t.Fatal("local-memory is not mesh")
+	}
+	if !ProfilesWantMesh([]Profile{ProfileMesh}) || !ProfilesWantMesh([]Profile{ProfilePlatformMCP}) || !ProfilesWantMesh([]Profile{ProfileAll}) {
+		t.Fatal("mesh / platform-mcp / all should want mesh")
+	}
+}

@@ -1,25 +1,30 @@
 // Package runtimewire maps config → agent runtime skill dirs and MCP server configs.
 // Shared by cmd/iomesh agent bootstrap, mcp --connect, skills list, ACP session build,
-// and post-setup hot reload (s1526 P4 ReplaceMCP · s1670 ReplaceSkills / skills re-scan).
+// and post-setup hot reload (s1526 P4 ReplaceMCP · s1670 ReplaceSkills / skills re-scan ·
+// s2055 ReplaceMesh when [iomesh] or inferred hooks change).
 //
 // Wire returns SkillDirs for LoadWithBuiltin on bootstrap and /setup reload.
-// ConnectMCP builds managers from Wire MCPServers. Callers hot-swap via
-// Runtime.ReplaceMCP and Runtime.ReplaceSkills (skills re-scan when SkillsFeatureOn).
+// ConnectMCP builds managers from Wire MCPServers. NewMesh applies inferred broker
+// then builds the iomesh client. Callers hot-swap via Runtime.ReplaceMCP,
+// Runtime.ReplaceSkills, and Runtime.ReplaceMesh.
 //
 // Residual honesty:
 //   - package wire ≠ Connected / install APPLY green / Agent Plugins GA / Memory GA
 //   - dual_write OFF (not flipped here)
 //   - Discover / map success ≠ process Connected
 //   - skills re-scan ≠ invent Connected
+//   - infer ≠ Connected · catalog MCP ≠ hooks streams
 //   - TOML [[mcp.servers]] remains primary; plugins append after TOML
 package runtimewire
 
 import (
 	"context"
 	"log/slog"
+	"strings"
 
 	"github.com/iome-sh/iomesh-tui/internal/agentplugins"
 	"github.com/iome-sh/iomesh-tui/internal/config"
+	"github.com/iome-sh/iomesh-tui/internal/iomesh"
 	"github.com/iome-sh/iomesh-tui/internal/mcp"
 	"github.com/iome-sh/iomesh-tui/internal/skills"
 )
@@ -131,4 +136,39 @@ func ConnectMCP(ctx context.Context, cfg *config.Config, workspace string, logge
 		return nil
 	}
 	return mcp.NewManager(ctx, w.MCPServers, logger)
+}
+
+// NewMesh builds the session mesh client from cfg, applying inferred hooks
+// when [iomesh] is unset. Infer ≠ Connected. Empty infer does not invent Enabled.
+// The second return is zero unless infer actually filled [iomesh].
+func NewMesh(cfg *config.Config, logger *slog.Logger) (*iomesh.Client, config.InferredBroker) {
+	if cfg == nil {
+		return iomesh.New(iomesh.Config{}, logger), config.InferredBroker{}
+	}
+	inf := config.ApplyInferredBroker(cfg)
+	if logger == nil {
+		logger = slog.Default()
+	}
+	if inf.Endpoint != "" {
+		logger.Info("inferred broker from portal MCP (catalog ≠ streams · infer ≠ Connected)",
+			"endpoint", inf.Endpoint)
+	}
+	return iomesh.New(iomesh.Config{
+		Enabled:         cfg.IOMesh.Enabled,
+		Endpoint:        cfg.IOMesh.Endpoint,
+		Tenant:          cfg.IOMesh.Tenant,
+		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
+		OrgID:           cfg.IOMesh.Org,
+		WorkspaceID:     cfg.IOMesh.Workspace,
+		DualWrite:       cfg.Memory.DualWrite,
+		MemoryEndpoint:  cfg.Memory.Endpoint,
+		EmitDeptStreams: cfg.IOMesh.EmitDeptStreams,
+		ContextPlane:    cfg.IOMesh.ContextPlane,
+		IncludeLineage:  cfg.IOMesh.IncludeLineage,
+		PolicyMode:      iomesh.PolicyMode(cfg.IOMesh.PolicyMode),
+		CatalogPlane:    cfg.IOMesh.CatalogPlane,
+		InjectCatalog:   cfg.IOMesh.InjectCatalog,
+		Role:            strings.TrimSpace(cfg.Memory.PullRole),
+		PullAllowSuffix: strings.TrimSpace(cfg.Memory.PullAllowSuffix),
+	}, logger), inf
 }

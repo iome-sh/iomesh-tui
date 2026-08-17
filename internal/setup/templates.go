@@ -218,6 +218,17 @@ func BuildManagedFragment(profiles []Profile, opt InitOptions) (string, error) {
 	return b.String(), nil
 }
 
+// ProfilesWantMesh reports whether init includes mesh or platform-mcp (or all).
+func ProfilesWantMesh(profiles []Profile) bool {
+	for _, p := range profiles {
+		switch p {
+		case ProfileMesh, ProfilePlatformMCP, ProfileAll:
+			return true
+		}
+	}
+	return false
+}
+
 // ParseProfiles splits comma/space profile list.
 func ParseProfiles(s string) []Profile {
 	s = strings.TrimSpace(s)

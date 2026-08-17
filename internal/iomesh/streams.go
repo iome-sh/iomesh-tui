@@ -272,6 +272,26 @@ func decodeStreamsList(raw []byte) ([]StreamInfo, error) {
 	return env.Streams, nil
 }
 
+// StreamsInboxNextStepLines is residual-honest after --create and empty FormatStreams.
+// Create ≠ PULSE. Mesh pub is ephemeral and does not fill /dashboard.
+func StreamsInboxNextStepLines() []string {
+	return []string{
+		"next: inbox is empty until the first durable event from your app or console tap",
+		"      then: iomesh mesh streams --messages --name OPERATIONAL_EVENTS",
+		"note: create ≠ PULSE · mesh pub is ephemeral and does not fill /dashboard · catalog MCP ≠ hooks streams",
+	}
+}
+
+// MeshDisabledHooksHint is the hooks-vs-catalog CTA when mesh is disabled
+// (streams / pub / status / wait). Catalog MCP ≠ hooks streams.
+func MeshDisabledHooksHint() string {
+	return strings.Join([]string{
+		`hint: portal MCP (apiv1.iome.sh/v7/mcp) is catalog — streams are hooks.iome.sh`,
+		`hint: pass --endpoint https://hooks.iome.sh --tenant dept.engineering`,
+		`hint: or add [iomesh] enabled=true endpoint="https://hooks.iome.sh" (setup mesh profile)`,
+	}, "\n")
+}
+
 // FormatStreams renders a compact table for CLI operator discovery.
 // Always prints PART (0 when unset) and RETENTION (empty when unset), plus
 // MAX_MSGS / MAX_AGE numeric columns (0 when *int64 nil) for CI scrapers (s699),
@@ -281,6 +301,10 @@ func FormatStreams(streams []StreamInfo) string {
 	fmt.Fprintf(&b, "iomesh streams count=%d\n", len(streams))
 	if len(streams) == 0 {
 		b.WriteString("(no streams)\n")
+		for _, line := range StreamsInboxNextStepLines() {
+			b.WriteString(line)
+			b.WriteByte('\n')
+		}
 		return b.String()
 	}
 	fmt.Fprintf(&b, "%-20s %8s %8s %8s %5s %8s %8s %-10s %-8s %s\n",

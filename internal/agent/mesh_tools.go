@@ -10,6 +10,23 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/router"
 )
 
+var meshToolNames = []string{
+	"list_mesh_catalog",
+	"get_mesh_catalog_product",
+	"mesh_status",
+}
+
+// UnregisterMeshTools removes catalog mesh tools. Used by Runtime.ReplaceMesh.
+func (r *ToolRegistry) UnregisterMeshTools() {
+	if r == nil || r.funcs == nil {
+		return
+	}
+	for _, name := range meshToolNames {
+		delete(r.funcs, name)
+		delete(r.meta, name)
+	}
+}
+
 // RegisterMeshTools adds read-only mesh catalog helpers when catalog plane is on.
 func (r *ToolRegistry) RegisterMeshTools(mesh *iomesh.Client) {
 	if mesh == nil || !mesh.CatalogEnabled() {

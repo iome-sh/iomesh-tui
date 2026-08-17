@@ -51,7 +51,9 @@ Post-write next steps are residual-honest (helper `setup.SetupInitNextStepLines`
 | **In-session** | TUI/session already running | `/setup preflight` · **`/setup reload`** (hot-swap MCP + re-scan skills · package wire ≠ Connected) |
 | **Cold start** | No session / CLI-only | **restart `iomesh`** · `iomesh setup preflight` |
 
-**Honesty:** CLI has **no** `iomesh setup reload` subcommand — in-session `/setup reload` only · dual_write **OFF** · not Memory GA · catalog ≠ Connected · package wire ≠ Connected · free eng **s1686** · slash init next-step parity free eng **s1723**.
+After **mesh** / **platform-mcp** profiles, also append `SetupInitMeshNextStepLines`: `export IOMESH_TOKEN` → `/setup reload` → `iomesh mesh streams --create --yes` → `--messages`. Create ≠ PULSE · catalog MCP ≠ hooks streams · mesh pub ephemeral ≠ `/dashboard` consume.
+
+**Honesty:** CLI has **no** `iomesh setup reload` subcommand — in-session `/setup reload` only · dual_write **OFF** · not Memory GA · catalog ≠ Connected · package wire ≠ Connected · infer ≠ Connected · free eng **s1686** · slash init next-step parity free eng **s1723** · mesh flags slash parity **s2055**.
 
 ### After `iomesh setup preflight` / `/setup preflight` (s1699 dual path)
 
@@ -96,7 +98,7 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 /setup init --stdio            # stdio iomesh-memory-mcp instead of HTTP URL
 /setup preflight               # aliases status|check — FormatPreflightText
 /setup portal                  # console.iome.sh/integrations + settings/agent
-/setup reload                  # hot-swap MCP + re-scan skills (P4 + s1670 · package wire ≠ Connected)
+/setup reload                  # hot-swap MCP + mesh + re-scan skills (P4 + s1670 + s2055 · package wire ≠ Connected · infer ≠ Connected)
 /setup pull                    # continuous pull status (alias status)
 /setup pull status
 /setup pull start [--once] [--config path]
@@ -117,16 +119,16 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 | Subcommand | Behavior |
 |------------|----------|
 | bare / `help` | usage + honesty one-liner (dual_write OFF · not Memory GA · pull/analyze opt-in · drift · guided repair) |
-| `init` | `setup.BuildManagedFragment` + `config.WriteSetupManagedUser` (or `--print-only`) · s1723 appends `SetupInitNextStepLines` (CLI parity with s1686) |
+| `init` | `setup.BuildManagedFragment` + `config.WriteSetupManagedUser` (or `--print-only`) · s1723 appends `SetupInitNextStepLines` (CLI parity with s1686) · mesh/platform-mcp also `SetupInitMeshNextStepLines` (IOMESH_TOKEN → reload → `--create --yes` → `--messages` · create ≠ PULSE) |
 | `preflight` / `status` / `check` | `setup.Preflight` + `FormatPreflightText` (s1699 dual-path next-step appended) |
 | `portal` | browser HITL URLs (`SetupLifecyclePortalHandoff`) · s1723 appends `SetupPortalNextStepLines` |
-| `reload` | `Wire` + `ReplaceSkills` + `ConnectMCP` + `ReplaceMCP` (s1670 skills re-scan · optional `--config path` · s1711 next-step appended via `SetupReloadNextStepLines`) |
+| `reload` | `Wire` + `ReplaceSkills` + `NewMesh` + `ReplaceMesh` + `ConnectMCP` + `ReplaceMCP` (s1670 skills re-scan · s2055 mesh infer/hot-swap · optional `--config path` · s1711 next-step appended via `SetupReloadNextStepLines`) |
 | `pull` | in-session continuous pull status/start/once/stop (s1530 P5 · s1711 next-step via `SetupPullNextStepLines`) |
 | `analyze` | in-session analyze tick status/start/once/stop (s1534 P6 · s1711 next-step via `SetupAnalyzeNextStepLines`) |
 | `drift` / `maintain` | report-only `BuildDriftReport` + `FormatDriftText` (s1534 P6 · s1707 dual-path next-step appended) |
 | `repair` | guided `PlanRepair` / `ApplyRepairPlan` (s1538 P7 · plan default · apply requires `--yes` · s1707 dual-path next-step on FormatRepair*) |
 
-Simple flags on slash `init`: `--stdio` · `--print-only` · `--plugins-dir path` · `--memory-url URL`. Full flag set remains on CLI `iomesh setup init`.
+Simple flags on slash `init`: `--stdio` · `--print-only` · `--plugins-dir path` · `--memory-url URL` · `--mesh-endpoint URL` · `--mesh-tenant id` · `--platform-mcp-url URL`. Mesh endpoint writes **hooks** (not portal `/v7/mcp`). When the portal URL is `apiv1.iome.sh`, infer `https://hooks.iome.sh`. Infer ≠ Connected.
 
 After init: start memory host (if needed) · set secret env vars · `/setup reload` (or restart TUI) · optional `/setup pull start` when mesh + consumer configured · optional `/setup analyze start` · `/setup drift` for residual next steps · optional `/setup repair apply --yes` for safe guided steps only. Slash `/setup init` uses the **same** `SetupInitNextStepLines` helper as CLI `iomesh setup init` (s1723 parity with s1686).
 

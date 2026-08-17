@@ -15,7 +15,6 @@ import (
 
 	"github.com/iome-sh/iomesh-tui/internal/agent"
 	"github.com/iome-sh/iomesh-tui/internal/config"
-	"github.com/iome-sh/iomesh-tui/internal/iomesh"
 	"github.com/iome-sh/iomesh-tui/internal/mcp"
 	"github.com/iome-sh/iomesh-tui/internal/router"
 	"github.com/iome-sh/iomesh-tui/internal/runtimewire"
@@ -392,24 +391,8 @@ func (s *Server) newRuntime(cwd string) (*agent.Runtime, *session.Store, error) 
 
 	var metrics router.MetricsSink = router.NopMetrics{}
 	// s675/s1530: wire [memory].pull_role / pull_allow_suffix for in-session continuous pull.
-	mesh := iomesh.New(iomesh.Config{
-		Enabled:         cfg.IOMesh.Enabled,
-		Endpoint:        cfg.IOMesh.Endpoint,
-		Tenant:          cfg.IOMesh.Tenant,
-		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
-		OrgID:           cfg.IOMesh.Org,
-		WorkspaceID:     cfg.IOMesh.Workspace,
-		DualWrite:       cfg.Memory.DualWrite,
-		MemoryEndpoint:  cfg.Memory.Endpoint,
-		EmitDeptStreams: cfg.IOMesh.EmitDeptStreams,
-		ContextPlane:    cfg.IOMesh.ContextPlane,
-		IncludeLineage:  cfg.IOMesh.IncludeLineage,
-		PolicyMode:      iomesh.PolicyMode(cfg.IOMesh.PolicyMode),
-		CatalogPlane:    cfg.IOMesh.CatalogPlane,
-		InjectCatalog:   cfg.IOMesh.InjectCatalog,
-		Role:            strings.TrimSpace(cfg.Memory.PullRole),
-		PullAllowSuffix: strings.TrimSpace(cfg.Memory.PullAllowSuffix),
-	}, s.logger)
+	// s2055: infer hooks from portal MCP when [iomesh] unset (infer ≠ Connected).
+	mesh, _ := runtimewire.NewMesh(&cfg, s.logger)
 	if mesh.Enabled() {
 		metrics = mesh
 	}

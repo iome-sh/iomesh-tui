@@ -19,7 +19,9 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
 
 1. **Init managed config** — write residual-honest fragment into user `config.toml`.
    - CLI: `iomesh setup init [profiles]`
-   - Slash: `/setup init [profiles] [--stdio] [--print-only] [--plugins-dir path]`
+   - Slash: `/setup init [profiles] [--stdio] [--print-only] [--plugins-dir path] [--memory-url URL] [--mesh-endpoint URL] [--mesh-tenant id] [--platform-mcp-url URL]`
+   - Mesh flags write **hooks** (not portal `/v7/mcp`). apiv1 portal URL infers `https://hooks.iome.sh`. Infer ≠ Connected.
+   - After mesh / platform-mcp write: `export IOMESH_TOKEN` → `/setup reload` → `iomesh mesh streams --create --yes` → `--messages` (create ≠ PULSE · mesh pub ephemeral ≠ `/dashboard` consume)
    - Profiles: `local-memory` (default) · `plugins` · `mesh` · `platform-mcp` · `all`
    - Managed block markers: `# BEGIN iomesh-setup-managed` … `# END iomesh-setup-managed`
    - **dual_write = false always** — setup path refuses `dual_write = true`

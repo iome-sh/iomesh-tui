@@ -36,8 +36,9 @@ aliases: /heartbeat /mesh-console
 fullscreen: esc/q close · tab cycle tenancy · 1-4 jump
 probe:    iomesh mesh streams --messages / broker GET /v1/streams/{name}/messages
           (not portal GET /v52 — cookie-only, TUI must not call it)
-setup:    console Settings → Mesh routing → Streams (OPERATIONAL_EVENTS)
-          or: iomesh mesh streams --create --yes
+setup:    add [iomesh] or infer hooks from portal MCP (catalog ≠ streams · infer ≠ Connected)
+          then console Settings → Mesh routing → Streams (OPERATIONAL_EVENTS)
+          or: iomesh mesh streams --create --yes  (create ≠ PULSE)
           then iomesh mesh streams --messages --name OPERATIONAL_EVENTS
 honesty: ` + DashboardHonestyOneLiner)
 }
@@ -362,30 +363,39 @@ func (d *dashboardState) renderFeed(th Theme, width int) string {
 	if len(d.Events) == 0 {
 		b.WriteString(th.Dim.Render("no consumed messages · mock eval rows hidden"))
 		b.WriteByte('\n')
-		switch strings.TrimSpace(d.ConsumeReason) {
-		case consumeReasonEmptyStream:
-			listed := strings.Join(d.StreamNames, ", ")
-			if listed == "" {
-				listed = "(named)"
+		if !d.MeshAttached {
+			// consume missing without a broker client: do not invent consume or create-as-PULSE
+			b.WriteString(th.Dim.Render("add [iomesh] endpoint=\"https://hooks.iome.sh\" or infer from portal MCP"))
+			b.WriteByte('\n')
+			b.WriteString(th.Dim.Render("portal MCP (apiv1.iome.sh/v7/mcp) is catalog — streams are hooks.iome.sh"))
+			b.WriteByte('\n')
+			b.WriteString(th.Dim.Render("infer ≠ Connected · do not invent consume"))
+		} else {
+			switch strings.TrimSpace(d.ConsumeReason) {
+			case consumeReasonEmptyStream:
+				listed := strings.Join(d.StreamNames, ", ")
+				if listed == "" {
+					listed = "(named)"
+				}
+				b.WriteString(th.Dim.Render("empty_stream · listed " + listed + " · 0 messages"))
+				b.WriteByte('\n')
+				b.WriteString(th.Dim.Render("iomesh mesh streams --messages · broker GET /v1 (not /v52)"))
+			case consumeReasonReplayDisabled:
+				b.WriteString(th.Dim.Render("replay_disabled · GET /v1/streams/{name}/messages 403"))
+				b.WriteByte('\n')
+				b.WriteString(th.Dim.Render("needs X-IOMesh-Tenant or AION_MEMORY_REPLAY_ENABLED · not /v52"))
+			case consumeReasonBrokerUnavailable:
+				b.WriteString(th.Dim.Render("broker_unavailable · consume probe failed"))
+				b.WriteByte('\n')
+				b.WriteString(th.Dim.Render("probe uses mesh streams --messages / broker /v1 · not /v52"))
+			default:
+				// no_streams (mesh attached): create-stream CTA (create ≠ PULSE)
+				b.WriteString(th.Dim.Render("create a mesh stream: console Settings → Mesh routing → Streams"))
+				b.WriteByte('\n')
+				b.WriteString(th.Dim.Render("or: iomesh mesh streams --create --yes"))
+				b.WriteByte('\n')
+				b.WriteString(th.Dim.Render("then iomesh mesh streams --messages --name OPERATIONAL_EVENTS"))
 			}
-			b.WriteString(th.Dim.Render("empty_stream · listed " + listed + " · 0 messages"))
-			b.WriteByte('\n')
-			b.WriteString(th.Dim.Render("iomesh mesh streams --messages · broker GET /v1 (not /v52)"))
-		case consumeReasonReplayDisabled:
-			b.WriteString(th.Dim.Render("replay_disabled · GET /v1/streams/{name}/messages 403"))
-			b.WriteByte('\n')
-			b.WriteString(th.Dim.Render("needs X-IOMesh-Tenant or AION_MEMORY_REPLAY_ENABLED · not /v52"))
-		case consumeReasonBrokerUnavailable:
-			b.WriteString(th.Dim.Render("broker_unavailable · consume probe failed"))
-			b.WriteByte('\n')
-			b.WriteString(th.Dim.Render("probe uses mesh streams --messages / broker /v1 · not /v52"))
-		default:
-			// no_streams and consume missing: create-stream CTA (create ≠ PULSE)
-			b.WriteString(th.Dim.Render("create a mesh stream: console Settings → Mesh routing → Streams"))
-			b.WriteByte('\n')
-			b.WriteString(th.Dim.Render("or: iomesh mesh streams --create --yes"))
-			b.WriteByte('\n')
-			b.WriteString(th.Dim.Render("then iomesh mesh streams --messages --name OPERATIONAL_EVENTS"))
 		}
 		b.WriteByte('\n')
 		b.WriteString(th.Dim.Render("/dashboard preview · eval template on iome.sh (not your org)"))
