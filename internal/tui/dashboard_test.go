@@ -18,6 +18,7 @@ func TestDashboardSnapshot_LandingParityAndHonesty(t *testing.T) {
 		"mock eval rows hidden",
 		"create a mesh stream",
 		"Mesh routing",
+		"or: iomesh mesh streams --create --yes",
 		"OPERATIONAL_EVENTS",
 		"/dashboard preview",
 		"dual_write OFF",

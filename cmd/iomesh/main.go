@@ -975,7 +975,7 @@ func cmdMesh(args []string) int {
   iomesh mesh dogfood   legacy alias for smoke (compat)
   iomesh mesh usage     local LLM metering rollup for this process (UsagePrint always-emit --json)
   iomesh mesh catalog   list/detail governed data products (--id detail; CatalogPrint / CatalogProductPrint --json)
-  iomesh mesh streams   list/get/delete/messages broker streams (GET|DELETE /v1/streams; explicit errors)
+  iomesh mesh streams   list/get/delete/messages/create broker streams (GET|POST|DELETE /v1/streams; explicit errors)
   iomesh mesh kv        KV list/get/put/delete/create-bucket (GET|PUT|DELETE|POST /v1/kv; mutate ops require --yes)
   iomesh mesh pub       ephemeral fire-and-forget publish (POST /v1/pub; requires --yes; PubPrint always-emit)
   iomesh mesh consumer  durable pull consumer create/fetch/ack/nack/delete (.../consumers; requires --yes)
@@ -1042,14 +1042,16 @@ Flags (catalog):
   --tenant id       override tenant
 
 Flags (streams):
-  --name NAME       get one stream (omit to list all); required with --delete / --messages
-  --json            JSON array (list/messages) or object (get); delete: StreamDeletePrint
-  --messages        list messages for --name (requires --name; incompatible with --delete)
+  --name NAME       get/delete/messages one stream (omit to list); create defaults OPERATIONAL_EVENTS
+  --json            JSON array (list/messages) or object (get/create); delete: StreamDeletePrint
+  --messages        list messages for --name (requires --name; incompatible with --delete / --create)
   --from-seq N      messages: lower seq bound (query from_seq)
   --to-seq N        messages: upper seq bound (query to_seq)
   --limit N         messages: max rows (default 20 for CLI comfort)
+  --create          create stream (requires --yes; default name OPERATIONAL_EVENTS; 409 = already exists)
+  --subject S       create: subject override (default from tenant: dept.{tenant}.events.github)
   --delete          delete stream named by --name (requires --name and --yes; DESTRUCTIVE)
-  --yes             confirm destructive delete
+  --yes             confirm destructive delete or mutating create
   --endpoint url    override mesh endpoint
   --config path     config.toml
   --tenant id       override tenant
@@ -1379,34 +1381,56 @@ func cmdMeshCatalog(args []string) int {
 	return 0
 }
 
-// cmdMeshStreams lists, gets, deletes, or inspects messages on broker streams via lean /v1/streams
-// (explicit errors; no SDK dep). --delete is destructive and requires --name and --yes.
-// --messages requires --name and is incompatible with --delete.
+// cmdMeshStreams lists, gets, deletes, inspects messages, or creates broker streams
+// via lean /v1/streams (explicit errors; no SDK dep). --delete is destructive and
+// requires --name and --yes. --create requires --yes (409 = already exists).
+// --create / --delete / --messages are mutually exclusive.
 func cmdMeshStreams(args []string) int {
 	fs := flag.NewFlagSet("mesh streams", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	var (
 		configPath = fs.String("config", "", "config.toml path")
-		name       = fs.String("name", "", "get/delete/messages one stream by name (omit to list all)")
+		name       = fs.String("name", "", "get/delete/messages one stream by name (omit to list; create defaults OPERATIONAL_EVENTS)")
 		endpoint   = fs.String("endpoint", "", "override IOMESH_ENDPOINT")
 		tenant     = fs.String("tenant", "", "override tenant")
-		jsonOut    = fs.Bool("json", false, "print streams/messages as JSON (messages: StreamMessagesPrint; delete: StreamDeletePrint)")
+		jsonOut    = fs.Bool("json", false, "print streams/messages as JSON (messages: StreamMessagesPrint; delete: StreamDeletePrint; create: StreamInfoPrint)")
 		doMessages = fs.Bool("messages", false, "list messages for --name (requires --name; GET /v1/streams/{name}/messages)")
 		fromSeq    = fs.Uint64("from-seq", 0, "messages: from_seq lower bound (0=omit; broker default)")
 		toSeq      = fs.Uint64("to-seq", 0, "messages: to_seq upper bound (0=omit; broker default)")
 		limit      = fs.Int("limit", 20, "messages: max rows (default 20 for CLI comfort)")
+		doCreate   = fs.Bool("create", false, "create stream (requires --yes; default name OPERATIONAL_EVENTS; 409 = already exists)")
+		subject    = fs.String("subject", "", "create: subject override (default from tenant: dept.{tenant}.events.github)")
 		doDelete   = fs.Bool("delete", false, "delete stream named by --name (requires --name and --yes; DESTRUCTIVE)")
-		yes        = fs.Bool("yes", false, "confirm destructive delete")
+		yes        = fs.Bool("yes", false, "confirm destructive delete or mutating create")
 		verbose    = fs.Bool("v", false, "verbose logs")
 	)
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
 	streamName := strings.TrimSpace(*name)
-	if *doDelete && *doMessages {
-		fmt.Fprintln(os.Stderr, "usage: iomesh mesh streams --messages|--delete (not both)")
-		fmt.Fprintln(os.Stderr, "  --messages is incompatible with --delete")
+	nMutate := 0
+	if *doCreate {
+		nMutate++
+	}
+	if *doDelete {
+		nMutate++
+	}
+	if *doMessages {
+		nMutate++
+	}
+	if nMutate > 1 {
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh streams --create|--messages|--delete (not both)")
+		fmt.Fprintln(os.Stderr, "  --create, --messages, and --delete are mutually exclusive")
 		return 2
+	}
+	if *doCreate && !*yes {
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh streams --create --yes [--name NAME] [--subject S] [--json]")
+		fmt.Fprintln(os.Stderr, "  --create requires --yes (mutating; 409 = already exists)")
+		fmt.Fprintln(os.Stderr, "  default name OPERATIONAL_EVENTS; subject from tenant (console defaults)")
+		return 2
+	}
+	if *doCreate && streamName == "" {
+		streamName = "OPERATIONAL_EVENTS"
 	}
 	if *doDelete {
 		if streamName == "" || !*yes {
@@ -1448,6 +1472,31 @@ func cmdMeshStreams(args []string) int {
 	defer stop()
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
+
+	if *doCreate {
+		createCfg := iomesh.DefaultOperationalEventsCreate(cfg.IOMesh.Tenant)
+		createCfg.Name = streamName
+		if sub := strings.TrimSpace(*subject); sub != "" {
+			createCfg.Subjects = []string{sub}
+		}
+		info, err := mesh.CreateStream(ctx, createCfg)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "FAIL mesh streams create: %v\n", err)
+			return 1
+		}
+		if info == nil {
+			fmt.Fprintln(os.Stderr, "FAIL mesh streams create: empty response")
+			return 1
+		}
+		if *jsonOut {
+			fmt.Print(iomesh.FormatStreamInfoJSON(iomesh.NewStreamInfoPrint(*info)))
+			return 0
+		}
+		// 409 already-exists is success (idempotent). Create ≠ PULSE.
+		fmt.Print("PASS mesh streams create\n")
+		fmt.Print(iomesh.FormatStreamDetail(*info))
+		return 0
+	}
 
 	if *doDelete {
 		if err := mesh.DeleteStream(ctx, streamName); err != nil {

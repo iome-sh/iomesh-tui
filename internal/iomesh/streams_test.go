@@ -569,6 +569,9 @@ func TestStreams_DisabledClient(t *testing.T) {
 	if err := c.DeleteStream(context.Background(), "EVENTS"); err == nil || !strings.Contains(err.Error(), "mesh disabled") {
 		t.Fatalf("DeleteStream err=%v", err)
 	}
+	if _, err := c.CreateStream(context.Background(), DefaultOperationalEventsCreate("")); err == nil || !strings.Contains(err.Error(), "mesh disabled") {
+		t.Fatalf("CreateStream err=%v", err)
+	}
 }
 
 func TestGetStream_EmptyName(t *testing.T) {
@@ -712,6 +715,215 @@ func TestDeleteStream_404(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "http 404") {
 		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestDefaultOperationalEventsCreate_SubjectFromTenant(t *testing.T) {
+	t.Parallel()
+
+	empty := DefaultOperationalEventsCreate("")
+	if empty.Name != "OPERATIONAL_EVENTS" {
+		t.Fatalf("empty name=%q", empty.Name)
+	}
+	if len(empty.Subjects) != 1 || empty.Subjects[0] != "dept.engineering.events.github" {
+		t.Fatalf("empty subjects=%v", empty.Subjects)
+	}
+
+	dept := DefaultOperationalEventsCreate("dept.engineering")
+	if len(dept.Subjects) != 1 || dept.Subjects[0] != "dept.engineering.events.github" {
+		t.Fatalf("dept.engineering subjects=%v", dept.Subjects)
+	}
+
+	ops := DefaultOperationalEventsCreate("dept.ops")
+	if len(ops.Subjects) != 1 || ops.Subjects[0] != "dept.ops.events.github" {
+		t.Fatalf("dept.ops subjects=%v", ops.Subjects)
+	}
+
+	bare := DefaultOperationalEventsCreate("engineering")
+	if len(bare.Subjects) != 1 || bare.Subjects[0] != "dept.engineering.events.github" {
+		t.Fatalf("engineering subjects=%v", bare.Subjects)
+	}
+
+	acme := DefaultOperationalEventsCreate("  acme  ")
+	if acme.Name != "OPERATIONAL_EVENTS" || len(acme.Subjects) != 1 || acme.Subjects[0] != "dept.acme.events.github" {
+		t.Fatalf("acme=%+v", acme)
+	}
+}
+
+func TestCreateStream_201(t *testing.T) {
+	prev := UserAgent()
+	SetUserAgent("iomesh-tui/test-s2038")
+	t.Cleanup(func() { SetUserAgent(prev) })
+
+	t.Setenv("IOMESH_TOKEN", "tok-create")
+	var gotMethod, gotPath, gotUA, gotAuth, gotTenant, gotOrg string
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		gotUA = r.Header.Get("User-Agent")
+		gotAuth = r.Header.Get("Authorization")
+		gotTenant = r.Header.Get("X-IOMesh-Tenant")
+		gotOrg = r.Header.Get("X-IOMesh-Org")
+		if r.Method != http.MethodPost || r.URL.Path != "/v1/streams" {
+			http.NotFound(w, r)
+			return
+		}
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		w.WriteHeader(http.StatusCreated)
+		max := int64(1_000_000)
+		age := int64(604800)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"name":        "OPERATIONAL_EVENTS",
+			"subjects":    []string{"dept.engineering.events.github"},
+			"retention":   "limits",
+			"max_msgs":    max,
+			"max_age_sec": age,
+			"messages":    0,
+			"first_seq":   0,
+			"last_seq":    0,
+			"created_at":  time.Date(2026, 8, 16, 12, 0, 0, 0, time.UTC),
+		})
+	}))
+	defer srv.Close()
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL,
+		Tenant: "dept.engineering", OrgID: "org_x",
+		APIKeyEnv: "IOMESH_TOKEN",
+	}, nil)
+	info, err := c.CreateStream(context.Background(), DefaultOperationalEventsCreate("dept.engineering"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotMethod != http.MethodPost {
+		t.Fatalf("method=%q", gotMethod)
+	}
+	if gotPath != "/v1/streams" {
+		t.Fatalf("path=%q", gotPath)
+	}
+	if gotUA != "iomesh-tui/test-s2038" {
+		t.Fatalf("User-Agent=%q", gotUA)
+	}
+	if gotAuth != "Bearer tok-create" {
+		t.Fatalf("Authorization=%q", gotAuth)
+	}
+	if gotTenant != "dept.engineering" || gotOrg != "org_x" {
+		t.Fatalf("tenant=%q org=%q", gotTenant, gotOrg)
+	}
+	if gotBody["name"] != "OPERATIONAL_EVENTS" {
+		t.Fatalf("body name=%v", gotBody["name"])
+	}
+	if gotBody["retention"] != "limits" {
+		t.Fatalf("retention=%v", gotBody["retention"])
+	}
+	if gotBody["max_age_sec"] != float64(604800) {
+		t.Fatalf("max_age_sec=%v", gotBody["max_age_sec"])
+	}
+	if gotBody["max_msgs"] != float64(1_000_000) {
+		t.Fatalf("max_msgs=%v", gotBody["max_msgs"])
+	}
+	if _, ok := gotBody["retention_tier"]; ok {
+		t.Fatalf("must not send retention_tier on create wire: %v", gotBody)
+	}
+	subs, _ := gotBody["subjects"].([]any)
+	if len(subs) != 1 || subs[0] != "dept.engineering.events.github" {
+		t.Fatalf("subjects=%v", gotBody["subjects"])
+	}
+	if info == nil || info.Name != "OPERATIONAL_EVENTS" {
+		t.Fatalf("info=%+v", info)
+	}
+	if info.Messages != 0 {
+		t.Fatalf("create ≠ PULSE; messages=%d", info.Messages)
+	}
+	detail := FormatStreamDetail(*info)
+	if !strings.Contains(detail, "OPERATIONAL_EVENTS") || !strings.Contains(detail, "dept.engineering.events.github") {
+		t.Fatal(detail)
+	}
+}
+
+func TestCreateStream_409GetStream(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/v1/streams":
+			w.WriteHeader(http.StatusConflict)
+			_, _ = w.Write([]byte(`{"error":"stream exists"}`))
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/streams/OPERATIONAL_EVENTS":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"name":     "OPERATIONAL_EVENTS",
+				"subjects": []string{"dept.engineering.events.github"},
+				"messages": 0,
+			})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	info, err := c.CreateStream(context.Background(), DefaultOperationalEventsCreate(""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info == nil || info.Name != "OPERATIONAL_EVENTS" {
+		t.Fatalf("info=%+v", info)
+	}
+	if len(info.Subjects) != 1 || info.Subjects[0] != "dept.engineering.events.github" {
+		t.Fatalf("subjects=%v (want GetStream body)", info.Subjects)
+	}
+}
+
+func TestCreateStream_409NameOnlyWhenGetFails(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost && r.URL.Path == "/v1/streams" {
+			w.WriteHeader(http.StatusConflict)
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	info, err := c.CreateStream(context.Background(), StreamCreateConfig{
+		Name:     "OPERATIONAL_EVENTS",
+		Subjects: []string{"dept.engineering.events.github"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info == nil || info.Name != "OPERATIONAL_EVENTS" {
+		t.Fatalf("info=%+v want Name=OPERATIONAL_EVENTS", info)
+	}
+}
+
+func TestCreateStream_403NotUnpaidInvent(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`{"error":"forbidden"}`))
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	_, err := c.CreateStream(context.Background(), DefaultOperationalEventsCreate(""))
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "http 403") {
+		t.Fatalf("err=%v", err)
+	}
+	low := strings.ToLower(err.Error())
+	if strings.Contains(low, "unpaid") || strings.Contains(low, "billing") {
+		t.Fatalf("must not invent unpaid 403: %v", err)
+	}
+}
+
+func TestCreateStream_EmptyNameAndSubject(t *testing.T) {
+	c := New(Config{Enabled: true, Endpoint: "http://127.0.0.1:9"}, nil)
+	if _, err := c.CreateStream(context.Background(), StreamCreateConfig{}); err == nil || !strings.Contains(err.Error(), "stream name required") {
+		t.Fatalf("empty name err=%v", err)
+	}
+	if _, err := c.CreateStream(context.Background(), StreamCreateConfig{Name: "EVENTS"}); err == nil || !strings.Contains(err.Error(), "subject required") {
+		t.Fatalf("empty subject err=%v", err)
 	}
 }
 

@@ -151,14 +151,15 @@ iomesh mesh catalog --id ops-incidents        # FormatProductDetail text
 iomesh mesh catalog --id ops-incidents --json # CatalogProductPrint always-emit (s744; completeness pin s753)
 ```
 
-## Stream discovery (operator list/get/delete/messages)
+## Stream discovery (operator list/get/delete/messages/create)
 
-Operator discovery over **org event streams / heartbeats** (help-blurb level framing — list/get/messages/delete wire unchanged). Lean client surface (no SDK dependency; wire parity with [iomesh-client-sdk-go](https://github.com/iome-sh/iomesh-client-sdk-go) `StreamInfo` / message list intent, or [Python SDK peer](https://github.com/iome-sh/iomesh-client-sdk-python)):
+Operator discovery over **org event streams / heartbeats** (help-blurb level framing — list/get/messages/delete wire unchanged; create is console-default mutate). Lean client surface (no SDK dependency; wire parity with [iomesh-client-sdk-go](https://github.com/iome-sh/iomesh-client-sdk-go) `StreamInfo` / message list intent, or [Python SDK peer](https://github.com/iome-sh/iomesh-client-sdk-python)):
 
 | Method | HTTP | Notes |
 |--------|------|-------|
 | `ListStreams` | `GET /v1/streams` | Accepts JSON array or `{"streams":[...]}`; **explicit errors** (not fail-open empty) |
 | `GetStream(name)` | `GET /v1/streams/{name}` | Path-escaped name; empty name / 404 → error |
+| `CreateStream(cfg)` | `POST /v1/streams` | Body `{name,subjects,retention,max_age_sec,max_msgs,description?}` — **no `retention_tier`**; 201 decodes `StreamInfo`; **409 Conflict = success** (idempotent: `GetStream` or `{Name}`); empty name / no subjects / other non-2xx → error. Defaults: `DefaultOperationalEventsCreate(tenant)` → `OPERATIONAL_EVENTS` + `dept.{tenant}.events.github` (empty tenant → `dept.engineering.events.github`). Create ≠ PULSE. Do not invent unpaid 403. |
 | `DeleteStream(name)` | `DELETE /v1/streams/{name}` | Path-escaped name; 2xx/204 success; empty name / non-2xx → error |
 | `ListStreamMessages(name, opts)` | `GET /v1/streams/{name}/messages` | Query `from_seq` / `to_seq` / `limit`; path-escaped name; empty name / non-2xx (incl. 403 replay gate) → error; base64 payload decoded |
 
@@ -194,12 +195,16 @@ iomesh mesh streams --name EVENTS --json
 iomesh mesh streams --messages --name EVENTS
 iomesh mesh streams --messages --name EVENTS --from-seq 1 --to-seq 100 --limit 50
 iomesh mesh streams --messages --name EVENTS --json   # StreamMessagesPrint envelope (s720; completeness pin s759)
-# DESTRUCTIVE — requires both --name and --yes (incompatible with --messages):
+# Create — requires --yes (incompatible with --delete / --messages); 409 = already exists:
+iomesh mesh streams --create --yes
+iomesh mesh streams --create --yes --name OPERATIONAL_EVENTS --subject dept.engineering.events.github
+iomesh mesh streams --create --yes --json   # StreamInfoPrint (create ≠ PULSE)
+# DESTRUCTIVE — requires both --name and --yes (incompatible with --messages / --create):
 iomesh mesh streams --delete --name TEMP --yes
 iomesh mesh streams --delete --name TEMP --yes --json   # StreamDeletePrint {ok,name} (s726; completeness pin s759)
 ```
 
-Mesh disabled / empty endpoint → error `mesh disabled` (non-zero CLI exit). Dogfood probes list only (`streams` step + `streams_count` / `streams_names`); delete and message list are CLI-only. Message list does not enable broker replay flags and is not auto-probed by dogfood.
+Mesh disabled / empty endpoint → error `mesh disabled` (non-zero CLI exit). Dogfood probes list only (`streams` step + `streams_count` / `streams_names`); create, delete, and message list are CLI-only. Create uses console defaults (`OPERATIONAL_EVENTS`, Temp 7d `limits`, **no** `retention_tier` on the wire). Create ≠ PULSE (a listed stream with 0 messages is still empty). HITL stays OPEN. Message list does not enable broker replay flags and is not auto-probed by dogfood.
 
 ## KV (operator list/get/put/delete/create-bucket)
 
@@ -321,7 +326,7 @@ Requires `--stream`, `--name`, and **`--yes`**. Create is idempotent (409 alread
 - `internal/iomesh/policy.go` — EvaluatePolicy
 - `internal/iomesh/meter.go` — UsageMeter / FormatUsage / NewUsagePrint / FormatUsageJSON (UsagePrint always-emit s738; completeness pin s756)
 - `internal/iomesh/catalog.go` — ListCatalog / GetCatalogProduct / FormatCatalog / NewCatalogPrint / FormatCatalogJSON / NewCatalogProductPrint / FormatCatalogProductJSON / FormatProductDetail / CatalogSnippet (CatalogPrint s735 + CatalogProductPrint s744; completeness pin s753)
-- `internal/iomesh/streams.go` — ListStreams / GetStream / DeleteStream / FormatStreams / NewStreamInfoPrint / FormatStreamInfoJSON / FormatStreamInfoListJSON / NewStreamDeletePrint / FormatStreamDelete / FormatStreamDeleteJSON (StreamDeletePrint s726; completeness pin s759)
+- `internal/iomesh/streams.go` — ListStreams / GetStream / CreateStream / DefaultOperationalEventsCreate / DeleteStream / FormatStreams / NewStreamInfoPrint / FormatStreamInfoJSON / FormatStreamInfoListJSON / NewStreamDeletePrint / FormatStreamDelete / FormatStreamDeleteJSON (StreamDeletePrint s726; completeness pin s759)
 - `internal/iomesh/streams_messages.go` — ListStreamMessages / FormatStreamMessages / NewStreamMessagePrint / NewStreamMessagesPrint / FormatStreamMessagesPrint / FormatStreamMessagesJSON (StreamMessagesPrint s720 + StreamMessagePrint s723; completeness pin s759)
 - `internal/iomesh/consumers.go` — CreateConsumer / ConsumerFetch / ConsumerAck / ConsumerNack / DeleteConsumer / FormatConsumerInfo / FormatConsumerInfoWithAuth / NewConsumerInfoPrint / FormatConsumerInfoJSON / NewConsumerFetchPrint / FormatConsumerFetch / FormatConsumerFetchJSON / NewConsumerAckPrint / FormatConsumerAck / NewConsumerDeletePrint / FormatConsumerDelete
 - `internal/iomesh/kv.go` — KVGet / KVListKeys / KVPut / KVDelete / KVCreateBucket / FormatKVEntry / FormatKVKeys / FormatKVBucketInfo / NewKVBucketInfoPrint / FormatKVBucketInfoJSON / NewKVEntryPrint / FormatKVEntryJSON / NewKVKeysPrint / FormatKVKeysJSON / NewKVPutPrint / FormatKVPut / FormatKVPutJSON / NewKVDeletePrint / FormatKVDelete / FormatKVDeleteJSON (KVPutPrint/KVDeletePrint s729; completeness pin s756)
