@@ -1827,7 +1827,7 @@ func (rt *Runtime) MemoryAdvancedStatus(ctx context.Context) (string, error) {
 	case "available":
 		fmt.Fprintf(&b, "MCP path: available (%d server(s))\n", nServers)
 	case "empty":
-		b.WriteString("MCP path: connected-empty (manager present, 0 servers) · fail-open\n")
+		b.WriteString("MCP path: mcp-manager-empty (0 servers) · fail-open\n")
 	default:
 		b.WriteString("MCP path: offline (no MCP manager/clients) · fail-open\n")
 	}
