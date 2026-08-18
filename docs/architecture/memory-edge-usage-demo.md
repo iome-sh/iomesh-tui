@@ -109,8 +109,9 @@ git clone https://github.com/iome-sh/iomesh-tui.git
 cd iomesh-tui
 make build          # → ./bin/iomesh
 
-# Or released / tip install
+# Or latest tagged release (@latest = latest semver tag, not untagged main)
 go install github.com/iome-sh/iomesh-tui/cmd/iomesh@latest
+# Tip of default branch: go install github.com/iome-sh/iomesh-tui/cmd/iomesh@main
 ```
 
 Set at least one LLM key (default cascade uses DeepSeek):

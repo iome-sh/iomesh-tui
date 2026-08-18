@@ -104,7 +104,8 @@ make build
 go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v0.77.0
 # Pin matches latest known tag at docs write; GitHub Releases may be newer — see RELEASING.md
 # Multi-platform archives: GitHub Releases (GoReleaser on v* tags)
-# Or tip of main: go install github.com/iome-sh/iomesh-tui/cmd/iomesh@latest  (pre-1.0 Beta)
+# @latest is the latest semver tag (same as the pin above today), not untagged main
+# Tip of default branch: go install github.com/iome-sh/iomesh-tui/cmd/iomesh@main  (pre-1.0 Beta)
 
 export DEEPSEEK_API_KEY=…          # required for default cascade
 # export XAI_API_KEY=…             # optional Grok fallback

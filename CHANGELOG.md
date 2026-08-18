@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **README `go install` honesty (#357)** — Quick start no longer calls `@latest` “tip of main”. `@latest` / `@v0.77.0` is the latest **semver tag**; tip of default branch is `go install …@main`. Does not cut a new tag. Dashboard empty/preview work is already on `main`; this is install/docs only.
+
 - **Onboard next mesh integrate-app steps (s2057)** — `/onboard next mesh` now lists the shipped s2055 CLI path: add `[iomesh]` or infer from portal MCP (infer ≠ Connected) → `IOMESH_TOKEN` → `iomesh mesh streams --create --yes` (create ≠ PULSE) → wait for a durable event from the app/console tap → `--messages` / `/dashboard` (mesh pub ephemeral ≠ consume). Residual-honest: `streams_not_probed` · never invent stream green · catalog ≠ Connected · mesh ≠ memory. Existing lock dump `~$88/$119` stays. Does not invent Memory GA.
 
 - **Dashboard three-pillar kinds (s2046)** — consume classifies `Kind` from subject tokens (same as CP): `events.docs` / `events.documents` / `notion` / `confluence` / `sharepoint` / `google_drive` / `.docs.` → knowledge; `metric.` / `.cdc` / `embedding` / `warehouse` / `.dbt` → analytics; else ops. GitHub stays ops. When knowledge or analytics count is 0, `/dashboard` adds `knowledge Beta empty · analytics Beta empty · not GA`. Does not invent events or GA. C2 stays OPEN.
