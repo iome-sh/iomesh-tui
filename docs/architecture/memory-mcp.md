@@ -87,7 +87,7 @@ Honesty pin so TUI surfaces agree with the **cost-max local-primary** charter af
 | **Long-term / temporal memory** | Customer **local palace** — local MCP (`iomesh-memory-mcp`) + optional local AI (Ollama pin). Not hosted cloud GPU palace. |
 | **Mesh heartbeats** | **Pull egress** into local palace (`iomesh memory pull`) — not a push-to-cloud-palace product path. |
 | **dual_write** | Optional mesh audit only · **default OFF** (`[memory].dual_write` / `IOMESH_MEMORY_DUAL_WRITE`). |
-| **$119 language** (if any) | **Memory Ops Pack** (pull / retain / audit / support) — **not** hosted cloud GPU palace. |
+| **Optional mesh pull** | Mesh credentials + platform endpoint can pull into local palace — **not** hosted cloud GPU palace. Do not invent a priced add-on SKU here. |
 | **Local AI** | Customer-edge Ollama only · **≠ platform GPU**. |
 | **Hosted Palace** | **Sunset** until scale. |
 | **Does not invent** | GA · freemium unlimited palace · platform GPU · full mesh RBAC GA. |
@@ -96,18 +96,18 @@ Peer aion **s767** bi-heartbeats local-primary honesty continuum. Unit pin: `Tes
 
 #### Naming honesty (s771 pin)
 
-Docs **naming honesty** residual after aion **s770** usage-rates Ops Pack honesty (this serial is docs/tests only — **does not** re-claim s761 Ollama product, s765 local-edge completeness, or s768 local-primary LT pin bodies):
+Docs **naming honesty** residual after aion **s770** usage-rates honesty (this serial is docs/tests only — **does not** re-claim s761 Ollama product, s765 local-edge completeness, or s768 local-primary LT pin bodies):
 
 | Name / phrase | Honest meaning in this TUI |
 |---------------|----------------------------|
 | **“Memory Palace”** | **Local-primary customer-edge palace** — MCP (`iomesh-memory-mcp`) + mesh **pull** into local store. **Not** multi-tenant hosted cloud GPU / Qdrant Palace fleet. |
-| **$119 / platform SKU** (if mentioned) | **Memory Ops Pack** — pull / Extended retain / audit / support entitlement. **Not** hosted GPU palace fleet. |
+| **Optional mesh pull** | Pull / retain into local palace when mesh is configured. **Not** hosted GPU palace fleet. Do not invent a priced add-on SKU here. |
 | **dual_write** | Optional mesh audit only · **default OFF**. |
 | **Hosted Palace** | **Sunset** until scale. |
 | **Local AI** | Customer-edge Ollama · **≠ platform GPU**. |
 | **Does not invent** | GA · freemium unlimited palace · platform GPU · full mesh RBAC GA. |
 
-Peer aion **s770** usage-rates Ops Pack residual · prior TUI **s768** local-primary LT honesty. dual_write OFF · Palace sunset · no invent GA · offline unit ≠ live APPLY · Beta.
+Peer aion **s770** usage-rates residual · prior TUI **s768** local-primary LT honesty. dual_write OFF · Palace sunset · no invent GA · offline unit ≠ live APPLY · Beta.
 
 #### Buyer claim pin (s774)
 
@@ -117,13 +117,13 @@ OSS / buyer-claim boundary pin peer aion **s773** cost-max claim suite expand (t
 |---------|-----------|----------------|
 | **Public MIT `iomesh-tui`** | OSS agent harness + optional mesh **client** surface (SDK elsewhere) | Hosted multi-tenant mesh **control plane** shipped inside free TUI |
 | **Memory** | Local palace via MCP (`iomesh-memory-mcp`); mesh **pull** into local store | Multi-tenant hosted / freemium cloud palace included with free TUI |
-| **$119 / platform SKU** (if mentioned) | **Memory Ops Pack** (pull / retain / audit / support) — **optional** local-primary commercial overlay · **not first-run required** (s1695) | Cloud GPU / hosted Palace fleet as the $119 product · freemium hosted palace · Ops Pack as first-run gate |
+| **Optional mesh pull** | Mesh pull into local palace — **optional** · **not first-run required** (s1695) | Cloud GPU / hosted Palace fleet as a first-run product · freemium hosted palace · pay-to-get-memory |
 | **Local AI** | Customer-edge Ollama pin | Platform GPU from Ollama pin |
 | **dual_write** | Optional mesh audit · **default OFF** | dual_write as primary palace path |
 | **Hosted Palace** | Sunset until scale | Invent GA · freemium unlimited palace · full mesh RBAC GA |
-| **First-run (s1695)** | TUI OSS + `iomesh-memory-mcp` local-primary only · mesh optional | Mesh / Ops Pack required for first-run · pay-to-get-memory invent |
+| **First-run (s1695)** | TUI OSS + `iomesh-memory-mcp` local-primary only · mesh optional | Mesh required for first-run · pay-to-get-memory invent |
 
-Peer aion **s773** cost-max claim suite expand · prior TUI **s771** naming · **s768** local-primary · **s1695** Ops Pack not first-run required. dual_write OFF · Palace sunset · local AI ≠ platform GPU · no invent GA · offline unit ≠ live APPLY · Beta. Unit pin peer: `TestDefault_DualWriteOff` / `TestDefaultMemoryConfig_DualWriteOff` (s768 body + s771/s774 comment peers).
+Peer aion **s773** cost-max claim suite expand · prior TUI **s771** naming · **s768** local-primary · **s1695** mesh not first-run required. dual_write OFF · Palace sunset · local AI ≠ platform GPU · no invent GA · offline unit ≠ live APPLY · Beta. Unit pin peer: `TestDefault_DualWriteOff` / `TestDefaultMemoryConfig_DualWriteOff` (s768 body + s771/s774 comment peers).
 
 **Non-goals:** private monorepo imports in public TUI; embedding Qdrant/Palace in-process; dependency on `iomesh-client-sdk-go` or `iomesh-client-sdk-python` (TUI does not package either SDK).
 
@@ -291,7 +291,7 @@ Residual-honest **edge Memory OSS install path** for operators (docs + `/onboard
 iomesh-tui (public MIT)  +  Memory MCP (iomesh-memory-mcp product name)  +  github.com/iome-sh/memory kernel  +  local palace
 ```
 
-Optional mesh feed: credentials + platform + **Memory Ops Pack (~$119)** for durable `iomesh memory pull` only — mesh base footprint separate (~$88). Mesh is **optional for pull only**, not required for local-primary Memory. **First-run (s1695):** OSS local-primary complete **without** mesh · **Ops Pack not first-run required** · Ops Pack = optional commercial overlay (pull/retain/support · not freemium hosted palace · Ops Pack ≠ GPU).
+Optional mesh feed: credentials + platform for durable `iomesh memory pull` only. Mesh is **optional for pull only**, not required for local-primary Memory. **First-run (s1695):** OSS local-primary complete **without** mesh. Do not invent a priced add-on SKU or a mesh base rate here.
 
 **M2 lean host attach (s1458 · residual-honest · not invent flip complete / GA):**
 
