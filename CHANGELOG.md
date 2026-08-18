@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- **First-run pack language (#361):** README + security + memory-mcp + edge-user-journey no longer invent a priced Memory Ops Pack or ~$88 / ~$119. Mesh stays optional. Local MIT · dual_write OFF · not Memory GA.
+
 ## [1.0.0] — 2026-08-18
 
 First **SemVer 1.0** cut of the MIT harness. No longer a 0.x / Beta / MVP tag. v1.0 is the public OSS TUI/CLI — **not** hosted Memory GA, **not** live HITL closed, **not** Knowledge/Analytics GA. dual_write OFF · catalog ≠ Connected · eval template ≠ Connected · `/dashboard` ≠ live `/v52` consume.
