@@ -53,6 +53,38 @@ func (a runtimeAdapter) Workspace() workspaceRoot {
 	return a.rt.Workspace()
 }
 
+// processConfigPath is the config file the running process loaded (--config /
+// IOMESH_CONFIG / user default). Empty when the runtime was not given a path.
+func (a runtimeAdapter) processConfigPath() string {
+	if a.rt == nil {
+		return ""
+	}
+	return a.rt.ConfigPath()
+}
+
+// slashConfigPath returns explicit slash --config (empty if omitted).
+func slashConfigPath(args []string) string {
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		if a == "--config" && i+1 < len(args) {
+			return strings.TrimSpace(args[i+1])
+		}
+		if strings.HasPrefix(a, "--config=") {
+			return strings.TrimSpace(strings.TrimPrefix(a, "--config="))
+		}
+	}
+	return ""
+}
+
+// setupProbeConfigPath prefers slash --config, then the process config path.
+// Empty means callers should LoadUser() (IOMESH_CONFIG / user default).
+func setupProbeConfigPath(args []string, processPath string) string {
+	if p := slashConfigPath(args); p != "" {
+		return p
+	}
+	return strings.TrimSpace(processPath)
+}
+
 // Run starts the interactive UI without a session store (full-screen when possible).
 func Run(ctx context.Context, rt *agent.Runtime, logger *slog.Logger) error {
 	return RunWithStore(ctx, rt, nil, logger)
@@ -609,7 +641,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		case "init":
 			handleSetupInit(out, parts[2:])
 		case "preflight", "status", "check", "st":
-			handleSetupPreflight(out, parts[2:])
+			handleSetupPreflight(out, rt, parts[2:])
 		case "portal", "hitl", "urls":
 			fmt.Fprintln(out, setup.SetupLifecyclePortalHandoff())
 			for _, line := range setup.SetupPortalNextStepLines() {
@@ -1175,9 +1207,9 @@ func integrationsHelp() string {
 func setupHelp() string {
 	base := strings.TrimSpace(`usage: /setup [init [profiles] [--stdio] [--print-only] [--plugins-dir path] [--memory-url URL] [--mesh-endpoint URL] [--mesh-tenant id] [--platform-mcp-url URL] | preflight | portal | reload | pull … | analyze … | drift|maintain | repair …]
   init       write managed config fragment (profiles: local-memory|plugins|mesh|platform-mcp|all; default local-memory; mesh flags write hooks not /v7/mcp)
-  preflight  residual-honest probe (aliases status|check) — PASS ≠ invent Connected / Memory GA
+  preflight  residual-honest probe (aliases status|check) — inherits process --config / IOMESH_CONFIG unless slash --config; PASS ≠ invent Connected / Memory GA
   portal     browser HITL URLs (integrations + settings/agent)
-  reload     hot-swap MCP + mesh + re-scan skills from user config (Wire · ReplaceSkills · NewMesh · ReplaceMesh · ConnectMCP + ReplaceMCP; package wire ≠ Connected · infer ≠ Connected)
+  reload     hot-swap MCP + mesh + re-scan skills from process config (or slash --config; Wire · ReplaceSkills · NewMesh · ReplaceMesh · ConnectMCP + ReplaceMCP; package wire ≠ Connected · infer ≠ Connected)
   pull       continuous pull status|start|once|stop (s1530 P5 · opt-in · CLI iomesh memory pull still valid)
   analyze    analyze tick status|start|once|stop (s1534 P6 · opt-in · /memory digest still valid)
   drift      report-only config vs runtime drift (alias maintain · residual next steps)
@@ -1332,6 +1364,9 @@ func handleSetupReload(out io.Writer, rt runtimeAdapter, args []string) {
 			cfgPath = strings.TrimSpace(strings.TrimPrefix(a, "--config="))
 			continue
 		}
+	}
+	if cfgPath == "" {
+		cfgPath = rt.processConfigPath()
 	}
 	var (
 		cfg *config.Config
@@ -1549,6 +1584,9 @@ func handleSetupPullStart(out io.Writer, rt runtimeAdapter, args []string, once 
 			fmt.Fprintf(out, "setup pull start: unexpected arg %q\n%s\n", a, setupPullHelp())
 			return
 		}
+	}
+	if cfgPath == "" {
+		cfgPath = rt.processConfigPath()
 	}
 	var (
 		cfg *config.Config
@@ -1812,6 +1850,9 @@ func handleSetupAnalyzeStart(out io.Writer, rt runtimeAdapter, args []string, on
 			return
 		}
 	}
+	if cfgPath == "" {
+		cfgPath = rt.processConfigPath()
+	}
 	var (
 		cfg *config.Config
 		err error
@@ -1933,6 +1974,9 @@ func handleSetupDrift(out io.Writer, rt runtimeAdapter, args []string) {
 			// tolerate unknown tokens lightly (aliases already consumed at switch)
 		}
 	}
+	if cfgPath == "" {
+		cfgPath = rt.processConfigPath()
+	}
 	var (
 		cfg *config.Config
 		err error
@@ -2020,7 +2064,7 @@ func handleSetupRepairPlan(out io.Writer, rt runtimeAdapter, args []string) {
 			return
 		}
 	}
-	cfg, _, loadNote := loadSetupConfig(args)
+	cfg, _, loadNote := loadSetupConfig(rt, args)
 	if loadNote != "" {
 		fmt.Fprintln(out, loadNote)
 	}
@@ -2062,7 +2106,10 @@ func handleSetupRepairApply(out io.Writer, rt runtimeAdapter, args []string) {
 		fmt.Fprintln(out, setupRepairHonesty)
 		return
 	}
-	// Load config (explicit path or user).
+	if cfgPath == "" {
+		cfgPath = rt.processConfigPath()
+	}
+	// Load config (slash --config, else process path, else user).
 	var (
 		cfg *config.Config
 		err error
@@ -2089,19 +2136,11 @@ func handleSetupRepairApply(out io.Writer, rt runtimeAdapter, args []string) {
 	fmt.Fprint(out, setup.FormatDriftText(after))
 }
 
-// loadSetupConfig parses optional --config from args and loads user/path config.
-// Fail-open: returns nil cfg + note on load error (residual-honest empty intent).
-func loadSetupConfig(args []string) (cfg *config.Config, cfgPath string, note string) {
-	for i := 0; i < len(args); i++ {
-		a := args[i]
-		switch {
-		case a == "--config" && i+1 < len(args):
-			i++
-			cfgPath = strings.TrimSpace(args[i])
-		case strings.HasPrefix(a, "--config="):
-			cfgPath = strings.TrimSpace(strings.TrimPrefix(a, "--config="))
-		}
-	}
+// loadSetupConfig parses optional --config from args and loads that path,
+// else the process config path, else user/IOMESH_CONFIG. Fail-open: returns
+// nil cfg + note on load error (residual-honest empty intent).
+func loadSetupConfig(rt runtimeAdapter, args []string) (cfg *config.Config, cfgPath string, note string) {
+	cfgPath = setupProbeConfigPath(args, rt.processConfigPath())
 	var err error
 	if cfgPath != "" {
 		cfg, err = config.Load(cfgPath)
@@ -2177,21 +2216,9 @@ func (e setupRepairExecutor) StartAnalyze(ctx context.Context) error {
 }
 
 // handleSetupPreflight runs residual-honest setup.Preflight for /setup preflight|status|check.
-func handleSetupPreflight(out io.Writer, args []string) {
-	cfgPath := ""
-	for i := 0; i < len(args); i++ {
-		a := args[i]
-		if a == "--config" && i+1 < len(args) {
-			i++
-			cfgPath = strings.TrimSpace(args[i])
-			continue
-		}
-		if strings.HasPrefix(a, "--config=") {
-			cfgPath = strings.TrimSpace(strings.TrimPrefix(a, "--config="))
-			continue
-		}
-		// ignore unknown trailing tokens lightly
-	}
+// Bare /setup preflight inherits the process --config / IOMESH_CONFIG path; slash --config overrides.
+func handleSetupPreflight(out io.Writer, rt runtimeAdapter, args []string) {
+	cfgPath := setupProbeConfigPath(args, rt.processConfigPath())
 	rep, err := setup.Preflight(context.Background(), cfgPath)
 	if err != nil {
 		fmt.Fprintf(out, "setup preflight: %v\n", err)

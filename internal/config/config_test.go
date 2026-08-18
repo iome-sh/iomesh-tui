@@ -326,6 +326,28 @@ func TestLoad_MissingFileUsesDefaults(t *testing.T) {
 	}
 }
 
+func TestResolvePath_ExplicitWinsOverEnv(t *testing.T) {
+	t.Setenv("IOMESH_CONFIG", "/tmp/from-env.toml")
+	got, err := ResolvePath(" /tmp/from-flag.toml ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "/tmp/from-flag.toml" {
+		t.Fatalf("got %q", got)
+	}
+}
+
+func TestResolvePath_EmptyUsesIOMESHConfig(t *testing.T) {
+	t.Setenv("IOMESH_CONFIG", "/tmp/from-env.toml")
+	got, err := ResolvePath("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "/tmp/from-env.toml" {
+		t.Fatalf("got %q", got)
+	}
+}
+
 func TestLoad_CustomModel(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.toml")

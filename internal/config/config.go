@@ -379,6 +379,15 @@ func LoadUser() (*Config, error) {
 	return Load(path)
 }
 
+// ResolvePath returns the explicit config path when set, otherwise UserConfigPath().
+// Matches process load order: --config, then IOMESH_CONFIG, then XDG/user default.
+func ResolvePath(explicit string) (string, error) {
+	if p := strings.TrimSpace(explicit); p != "" {
+		return p, nil
+	}
+	return UserConfigPath()
+}
+
 // UserConfigPath returns the default user config file path.
 func UserConfigPath() (string, error) {
 	if p := os.Getenv("IOMESH_CONFIG"); p != "" {

@@ -51,6 +51,9 @@ type Config struct {
 	WorktreeBase string
 	// WorktreeAutoRemove deletes successful isolation worktrees.
 	WorktreeAutoRemove bool
+	// ConfigPath is the process config file used at start (--config / IOMESH_CONFIG /
+	// user default). In-session /setup probes inherit this when slash --config is omitted.
+	ConfigPath string
 }
 
 // Runtime is the agent loop shared by TUI / headless / ACP.
@@ -104,6 +107,9 @@ type Runtime struct {
 	analyzeLastSum string
 	analyzeLastErr string
 	analyzeTicks   int
+
+	// Process config path inherited by in-session /setup probes (empty → LoadUser).
+	configPath string
 }
 
 // New constructs a Runtime. mesh may be nil.
@@ -119,12 +125,13 @@ func New(cfg Config, r *router.Router, mesh *iomesh.Client, logger *slog.Logger)
 		return nil, err
 	}
 	rt := &Runtime{
-		cfg:    cfg,
-		router: r,
-		mesh:   mesh,
-		ws:     ws,
-		logger: logger,
-		tools:  DefaultTools(ws),
+		cfg:        cfg,
+		router:     r,
+		mesh:       mesh,
+		ws:         ws,
+		logger:     logger,
+		tools:      DefaultTools(ws),
+		configPath: strings.TrimSpace(cfg.ConfigPath),
 		messages: []router.Message{
 			{Role: "system", Content: defaultSystemPrompt(ws.Root())},
 		},
@@ -172,6 +179,21 @@ func (rt *Runtime) Router() *router.Router { return rt.router }
 
 // Workspace returns the bound workspace.
 func (rt *Runtime) Workspace() *workspace.Workspace { return rt.ws }
+
+// ConfigPath returns the process config path used at start (may be empty).
+func (rt *Runtime) ConfigPath() string {
+	if rt == nil {
+		return ""
+	}
+	return rt.configPath
+}
+
+// SetConfigPath records the process config path for in-session /setup probes.
+func (rt *Runtime) SetConfigPath(path string) {
+	if rt != nil {
+		rt.configPath = strings.TrimSpace(path)
+	}
+}
 
 // Skills returns the loaded skill catalog (may be nil).
 func (rt *Runtime) Skills() *skills.Catalog { return rt.skills }

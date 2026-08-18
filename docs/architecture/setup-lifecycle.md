@@ -96,9 +96,9 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 /setup init [profiles] …       # write managed fragment (user config path)
 /setup init local-memory --print-only
 /setup init --stdio            # stdio iomesh-memory-mcp instead of HTTP URL
-/setup preflight               # aliases status|check — FormatPreflightText
+/setup preflight               # aliases status|check — FormatPreflightText; inherits process --config / IOMESH_CONFIG unless slash --config
 /setup portal                  # console.iome.sh/integrations + settings/agent
-/setup reload                  # hot-swap MCP + mesh + re-scan skills (P4 + s1670 + s2055 · package wire ≠ Connected · infer ≠ Connected)
+/setup reload                  # hot-swap MCP + mesh + re-scan skills (P4 + s1670 + s2055 · package wire ≠ Connected · infer ≠ Connected; inherits process config unless slash --config)
 /setup pull                    # continuous pull status (alias status)
 /setup pull status
 /setup pull start [--once] [--config path]
@@ -120,15 +120,17 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 |------------|----------|
 | bare / `help` | usage + honesty one-liner (dual_write OFF · not Memory GA · pull/analyze opt-in · drift · guided repair) |
 | `init` | `setup.BuildManagedFragment` + `config.WriteSetupManagedUser` (or `--print-only`) · s1723 appends `SetupInitNextStepLines` (CLI parity with s1686) · mesh/platform-mcp also `SetupInitMeshNextStepLines` (IOMESH_TOKEN → reload → `--create --yes` → `--messages` · create ≠ PULSE) |
-| `preflight` / `status` / `check` | `setup.Preflight` + `FormatPreflightText` (s1699 dual-path next-step appended) |
+| `preflight` / `status` / `check` | `setup.Preflight` + `FormatPreflightText` (s1699 dual-path next-step appended) · inherits process `--config` / `IOMESH_CONFIG` when slash `--config` omitted |
 | `portal` | browser HITL URLs (`SetupLifecyclePortalHandoff`) · s1723 appends `SetupPortalNextStepLines` |
-| `reload` | `Wire` + `ReplaceSkills` + `NewMesh` + `ReplaceMesh` + `ConnectMCP` + `ReplaceMCP` (s1670 skills re-scan · s2055 mesh infer/hot-swap · optional `--config path` · s1711 next-step appended via `SetupReloadNextStepLines`) |
+| `reload` | `Wire` + `ReplaceSkills` + `NewMesh` + `ReplaceMesh` + `ConnectMCP` + `ReplaceMCP` (s1670 skills re-scan · s2055 mesh infer/hot-swap · optional `--config path` else process path · s1711 next-step appended via `SetupReloadNextStepLines`) |
 | `pull` | in-session continuous pull status/start/once/stop (s1530 P5 · s1711 next-step via `SetupPullNextStepLines`) |
 | `analyze` | in-session analyze tick status/start/once/stop (s1534 P6 · s1711 next-step via `SetupAnalyzeNextStepLines`) |
 | `drift` / `maintain` | report-only `BuildDriftReport` + `FormatDriftText` (s1534 P6 · s1707 dual-path next-step appended) |
 | `repair` | guided `PlanRepair` / `ApplyRepairPlan` (s1538 P7 · plan default · apply requires `--yes` · s1707 dual-path next-step on FormatRepair*) |
 
 Simple flags on slash `init`: `--stdio` · `--print-only` · `--plugins-dir path` · `--memory-url URL` · `--mesh-endpoint URL` · `--mesh-tenant id` · `--platform-mcp-url URL`. Mesh endpoint writes **hooks** (not portal `/v7/mcp`). When the portal URL is `apiv1.iome.sh`, infer `https://hooks.iome.sh`. Infer ≠ Connected.
+
+**Process config inheritance:** in-session `/setup preflight` (and `/setup` probes that load config: reload · pull start/once · analyze start/once · drift · repair) use the same path the running process loaded (`iomesh --config` / `--repl --config` / `IOMESH_CONFIG` / user default) when slash `--config` is omitted. Slash `--config PATH` still overrides. CLI `iomesh setup preflight --config PATH` is unchanged. Slash `/setup init` still writes the user config path (CLI `--config` remains the custom write target). dual_write **OFF** · not Memory GA · PASS ≠ invent Connected.
 
 After init: start memory host (if needed) · set secret env vars · `/setup reload` (or restart TUI) · optional `/setup pull start` when mesh + consumer configured · optional `/setup analyze start` · `/setup drift` for residual next steps · optional `/setup repair apply --yes` for safe guided steps only. Slash `/setup init` uses the **same** `SetupInitNextStepLines` helper as CLI `iomesh setup init` (s1723 parity with s1686).
 

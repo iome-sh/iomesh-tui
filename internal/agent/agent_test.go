@@ -163,3 +163,30 @@ func TestMessagesCopy(t *testing.T) {
 		t.Fatal("Messages should return a copy")
 	}
 }
+
+func TestRuntime_ConfigPath(t *testing.T) {
+	models := []router.ModelConfig{{
+		Name: "m", BaseURL: "http://127.0.0.1:9", ModelID: "m", APIKey: "k",
+		CostTier: 1, MaxContext: 1000, Capabilities: []string{"fast"}, Priority: 1,
+	}}
+	rtr, err := router.New(models, "m")
+	if err != nil {
+		t.Fatal(err)
+	}
+	rt, err := New(Config{Workspace: t.TempDir(), ConfigPath: " /tmp/process.toml "}, rtr, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rt.ConfigPath() != "/tmp/process.toml" {
+		t.Fatalf("ConfigPath=%q", rt.ConfigPath())
+	}
+	rt.SetConfigPath(" /tmp/other.toml ")
+	if rt.ConfigPath() != "/tmp/other.toml" {
+		t.Fatalf("SetConfigPath=%q", rt.ConfigPath())
+	}
+	var nilRT *Runtime
+	if nilRT.ConfigPath() != "" {
+		t.Fatal("nil ConfigPath")
+	}
+	nilRT.SetConfigPath("/nope") // must not panic
+}
