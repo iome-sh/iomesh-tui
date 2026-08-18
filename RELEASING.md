@@ -1,6 +1,6 @@
 # Releasing
 
-Pre-1.0: ship from `main` via PR; cut annotated tags for public consumers.
+Ship from `main` via PR; cut annotated tags for public consumers. **1.0+** is SemVer (breaking CLI/API/config requires a major bump).
 
 ## When to bump and tag
 
