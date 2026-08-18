@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.0] — 2026-08-18
+
+First **SemVer 1.0** cut of the MIT harness. No longer a 0.x / Beta / MVP tag. v1.0 is the public OSS TUI/CLI — **not** hosted Memory GA, **not** live HITL closed, **not** Knowledge/Analytics GA. dual_write OFF · catalog ≠ Connected · eval template ≠ Connected · `/dashboard` ≠ live `/v52` consume.
+
+Packages everything on `main` since v0.77.0: consume honesty, mesh create, infer hooks broker, integrate-app UX, `/setup` process `--config`.
+
 ### Added
 
 - **TUI integrate-app UX (s2055)** — infer broker when building the TUI/ACP mesh client (`runtimewire.NewMesh` + `config.ApplyInferredBroker`; same mapping as CLI). `/setup reload` hot-swaps mesh via `Runtime.ReplaceMesh` when `[iomesh]` or inferred hooks change. Dashboard `consume missing` without a mesh client tells the operator to add `[iomesh]` or infer from portal MCP (does not invent consume). Slash `/setup init` accepts `--mesh-endpoint` · `--mesh-tenant` · `--platform-mcp-url` (writes hooks, not `/v7/mcp`; apiv1 infers `hooks.iome.sh`). After mesh/platform-mcp init: `IOMESH_TOKEN` → reload → `iomesh mesh streams --create --yes` → `--messages` (create ≠ PULSE). After `--create` and empty `FormatStreams`: inbox is empty until the first durable event from the app/console tap; mesh pub is ephemeral and does not fill `/dashboard`. Mesh disabled on `pub`/`status`/`wait` reuses the streams hooks-vs-catalog hint. Infer ≠ Connected · catalog MCP ≠ hooks streams. HITL stays OPEN. Docs: [tui.md](docs/architecture/tui.md) · [setup-lifecycle.md](docs/architecture/setup-lifecycle.md) · [mesh-deeper.md](docs/architecture/mesh-deeper.md).
@@ -15,7 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- **README `go install` honesty (#357)** — Quick start no longer calls `@latest` “tip of main”. `@latest` / `@v0.77.0` is the latest **semver tag**; tip of default branch is `go install …@main`. Does not cut a new tag. Dashboard empty/preview work is already on `main`; this is install/docs only.
+- **README `go install` honesty (#357 / #359)** — Quick start no longer calls `@latest` “tip of main”. `@latest` / `@v1.0.0` is the latest **semver tag**; tip of default branch is `go install …@main`. `/setup` preflight inherits the process `--config` path. `#357` was docs-only on `main`; this tag is the first 1.0 pin.
+- **`/setup` process `--config` (#359)** — preflight / setup CLI inherit the same `--config` the TUI process was started with (not a second silent user-config write). `/setup init` still writes the user config path unless `--config` is passed.
 
 - **Onboard next mesh integrate-app steps (s2057)** — `/onboard next mesh` now lists the shipped s2055 CLI path: add `[iomesh]` or infer from portal MCP (infer ≠ Connected) → `IOMESH_TOKEN` → `iomesh mesh streams --create --yes` (create ≠ PULSE) → wait for a durable event from the app/console tap → `--messages` / `/dashboard` (mesh pub ephemeral ≠ consume). Residual-honest: `streams_not_probed` · never invent stream green · catalog ≠ Connected · mesh ≠ memory. Existing lock dump `~$88/$119` stays. Does not invent Memory GA.
 

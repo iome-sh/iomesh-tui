@@ -11,7 +11,7 @@
 
 ## What we maintain
 
-- **Best effort** on `main` while the project is pre-1.0  
+- **Best effort** on `main` and security fixes on the latest `v1.x` tag
 - Security fixes on the default branch  
 - No paid support SLA for the open-source binary  
 
