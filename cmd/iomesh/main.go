@@ -147,6 +147,11 @@ func run(args []string) int {
 	// [subagents].enabled is SSOT; features.subagents=false forces off.
 	subEnabled := cfg.Subagents.Enabled && cfg.Features.Subagents
 
+	processCfgPath, err := config.ResolvePath(*configPath)
+	if err != nil {
+		processCfgPath = strings.TrimSpace(*configPath)
+	}
+
 	rt, err := agent.New(agent.Config{
 		Mode:                  mode,
 		Workspace:             cfg.Agent.Workspace,
@@ -157,6 +162,7 @@ func run(args []string) int {
 		MaxSubagentBatch:      cfg.Subagents.MaxBatch,
 		WorktreeBase:          cfg.Subagents.WorktreeBase,
 		WorktreeAutoRemove:    cfg.Subagents.WorktreeAutoRemove,
+		ConfigPath:            processCfgPath,
 	}, rtr, mesh, logger)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "agent: %v\n", err)

@@ -406,6 +406,10 @@ func (s *Server) newRuntime(cwd string) (*agent.Runtime, *session.Store, error) 
 		}
 	}
 	subEnabled := cfg.Subagents.Enabled && cfg.Features.Subagents
+	processCfgPath, err := config.ResolvePath(s.opts.ConfigPath)
+	if err != nil {
+		processCfgPath = strings.TrimSpace(s.opts.ConfigPath)
+	}
 	rt, err := agent.New(agent.Config{
 		Mode:                  agent.ModeACP,
 		Workspace:             abs,
@@ -416,6 +420,7 @@ func (s *Server) newRuntime(cwd string) (*agent.Runtime, *session.Store, error) 
 		MaxSubagentBatch:      cfg.Subagents.MaxBatch,
 		WorktreeBase:          cfg.Subagents.WorktreeBase,
 		WorktreeAutoRemove:    cfg.Subagents.WorktreeAutoRemove,
+		ConfigPath:            processCfgPath,
 	}, rtr, mesh, s.logger)
 	if err != nil {
 		return nil, nil, err

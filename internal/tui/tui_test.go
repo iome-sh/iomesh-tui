@@ -4624,6 +4624,66 @@ func TestHandleSlash_SetupLifecycle(t *testing.T) {
 	}
 }
 
+func TestSetupProbeConfigPath(t *testing.T) {
+	if got := setupProbeConfigPath(nil, "/tmp/proc.toml"); got != "/tmp/proc.toml" {
+		t.Fatalf("process fallback: %q", got)
+	}
+	if got := setupProbeConfigPath([]string{"--config", "/tmp/slash.toml"}, "/tmp/proc.toml"); got != "/tmp/slash.toml" {
+		t.Fatalf("slash wins: %q", got)
+	}
+	if got := setupProbeConfigPath([]string{"--config=/tmp/eq.toml"}, "/tmp/proc.toml"); got != "/tmp/eq.toml" {
+		t.Fatalf("equals form: %q", got)
+	}
+	if got := setupProbeConfigPath([]string{"status"}, ""); got != "" {
+		t.Fatalf("empty: %q", got)
+	}
+}
+
+// Bare /setup preflight must inherit process --config (issue #356). Slash --config still overrides.
+func TestHandleSlash_SetupPreflight_InheritsProcessConfig(t *testing.T) {
+	rt := testRuntime(t)
+	dir := t.TempDir()
+	processPath := filepath.Join(dir, "iomesh-qa-process.toml")
+	body := "[mcp]\nenabled = true\n[memory]\nenabled = false\ndual_write = false\n"
+	if err := os.WriteFile(processPath, []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	rt.SetConfigPath(processPath)
+
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+	if _, err := handleSlash(&out, adapter, "/setup preflight"); err != nil {
+		t.Fatal(err)
+	}
+	text := out.String()
+	if !strings.Contains(text, processPath) {
+		t.Fatalf("preflight must inherit process config path %q:\n%s", processPath, text)
+	}
+	if !strings.Contains(text, "present=true") {
+		t.Fatalf("process config should be present:\n%s", text)
+	}
+	if strings.Contains(text, filepath.Join(".iomesh", "config.toml")) {
+		t.Fatalf("must not fall back to default user path:\n%s", text)
+	}
+	if strings.Contains(text, "Connected: yes") || strings.Contains(text, "Memory GA shipped") || strings.Contains(text, "dual_write ON") {
+		t.Fatalf("must not invent Connected / Memory GA / dual_write ON:\n%s", text)
+	}
+
+	missing := filepath.Join(dir, "slash-override-missing.toml")
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/setup preflight --config "+missing)
+	over := out.String()
+	if !strings.Contains(over, missing) {
+		t.Fatalf("slash --config should override process path:\n%s", over)
+	}
+	if strings.Contains(over, "present=true") {
+		t.Fatalf("override missing file should be present=false:\n%s", over)
+	}
+	if strings.Contains(over, processPath) {
+		t.Fatalf("must not still probe process path when slash --config set:\n%s", over)
+	}
+}
+
 // s1723: IOMESH_PLATFORM_RESIDUAL labels bare /setup help only — never hides setup subcommands/lanes.
 func TestHandleSlash_SetupPlatformResidualLabel(t *testing.T) {
 	rt := testRuntime(t)
