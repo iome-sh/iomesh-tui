@@ -79,7 +79,7 @@ func TestDashboardSnapshot_NoMeshTellsInferNotCreate(t *testing.T) {
 		t.Fatalf("unattached must tell operator to add [iomesh] or infer:\n%s", out)
 	}
 	if !strings.Contains(out, dashboardEmptyPrimaryNext) {
-		t.Fatalf("unattached missing primary consume next action:\n%s", out)
+		t.Fatalf("unattached missing visual hooks.iome.sh next action:\n%s", out)
 	}
 	if strings.Contains(out, "create a mesh stream") {
 		t.Fatalf("unattached must not jump to create-stream CTA:\n%s", out)
@@ -123,8 +123,9 @@ func TestDashboardEmpty_PrimaryNextActionContrast(t *testing.T) {
 }
 
 func TestThemeDefault_DashboardInkContrast(t *testing.T) {
-	// REPL /dashboard is ThemeDefault() on documented empty-pane ink #09090b.
+	// Design Packet 4 visual leftover: ThemeDefault() on empty-pane ink #09090b.
 	// Dim 241 (#626262) is the leftover FAIL; Status 245 (#8a8a8a) is the primary pass.
+	// Does not probe consume or set IOMESH_* secrets.
 	ink := [3]float64{0x09, 0x09, 0x0b}
 	dim := ansi256GrayRGB(241)
 	status := ansi256GrayRGB(245)

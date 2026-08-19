@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
-- **Empty `/dashboard` next-action contrast (#363):** first-run convert path is one `Theme.Status` (ANSI 245) line onto `hooks.iome.sh` consume (`next: add [iomesh] … · then consume GitHub`). Catalog / infer honesty stays `Theme.Dim` so three Dim 241 lines no longer compete as equal CTAs. Dim 241 on `#09090b` was 3.26:1 FAIL AA; Status 245 is ~5.73:1. REPL `/dashboard` still `ThemeDefault()` — `/theme dim` remains fullscreen only. No celadon/paper theme · no Connected · no Memory GA · `dual_write OFF` · not live APPLY. leftover_is_tui leftover_is_code.
+- **Empty `/dashboard` next-action contrast (#363):** Design Packet 4 **visual only** — one `Theme.Status` (ANSI 245) first-run next action pointing at `hooks.iome.sh` (`next: add [iomesh] … · then consume GitHub`). Catalog / infer honesty stays `Theme.Dim` so three Dim 241 lines no longer compete as equal CTAs. Dim 241 on `#09090b` was 3.26:1 FAIL AA; Status 245 is ~5.73:1. EMPTY until consume is expected PASS. `/dashboard preview` stays the eval template. REPL `/dashboard` still `ThemeDefault()` — `/theme dim` remains fullscreen only. No celadon/paper theme · no Connected · no Memory GA · `dual_write OFF` · not live APPLY. leftover_is_tui leftover_is_code=no leftover_is_host=yes. Does not twin #356/#359/#361/#362.
 - **First-run pack language (#361):** README + security + memory-mcp + edge-user-journey no longer invent a priced Memory Ops Pack or ~$88 / ~$119. Mesh stays optional. Local MIT · dual_write OFF · not Memory GA.
 
 ## [1.0.0] — 2026-08-18

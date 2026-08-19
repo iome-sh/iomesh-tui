@@ -27,8 +27,9 @@ const DashboardHonestyOneLiner = "no mock live rows · /dashboard preview is eva
 // Empty pillars stay Beta — not GA. Do not invent events.
 const DashboardBetaEmptyHonesty = "knowledge Beta empty · analytics Beta empty · not GA"
 
-// First-run empty /dashboard (no mesh client): one primary convert path onto
-// hooks.iome.sh consume, plus Dim honesty that must not compete as equal CTAs.
+// Design Packet 4 visual leftover (#363): one first-run next action at ≥4.5:1
+// pointing at hooks.iome.sh. Honesty stays Dim so it does not compete as CTAs.
+// EMPTY until consume is expected. Not a functional consume-path change.
 // REPL /dashboard always ThemeDefault() — /theme dim is fullscreen only.
 const (
 	dashboardEmptyPrimaryNext    = `next: add [iomesh] endpoint="https://hooks.iome.sh" · then consume GitHub`
@@ -373,7 +374,7 @@ func (d *dashboardState) renderFeed(th Theme, width int) string {
 		b.WriteString(th.Dim.Render("no consumed messages · mock eval rows hidden"))
 		b.WriteByte('\n')
 		if !d.MeshAttached {
-			// One Status (ANSI 245) convert path; honesty stays Dim so it does not compete.
+			// Visual leftover: one Status (ANSI 245) next action; honesty stays Dim.
 			b.WriteString(th.Status.Render(dashboardEmptyPrimaryNext))
 			b.WriteByte('\n')
 			b.WriteString(th.Dim.Render(dashboardEmptyHonestyCatalog))
