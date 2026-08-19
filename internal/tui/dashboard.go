@@ -27,6 +27,16 @@ const DashboardHonestyOneLiner = "no mock live rows · /dashboard preview is eva
 // Empty pillars stay Beta — not GA. Do not invent events.
 const DashboardBetaEmptyHonesty = "knowledge Beta empty · analytics Beta empty · not GA"
 
+// Design Packet 4 visual leftover (#363): one first-run next action at ≥4.5:1
+// pointing at hooks.iome.sh. Honesty stays Dim so it does not compete as CTAs.
+// EMPTY until consume is expected. Not a functional consume-path change.
+// REPL /dashboard always ThemeDefault() — /theme dim is fullscreen only.
+const (
+	dashboardEmptyPrimaryNext    = `next: add [iomesh] endpoint="https://hooks.iome.sh" · then consume GitHub`
+	dashboardEmptyHonestyCatalog = `portal MCP (apiv1.iome.sh/v7/mcp) is catalog — streams are hooks.iome.sh`
+	dashboardEmptyHonestyInfer   = `or infer from portal MCP · infer ≠ Connected · do not invent consume`
+)
+
 func dashboardHelp() string {
 	return strings.TrimSpace(`usage: /dashboard [help|preview|focus <tenancy>]
 aliases: /heartbeat /mesh-console
@@ -364,12 +374,12 @@ func (d *dashboardState) renderFeed(th Theme, width int) string {
 		b.WriteString(th.Dim.Render("no consumed messages · mock eval rows hidden"))
 		b.WriteByte('\n')
 		if !d.MeshAttached {
-			// consume missing without a broker client: do not invent consume or create-as-PULSE
-			b.WriteString(th.Dim.Render("add [iomesh] endpoint=\"https://hooks.iome.sh\" or infer from portal MCP"))
+			// Visual leftover: one Status (ANSI 245) next action; honesty stays Dim.
+			b.WriteString(th.Status.Render(dashboardEmptyPrimaryNext))
 			b.WriteByte('\n')
-			b.WriteString(th.Dim.Render("portal MCP (apiv1.iome.sh/v7/mcp) is catalog — streams are hooks.iome.sh"))
+			b.WriteString(th.Dim.Render(dashboardEmptyHonestyCatalog))
 			b.WriteByte('\n')
-			b.WriteString(th.Dim.Render("infer ≠ Connected · do not invent consume"))
+			b.WriteString(th.Dim.Render(dashboardEmptyHonestyInfer))
 		} else {
 			switch strings.TrimSpace(d.ConsumeReason) {
 			case consumeReasonEmptyStream:
