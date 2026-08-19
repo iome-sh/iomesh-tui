@@ -72,7 +72,9 @@ analysis  ops 0 · knowledge 0 · analytics 0  ·  Beta
 knowledge Beta empty · analytics Beta empty · not GA
 Heartbeat
 no consumed messages · mock eval rows hidden
-add [iomesh] endpoint="https://hooks.iome.sh" or infer from portal MCP
+next: add [iomesh] endpoint="https://hooks.iome.sh" · then consume GitHub
+portal MCP (apiv1.iome.sh/v7/mcp) is catalog — streams are hooks.iome.sh
+or infer from portal MCP · infer ≠ Connected · do not invent consume
 ```
 
 - REPL `/dashboard` (no args): empty snapshot; **probe** if a mesh client is attached (`ListStreams` then `ListStreamMessages` on the first 4 names — same path as `iomesh mesh streams --messages` / broker `GET /v1/streams/{name}/messages`). **Not** portal `GET /v52` (cookie-only).

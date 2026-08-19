@@ -186,9 +186,9 @@ knowledge Beta empty · analytics Beta empty · not GA
 
 Heartbeat
 no consumed messages · mock eval rows hidden
-add [iomesh] endpoint="https://hooks.iome.sh" or infer from portal MCP
+next: add [iomesh] endpoint="https://hooks.iome.sh" · then consume GitHub
 portal MCP (apiv1.iome.sh/v7/mcp) is catalog — streams are hooks.iome.sh
-infer ≠ Connected · do not invent consume
+or infer from portal MCP · infer ≠ Connected · do not invent consume
 /dashboard preview · eval template on iome.sh (not your org)
 ```
 

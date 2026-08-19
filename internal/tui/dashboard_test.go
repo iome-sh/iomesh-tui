@@ -2,9 +2,14 @@ package tui
 
 import (
 	"bytes"
+	"fmt"
+	"math"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 )
 
 func TestDashboardSnapshot_LandingParityAndHonesty(t *testing.T) {
@@ -17,6 +22,8 @@ func TestDashboardSnapshot_LandingParityAndHonesty(t *testing.T) {
 		"no consumed messages",
 		"mock eval rows hidden",
 		"add [iomesh]",
+		"https://hooks.iome.sh",
+		"then consume GitHub",
 		"infer from portal MCP",
 		"hooks.iome.sh",
 		"infer ≠ Connected",
@@ -71,12 +78,96 @@ func TestDashboardSnapshot_NoMeshTellsInferNotCreate(t *testing.T) {
 	if !strings.Contains(out, "add [iomesh]") || !strings.Contains(out, "infer from portal MCP") {
 		t.Fatalf("unattached must tell operator to add [iomesh] or infer:\n%s", out)
 	}
+	if !strings.Contains(out, dashboardEmptyPrimaryNext) {
+		t.Fatalf("unattached missing primary consume next action:\n%s", out)
+	}
 	if strings.Contains(out, "create a mesh stream") {
 		t.Fatalf("unattached must not jump to create-stream CTA:\n%s", out)
 	}
 	if strings.Contains(out, "PULSE") && !strings.Contains(out, "create ≠ PULSE") {
 		t.Fatalf("unattached must not invent PULSE:\n%s", out)
 	}
+}
+
+func TestDashboardEmpty_PrimaryNextActionContrast(t *testing.T) {
+	th := ThemeDefault()
+	if got := fmt.Sprint(th.Dim.GetForeground()); got != "241" {
+		t.Fatalf("ThemeDefault Dim want ANSI 241, got %s", got)
+	}
+	if got := fmt.Sprint(th.Status.GetForeground()); got != "245" {
+		t.Fatalf("ThemeDefault Status want ANSI 245, got %s", got)
+	}
+
+	prev := lipgloss.ColorProfile()
+	lipgloss.SetColorProfile(termenv.ANSI256)
+	t.Cleanup(func() { lipgloss.SetColorProfile(prev) })
+
+	out := formatDashboardSnapshot(false, "")
+	primary := th.Status.Render(dashboardEmptyPrimaryNext)
+	if !strings.Contains(out, primary) {
+		t.Fatalf("primary next action must use Theme.Status (ANSI 245), not Dim:\n%s", out)
+	}
+	if strings.Contains(out, th.Dim.Render(dashboardEmptyPrimaryNext)) {
+		t.Fatalf("primary next action must not use Theme.Dim (ANSI 241):\n%s", out)
+	}
+	if !strings.Contains(out, th.Dim.Render(dashboardEmptyHonestyCatalog)) {
+		t.Fatalf("catalog honesty must stay Dim:\n%s", out)
+	}
+	if !strings.Contains(out, th.Dim.Render(dashboardEmptyHonestyInfer)) {
+		t.Fatalf("infer honesty must stay Dim:\n%s", out)
+	}
+	if strings.Contains(out, th.Status.Render(dashboardEmptyHonestyCatalog)) ||
+		strings.Contains(out, th.Status.Render(dashboardEmptyHonestyInfer)) {
+		t.Fatalf("honesty lines must not compete as Status CTAs:\n%s", out)
+	}
+}
+
+func TestThemeDefault_DashboardInkContrast(t *testing.T) {
+	// REPL /dashboard is ThemeDefault() on documented empty-pane ink #09090b.
+	// Dim 241 (#626262) is the leftover FAIL; Status 245 (#8a8a8a) is the primary pass.
+	ink := [3]float64{0x09, 0x09, 0x0b}
+	dim := ansi256GrayRGB(241)
+	status := ansi256GrayRGB(245)
+	before := contrastRatio(dim, ink)
+	after := contrastRatio(status, ink)
+	if before >= 4.5 {
+		t.Fatalf("Dim 241 on #09090b unexpectedly passes AA: %.2f:1", before)
+	}
+	if after < 4.5 {
+		t.Fatalf("Status 245 on #09090b must be ≥4.5:1, got %.2f:1", after)
+	}
+	if before < 3.2 || before > 3.4 {
+		t.Fatalf("Dim 241 on #09090b want ~3.26:1, got %.2f:1", before)
+	}
+	if after < 5.6 || after > 5.9 {
+		t.Fatalf("Status 245 on #09090b want ~5.73:1, got %.2f:1", after)
+	}
+}
+
+// ansi256GrayRGB returns the xterm 256 grayscale cube (232–255).
+func ansi256GrayRGB(code int) [3]float64 {
+	v := float64(8 + 10*(code-232))
+	return [3]float64{v, v, v}
+}
+
+func contrastRatio(fg, bg [3]float64) float64 {
+	l1 := relativeLuminance(fg)
+	l2 := relativeLuminance(bg)
+	if l1 < l2 {
+		l1, l2 = l2, l1
+	}
+	return (l1 + 0.05) / (l2 + 0.05)
+}
+
+func relativeLuminance(rgb [3]float64) float64 {
+	lin := func(c float64) float64 {
+		s := c / 255
+		if s <= 0.03928 {
+			return s / 12.92
+		}
+		return math.Pow((s+0.055)/1.055, 2.4)
+	}
+	return 0.2126*lin(rgb[0]) + 0.7152*lin(rgb[1]) + 0.0722*lin(rgb[2])
 }
 
 func TestDashboardPreview_OptInEvalTemplate(t *testing.T) {
