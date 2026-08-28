@@ -21,6 +21,25 @@ Official open-source tooling from [IOMesh](https://iome.sh) (**IOMesh Technology
 
 **Local path (default mental model):** install `iomesh` → set an LLM key (or pin Ollama) → `/setup` for managed config + memory host preflight → attach local MCP memory → agent turns with recall/ingest. Mesh and portal are **optional**.
 
+### Local MIT trio
+
+Free local eval is three public MIT pieces. Mesh is optional. This is **not** hosted memory generally available.
+
+| Piece | Published pin | Role |
+|-------|----------------|------|
+| [iomesh-tui](https://github.com/iome-sh/iomesh-tui) | **v1.0.0** (`go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.0.0` · [GitHub Release](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.0.0)) | Agent harness / TUI |
+| [memory](https://github.com/iome-sh/memory) | **v1.5.7** | Local palace kernel |
+| [iomesh-memory-mcp](https://github.com/iome-sh/iomesh-memory-mcp) | **`@main`** until the first annotated `v*` tag (README there is honest: `/releases/latest` is 404) | MCP host over the kernel |
+
+```bash
+go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.0.0
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main
+# kernel is a Go module consumed by the MCP host: github.com/iome-sh/memory@v1.5.7
+iomesh setup preflight   # or in the TUI: /setup · dual_write stays OFF
+```
+
+Do not sell the trio as hosted Memory GA. dual_write OFF. catalog ≠ Connected.
+
 - Local memory docs: [memory-mcp.md](docs/architecture/memory-mcp.md) · [setup-lifecycle.md](docs/architecture/setup-lifecycle.md) · [edge-user-journey.md](docs/architecture/edge-user-journey.md)
 - Security model (local sandbox defaults): [SECURITY.md](SECURITY.md)
 - Packaging boundary (MIT vs private platform): [oss-packaging-boundary.md](docs/architecture/oss-packaging-boundary.md)
