@@ -38,8 +38,9 @@ for arg in "$@"; do
 done
 
 if [[ "$UNIT" -eq 1 ]]; then
-  echo "mesh dogfood: unit mode (go test internal/iomesh)"
+  echo "mesh dogfood: unit mode (go test internal/iomesh + dashboard compose smoke)"
   go test ./internal/iomesh/ -count=1 -timeout=60s
+  go test ./internal/tui/ -count=1 -timeout=60s -run 'TestDashboardSnapshot_LandingParityAndHonesty|TestDashboardCompose'
   echo "RESULT=PASS (unit)"
   exit 0
 fi

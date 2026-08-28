@@ -61,6 +61,25 @@ func TestDashboardSnapshot_LandingParityAndHonesty(t *testing.T) {
 	}
 }
 
+func TestDashboardCompose_SmokeNeverAutoApplies(t *testing.T) {
+	out := formatDashboardSnapshot(false, "")
+	if !strings.Contains(out, DashboardComposePulse) {
+		t.Fatalf("compose smoke missing pulse:\n%s", out)
+	}
+	if !strings.Contains(out, DashboardComposePull) {
+		t.Fatalf("compose smoke missing pull:\n%s", out)
+	}
+	if !strings.Contains(out, DashboardComposeInsights) {
+		t.Fatalf("compose smoke missing insights:\n%s", out)
+	}
+	if !strings.Contains(out, DashboardComposeDecision) || !strings.Contains(out, "never auto-applies") {
+		t.Fatalf("compose smoke missing decision stub:\n%s", out)
+	}
+	if strings.Contains(out, "auto-apply green") {
+		t.Fatalf("compose smoke must not auto-apply:\n%s", out)
+	}
+}
+
 func TestDashboardSnapshot_MeshAttachedLabel(t *testing.T) {
 	out := formatDashboardSnapshot(true, "eng.ops")
 	if !strings.Contains(out, "CLIENT") {

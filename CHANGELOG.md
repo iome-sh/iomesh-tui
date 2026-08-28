@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Dashboard compose smoke:** `TestDashboardCompose_SmokeNeverAutoApplies` plus `iomesh mesh smoke --unit` runs `/dashboard` compose tests. Decision stub never auto-applies. dual_write OFF · not Memory GA · not live APPLY.
 - **`/dashboard` compose strip (#365):** pulse (this feed) · entitled `dept.*` pull via existing `iomesh memory pull` · insights via existing `/memory digest` · human **decision stub that never auto-applies**. No new backends. Empty until consume stays expected. `/dashboard preview` remains the eval template. dual_write OFF · not Memory GA · not live APPLY.
 - **Local MIT trio docs (#366):** README names published pins — TUI **v1.0.0**, memory kernel **v1.5.7**, `iomesh-memory-mcp` **`@main` until first v\* tag**. Mesh optional. Trio is not hosted Memory GA.
 
