@@ -27,6 +27,16 @@ const DashboardHonestyOneLiner = "no mock live rows · /dashboard preview is eva
 // Empty pillars stay Beta — not GA. Do not invent events.
 const DashboardBetaEmptyHonesty = "knowledge Beta empty · analytics Beta empty · not GA"
 
+// Compose already-shipped paths onto /dashboard (pulse, entitled pull, insights, human decision).
+// No new backends. Pull uses iomesh memory pull. Insights use /memory digest.
+// Decision stub never auto-applies.
+const (
+	DashboardComposePulse    = "pulse: this feed · empty until consume"
+	DashboardComposePull     = "pull: iomesh memory pull · entitled dept.* only"
+	DashboardComposeInsights = "insights: /memory digest · existing agent path"
+	DashboardComposeDecision = "decision stub: human owns apply · never auto-applies"
+)
+
 // Design Packet 4 visual leftover (#363): one first-run next action at ≥4.5:1
 // pointing at hooks.iome.sh. Honesty stays Dim so it does not compete as CTAs.
 // EMPTY until consume is expected. Not a functional consume-path change.
@@ -285,6 +295,10 @@ func (d *dashboardState) Render(th Theme, width int) string {
 	if knN == 0 || anN == 0 {
 		analysis += "\n" + th.Dim.Render(DashboardBetaEmptyHonesty)
 	}
+	compose := th.Dim.Render("compose  " + DashboardComposePulse)
+	compose += "\n" + th.Dim.Render(DashboardComposePull)
+	compose += "\n" + th.Dim.Render(DashboardComposeInsights)
+	compose += "\n" + th.Dim.Render(DashboardComposeDecision)
 
 	body := d.renderBody(th, width)
 	honesty := th.Dim.Render(DashboardHonestyOneLiner)
@@ -294,7 +308,7 @@ func (d *dashboardState) Render(th Theme, width int) string {
 		honesty = th.Dim.Render("mesh client attached · no mock live rows · /dashboard preview for eval template · " + DashboardHonestyOneLiner)
 	}
 
-	return strings.Join([]string{header, rule, spark, analysis, rule, body, rule, honesty}, "\n")
+	return strings.Join([]string{header, rule, spark, analysis, compose, rule, body, rule, honesty}, "\n")
 }
 
 func (d *dashboardState) renderBody(th Theme, width int) string {

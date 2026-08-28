@@ -35,6 +35,11 @@ func TestDashboardSnapshot_LandingParityAndHonesty(t *testing.T) {
 		"not live APPLY",
 		"eval template",
 		DashboardBetaEmptyHonesty,
+		DashboardComposePulse,
+		DashboardComposePull,
+		DashboardComposeInsights,
+		DashboardComposeDecision,
+		"never auto-applies",
 	}
 	for _, n := range needles {
 		if !strings.Contains(out, n) {
@@ -47,6 +52,8 @@ func TestDashboardSnapshot_LandingParityAndHonesty(t *testing.T) {
 		"live APPLY green",
 		"fleet-GA on every surface",
 		"INSTALL_STORE",
+		"auto-apply green",
+		"hosted Memory GA",
 	} {
 		if strings.Contains(out, bad) {
 			t.Fatalf("snapshot must not invent %q\n%s", bad, out)
