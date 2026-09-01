@@ -58,6 +58,24 @@ When grounding GTM work on mesh connectors:
 | agent does not APPLY installs | Portal session owns install plane; MCP is residual list/plan |
 | drafts only · HITL publish | Phase 2 local hard gates — no auto-send / no auto-publish |
 
+## Market-telling / voc_brief palace (#372)
+
+Named palace artifact for later RevOps / GTM and founder-laptop briefs. **SoR is the local palace**, not a git markdown.
+
+| Field | Value |
+|-------|--------|
+| kind | `market_telling` or `voc_brief` |
+| source | `agent-brief` (classifies as private for cite-both · never mesh) |
+| tenant | `gtm/founder` |
+| slash | `/gtm brief [show\|write\|ledger\|cadence\|recipe]` |
+
+- **Write** requires hypothesis + confidence (0–1) + one falsification test.
+- **Ledger** statuses: `shipped` · `moved` · `killed` · `falsified`. Dropped (moved/killed) is **not** falsified. Contradiction vs yesterday is recorded when status changes.
+- **Cadence** `daily|weekly|on_threshold`. Daily (and on_threshold) refused below volume floor — thin n=3 does not fire a daily cron.
+- **One RevOps recipe:** `support_theme` only, same metadata contract as incidents (id, event_time, summary, source_hint, pointer, account_hash, kind, subject). ≤3 first-party sources (`mesh`, `private`, `github`). Not a seven-source “market truth” MCP.
+- **Hands off this plane:** win-back and price change are refused.
+- dual_write **OFF** · not Memory GA · no Slack persist · CRM ≠ Connected · catalog ≠ Connected.
+
 ## Optional Memory Ops Pack
 
 For **institutional recall** on the operator box, optional **Memory Ops Pack** / local-primary palace MCP may ground context (prior drafts, account notes, campaign memos).

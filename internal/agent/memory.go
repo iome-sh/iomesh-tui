@@ -391,7 +391,7 @@ func ClassifyDigestSourceHint(hint string) string {
 		"broker", "stream", "consume", "ops_pulse":
 		return DigestSourceMesh
 	case "private", "private_overlay", "private_rca", "palace", "palace_timeline",
-		"local", "local_palace", "rca", "overlay":
+		"local", "local_palace", "rca", "overlay", "agent_brief", "voc_brief", "market_telling":
 		return DigestSourcePrivate
 	}
 	switch {
