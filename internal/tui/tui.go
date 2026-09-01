@@ -836,11 +836,15 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			case "help", "checklist", "?":
 				fmt.Fprintln(out, agent.GtmDraftChecklist())
 				return false, nil
+			case "brief", "voc-brief", "voc_brief", "market-telling", "market_telling":
+				// #372: palace market_telling / voc_brief (source=agent-brief, tenant gtm/founder).
+				handleGtmBriefSlash(out, parts[2:])
+				return false, nil
 			}
 			// Unknown subcommand: still print guidance + usage hint for help/checklist.
 			fmt.Fprintln(out, agent.GtmDraftOnlyAgentGuidanceNote())
 			fmt.Fprintln(out, "— residual: drafts only · human publish · skill gtm-draft-only-agent via read_skill · dual_write OFF · not Memory GA")
-			fmt.Fprintln(out, "usage: /gtm [help|checklist]  (aliases /gtm-draft /gtm-agent)")
+			fmt.Fprintln(out, "usage: /gtm [help|checklist|brief]  (aliases /gtm-draft /gtm-agent)")
 			return false, nil
 		}
 		fmt.Fprintln(out, agent.GtmDraftOnlyAgentGuidanceNote())
@@ -1182,7 +1186,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /memory [recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · status advanced inventory)
   /integrations [list|plan|signing|status]  list/plan a source via MCP, then finish in portal HITL (not install CRUD)
   /setup [init|preflight|portal|reload|pull|analyze|drift|repair]  setup lifecycle (managed config · preflight · portal HITL · hot MCP reload · opt-in continuous pull/analyze · drift report · guided repair; alias /setup-lifecycle; dual_write OFF · not Memory GA · PASS ≠ invent Connected · pull/analyze/repair ≠ invent Connected)
-  /gtm [help|checklist]  GTM draft-only guidance or checklist (aliases /gtm-draft /gtm-agent; no auto-send; human publish)
+  /gtm [help|checklist|brief]  GTM draft-only guidance, checklist, or palace voc_brief / market_telling (aliases /gtm-draft /gtm-agent; no auto-send; human publish; palace SoR · source=agent-brief · tenant gtm/founder)
   /onboard [help|checklist|portal|status|next]  start here: portal MCP copy → TUI attach → /integrations list|plan → portal HITL (aliases /aion-onboard /agent-onboard; next wizard|journey|setup|portal-hitl|memory · operator notes /onboard next [plugins|gtm|memory|mesh|export|…])
   /plugins [help|list|validate|smoke|status]  residual-honest Agent Plugins soft offline smoke (alias /plugin; smoke aliases dogfood|soft|samples|offline; check→validate; Discover ≠ Connected · soft offline ≠ live smoke · ≠ invent Agent Plugins GA)
   /quit                exit

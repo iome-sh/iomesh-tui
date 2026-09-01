@@ -585,6 +585,10 @@ func TestClassifyDigestSourceHint(t *testing.T) {
 		{"mesh_consume", DigestSourceMesh},
 		{"palace_timeline", DigestSourcePrivate},
 		{"private_rca", DigestSourcePrivate},
+		{"agent-brief", DigestSourcePrivate},
+		{"agent_brief", DigestSourcePrivate},
+		{"voc_brief", DigestSourcePrivate},
+		{"market_telling", DigestSourcePrivate},
 		{"catalog", DigestSourceCatalog},
 		{"catalog_only", DigestSourceCatalog},
 		{"grant", DigestSourceGrant},
@@ -670,6 +674,28 @@ func TestFormatRequireSourcesCheck_MissMesh(t *testing.T) {
 	}
 	if strings.Contains(out, "require-sources: ok") {
 		t.Fatalf("must not ok: %q", out)
+	}
+}
+
+// #372: agent-brief / voc_brief palace writes classify private; they never fill mesh cite-both.
+func TestFormatRequireSourcesCheck_AgentBriefIsPrivateNotMesh(t *testing.T) {
+	res := &iomesh.MemoryOpsDigestResult{
+		Receipts: []iomesh.MemoryOpsDigestReceipt{
+			{ID: "b1", Summary: "voc brief support theme", SourceHint: "agent-brief"},
+		},
+	}
+	out := FormatRequireSourcesCheck(res, []string{"mesh", "private"})
+	if !strings.Contains(out, "require-sources: miss") || !strings.Contains(out, "missing=mesh") {
+		t.Fatalf("agent-brief must not satisfy mesh: %q", out)
+	}
+	if !strings.Contains(out, "cited=private") {
+		t.Fatalf("agent-brief should cite private: %q", out)
+	}
+	if strings.Contains(out, "require-sources: ok") {
+		t.Fatalf("must not ok from agent-brief alone: %q", out)
+	}
+	if !strings.Contains(out, "dual_write OFF") || !strings.Contains(out, "not Memory GA") {
+		t.Fatalf("honesty pin missing: %q", out)
 	}
 }
 

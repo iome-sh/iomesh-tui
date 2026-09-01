@@ -85,6 +85,7 @@ or infer from portal MCP · infer ≠ Connected · do not invent consume
 - Badge **EMPTY** (no mesh, no consume) / **CLIENT** (mesh attached, no consumed rows) / **PULSE** (≥1 decoded message) / **EVAL** (`/dashboard preview` only).
 - Knowledge / analytics stay **Beta**. Empty knowledge or analytics adds `knowledge Beta empty · analytics Beta empty · not GA`. `catalog ≠ Connected`. `dual_write OFF`. Not Memory GA. Not live APPLY. Kind from subject ≠ GA.
 - **Brief ACK (#371):** compose strip shows `brief: UNREAD` until `/dashboard ack`. Unacked ≠ known (fail-open). Optional local palace write (`brief-ack.json` beside user config). ACK does not send/pay/ship.
+- **Market-telling / voc_brief (#372):** `/gtm brief` writes a named palace artifact (`source=agent-brief`, tenant `gtm/founder`) — local palace SoR, not a git file. Ledger: shipped / moved / killed vs falsified + contradiction vs yesterday. Cadence `daily|weekly|on_threshold` (daily refused below volume floor). One RevOps support-theme recipe, same metadata as incidents, ≤3 first-party sources. dual_write OFF · not Memory GA · no Slack persist · CRM ≠ Connected. Hands (win-back, price change) stay off this plane.
 
 ```text
 iomesh> /dashboard
@@ -92,13 +93,17 @@ iomesh> /dashboard preview
 iomesh> /dashboard focus eng.ops
 iomesh> /dashboard ack
 iomesh> /heartbeat help
+iomesh> /gtm brief write --kind voc_brief --hypothesis support-theme --confidence 0.7 --falsify theme-vanishes-next-window
+iomesh> /gtm brief ledger killed H2 --vs-yesterday shipped
+iomesh> /gtm brief cadence daily --volume 3
 ```
 
 ## Package
 
 - `internal/tui/fullscreen.go` — Bubble Tea model + textarea input + dashboard overlay
 - `internal/tui/dashboard.go` — MeshConsole heartbeat live-feed analysis
+- `internal/tui/market_telling.go` — palace `market_telling` / `voc_brief` (#372) · ledger · cadence · one RevOps support-theme recipe
 - `internal/tui/theme.go` — named palettes
-- `internal/tui/tui.go` — classic REPL + shared slash helpers (`/memory`, `/integrations`, `/dashboard`, …)
+- `internal/tui/tui.go` — classic REPL + shared slash helpers (`/memory`, `/integrations`, `/dashboard`, `/gtm brief`, …)
 
 **s1238/s1242/s1243:** `/integrations` (`list` / `plan` / `signing` / `status`) — connector catalog + setup plan + signing header discovery via MCP (v178 wire parity); residual-honest fail-open. See [agent-integrations-setup.md](./agent-integrations-setup.md).
