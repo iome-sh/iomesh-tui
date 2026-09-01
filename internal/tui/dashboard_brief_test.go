@@ -10,33 +10,37 @@ import (
 	"time"
 )
 
-func TestMain(m *testing.M) {
-	dir, err := os.MkdirTemp("", "iomesh-brief-ack-*")
-	if err != nil {
-		panic(err)
-	}
+// setupBriefAck isolates ACK path + clock for this test only.
+// Do not use package TestMain — that hijacks every internal/tui test.
+func setupBriefAck(t *testing.T) {
+	t.Helper()
+	dir := t.TempDir()
+	t.Setenv("IOMESH_CONFIG", filepath.Join(dir, "config.toml"))
 	path := filepath.Join(dir, briefAckFileName)
+
+	prevPath := briefAckPathFn
+	prevNow := briefAckNowFn
 	briefAckPathFn = func() (string, error) { return path, nil }
 	briefAckNowFn = func() time.Time {
 		return time.Date(2026, 9, 1, 9, 0, 0, 0, time.Local)
 	}
-	code := m.Run()
-	_ = os.RemoveAll(dir)
-	os.Exit(code)
+	t.Cleanup(func() {
+		briefAckPathFn = prevPath
+		briefAckNowFn = prevNow
+	})
 }
 
-func clearBriefAckFile(t *testing.T) {
+func assertDashboardHonesty(t *testing.T, out string) {
 	t.Helper()
-	path, err := briefAckPathFn()
-	if err != nil {
-		t.Fatal(err)
+	for _, n := range []string{"dual_write OFF", "not Memory GA", "catalog ≠ Connected"} {
+		if !strings.Contains(out, n) {
+			t.Fatalf("honesty missing %q:\n%s", n, out)
+		}
 	}
-	_ = os.Remove(path)
-	t.Cleanup(func() { _ = os.Remove(path) })
 }
 
 func TestBriefAck_MissingIsUnreadFailOpen(t *testing.T) {
-	clearBriefAckFile(t)
+	setupBriefAck(t)
 
 	if got := loadBriefAckStatus(); got != BriefUnread {
 		t.Fatalf("missing ACK want unread, got %q", got)
@@ -48,6 +52,7 @@ func TestBriefAck_MissingIsUnreadFailOpen(t *testing.T) {
 	if strings.Contains(out, DashboardComposeBriefAcked) {
 		t.Fatalf("missing ACK must not render ACKed:\n%s", out)
 	}
+	assertDashboardHonesty(t, out)
 	for _, bad := range []string{"handled", "known green", "auto send", "auto-pay", "auto-ship"} {
 		if strings.Contains(strings.ToLower(out), bad) {
 			t.Fatalf("unacked must not look %q:\n%s", bad, out)
@@ -56,7 +61,7 @@ func TestBriefAck_MissingIsUnreadFailOpen(t *testing.T) {
 }
 
 func TestBriefAck_CorruptAndStaleAreUnread(t *testing.T) {
-	clearBriefAckFile(t)
+	setupBriefAck(t)
 	path, err := briefAckPathFn()
 	if err != nil {
 		t.Fatal(err)
@@ -79,12 +84,16 @@ func TestBriefAck_CorruptAndStaleAreUnread(t *testing.T) {
 }
 
 func TestDashboardCompose_BriefAckUnreadVsAcked(t *testing.T) {
-	clearBriefAckFile(t)
+	setupBriefAck(t)
 
 	unread := formatDashboardSnapshot(false, "")
 	if !strings.Contains(unread, DashboardComposeBriefUnread) {
 		t.Fatalf("compose unread missing:\n%s", unread)
 	}
+	if strings.Contains(unread, DashboardComposeBriefAcked) {
+		t.Fatalf("unread must not render ACKed:\n%s", unread)
+	}
+	assertDashboardHonesty(t, unread)
 	if strings.Contains(unread, "send/pay/ship") && strings.Contains(unread, "ACKed") {
 		t.Fatalf("unread must not claim ACKed closed loop:\n%s", unread)
 	}
@@ -113,6 +122,7 @@ func TestDashboardCompose_BriefAckUnreadVsAcked(t *testing.T) {
 	if !strings.Contains(acked, "no send/pay/ship") {
 		t.Fatalf("acked must still refuse closed loop:\n%s", acked)
 	}
+	assertDashboardHonesty(t, acked)
 	for _, bad := range []string{"auto-apply green", "sent payment", "shipped order"} {
 		if strings.Contains(acked, bad) {
 			t.Fatalf("ACK must not invent closed loop %q:\n%s", bad, acked)
@@ -121,7 +131,7 @@ func TestDashboardCompose_BriefAckUnreadVsAcked(t *testing.T) {
 }
 
 func TestDashboardSlash_AckRitual(t *testing.T) {
-	clearBriefAckFile(t)
+	setupBriefAck(t)
 
 	var out bytes.Buffer
 	handleDashboardSlash(&out, runtimeAdapter{}, []string{"/dashboard", "ack"})
@@ -138,12 +148,41 @@ func TestDashboardSlash_AckRitual(t *testing.T) {
 	if strings.Contains(got, "auto-apply green") {
 		t.Fatalf("ack must not auto-apply:\n%s", got)
 	}
+	assertDashboardHonesty(t, got)
 	path, err := briefAckPathFn()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(path); err != nil {
 		t.Fatalf("ack must write local palace marker: %v", err)
+	}
+}
+
+func TestHandleSlash_DashboardAck(t *testing.T) {
+	setupBriefAck(t)
+	rt := testRuntime(t)
+	adapter := runtimeAdapter{rt: rt}
+
+	var out bytes.Buffer
+	quit, err := handleSlash(&out, adapter, "/dashboard ack")
+	if quit || err != nil {
+		t.Fatalf("quit=%v err=%v", quit, err)
+	}
+	got := out.String()
+	if !strings.Contains(got, "brief ACKed") {
+		t.Fatalf("REPL /dashboard ack missing confirmation:\n%s", got)
+	}
+	if !strings.Contains(got, DashboardComposeBriefAcked) {
+		t.Fatalf("REPL /dashboard ack must re-render ACKed brief:\n%s", got)
+	}
+	if !strings.Contains(got, "no send/pay/ship") {
+		t.Fatalf("REPL /dashboard ack must pin no closed loop:\n%s", got)
+	}
+	assertDashboardHonesty(t, got)
+	for _, bad := range []string{"auto-apply green", "sent payment", "shipped order", "auto send", "auto-pay", "auto-ship"} {
+		if strings.Contains(strings.ToLower(got), bad) {
+			t.Fatalf("REPL ack must not invent closed loop %q:\n%s", bad, got)
+		}
 	}
 }
 
