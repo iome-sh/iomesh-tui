@@ -499,6 +499,9 @@ func TestMemoryOpsDigest_PrefersSyncHTTP(t *testing.T) {
 	if !strings.Contains(out, "dual_write=off") {
 		t.Fatalf("dual_write pin missing: %q", out)
 	}
+	if strings.Contains(out, "require-sources:") {
+		t.Fatalf("default digest without --require-sources must stay existing behavior: %q", out)
+	}
 }
 
 // s1200: per-call Window/Horizon/Limit override defaults.
@@ -611,6 +614,11 @@ func TestParseRequireSourcesList(t *testing.T) {
 	if _, err := ParseRequireSourcesList(""); err == "" {
 		t.Fatal("expected reject empty")
 	}
+	for _, junk := range []string{"grant", "mesh,foo", "junk", "mesh,grant"} {
+		if _, err := ParseRequireSourcesList(junk); err == "" {
+			t.Fatalf("expected reject junk %q", junk)
+		}
+	}
 }
 
 // #373: cite-both ok when mesh + private receipts present.
@@ -678,6 +686,28 @@ func TestFormatRequireSourcesCheck_CatalogGrantOnly(t *testing.T) {
 	}
 	if !strings.Contains(out, "catalog/grant do not satisfy cite-both") {
 		t.Fatalf("want catalog/grant pin: %q", out)
+	}
+}
+
+// #373: mesh-only → explicit miss for private (catalog/grant pin only when those hints appear).
+func TestFormatRequireSourcesCheck_MissPrivate(t *testing.T) {
+	res := &iomesh.MemoryOpsDigestResult{
+		Receipts: []iomesh.MemoryOpsDigestReceipt{
+			{ID: "m1", Summary: "mesh incident INC-9", SourceHint: "mesh_stream"},
+		},
+	}
+	out := FormatRequireSourcesCheck(res, []string{"mesh", "private"})
+	if !strings.Contains(out, "require-sources: miss") || !strings.Contains(out, "missing=private") {
+		t.Fatalf("want private miss: %q", out)
+	}
+	if !strings.Contains(out, "cited=mesh") {
+		t.Fatalf("want mesh cited: %q", out)
+	}
+	if strings.Contains(out, "catalog/grant do not satisfy cite-both") {
+		t.Fatalf("catalog/grant pin only when those hints present: %q", out)
+	}
+	if !strings.Contains(out, "dual_write OFF") || !strings.Contains(out, "not Memory GA") {
+		t.Fatalf("honesty pin missing: %q", out)
 	}
 }
 
@@ -749,7 +779,7 @@ func TestMemoryOpsDigest_RequireSourcesCiteBoth(t *testing.T) {
 	mesh := iomesh.New(iomesh.Config{Enabled: true, Endpoint: srv.URL, Tenant: "t"}, nil)
 	rt := &Runtime{
 		mesh:   mesh,
-		memory: MemoryConfig{Enabled: true, Tenant: "t", Server: "memory"},
+		memory: MemoryConfig{Enabled: true, Tenant: "t", Server: "memory", DualWrite: false},
 	}
 	out, err := rt.MemoryOpsDigest(context.Background(), MemoryOpsDigestOpts{
 		RequireSources: []string{"mesh", "private"},
@@ -762,6 +792,143 @@ func TestMemoryOpsDigest_RequireSourcesCiteBoth(t *testing.T) {
 	}
 	if !strings.Contains(out, "mesh=mesh incident INC-9") || !strings.Contains(out, "private=private RCA") {
 		t.Fatalf("want both cites: %q", out)
+	}
+	if !strings.Contains(out, "dual_write OFF") || !strings.Contains(out, "not Memory GA") {
+		t.Fatalf("honesty pin missing: %q", out)
+	}
+	if rt.memory.DualWrite {
+		t.Fatal("dual_write must remain OFF")
+	}
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "dual_write ON") {
+		t.Fatalf("must not invent GA / dual_write ON: %q", out)
+	}
+}
+
+// #373: catalog-only / grant-only HTTP digest never satisfies cite-both; mesh-only misses private.
+func TestMemoryOpsDigest_RequireSourcesCatalogGrantAndMeshOnly(t *testing.T) {
+	cases := []struct {
+		name     string
+		receipts []map[string]any
+		want     []string
+		not      []string
+	}{
+		{
+			name: "catalog_only",
+			receipts: []map[string]any{
+				{"id": "c1", "summary": "catalog list", "source_hint": "catalog"},
+			},
+			want: []string{
+				"require-sources: miss", "missing=mesh,private", "cited=(none)",
+				"catalog/grant do not satisfy cite-both", "dual_write OFF", "not Memory GA",
+			},
+			not: []string{"require-sources: ok"},
+		},
+		{
+			name: "grant_only",
+			receipts: []map[string]any{
+				{"id": "g1", "summary": "grant entitlement", "source_hint": "grant_only"},
+			},
+			want: []string{
+				"require-sources: miss", "missing=mesh,private",
+				"catalog/grant do not satisfy cite-both", "dual_write OFF",
+			},
+			not: []string{"require-sources: ok"},
+		},
+		{
+			name: "mesh_only_missing_private",
+			receipts: []map[string]any{
+				{"id": "m1", "summary": "mesh incident INC-9", "source_hint": "mesh_stream"},
+			},
+			want: []string{"require-sources: miss", "missing=private", "cited=mesh", "dual_write OFF"},
+			not:  []string{"require-sources: ok", "catalog/grant do not satisfy cite-both"},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"window": "day", "horizon": "ops",
+					"honesty": map[string]any{
+						"ops_pulse": "ga_path", "never_invent_ga": true, "dual_write_default": "off",
+					},
+					"patterns": []any{},
+					"receipts": tc.receipts,
+				})
+			}))
+			defer srv.Close()
+
+			mesh := iomesh.New(iomesh.Config{Enabled: true, Endpoint: srv.URL, Tenant: "t"}, nil)
+			rt := &Runtime{
+				mesh:   mesh,
+				memory: MemoryConfig{Enabled: true, Tenant: "t", Server: "memory", DualWrite: false},
+			}
+			out, err := rt.MemoryOpsDigest(context.Background(), MemoryOpsDigestOpts{
+				RequireSources: []string{"mesh", "private"},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.HasPrefix(strings.TrimSpace(out), "require-sources: miss") {
+				t.Fatalf("want miss prefix: %q", out)
+			}
+			for _, n := range tc.want {
+				if !strings.Contains(out, n) {
+					t.Fatalf("missing %q in %q", n, out)
+				}
+			}
+			for _, n := range tc.not {
+				if strings.Contains(out, n) {
+					t.Fatalf("must not contain %q: %q", n, out)
+				}
+			}
+			if rt.memory.DualWrite {
+				t.Fatal("dual_write must remain OFF")
+			}
+		})
+	}
+}
+
+// #373: MCP JSON fallback still classifies source_hint for cite-both.
+func TestParseOpsDigestJSON_RequireSources(t *testing.T) {
+	raw := `{
+		"window": "day",
+		"horizon": "ops",
+		"honesty": {"ops_pulse": "ga_path", "never_invent_ga": true, "dual_write_default": "off"},
+		"patterns": [],
+		"receipts": [
+			{"id": "c1", "summary": "catalog list", "source_hint": "catalog"},
+			{"id": "g1", "summary": "grant only", "source_hint": "grant"}
+		]
+	}`
+	res, formatted := parseOpsDigestJSON(raw, 6000)
+	if res == nil || formatted == "" {
+		t.Fatalf("parse failed res=%v formatted=%q", res, formatted)
+	}
+	out := applyRequireSources(formatted, res, []string{"mesh", "private"})
+	if !strings.HasPrefix(strings.TrimSpace(out), "require-sources: miss") {
+		t.Fatalf("want miss prefix: %q", out)
+	}
+	if !strings.Contains(out, "catalog/grant do not satisfy cite-both") {
+		t.Fatalf("want catalog/grant pin: %q", out)
+	}
+	if !strings.Contains(out, "dual_write OFF") || !strings.Contains(out, "not Memory GA") {
+		t.Fatalf("honesty pin missing: %q", out)
+	}
+
+	both := `{
+		"window": "day", "horizon": "ops",
+		"receipts": [
+			{"id": "m1", "summary": "mesh incident INC-9", "source_hint": "mesh"},
+			{"id": "p1", "summary": "private RCA", "source_hint": "private"}
+		]
+	}`
+	res2, formatted2 := parseOpsDigestJSON(both, 6000)
+	ok := applyRequireSources(formatted2, res2, []string{"mesh", "private"})
+	if !strings.HasPrefix(strings.TrimSpace(ok), "require-sources: ok") {
+		t.Fatalf("want ok prefix: %q", ok)
+	}
+	if !strings.Contains(ok, "mesh=mesh incident INC-9") || !strings.Contains(ok, "private=private RCA") {
+		t.Fatalf("want both cites: %q", ok)
 	}
 }
 
