@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Cite-both digest (#373):** `/memory digest --require-sources mesh,private` cites both mesh + private receipt `source_hint`s or prints an explicit miss. Catalog-only / grant-only never satisfies cite-both. dual_write OFF · not Memory GA · local palace on disk. Does not twin digest honesty (#369).
 - **Brief ACK / unread on `/dashboard` (#371):** morning brief has **UNREAD** vs **ACKed** state. Unacked does not count as known (fail-open: missing ACK stays visible, not fake green). `/dashboard ack` writes an optional local palace marker (`brief-ack.json` beside user config). ACK is a human ritual only — **no send/pay/ship** closed loop. Does not rewrite pulse/compose (#365). dual_write OFF · not Memory GA · not live APPLY.
 - **Dashboard compose smoke:** `TestDashboardCompose_SmokeNeverAutoApplies` plus `iomesh mesh smoke --unit` runs `/dashboard` compose tests. Decision stub never auto-applies. dual_write OFF · not Memory GA · not live APPLY.
 - **`/dashboard` compose strip (#365):** pulse (this feed) · entitled `dept.*` pull via existing `iomesh memory pull` · insights via existing `/memory digest` · human **decision stub that never auto-applies**. No new backends. Empty until consume stays expected. `/dashboard preview` remains the eval template. dual_write OFF · not Memory GA · not live APPLY.

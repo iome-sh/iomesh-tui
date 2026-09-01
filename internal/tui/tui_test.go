@@ -252,6 +252,7 @@ func TestParseMemoryRelatedArgs(t *testing.T) {
 }
 
 // s1200: /memory digest flag parser for window / horizon / limit.
+// #373: --require-sources mesh,private.
 func TestParseMemoryDigestArgs(t *testing.T) {
 	o, errMsg := parseMemoryDigestArgs([]string{
 		"--window", "week",
@@ -288,6 +289,22 @@ func TestParseMemoryDigestArgs(t *testing.T) {
 	_, badFlag := parseMemoryDigestArgs([]string{"--unknown"})
 	if badFlag == "" {
 		t.Fatal("expected unknown flag")
+	}
+
+	oReq, errReq := parseMemoryDigestArgs([]string{"--require-sources", "mesh,private"})
+	if errReq != "" {
+		t.Fatalf("require-sources err=%q", errReq)
+	}
+	if len(oReq.RequireSources) != 2 || oReq.RequireSources[0] != "mesh" || oReq.RequireSources[1] != "private" {
+		t.Fatalf("require-sources opts=%+v", oReq)
+	}
+	oEq, errEq := parseMemoryDigestArgs([]string{"--require_sources=private,mesh"})
+	if errEq != "" || len(oEq.RequireSources) != 2 {
+		t.Fatalf("eq form opts=%+v err=%q", oEq, errEq)
+	}
+	_, badReq := parseMemoryDigestArgs([]string{"--require-sources", "catalog"})
+	if badReq == "" {
+		t.Fatal("expected invalid --require-sources catalog")
 	}
 }
 

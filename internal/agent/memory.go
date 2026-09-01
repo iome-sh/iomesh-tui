@@ -346,17 +346,180 @@ type MemoryRelatedOpts struct {
 
 // MemoryOpsDigestOpts overrides defaults for one opt-in ops digest export (s1200).
 // Zero/empty fields use defaults: Window=day, Horizon=ops, Limit=20.
+// RequireSources (issue #373): when non-empty (typically mesh,private), the
+// digest must cite each required source via receipt source_hint, or an explicit
+// miss line is printed. Catalog/grant hints never satisfy mesh or private.
+// dual_write stays OFF · not hosted Memory GA · local palace on disk.
 type MemoryOpsDigestOpts struct {
-	Window  string // day|week
-	Horizon string // ops|knowledge|analytical|all
-	Limit   int
-	AsOf    string // optional RFC3339
+	Window         string // day|week
+	Horizon        string // ops|knowledge|analytical|all
+	Limit          int
+	AsOf           string   // optional RFC3339
+	RequireSources []string // mesh and/or private (#373 cite-both)
+}
+
+// Digest source kinds for --require-sources (#373).
+// Catalog/grant never count as mesh or private (cite-both).
+const (
+	DigestSourceMesh    = "mesh"
+	DigestSourcePrivate = "private"
+	DigestSourceCatalog = "catalog"
+	DigestSourceGrant   = "grant"
+)
+
+// ClassifyDigestSourceHint maps a receipt source_hint to mesh|private|catalog|grant|"".
+// Empty / unknown hints do not satisfy require-sources. Catalog and grant never
+// satisfy mesh or private.
+func ClassifyDigestSourceHint(hint string) string {
+	h := strings.ToLower(strings.TrimSpace(hint))
+	h = strings.ReplaceAll(h, "-", "_")
+	if h == "" {
+		return ""
+	}
+	switch h {
+	case "catalog", "portal", "catalog_only", "catalog_list":
+		return DigestSourceCatalog
+	case "grant", "grant_only", "entitlement", "entitlements":
+		return DigestSourceGrant
+	case "mesh", "mesh_stream", "mesh_consume", "mesh_pulse", "mesh_incident", "mesh_incidents",
+		"broker", "stream", "consume", "ops_pulse":
+		return DigestSourceMesh
+	case "private", "private_overlay", "private_rca", "palace", "palace_timeline",
+		"local", "local_palace", "rca", "overlay":
+		return DigestSourcePrivate
+	}
+	switch {
+	case strings.HasPrefix(h, "mesh_"):
+		return DigestSourceMesh
+	case strings.HasPrefix(h, "private_"), strings.HasPrefix(h, "palace_"):
+		return DigestSourcePrivate
+	case strings.HasPrefix(h, "catalog_"):
+		return DigestSourceCatalog
+	case strings.HasPrefix(h, "grant_"):
+		return DigestSourceGrant
+	default:
+		return ""
+	}
+}
+
+// ParseRequireSourcesList parses a comma-separated mesh|private list (#373).
+// Returns errMsg when empty or when an unknown token appears.
+func ParseRequireSourcesList(val string) (out []string, errMsg string) {
+	seen := map[string]bool{}
+	for _, part := range strings.Split(val, ",") {
+		s := strings.ToLower(strings.TrimSpace(part))
+		if s == "" {
+			continue
+		}
+		if s != DigestSourceMesh && s != DigestSourcePrivate {
+			return nil, "invalid --require-sources value (mesh|private)"
+		}
+		if seen[s] {
+			continue
+		}
+		seen[s] = true
+		out = append(out, s)
+	}
+	if len(out) == 0 {
+		return nil, "invalid --require-sources (mesh|private)"
+	}
+	return out, ""
+}
+
+func citeDigestReceipt(r iomesh.MemoryOpsDigestReceipt) string {
+	sum := strings.TrimSpace(r.Summary)
+	if sum == "" {
+		sum = strings.TrimSpace(r.ID)
+	}
+	if sum == "" {
+		sum = strings.TrimSpace(r.SourceHint)
+	}
+	if sum == "" {
+		return "(untitled)"
+	}
+	// Keep cite lines compact for the require-sources footer.
+	if utf8.RuneCountInString(sum) > 80 {
+		runes := []rune(sum)
+		sum = string(runes[:77]) + "…"
+	}
+	return sum
+}
+
+// FormatRequireSourcesCheck returns an explicit cite-both ok or miss line (#373).
+// Catalog/grant receipts never satisfy mesh or private. dual_write OFF pin always.
+func FormatRequireSourcesCheck(res *iomesh.MemoryOpsDigestResult, required []string) string {
+	if len(required) == 0 {
+		return ""
+	}
+	present := map[string]bool{}
+	meshCite, privateCite := "", ""
+	catalogOrGrant := false
+	if res != nil {
+		for _, r := range res.Receipts {
+			switch ClassifyDigestSourceHint(r.SourceHint) {
+			case DigestSourceMesh:
+				present[DigestSourceMesh] = true
+				if meshCite == "" {
+					meshCite = citeDigestReceipt(r)
+				}
+			case DigestSourcePrivate:
+				present[DigestSourcePrivate] = true
+				if privateCite == "" {
+					privateCite = citeDigestReceipt(r)
+				}
+			case DigestSourceCatalog, DigestSourceGrant:
+				catalogOrGrant = true
+			}
+		}
+	}
+	var cited, missing []string
+	for _, req := range required {
+		if present[req] {
+			cited = append(cited, req)
+		} else {
+			missing = append(missing, req)
+		}
+	}
+	citedStr := strings.Join(cited, ",")
+	if citedStr == "" {
+		citedStr = "(none)"
+	}
+	pin := "dual_write OFF · not Memory GA · local palace on disk"
+	if len(missing) > 0 {
+		msg := fmt.Sprintf("require-sources: miss · required=%s · cited=%s · missing=%s",
+			strings.Join(required, ","), citedStr, strings.Join(missing, ","))
+		if catalogOrGrant {
+			msg += " · catalog/grant do not satisfy cite-both"
+		}
+		return msg + " · " + pin
+	}
+	msg := fmt.Sprintf("require-sources: ok · cited=%s", citedStr)
+	if present[DigestSourceMesh] && meshCite != "" {
+		msg += " · mesh=" + meshCite
+	}
+	if present[DigestSourcePrivate] && privateCite != "" {
+		msg += " · private=" + privateCite
+	}
+	return msg + " · " + pin
+}
+
+func applyRequireSources(text string, res *iomesh.MemoryOpsDigestResult, required []string) string {
+	if len(required) == 0 {
+		return text
+	}
+	check := FormatRequireSourcesCheck(res, required)
+	if strings.TrimSpace(text) == "" {
+		return check
+	}
+	return check + "\n" + text
 }
 
 // MemoryOpsDigest exports an ops heartbeat digest pack (s1200).
 // Prefers sync HTTP ExportOpsDigest (POST /v1|/v5/memory/ops_digest); falls back
 // to MCP ops_digest_export when sync fails or mesh is unavailable.
 // Returns human-readable text (patterns + receipts + honesty line).
+// When RequireSources is set (#373), prefixes an explicit cite-both ok or miss
+// line from receipt source_hint (catalog/grant never satisfy mesh|private).
 // Does NOT run on default auto-recall (slash/CLI opt-in only).
 // Honesty: ops GA-path · knowledge/analytical Beta · never invent GA · dual_write OFF ·
 // not product Memory GA · not full graph RAG. Human owns irreversible decisions.
@@ -385,6 +548,7 @@ func (rt *Runtime) MemoryOpsDigest(ctx context.Context, opts ...MemoryOpsDigestO
 	if maxBytes <= 0 {
 		maxBytes = 6000
 	}
+	required := call.RequireSources
 
 	// Prefer sync ops digest against memory sidecar HTTP when mesh client is live.
 	if rt.syncMemoryReady() {
@@ -399,7 +563,7 @@ func (rt *Runtime) MemoryOpsDigest(ctx context.Context, opts ...MemoryOpsDigestO
 		rt.lastMemoryRetrieveMS.Store(int64(latMS))
 		rt.lastMemoryRetrieveCacheHit.Store(false)
 		if err == nil {
-			return formatOpsDigest(res, maxBytes), nil
+			return applyRequireSources(formatOpsDigest(res, maxBytes), res, required), nil
 		}
 		if rt.logger != nil {
 			rt.logger.Debug("memory ops_digest sync failed; trying MCP fallback", "err", err, "ms", latMS)
@@ -434,10 +598,10 @@ func (rt *Runtime) MemoryOpsDigest(ctx context.Context, opts ...MemoryOpsDigestO
 		return "", err
 	}
 	// MCP returns JSON text; try to re-format for operator readability, else pass through.
-	if formatted := formatOpsDigestJSON(out, maxBytes); formatted != "" {
-		return formatted, nil
+	if res, formatted := parseOpsDigestJSON(out, maxBytes); formatted != "" {
+		return applyRequireSources(formatted, res, required), nil
 	}
-	return truncateBytes(out, maxBytes), nil
+	return applyRequireSources(truncateBytes(out, maxBytes), nil, required), nil
 }
 
 // formatOpsDigest turns a sync ExportOpsDigest result into a compact human-readable pack.
@@ -498,9 +662,15 @@ func formatOpsDigest(res *iomesh.MemoryOpsDigestResult, maxBytes int) string {
 				sum = r.ID
 			}
 			when := strings.TrimSpace(r.EventTime)
-			if when != "" {
+			hint := strings.TrimSpace(r.SourceHint)
+			switch {
+			case when != "" && hint != "":
+				fmt.Fprintf(&b, "  %d. [%s] %s (source=%s)\n", i+1, when, sum, hint)
+			case when != "":
 				fmt.Fprintf(&b, "  %d. [%s] %s\n", i+1, when, sum)
-			} else {
+			case hint != "":
+				fmt.Fprintf(&b, "  %d. %s (source=%s)\n", i+1, sum, hint)
+			default:
 				fmt.Fprintf(&b, "  %d. %s\n", i+1, sum)
 			}
 		}
@@ -541,15 +711,22 @@ func formatOpsDigest(res *iomesh.MemoryOpsDigestResult, maxBytes int) string {
 // formatOpsDigestJSON attempts to parse MCP ops_digest_export JSON into the same
 // human-readable layout as formatOpsDigest. Returns empty when parse fails.
 func formatOpsDigestJSON(raw string, maxBytes int) string {
+	_, formatted := parseOpsDigestJSON(raw, maxBytes)
+	return formatted
+}
+
+// parseOpsDigestJSON parses MCP ops_digest_export JSON for formatting and
+// require-sources checks (#373). Returns (nil, "") when parse fails.
+func parseOpsDigestJSON(raw string, maxBytes int) (*iomesh.MemoryOpsDigestResult, string) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" || raw[0] != '{' {
-		return ""
+		return nil, ""
 	}
 	var res iomesh.MemoryOpsDigestResult
 	if err := json.Unmarshal([]byte(raw), &res); err != nil {
-		return ""
+		return nil, ""
 	}
-	return formatOpsDigest(&res, maxBytes)
+	return &res, formatOpsDigest(&res, maxBytes)
 }
 
 // MemoryFactsAsOfOpts for opt-in bi-temporal lite validity listing (s1276 / aion Beta K4 lite).

@@ -558,6 +558,198 @@ func TestMemoryOpsDigest_Disabled(t *testing.T) {
 	}
 }
 
+// #373: classify receipt source_hint — catalog/grant never count as mesh|private.
+func TestClassifyDigestSourceHint(t *testing.T) {
+	cases := []struct {
+		hint string
+		want string
+	}{
+		{"mesh", DigestSourceMesh},
+		{"mesh_stream", DigestSourceMesh},
+		{"MESH-INCIDENTS", DigestSourceMesh},
+		{"palace_timeline", DigestSourcePrivate},
+		{"private_rca", DigestSourcePrivate},
+		{"catalog", DigestSourceCatalog},
+		{"catalog_only", DigestSourceCatalog},
+		{"grant", DigestSourceGrant},
+		{"grant_only", DigestSourceGrant},
+		{"entitlement", DigestSourceGrant},
+		{"", ""},
+		{"unknown_widget", ""},
+	}
+	for _, tc := range cases {
+		if got := ClassifyDigestSourceHint(tc.hint); got != tc.want {
+			t.Fatalf("hint=%q got=%q want=%q", tc.hint, got, tc.want)
+		}
+	}
+}
+
+func TestParseRequireSourcesList(t *testing.T) {
+	got, errMsg := ParseRequireSourcesList("mesh,private")
+	if errMsg != "" || len(got) != 2 || got[0] != "mesh" || got[1] != "private" {
+		t.Fatalf("got=%v err=%q", got, errMsg)
+	}
+	got2, err2 := ParseRequireSourcesList(" private , mesh , private ")
+	if err2 != "" || len(got2) != 2 || got2[0] != "private" || got2[1] != "mesh" {
+		t.Fatalf("dedupe got=%v err=%q", got2, err2)
+	}
+	if _, err := ParseRequireSourcesList("mesh,catalog"); err == "" {
+		t.Fatal("expected reject catalog in require-sources")
+	}
+	if _, err := ParseRequireSourcesList(""); err == "" {
+		t.Fatal("expected reject empty")
+	}
+}
+
+// #373: cite-both ok when mesh + private receipts present.
+func TestFormatRequireSourcesCheck_CiteBothOK(t *testing.T) {
+	res := &iomesh.MemoryOpsDigestResult{
+		Receipts: []iomesh.MemoryOpsDigestReceipt{
+			{ID: "m1", Summary: "P2 checkout p95", SourceHint: "mesh_stream"},
+			{ID: "p1", Summary: "private RCA note", SourceHint: "palace_timeline"},
+			{ID: "c1", Summary: "catalog product list", SourceHint: "catalog"},
+		},
+	}
+	out := FormatRequireSourcesCheck(res, []string{"mesh", "private"})
+	if !strings.Contains(out, "require-sources: ok") {
+		t.Fatalf("want ok: %q", out)
+	}
+	if !strings.Contains(out, "mesh=P2 checkout p95") || !strings.Contains(out, "private=private RCA note") {
+		t.Fatalf("want cites: %q", out)
+	}
+	if !strings.Contains(out, "dual_write OFF") || !strings.Contains(out, "not Memory GA") {
+		t.Fatalf("honesty pin missing: %q", out)
+	}
+	if strings.Contains(out, "miss") {
+		t.Fatalf("must not miss when both present: %q", out)
+	}
+}
+
+// #373: private-only → explicit miss for mesh; catalog/grant do not satisfy.
+func TestFormatRequireSourcesCheck_MissMesh(t *testing.T) {
+	res := &iomesh.MemoryOpsDigestResult{
+		Receipts: []iomesh.MemoryOpsDigestReceipt{
+			{ID: "p1", Summary: "local RCA", SourceHint: "palace_timeline"},
+			{ID: "c1", Summary: "portal catalog row", SourceHint: "catalog_only"},
+			{ID: "g1", Summary: "grant entitlement", SourceHint: "grant"},
+		},
+	}
+	out := FormatRequireSourcesCheck(res, []string{"mesh", "private"})
+	if !strings.Contains(out, "require-sources: miss") || !strings.Contains(out, "missing=mesh") {
+		t.Fatalf("want mesh miss: %q", out)
+	}
+	if !strings.Contains(out, "cited=private") {
+		t.Fatalf("want private cited: %q", out)
+	}
+	if !strings.Contains(out, "catalog/grant do not satisfy cite-both") {
+		t.Fatalf("want catalog/grant pin: %q", out)
+	}
+	if strings.Contains(out, "require-sources: ok") {
+		t.Fatalf("must not ok: %q", out)
+	}
+}
+
+// #373: catalog-only / grant-only never counts as cite-both.
+func TestFormatRequireSourcesCheck_CatalogGrantOnly(t *testing.T) {
+	res := &iomesh.MemoryOpsDigestResult{
+		Receipts: []iomesh.MemoryOpsDigestReceipt{
+			{ID: "c1", Summary: "catalog list", SourceHint: "catalog"},
+			{ID: "g1", Summary: "grant only", SourceHint: "grant_only"},
+		},
+	}
+	out := FormatRequireSourcesCheck(res, []string{"mesh", "private"})
+	if !strings.Contains(out, "miss") || !strings.Contains(out, "missing=mesh,private") {
+		t.Fatalf("want both missing: %q", out)
+	}
+	if !strings.Contains(out, "cited=(none)") {
+		t.Fatalf("want cited none: %q", out)
+	}
+	if !strings.Contains(out, "catalog/grant do not satisfy cite-both") {
+		t.Fatalf("want catalog/grant pin: %q", out)
+	}
+}
+
+// #373: MemoryOpsDigest with --require-sources prefixes miss when palace-only.
+func TestMemoryOpsDigest_RequireSourcesMiss(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"window": "day", "horizon": "ops",
+			"honesty": map[string]any{
+				"ops_pulse": "ga_path", "knowledge": "beta", "analytical": "beta",
+				"never_invent_ga": true, "dual_write_default": "off",
+			},
+			"patterns": []any{},
+			"receipts": []map[string]any{
+				{"id": "r1", "summary": "palace note", "source_hint": "palace_timeline"},
+			},
+		})
+	}))
+	defer srv.Close()
+
+	mesh := iomesh.New(iomesh.Config{Enabled: true, Endpoint: srv.URL, Tenant: "t"}, nil)
+	rt := &Runtime{
+		mesh:   mesh,
+		memory: MemoryConfig{Enabled: true, Tenant: "t", Server: "memory", DualWrite: false},
+	}
+	out, err := rt.MemoryOpsDigest(context.Background(), MemoryOpsDigestOpts{
+		RequireSources: []string{"mesh", "private"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(strings.TrimSpace(out), "require-sources: miss") {
+		t.Fatalf("want miss prefix: %q", out)
+	}
+	if !strings.Contains(out, "missing=mesh") || !strings.Contains(out, "cited=private") {
+		t.Fatalf("want private-only cite: %q", out)
+	}
+	if !strings.Contains(out, "palace note") || !strings.Contains(out, "source=palace_timeline") {
+		t.Fatalf("want digest body with source hint: %q", out)
+	}
+	if rt.memory.DualWrite {
+		t.Fatal("dual_write must remain OFF")
+	}
+	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "dual_write ON") {
+		t.Fatalf("must not invent GA / dual_write ON: %q", out)
+	}
+}
+
+// #373: MemoryOpsDigest cite-both ok when both source_hints present.
+func TestMemoryOpsDigest_RequireSourcesCiteBoth(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"window": "day", "horizon": "ops",
+			"honesty": map[string]any{
+				"ops_pulse": "ga_path", "never_invent_ga": true, "dual_write_default": "off",
+			},
+			"patterns": []any{},
+			"receipts": []map[string]any{
+				{"id": "m1", "summary": "mesh incident INC-9", "source_hint": "mesh"},
+				{"id": "p1", "summary": "private RCA", "source_hint": "private"},
+			},
+		})
+	}))
+	defer srv.Close()
+
+	mesh := iomesh.New(iomesh.Config{Enabled: true, Endpoint: srv.URL, Tenant: "t"}, nil)
+	rt := &Runtime{
+		mesh:   mesh,
+		memory: MemoryConfig{Enabled: true, Tenant: "t", Server: "memory"},
+	}
+	out, err := rt.MemoryOpsDigest(context.Background(), MemoryOpsDigestOpts{
+		RequireSources: []string{"mesh", "private"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(strings.TrimSpace(out), "require-sources: ok") {
+		t.Fatalf("want ok prefix: %q", out)
+	}
+	if !strings.Contains(out, "mesh=mesh incident INC-9") || !strings.Contains(out, "private=private RCA") {
+		t.Fatalf("want both cites: %q", out)
+	}
+}
+
 // s1135: MemoryRelated prefers sync HTTP POST /v1/memory/related.
 func TestMemoryRelated_PrefersSyncHTTP(t *testing.T) {
 	var gotPath string
