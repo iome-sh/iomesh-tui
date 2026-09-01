@@ -310,7 +310,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 	case "/memory", "/mem":
 		if len(parts) < 2 {
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
-			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | trigger-compact --i-confirm | semantic [query|--query ...] [--limit N] | ingest-event --subject <id> --content <text> [--event-time|--session-id|--session-seq|--severity|--source-stream] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | ingest <text> | status]")
+			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] [--require-sources mesh,private] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | trigger-compact --i-confirm | semantic [query|--query ...] [--limit N] | ingest-event --subject <id> --content <text> [--event-time|--session-id|--session-seq|--severity|--source-stream] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | ingest <text> | status]")
 			// s1831: residual-honest dual-path next-step after bare /memory help.
 			for _, line := range agent.MemoryNextStepLines() {
 				fmt.Fprintln(out, line)
@@ -372,10 +372,11 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		case "digest", "dig":
 			// s1200: opt-in ops heartbeat digest export (HTTP + MCP ops_digest_export fallback).
 			// ops GA-path · knowledge/analytical Beta · never invent GA · dual_write OFF · not Memory GA.
+			// #373: --require-sources mesh,private cites both or explicit miss (catalog/grant ≠ cite-both).
 			// s1831: residual-honest dual-path next-step after digest (primary honesty surface).
 			dopts, perr := parseMemoryDigestArgs(parts[2:])
 			if perr != "" {
-				fmt.Fprintf(out, "memory digest: %s\nusage: /memory digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N]\n", perr)
+				fmt.Fprintf(out, "memory digest: %s\nusage: /memory digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] [--require-sources mesh,private]\n", perr)
 				return false, nil
 			}
 			text, err := rt.rt.MemoryOpsDigest(context.Background(), dopts)
@@ -2383,8 +2384,9 @@ func parseMemoryRecallArgs(args []string) (query string, opts agent.MemoryRecall
 	return strings.Join(qParts, " "), opts
 }
 
-// parseMemoryDigestArgs extracts ops digest flags (s1200).
-// Supports: --window day|week, --horizon ops|knowledge|analytical|all, --limit N, --as-of RFC3339.
+// parseMemoryDigestArgs extracts ops digest flags (s1200 + #373 require-sources).
+// Supports: --window day|week, --horizon ops|knowledge|analytical|all, --limit N,
+// --as-of RFC3339, --require-sources mesh,private (cite-both or explicit miss).
 // Returns errMsg when a flag is malformed or values are invalid.
 func parseMemoryDigestArgs(args []string) (opts agent.MemoryOpsDigestOpts, errMsg string) {
 	for i := 0; i < len(args); i++ {
@@ -2437,6 +2439,18 @@ func parseMemoryDigestArgs(args []string) (opts agent.MemoryOpsDigestOpts, errMs
 				}
 			}
 			opts.AsOf = strings.TrimSpace(val)
+		case "--require-sources", "--require_sources":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			srcs, perr := agent.ParseRequireSourcesList(val)
+			if perr != "" {
+				return opts, perr
+			}
+			opts.RequireSources = srcs
 		default:
 			if strings.HasPrefix(a, "-") {
 				return opts, "unknown flag " + a
