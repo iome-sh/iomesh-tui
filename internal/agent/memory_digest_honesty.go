@@ -11,19 +11,25 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/iomesh"
 )
 
-// Digest honesty (#369 / FR-25 · FR-26 · FR-31):
+// Digest honesty (#369 / FR-25 · FR-26 · FR-31 + #370 / FR-24 · FR-30):
 //   - Empty or rejected patterns → insufficient-signal / nothing reliable today (do not invent).
 //   - Rate-claiming pattern lines require n of N and a window, else rejected.
 //   - Receipts default to pointers + hashes, not raw customer text.
+//   - No-delta window (recap / same fingerprint vs prior) → insufficient-signal, not a “what is true” brief.
+//   - External/sponsored color is a third labeled pane and never satisfies cite-both mesh+private.
 //   - dual_write stays off · catalog list ≠ consume · not Memory GA.
 
 const (
 	digestInsufficientSignal = "insufficient-signal · nothing reliable today"
-	digestHonestyExtraPin    = "catalog list ≠ consume · receipts=pointers+hashes · insufficient-signal allowed"
+	digestHonestyExtraPin    = "catalog list ≠ consume · receipts=pointers+hashes · insufficient-signal allowed · external ≠ cite-both · no-delta ≠ recap"
+	digestExternalPaneLabel  = "external color (third pane · never heartbeat · never cite-both)"
 )
 
 // digestRateClaimRE matches summaries/kinds that claim a rate (need n/N + window).
 var digestRateClaimRE = regexp.MustCompile(`(?i)(%|\bpercent(?:age)?\b|\bpct\b|\brate\b|\bratio\b|\bper\s+(?:day|week|hour|month|minute)\b)`)
+
+// digestRecapTextRE matches recap language that is not a change vs the prior window (#370).
+var digestRecapTextRE = regexp.MustCompile(`(?i)\bwhat is true\b|\bno delta\b|\bno change vs prior\b|\bunchanged vs prior\b|\bsame as prior window\b`)
 
 // patternClaimsRate reports whether the pattern line claims a rate / percentage.
 func patternClaimsRate(p iomesh.MemoryOpsDigestPattern) bool {
@@ -54,6 +60,69 @@ func acceptDigestPattern(p iomesh.MemoryOpsDigestPattern) bool {
 		strings.TrimSpace(p.Subject) != "" ||
 		strings.TrimSpace(p.Kind) != "" ||
 		strings.TrimSpace(p.ID) != ""
+}
+
+func normalizeDigestToken(s string) string {
+	s = strings.ToLower(strings.TrimSpace(s))
+	s = strings.ReplaceAll(s, "-", "_")
+	s = strings.ReplaceAll(s, " ", "_")
+	return s
+}
+
+func isDigestDeltaKind(s string) bool {
+	s = strings.TrimPrefix(normalizeDigestToken(s), "new_")
+	switch s {
+	case "language", "stall", "support_theme", "paging_shape":
+		return true
+	}
+	return false
+}
+
+func isDigestRecapToken(s string) bool {
+	switch normalizeDigestToken(s) {
+	case "recap", "what_is_true", "no_delta", "unchanged", "status_quo", "same_as_prior":
+		return true
+	}
+	return false
+}
+
+// patternIsDeltaVsPrior reports whether the pattern is a change vs the prior window
+// (new language, stall, support theme, or paging shape). Recaps / no-delta /
+// identical fingerprints are not briefs (#370 / FR-24).
+// Unspecified first-window patterns count as a delta vs empty prior.
+func patternIsDeltaVsPrior(p iomesh.MemoryOpsDigestPattern) bool {
+	if p.Delta != nil {
+		return *p.Delta
+	}
+	fp := strings.TrimSpace(p.Fingerprint)
+	prior := strings.TrimSpace(p.PriorFingerprint)
+	if fp != "" && prior != "" && fp == prior {
+		return false
+	}
+	if isDigestRecapToken(p.Kind) || isDigestRecapToken(p.DeltaKind) {
+		return false
+	}
+	if isDigestDeltaKind(p.Kind) || isDigestDeltaKind(p.DeltaKind) {
+		return true
+	}
+	text := strings.TrimSpace(p.Summary) + " " + strings.TrimSpace(p.Subject)
+	if digestRecapTextRE.MatchString(text) {
+		return false
+	}
+	return true
+}
+
+// partitionDigestReceipts pulls external/sponsored color out of the heartbeat
+// receipt list. External is a third labeled pane and never the heartbeat (#370).
+func partitionDigestReceipts(receipts []iomesh.MemoryOpsDigestReceipt) (heartbeat, external []iomesh.MemoryOpsDigestReceipt) {
+	for _, r := range receipts {
+		if ClassifyDigestSourceHint(r.SourceHint) == DigestSourceExternal {
+			external = append(external, r)
+			continue
+		}
+		heartbeat = append(heartbeat, r)
+	}
+	return heartbeat, external
 }
 
 // formatDigestPatternLine renders one accepted pattern. Rate lines always show n of N + window.
@@ -172,7 +241,7 @@ func receiptHash(r iomesh.MemoryOpsDigestReceipt) string {
 }
 
 // formatDigestReceiptLine prints pointer + hash only — never raw customer summary text.
-// source_hint is a classification token (mesh|private|catalog|grant), not customer language.
+// source_hint is a classification token (mesh|private|catalog|grant|external), not customer language.
 func formatDigestReceiptLine(i int, r iomesh.MemoryOpsDigestReceipt) string {
 	ptr := receiptPointer(r)
 	hash := receiptHash(r)

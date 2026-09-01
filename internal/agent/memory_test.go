@@ -573,7 +573,7 @@ func TestMemoryOpsDigest_Disabled(t *testing.T) {
 	}
 }
 
-// #373: classify receipt source_hint — catalog/grant never count as mesh|private.
+// #373 / #370: classify receipt source_hint — catalog/grant/external never count as mesh|private.
 func TestClassifyDigestSourceHint(t *testing.T) {
 	cases := []struct {
 		hint string
@@ -582,6 +582,7 @@ func TestClassifyDigestSourceHint(t *testing.T) {
 		{"mesh", DigestSourceMesh},
 		{"mesh_stream", DigestSourceMesh},
 		{"MESH-INCIDENTS", DigestSourceMesh},
+		{"consume", DigestSourceMesh},
 		{"palace_timeline", DigestSourcePrivate},
 		{"private_rca", DigestSourcePrivate},
 		{"catalog", DigestSourceCatalog},
@@ -589,6 +590,15 @@ func TestClassifyDigestSourceHint(t *testing.T) {
 		{"grant", DigestSourceGrant},
 		{"grant_only", DigestSourceGrant},
 		{"entitlement", DigestSourceGrant},
+		{"external", DigestSourceExternal},
+		{"sponsored", DigestSourceExternal},
+		{"source=external", DigestSourceExternal},
+		{"source=sponsored", DigestSourceExternal},
+		{"external_feed", DigestSourceExternal},
+		{"sponsored_stream", DigestSourceExternal},
+		{"sponsored_consume", DigestSourceExternal},
+		{"demand_feed", DigestSourceExternal},
+		{"tam_color", DigestSourceExternal},
 		{"", ""},
 		{"unknown_widget", ""},
 	}
@@ -610,6 +620,12 @@ func TestParseRequireSourcesList(t *testing.T) {
 	}
 	if _, err := ParseRequireSourcesList("mesh,catalog"); err == "" {
 		t.Fatal("expected reject catalog in require-sources")
+	}
+	if _, err := ParseRequireSourcesList("mesh,external"); err == "" {
+		t.Fatal("expected reject external in require-sources")
+	}
+	if _, err := ParseRequireSourcesList("external"); err == "" {
+		t.Fatal("expected reject external-only require-sources")
 	}
 	if _, err := ParseRequireSourcesList(""); err == "" {
 		t.Fatal("expected reject empty")
@@ -929,6 +945,124 @@ func TestParseOpsDigestJSON_RequireSources(t *testing.T) {
 	}
 	if !strings.Contains(ok, "mesh=mesh incident INC-9") || !strings.Contains(ok, "private=private RCA") {
 		t.Fatalf("want both cites: %q", ok)
+	}
+}
+
+// #370: source=external never satisfies cite-both mesh+private.
+func TestFormatRequireSourcesCheck_ExternalNeverCiteBoth(t *testing.T) {
+	res := &iomesh.MemoryOpsDigestResult{
+		Receipts: []iomesh.MemoryOpsDigestReceipt{
+			{ID: "e1", Summary: "sponsored TAM color", SourceHint: "source=external"},
+			{ID: "e2", Summary: "demand feed", SourceHint: "sponsored_stream"},
+			{ID: "p1", Summary: "private RCA", SourceHint: "palace_timeline"},
+		},
+	}
+	out := FormatRequireSourcesCheck(res, []string{"mesh", "private"})
+	if !strings.Contains(out, "require-sources: miss") || !strings.Contains(out, "missing=mesh") {
+		t.Fatalf("want mesh miss: %q", out)
+	}
+	if !strings.Contains(out, "cited=private") {
+		t.Fatalf("want private cited: %q", out)
+	}
+	if !strings.Contains(out, "external/sponsored do not satisfy cite-both") {
+		t.Fatalf("want external pin: %q", out)
+	}
+	if strings.Contains(out, "require-sources: ok") {
+		t.Fatalf("must not ok: %q", out)
+	}
+}
+
+// #370: MemoryOpsDigest httptest — external-only receipts miss cite-both; first-party consume fills mesh.
+func TestMemoryOpsDigest_ExternalNeverFillsMesh(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"window": "day", "horizon": "ops",
+			"honesty": map[string]any{
+				"ops_pulse": "ga_path", "never_invent_ga": true, "dual_write_default": "off",
+			},
+			"patterns": []map[string]any{
+				{"kind": "stall", "delta_kind": "stall", "subject": "dept.ops", "summary": "new checkout stall", "count": 4, "window": "24h"},
+			},
+			"receipts": []map[string]any{
+				{"id": "e1", "summary": "sponsored TAM", "source_hint": "external", "pointer": "https://feed.example/tam"},
+				{"id": "p1", "summary": "palace note", "source_hint": "private"},
+			},
+		})
+	}))
+	defer srv.Close()
+
+	mesh := iomesh.New(iomesh.Config{Enabled: true, Endpoint: srv.URL, Tenant: "t"}, nil)
+	rt := &Runtime{
+		mesh:   mesh,
+		memory: MemoryConfig{Enabled: true, Tenant: "t", Server: "memory", DualWrite: false},
+	}
+	out, err := rt.MemoryOpsDigest(context.Background(), MemoryOpsDigestOpts{
+		RequireSources: []string{"mesh", "private"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(strings.TrimSpace(out), "require-sources: miss") {
+		t.Fatalf("want miss prefix: %q", out)
+	}
+	if !strings.Contains(out, "missing=mesh") || !strings.Contains(out, "cited=private") {
+		t.Fatalf("want private-only cite: %q", out)
+	}
+	if !strings.Contains(out, "external/sponsored do not satisfy cite-both") {
+		t.Fatalf("want external pin: %q", out)
+	}
+	if !strings.Contains(out, digestExternalPaneLabel) {
+		t.Fatalf("want external third pane: %q", out)
+	}
+	if strings.Contains(out, "sponsored TAM") {
+		t.Fatalf("must not paste external raw text: %q", out)
+	}
+	if rt.memory.DualWrite {
+		t.Fatal("dual_write must remain OFF")
+	}
+}
+
+func TestMemoryOpsDigest_FirstPartyConsumeFillsMesh(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"window": "day", "horizon": "ops",
+			"honesty": map[string]any{
+				"ops_pulse": "ga_path", "never_invent_ga": true, "dual_write_default": "off",
+			},
+			"patterns": []map[string]any{
+				{"kind": "language", "delta_kind": "language", "subject": "dept.ops", "summary": "new pager language", "count": 2, "window": "24h"},
+			},
+			"receipts": []map[string]any{
+				{"id": "m1", "summary": "consumed GitHub event", "source_hint": "consume", "pointer": "https://tickets.example/INC-1"},
+				{"id": "p1", "summary": "private RCA", "source_hint": "private"},
+				{"id": "e1", "summary": "sponsored color", "source_hint": "sponsored"},
+			},
+		})
+	}))
+	defer srv.Close()
+
+	mesh := iomesh.New(iomesh.Config{Enabled: true, Endpoint: srv.URL, Tenant: "t"}, nil)
+	rt := &Runtime{
+		mesh:   mesh,
+		memory: MemoryConfig{Enabled: true, Tenant: "t", Server: "memory"},
+	}
+	out, err := rt.MemoryOpsDigest(context.Background(), MemoryOpsDigestOpts{
+		RequireSources: []string{"mesh", "private"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(strings.TrimSpace(out), "require-sources: ok") {
+		t.Fatalf("want ok prefix: %q", out)
+	}
+	if !strings.Contains(out, "cited=mesh,private") {
+		t.Fatalf("want both cited: %q", out)
+	}
+	if !strings.Contains(out, "external color is a third pane") {
+		t.Fatalf("want third-pane pin when external also present: %q", out)
+	}
+	if !strings.Contains(out, digestExternalPaneLabel) {
+		t.Fatalf("want external pane: %q", out)
 	}
 }
 

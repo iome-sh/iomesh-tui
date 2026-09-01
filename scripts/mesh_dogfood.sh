@@ -38,9 +38,9 @@ for arg in "$@"; do
 done
 
 if [[ "$UNIT" -eq 1 ]]; then
-  echo "mesh dogfood: unit mode (go test internal/iomesh + dashboard compose smoke + cite-both digest)"
+  echo "mesh dogfood: unit mode (go test internal/iomesh + dashboard compose smoke + cite-both digest + delta/external honesty)"
   go test ./internal/iomesh/ -count=1 -timeout=60s
-  go test ./internal/agent/ -count=1 -timeout=60s -run 'TestMemoryOpsDigest_RequireSources|TestFormatRequireSourcesCheck|TestParseRequireSourcesList|TestClassifyDigestSourceHint|TestParseOpsDigestJSON_RequireSources'
+  go test ./internal/agent/ -count=1 -timeout=60s -run 'TestMemoryOpsDigest_RequireSources|TestMemoryOpsDigest_External|TestMemoryOpsDigest_FirstPartyConsume|TestFormatRequireSourcesCheck|TestParseRequireSourcesList|TestClassifyDigestSourceHint|TestParseOpsDigestJSON_RequireSources|TestFormatOpsDigest_NoDelta|TestFormatOpsDigest_External|TestPatternIsDeltaVsPrior'
   go test ./internal/tui/ -count=1 -timeout=60s -run 'TestDashboardSnapshot_LandingParityAndHonesty|TestDashboardCompose|TestBriefAck|TestDashboardSlash_AckRitual|TestParseMemoryDigestArgs|TestHandleSlash_MemoryDigestRequireSourcesUsage'
   echo "RESULT=PASS (unit)"
   exit 0

@@ -157,3 +157,154 @@ func TestDigestHonesty_DualWriteRemainsOff(t *testing.T) {
 		t.Fatal("dual_write must default OFF for private overlay")
 	}
 }
+
+func boolPtr(v bool) *bool { return &v }
+
+// #370: recap / no-delta vs prior window → insufficient-signal, not a “what is true” brief.
+func TestFormatOpsDigest_NoDeltaIsInsufficientSignal(t *testing.T) {
+	out := formatOpsDigest(&iomesh.MemoryOpsDigestResult{
+		Window:  "day",
+		Horizon: "ops",
+		Patterns: []iomesh.MemoryOpsDigestPattern{
+			{Kind: "recap", Subject: "dept.ops", Summary: "what is true about checkout", Count: 8, Window: "24h"},
+			{Kind: "status_quo", Summary: "unchanged vs prior", Count: 3, Window: "24h"},
+			{Kind: "burst", Subject: "dept.ops", Summary: "same stall", Fingerprint: "abc", PriorFingerprint: "abc", Count: 2, Window: "24h"},
+			{Kind: "burst", Subject: "dept.ops", Summary: "still paging", Delta: boolPtr(false), Count: 1, Window: "24h"},
+		},
+		Honesty: iomesh.MemoryOpsDigestHonesty{NeverInventGA: true, DualWriteDefault: "off"},
+	}, 4000)
+	if !strings.Contains(out, digestInsufficientSignal) {
+		t.Fatalf("want insufficient-signal for no-delta window: %q", out)
+	}
+	if !strings.Contains(out, "rejected 4 recap(s) with no delta vs prior window") {
+		t.Fatalf("want recap reject note: %q", out)
+	}
+	if strings.Contains(out, "what is true about checkout") || strings.Contains(out, "patterns (") {
+		t.Fatalf("must not render recap as a brief: %q", out)
+	}
+}
+
+func TestFormatOpsDigest_NoDeltaFlagForcesInsufficientSignal(t *testing.T) {
+	out := formatOpsDigest(&iomesh.MemoryOpsDigestResult{
+		Window:  "day",
+		Horizon: "ops",
+		NoDelta: true,
+		Patterns: []iomesh.MemoryOpsDigestPattern{
+			{Kind: "stall", DeltaKind: "stall", Subject: "dept.ops", Summary: "new checkout stall", Count: 4, Window: "24h"},
+		},
+	}, 4000)
+	if !strings.Contains(out, digestInsufficientSignal) {
+		t.Fatalf("want insufficient-signal when no_delta flag set: %q", out)
+	}
+	if !strings.Contains(out, "no delta vs prior window") {
+		t.Fatalf("want no-delta reject note: %q", out)
+	}
+	if strings.Contains(out, "new checkout stall") && strings.Contains(out, "patterns (1)") {
+		t.Fatalf("no-delta window must not list the recap as a brief: %q", out)
+	}
+}
+
+func TestFormatOpsDigest_DeltaKindsKept(t *testing.T) {
+	out := formatOpsDigest(&iomesh.MemoryOpsDigestResult{
+		Window:      "day",
+		Horizon:     "ops",
+		PriorWindow: "prior_day",
+		Patterns: []iomesh.MemoryOpsDigestPattern{
+			{Kind: "language", DeltaKind: "language", Subject: "dept.cs", Summary: "new support phrasing", Count: 3, Window: "24h"},
+			{Kind: "stall", DeltaKind: "stall", Subject: "dept.ops", Summary: "new checkout stall", Count: 2, Window: "24h"},
+			{Kind: "support_theme", DeltaKind: "support_theme", Subject: "dept.cs", Summary: "new billing theme", Count: 5, Window: "24h"},
+			{Kind: "paging_shape", DeltaKind: "paging_shape", Subject: "dept.sre", Summary: "new page burst shape", Count: 4, Window: "24h"},
+			{Kind: "recap", Subject: "dept.ops", Summary: "what is true", Count: 9, Window: "24h"},
+		},
+		Honesty: iomesh.MemoryOpsDigestHonesty{NeverInventGA: true, DualWriteDefault: "off"},
+	}, 4000)
+	if strings.Contains(out, digestInsufficientSignal) {
+		t.Fatalf("delta kinds must not collapse to insufficient-signal: %q", out)
+	}
+	if !strings.Contains(out, "patterns (4)") {
+		t.Fatalf("want four delta patterns: %q", out)
+	}
+	if !strings.Contains(out, "prior_window=prior_day") {
+		t.Fatalf("want prior_window header: %q", out)
+	}
+	if !strings.Contains(out, "rejected 1 recap") {
+		t.Fatalf("want recap filtered beside deltas: %q", out)
+	}
+	if strings.Contains(out, "what is true") {
+		t.Fatalf("recap must not render: %q", out)
+	}
+}
+
+func TestFormatOpsDigest_ExternalThirdPaneNeverHeartbeat(t *testing.T) {
+	out := formatOpsDigest(&iomesh.MemoryOpsDigestResult{
+		Window:  "day",
+		Horizon: "ops",
+		Patterns: []iomesh.MemoryOpsDigestPattern{
+			{Kind: "stall", DeltaKind: "stall", Subject: "dept.ops", Summary: "new stall", Count: 2, Window: "24h"},
+		},
+		Receipts: []iomesh.MemoryOpsDigestReceipt{
+			{ID: "m1", SourceHint: "mesh_consume", Pointer: "https://tickets.example/INC-1"},
+			{ID: "e1", SourceHint: "external", Pointer: "https://feed.example/tam", Summary: "sponsored demand"},
+			{ID: "e2", SourceHint: "sponsored", Pointer: "https://feed.example/ad"},
+		},
+		Honesty: iomesh.MemoryOpsDigestHonesty{NeverInventGA: true, DualWriteDefault: "off"},
+	}, 4000)
+	if !strings.Contains(out, "receipts (1):") {
+		t.Fatalf("heartbeat must exclude external: %q", out)
+	}
+	if !strings.Contains(out, digestExternalPaneLabel+" (2):") {
+		t.Fatalf("want labeled external pane: %q", out)
+	}
+	if !strings.Contains(out, "source=external") || !strings.Contains(out, "source=sponsored") {
+		t.Fatalf("want external source hints on third pane: %q", out)
+	}
+	if strings.Contains(out, "sponsored demand") {
+		t.Fatalf("must not paste external raw text: %q", out)
+	}
+	if !strings.Contains(out, "external ≠ cite-both") {
+		t.Fatalf("honesty pin missing: %q", out)
+	}
+}
+
+func TestFormatOpsDigest_ExternalOnlyIsNotHeartbeat(t *testing.T) {
+	out := formatOpsDigest(&iomesh.MemoryOpsDigestResult{
+		Window:  "day",
+		Horizon: "ops",
+		Patterns: []iomesh.MemoryOpsDigestPattern{
+			{Kind: "recap", Summary: "what is true in the TAM feed", Count: 3, Window: "24h"},
+		},
+		Receipts: []iomesh.MemoryOpsDigestReceipt{
+			{ID: "e1", SourceHint: "source=external", Pointer: "https://feed.example/tam"},
+		},
+	}, 4000)
+	if !strings.Contains(out, digestInsufficientSignal) {
+		t.Fatalf("external recap is not a brief: %q", out)
+	}
+	if !strings.Contains(out, "receipts: (none)") {
+		t.Fatalf("external-only must not fill heartbeat receipts: %q", out)
+	}
+	if !strings.Contains(out, digestExternalPaneLabel) {
+		t.Fatalf("want third pane: %q", out)
+	}
+}
+
+func TestPatternIsDeltaVsPrior(t *testing.T) {
+	if !patternIsDeltaVsPrior(iomesh.MemoryOpsDigestPattern{Kind: "burst", Summary: "deploy burst", Count: 5}) {
+		t.Fatal("first-window unspecified pattern is a delta vs empty prior")
+	}
+	if patternIsDeltaVsPrior(iomesh.MemoryOpsDigestPattern{Kind: "recap", Summary: "status restatement"}) {
+		t.Fatal("recap is not a delta")
+	}
+	if patternIsDeltaVsPrior(iomesh.MemoryOpsDigestPattern{Summary: "what is true about checkout"}) {
+		t.Fatal("what-is-true recap is not a delta")
+	}
+	if !patternIsDeltaVsPrior(iomesh.MemoryOpsDigestPattern{DeltaKind: "paging_shape", Summary: "new page shape"}) {
+		t.Fatal("paging_shape is a delta")
+	}
+	if patternIsDeltaVsPrior(iomesh.MemoryOpsDigestPattern{Fingerprint: "x", PriorFingerprint: "x"}) {
+		t.Fatal("identical fingerprint is no-delta")
+	}
+	if patternIsDeltaVsPrior(iomesh.MemoryOpsDigestPattern{Delta: boolPtr(false), Kind: "stall"}) {
+		t.Fatal("explicit delta=false wins")
+	}
+}

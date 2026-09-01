@@ -306,6 +306,14 @@ func TestParseMemoryDigestArgs(t *testing.T) {
 	if badReq == "" {
 		t.Fatal("expected invalid --require-sources catalog")
 	}
+	_, badExt := parseMemoryDigestArgs([]string{"--require-sources", "external"})
+	if badExt == "" {
+		t.Fatal("expected invalid --require-sources external")
+	}
+	_, badExt2 := parseMemoryDigestArgs([]string{"--require-sources", "mesh,external"})
+	if badExt2 == "" {
+		t.Fatal("expected invalid --require-sources mesh,external")
+	}
 	for _, junk := range [][]string{
 		{"--require-sources", "grant"},
 		{"--require-sources", "mesh,foo"},

@@ -487,6 +487,8 @@ type MemoryOpsDigestHonesty struct {
 
 // MemoryOpsDigestPattern is one pattern signal in an ops digest (aion PatternSignal wire shape).
 // Rate claims (%, rate, ratio) must carry n (Count), N (Total), and Window or the TUI rejects them (#369).
+// Briefs are a change vs the prior window (#370): recap / no-delta patterns are
+// rejected as insufficient-signal (not a “what is true” restatement).
 type MemoryOpsDigestPattern struct {
 	ID               string   `json:"id,omitempty"`
 	Kind             string   `json:"kind,omitempty"`
@@ -500,6 +502,10 @@ type MemoryOpsDigestPattern struct {
 	Summary          string   `json:"summary,omitempty"`
 	FirstSeen        string   `json:"first_seen,omitempty"`
 	LastSeen         string   `json:"last_seen,omitempty"`
+	Delta            *bool    `json:"delta,omitempty"`      // false = recap vs prior window (#370)
+	DeltaKind        string   `json:"delta_kind,omitempty"` // language|stall|support_theme|paging_shape
+	Fingerprint      string   `json:"fingerprint,omitempty"`
+	PriorFingerprint string   `json:"prior_fingerprint,omitempty"` // same as Fingerprint → no-delta
 }
 
 // MemoryOpsDigestReceipt is one timeline receipt in an ops digest pack.
@@ -530,6 +536,11 @@ type MemoryOpsDigestResult struct {
 	Patterns     []MemoryOpsDigestPattern    `json:"patterns"`
 	Receipts     []MemoryOpsDigestReceipt    `json:"receipts"`
 	DecisionStub MemoryOpsDigestDecisionStub `json:"decision_stub"`
+	// InsufficientSignal / NoDelta: a no-delta window is not a “what is true”
+	// recap — TUI renders insufficient-signal (#370 / FR-24).
+	InsufficientSignal bool   `json:"insufficient_signal,omitempty"`
+	NoDelta            bool   `json:"no_delta,omitempty"`
+	PriorWindow        string `json:"prior_window,omitempty"`
 	// Path is the successful API path (v1 or v5 fallback).
 	Path string `json:"-"`
 }
