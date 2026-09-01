@@ -40,7 +40,7 @@ done
 if [[ "$UNIT" -eq 1 ]]; then
   echo "mesh dogfood: unit mode (go test internal/iomesh + dashboard compose smoke)"
   go test ./internal/iomesh/ -count=1 -timeout=60s
-  go test ./internal/tui/ -count=1 -timeout=60s -run 'TestDashboardSnapshot_LandingParityAndHonesty|TestDashboardCompose'
+  go test ./internal/tui/ -count=1 -timeout=60s -run 'TestDashboardSnapshot_LandingParityAndHonesty|TestDashboardCompose|TestBriefAck|TestDashboardSlash_AckRitual'
   echo "RESULT=PASS (unit)"
   exit 0
 fi

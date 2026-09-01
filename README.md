@@ -191,6 +191,7 @@ No GIF of a live tenant. Default `/dashboard` stays **empty** until consume (`Li
 /dashboard                   # toggle overlay (empty until consume)
 /dashboard preview           # opt-in eval template (not your org)
 /dashboard focus eng.ops     # tenancy
+/dashboard ack               # ACK today's morning brief (unread ≠ known · no send/pay/ship)
 /heartbeat help              # aliases: /heartbeat /mesh-console
 ```
 
@@ -225,7 +226,7 @@ Tenancy            Heartbeat                         Agent tools
 Pulse 18 / min     14:02:39  analytics  gtm.pipeline
 ```
 
-Honesty: default empty until consume · `/dashboard preview` is eval template not your org · `catalog ≠ Connected` · `dual_write OFF` · knowledge/analytics **Beta** · not Memory GA · not live APPLY · **CLIENT** badge only means a mesh client is configured — listed streams ≠ live pulse · **PULSE** only after ≥1 decoded broker message. Full notes: [tui.md](docs/architecture/tui.md#dashboard-heartbeat-live-feed) · asset: [docs/assets/dashboard-eval.svg](docs/assets/dashboard-eval.svg).
+Honesty: default empty until consume · `/dashboard preview` is eval template not your org · `catalog ≠ Connected` · `dual_write OFF` · knowledge/analytics **Beta** · not Memory GA · not live APPLY · **CLIENT** badge only means a mesh client is configured — listed streams ≠ live pulse · **PULSE** only after ≥1 decoded broker message · unacked brief ≠ known (`/dashboard ack` is a local ritual · no send/pay/ship). Full notes: [tui.md](docs/architecture/tui.md#dashboard-heartbeat-live-feed) · asset: [docs/assets/dashboard-eval.svg](docs/assets/dashboard-eval.svg).
 
 ## CLI
 

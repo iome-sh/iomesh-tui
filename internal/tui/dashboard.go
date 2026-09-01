@@ -21,7 +21,7 @@ const (
 )
 
 // DashboardHonestyOneLiner is the residual lock for /dashboard.
-const DashboardHonestyOneLiner = "no mock live rows · /dashboard preview is eval template not your org · catalog ≠ Connected · dual_write OFF · knowledge/analytics Beta · not Memory GA · demo feed ≠ fleet-GA · not live APPLY"
+const DashboardHonestyOneLiner = "no mock live rows · /dashboard preview is eval template not your org · catalog ≠ Connected · dual_write OFF · knowledge/analytics Beta · not Memory GA · demo feed ≠ fleet-GA · not live APPLY · unacked brief ≠ known"
 
 // DashboardBetaEmptyHonesty is shown when knowledge or analytics count is 0.
 // Empty pillars stay Beta — not GA. Do not invent events.
@@ -29,7 +29,7 @@ const DashboardBetaEmptyHonesty = "knowledge Beta empty · analytics Beta empty 
 
 // Compose already-shipped paths onto /dashboard (pulse, entitled pull, insights, human decision).
 // No new backends. Pull uses iomesh memory pull. Insights use /memory digest.
-// Decision stub never auto-applies.
+// Decision stub never auto-applies. Brief ACK (#371): unread ≠ known; no send/pay/ship.
 const (
 	DashboardComposePulse    = "pulse: this feed · empty until consume"
 	DashboardComposePull     = "pull: iomesh memory pull · entitled dept.* only"
@@ -48,11 +48,12 @@ const (
 )
 
 func dashboardHelp() string {
-	return strings.TrimSpace(`usage: /dashboard [help|preview|focus <tenancy>]
+	return strings.TrimSpace(`usage: /dashboard [help|preview|focus <tenancy>|ack]
 aliases: /heartbeat /mesh-console
   (no args)   empty until consume · probe if mesh attached (no mock rows)
   preview     opt-in eval template (iome.sh MeshConsole — not your org)
   focus       tenancy: sre.incidents | eng.ops | cs.tickets | gtm.pipeline
+  ack         ACK today's morning brief (local ritual · unread ≠ known · no send/pay/ship)
 fullscreen: esc/q close · tab cycle tenancy · 1-4 jump
 probe:    iomesh mesh streams --messages / broker GET /v1/streams/{name}/messages
           (not portal GET /v52 — cookie-only, TUI must not call it)
@@ -135,6 +136,8 @@ type dashboardState struct {
 	Height        int
 	ConsumeReason string
 	StreamNames   []string
+	// BriefAck is today's morning brief state. Empty → load on render (fail-open unread).
+	BriefAck BriefAckStatus
 }
 
 func newDashboardState(meshAttached bool) *dashboardState {
@@ -299,6 +302,18 @@ func (d *dashboardState) Render(th Theme, width int) string {
 	compose += "\n" + th.Dim.Render(DashboardComposePull)
 	compose += "\n" + th.Dim.Render(DashboardComposeInsights)
 	compose += "\n" + th.Dim.Render(DashboardComposeDecision)
+	briefStatus := d.BriefAck
+	if briefStatus == "" {
+		briefStatus = loadBriefAckStatus()
+		d.BriefAck = briefStatus
+	}
+	briefLine := composeBriefLine(briefStatus)
+	// Unacked must be visible (not Dim fake-handled / not OK green). ACKed stays Dim.
+	if briefStatus == BriefAcked {
+		compose += "\n" + th.Dim.Render(briefLine)
+	} else {
+		compose += "\n" + th.Status.Render(briefLine)
+	}
 
 	body := d.renderBody(th, width)
 	honesty := th.Dim.Render(DashboardHonestyOneLiner)
@@ -498,6 +513,17 @@ func handleDashboardSlash(out io.Writer, rt runtimeAdapter, parts []string) {
 		fmt.Fprintln(out, dashboardHelp())
 	case "preview":
 		fmt.Fprintln(out, formatDashboardSnapshotMode(meshClientAttached(rt), "", true))
+	case "ack":
+		msg, err := ackTodayBrief()
+		if err != nil {
+			fmt.Fprintf(out, "dashboard ack: %v · fail-open unread stays visible\n", err)
+			return
+		}
+		fmt.Fprintln(out, msg)
+		d := newDashboardState(meshClientAttached(rt))
+		d.BriefAck = BriefAcked
+		probeDashboardIfAttached(d, rt)
+		fmt.Fprintln(out, d.Render(ThemeDefault(), 100))
 	case "focus":
 		want := ""
 		if len(parts) > 2 {

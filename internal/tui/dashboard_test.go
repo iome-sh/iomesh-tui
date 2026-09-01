@@ -13,6 +13,7 @@ import (
 )
 
 func TestDashboardSnapshot_LandingParityAndHonesty(t *testing.T) {
+	clearBriefAckFile(t)
 	out := formatDashboardSnapshot(false, "")
 	needles := []string{
 		"context://mesh",
@@ -40,6 +41,8 @@ func TestDashboardSnapshot_LandingParityAndHonesty(t *testing.T) {
 		DashboardComposeInsights,
 		DashboardComposeDecision,
 		"never auto-applies",
+		DashboardComposeBriefUnread,
+		"unacked brief ≠ known",
 	}
 	for _, n := range needles {
 		if !strings.Contains(out, n) {
@@ -62,6 +65,8 @@ func TestDashboardSnapshot_LandingParityAndHonesty(t *testing.T) {
 }
 
 func TestDashboardCompose_SmokeNeverAutoApplies(t *testing.T) {
+	clearBriefAckFile(t)
+
 	out := formatDashboardSnapshot(false, "")
 	if !strings.Contains(out, DashboardComposePulse) {
 		t.Fatalf("compose smoke missing pulse:\n%s", out)
@@ -75,8 +80,14 @@ func TestDashboardCompose_SmokeNeverAutoApplies(t *testing.T) {
 	if !strings.Contains(out, DashboardComposeDecision) || !strings.Contains(out, "never auto-applies") {
 		t.Fatalf("compose smoke missing decision stub:\n%s", out)
 	}
+	if !strings.Contains(out, DashboardComposeBriefUnread) {
+		t.Fatalf("compose smoke missing unread brief (fail-open):\n%s", out)
+	}
 	if strings.Contains(out, "auto-apply green") {
 		t.Fatalf("compose smoke must not auto-apply:\n%s", out)
+	}
+	if strings.Contains(out, DashboardComposeBriefAcked) {
+		t.Fatalf("compose smoke without ACK must not look handled:\n%s", out)
 	}
 }
 
