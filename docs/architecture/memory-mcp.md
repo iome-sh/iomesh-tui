@@ -728,7 +728,7 @@ Operators can export a **day/week pattern + receipts pack** without changing def
 | Slash | `/memory digest --window week --horizon ops --limit 10` |
 | Output | Human-readable patterns + receipts + honesty line |
 
-**Honesty:** ops pulse **GA-path** · knowledge/analytical digests **Beta** · **never invent GA** · dual_write default OFF · **not** product Memory GA · **not** full graph RAG · human owns irreversible decisions.
+**Honesty:** ops pulse **GA-path** · knowledge/analytical digests **Beta** · **never invent GA** · dual_write default OFF · **not** product Memory GA · **not** full graph RAG · human owns irreversible decisions. **#369:** may emit **insufficient-signal / nothing reliable today** · rate claims need **n of N + window** (else rejected) · receipts are **pointers + hashes** (not raw customer text) · catalog list ≠ consume.
 
 ## Multi-hop related recall (s1135 · opt-in · s1281 hop ranking)
 

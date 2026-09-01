@@ -453,10 +453,10 @@ func TestMemoryOpsDigest_PrefersSyncHTTP(t *testing.T) {
 				"note":               "Ops digests synthesize live pulse",
 			},
 			"patterns": []map[string]any{
-				{"id": "p1", "kind": "burst", "subject": "dept.ops", "summary": "spike in deploys", "score": 0.9},
+				{"id": "p1", "kind": "burst", "subject": "dept.ops", "summary": "deploy burst", "score": 0.9, "count": 5, "window": "15m"},
 			},
 			"receipts": []map[string]any{
-				{"id": "r1", "event_time": "2026-08-04T10:00:00Z", "summary": "deploy finished"},
+				{"id": "r1", "event_time": "2026-08-04T10:00:00Z", "summary": "deploy finished customer said outage", "pointer": "https://tickets.example/INC-9"},
 			},
 			"decision_stub": map[string]any{"pattern": "dept.ops"},
 		})
@@ -481,14 +481,23 @@ func TestMemoryOpsDigest_PrefersSyncHTTP(t *testing.T) {
 	if gotBody["window"] != "day" || gotBody["horizon"] != "ops" || gotBody["tenant_id"] != "dept.research" {
 		t.Fatalf("body=%v", gotBody)
 	}
-	if !strings.Contains(out, "spike in deploys") || !strings.Contains(out, "deploy finished") {
-		t.Fatalf("out=%q", out)
+	if !strings.Contains(out, "dept.ops") || !strings.Contains(out, "n=5") || !strings.Contains(out, "window=15m") {
+		t.Fatalf("pattern missing: %q", out)
+	}
+	if !strings.Contains(out, "pointer=https://tickets.example/INC-9") || !strings.Contains(out, "hash=") {
+		t.Fatalf("receipt pointer/hash missing: %q", out)
+	}
+	if strings.Contains(out, "customer said outage") || strings.Contains(out, "deploy finished") {
+		t.Fatalf("raw customer receipt text leaked: %q", out)
 	}
 	if !strings.Contains(out, "honesty:") || !strings.Contains(out, "ga_path") || !strings.Contains(out, "never_invent_ga=true") {
 		t.Fatalf("honesty missing: %q", out)
 	}
-	if !strings.Contains(out, "not Memory GA") {
+	if !strings.Contains(out, "not Memory GA") || !strings.Contains(out, "catalog list ≠ consume") {
 		t.Fatalf("honesty pin missing: %q", out)
+	}
+	if !strings.Contains(out, "dual_write=off") {
+		t.Fatalf("dual_write pin missing: %q", out)
 	}
 }
 
@@ -522,8 +531,11 @@ func TestMemoryOpsDigest_OptsOverride(t *testing.T) {
 	if !strings.Contains(out, "window=week") || !strings.Contains(out, "horizon=knowledge") {
 		t.Fatalf("out=%q", out)
 	}
-	if !strings.Contains(out, "patterns: (none)") || !strings.Contains(out, "receipts: (none)") {
-		t.Fatalf("empty sections: %q", out)
+	if !strings.Contains(out, "insufficient-signal") || !strings.Contains(out, "nothing reliable today") {
+		t.Fatalf("expected insufficient-signal on empty patterns: %q", out)
+	}
+	if !strings.Contains(out, "receipts: (none)") {
+		t.Fatalf("empty receipts: %q", out)
 	}
 }
 
@@ -703,8 +715,11 @@ func TestMemoryOpsDigest_RequireSourcesMiss(t *testing.T) {
 	if !strings.Contains(out, "missing=mesh") || !strings.Contains(out, "cited=private") {
 		t.Fatalf("want private-only cite: %q", out)
 	}
-	if !strings.Contains(out, "palace note") || !strings.Contains(out, "source=palace_timeline") {
-		t.Fatalf("want digest body with source hint: %q", out)
+	if strings.Contains(out, "palace note") {
+		t.Fatalf("receipts must not paste raw customer summary: %q", out)
+	}
+	if !strings.Contains(out, "source=palace_timeline") {
+		t.Fatalf("want digest receipt source hint: %q", out)
 	}
 	if rt.memory.DualWrite {
 		t.Fatal("dual_write must remain OFF")
