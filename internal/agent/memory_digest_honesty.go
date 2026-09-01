@@ -11,15 +11,17 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/iomesh"
 )
 
-// Digest honesty (#369 / FR-25 · FR-26 · FR-31):
+// Digest honesty (#369 / FR-25 · FR-26 · FR-31) + delta briefs (#370 / FR-24 · FR-30):
 //   - Empty or rejected patterns → insufficient-signal / nothing reliable today (do not invent).
 //   - Rate-claiming pattern lines require n of N and a window, else rejected.
+//   - No-delta / "what is true" recaps are rejected (briefs must be a change vs prior window).
 //   - Receipts default to pointers + hashes, not raw customer text.
+//   - source=external is a third labeled pane; never satisfies cite-both mesh,private.
 //   - dual_write stays off · catalog list ≠ consume · not Memory GA.
 
 const (
 	digestInsufficientSignal = "insufficient-signal · nothing reliable today"
-	digestHonestyExtraPin    = "catalog list ≠ consume · receipts=pointers+hashes · insufficient-signal allowed"
+	digestHonestyExtraPin    = "catalog list ≠ consume · receipts=pointers+hashes · insufficient-signal allowed · delta≠recap · external≠heartbeat"
 )
 
 // digestRateClaimRE matches summaries/kinds that claim a rate (need n/N + window).
@@ -44,8 +46,12 @@ func patternRateHonest(p iomesh.MemoryOpsDigestPattern) bool {
 }
 
 // acceptDigestPattern keeps non-rate patterns, and rate patterns only when n/N+window are present.
-// Rejected rate claims are omitted (never invented into the operator brief).
+// Rejected rate claims and no-delta recaps are omitted (never invented into the operator brief).
 func acceptDigestPattern(p iomesh.MemoryOpsDigestPattern) bool {
+	// #370: no-delta / "what is true" recap is not a brief.
+	if patternIsNoDelta(p) {
+		return false
+	}
 	if patternClaimsRate(p) {
 		return patternRateHonest(p)
 	}
@@ -112,6 +118,10 @@ func formatDigestPatternLine(i int, p iomesh.MemoryOpsDigestPattern) string {
 	}
 	if w := strings.TrimSpace(p.Window); w != "" {
 		fmt.Fprintf(&b, " window=%s", w)
+	}
+	// #370: show prior-window baseline on delta briefs (change vs prior).
+	if cw := strings.TrimSpace(p.ComparisonWindow); cw != "" {
+		fmt.Fprintf(&b, " vs=%s", cw)
 	}
 	return b.String()
 }

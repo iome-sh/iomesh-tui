@@ -706,7 +706,7 @@ See [mesh-dogfood.md](mesh-dogfood.md) for soft vs strict matrix. Unit coverage:
 | `/memory recall [query]` | Sync HTTP retrieve when mesh enabled, else MCP (default query = last user text or `"*"`) |
 | `/memory recall --since|--until|--session-seq … [query]` | Same + per-call temporal filters (s1068; override config) |
 | `/memory related --seed <entity> [--query …] [--max-hops N] [--prefer-shorter-hops\|--legacy-sort]` | Opt-in multi-hop lite related recall (s1135 + s1281; HTTP + MCP `memory_related`; PreferShorterHops omit=true; not auto-recall) |
-| `/memory digest [--window day\|week] [--horizon ops\|knowledge\|analytical\|all] [--limit N] [--require-sources mesh,private]` | Opt-in ops heartbeat digest export (s1200; HTTP + MCP `ops_digest_export`) · **#373** cite-both opt-in (`mesh,private` or explicit miss; catalog/grant never count) · **s1831** next-step footer |
+| `/memory digest [--window day\|week] [--horizon ops\|knowledge\|analytical\|all] [--limit N] [--require-sources mesh,private]` | Opt-in ops heartbeat digest export (s1200; HTTP + MCP `ops_digest_export`) · **#373** cite-both opt-in (`mesh,private` or explicit miss; catalog/grant/external never count) · **#369** honesty · **#370** delta briefs · **s1831** next-step footer |
 | `/memory facts-as-of\|facts\|as-of --as-of <RFC3339> [--entity …] [--query …] [--limit N]` | Opt-in bi-temporal lite validity listing (s1276; MCP `memory_facts_as_of`; MCP-first) |
 | `/memory supersede\|super --entity <key> [--as-of RFC3339] --i-confirm` | Opt-in HITL A3 lite supersede (s1282; MCP `memory_supersede_entity`; MCP-first; mutating) |
 | `/memory timeline\|tl […]` | Opt-in temporal timeline (s1296; MCP `memory_timeline`; MCP-first) |
@@ -730,7 +730,7 @@ Operators can export a **day/week pattern + receipts pack** without changing def
 
 **Cite-both (#373, opt-in):** `--require-sources mesh,private` requires receipt `source_hint`s for **both** mesh and private, or prints an explicit miss. Catalog-only / grant-only never satisfy cite-both (catalog list is not consume). Default `/memory digest` without the flag stays the existing ops pack. dual_write OFF · not Memory GA · local palace on disk.
 
-**Honesty:** ops pulse **GA-path** · knowledge/analytical digests **Beta** · **never invent GA** · dual_write default OFF · **not** product Memory GA · **not** full graph RAG · human owns irreversible decisions. **#369:** may emit **insufficient-signal / nothing reliable today** · rate claims need **n of N + window** (else rejected) · receipts are **pointers + hashes** (not raw customer text) · catalog list ≠ consume.
+**Honesty:** ops pulse **GA-path** · knowledge/analytical digests **Beta** · **never invent GA** · dual_write default OFF · **not** product Memory GA · **not** full graph RAG · human owns irreversible decisions. **#369:** may emit **insufficient-signal / nothing reliable today** · rate claims need **n of N + window** (else rejected) · receipts are **pointers + hashes** (not raw customer text) · catalog list ≠ consume. **#373:** `--require-sources mesh,private` cites both or explicit miss (catalog/grant ≠ cite-both). **#370:** briefs are a **change vs the prior window** (no-delta / “what is true” recap → insufficient-signal) · `source=external` is a **third labeled pane**, never the heartbeat, and never satisfies cite-both · first-party consume remains the only mesh citation path.
 
 ## Multi-hop related recall (s1135 · opt-in · s1281 hop ranking)
 

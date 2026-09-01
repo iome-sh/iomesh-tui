@@ -358,18 +358,21 @@ type MemoryOpsDigestOpts struct {
 	RequireSources []string // mesh and/or private (#373 cite-both)
 }
 
-// Digest source kinds for --require-sources (#373).
-// Catalog/grant never count as mesh or private (cite-both).
+// Digest source kinds for --require-sources (#373) and external color (#370).
+// Catalog/grant/external never count as mesh or private (cite-both).
+// External is a third labeled pane — never the heartbeat; first-party consume
+// remains the only path that fills mesh citations.
 const (
-	DigestSourceMesh    = "mesh"
-	DigestSourcePrivate = "private"
-	DigestSourceCatalog = "catalog"
-	DigestSourceGrant   = "grant"
+	DigestSourceMesh     = "mesh"
+	DigestSourcePrivate  = "private"
+	DigestSourceCatalog  = "catalog"
+	DigestSourceGrant    = "grant"
+	DigestSourceExternal = "external"
 )
 
-// ClassifyDigestSourceHint maps a receipt source_hint to mesh|private|catalog|grant|"".
-// Empty / unknown hints do not satisfy require-sources. Catalog and grant never
-// satisfy mesh or private.
+// ClassifyDigestSourceHint maps a receipt source_hint to mesh|private|catalog|grant|external|"".
+// Empty / unknown hints do not satisfy require-sources. Catalog, grant, and external
+// never satisfy mesh or private. External/sponsored color cannot fill mesh citations.
 func ClassifyDigestSourceHint(hint string) string {
 	h := strings.ToLower(strings.TrimSpace(hint))
 	h = strings.ReplaceAll(h, "-", "_")
@@ -377,6 +380,9 @@ func ClassifyDigestSourceHint(hint string) string {
 		return ""
 	}
 	switch h {
+	case "external", "sponsored", "tam", "tam_color", "demand_feed", "demand",
+		"market_color", "third_party", "thirdparty", "sponsor":
+		return DigestSourceExternal
 	case "catalog", "portal", "catalog_only", "catalog_list":
 		return DigestSourceCatalog
 	case "grant", "grant_only", "entitlement", "entitlements":
@@ -389,6 +395,9 @@ func ClassifyDigestSourceHint(hint string) string {
 		return DigestSourcePrivate
 	}
 	switch {
+	case strings.HasPrefix(h, "external_"), strings.HasPrefix(h, "sponsored_"),
+		strings.HasPrefix(h, "tam_"), strings.HasPrefix(h, "demand_"):
+		return DigestSourceExternal
 	case strings.HasPrefix(h, "mesh_"):
 		return DigestSourceMesh
 	case strings.HasPrefix(h, "private_"), strings.HasPrefix(h, "palace_"):
@@ -446,7 +455,9 @@ func citeDigestReceipt(r iomesh.MemoryOpsDigestReceipt) string {
 }
 
 // FormatRequireSourcesCheck returns an explicit cite-both ok or miss line (#373).
-// Catalog/grant receipts never satisfy mesh or private. dual_write OFF pin always.
+// Catalog/grant/external receipts never satisfy mesh or private (#370).
+// First-party consume remains the only path that fills mesh citations.
+// dual_write OFF pin always.
 func FormatRequireSourcesCheck(res *iomesh.MemoryOpsDigestResult, required []string) string {
 	if len(required) == 0 {
 		return ""
@@ -454,6 +465,7 @@ func FormatRequireSourcesCheck(res *iomesh.MemoryOpsDigestResult, required []str
 	present := map[string]bool{}
 	meshCite, privateCite := "", ""
 	catalogOrGrant := false
+	externalSeen := false
 	if res != nil {
 		for _, r := range res.Receipts {
 			switch ClassifyDigestSourceHint(r.SourceHint) {
@@ -469,6 +481,8 @@ func FormatRequireSourcesCheck(res *iomesh.MemoryOpsDigestResult, required []str
 				}
 			case DigestSourceCatalog, DigestSourceGrant:
 				catalogOrGrant = true
+			case DigestSourceExternal:
+				externalSeen = true
 			}
 		}
 	}
@@ -490,6 +504,9 @@ func FormatRequireSourcesCheck(res *iomesh.MemoryOpsDigestResult, required []str
 			strings.Join(required, ","), citedStr, strings.Join(missing, ","))
 		if catalogOrGrant {
 			msg += " · catalog/grant do not satisfy cite-both"
+		}
+		if externalSeen {
+			msg += " · " + digestExternalCitePin
 		}
 		return msg + " · " + pin
 	}
@@ -607,8 +624,9 @@ func (rt *Runtime) MemoryOpsDigest(ctx context.Context, opts ...MemoryOpsDigestO
 }
 
 // formatOpsDigest turns a sync ExportOpsDigest result into a compact human-readable pack.
-// Sections: header · patterns · receipts · honesty (residual-honest framing).
+// Sections: header · patterns · first-party receipts · optional external color pane · honesty.
 // #369: may emit insufficient-signal; rate claims need n of N + window; receipts are pointers+hashes.
+// #370: no-delta recaps rejected; external color is a third labeled pane, never the heartbeat.
 func formatOpsDigest(res *iomesh.MemoryOpsDigestResult, maxBytes int) string {
 	if res == nil {
 		return ""
@@ -630,9 +648,14 @@ func formatOpsDigest(res *iomesh.MemoryOpsDigestResult, maxBytes int) string {
 
 	accepted := make([]iomesh.MemoryOpsDigestPattern, 0, len(res.Patterns))
 	rejectedRate := 0
+	rejectedNoDelta := 0
 	for _, p := range res.Patterns {
 		if acceptDigestPattern(p) {
 			accepted = append(accepted, p)
+			continue
+		}
+		if patternIsNoDelta(p) {
+			rejectedNoDelta++
 			continue
 		}
 		if patternClaimsRate(p) {
@@ -640,8 +663,11 @@ func formatOpsDigest(res *iomesh.MemoryOpsDigestResult, maxBytes int) string {
 		}
 	}
 	if len(accepted) == 0 {
-		// FR-25: nothing reliable today — do not invent a pattern to fill the slot.
+		// FR-25 / FR-24: nothing reliable today — do not invent a pattern or recap to fill the slot.
 		fmt.Fprintf(&b, "patterns: %s\n", digestInsufficientSignal)
+		if rejectedNoDelta > 0 {
+			fmt.Fprintf(&b, "  ("+digestNoDeltaRejectNote+")\n", rejectedNoDelta)
+		}
 		if rejectedRate > 0 {
 			fmt.Fprintf(&b, "  (rejected %d rate claim(s) missing n of N + window)\n", rejectedRate)
 		}
@@ -651,16 +677,36 @@ func formatOpsDigest(res *iomesh.MemoryOpsDigestResult, maxBytes int) string {
 			b.WriteString(formatDigestPatternLine(i+1, p))
 			b.WriteByte('\n')
 		}
+		if rejectedNoDelta > 0 {
+			fmt.Fprintf(&b, "  ("+digestNoDeltaRejectNote+")\n", rejectedNoDelta)
+		}
 		if rejectedRate > 0 {
 			fmt.Fprintf(&b, "  (rejected %d rate claim(s) missing n of N + window)\n", rejectedRate)
 		}
 	}
 
-	if len(res.Receipts) == 0 {
+	// Split first-party heartbeat receipts from external/sponsored color (#370).
+	var firstParty, external []iomesh.MemoryOpsDigestReceipt
+	for _, r := range res.Receipts {
+		if isExternalDigestReceipt(r) {
+			external = append(external, r)
+			continue
+		}
+		firstParty = append(firstParty, r)
+	}
+	if len(firstParty) == 0 {
 		b.WriteString("receipts: (none)\n")
 	} else {
-		fmt.Fprintf(&b, "receipts (%d):\n", len(res.Receipts))
-		for i, r := range res.Receipts {
+		fmt.Fprintf(&b, "receipts (%d):\n", len(firstParty))
+		for i, r := range firstParty {
+			b.WriteString(formatDigestReceiptLine(i+1, r))
+			b.WriteByte('\n')
+		}
+	}
+	if len(external) > 0 {
+		// Third labeled pane — never the heartbeat; does not fill mesh citations.
+		fmt.Fprintf(&b, "%s (%d) · not heartbeat · not cite-both:\n", digestExternalColorPane, len(external))
+		for i, r := range external {
 			b.WriteString(formatDigestReceiptLine(i+1, r))
 			b.WriteByte('\n')
 		}
