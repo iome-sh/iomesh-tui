@@ -487,6 +487,7 @@ type MemoryOpsDigestHonesty struct {
 
 // MemoryOpsDigestPattern is one pattern signal in an ops digest (aion PatternSignal wire shape).
 // Rate claims (%, rate, ratio) must carry n (Count), N (Total), and Window or the TUI rejects them (#369).
+// Delta briefs (#370): a change vs the prior window; no-delta / "what is true" recaps are rejected.
 type MemoryOpsDigestPattern struct {
 	ID               string   `json:"id,omitempty"`
 	Kind             string   `json:"kind,omitempty"`
@@ -500,6 +501,10 @@ type MemoryOpsDigestPattern struct {
 	Summary          string   `json:"summary,omitempty"`
 	FirstSeen        string   `json:"first_seen,omitempty"`
 	LastSeen         string   `json:"last_seen,omitempty"`
+	// Delta, when non-nil, is an explicit wire signal (#370 / FR-24).
+	// false → no-delta reject unless ComparisonWindow / delta kind/language already proves change.
+	// true → treated as a change vs the prior window (still subject to rate honesty).
+	Delta *bool `json:"delta,omitempty"`
 }
 
 // MemoryOpsDigestReceipt is one timeline receipt in an ops digest pack.
