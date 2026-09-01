@@ -92,6 +92,20 @@ func TestDashboardCompose_SmokeNeverAutoApplies(t *testing.T) {
 	assertDashboardHonesty(t, out)
 }
 
+// Mesh smoke --unit already covers /memory digest as compose insights.
+// Cite-both stays opt-in on /memory digest — do not force it on the dashboard path.
+func TestDashboardCompose_DigestInsightsStayExistingPath(t *testing.T) {
+	setupBriefAck(t)
+
+	out := formatDashboardSnapshot(false, "")
+	if !strings.Contains(out, "/memory digest") {
+		t.Fatalf("compose insights must keep /memory digest:\n%s", out)
+	}
+	if strings.Contains(out, "--require-sources") {
+		t.Fatal("compose must not force cite-both; --require-sources is opt-in on /memory digest")
+	}
+}
+
 func TestDashboardSnapshot_MeshAttachedLabel(t *testing.T) {
 	setupBriefAck(t)
 	out := formatDashboardSnapshot(true, "eng.ops")

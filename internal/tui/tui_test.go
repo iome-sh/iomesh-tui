@@ -269,9 +269,9 @@ func TestParseMemoryDigestArgs(t *testing.T) {
 	if o.AsOf != "2026-08-04T00:00:00Z" {
 		t.Fatalf("as_of=%q", o.AsOf)
 	}
-	// defaults when empty.
+	// defaults when empty — do not force cite-both.
 	o2, errMsg2 := parseMemoryDigestArgs(nil)
-	if errMsg2 != "" || o2.Window != "" || o2.Horizon != "" || o2.Limit != 0 {
+	if errMsg2 != "" || o2.Window != "" || o2.Horizon != "" || o2.Limit != 0 || len(o2.RequireSources) != 0 {
 		t.Fatalf("empty opts=%+v err=%q", o2, errMsg2)
 	}
 	_, badWin := parseMemoryDigestArgs([]string{"--window", "month"})
@@ -305,6 +305,34 @@ func TestParseMemoryDigestArgs(t *testing.T) {
 	_, badReq := parseMemoryDigestArgs([]string{"--require-sources", "catalog"})
 	if badReq == "" {
 		t.Fatal("expected invalid --require-sources catalog")
+	}
+	for _, junk := range [][]string{
+		{"--require-sources", "grant"},
+		{"--require-sources", "mesh,foo"},
+		{"--require-sources", "junk"},
+		{"--require-sources"},
+	} {
+		if _, err := parseMemoryDigestArgs(junk); err == "" {
+			t.Fatalf("expected reject junk %v", junk)
+		}
+	}
+}
+
+// #373: usage string includes opt-in --require-sources; junk is rejected before the digest call.
+func TestHandleSlash_MemoryDigestRequireSourcesUsage(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+	_, err := handleSlash(&out, adapter, "/memory digest --require-sources catalog")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := out.String()
+	if !strings.Contains(s, "invalid --require-sources") {
+		t.Fatalf("want reject catalog: %s", s)
+	}
+	if !strings.Contains(s, "--require-sources mesh,private") {
+		t.Fatalf("usage must include --require-sources: %s", s)
 	}
 }
 

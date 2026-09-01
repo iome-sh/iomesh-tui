@@ -706,7 +706,7 @@ See [mesh-dogfood.md](mesh-dogfood.md) for soft vs strict matrix. Unit coverage:
 | `/memory recall [query]` | Sync HTTP retrieve when mesh enabled, else MCP (default query = last user text or `"*"`) |
 | `/memory recall --since|--until|--session-seq … [query]` | Same + per-call temporal filters (s1068; override config) |
 | `/memory related --seed <entity> [--query …] [--max-hops N] [--prefer-shorter-hops\|--legacy-sort]` | Opt-in multi-hop lite related recall (s1135 + s1281; HTTP + MCP `memory_related`; PreferShorterHops omit=true; not auto-recall) |
-| `/memory digest [--window day\|week] [--horizon ops\|knowledge\|analytical\|all] [--limit N]` | Opt-in ops heartbeat digest export (s1200; HTTP + MCP `ops_digest_export`) · **s1831** next-step footer |
+| `/memory digest [--window day\|week] [--horizon ops\|knowledge\|analytical\|all] [--limit N] [--require-sources mesh,private]` | Opt-in ops heartbeat digest export (s1200; HTTP + MCP `ops_digest_export`) · **#373** cite-both opt-in (`mesh,private` or explicit miss; catalog/grant never count) · **s1831** next-step footer |
 | `/memory facts-as-of\|facts\|as-of --as-of <RFC3339> [--entity …] [--query …] [--limit N]` | Opt-in bi-temporal lite validity listing (s1276; MCP `memory_facts_as_of`; MCP-first) |
 | `/memory supersede\|super --entity <key> [--as-of RFC3339] --i-confirm` | Opt-in HITL A3 lite supersede (s1282; MCP `memory_supersede_entity`; MCP-first; mutating) |
 | `/memory timeline\|tl […]` | Opt-in temporal timeline (s1296; MCP `memory_timeline`; MCP-first) |
@@ -725,8 +725,10 @@ Operators can export a **day/week pattern + receipts pack** without changing def
 |---------|------|
 | Lean HTTP | `iomesh.ExportOpsDigest` → `POST /v1/memory/ops_digest` (+ `/v5` fallback); body: `window` / `horizon` / `limit` / `as_of` |
 | MCP fallback | `ops_digest_export` tool args (`window`, `horizon`, `limit`, `as_of`, `tenant`) when sync fails |
-| Slash | `/memory digest --window week --horizon ops --limit 10` |
-| Output | Human-readable patterns + receipts + honesty line |
+| Slash | `/memory digest --window week --horizon ops --limit 10` · optional `--require-sources mesh,private` |
+| Output | Human-readable patterns + receipts + honesty line · with `--require-sources`, prefixed `require-sources: ok` or `require-sources: miss` |
+
+**Cite-both (#373, opt-in):** `--require-sources mesh,private` requires receipt `source_hint`s for **both** mesh and private, or prints an explicit miss. Catalog-only / grant-only never satisfy cite-both (catalog list is not consume). Default `/memory digest` without the flag stays the existing ops pack. dual_write OFF · not Memory GA · local palace on disk.
 
 **Honesty:** ops pulse **GA-path** · knowledge/analytical digests **Beta** · **never invent GA** · dual_write default OFF · **not** product Memory GA · **not** full graph RAG · human owns irreversible decisions. **#369:** may emit **insufficient-signal / nothing reliable today** · rate claims need **n of N + window** (else rejected) · receipts are **pointers + hashes** (not raw customer text) · catalog list ≠ consume.
 
