@@ -523,6 +523,8 @@ func applyRequireSources(text string, res *iomesh.MemoryOpsDigestResult, require
 // Does NOT run on default auto-recall (slash/CLI opt-in only).
 // Honesty: ops GA-path · knowledge/analytical Beta · never invent GA · dual_write OFF ·
 // not product Memory GA · not full graph RAG. Human owns irreversible decisions.
+// #369: insufficient-signal allowed · rate claims need n of N + window · receipts=pointers+hashes ·
+// catalog list ≠ consume.
 func (rt *Runtime) MemoryOpsDigest(ctx context.Context, opts ...MemoryOpsDigestOpts) (string, error) {
 	if rt == nil || !rt.memory.Enabled {
 		return "", fmt.Errorf("memory hooks disabled")
@@ -606,6 +608,7 @@ func (rt *Runtime) MemoryOpsDigest(ctx context.Context, opts ...MemoryOpsDigestO
 
 // formatOpsDigest turns a sync ExportOpsDigest result into a compact human-readable pack.
 // Sections: header · patterns · receipts · honesty (residual-honest framing).
+// #369: may emit insufficient-signal; rate claims need n of N + window; receipts are pointers+hashes.
 func formatOpsDigest(res *iomesh.MemoryOpsDigestResult, maxBytes int) string {
 	if res == nil {
 		return ""
@@ -625,30 +628,31 @@ func formatOpsDigest(res *iomesh.MemoryOpsDigestResult, maxBytes int) string {
 	}
 	b.WriteByte('\n')
 
-	if len(res.Patterns) == 0 {
-		b.WriteString("patterns: (none)\n")
+	accepted := make([]iomesh.MemoryOpsDigestPattern, 0, len(res.Patterns))
+	rejectedRate := 0
+	for _, p := range res.Patterns {
+		if acceptDigestPattern(p) {
+			accepted = append(accepted, p)
+			continue
+		}
+		if patternClaimsRate(p) {
+			rejectedRate++
+		}
+	}
+	if len(accepted) == 0 {
+		// FR-25: nothing reliable today — do not invent a pattern to fill the slot.
+		fmt.Fprintf(&b, "patterns: %s\n", digestInsufficientSignal)
+		if rejectedRate > 0 {
+			fmt.Fprintf(&b, "  (rejected %d rate claim(s) missing n of N + window)\n", rejectedRate)
+		}
 	} else {
-		fmt.Fprintf(&b, "patterns (%d):\n", len(res.Patterns))
-		for i, p := range res.Patterns {
-			line := strings.TrimSpace(p.Summary)
-			if line == "" {
-				line = strings.TrimSpace(p.Subject)
-			}
-			if line == "" {
-				line = strings.TrimSpace(p.Kind)
-			}
-			if line == "" {
-				line = p.ID
-			}
-			prefix := ""
-			if p.Score > 0 {
-				prefix = fmt.Sprintf("[%.2f] ", p.Score)
-			}
-			kind := ""
-			if k := strings.TrimSpace(p.Kind); k != "" {
-				kind = k + " "
-			}
-			fmt.Fprintf(&b, "  %d. %s%s%s\n", i+1, prefix, kind, line)
+		fmt.Fprintf(&b, "patterns (%d):\n", len(accepted))
+		for i, p := range accepted {
+			b.WriteString(formatDigestPatternLine(i+1, p))
+			b.WriteByte('\n')
+		}
+		if rejectedRate > 0 {
+			fmt.Fprintf(&b, "  (rejected %d rate claim(s) missing n of N + window)\n", rejectedRate)
 		}
 	}
 
@@ -657,26 +661,12 @@ func formatOpsDigest(res *iomesh.MemoryOpsDigestResult, maxBytes int) string {
 	} else {
 		fmt.Fprintf(&b, "receipts (%d):\n", len(res.Receipts))
 		for i, r := range res.Receipts {
-			sum := strings.TrimSpace(r.Summary)
-			if sum == "" {
-				sum = r.ID
-			}
-			when := strings.TrimSpace(r.EventTime)
-			hint := strings.TrimSpace(r.SourceHint)
-			switch {
-			case when != "" && hint != "":
-				fmt.Fprintf(&b, "  %d. [%s] %s (source=%s)\n", i+1, when, sum, hint)
-			case when != "":
-				fmt.Fprintf(&b, "  %d. [%s] %s\n", i+1, when, sum)
-			case hint != "":
-				fmt.Fprintf(&b, "  %d. %s (source=%s)\n", i+1, sum, hint)
-			default:
-				fmt.Fprintf(&b, "  %d. %s\n", i+1, sum)
-			}
+			b.WriteString(formatDigestReceiptLine(i+1, r))
+			b.WriteByte('\n')
 		}
 	}
 
-	// Honesty line — residual framing pin (never invent GA).
+	// Honesty line — residual framing pin (never invent GA · dual_write OFF · catalog ≠ consume).
 	h := res.Honesty
 	opsPulse := h.OpsPulse
 	if opsPulse == "" {
@@ -699,8 +689,8 @@ func formatOpsDigest(res *iomesh.MemoryOpsDigestResult, maxBytes int) string {
 	if !neverInvent && h.OpsPulse == "" && h.Knowledge == "" {
 		neverInvent = true
 	}
-	fmt.Fprintf(&b, "honesty: ops=%s knowledge=%s analytical=%s never_invent_ga=%v dual_write=%s · not Memory GA · not full graph RAG",
-		opsPulse, know, anal, neverInvent, dw)
+	fmt.Fprintf(&b, "honesty: ops=%s knowledge=%s analytical=%s never_invent_ga=%v dual_write=%s · not Memory GA · not full graph RAG · %s",
+		opsPulse, know, anal, neverInvent, dw, digestHonestyExtraPin)
 	if note := strings.TrimSpace(h.Note); note != "" {
 		fmt.Fprintf(&b, "\n  note: %s", note)
 	}

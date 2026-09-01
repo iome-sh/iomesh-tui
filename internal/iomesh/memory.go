@@ -486,24 +486,31 @@ type MemoryOpsDigestHonesty struct {
 }
 
 // MemoryOpsDigestPattern is one pattern signal in an ops digest (aion PatternSignal wire shape).
+// Rate claims (%, rate, ratio) must carry n (Count), N (Total), and Window or the TUI rejects them (#369).
 type MemoryOpsDigestPattern struct {
-	ID        string  `json:"id,omitempty"`
-	Kind      string  `json:"kind,omitempty"`
-	Subject   string  `json:"subject,omitempty"`
-	Count     int     `json:"count,omitempty"`
-	Window    string  `json:"window,omitempty"`
-	Score     float64 `json:"score,omitempty"`
-	Summary   string  `json:"summary,omitempty"`
-	FirstSeen string  `json:"first_seen,omitempty"`
-	LastSeen  string  `json:"last_seen,omitempty"`
+	ID               string   `json:"id,omitempty"`
+	Kind             string   `json:"kind,omitempty"`
+	Subject          string   `json:"subject,omitempty"`
+	Count            int      `json:"count,omitempty"`             // n
+	Total            int      `json:"total,omitempty"`             // N (denominator for rate claims)
+	Window           string   `json:"window,omitempty"`            // observation window
+	ComparisonWindow string   `json:"comparison_window,omitempty"` // optional baseline / prior window
+	Links            []string `json:"links,omitempty"`             // ticket/runbook pointers (not pasted quotes)
+	Score            float64  `json:"score,omitempty"`
+	Summary          string   `json:"summary,omitempty"`
+	FirstSeen        string   `json:"first_seen,omitempty"`
+	LastSeen         string   `json:"last_seen,omitempty"`
 }
 
 // MemoryOpsDigestReceipt is one timeline receipt in an ops digest pack.
+// Display defaults to pointers + hashes — not raw customer text (#369 / FR-31).
 type MemoryOpsDigestReceipt struct {
-	ID         string `json:"id,omitempty"`
-	EventTime  string `json:"event_time,omitempty"`
-	Summary    string `json:"summary,omitempty"`
-	SourceHint string `json:"source_hint,omitempty"`
+	ID          string `json:"id,omitempty"`
+	EventTime   string `json:"event_time,omitempty"`
+	Summary     string `json:"summary,omitempty"`      // wire may carry text; formatter hashes it
+	SourceHint  string `json:"source_hint,omitempty"`  // e.g. palace_timeline or ticket URL
+	Pointer     string `json:"pointer,omitempty"`      // preferred ticket/URL/id pointer
+	AccountHash string `json:"account_hash,omitempty"` // stable account fingerprint (no PII)
 }
 
 // MemoryOpsDigestDecisionStub is a human-owned decision scaffold (not auto-apply).
