@@ -13,7 +13,7 @@ import (
 )
 
 func TestDashboardSnapshot_LandingParityAndHonesty(t *testing.T) {
-	clearBriefAckFile(t)
+	setupBriefAck(t)
 	out := formatDashboardSnapshot(false, "")
 	needles := []string{
 		"context://mesh",
@@ -65,7 +65,7 @@ func TestDashboardSnapshot_LandingParityAndHonesty(t *testing.T) {
 }
 
 func TestDashboardCompose_SmokeNeverAutoApplies(t *testing.T) {
-	clearBriefAckFile(t)
+	setupBriefAck(t)
 
 	out := formatDashboardSnapshot(false, "")
 	if !strings.Contains(out, DashboardComposePulse) {
@@ -89,9 +89,11 @@ func TestDashboardCompose_SmokeNeverAutoApplies(t *testing.T) {
 	if strings.Contains(out, DashboardComposeBriefAcked) {
 		t.Fatalf("compose smoke without ACK must not look handled:\n%s", out)
 	}
+	assertDashboardHonesty(t, out)
 }
 
 func TestDashboardSnapshot_MeshAttachedLabel(t *testing.T) {
+	setupBriefAck(t)
 	out := formatDashboardSnapshot(true, "eng.ops")
 	if !strings.Contains(out, "CLIENT") {
 		t.Fatalf("attached snapshot missing CLIENT badge:\n%s", out)
@@ -111,6 +113,7 @@ func TestDashboardSnapshot_MeshAttachedLabel(t *testing.T) {
 }
 
 func TestDashboardSnapshot_NoMeshTellsInferNotCreate(t *testing.T) {
+	setupBriefAck(t)
 	out := formatDashboardSnapshot(false, "")
 	if !strings.Contains(out, "add [iomesh]") || !strings.Contains(out, "infer from portal MCP") {
 		t.Fatalf("unattached must tell operator to add [iomesh] or infer:\n%s", out)
@@ -139,6 +142,7 @@ func TestDashboardEmpty_PrimaryNextActionContrast(t *testing.T) {
 	lipgloss.SetColorProfile(termenv.ANSI256)
 	t.Cleanup(func() { lipgloss.SetColorProfile(prev) })
 
+	setupBriefAck(t)
 	out := formatDashboardSnapshot(false, "")
 	primary := th.Status.Render(dashboardEmptyPrimaryNext)
 	if !strings.Contains(out, primary) {
@@ -209,6 +213,7 @@ func relativeLuminance(rgb [3]float64) float64 {
 }
 
 func TestDashboardPreview_OptInEvalTemplate(t *testing.T) {
+	setupBriefAck(t)
 	out := formatDashboardSnapshotMode(false, "", true)
 	if !strings.Contains(out, "EVAL") {
 		t.Fatalf("preview missing EVAL:\n%s", out)
@@ -324,6 +329,7 @@ func TestReadmeDashboardShowcase(t *testing.T) {
 }
 
 func TestHandleSlash_Dashboard(t *testing.T) {
+	setupBriefAck(t)
 	rt := testRuntime(t)
 	adapter := runtimeAdapter{rt: rt}
 
