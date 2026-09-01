@@ -15,8 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **`/dashboard` compose strip (#365):** pulse (this feed) · entitled `dept.*` pull via existing `iomesh memory pull` · insights via existing `/memory digest` · human **decision stub that never auto-applies**. No new backends. Empty until consume stays expected. `/dashboard preview` remains the eval template. dual_write OFF · not Memory GA · not live APPLY.
 - **Local MIT trio docs (#366):** README names published pins — TUI **v1.0.0**, memory kernel **v1.5.7**, `iomesh-memory-mcp` **`@main` until first v\* tag**. Mesh optional. Trio is not hosted Memory GA.
 
+### Changed
+- **Public docs rewrite (#375):** Strip internal process language from the empty-`/dashboard` CHANGELOG note (no leftover-classification tokens). Companion issue-comment rewrites stay on GitHub (#365/#366/#372). Docs-only · no product change.
+
 ### Fixed
-- **Empty `/dashboard` next-action contrast (#363):** Design Packet 4 **visual only** — one `Theme.Status` (ANSI 245) first-run next action pointing at `hooks.iome.sh` (`next: add [iomesh] … · then consume GitHub`). Catalog / infer honesty stays `Theme.Dim` so three Dim 241 lines no longer compete as equal CTAs. Dim 241 on `#09090b` was 3.26:1 FAIL AA; Status 245 is ~5.73:1. EMPTY until consume is expected PASS. `/dashboard preview` stays the eval template. REPL `/dashboard` still `ThemeDefault()` — `/theme dim` remains fullscreen only. No celadon/paper theme · no Connected · no Memory GA · `dual_write OFF` · not live APPLY. leftover_is_tui leftover_is_code=no leftover_is_host=yes. Does not twin #356/#359/#361/#362.
+- **Empty `/dashboard` next-action contrast (#363):** Visual contrast only — one `Theme.Status` (ANSI 245) first-run next action pointing at `hooks.iome.sh` (`next: add [iomesh] … · then consume GitHub`). Catalog / infer honesty stays `Theme.Dim` so three Dim 241 lines no longer compete as equal CTAs. Dim 241 on `#09090b` was 3.26:1 FAIL AA; Status 245 is ~5.73:1. EMPTY until consume is expected. `/dashboard preview` stays the eval template. REPL `/dashboard` still `ThemeDefault()` — `/theme dim` remains fullscreen only. No celadon/paper theme · no Connected · no Memory GA · `dual_write OFF` · not live APPLY.
 - **First-run pack language (#361):** README + security + memory-mcp + edge-user-journey no longer invent a priced Memory Ops Pack or ~$88 / ~$119. Mesh stays optional. Local MIT · dual_write OFF · not Memory GA.
 
 ## [1.0.0] — 2026-08-18
