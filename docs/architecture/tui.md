@@ -84,11 +84,13 @@ or infer from portal MCP · infer ≠ Connected · do not invent consume
 - **PULSE**-shaped rows only when ≥1 broker message was decoded. Never invent PULSE from eval or from a stream list alone. Create stream ≠ PULSE. Mesh pub is ephemeral and does not fill `/dashboard`.
 - Badge **EMPTY** (no mesh, no consume) / **CLIENT** (mesh attached, no consumed rows) / **PULSE** (≥1 decoded message) / **EVAL** (`/dashboard preview` only).
 - Knowledge / analytics stay **Beta**. Empty knowledge or analytics adds `knowledge Beta empty · analytics Beta empty · not GA`. `catalog ≠ Connected`. `dual_write OFF`. Not Memory GA. Not live APPLY. Kind from subject ≠ GA.
+- **Brief ACK (#371):** compose strip shows `brief: UNREAD` until `/dashboard ack`. Unacked ≠ known (fail-open). Optional local palace write (`brief-ack.json` beside user config). ACK does not send/pay/ship.
 
 ```text
 iomesh> /dashboard
 iomesh> /dashboard preview
 iomesh> /dashboard focus eng.ops
+iomesh> /dashboard ack
 iomesh> /heartbeat help
 ```
 

@@ -1175,7 +1175,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /sessions            list saved sessions
   /load <id>           restore session
   /cost                session usage meter + sample estimate
-  /dashboard [help|preview|focus]  empty until consume · preview = eval not your org (aliases /heartbeat /mesh-console)
+  /dashboard [help|preview|focus|ack]  empty until consume · preview = eval not your org · ack = brief ritual (aliases /heartbeat /mesh-console)
   /mesh                I/O Mesh status + usage
   /catalog [query]     list mesh data products (catalog plane)
   /memory [recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · status advanced inventory)

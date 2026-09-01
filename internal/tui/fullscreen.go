@@ -508,6 +508,27 @@ func (m *fullscreenModel) handleDashboardSlash(parts []string) tea.Cmd {
 			m.refreshViewport(true)
 			return nil
 		}
+		if sub == "ack" {
+			msg, err := ackTodayBrief()
+			if err != nil {
+				m.appendLine(m.theme.Err.Render(fmt.Sprintf("dashboard ack: %v · fail-open unread stays visible", err)))
+				m.refreshViewport(true)
+				return nil
+			}
+			m.appendLine(m.theme.Status.Render(msg))
+			attached := false
+			if m.rt != nil && m.rt.Mesh() != nil && m.rt.Mesh().Enabled() {
+				attached = true
+			}
+			if m.dash == nil {
+				m.dash = newDashboardState(attached)
+			}
+			m.dash.BriefAck = BriefAcked
+			m.status = "dashboard"
+			m.layout()
+			m.refreshViewport(true)
+			return nil
+		}
 		if sub == "preview" {
 			attached := false
 			if m.rt != nil && m.rt.Mesh() != nil && m.rt.Mesh().Enabled() {
