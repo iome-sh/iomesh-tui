@@ -343,7 +343,16 @@ Expect residual-honest status lines (`mcp=true` when attached · `dual_write=fal
 ```text
 /memory ingest Demo note: Project alpha ships Friday; owner is Alice.
 /memory recall alpha
+# folder overlay (no session_id required):
+/memory ingest-dir ./notes --dry-run
+/memory ingest-dir ./notes
+# CLI equivalent:
+# iomesh memory ingest --yes "Demo note: Project alpha ships Friday; owner is Alice."
+# iomesh memory ingest-dir --dry-run ./notes
+# iomesh memory ingest-dir --yes ./notes
 ```
+
+`session_id` is minted as `local-overlay` when the walk has no TUI/config session (`iomesh-memory-mcp` v0.1.0 requires it on `memory_ingest_turn`). `/memory recall` without a session_id stays unfiltered and finds those private overlay entries. Catalog list ≠ consume. dual_write OFF.
 
 With `auto_ingest = true` (opt-in), successful agent turns also write user/assistant turns via MCP `memory_ingest_turn` (mutating; interactive MCP tools still approval-gated unless `--yolo`).
 

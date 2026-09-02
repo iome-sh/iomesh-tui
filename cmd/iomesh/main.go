@@ -27,6 +27,7 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/setup"
 	"github.com/iome-sh/iomesh-tui/internal/skills"
 	"github.com/iome-sh/iomesh-tui/internal/tui"
+	"github.com/iome-sh/iomesh-tui/internal/workspace"
 )
 
 // Overridden at link time by make build: -X main.version=$(VERSION)
@@ -2551,16 +2552,22 @@ func cmdAgent(args []string) int {
 // cmdMemory is the Memory Palace operator surface (local-first cost-max path).
 func cmdMemory(args []string) int {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: iomesh memory pull [flags]")
+		fmt.Fprintln(os.Stderr, "usage: iomesh memory [pull|ingest|ingest-dir] [flags]")
 		return 2
 	}
 	switch args[0] {
 	case "pull":
 		return cmdMemoryPull(args[1:])
+	case "ingest":
+		return cmdMemoryIngest(args[1:])
+	case "ingest-dir", "ingestdir", "ingest_dir":
+		return cmdMemoryIngestDir(args[1:])
 	case "help", "-h", "--help":
 		fmt.Fprint(os.Stderr, `iomesh memory — local-first Memory Palace operators (cost-max M1)
 
-  iomesh memory pull   durable mesh pull → local MCP memory_ingest_turn
+  iomesh memory pull         durable mesh pull → local MCP memory_ingest_turn
+  iomesh memory ingest       ingest text via MCP memory_ingest_turn (session_id minted)
+  iomesh memory ingest-dir   folder ingest into private overlay (session_id minted)
 
 Flags (pull):
   --config path         config.toml
@@ -2580,7 +2587,27 @@ Flags (pull):
   --pull-allow-suffix S optional X-IOMesh-Pull-Allow-Suffix (comma tokens; role=custom); [memory].pull_allow_suffix
   -v                    verbose
 
+Flags (ingest):
+  --config path         config.toml
+  --yes                 confirm mutating ingest (required)
+  --session-id id       override (default: minted local-overlay when the walk has none)
+  --mcp-server name     MCP server name for memory tools (default memory)
+  --tenant T            palace tenant (default [memory].tenant)
+
+Flags (ingest-dir):
+  --config path         config.toml
+  --yes                 confirm mutating folder ingest (required unless --dry-run)
+  --dry-run             list files only (no MCP)
+  --limit N             max files (default 32)
+  --session-id id       override (default: minted local-overlay when the walk has none)
+  --mcp-server name     MCP server name for memory tools (default memory)
+  --tenant T            palace tenant (default [memory].tenant)
+  -C dir                workspace root for path jail (default cwd)
+
 Honesty: dual_write remains optional audit (default OFF). Hosted Palace sunset until scale.
+  /memory ingest and iomesh memory ingest mint session_id=local-overlay when the operator
+  has none so iomesh-memory-mcp v0.1.0 memory_ingest_turn can complete. Retrieve without
+  a session_id stays unfiltered and finds the private overlay. Catalog list ≠ consume.
   Role/suffix headers are Beta federated ACL (s675); role-aware default filter is s678/s687 Beta —
   memory → tenant.memory.> (peer aion s686); fail-open when empty — not full IdP RBAC GA.
   s705: PASS/summary and --json always emit stream/consumer/filter_subject/pull_role/pull_allow_suffix/tenant
@@ -2593,9 +2620,213 @@ Honesty: dual_write remains optional audit (default OFF). Hosted Palace sunset u
 		return 0
 	default:
 		fmt.Fprintf(os.Stderr, "unknown memory subcommand %q\n", args[0])
-		fmt.Fprintln(os.Stderr, "usage: iomesh memory pull [flags]")
+		fmt.Fprintln(os.Stderr, "usage: iomesh memory [pull|ingest|ingest-dir] [flags]")
 		return 2
 	}
+}
+
+func cmdMemoryIngest(args []string) int {
+	fs := flag.NewFlagSet("memory ingest", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	var (
+		configPath = fs.String("config", "", "config.toml path")
+		yes        = fs.Bool("yes", false, "confirm mutating ingest")
+		sessionID  = fs.String("session-id", "", "override session_id (default minted local-overlay)")
+		mcpServer  = fs.String("mcp-server", "", "MCP memory server name")
+		tenantFlag = fs.String("tenant", "", "palace tenant")
+	)
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	content := strings.TrimSpace(strings.Join(fs.Args(), " "))
+	if content == "" {
+		fmt.Fprintln(os.Stderr, "usage: iomesh memory ingest --yes <text>")
+		fmt.Fprintln(os.Stderr, "  session_id minted as local-overlay when the operator has none")
+		return 2
+	}
+	if !*yes {
+		fmt.Fprintln(os.Stderr, "memory ingest: mutating — pass --yes (dual_write stays off)")
+		return 2
+	}
+	cfg, err := loadConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "config: %v\n", err)
+		return 1
+	}
+	serverName := strings.TrimSpace(*mcpServer)
+	if serverName == "" {
+		serverName = strings.TrimSpace(cfg.Memory.Server)
+	}
+	if serverName == "" {
+		serverName = "memory"
+	}
+	tenant := strings.TrimSpace(*tenantFlag)
+	if tenant == "" {
+		tenant = strings.TrimSpace(cfg.Memory.Tenant)
+	}
+	sid := agent.ResolveMemoryIngestSessionID(*sessionID, "")
+	cl, closer, err := connectMemoryMCP(cfg, serverName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "memory ingest: %v\n", err)
+		return 1
+	}
+	defer closer()
+	argsIn := map[string]any{
+		"role":       "user",
+		"content":    content,
+		"session_id": sid,
+	}
+	if tenant != "" {
+		argsIn["tenant"] = tenant
+	}
+	out, err := cl.CallTool(context.Background(), "memory_ingest_turn", argsIn)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "memory ingest: %v\n", err)
+		return 1
+	}
+	minted := strings.TrimSpace(*sessionID) == ""
+	fmt.Printf("memory ingest: session_id=%s", sid)
+	if minted {
+		fmt.Print(" (minted · operator had none)")
+	}
+	fmt.Printf(" dual_write=%v · not Memory GA · catalog list ≠ consume\n", cfg.Memory.DualWrite)
+	if s := strings.TrimSpace(out); s != "" {
+		fmt.Println(s)
+	}
+	return 0
+}
+
+func cmdMemoryIngestDir(args []string) int {
+	fs := flag.NewFlagSet("memory ingest-dir", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	var (
+		configPath = fs.String("config", "", "config.toml path")
+		yes        = fs.Bool("yes", false, "confirm mutating folder ingest")
+		dryRun     = fs.Bool("dry-run", false, "list files only (no MCP)")
+		limit      = fs.Int("limit", 0, "max files (default 32)")
+		sessionID  = fs.String("session-id", "", "override session_id (default minted local-overlay)")
+		mcpServer  = fs.String("mcp-server", "", "MCP memory server name")
+		tenantFlag = fs.String("tenant", "", "palace tenant")
+		workDir    = fs.String("C", "", "workspace root for path jail")
+	)
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	dir := strings.TrimSpace(strings.Join(fs.Args(), " "))
+	if dir == "" {
+		fmt.Fprintln(os.Stderr, "usage: iomesh memory ingest-dir [--dry-run|--yes] <path>")
+		fmt.Fprintln(os.Stderr, "  folder ingest; session_id minted as local-overlay when the walk has none")
+		return 2
+	}
+	if !*dryRun && !*yes {
+		fmt.Fprintln(os.Stderr, "memory ingest-dir: mutating — pass --yes or --dry-run (dual_write stays off)")
+		return 2
+	}
+	root := strings.TrimSpace(*workDir)
+	ws, err := workspace.Open(root)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "memory ingest-dir: workspace: %v\n", err)
+		return 1
+	}
+	plan, err := agent.ListIngestDirFiles(ws, dir, *limit)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "memory ingest-dir: %v\n", err)
+		return 1
+	}
+	sid := agent.ResolveMemoryIngestSessionID(*sessionID, "")
+	minted := strings.TrimSpace(*sessionID) == ""
+	if *dryRun {
+		fmt.Println(agent.FormatIngestDirPlan(plan, sid, minted, true))
+		return 0
+	}
+	cfg, err := loadConfig(*configPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "config: %v\n", err)
+		return 1
+	}
+	serverName := strings.TrimSpace(*mcpServer)
+	if serverName == "" {
+		serverName = strings.TrimSpace(cfg.Memory.Server)
+	}
+	if serverName == "" {
+		serverName = "memory"
+	}
+	tenant := strings.TrimSpace(*tenantFlag)
+	if tenant == "" {
+		tenant = strings.TrimSpace(cfg.Memory.Tenant)
+	}
+	cl, closer, err := connectMemoryMCP(cfg, serverName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "memory ingest-dir: %v\n", err)
+		return 1
+	}
+	defer closer()
+	ingested := 0
+	failed := 0
+	var lines []string
+	for _, f := range plan.Files {
+		content := "file: " + f.Rel + "\n\n" + f.Text
+		callArgs := map[string]any{
+			"role":       "user",
+			"content":    content,
+			"session_id": sid,
+		}
+		if tenant != "" {
+			callArgs["tenant"] = tenant
+		}
+		out, ierr := cl.CallTool(context.Background(), "memory_ingest_turn", callArgs)
+		if ierr != nil {
+			failed++
+			lines = append(lines, f.Rel+": "+ierr.Error())
+			continue
+		}
+		ingested++
+		if s := strings.TrimSpace(out); s != "" {
+			lines = append(lines, f.Rel+": "+s)
+		} else {
+			lines = append(lines, f.Rel+": ok")
+		}
+	}
+	fmt.Printf("ingest-dir: dir=%s ingested=%d failed=%d skipped=%d session_id=%s",
+		plan.Dir, ingested, failed, len(plan.Skipped), sid)
+	if minted {
+		fmt.Print(" (minted · operator had none)")
+	}
+	fmt.Printf(" dual_write=%v · not Memory GA · catalog list ≠ consume · private overlay\n", cfg.Memory.DualWrite)
+	for _, line := range lines {
+		fmt.Printf("  %s\n", line)
+	}
+	for _, s := range plan.Skipped {
+		fmt.Printf("  skip %s\n", s)
+	}
+	if ingested == 0 && failed > 0 {
+		return 1
+	}
+	return 0
+}
+
+func connectMemoryMCP(cfg *config.Config, serverName string) (*mcp.Client, func(), error) {
+	if cfg == nil {
+		return nil, func() {}, fmt.Errorf("config required")
+	}
+	if !cfg.MCP.Enabled && !cfg.Features.MCP {
+		return nil, func() {}, fmt.Errorf("MCP disabled — enable [mcp] or use --dry-run")
+	}
+	var servers []mcp.ServerConfig
+	for _, s := range cfg.MCP.Servers {
+		servers = append(servers, mcpServerFromTOML(s, cfg))
+	}
+	if len(servers) == 0 {
+		return nil, func() {}, fmt.Errorf("no MCP servers configured")
+	}
+	ctx := context.Background()
+	mgr := mcp.NewManager(ctx, servers, slog.Default())
+	cl := mgr.ClientByName(serverName)
+	if cl == nil {
+		_ = mgr.Close()
+		return nil, func() {}, fmt.Errorf("MCP server %q not connected", serverName)
+	}
+	return cl, func() { _ = mgr.Close() }, nil
 }
 
 func cmdMemoryPull(args []string) int {
@@ -2916,6 +3147,8 @@ Usage:
   iomesh mesh wait               poll mesh Ready until OK (operator preflight)
   iomesh mesh status             operator snapshot (StatusLine + Health/Ready; --strict gates result=err)
   iomesh memory pull             mesh durable pull → local MCP palace (cost-max M1; --yes)
+  iomesh memory ingest           local overlay text ingest (session_id minted; --yes)
+  iomesh memory ingest-dir       folder ingest into private overlay (--dry-run|--yes)
   iomesh models                  list configured models
   iomesh agent stdio             ACP JSON-RPC over stdio (IDE integration)
   iomesh agent serve             ACP JSON-RPC over WebSocket (default 127.0.0.1:7400/acp)

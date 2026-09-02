@@ -94,6 +94,9 @@ func TestHandleSlash_ModelsAndCost(t *testing.T) {
 	if !strings.Contains(out.String(), "/memory") {
 		t.Fatalf("help missing /memory: %s", out.String())
 	}
+	if !strings.Contains(out.String(), "ingest-dir") {
+		t.Fatalf("help missing ingest-dir: %s", out.String())
+	}
 	if !strings.Contains(out.String(), "/integrations") {
 		t.Fatalf("help missing /integrations: %s", out.String())
 	}
@@ -596,6 +599,63 @@ func TestParseMemoryIngestEventArgs(t *testing.T) {
 	_, badArg := parseMemoryIngestEventArgs([]string{"bare"})
 	if badArg == "" {
 		t.Fatal("expected unexpected argument")
+	}
+}
+
+// #384: /memory ingest-dir flag parser for path / --dry-run / --limit.
+func TestParseMemoryIngestDirArgs(t *testing.T) {
+	o, errMsg := parseMemoryIngestDirArgs([]string{"notes/overlay", "--dry-run", "--limit", "4"})
+	if errMsg != "" {
+		t.Fatalf("errMsg=%q", errMsg)
+	}
+	if o.Path != "notes/overlay" || !o.DryRun || o.Limit != 4 {
+		t.Fatalf("opts=%+v", o)
+	}
+	o2, errMsg2 := parseMemoryIngestDirArgs([]string{"--dir=palace/in", "--dry_run", "--limit=2"})
+	if errMsg2 != "" {
+		t.Fatalf("errMsg=%q", errMsg2)
+	}
+	if o2.Path != "palace/in" || !o2.DryRun || o2.Limit != 2 {
+		t.Fatalf("opts=%+v", o2)
+	}
+	o3, errMsg3 := parseMemoryIngestDirArgs(nil)
+	if errMsg3 != "" || o3.Path != "" || o3.DryRun {
+		t.Fatalf("empty opts=%+v err=%q", o3, errMsg3)
+	}
+	_, badLimit := parseMemoryIngestDirArgs([]string{"--limit", "nope"})
+	if badLimit == "" {
+		t.Fatal("expected invalid --limit")
+	}
+	_, badFlag := parseMemoryIngestDirArgs([]string{"--unknown"})
+	if badFlag == "" {
+		t.Fatal("expected unknown flag")
+	}
+}
+
+func TestHandleSlash_MemoryIngestDirUsage(t *testing.T) {
+	rt := testRuntime(t)
+	rt.AttachMemory(agent.MemoryConfig{Enabled: true, Server: "memory", DualWrite: false})
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+	_, err := handleSlash(&out, adapter, "/memory ingest-dir")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := out.String()
+	if !strings.Contains(got, "ingest-dir") || !strings.Contains(got, "local-overlay") {
+		t.Fatalf("usage: %s", got)
+	}
+	if strings.Contains(got, "Memory GA") && !strings.Contains(got, "not") {
+		t.Fatalf("must not stamp Memory GA: %s", got)
+	}
+	out.Reset()
+	_, err = handleSlash(&out, adapter, "/memory ingest")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got = out.String()
+	if !strings.Contains(got, "local-overlay") || !strings.Contains(got, "ingest-dir") {
+		t.Fatalf("ingest usage should name mint + ingest-dir: %s", got)
 	}
 }
 

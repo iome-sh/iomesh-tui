@@ -1,10 +1,69 @@
 package main
 
 import (
+	"bytes"
+	"io"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/iome-sh/iomesh-tui/internal/config"
 )
+
+func TestCmdMemory_IngestDirUsage(t *testing.T) {
+	if code := cmdMemory([]string{}); code != 2 {
+		t.Fatalf("empty exit=%d want 2", code)
+	}
+	if code := cmdMemory([]string{"ingest-dir"}); code != 2 {
+		t.Fatalf("ingest-dir missing path exit=%d want 2", code)
+	}
+	if code := cmdMemoryIngestDir([]string{"notes"}); code != 2 {
+		t.Fatalf("ingest-dir without --yes/--dry-run exit=%d want 2", code)
+	}
+	if code := cmdMemory([]string{"ingest"}); code != 2 {
+		t.Fatalf("ingest missing text exit=%d want 2", code)
+	}
+	if code := cmdMemoryIngest([]string{"hello overlay"}); code != 2 {
+		t.Fatalf("ingest without --yes exit=%d want 2", code)
+	}
+}
+
+func TestCmdMemoryHelp_IngestDir(t *testing.T) {
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	old := os.Stderr
+	os.Stderr = w
+	code := cmdMemory([]string{"help"})
+	_ = w.Close()
+	os.Stderr = old
+	var buf bytes.Buffer
+	_, _ = io.Copy(&buf, r)
+	if code != 0 {
+		t.Fatalf("help exit=%d", code)
+	}
+	got := buf.String()
+	for _, want := range []string{"ingest-dir", "local-overlay", "dual_write", "Catalog list ≠ consume"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("help missing %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestCmdMemoryIngestDir_DryRun(t *testing.T) {
+	root := t.TempDir()
+	overlay := root + "/overlay"
+	if err := os.MkdirAll(overlay, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(overlay+"/note.md", []byte("alpha needle"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if code := cmdMemoryIngestDir([]string{"-C", root, "--dry-run", "overlay"}); code != 0 {
+		t.Fatalf("dry-run exit=%d", code)
+	}
+}
 
 func TestCmdMeshStreams_CreateRequiresYes(t *testing.T) {
 	if code := cmdMeshStreams([]string{"--create"}); code != 2 {
