@@ -42,7 +42,7 @@ Agent path for **advanced Memory Palace surfaces** already wired in iomesh-tui (
 | `/memory ingest-event\|event --subject <id> --content <text> […]` (s1301) | `memory_ingest_event` | **MCP-first only** — s138 T1 temporal event telemetry; not conversation turn |
 | `/memory status` (s1311 advanced inventory) | (presence probe only) | Residual inventory of advanced MCP tools · dual_write OFF · not Memory GA |
 
-Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conversation turns via `/memory ingest`) — see architecture docs.
+Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conversation turns via `/memory ingest`; folder overlay via `/memory ingest-dir` / `iomesh memory ingest-dir` — session_id minted as `local-overlay` when the operator has none) — see architecture docs.
 
 **s1311 HITL shipped:** `memory_trigger_compact` is wired as `/memory trigger-compact --i-confirm` (aliases `--confirm` / `--yes`). Without HITL → residual-honest refuse (no MCP call).
 

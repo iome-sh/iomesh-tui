@@ -310,7 +310,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 	case "/memory", "/mem":
 		if len(parts) < 2 {
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
-			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] [--require-sources mesh,private] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | trigger-compact --i-confirm | semantic [query|--query ...] [--limit N] | ingest-event --subject <id> --content <text> [--event-time|--session-id|--session-seq|--severity|--source-stream] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | ingest <text> | status]")
+			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] [--require-sources mesh,private] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | trigger-compact --i-confirm | semantic [query|--query ...] [--limit N] | ingest-event --subject <id> --content <text> [--event-time|--session-id|--session-seq|--severity|--source-stream] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | ingest <text> | ingest-dir <path> [--dry-run] [--limit N] | status]")
 			// s1831: residual-honest dual-path next-step after bare /memory help.
 			for _, line := range agent.MemoryNextStepLines() {
 				fmt.Fprintln(out, line)
@@ -592,10 +592,29 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 				return false, nil
 			}
 			fmt.Fprintln(out, text)
+		case "ingest-dir", "ingestdir", "ingest_dir", "idir":
+			// #384: folder ingest into private overlay. session_id minted as
+			// local-overlay when the operator has none. dual_write OFF.
+			// Catalog list ≠ consume. Not hosted Memory GA.
+			dopts, perr := parseMemoryIngestDirArgs(parts[2:])
+			if perr != "" {
+				fmt.Fprintf(out, "memory ingest-dir: %s\nusage: /memory ingest-dir <path> [--dry-run] [--limit N]\n", perr)
+				return false, nil
+			}
+			if strings.TrimSpace(dopts.Path) == "" {
+				fmt.Fprintln(out, "usage: /memory ingest-dir <path> [--dry-run] [--limit N]\n  folder ingest into private overlay (session_id minted as local-overlay when the walk has none; dual_write OFF; catalog list ≠ consume)")
+				return false, nil
+			}
+			text, err := rt.rt.MemoryIngestDir(context.Background(), dopts)
+			if err != nil {
+				fmt.Fprintf(out, "memory ingest-dir: %v\n", err)
+				return false, nil
+			}
+			fmt.Fprintln(out, text)
 		case "ingest", "i":
 			content := strings.Join(parts[2:], " ")
 			if strings.TrimSpace(content) == "" {
-				fmt.Fprintln(out, "usage: /memory ingest <text>")
+				fmt.Fprintln(out, "usage: /memory ingest <text>\n  session_id is minted as local-overlay when the operator has none (iomesh-memory-mcp requires it). Folder: /memory ingest-dir <path>")
 				return false, nil
 			}
 			text, err := rt.rt.MemoryIngestTurn(context.Background(), "user", content)
@@ -610,7 +629,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			q, ropts := parseMemoryRecallArgs(parts[1:])
 			text, err := rt.rt.MemoryRecallWithOpts(context.Background(), q, ropts)
 			if err != nil {
-				fmt.Fprintf(out, "memory: %v (try /memory status|recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest)\n", err)
+				fmt.Fprintf(out, "memory: %v (try /memory status|recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|ingest-dir)\n", err)
 				return false, nil
 			}
 			if strings.TrimSpace(text) == "" {
@@ -1183,7 +1202,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /dashboard [help|preview|focus|ack]  empty until consume · preview = eval not your org · ack = brief ritual (aliases /heartbeat /mesh-console)
   /mesh                I/O Mesh status + usage
   /catalog [query]     list mesh data products (catalog plane)
-  /memory [recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · status advanced inventory)
+  /memory [recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|ingest-dir|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · ingest-dir folder overlay · status advanced inventory)
   /integrations [list|plan|signing|status]  list/plan a source via MCP, then finish in portal HITL (not install CRUD)
   /setup [init|preflight|portal|reload|pull|analyze|drift|repair]  setup lifecycle (managed config · preflight · portal HITL · hot MCP reload · opt-in continuous pull/analyze · drift report · guided repair; alias /setup-lifecycle; dual_write OFF · not Memory GA · PASS ≠ invent Connected · pull/analyze/repair ≠ invent Connected)
   /gtm [help|checklist|brief]  GTM draft-only guidance, checklist, or palace voc_brief / market_telling (aliases /gtm-draft /gtm-agent; no auto-send; human publish; palace SoR · source=agent-brief · tenant gtm/founder)
@@ -2585,6 +2604,50 @@ func parseMemoryIngestEventArgs(args []string) (opts agent.MemoryIngestEventOpts
 			}
 			return opts, "unexpected argument " + a
 		}
+	}
+	return opts, ""
+}
+
+// parseMemoryIngestDirArgs extracts folder ingest flags (#384).
+// Supports: --dir / --path, --dry-run / --dry_run, --limit.
+// First non-flag token is the directory path.
+func parseMemoryIngestDirArgs(args []string) (opts agent.MemoryIngestDirOpts, errMsg string) {
+	var pathParts []string
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		key, val, hasEq := splitFlagKV(a)
+		switch key {
+		case "--dir", "--path":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.Path = strings.TrimSpace(val)
+		case "--dry-run", "--dry_run":
+			opts.DryRun = true
+		case "--limit":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			n, err := strconv.Atoi(strings.TrimSpace(val))
+			if err != nil || n < 0 {
+				return opts, "invalid --limit"
+			}
+			opts.Limit = n
+		default:
+			if strings.HasPrefix(a, "-") {
+				return opts, "unknown flag " + a
+			}
+			pathParts = append(pathParts, a)
+		}
+	}
+	if strings.TrimSpace(opts.Path) == "" && len(pathParts) > 0 {
+		opts.Path = strings.Join(pathParts, " ")
 	}
 	return opts, ""
 }

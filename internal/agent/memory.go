@@ -140,6 +140,42 @@ func (rt *Runtime) memorySessionID() string {
 	return rt.sessionID
 }
 
+// LocalOverlaySessionID is the residual-honest default session_id minted when
+// the operator has no TUI/config session. iomesh-memory-mcp v0.1.0 requires
+// session_id on memory_ingest_turn; the host walk does not invent a conversation
+// session. Retrieve without a session_id stays unfiltered and still finds these
+// private overlay entries. dual_write stays OFF. Not a conversation session.
+const LocalOverlaySessionID = "local-overlay"
+
+// ResolveMemoryIngestSessionID returns configured, then runtime, then local-overlay.
+// Used by /memory ingest, /memory ingest-dir, and iomesh memory ingest[-dir].
+func ResolveMemoryIngestSessionID(configured, runtime string) string {
+	if s := strings.TrimSpace(configured); s != "" {
+		return s
+	}
+	if s := strings.TrimSpace(runtime); s != "" {
+		return s
+	}
+	return LocalOverlaySessionID
+}
+
+// memoryIngestSessionID always returns a non-empty session_id for palace ingest.
+func (rt *Runtime) memoryIngestSessionID() string {
+	if rt == nil {
+		return LocalOverlaySessionID
+	}
+	return ResolveMemoryIngestSessionID(rt.memory.SessionID, rt.sessionID)
+}
+
+// memoryIngestSessionMinted reports whether ingest will mint local-overlay
+// because the operator has no configured or runtime session.
+func (rt *Runtime) memoryIngestSessionMinted() bool {
+	if rt == nil {
+		return true
+	}
+	return strings.TrimSpace(rt.memory.SessionID) == "" && strings.TrimSpace(rt.sessionID) == ""
+}
+
 // nextSessionSeq returns a monotonic session_seq for dual-write envelopes.
 func (rt *Runtime) nextSessionSeq() int {
 	if rt == nil {
@@ -2604,9 +2640,9 @@ func (rt *Runtime) MemoryIngestTurn(ctx context.Context, role, content string) (
 		if t := rt.memoryTenant(); t != "" {
 			args["tenant"] = t
 		}
-		if sid := rt.memorySessionID(); sid != "" {
-			args["session_id"] = sid
-		}
+		// Always send session_id: iomesh-memory-mcp v0.1.0 requires it on
+		// memory_ingest_turn. Mint local-overlay when the operator has none.
+		args["session_id"] = rt.memoryIngestSessionID()
 		out, err := c.CallTool(ctx, "memory_ingest_turn", args)
 		if err != nil {
 			if rt.logger != nil {
@@ -2636,6 +2672,13 @@ func (rt *Runtime) MemoryIngestTurn(ctx context.Context, role, content string) (
 		}
 	}
 
+	sid := rt.memoryIngestSessionID()
+	if rt.memoryIngestSessionMinted() {
+		parts = append(parts, "session_id="+sid+" (minted · operator had none)")
+	} else {
+		parts = append(parts, "session_id="+sid)
+	}
+	parts = append(parts, fmt.Sprintf("dual_write=%v", rt.memory.DualWrite))
 	msg := strings.Join(parts, "; ")
 	if ok {
 		return msg, nil
@@ -2734,9 +2777,7 @@ func (rt *Runtime) autoIngestOne(ctx context.Context, role, content string, onEv
 		if t := rt.memoryTenant(); t != "" {
 			args["tenant"] = t
 		}
-		if sid := rt.memorySessionID(); sid != "" {
-			args["session_id"] = sid
-		}
+		args["session_id"] = rt.memoryIngestSessionID()
 		if _, err := c.CallTool(ctx, "memory_ingest_turn", args); err != nil {
 			if rt.logger != nil {
 				rt.logger.Debug("memory auto_ingest "+role, "err", err)
