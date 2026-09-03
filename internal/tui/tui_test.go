@@ -4623,6 +4623,22 @@ func TestHandleSlash_SetupLifecycle(t *testing.T) {
 	if !strings.Contains(meshPrint, "dept.engineering") {
 		t.Fatalf("mesh print-only want tenant:\n%s", meshPrint)
 	}
+	if !strings.Contains(meshPrint, "# org =") || !strings.Contains(meshPrint, "IOMESH_ORG") || !strings.Contains(meshPrint, "fail-open") {
+		t.Fatalf("mesh print-only must surface org residual + fail-open honesty:\n%s", meshPrint)
+	}
+	if strings.Contains(meshPrint, "\norg = ") {
+		t.Fatalf("empty --mesh-org must not persist a live org field:\n%s", meshPrint)
+	}
+
+	out.Reset()
+	_, _ = handleSlash(&out, adapter, "/setup init mesh --print-only --mesh-endpoint https://hooks.iome.sh --mesh-tenant dept.engineering --mesh-org org_a")
+	meshOrgPrint := out.String()
+	if !strings.Contains(meshOrgPrint, `org = "org_a"`) {
+		t.Fatalf("slash --mesh-org must persist org field:\n%s", meshOrgPrint)
+	}
+	if !strings.Contains(meshOrgPrint, "IOMESH_ORG") {
+		t.Fatalf("slash --mesh-org must name IOMESH_ORG:\n%s", meshOrgPrint)
+	}
 
 	out.Reset()
 	_, _ = handleSlash(&out, adapter, "/setup init platform-mcp --print-only --platform-mcp-url https://apiv1.iome.sh/v7/mcp")

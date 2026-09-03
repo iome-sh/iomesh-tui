@@ -73,7 +73,7 @@ func SetupInitNextStepLines() []string {
 // Infer ≠ Connected · catalog MCP ≠ hooks streams · mesh pub ephemeral ≠ consume.
 func SetupInitMeshNextStepLines() []string {
 	return []string{
-		"next (mesh): export IOMESH_TOKEN (env ref · never inline secret) · /setup reload (hot-swap mesh + MCP · infer ≠ Connected)",
+		"next (mesh): export IOMESH_TOKEN (env ref · never inline secret) · export IOMESH_ORG or set [iomesh].org (empty fail-opens · aion #2721) · /setup reload (hot-swap mesh + MCP · infer ≠ Connected)",
 		"then: iomesh mesh streams --create --yes  # create ≠ PULSE",
 		"      iomesh mesh streams --messages --name OPERATIONAL_EVENTS",
 		"note: listed stream + 0 messages is still empty · catalog MCP ≠ hooks streams · mesh pub ephemeral ≠ /dashboard consume · dual_write OFF · not Memory GA",

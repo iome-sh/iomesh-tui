@@ -50,6 +50,9 @@ func TestBuildManagedFragment_All(t *testing.T) {
 	for _, needle := range []string{
 		"[iomesh]",
 		`api_key_env = "IOMESH_TOKEN"`,
+		"# org =",
+		"IOMESH_ORG",
+		"fail-open",
 		"aion-platform",
 		"[plugins]",
 		"dirs = [\"/tmp/plugins\"]",
@@ -75,6 +78,61 @@ func TestBuildManagedFragment_PlatformMCPInfersHooks(t *testing.T) {
 	}
 	if !strings.Contains(frag, "not portal /v7/mcp") {
 		t.Fatalf("want honesty comment in:\n%s", frag)
+	}
+}
+
+func TestBuildManagedFragment_MeshOrgResidualEmpty(t *testing.T) {
+	opt := DefaultInitOptions()
+	opt.MeshEndpoint = "https://hooks.iome.sh"
+	frag, err := BuildManagedFragment([]Profile{ProfileMesh}, opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(frag, "[iomesh]") {
+		t.Fatalf("missing [iomesh]:\n%s", frag)
+	}
+	if !strings.Contains(frag, `api_key_env = "IOMESH_TOKEN"`) {
+		t.Fatalf("missing api_key_env:\n%s", frag)
+	}
+	if !strings.Contains(frag, "# org =") {
+		t.Fatalf("empty org must write commented residual:\n%s", frag)
+	}
+	if strings.Contains(frag, "\norg = ") {
+		t.Fatalf("empty org must not persist a live org field:\n%s", frag)
+	}
+	for _, needle := range []string{
+		"IOMESH_ORG",
+		"X-IOMesh-Org",
+		"fail-open",
+		"aion #2721",
+		"never invent Connected",
+	} {
+		if !strings.Contains(frag, needle) {
+			t.Fatalf("missing org residual honesty %q in:\n%s", needle, frag)
+		}
+	}
+	if strings.Contains(frag, "dual_write = true") {
+		t.Fatal("must not set dual_write true")
+	}
+}
+
+func TestBuildManagedFragment_MeshOrgPersistsWhenSet(t *testing.T) {
+	opt := DefaultInitOptions()
+	opt.MeshEndpoint = "https://hooks.iome.sh"
+	opt.MeshTenant = "dept.engineering"
+	opt.MeshOrg = "org_a"
+	frag, err := BuildManagedFragment([]Profile{ProfileMesh}, opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(frag, `org = "org_a"`) {
+		t.Fatalf("want persisted org field:\n%s", frag)
+	}
+	if !strings.Contains(frag, "IOMESH_ORG") || !strings.Contains(frag, "X-IOMesh-Org") {
+		t.Fatalf("want IOMESH_ORG / X-IOMesh-Org honesty:\n%s", frag)
+	}
+	if strings.Contains(frag, "secret") && strings.Contains(frag, "org_a") && strings.Contains(frag, "token=") {
+		t.Fatalf("must not inline secrets next to org:\n%s", frag)
 	}
 }
 

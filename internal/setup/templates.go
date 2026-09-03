@@ -35,6 +35,9 @@ type InitOptions struct {
 	MeshEndpoint string
 	// MeshTenant optional.
 	MeshTenant string
+	// MeshOrg optional [iomesh].org / IOMESH_ORG residual (X-IOMesh-Org).
+	// Empty writes a commented org line + fail-open honesty (aion #2721).
+	MeshOrg string
 	// MeshAPIKeyEnv env var name only (default IOMESH_TOKEN).
 	MeshAPIKeyEnv string
 	// PlatformMCPURL streamable HTTP from portal Agent/MCP panel.
@@ -144,6 +147,11 @@ func BuildManagedFragment(profiles []Profile, opt InitOptions) (string, error) {
 			fmt.Fprintf(&b, "tenant = %q\n", t)
 		} else {
 			b.WriteString("# tenant = \"dept.yourorg\"\n")
+		}
+		if org := strings.TrimSpace(opt.MeshOrg); org != "" {
+			fmt.Fprintf(&b, "org = %q  # X-IOMesh-Org · IOMESH_ORG · empty fail-opens (aion #2721)\n", org)
+		} else {
+			b.WriteString("# org = \"org_…\"  # X-IOMesh-Org from console /me (org_ + cuid2) · IOMESH_ORG · empty fail-opens (aion #2721 fetch-org filter) · never invent Connected\n")
 		}
 		fmt.Fprintf(&b, "api_key_env = %q  # set env; never commit secret values\n", opt.MeshAPIKeyEnv)
 		b.WriteString("emit_dept_streams = true\n")

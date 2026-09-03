@@ -19,8 +19,9 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
 
 1. **Init managed config** — write residual-honest fragment into user `config.toml`.
    - CLI: `iomesh setup init [profiles]`
-   - Slash: `/setup init [profiles] [--stdio] [--print-only] [--plugins-dir path] [--memory-url URL] [--mesh-endpoint URL] [--mesh-tenant id] [--platform-mcp-url URL]`
+   - Slash: `/setup init [profiles] [--stdio] [--print-only] [--plugins-dir path] [--memory-url URL] [--mesh-endpoint URL] [--mesh-tenant id] [--mesh-org id] [--platform-mcp-url URL]`
    - Mesh flags write **hooks** (not portal `/v7/mcp`). apiv1 portal URL infers `https://hooks.iome.sh`. Infer ≠ Connected.
+   - `--mesh-org` persists `[iomesh].org` (X-IOMesh-Org / `IOMESH_ORG`). Empty org is residual-honest fail-open (aion #2721 fetch-org filter) — setup must not silently omit the residual.
    - After mesh / platform-mcp write: `export IOMESH_TOKEN` → `/setup reload` → `iomesh mesh streams --create --yes` → `--messages` (create ≠ PULSE · mesh pub ephemeral ≠ `/dashboard` consume)
    - Profiles: `local-memory` (default) · `plugins` · `mesh` · `platform-mcp` · `all`
    - Managed block markers: `# BEGIN iomesh-setup-managed` … `# END iomesh-setup-managed`

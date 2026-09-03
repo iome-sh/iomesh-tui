@@ -73,7 +73,7 @@ Post-probe next steps are residual-honest (helper `setup.SetupPreflightNextStepL
 |---------|--------|
 | `local-memory` | `[mcp]` + memory server URL/stdio + `[memory]` dual_write=false · pull_continuous=false · analyze_continuous=false |
 | `plugins` | `[plugins] enabled` + dirs |
-| `mesh` | `[iomesh]` endpoint/tenant placeholders + `api_key_env` |
+| `mesh` | `[iomesh]` endpoint/tenant/org residual + `api_key_env` (`org` field when `--mesh-org` set; otherwise commented `org` + empty fail-open honesty · aion #2721 · `IOMESH_ORG`) |
 | `platform-mcp` | platform `[[mcp.servers]]` + `oauth_token_env` |
 | `all` | all of the above |
 
@@ -128,7 +128,7 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 | `drift` / `maintain` | report-only `BuildDriftReport` + `FormatDriftText` (s1534 P6 · s1707 dual-path next-step appended) |
 | `repair` | guided `PlanRepair` / `ApplyRepairPlan` (s1538 P7 · plan default · apply requires `--yes` · s1707 dual-path next-step on FormatRepair*) |
 
-Simple flags on slash `init`: `--stdio` · `--print-only` · `--plugins-dir path` · `--memory-url URL` · `--mesh-endpoint URL` · `--mesh-tenant id` · `--platform-mcp-url URL`. Mesh endpoint writes **hooks** (not portal `/v7/mcp`). When the portal URL is `apiv1.iome.sh`, infer `https://hooks.iome.sh`. Infer ≠ Connected.
+Simple flags on slash `init`: `--stdio` · `--print-only` · `--plugins-dir path` · `--memory-url URL` · `--mesh-endpoint URL` · `--mesh-tenant id` · `--mesh-org id` · `--platform-mcp-url URL`. Mesh endpoint writes **hooks** (not portal `/v7/mcp`). When the portal URL is `apiv1.iome.sh`, infer `https://hooks.iome.sh`. Infer ≠ Connected. `--mesh-org` persists `[iomesh].org` / `IOMESH_ORG` (empty writes a commented residual; empty org fail-opens after aion #2721).
 
 **Process config inheritance:** in-session `/setup preflight` (and `/setup` probes that load config: reload · pull start/once · analyze start/once · drift · repair) use the same path the running process loaded (`iomesh --config` / `--repl --config` / `IOMESH_CONFIG` / user default) when slash `--config` is omitted. Slash `--config PATH` still overrides. CLI `iomesh setup preflight --config PATH` is unchanged. Slash `/setup init` still writes the user config path (CLI `--config` remains the custom write target). dual_write **OFF** · not Memory GA · PASS ≠ invent Connected.
 

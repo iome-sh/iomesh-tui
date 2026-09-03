@@ -4,11 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/iome-sh/iomesh-tui/internal/iomesh"
 	"github.com/iome-sh/iomesh-tui/internal/mcp"
 	"github.com/iome-sh/iomesh-tui/internal/workspace"
 )
@@ -168,6 +171,94 @@ func TestMemoryIngestDir_DryRunNoMCP(t *testing.T) {
 	}
 	if !strings.Contains(out, "session_id=local-overlay") || !strings.Contains(out, "dual_write=off") {
 		t.Fatalf("honesty: %q", out)
+	}
+}
+
+func TestMemoryIngestDir_MeshOrgHeaderWhenDualWrite(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "notes"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "notes", "alpha.md"), []byte("Project alpha ships Friday"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	ws, err := workspace.Open(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var gotOrg string
+	var hadOrg bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotOrg = r.Header.Get("X-IOMesh-Org")
+		_, hadOrg = r.Header["X-IOMesh-Org"]
+		_ = json.NewEncoder(w).Encode(map[string]any{"stream": "MEMORY_INGEST", "seq": 1})
+	}))
+	defer srv.Close()
+
+	mesh := iomesh.New(iomesh.Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "dept.engineering", OrgID: "org_a",
+	}, nil)
+	rt := &Runtime{
+		mesh: mesh,
+		memory: MemoryConfig{
+			Enabled: true, DualWrite: true, Tenant: "dept.engineering", Server: "memory",
+		},
+		ws: ws,
+	}
+	out, err := rt.MemoryIngestDir(context.Background(), MemoryIngestDirOpts{Path: "notes"})
+	if err != nil {
+		t.Fatalf("err=%v out=%q", err, out)
+	}
+	if !hadOrg || gotOrg != "org_a" {
+		t.Fatalf("ingest-dir mesh path must send X-IOMesh-Org=org_a; got %q had=%v", gotOrg, hadOrg)
+	}
+	if !strings.Contains(out, "ingest-dir") || !strings.Contains(out, "ingested=1") {
+		t.Fatalf("out=%q", out)
+	}
+}
+
+func TestMemoryIngestTurn_OrgHeaderWhenDualWrite(t *testing.T) {
+	var gotOrg string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotOrg = r.Header.Get("X-IOMesh-Org")
+		_ = json.NewEncoder(w).Encode(map[string]any{"stream": "MEMORY_INGEST", "seq": 2})
+	}))
+	defer srv.Close()
+
+	mesh := iomesh.New(iomesh.Config{
+		Enabled: true, Endpoint: srv.URL, Tenant: "acme", OrgID: "org_a",
+	}, nil)
+	rt := &Runtime{
+		mesh:   mesh,
+		memory: MemoryConfig{Enabled: true, DualWrite: true, Tenant: "acme", Server: "memory"},
+	}
+	if _, err := rt.MemoryIngestTurn(context.Background(), "user", "note for org_a"); err != nil {
+		t.Fatal(err)
+	}
+	if gotOrg != "org_a" {
+		t.Fatalf("X-IOMesh-Org=%q", gotOrg)
+	}
+}
+
+func TestMemoryIngestTurn_OmitsOrgWhenUnset(t *testing.T) {
+	var hadOrg bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, hadOrg = r.Header["X-IOMesh-Org"]
+		_ = json.NewEncoder(w).Encode(map[string]any{"stream": "MEMORY_INGEST", "seq": 1})
+	}))
+	defer srv.Close()
+
+	mesh := iomesh.New(iomesh.Config{Enabled: true, Endpoint: srv.URL, Tenant: "acme"}, nil)
+	rt := &Runtime{
+		mesh:   mesh,
+		memory: MemoryConfig{Enabled: true, DualWrite: true, Tenant: "acme", Server: "memory"},
+	}
+	if _, err := rt.MemoryIngestTurn(context.Background(), "user", "note"); err != nil {
+		t.Fatal(err)
+	}
+	if hadOrg {
+		t.Fatal("empty org must omit X-IOMesh-Org (fail-open)")
 	}
 }
 

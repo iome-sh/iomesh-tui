@@ -1229,8 +1229,8 @@ func integrationsHelp() string {
 // setupHelp is bare /setup and help/? copy (s1526 P3+P4 + s1530 P5 + s1534 P6 + s1538 P7 residual honesty).
 // s1723: when IOMESH_PLATFORM_RESIDUAL is on, append PlatformResidualLabelNote (label only · never hides subcommands).
 func setupHelp() string {
-	base := strings.TrimSpace(`usage: /setup [init [profiles] [--stdio] [--print-only] [--plugins-dir path] [--memory-url URL] [--mesh-endpoint URL] [--mesh-tenant id] [--platform-mcp-url URL] | preflight | portal | reload | pull … | analyze … | drift|maintain | repair …]
-  init       write managed config fragment (profiles: local-memory|plugins|mesh|platform-mcp|all; default local-memory; mesh flags write hooks not /v7/mcp)
+	base := strings.TrimSpace(`usage: /setup [init [profiles] [--stdio] [--print-only] [--plugins-dir path] [--memory-url URL] [--mesh-endpoint URL] [--mesh-tenant id] [--mesh-org id] [--platform-mcp-url URL] | preflight | portal | reload | pull … | analyze … | drift|maintain | repair …]
+  init       write managed config fragment (profiles: local-memory|plugins|mesh|platform-mcp|all; default local-memory; mesh flags write hooks not /v7/mcp; --mesh-org persists [iomesh].org / IOMESH_ORG residual)
   preflight  residual-honest probe (aliases status|check) — inherits process --config / IOMESH_CONFIG unless slash --config; PASS ≠ invent Connected / Memory GA
   portal     browser HITL URLs (integrations + settings/agent)
   reload     hot-swap MCP + mesh + re-scan skills from process config (or slash --config; Wire · ReplaceSkills · NewMesh · ReplaceMesh · ConnectMCP + ReplaceMCP; package wire ≠ Connected · infer ≠ Connected)
@@ -1306,6 +1306,15 @@ func handleSetupInit(out io.Writer, args []string) {
 			opt.MeshTenant = strings.TrimSpace(args[i])
 		case strings.HasPrefix(a, "--mesh-tenant="):
 			opt.MeshTenant = strings.TrimSpace(strings.TrimPrefix(a, "--mesh-tenant="))
+		case a == "--mesh-org" || a == "--mesh_org":
+			if i+1 >= len(args) || strings.HasPrefix(args[i+1], "-") {
+				fmt.Fprintln(out, "setup init: --mesh-org requires an org id")
+				return
+			}
+			i++
+			opt.MeshOrg = strings.TrimSpace(args[i])
+		case strings.HasPrefix(a, "--mesh-org="):
+			opt.MeshOrg = strings.TrimSpace(strings.TrimPrefix(a, "--mesh-org="))
 		case a == "--platform-mcp-url" || a == "--platform_mcp_url":
 			if i+1 >= len(args) || strings.HasPrefix(args[i+1], "-") {
 				fmt.Fprintln(out, "setup init: --platform-mcp-url requires a URL")

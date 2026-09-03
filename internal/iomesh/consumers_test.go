@@ -940,6 +940,59 @@ func TestConsumerFetch_RoleAndPullAllowSuffixHeaders(t *testing.T) {
 	}
 }
 
+func TestConsumerFetch_OrgHeaderWhenSet(t *testing.T) {
+	var gotOrg string
+	var hadOrg bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotOrg = r.Header.Get("X-IOMesh-Org")
+		_, hadOrg = r.Header["X-IOMesh-Org"]
+		_ = json.NewEncoder(w).Encode(map[string]any{"messages": []any{}})
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "dept.engineering", OrgID: "org_a"}, nil)
+	if _, err := c.ConsumerFetch(context.Background(), "EVENTS", "c", 1, time.Second); err != nil {
+		t.Fatal(err)
+	}
+	if !hadOrg || gotOrg != "org_a" {
+		t.Fatalf("X-IOMesh-Org=%q had=%v", gotOrg, hadOrg)
+	}
+}
+
+func TestConsumerAck_OrgHeaderWhenSet(t *testing.T) {
+	var gotOrg string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotOrg = r.Header.Get("X-IOMesh-Org")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ack_floor": 1})
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "dept.engineering", OrgID: "org_a"}, nil)
+	if _, err := c.ConsumerAck(context.Background(), "EVENTS", "c", 1); err != nil {
+		t.Fatal(err)
+	}
+	if gotOrg != "org_a" {
+		t.Fatalf("X-IOMesh-Org=%q", gotOrg)
+	}
+}
+
+func TestConsumerFetch_OmitsOrgWhenUnset(t *testing.T) {
+	var hadOrg bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, hadOrg = r.Header["X-IOMesh-Org"]
+		_ = json.NewEncoder(w).Encode(map[string]any{"messages": []any{}})
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "dept.engineering"}, nil)
+	if _, err := c.ConsumerFetch(context.Background(), "EVENTS", "c", 1, time.Second); err != nil {
+		t.Fatal(err)
+	}
+	if hadOrg {
+		t.Fatal("empty org must omit X-IOMesh-Org (fail-open)")
+	}
+}
+
 func TestConsumerFetch_OmitsRoleAndSuffixWhenEmpty(t *testing.T) {
 	var gotRole, gotSuffix string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
