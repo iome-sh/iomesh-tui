@@ -36,6 +36,8 @@ type PreflightReport struct {
 	// Mesh
 	MeshEnabled  bool   `json:"mesh_enabled"`
 	MeshEndpoint string `json:"mesh_endpoint"`
+	// MeshOrg is [iomesh].org / IOMESH_ORG (always emit; empty honest).
+	MeshOrg string `json:"org"`
 	// Residual copy
 	Honesty string   `json:"honesty"`
 	Notes   []string `json:"notes"`
@@ -78,6 +80,7 @@ func Preflight(ctx context.Context, cfgPath string) (*PreflightReport, error) {
 	rep.MemoryEnabled = cfg.Memory.Enabled
 	rep.MeshEnabled = cfg.IOMesh.Enabled
 	rep.MeshEndpoint = strings.TrimSpace(cfg.IOMesh.Endpoint)
+	rep.MeshOrg = strings.TrimSpace(cfg.IOMesh.Org)
 	rep.MemoryServer = strings.TrimSpace(cfg.Memory.Server)
 	if rep.MemoryServer == "" {
 		rep.MemoryServer = "memory"
@@ -85,6 +88,9 @@ func Preflight(ctx context.Context, cfgPath string) (*PreflightReport, error) {
 
 	if !rep.DualWriteHonest {
 		rep.Notes = append(rep.Notes, "dual_write is true — residual-honest local-primary prefers dual_write=false (audit only when intentionally enabled)")
+	}
+	if (rep.MeshEnabled || rep.MeshEndpoint != "") && rep.MeshOrg == "" {
+		rep.Notes = append(rep.Notes, "mesh org empty — X-IOMesh-Org omitted (fail-open after aion fetch-org filter · set [iomesh].org or IOMESH_ORG for N=2 isolation · never invent Connected)")
 	}
 
 	// Find memory server entry
@@ -229,7 +235,7 @@ func FormatPreflightText(r *PreflightReport) string {
 	if r.MemoryHealthBody != "" && len(r.MemoryHealthBody) < 500 {
 		fmt.Fprintf(&b, "  memory.health_body: %s\n", r.MemoryHealthBody)
 	}
-	fmt.Fprintf(&b, "  mesh.enabled=%v endpoint=%q\n", r.MeshEnabled, r.MeshEndpoint)
+	fmt.Fprintf(&b, "  mesh.enabled=%v endpoint=%q org=%q\n", r.MeshEnabled, r.MeshEndpoint, r.MeshOrg)
 	fmt.Fprintf(&b, "  honesty: %s\n", r.Honesty)
 	for _, n := range r.Notes {
 		fmt.Fprintf(&b, "  note: %s\n", n)

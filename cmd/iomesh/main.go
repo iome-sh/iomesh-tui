@@ -549,6 +549,7 @@ Flags (init):
   --plugins-dir path      repeatable [plugins].dirs entry
   --mesh-endpoint URL     optional mesh base
   --mesh-tenant id        optional tenant
+  --mesh-org id           optional [iomesh].org / IOMESH_ORG (X-IOMesh-Org; empty fail-opens)
   --platform-mcp-url URL  portal Agent/MCP streamable HTTP URL
   --print-only            print fragment only (do not write)
 
@@ -575,6 +576,7 @@ func cmdSetupInit(args []string) int {
 	memoryURL := fs.String("memory-url", "", "memory MCP HTTP URL")
 	meshEP := fs.String("mesh-endpoint", "", "mesh endpoint URL")
 	meshTenant := fs.String("mesh-tenant", "", "mesh tenant")
+	meshOrg := fs.String("mesh-org", "", "mesh org id ([iomesh].org / IOMESH_ORG; X-IOMesh-Org)")
 	platformURL := fs.String("platform-mcp-url", "", "platform MCP URL from portal")
 	printOnly := fs.Bool("print-only", false, "print managed fragment only")
 	var pluginDirs multiFlag
@@ -600,6 +602,7 @@ func cmdSetupInit(args []string) int {
 	}
 	opt.MeshEndpoint = strings.TrimSpace(*meshEP)
 	opt.MeshTenant = strings.TrimSpace(*meshTenant)
+	opt.MeshOrg = strings.TrimSpace(*meshOrg)
 	opt.PlatformMCPURL = strings.TrimSpace(*platformURL)
 	opt.PluginsDirs = append([]string{}, pluginDirs...)
 
@@ -695,7 +698,7 @@ func hoistFlags(args []string) []string {
 			name := strings.TrimLeft(a, "-")
 			switch name {
 			case "config", "profiles", "memory-url", "mesh-endpoint", "mesh-tenant",
-				"platform-mcp-url", "plugins-dir":
+				"mesh-org", "platform-mcp-url", "plugins-dir":
 				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
 					i++
 					flags = append(flags, args[i])
@@ -1109,6 +1112,17 @@ func applyInferredBroker(cfg *config.Config) {
 		return
 	}
 	fmt.Fprintf(os.Stderr, "note: inferred broker %s from portal MCP (catalog ≠ streams)\n", inf.Endpoint)
+}
+
+// applyOrgFlag overlays --org onto [iomesh].org / IOMESH_ORG when the flag is set.
+// Empty flag keeps config/env. Empty org still fail-opens (aion #2721).
+func applyOrgFlag(cfg *config.Config, org string) {
+	if cfg == nil {
+		return
+	}
+	if s := strings.TrimSpace(org); s != "" {
+		cfg.IOMesh.Org = s
+	}
 }
 
 func cmdMeshWait(args []string) int {
@@ -1704,6 +1718,7 @@ func cmdMeshConsumerAckNack(args []string, nack bool) int {
 		verbose         = fs.Bool("v", false, "verbose logs")
 		endpoint        = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
 		tenant          = fs.String("tenant", "", "override tenant")
+		org             = fs.String("org", "", "override [iomesh].org / IOMESH_ORG (X-IOMesh-Org; empty fail-opens)")
 	)
 	fs.Var(&seqs, "seq", "message sequence to "+op+" (repeatable; CSV ok)")
 	if err := fs.Parse(args); err != nil {
@@ -1731,6 +1746,7 @@ func cmdMeshConsumerAckNack(args []string, nack bool) int {
 	if *tenant != "" {
 		cfg.IOMesh.Tenant = *tenant
 	}
+	applyOrgFlag(cfg, *org)
 	applyInferredBroker(cfg)
 	// s684: same role/suffix auth headers as create/fetch (defense-in-depth; fail-open empty).
 	pullRole, allowSuffix := iomesh.ResolveMeshPullAuth(
@@ -1860,6 +1876,7 @@ func cmdMeshConsumerCreate(args []string) int {
 		verbose         = fs.Bool("v", false, "verbose logs")
 		endpoint        = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
 		tenant          = fs.String("tenant", "", "override tenant")
+		org             = fs.String("org", "", "override [iomesh].org / IOMESH_ORG (X-IOMesh-Org; empty fail-opens)")
 	)
 	if err := fs.Parse(args); err != nil {
 		return 2
@@ -1886,6 +1903,7 @@ func cmdMeshConsumerCreate(args []string) int {
 	if *tenant != "" {
 		cfg.IOMesh.Tenant = *tenant
 	}
+	applyOrgFlag(cfg, *org)
 	applyInferredBroker(cfg)
 	// s681: federated role + allow-suffix (flags override [memory] config) + role-aware default filter.
 	// Tenant is IOMesh tenant (mesh command pattern). Fail-open empty role/suffix → omit headers.
@@ -1947,6 +1965,7 @@ func cmdMeshConsumerFetch(args []string) int {
 		verbose         = fs.Bool("v", false, "verbose logs")
 		endpoint        = fs.String("endpoint", "", "override IOMESH_ENDPOINT / config")
 		tenant          = fs.String("tenant", "", "override tenant")
+		org             = fs.String("org", "", "override [iomesh].org / IOMESH_ORG (X-IOMesh-Org; empty fail-opens)")
 	)
 	if err := fs.Parse(args); err != nil {
 		return 2
@@ -1954,7 +1973,7 @@ func cmdMeshConsumerFetch(args []string) int {
 	streamName := strings.TrimSpace(*stream)
 	consumerName := strings.TrimSpace(*name)
 	if streamName == "" || consumerName == "" || !*yes {
-		fmt.Fprintln(os.Stderr, "usage: iomesh mesh consumer fetch --stream S --name C [--batch N] [--role R] [--pull-allow-suffix S] --yes [--json]")
+		fmt.Fprintln(os.Stderr, "usage: iomesh mesh consumer fetch --stream S --name C [--batch N] [--role R] [--pull-allow-suffix S] [--org id] --yes [--json]")
 		fmt.Fprintln(os.Stderr, "  --stream and --name required; --yes required (long-poll mutate)")
 		fmt.Fprintln(os.Stderr, "  text/JSON always-emit pull_role / pull_allow_suffix + knobs + count (s708; empty when unset)")
 		return 2
@@ -1977,6 +1996,7 @@ func cmdMeshConsumerFetch(args []string) int {
 	if *tenant != "" {
 		cfg.IOMesh.Tenant = *tenant
 	}
+	applyOrgFlag(cfg, *org)
 	applyInferredBroker(cfg)
 	// s684: federated role + allow-suffix on fetch (flags override [memory] config).
 	// Fail-open empty role/suffix → Client.auth omits headers. Peer aion s683 continuum.
@@ -2582,6 +2602,7 @@ Flags (pull):
   --yes                 confirm mutating pull loop (required unless --dry-run)
   --json                print MemoryPullStatsPrint JSON (always-emits identity + knobs + counters + process evidence; complete s747)
   --endpoint url        override IOMESH_ENDPOINT
+  --org id              override [iomesh].org / IOMESH_ORG (X-IOMesh-Org; empty fail-opens)
   --mcp-server name     MCP server name for memory tools (default memory)
   --role R              optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|memory|custom); [memory].pull_role
   --pull-allow-suffix S optional X-IOMesh-Pull-Allow-Suffix (comma tokens; role=custom); [memory].pull_allow_suffix
@@ -2845,6 +2866,7 @@ func cmdMemoryPull(args []string) int {
 		yes             = fs.Bool("yes", false, "confirm mutating pull (required unless --dry-run)")
 		jsonOut         = fs.Bool("json", false, "print MemoryPullStatsPrint JSON (always-emits identity + knobs + counters + process evidence; complete s747)")
 		endpoint        = fs.String("endpoint", "", "override mesh endpoint")
+		org             = fs.String("org", "", "override [iomesh].org / IOMESH_ORG (X-IOMesh-Org; empty fail-opens)")
 		mcpServer       = fs.String("mcp-server", "", "MCP memory server name")
 		role            = fs.String("role", "", "optional X-IOMesh-Role (operator|admin|agent|auditor|viewer|memory|custom)")
 		pullAllowSuffix = fs.String("pull-allow-suffix", "", "optional X-IOMesh-Pull-Allow-Suffix (comma tokens; role=custom)")
@@ -2864,6 +2886,7 @@ func cmdMemoryPull(args []string) int {
 		cfg.IOMesh.Endpoint = *endpoint
 		cfg.IOMesh.Enabled = true
 	}
+	applyOrgFlag(cfg, *org)
 	applyInferredBroker(cfg)
 
 	streamName := strings.TrimSpace(*stream)

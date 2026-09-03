@@ -83,6 +83,78 @@ dual_write = false
 	}
 }
 
+func TestPreflight_MeshOrgEmptyNote(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.toml")
+	opt := DefaultInitOptions()
+	opt.MeshEndpoint = "https://hooks.iome.sh"
+	opt.MeshTenant = "dept.engineering"
+	frag, err := BuildManagedFragment([]Profile{ProfileMesh}, opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := config.WriteSetupManagedFragment(path, frag); err != nil {
+		t.Fatal(err)
+	}
+	rep, err := Preflight(context.Background(), path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rep.MeshOrg != "" {
+		t.Fatalf("org must be empty honest, got %q", rep.MeshOrg)
+	}
+	text := FormatPreflightText(rep)
+	jsonOut := FormatPreflightJSON(rep)
+	if !strings.Contains(jsonOut, `"org": ""`) && !strings.Contains(jsonOut, `"org":""`) {
+		t.Fatalf("preflight JSON must always-emit empty org:\n%s", jsonOut)
+	}
+	note := false
+	for _, n := range rep.Notes {
+		if strings.Contains(n, "org empty") && strings.Contains(n, "fail-open") {
+			note = true
+		}
+	}
+	if !note {
+		t.Fatalf("want N=2 isolation note when mesh-on + org-empty: %+v", rep.Notes)
+	}
+	if !strings.Contains(text, `org=""`) && !strings.Contains(text, `org="`) {
+		t.Fatalf("text must surface org residual:\n%s", text)
+	}
+	if strings.Contains(text, "Connected: yes") {
+		t.Fatal(text)
+	}
+}
+
+func TestPreflight_MeshOrgSetNoFailOpenNote(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.toml")
+	opt := DefaultInitOptions()
+	opt.MeshEndpoint = "https://hooks.iome.sh"
+	opt.MeshOrg = "org_a"
+	frag, err := BuildManagedFragment([]Profile{ProfileMesh}, opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := config.WriteSetupManagedFragment(path, frag); err != nil {
+		t.Fatal(err)
+	}
+	rep, err := Preflight(context.Background(), path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rep.MeshOrg != "org_a" {
+		t.Fatalf("org=%q", rep.MeshOrg)
+	}
+	for _, n := range rep.Notes {
+		if strings.Contains(n, "org empty") {
+			t.Fatalf("must not warn fail-open when org set: %s", n)
+		}
+	}
+	if !strings.Contains(FormatPreflightJSON(rep), `"org": "org_a"`) && !strings.Contains(FormatPreflightJSON(rep), `"org":"org_a"`) {
+		t.Fatalf("json org:\n%s", FormatPreflightJSON(rep))
+	}
+}
+
 func TestWriteInitAndPreflight_LocalMemoryOffline(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.toml")

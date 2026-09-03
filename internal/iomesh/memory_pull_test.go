@@ -2,7 +2,10 @@ package iomesh
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -156,6 +159,77 @@ func TestDefaultMemoryPullFilterForRole(t *testing.T) {
 					tt.explicit, tt.tenant, tt.role, tt.allowSuffix, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestRunMemoryPull_SendsOrgHeaderWhenSet(t *testing.T) {
+	var createOrg, fetchOrg, ackOrg string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		org := r.Header.Get("X-IOMesh-Org")
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/consumers") && !strings.Contains(r.URL.Path, "/fetch"):
+			createOrg = org
+			_ = json.NewEncoder(w).Encode(map[string]any{"stream": "EVENTS", "name": "tui-local-palace"})
+		case strings.HasSuffix(r.URL.Path, "/fetch"):
+			fetchOrg = org
+			payload := base64.StdEncoding.EncodeToString([]byte(`{"text":"only org_a"}`))
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"messages": []map[string]any{{
+					"stream": "EVENTS", "seq": 3, "subject": "dept.engineering.events.github",
+					"payload": payload,
+				}},
+			})
+		case strings.HasSuffix(r.URL.Path, "/ack"):
+			ackOrg = org
+			_ = json.NewEncoder(w).Encode(map[string]any{"ack_floor": 3})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "dept.engineering", OrgID: "org_a"}, nil)
+	st, err := c.RunMemoryPull(context.Background(), MemoryPullOptions{
+		Stream: "EVENTS", Name: "tui-local-palace", Batch: 1, MaxWait: time.Millisecond,
+		MaxLoops: 1, Ack: true, DryRun: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if createOrg != "org_a" || fetchOrg != "org_a" || ackOrg != "org_a" {
+		t.Fatalf("org headers create=%q fetch=%q ack=%q", createOrg, fetchOrg, ackOrg)
+	}
+	if st.Fetched < 1 {
+		t.Fatalf("stats=%+v", st)
+	}
+}
+
+func TestRunMemoryPull_OmitsOrgHeaderWhenUnset(t *testing.T) {
+	var gotOrg string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if v := r.Header.Get("X-IOMesh-Org"); v != "" {
+			gotOrg = v
+		}
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/consumers") && !strings.Contains(r.URL.Path, "/fetch"):
+			_ = json.NewEncoder(w).Encode(map[string]any{"stream": "EVENTS", "name": "c"})
+		case strings.HasSuffix(r.URL.Path, "/fetch"):
+			_ = json.NewEncoder(w).Encode(map[string]any{"messages": []any{}})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "dept.engineering"}, nil)
+	if _, err := c.RunMemoryPull(context.Background(), MemoryPullOptions{
+		Stream: "EVENTS", Name: "c", Batch: 1, MaxWait: time.Millisecond,
+		MaxLoops: 1, DryRun: true,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if gotOrg != "" {
+		t.Fatalf("empty org must omit X-IOMesh-Org (fail-open); got %q", gotOrg)
 	}
 }
 

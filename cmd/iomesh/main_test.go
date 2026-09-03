@@ -93,6 +93,74 @@ func portalMCPConfig() *config.Config {
 	return cfg
 }
 
+func TestApplyOrgFlag(t *testing.T) {
+	applyOrgFlag(nil, "org_a")
+	cfg := &config.Config{}
+	cfg.IOMesh.Org = "org_keep"
+	applyOrgFlag(cfg, "  ")
+	if cfg.IOMesh.Org != "org_keep" {
+		t.Fatalf("empty flag must keep config org: %q", cfg.IOMesh.Org)
+	}
+	applyOrgFlag(cfg, " org_a ")
+	if cfg.IOMesh.Org != "org_a" {
+		t.Fatalf("flag must overlay org: %q", cfg.IOMesh.Org)
+	}
+}
+
+func TestCmdSetupInit_MeshPrintOnlyOrgResidual(t *testing.T) {
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	old := os.Stdout
+	os.Stdout = w
+	code := cmdSetupInit([]string{"mesh", "--print-only", "--mesh-endpoint", "https://hooks.iome.sh"})
+	_ = w.Close()
+	os.Stdout = old
+	var buf bytes.Buffer
+	_, _ = io.Copy(&buf, r)
+	if code != 0 {
+		t.Fatalf("print-only exit=%d", code)
+	}
+	got := buf.String()
+	for _, want := range []string{
+		"[iomesh]",
+		"# org =",
+		"IOMESH_ORG",
+		"fail-open",
+		"aion #2721",
+		`api_key_env = "IOMESH_TOKEN"`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("setup init mesh --print-only missing %q:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, "\norg = ") {
+		t.Fatalf("empty org must not persist a live field:\n%s", got)
+	}
+}
+
+func TestCmdSetupInit_MeshPrintOnlyPersistsOrg(t *testing.T) {
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	old := os.Stdout
+	os.Stdout = w
+	code := cmdSetupInit([]string{"mesh", "--print-only", "--mesh-endpoint", "https://hooks.iome.sh", "--mesh-org", "org_a"})
+	_ = w.Close()
+	os.Stdout = old
+	var buf bytes.Buffer
+	_, _ = io.Copy(&buf, r)
+	if code != 0 {
+		t.Fatalf("print-only exit=%d", code)
+	}
+	got := buf.String()
+	if !strings.Contains(got, `org = "org_a"`) {
+		t.Fatalf("want persisted org:\n%s", got)
+	}
+}
+
 func TestApplyInferredBroker_Nil(t *testing.T) {
 	applyInferredBroker(nil)
 }

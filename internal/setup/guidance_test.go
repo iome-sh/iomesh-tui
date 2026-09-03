@@ -43,6 +43,9 @@ func TestSetupInitMeshNextStepLines_HonestyNeedles(t *testing.T) {
 	out := strings.Join(lines, "\n")
 	for _, want := range []string{
 		"IOMESH_TOKEN",
+		"IOMESH_ORG",
+		"[iomesh].org",
+		"fail-open",
 		"/setup reload",
 		"iomesh mesh streams --create --yes",
 		"--messages",
