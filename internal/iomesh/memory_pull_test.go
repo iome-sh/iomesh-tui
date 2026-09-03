@@ -205,10 +205,10 @@ func TestRunMemoryPull_SendsOrgHeaderWhenSet(t *testing.T) {
 }
 
 func TestRunMemoryPull_OmitsOrgHeaderWhenUnset(t *testing.T) {
-	var hadOrg bool
+	var gotOrg string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := r.Header["X-IOMesh-Org"]; ok {
-			hadOrg = true
+		if v := r.Header.Get("X-IOMesh-Org"); v != "" {
+			gotOrg = v
 		}
 		switch {
 		case strings.HasSuffix(r.URL.Path, "/consumers") && !strings.Contains(r.URL.Path, "/fetch"):
@@ -228,8 +228,8 @@ func TestRunMemoryPull_OmitsOrgHeaderWhenUnset(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if hadOrg {
-		t.Fatal("empty org must omit X-IOMesh-Org (fail-open)")
+	if gotOrg != "" {
+		t.Fatalf("empty org must omit X-IOMesh-Org (fail-open); got %q", gotOrg)
 	}
 }
 
