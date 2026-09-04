@@ -13,14 +13,19 @@ import (
 )
 
 // StreamInfo is broker stream metadata from GET /v1/streams and GET /v1/streams/{name}.
-// Wire shape matches broker / iomesh-client-sdk-go StreamInfo (name, subjects, stats, retention knobs).
-// Lean TUI surface — no SDK dependency.
+// Wire shape matches broker / iomesh-client-sdk-go StreamInfo (name, subjects, stats,
+// retention knobs, org_id). Lean TUI surface — no SDK dependency.
 //
-// RetentionTier is the broker product-facing class (hot|temp|extended|archive) when present
-// on the wire (aion s701 / s654). omitempty keeps the wire lean; do not invent tier from
-// max_age alone — empty means the broker omitted it. Beta · offline unit ≠ live APPLY.
+// OrgID is the persist org when the broker returns org_id. Empty org_id means a shared
+// stream visible to every org — do not invent an org from [iomesh].org / IOMESH_ORG.
+// omitempty keeps the wire lean.
+//
+// RetentionTier is the broker product-facing class (hot|temp|extended|archive) when
+// present on the wire. omitempty keeps the wire lean; do not invent tier from max_age
+// alone — empty means the broker omitted it. dual_write default OFF.
 type StreamInfo struct {
 	Name          string    `json:"name"`
+	OrgID         string    `json:"org_id,omitempty"`
 	Subjects      []string  `json:"subjects"`
 	Retention     string    `json:"retention,omitempty"`
 	RetentionTier string    `json:"retention_tier,omitempty"`
@@ -294,8 +299,10 @@ func MeshDisabledHooksHint() string {
 
 // FormatStreams renders a compact table for CLI operator discovery.
 // Always prints PART (0 when unset) and RETENTION (empty when unset), plus
-// MAX_MSGS / MAX_AGE numeric columns (0 when *int64 nil) for CI scrapers (s699),
-// and TIER (retention_tier; empty when broker omits — never invent from max_age) (s702).
+// MAX_MSGS / MAX_AGE numeric columns (0 when *int64 nil), TIER (retention_tier;
+// empty when broker omits — never invent from max_age), and ORG (org_id; empty
+// when broker omits — never invent from [iomesh].org; empty org_id is shared
+// persist visible to every org).
 func FormatStreams(streams []StreamInfo) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "iomesh streams count=%d\n", len(streams))
@@ -307,8 +314,8 @@ func FormatStreams(streams []StreamInfo) string {
 		}
 		return b.String()
 	}
-	fmt.Fprintf(&b, "%-20s %8s %8s %8s %5s %8s %8s %-10s %-8s %s\n",
-		"NAME", "MSGS", "FIRST", "LAST", "PART", "MAX_MSGS", "MAX_AGE", "RETENTION", "TIER", "SUBJECTS")
+	fmt.Fprintf(&b, "%-20s %8s %8s %8s %5s %8s %8s %-10s %-8s %-16s %s\n",
+		"NAME", "MSGS", "FIRST", "LAST", "PART", "MAX_MSGS", "MAX_AGE", "RETENTION", "TIER", "ORG", "SUBJECTS")
 	for i, s := range streams {
 		if i >= 50 {
 			fmt.Fprintf(&b, "… (%d more)\n", len(streams)-50)
@@ -323,12 +330,13 @@ func FormatStreams(streams []StreamInfo) string {
 		if s.MaxAgeSec != nil {
 			maxAge = *s.MaxAgeSec
 		}
-		fmt.Fprintf(&b, "%-20s %8d %8d %8d %5d %8d %8d %-10s %-8s %s\n",
+		fmt.Fprintf(&b, "%-20s %8d %8d %8d %5d %8d %8d %-10s %-8s %-16s %s\n",
 			truncateRunes(s.Name, 20),
 			s.Messages, s.FirstSeq, s.LastSeq, s.Partitions,
 			maxMsgs, maxAge,
 			truncateRunes(s.Retention, 10),
 			truncateRunes(s.RetentionTier, 8),
+			truncateRunes(s.OrgID, 16),
 			truncateRunes(subj, 40),
 		)
 	}
@@ -336,18 +344,16 @@ func FormatStreams(streams []StreamInfo) string {
 }
 
 // StreamInfoPrint is a CLI-side print DTO for mesh stream get/detail JSON.
-// Always emits retention knobs for CI scrapers without omitempty gaps:
-// description, retention (empty string when unset), retention_tier (empty when
-// broker omits — never invent from max_age), partitions (0 when unset),
-// max_msgs / max_age_sec (0 when wire *int64 nil), created_at ("" when zero),
-// subjects ([] when empty). Separate from wire StreamInfo so broker decode stays
-// lean (omitempty intact on the wire type).
-//
-// s699 retention knobs + s702 retention_tier always-emit. Peer FormatStreamDetail
-// text + aion s701 mesh-stream-retention residual. Beta · offline unit ≠ live APPLY
-// · does not invent freemium unlimited retain · dual_write default OFF.
+// Always emits knobs for CI scrapers without omitempty gaps: description,
+// retention, retention_tier (empty when broker omits — never invent from
+// max_age), org_id (empty when broker omits — never invent from [iomesh].org;
+// empty org_id is shared persist visible to every org), partitions (0 when
+// unset), max_msgs / max_age_sec (0 when wire *int64 nil), created_at ("" when
+// zero), subjects ([] when empty). Separate from wire StreamInfo so broker
+// decode stays lean (omitempty intact on the wire type). dual_write default OFF.
 type StreamInfoPrint struct {
 	Name          string   `json:"name"`
+	OrgID         string   `json:"org_id"`
 	Description   string   `json:"description"`
 	Retention     string   `json:"retention"`
 	RetentionTier string   `json:"retention_tier"`
@@ -364,9 +370,11 @@ type StreamInfoPrint struct {
 // NewStreamInfoPrint builds a print DTO from wire StreamInfo. Nil *int64 knobs
 // become 0; empty strings/slices stay empty (never omitted on marshal).
 // RetentionTier maps s.RetentionTier as-is (empty when broker omit).
+// OrgID maps s.OrgID as-is (empty when broker omit — never invent).
 func NewStreamInfoPrint(s StreamInfo) StreamInfoPrint {
 	p := StreamInfoPrint{
 		Name:          s.Name,
+		OrgID:         s.OrgID,
 		Description:   s.Description,
 		Retention:     s.Retention,
 		RetentionTier: s.RetentionTier,
@@ -476,16 +484,17 @@ func FormatStreamDeleteJSON(p StreamDeletePrint) string {
 // FormatStreamDetail is a multi-line view for one stream (CLI).
 // Pure helper with no network I/O.
 //
-// s699 always-emit retention knobs + s702 retention_tier for CI scrapers (same
-// discipline as filter_subject / pull_role): description, retention, retention_tier
-// (empty when unset — never invent from max_age alone), partitions (0 when unset),
-// max_msgs / max_age_sec (numeric; 0 when *int64 nil), created_at (blank when zero),
-// subjects ("  (none)" when empty). Beta · offline unit ≠ live APPLY · peer aion
-// s701 mesh-stream-retention residual · dual_write default OFF.
+// Always-emit knobs for CI scrapers: org_id (empty when broker omits — never
+// invent from [iomesh].org; empty org_id is shared persist), description,
+// retention, retention_tier (empty when unset — never invent from max_age
+// alone), partitions (0 when unset), max_msgs / max_age_sec (numeric; 0 when
+// *int64 nil), created_at (blank when zero), subjects ("  (none)" when empty).
+// dual_write default OFF.
 func FormatStreamDetail(s StreamInfo) string {
 	var b strings.Builder
 	b.WriteString("iomesh stream\n")
 	fmt.Fprintf(&b, "name:           %s\n", s.Name)
+	fmt.Fprintf(&b, "org_id:         %s\n", s.OrgID)
 	fmt.Fprintf(&b, "description:    %s\n", s.Description)
 	fmt.Fprintf(&b, "retention:      %s\n", s.Retention)
 	fmt.Fprintf(&b, "retention_tier: %s\n", s.RetentionTier)

@@ -119,6 +119,7 @@ func TestListStreams_OKAndUserAgent(t *testing.T) {
 		_ = json.NewEncoder(w).Encode([]map[string]any{
 			{
 				"name":       "EVENTS",
+				"org_id":     "org_public1",
 				"subjects":   []string{"dept.events.>"},
 				"messages":   3,
 				"first_seq":  1,
@@ -143,12 +144,18 @@ func TestListStreams_OKAndUserAgent(t *testing.T) {
 	if len(streams) != 1 || streams[0].Name != "EVENTS" {
 		t.Fatalf("streams=%+v", streams)
 	}
+	if streams[0].OrgID != "org_public1" {
+		t.Fatalf("org_id=%q", streams[0].OrgID)
+	}
 	if streams[0].Messages != 3 || streams[0].LastSeq != 3 {
 		t.Fatalf("stats=%+v", streams[0])
 	}
 	out := FormatStreams(streams)
 	if !strings.Contains(out, "EVENTS") || !strings.Contains(out, "count=1") {
 		t.Fatal(out)
+	}
+	if !strings.Contains(out, "org_public1") {
+		t.Fatalf("want org_id in FormatStreams, got:\n%s", out)
 	}
 	// s699: list table always emits MAX_MSGS / MAX_AGE column headers for scrapers.
 	// s702: TIER (retention_tier) column always present (empty when broker omits).
@@ -158,13 +165,16 @@ func TestListStreams_OKAndUserAgent(t *testing.T) {
 	if !strings.Contains(out, "TIER") {
 		t.Fatalf("want TIER header, got:\n%s", out)
 	}
+	if !strings.Contains(out, "ORG") {
+		t.Fatalf("want ORG header, got:\n%s", out)
+	}
 }
 
 func TestListStreams_Envelope(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"streams": []map[string]any{
-				{"name": "KV", "subjects": []string{"kv.>"}, "messages": 0, "first_seq": 0, "last_seq": 0},
+				{"name": "KV", "org_id": "org_env", "subjects": []string{"kv.>"}, "messages": 0, "first_seq": 0, "last_seq": 0},
 			},
 		})
 	}))
@@ -177,6 +187,9 @@ func TestListStreams_Envelope(t *testing.T) {
 	}
 	if len(streams) != 1 || streams[0].Name != "KV" {
 		t.Fatalf("streams=%+v", streams)
+	}
+	if streams[0].OrgID != "org_env" {
+		t.Fatalf("envelope org_id=%q", streams[0].OrgID)
 	}
 }
 
@@ -191,6 +204,7 @@ func TestGetStream_OK(t *testing.T) {
 		max := int64(1000)
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"name":        "EVENTS",
+			"org_id":      "org_get1",
 			"subjects":    []string{"dept.events.>"},
 			"retention":   "limits",
 			"partitions":  1,
@@ -215,9 +229,103 @@ func TestGetStream_OK(t *testing.T) {
 	if info == nil || info.Name != "EVENTS" || info.LastSeq != 10 {
 		t.Fatalf("info=%+v", info)
 	}
+	if info.OrgID != "org_get1" {
+		t.Fatalf("org_id=%q", info.OrgID)
+	}
 	detail := FormatStreamDetail(*info)
 	if !strings.Contains(detail, "ops events") || !strings.Contains(detail, "dept.events.>") {
 		t.Fatal(detail)
+	}
+	if !strings.Contains(detail, "org_id:         org_get1") {
+		t.Fatalf("want org_id in FormatStreamDetail, got:\n%s", detail)
+	}
+}
+
+func TestStreamInfo_DecodesOrgIDFromListAndGet(t *testing.T) {
+	var gotPath string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		switch r.URL.Path {
+		case "/v1/streams":
+			_ = json.NewEncoder(w).Encode([]map[string]any{
+				{"name": "SHARED", "subjects": []string{"dept.events.>"}, "messages": 0},
+				{"name": "ORGED", "org_id": "org_a", "subjects": []string{"dept.events.>"}, "messages": 1},
+			})
+		case "/v1/streams/ORGED":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"name": "ORGED", "org_id": "org_a", "subjects": []string{"dept.events.>"}, "messages": 1,
+			})
+		case "/v1/streams/SHARED":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"name": "SHARED", "subjects": []string{"dept.events.>"}, "messages": 0,
+			})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL}, nil)
+	streams, err := c.ListStreams(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(streams) != 2 {
+		t.Fatalf("streams=%+v", streams)
+	}
+	if streams[0].Name != "SHARED" || streams[0].OrgID != "" {
+		t.Fatalf("empty org_id must stay empty (shared persist), got %+v", streams[0])
+	}
+	if streams[1].Name != "ORGED" || streams[1].OrgID != "org_a" {
+		t.Fatalf("list must decode org_id, got %+v", streams[1])
+	}
+
+	got, err := c.GetStream(context.Background(), "ORGED")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotPath != "/v1/streams/ORGED" {
+		t.Fatalf("path=%q", gotPath)
+	}
+	if got == nil || got.OrgID != "org_a" {
+		t.Fatalf("get must decode org_id, got %+v", got)
+	}
+	shared, err := c.GetStream(context.Background(), "SHARED")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if shared.OrgID != "" {
+		t.Fatalf("get must not invent org_id, got %+v", shared)
+	}
+
+	printPop := NewStreamInfoPrint(*got)
+	if printPop.OrgID != "org_a" {
+		t.Fatalf("print DTO must copy org_id: %+v", printPop)
+	}
+	printEmpty := NewStreamInfoPrint(*shared)
+	if printEmpty.OrgID != "" {
+		t.Fatalf("print DTO must not invent org_id: %+v", printEmpty)
+	}
+	js := FormatStreamInfoJSON(printPop)
+	if !strings.Contains(js, `"org_id": "org_a"`) && !strings.Contains(js, `"org_id":"org_a"`) {
+		t.Fatalf("FormatStreamInfoJSON missing org_id:\n%s", js)
+	}
+	emptyJS := FormatStreamInfoJSON(printEmpty)
+	if !strings.Contains(emptyJS, `"org_id": ""`) && !strings.Contains(emptyJS, `"org_id":""`) {
+		t.Fatalf("FormatStreamInfoJSON must always-emit empty org_id:\n%s", emptyJS)
+	}
+
+	table := FormatStreams(streams)
+	if !strings.Contains(table, "ORG") || !strings.Contains(table, "org_a") {
+		t.Fatalf("FormatStreams missing ORG/org_a:\n%s", table)
+	}
+	detail := FormatStreamDetail(*got)
+	if !strings.Contains(detail, "org_id:         org_a") {
+		t.Fatalf("FormatStreamDetail missing org_id:\n%s", detail)
+	}
+	emptyDetail := FormatStreamDetail(*shared)
+	if !strings.Contains(emptyDetail, "org_id:         \n") {
+		t.Fatalf("FormatStreamDetail must emit empty org_id, not invent:\n%s", emptyDetail)
 	}
 }
 
@@ -226,6 +334,7 @@ func TestFormatStreamDetail_Fields(t *testing.T) {
 	age := int64(3600)
 	detail := FormatStreamDetail(StreamInfo{
 		Name:          "EVENTS",
+		OrgID:         "org_a",
 		Description:   "ops events",
 		Retention:     "limits",
 		RetentionTier: "temp",
@@ -241,6 +350,7 @@ func TestFormatStreamDetail_Fields(t *testing.T) {
 	for _, want := range []string{
 		"iomesh stream",
 		"name:           EVENTS",
+		"org_id:         org_a",
 		"description:    ops events",
 		"retention:      limits",
 		"retention_tier: temp",
@@ -271,6 +381,7 @@ func TestFormatStreamDetail_EmptyAlwaysEmit(t *testing.T) {
 	for _, want := range []string{
 		"iomesh stream",
 		"name:           SPARSE",
+		"org_id:         \n",
 		"description:    \n",
 		"retention:      \n",
 		"retention_tier: \n",
@@ -348,14 +459,14 @@ func TestStreamInfoPrint_AlwaysEmit(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, key := range []string{
-		"name", "description", "retention", "retention_tier", "partitions", "max_msgs", "max_age_sec",
+		"name", "org_id", "description", "retention", "retention_tier", "partitions", "max_msgs", "max_age_sec",
 		"messages", "first_seq", "last_seq", "created_at", "subjects",
 	} {
 		if _, ok := emptyObj[key]; !ok {
 			t.Fatalf("missing always-emit key %q in %s", key, emptyJS)
 		}
 	}
-	if emptyObj["description"] != "" || emptyObj["retention"] != "" || emptyObj["retention_tier"] != "" || emptyObj["created_at"] != "" {
+	if emptyObj["org_id"] != "" || emptyObj["description"] != "" || emptyObj["retention"] != "" || emptyObj["retention_tier"] != "" || emptyObj["created_at"] != "" {
 		t.Fatalf("empty strings want \"\"; got %v", emptyObj)
 	}
 	if emptyObj["partitions"].(float64) != 0 || emptyObj["max_msgs"].(float64) != 0 || emptyObj["max_age_sec"].(float64) != 0 {
@@ -372,6 +483,7 @@ func TestStreamInfoPrint_AlwaysEmit(t *testing.T) {
 	age := int64(3600)
 	pop := NewStreamInfoPrint(StreamInfo{
 		Name:          "EVENTS",
+		OrgID:         "org_a",
 		Description:   "ops events",
 		Retention:     "limits",
 		RetentionTier: "hot",
@@ -392,7 +504,7 @@ func TestStreamInfoPrint_AlwaysEmit(t *testing.T) {
 	if err := json.Unmarshal(popJS, &popObj); err != nil {
 		t.Fatal(err)
 	}
-	if popObj["description"] != "ops events" || popObj["retention"] != "limits" || popObj["retention_tier"] != "hot" {
+	if popObj["org_id"] != "org_a" || popObj["description"] != "ops events" || popObj["retention"] != "limits" || popObj["retention_tier"] != "hot" {
 		t.Fatalf("populated strings: %s", popJS)
 	}
 	if popObj["partitions"].(float64) != 2 || popObj["max_msgs"].(float64) != 1000 || popObj["max_age_sec"].(float64) != 3600 {
@@ -408,7 +520,7 @@ func TestStreamInfoPrint_AlwaysEmit(t *testing.T) {
 		t.Fatal(err)
 	}
 	wireS := string(wire)
-	if strings.Contains(wireS, "retention") || strings.Contains(wireS, "max_msgs") || strings.Contains(wireS, "description") {
+	if strings.Contains(wireS, "retention") || strings.Contains(wireS, "max_msgs") || strings.Contains(wireS, "description") || strings.Contains(wireS, "org_id") {
 		t.Fatalf("wire StreamInfo should omitempty empty optionals: %s", wireS)
 	}
 
@@ -447,7 +559,7 @@ func TestFormatStreamInfoJSON_KeysAndNewline(t *testing.T) {
 		t.Fatalf("unmarshal: %v\n%s", err, js)
 	}
 	for _, key := range []string{
-		"name", "description", "retention", "retention_tier", "partitions", "max_msgs", "max_age_sec",
+		"name", "org_id", "description", "retention", "retention_tier", "partitions", "max_msgs", "max_age_sec",
 		"messages", "first_seq", "last_seq", "created_at", "subjects",
 	} {
 		if _, ok := obj[key]; !ok {
@@ -497,6 +609,9 @@ func TestFormatStreamInfoListJSON_NilEmptyNotNull(t *testing.T) {
 	if _, ok := popList[0]["retention_tier"]; !ok {
 		t.Fatalf("list element missing retention_tier: %s", pop)
 	}
+	if _, ok := popList[0]["org_id"]; !ok {
+		t.Fatalf("list element missing org_id: %s", pop)
+	}
 }
 
 // s699/s702: FormatStreams always emits MAX_MSGS / MAX_AGE / RETENTION / TIER.
@@ -504,10 +619,10 @@ func TestFormatStreams_AlwaysEmitRetentionColumns(t *testing.T) {
 	max := int64(5000)
 	age := int64(604800)
 	out := FormatStreams([]StreamInfo{
-		{Name: "TEMP", Messages: 1, FirstSeq: 1, LastSeq: 1, Partitions: 1, Retention: "limits", RetentionTier: "temp"},
+		{Name: "TEMP", OrgID: "org_a", Messages: 1, FirstSeq: 1, LastSeq: 1, Partitions: 1, Retention: "limits", RetentionTier: "temp"},
 		{Name: "CAPPED", MaxMsgs: &max, MaxAgeSec: &age, Messages: 2, FirstSeq: 1, LastSeq: 2, Retention: "limits"},
 	})
-	for _, want := range []string{"MAX_MSGS", "MAX_AGE", "RETENTION", "TIER", "TEMP", "CAPPED", "5000", "604800", "temp"} {
+	for _, want := range []string{"MAX_MSGS", "MAX_AGE", "RETENTION", "TIER", "ORG", "TEMP", "CAPPED", "5000", "604800", "temp", "org_a"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("missing %q in:\n%s", want, out)
 		}
