@@ -103,6 +103,9 @@ func TestPreflight_MeshOrgEmptyNote(t *testing.T) {
 	if rep.MeshOrg != "" {
 		t.Fatalf("org must be empty honest, got %q", rep.MeshOrg)
 	}
+	if !rep.OK {
+		t.Fatalf("empty org must not hard-fail preflight: ok=%v notes=%v", rep.OK, rep.Notes)
+	}
 	text := FormatPreflightText(rep)
 	jsonOut := FormatPreflightJSON(rep)
 	if !strings.Contains(jsonOut, `"org": ""`) && !strings.Contains(jsonOut, `"org":""`) {
@@ -110,12 +113,18 @@ func TestPreflight_MeshOrgEmptyNote(t *testing.T) {
 	}
 	note := false
 	for _, n := range rep.Notes {
-		if strings.Contains(n, "org empty") && strings.Contains(n, "fail-open") {
+		if n == meshOrgEmptyNote || (strings.Contains(n, "org empty") &&
+			strings.Contains(n, "fail-open") &&
+			strings.Contains(n, "400") &&
+			strings.Contains(n, "X-IOMesh-Org")) {
 			note = true
 		}
 	}
 	if !note {
-		t.Fatalf("want N=2 isolation note when mesh-on + org-empty: %+v", rep.Notes)
+		t.Fatalf("want hosted-org isolation note when mesh-on + org-empty: %+v", rep.Notes)
+	}
+	if !strings.Contains(text, meshOrgEmptyNote) {
+		t.Fatalf("text must print empty-org note:\n%s", text)
 	}
 	if !strings.Contains(text, `org=""`) && !strings.Contains(text, `org="`) {
 		t.Fatalf("text must surface org residual:\n%s", text)

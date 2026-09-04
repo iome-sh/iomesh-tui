@@ -45,6 +45,12 @@ type PreflightReport struct {
 	State string `json:"state"`
 }
 
+// meshOrgEmptyNote is residual-honest when mesh is on and [iomesh].org /
+// IOMESH_ORG is empty. Hosted brokers isolate catalog/consume by X-IOMesh-Org
+// and may 400 without it. Local/dev stays fail-open — not a hard fail.
+// dual_write OFF · catalog ≠ Connected · not Memory GA.
+const meshOrgEmptyNote = "mesh org empty — X-IOMesh-Org omitted · hosted brokers isolate catalog/consume by org and may 400 without it · local/dev stays fail-open · set [iomesh].org or IOMESH_ORG · catalog ≠ Connected"
+
 // Preflight loads config and probes local memory when configured.
 // Fail-open: network errors become notes, not invented green.
 func Preflight(ctx context.Context, cfgPath string) (*PreflightReport, error) {
@@ -90,7 +96,10 @@ func Preflight(ctx context.Context, cfgPath string) (*PreflightReport, error) {
 		rep.Notes = append(rep.Notes, "dual_write is true — residual-honest local-primary prefers dual_write=false (audit only when intentionally enabled)")
 	}
 	if (rep.MeshEnabled || rep.MeshEndpoint != "") && rep.MeshOrg == "" {
-		rep.Notes = append(rep.Notes, "mesh org empty — X-IOMesh-Org omitted (fail-open after aion fetch-org filter · set [iomesh].org or IOMESH_ORG for N=2 isolation · never invent Connected)")
+		// Residual-honest note, not a hard fail: hosted brokers isolate
+		// catalog/consume by X-IOMesh-Org and may 400 without it. Local/dev
+		// stays fail-open.
+		rep.Notes = append(rep.Notes, meshOrgEmptyNote)
 	}
 
 	// Find memory server entry
