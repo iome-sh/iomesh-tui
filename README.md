@@ -27,12 +27,12 @@ Free local eval is three public MIT pieces. Mesh is optional. This is **not** ho
 
 | Piece | Published pin | Role |
 |-------|----------------|------|
-| [iomesh-tui](https://github.com/iome-sh/iomesh-tui) | **v1.0.0** (`go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.0.0` · [GitHub Release](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.0.0)) | Agent harness / TUI |
+| [iomesh-tui](https://github.com/iome-sh/iomesh-tui) | **v1.1.0** (`go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.1.0` · [GitHub Release](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.1.0)) | Agent harness / TUI |
 | [memory](https://github.com/iome-sh/memory) | **v1.5.7** | Local palace kernel |
 | [iomesh-memory-mcp](https://github.com/iome-sh/iomesh-memory-mcp) | **`@main`** until the first annotated `v*` tag (README there is honest: `/releases/latest` is 404) | MCP host over the kernel |
 
 ```bash
-go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.0.0
+go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.1.0
 go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main
 # kernel is a Go module consumed by the MCP host: github.com/iome-sh/memory@v1.5.7
 iomesh setup preflight   # or in the TUI: /setup · dual_write stays OFF
@@ -44,7 +44,7 @@ Do not sell the trio as hosted Memory GA. dual_write OFF. catalog ≠ Connected.
 - Security model (local sandbox defaults): [SECURITY.md](SECURITY.md)
 - Packaging boundary (MIT vs private platform): [oss-packaging-boundary.md](docs/architecture/oss-packaging-boundary.md)
 
-> **Status:** public open-source **v1.0.x** (stable SemVer 1.0). Shipped: agent loop · subagents · full-screen TUI · **heartbeat dashboard** · permissions · ACP · skills · MCP client · **local memory attach** · multi-model catalog (DeepSeek · Grok · Gemini · Vertex · Ollama). Optional mesh client when pointed at a broker you run or subscribe to. v1.0 is the MIT harness — not hosted Memory GA, not live HITL closed, not Knowledge/Analytics GA. dual_write OFF. catalog ≠ Connected.
+> **Status:** public open-source **v1.1.x** (stable SemVer 1.0+). Shipped: agent loop · subagents · full-screen TUI · **heartbeat dashboard** · permissions · ACP · skills · MCP client · **local memory attach** · multi-model catalog (DeepSeek · Grok · Gemini · Vertex · Ollama). Optional mesh client when pointed at a broker you run or subscribe to. v1.1 is the MIT harness — not hosted Memory GA, not live HITL closed, not Knowledge/Analytics GA. dual_write OFF. catalog ≠ Connected.
 
 [![iomesh-tui /dashboard — landing MeshConsole eval template](docs/assets/dashboard-eval.svg)](docs/architecture/tui.md#dashboard-heartbeat-live-feed)
 
@@ -120,7 +120,7 @@ cd iomesh-tui
 make build
 
 # Or install a released version (Go toolchain)
-go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.0.0
+go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.1.0
 # Pin matches latest known tag at docs write; GitHub Releases may be newer — see RELEASING.md
 # Multi-platform archives: GitHub Releases (GoReleaser on v* tags)
 # @latest is the latest semver tag (same as the pin above today), not untagged main
