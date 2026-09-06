@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/iome-sh/iomesh-tui/internal/iomesh"
 	"github.com/iome-sh/iomesh-tui/internal/mcp"
@@ -77,6 +78,110 @@ func TestIntegrationsPlan_OfflineFailOpen(t *testing.T) {
 	}
 	if !strings.Contains(out, "fail-open") || !strings.Contains(out, "s1237") {
 		t.Fatalf("%s", out)
+	}
+}
+
+// #391: configured mesh org_id is forwarded on plan_connector_setup (same source as status).
+func TestIntegrationsPlan_PassesOrgIDWhenConfigured(t *testing.T) {
+	gotArgs := make(chan map[string]any, 1)
+	cInR, cInW := io.Pipe()
+	cOutR, cOutW := io.Pipe()
+	go mockPlanConnectorSetupMCP(cOutW, cInR, gotArgs)
+
+	mut := false
+	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "mesh-scenario", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
+	defer cl.Close()
+	if err := cl.InitForTest(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	mgr := mcp.NewManagerEmpty(nil)
+	mgr.Attach(cl)
+	mesh := iomesh.New(iomesh.Config{Enabled: true, Endpoint: "http://127.0.0.1:9", OrgID: "org_test_plan"}, nil)
+	rt := &Runtime{mcp: mgr, mesh: mesh}
+
+	out, err := rt.IntegrationsPlan(context.Background(), "github")
+	if err != nil {
+		t.Fatalf("err=%v", err)
+	}
+	args := recvPlanCallArgs(t, gotArgs)
+	if got, _ := args["connector_id"].(string); got != "github" {
+		t.Fatalf("connector_id: got %v want github (args=%v)", args["connector_id"], args)
+	}
+	if got, _ := args["org_id"].(string); got != "org_test_plan" {
+		t.Fatalf("org_id: got %v want org_test_plan (args=%v)", args["org_id"], args)
+	}
+	assertIntegrationsPlanHITLHonesty(t, out)
+}
+
+// #391: empty / unset mesh org → omit org_id (fail-open). Offline path unchanged above.
+func TestIntegrationsPlan_OmitsOrgIDWhenEmpty(t *testing.T) {
+	cases := []struct {
+		name string
+		mesh *iomesh.Client
+	}{
+		{name: "nil-mesh"},
+		{name: "empty-org", mesh: iomesh.New(iomesh.Config{Enabled: true, Endpoint: "http://127.0.0.1:9", OrgID: ""}, nil)},
+		{name: "whitespace-org", mesh: iomesh.New(iomesh.Config{Enabled: true, Endpoint: "http://127.0.0.1:9", OrgID: "  \t"}, nil)},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			gotArgs := make(chan map[string]any, 1)
+			cInR, cInW := io.Pipe()
+			cOutR, cOutW := io.Pipe()
+			go mockPlanConnectorSetupMCP(cOutW, cInR, gotArgs)
+
+			mut := false
+			cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "mesh-scenario", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
+			defer cl.Close()
+			if err := cl.InitForTest(context.Background()); err != nil {
+				t.Fatal(err)
+			}
+
+			mgr := mcp.NewManagerEmpty(nil)
+			mgr.Attach(cl)
+			rt := &Runtime{mcp: mgr, mesh: tc.mesh}
+
+			out, err := rt.IntegrationsPlan(context.Background(), "github")
+			if err != nil {
+				t.Fatalf("err=%v", err)
+			}
+			args := recvPlanCallArgs(t, gotArgs)
+			if got, _ := args["connector_id"].(string); got != "github" {
+				t.Fatalf("connector_id: got %v want github (args=%v)", args["connector_id"], args)
+			}
+			if _, ok := args["org_id"]; ok {
+				t.Fatalf("org_id must be omitted when empty (args=%v)", args)
+			}
+			assertIntegrationsPlanHITLHonesty(t, out)
+		})
+	}
+}
+
+func recvPlanCallArgs(t *testing.T, ch <-chan map[string]any) map[string]any {
+	t.Helper()
+	select {
+	case args := <-ch:
+		if args == nil {
+			t.Fatal("plan_connector_setup arguments were nil")
+		}
+		return args
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for plan_connector_setup call")
+		return nil
+	}
+}
+
+func assertIntegrationsPlanHITLHonesty(t *testing.T, out string) {
+	t.Helper()
+	if !strings.Contains(out, "console.iome.sh/integrations") {
+		t.Fatalf("want portal HITL url: %s", out)
+	}
+	if strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent install green: %s", out)
+	}
+	if !strings.Contains(strings.ToLower(out), "hitl") && !strings.Contains(out, "never invent install green") {
+		t.Fatalf("want portal HITL / residual honesty: %s", out)
 	}
 }
 
@@ -839,6 +944,84 @@ func TestIntegrationsStatus_S1271OrgInstallsUnavailableFixture(t *testing.T) {
 	}
 	if strings.Contains(out, "installs: 0") {
 		t.Fatalf("must not invent empty-as-none: %s", out)
+	}
+}
+
+// mockPlanConnectorSetupMCP serves tools/list with plan_connector_setup and records
+// the tools/call arguments (used by #391 org_id pass-through tests).
+func mockPlanConnectorSetupMCP(w io.WriteCloser, r io.Reader, gotArgs chan<- map[string]any) {
+	defer w.Close()
+	dec := json.NewDecoder(r)
+	fixture := `{
+		"connector_id": "github",
+		"org_id": "",
+		"connector": {
+			"id":"github","label":"GitHub","status":"available","mesh_layer":"operational",
+			"ingress_type":"webhook","oauth_install_supported":false,"portal_path":"/integrations/github"
+		},
+		"portal_url": "https://console.iome.sh/integrations/github",
+		"oauth_install_supported": false,
+		"oauth_mode_hint": "",
+		"signing_headers_tool": "get_webhook_signing_headers",
+		"next_steps": ["Open portal", "Complete OAuth in browser"],
+		"honesty": {
+			"browser_hitl_required_for_oauth_complete": true,
+			"stub_oauth_not_live": true,
+			"pass_not_invent_install_green": true,
+			"dual_write_off": true,
+			"book_demo_off": true,
+			"no_invent_ga": true,
+			"agent_mcp_cannot_write_installs": true,
+			"session_portal_owns_install_crud": true,
+			"notes": [
+				"Browser HITL required for OAuth complete",
+				"PASS ≠ invent install green · dual_write OFF"
+			]
+		}
+	}`
+	for {
+		var req map[string]any
+		if err := dec.Decode(&req); err != nil {
+			return
+		}
+		id := req["id"]
+		method, _ := req["method"].(string)
+		if method == "notifications/initialized" || id == nil {
+			continue
+		}
+		var result any
+		switch method {
+		case "initialize":
+			result = map[string]any{"protocolVersion": "2024-11-05", "serverInfo": map[string]string{"name": "mesh", "version": "1"}}
+		case "tools/list":
+			result = map[string]any{"tools": []map[string]any{{
+				"name": "plan_connector_setup", "description": "Plan (v178)", "inputSchema": map[string]any{
+					"type": "object", "properties": map[string]any{
+						"connector_id": map[string]any{"type": "string"},
+						"org_id":       map[string]any{"type": "string"},
+					},
+					"required": []string{"connector_id"},
+				},
+			}}}
+		case "tools/call":
+			name := ""
+			var args map[string]any
+			if params, ok := req["params"].(map[string]any); ok {
+				name, _ = params["name"].(string)
+				args, _ = params["arguments"].(map[string]any)
+			}
+			if name == "plan_connector_setup" && gotArgs != nil {
+				gotArgs <- args
+			}
+			text := "unknown tool"
+			if name == "plan_connector_setup" {
+				text = fixture
+			}
+			result = map[string]any{"content": []map[string]any{{"type": "text", "text": text}}}
+		default:
+			result = map[string]any{}
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"jsonrpc": "2.0", "id": id, "result": result})
 	}
 }
 

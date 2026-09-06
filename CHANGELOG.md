@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 Honesty note (#394 / #395): older CHANGELOG lines may still mention a retired internal control-plane codename. Public language is **IOMESH_*** / mesh / CP / broker / iome. dual_write OFF · not Memory GA · catalog ≠ Connected.
 
 ### Added
+- **`/integrations plan` passes `org_id` (#391):** When `meshOrgID()` is non-empty, MCP `plan_connector_setup` args include `org_id` (same source as `/integrations status`). Empty org omits the field (fail-open). Portal HITL honesty unchanged (plan ≠ APPLY · catalog ≠ Connected · agent cannot write installs). dual_write OFF · not Memory GA.
 - **`X-IOMesh-Department` on MCP inject + mesh HTTP auth (#392):** `[iomesh].department` / `IOMESH_DEPARTMENT` stamps `X-IOMesh-Department` (1) on HTTP MCP when `inject_iomesh_context` is on and (2) on mesh client `auth` / entitlement headers alongside Org/Tenant/Workspace. Empty omit (never invent); never overwrite an explicit header. dual_write OFF · not Memory GA · catalog ≠ Connected. Does not twin console #498/#500.
 
 ### Changed
