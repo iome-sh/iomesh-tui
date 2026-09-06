@@ -7,15 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-Honesty note (#394 / #395): older CHANGELOG lines may still mention a retired internal control-plane codename. Public language is **IOMESH_*** / mesh / CP / broker / iome. dual_write OFF · not Memory GA · catalog ≠ Connected.
+### Added
+
+## [1.2.0] — 2026-09-06
+
+Opt-in `X-IOMesh-Department` on MCP inject + mesh HTTP, `/integrations plan` passes configured `org_id`, and public OSS naming scrub. dual_write OFF · catalog ≠ Connected · not Memory GA · department header opt-in.
 
 ### Added
-- **`/integrations plan` passes `org_id` (#391):** When `meshOrgID()` is non-empty, MCP `plan_connector_setup` args include `org_id` (same source as `/integrations status`). Empty org omits the field (fail-open). Portal HITL honesty unchanged (plan ≠ APPLY · catalog ≠ Connected · agent cannot write installs). dual_write OFF · not Memory GA.
-- **`X-IOMesh-Department` on MCP inject + mesh HTTP auth (#392):** `[iomesh].department` / `IOMESH_DEPARTMENT` stamps `X-IOMesh-Department` (1) on HTTP MCP when `inject_iomesh_context` is on and (2) on mesh client `auth` / entitlement headers alongside Org/Tenant/Workspace. Empty omit (never invent); never overwrite an explicit header. dual_write OFF · not Memory GA · catalog ≠ Connected. Does not twin console #498/#500.
+- **`X-IOMesh-Department` on MCP inject + mesh HTTP auth (#393):** `[iomesh].department` / `IOMESH_DEPARTMENT` stamps `X-IOMesh-Department` (1) on HTTP MCP when `inject_iomesh_context` is on and (2) on mesh client `auth` / entitlement headers alongside Org/Tenant/Workspace. Empty omit (never invent); never overwrite an explicit header. Opt-in — empty department is omitted. dual_write OFF · not Memory GA · catalog ≠ Connected.
+- **`/integrations plan` passes `org_id` (#397):** When `meshOrgID()` is non-empty, MCP `plan_connector_setup` args include `org_id` (same source as `/integrations status`). Empty org omits the field (fail-open). Portal HITL honesty unchanged (plan ≠ APPLY · catalog ≠ Connected · agent cannot write installs). dual_write OFF · not Memory GA.
 
 ### Changed
-
-- **Public naming (#394 / #395):** Scrub internal control-plane codename leaks from OSS TUI env, UX, skills, configs, and docs. Env `IOMESH_MEMORY_REPLAY_ENABLED` (one-release deprecated read of the old `AION_*` name in code only — not in `.env.example`). Skill `mesh-agent-onboarding`. MCP setup default `iomesh-platform`. Docs/config/UX use mesh / control-plane / broker / iome.sh. dual_write **OFF** · not Memory GA · catalog ≠ Connected.
+- **Public naming (#394 / #395):** Scrub internal control-plane codename leaks from OSS TUI env, UX, skills, configs, and docs. Env `IOMESH_MEMORY_REPLAY_ENABLED` (one-release deprecated read of the old name in code only — not in `.env.example`). Skill `mesh-agent-onboarding`. MCP setup default `iomesh-platform`. Docs/config/UX use mesh / control-plane / broker / iome.sh. Older CHANGELOG lines may still mention the retired name; public language is **IOMESH_*** / mesh / CP / broker / iome. dual_write **OFF** · not Memory GA · catalog ≠ Connected.
 
 ## [1.1.0] — 2026-09-04
 
@@ -878,7 +881,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/iome-sh/iomesh-tui/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/iome-sh/iomesh-tui/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v1.0.0
 [0.28.0]: https://github.com/iome-sh/iomesh-tui/releases/tag/v0.28.0
