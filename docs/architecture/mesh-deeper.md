@@ -73,7 +73,7 @@ iomesh mesh usage --json       # UsagePrint always-emit (s738; completeness pin 
 When `[iomesh]` is enabled and `emit_dept_streams = true` (default):
 
 1. Each LLM call → local `UsageMeter` **and** `POST /v1/streams/dept/publish` (subject = `dept.agent.llm_call`, base64 JSON envelope — same wire as [iomesh-client-sdk-go](https://github.com/iome-sh/iomesh-client-sdk-go) `EmitLLMCall` / Python SDK peer)
-2. Request headers: `X-IOMesh-Org` / `X-IOMesh-Workspace` when `[iomesh] org` / `workspace` are set (PlanGate / multi-tenant attribution)
+2. Request headers: `X-IOMesh-Org` / `X-IOMesh-Workspace` / `X-IOMesh-Department` when `[iomesh] org` / `workspace` / `department` are set (PlanGate / multi-tenant attribution)
 3. Envelope payload includes `tenant`, `org`, `workspace`, token counts, `est_usd`, model ids (errors redacted)
 
 Stage smoke:
@@ -97,9 +97,10 @@ policy_mode = "off"   # off | advisory | enforce
 emit_dept_streams = true
 # org = "org_…"        # X-IOMesh-Org on dept emit + memory
 # workspace = "ws_…"   # X-IOMesh-Workspace
+# department = "eng"   # X-IOMesh-Department on mesh HTTP auth + MCP inject
 ```
 
-Env: `IOMESH_INCLUDE_LINEAGE`, `IOMESH_POLICY_MODE`, `IOMESH_ORG`, `IOMESH_WORKSPACE`.
+Env: `IOMESH_INCLUDE_LINEAGE`, `IOMESH_POLICY_MODE`, `IOMESH_ORG`, `IOMESH_WORKSPACE`, `IOMESH_DEPARTMENT`.
 
 ## Dogfood
 

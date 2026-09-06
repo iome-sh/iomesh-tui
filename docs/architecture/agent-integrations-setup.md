@@ -246,7 +246,7 @@ No invented catalog rows. No invented plan success. No invented signing secrets.
 | **s1259** | free-floor peer | free-floor continuum peer (not dual-auth ship) |
 | **s1261** | aion | dual-auth org install read snapshot **candidacy** only (not claimed shipped in TUI) |
 | **s1263** | **iomesh-tui** | **Status org-installs residual honesty (`statusOrgInstallsSection` · always unavailable via agent MCP · portal HITL · never invent Connected / empty-as-none)** · free eng concurrent s1261+ |
-| **s1267** | **iomesh-tui** | **Opt-in MCP HTTP inject of `X-IOMesh-Tenant`/`Org`/`Workspace` from `[iomesh]`/`[memory]` (`inject_iomesh_context` · never overwrite explicit headers · stdio N/A)** · residual: inject ≠ install green · ≠ dual-auth ship |
+| **s1267** | **iomesh-tui** | **Opt-in MCP HTTP inject of `X-IOMesh-Tenant`/`Org`/`Workspace`/`Department` from `[iomesh]`/`[memory]` (`inject_iomesh_context` · never overwrite explicit headers · stdio N/A)** · residual: inject ≠ install green · ≠ dual-auth ship |
 | **s1268** | aion | MCP `list_org_connector_installs` (v179) residual-honest fail-open (`available=false` · `installs=null`) |
 | **s1271** | **iomesh-tui** | **Status wires `list_org_connector_installs` (`formatOrgInstallsSnapshot` · probe tool · org_id from mesh · fail-open residual · never invent empty-as-none / Connected)** |
 | **s1273** | **iomesh-tui** | **Skill + `<integrations>` guidance mention `list_org_connector_installs` residual fail-open · never invent empty-as-none · dual_auth candidacy open** |
@@ -255,6 +255,6 @@ No invented catalog rows. No invented plan success. No invented signing secrets.
 
 Uses whatever MCP servers are already attached via `[mcp]` (e.g. platform portal/scenario MCP once s1237 tools land). No new TUI config keys required for the fail-open path.
 
-**s1267 (optional multi-tenant context on HTTP MCP):** set `[mcp] inject_iomesh_context = true` (or per `[[mcp.servers]]`) so agent/scenario MCP calls can carry `X-IOMesh-Tenant` / `X-IOMesh-Org` / `X-IOMesh-Workspace` when configured. Default **false**. Does **not** invent install Connected, dual-auth install list, dual_write, or book-demo. Empty values are not sent. Stdio MCP has no HTTP headers. See [mcp.md](./mcp.md#multi-tenant-context-headers-s1267).
+**s1267 (optional multi-tenant context on HTTP MCP):** set `[mcp] inject_iomesh_context = true` (or per `[[mcp.servers]]`) so agent/scenario MCP calls can carry `X-IOMesh-Tenant` / `X-IOMesh-Org` / `X-IOMesh-Workspace` / `X-IOMesh-Department` when configured. Default **false**. Does **not** invent install Connected, dual-auth install list, dual_write, or book-demo. Empty values are not sent. Stdio MCP has no HTTP headers. See [mcp.md](./mcp.md#multi-tenant-context-headers-s1267).
 
 See also: [mcp.md](./mcp.md) · [memory-mcp.md](./memory-mcp.md) · [mesh-deeper.md](./mesh-deeper.md).

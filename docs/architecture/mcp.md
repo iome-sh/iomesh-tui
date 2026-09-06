@@ -88,12 +88,14 @@ Opt-in inject of iomesh multi-tenant context into **HTTP** MCP request headers a
 | `X-IOMesh-Tenant` | `[iomesh].tenant`, else `[memory].tenant` |
 | `X-IOMesh-Org` | `[iomesh].org` |
 | `X-IOMesh-Workspace` | `[iomesh].workspace` |
+| `X-IOMesh-Department` | `[iomesh].department` / `IOMESH_DEPARTMENT` |
 
 ```toml
 [iomesh]
 tenant = "acme"
 org = "org_…"   # paste from console Agent/MCP (org_ + cuid2)
 workspace = "ws_alpha"
+department = "eng"   # optional; empty omit (never invent)
 
 [mcp]
 enabled = true
@@ -112,7 +114,7 @@ url = "https://mcp.example.com/mcp"
 |-------|--------|
 | inject ≠ install APPLY / Connected / INSTALL_STORE green | Headers only; no install CRUD |
 | inject ≠ dual-auth install list shipped | Peer candidacy only; not claimed here |
-| empty values not sent | Never invent tenant/org/workspace |
+| empty values not sent | Never invent tenant/org/workspace/department |
 | default `inject_iomesh_context = false` | Avoids surprising auth/context changes |
 | stdio servers | No HTTP headers — inject is a no-op for command transport |
 | dual_write / book-demo / GA | OFF · OFF · not invented |

@@ -4,8 +4,8 @@ import "github.com/iome-sh/iomesh-tui/internal/mcp"
 
 // BuildMCPServerConfig maps one [[mcp.servers]] entry to mcp.ServerConfig.
 // When inject_iomesh_context is enabled (global [mcp] or per-server), merges
-// non-empty X-IOMesh-Tenant/Org/Workspace from IOMeshMCPContext without overwriting
-// explicit headers (s1267 residual-honest opt-in).
+// non-empty X-IOMesh-Tenant/Org/Workspace/Department from IOMeshMCPContext without
+// overwriting explicit headers (s1267 residual-honest opt-in).
 //
 // Residual honesty:
 //   - inject ≠ install APPLY / Connected / INSTALL_STORE green
@@ -38,8 +38,8 @@ func (c *Config) BuildMCPServerConfig(s MCPServerTOML) mcp.ServerConfig {
 		}
 	}
 	if c != nil && c.MCP.WantsInjectIOMeshContext(s) {
-		tenant, org, workspace := c.IOMeshMCPContext()
-		sc.Headers = mcp.ApplyIOMeshContextHeaders(sc.Headers, tenant, org, workspace)
+		tenant, org, workspace, department := c.IOMeshMCPContext()
+		sc.Headers = mcp.ApplyIOMeshContextHeaders(sc.Headers, tenant, org, workspace, department)
 	}
 	return sc
 }
