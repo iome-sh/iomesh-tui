@@ -801,7 +801,7 @@ func parseOpsDigestJSON(raw string, maxBytes int) (*iomesh.MemoryOpsDigestResult
 	return &res, formatOpsDigest(&res, maxBytes)
 }
 
-// MemoryFactsAsOfOpts for opt-in bi-temporal lite validity listing (s1276 / aion Beta K4 lite).
+// MemoryFactsAsOfOpts for opt-in bi-temporal lite validity listing (s1276 / mesh Beta K4 lite).
 // AsOf is required (RFC3339). Entity, Query, SessionID, Limit are optional.
 // Does NOT run on default auto-recall (slash/CLI opt-in only).
 //
@@ -820,13 +820,13 @@ type MemoryFactsAsOfOpts struct {
 // Locked: bi-temporal lite · not full dual-clock Graphiti · not Memory GA · dual_write OFF.
 const factsAsOfHonestyFooter = "honesty: bi-temporal lite · not full dual-clock Graphiti · not Memory GA · dual_write OFF"
 
-// memoryFactsAsOfResult is the aion MCP memory_facts_as_of JSON wire shape.
+// memoryFactsAsOfResult is the mesh MCP memory_facts_as_of JSON wire shape.
 type memoryFactsAsOfResult struct {
 	AsOf  string             `json:"as_of"`
 	Facts []iomesh.MemoryHit `json:"facts"`
 }
 
-// MemoryFactsAsOf lists palace entries valid at as_of (s1276 · aion Beta K4 lite).
+// MemoryFactsAsOf lists palace entries valid at as_of (s1276 · mesh Beta K4 lite).
 // Prefers MCP tool memory_facts_as_of on the configured memory server (MCP-first;
 // no lean HTTP facts_as_of route on platform today).
 // Returns human-readable facts + honesty footer. Empty facts is honest empty
@@ -841,7 +841,7 @@ func (rt *Runtime) MemoryFactsAsOf(ctx context.Context, opts MemoryFactsAsOfOpts
 	if asOf == "" {
 		return "", fmt.Errorf("as_of required (RFC3339)")
 	}
-	// Soft-validate RFC3339 / RFC3339Nano; aion parseRFC3339Flexible is the authority at the tool.
+	// Soft-validate RFC3339 / RFC3339Nano; broker parseRFC3339Flexible is the authority at the tool.
 	if _, err := time.Parse(time.RFC3339, asOf); err != nil {
 		if _, err2 := time.Parse(time.RFC3339Nano, asOf); err2 != nil {
 			return "", fmt.Errorf("as_of must be RFC3339: %w", err)
@@ -980,7 +980,7 @@ func formatFactsAsOfJSON(raw string, maxBytes int) string {
 	return formatFactsAsOf(asOf, res.Facts, maxBytes)
 }
 
-// MemorySupersedeOpts for opt-in HITL A3 lite entity supersession (s1282 / aion s640).
+// MemorySupersedeOpts for opt-in HITL A3 lite entity supersession (s1282 / mesh s640).
 // Entity is required. AsOf is optional RFC3339 (empty → server default now).
 // Confirm must be true to call MCP — accidental mutation is refused residual-honestly.
 //
@@ -998,7 +998,7 @@ type MemorySupersedeOpts struct {
 // dual_write OFF · mutating (valid_until close).
 const supersedeHonestyFooter = "honesty: A3 lite supersede · not NLP contradiction · not full dual-clock Graphiti · not Memory GA · dual_write OFF · mutating (valid_until close)"
 
-// memorySupersedeResult is the aion MCP memory_supersede_entity JSON wire shape (s640).
+// memorySupersedeResult is the mesh MCP memory_supersede_entity JSON wire shape (s640).
 // Output: { entity, as_of, superseded_count }.
 type memorySupersedeResult struct {
 	Entity          string `json:"entity"`
@@ -1006,7 +1006,7 @@ type memorySupersedeResult struct {
 	SupersededCount int    `json:"superseded_count"`
 }
 
-// MemorySupersede closes open validity windows for entity tags (s1282 · aion A3 lite / s640).
+// MemorySupersede closes open validity windows for entity tags (s1282 · mesh A3 lite / s640).
 // Prefers MCP tool memory_supersede_entity on the configured memory server (MCP-first;
 // no lean HTTP supersede invent). Mutating: sets valid_until=as_of for open facts tagged
 // with the entity — NOT NLP contradiction detection; NOT full dual-clock Graphiti; NOT Memory GA.
@@ -1024,7 +1024,7 @@ func (rt *Runtime) MemorySupersede(ctx context.Context, opts MemorySupersedeOpts
 	}
 	asOf := strings.TrimSpace(opts.AsOf)
 	if asOf != "" {
-		// Soft-validate RFC3339 / RFC3339Nano; aion is the authority at the tool.
+		// Soft-validate RFC3339 / RFC3339Nano; the broker is the authority at the tool.
 		if _, err := time.Parse(time.RFC3339, asOf); err != nil {
 			if _, err2 := time.Parse(time.RFC3339Nano, asOf); err2 != nil {
 				return "", fmt.Errorf("as_of must be RFC3339: %w", err)
@@ -1140,7 +1140,7 @@ func formatSupersedeJSON(raw string) string {
 	return formatSupersede(entity, asOf, res.SupersededCount)
 }
 
-// MemoryPatternsOpts for opt-in ops-pulse pattern listing (s1287 / aion s138 T2 · s789 Beta).
+// MemoryPatternsOpts for opt-in ops-pulse pattern listing (s1287 / mesh s138 T2 · s789 Beta).
 // Limit optional (zero → config Limit, default 8). Does NOT run on default auto-recall.
 //
 // MCP-first: platform ships MCP tool memory_patterns_list; do not invent lean HTTP patterns routes.
@@ -1150,7 +1150,7 @@ type MemoryPatternsOpts struct {
 	Limit int
 }
 
-// MemoryAnomaliesOpts for opt-in ops-pulse anomaly listing (s1287 / aion s138 T2 · s789 Beta).
+// MemoryAnomaliesOpts for opt-in ops-pulse anomaly listing (s1287 / mesh s138 T2 · s789 Beta).
 // Limit optional (zero → config Limit, default 8). Does NOT run on default auto-recall.
 //
 // MCP-first: platform ships MCP tool memory_anomalies_list; do not invent lean HTTP anomalies routes.
@@ -1166,7 +1166,7 @@ type MemoryAnomaliesOpts struct {
 // (s138 T2 · s789 Beta framing; offline analysis; empty ≠ invent patterns/anomalies.)
 const pulseHonestyFooter = "honesty: ops pulse Beta · suggestive only · not medical diagnosis · not OTel host metrics · not invent GA window engine · dual_write OFF · not Memory GA"
 
-// pulseSignal is a defensive wire shape for aion PatternSignal / AnomalySignal.
+// pulseSignal is a defensive wire shape for mesh PatternSignal / AnomalySignal.
 // Typical fields: subject, kind, count, score, summary/note, window — all optional for residual-honest parse.
 type pulseSignal struct {
 	ID      string  `json:"id"`
@@ -1187,7 +1187,7 @@ type memoryAnomaliesResult struct {
 	Anomalies []pulseSignal `json:"anomalies"`
 }
 
-// MemoryPatterns lists recurring subject/keyphrase ops-pulse signals (s1287 · aion s138 T2).
+// MemoryPatterns lists recurring subject/keyphrase ops-pulse signals (s1287 · mesh s138 T2).
 // Prefers MCP tool memory_patterns_list on the configured memory server (MCP-first;
 // no lean HTTP patterns invent). Returns human-readable lines + honesty footer.
 // Empty list is honest empty (patterns: (none)) — never invents signals.
@@ -1240,7 +1240,7 @@ func (rt *Runtime) MemoryPatterns(ctx context.Context, opts MemoryPatternsOpts) 
 	return truncateBytes(raw+"\n"+pulseHonestyFooter, maxBytes), nil
 }
 
-// MemoryAnomalies lists rate/burst ops-pulse signals (s1287 · aion s138 T2).
+// MemoryAnomalies lists rate/burst ops-pulse signals (s1287 · mesh s138 T2).
 // Prefers MCP tool memory_anomalies_list on the configured memory server (MCP-first;
 // no lean HTTP anomalies invent). Returns human-readable lines + honesty footer.
 // Empty list is honest empty (anomalies: (none)) — never invents signals.
@@ -1454,7 +1454,7 @@ func formatAnomaliesJSON(raw string, maxBytes int) string {
 	return formatAnomalies(res.Anomalies, maxBytes)
 }
 
-// MemoryTimelineOpts for opt-in temporal timeline listing (s1296 / aion memory_timeline).
+// MemoryTimelineOpts for opt-in temporal timeline listing (s1296 / mesh memory_timeline).
 // Since, Until, Query, SessionID, Limit optional. Does NOT run on default auto-recall.
 //
 // MCP-first: platform ships MCP tool memory_timeline; there is no lean HTTP
@@ -1486,7 +1486,7 @@ const timelineHonestyFooter = "honesty: temporal timeline · filters before limi
 // Locked: Palace tier counts residual · not Memory GA · not auto-compact product · dual_write OFF.
 const compactStatusHonestyFooter = "honesty: Palace tier counts residual · not Memory GA · not auto-compact product · dual_write OFF · MCP-first (no lean HTTP invent)"
 
-// timelineEntry is a defensive wire shape for aion memory_timeline entries (memoryHit-like).
+// timelineEntry is a defensive wire shape for mesh memory_timeline entries (memoryHit-like).
 // Accepts id/summary/full/score + timestamp or event_time when present.
 type timelineEntry struct {
 	ID        string  `json:"id"`
@@ -1501,7 +1501,7 @@ type memoryTimelineResult struct {
 	Entries []timelineEntry `json:"entries"`
 }
 
-// memoryCompactStatusResult is the aion MCP memory_compact_status JSON wire shape.
+// memoryCompactStatusResult is the mesh MCP memory_compact_status JSON wire shape.
 // stats may be PascalCase (palace.MemoryStats has no json tags) or snake_case —
 // parse defensively via raw map + helper fields.
 type memoryCompactStatusResult struct {
@@ -1515,7 +1515,7 @@ type memoryCompactStatusResult struct {
 	TotalEntries    *int `json:"total_entries"`
 }
 
-// MemoryTimeline lists palace entries ordered by event time (s1296 · aion memory_timeline).
+// MemoryTimeline lists palace entries ordered by event time (s1296 · mesh memory_timeline).
 // Prefers MCP tool memory_timeline on the configured memory server (MCP-first;
 // no lean HTTP timeline route on platform today). Returns human-readable entries + honesty footer.
 // Empty list is honest empty (entries: (none)) — never invents memories.
@@ -1562,7 +1562,7 @@ func (rt *Runtime) MemoryTimeline(ctx context.Context, opts MemoryTimelineOpts) 
 		sid = rt.memorySessionID()
 	}
 	if sid != "" {
-		// Pass-through when set; aion timeline may ignore unknown session_id today.
+		// Pass-through when set; broker timeline may ignore unknown session_id today.
 		args["session_id"] = sid
 	}
 	start := time.Now()
@@ -1585,7 +1585,7 @@ func (rt *Runtime) MemoryTimeline(ctx context.Context, opts MemoryTimelineOpts) 
 	return truncateBytes(raw+"\n"+timelineHonestyFooter, maxBytes), nil
 }
 
-// MemoryCompactStatus returns Palace tier counts + last_compaction (s1296 · aion memory_compact_status).
+// MemoryCompactStatus returns Palace tier counts + last_compaction (s1296 · mesh memory_compact_status).
 // Prefers MCP tool memory_compact_status on the configured memory server (MCP-first;
 // no lean HTTP invent). Read-only residual — not auto-compact product · not Memory GA.
 // Offline / tool failure is residual-honest fail-open messaging. Opt-in only — not auto-recall.
@@ -1876,7 +1876,7 @@ func compactStatusString(m map[string]any, keys ...string) (string, bool) {
 	return "", false
 }
 
-// MemoryTriggerCompactOpts for opt-in HITL RecMem compaction advisory (s1311 / aion memory_trigger_compact).
+// MemoryTriggerCompactOpts for opt-in HITL RecMem compaction advisory (s1311 / mesh memory_trigger_compact).
 // Confirm must be true to call MCP — accidental mutation is refused residual-honestly.
 //
 // MCP-first: platform ships MCP tool memory_trigger_compact (publishes memory.compact.trigger
@@ -1890,14 +1890,14 @@ type MemoryTriggerCompactOpts struct {
 // Locked: RecMem advisory · not invent compaction green · dual_write OFF · not Memory GA · mutating HITL.
 const triggerCompactHonestyFooter = "honesty: RecMem advisory · not invent compaction green · dual_write OFF · not Memory GA · mutating HITL · MCP-first"
 
-// memoryTriggerCompactResult is the aion MCP memory_trigger_compact JSON wire shape.
+// memoryTriggerCompactResult is the mesh MCP memory_trigger_compact JSON wire shape.
 // Output: { triggered, cluster_size }.
 type memoryTriggerCompactResult struct {
 	Triggered   bool `json:"triggered"`
 	ClusterSize int  `json:"cluster_size"`
 }
 
-// MemoryTriggerCompact publishes a RecMem compaction advisory (s1311 · aion memory_trigger_compact).
+// MemoryTriggerCompact publishes a RecMem compaction advisory (s1311 · mesh memory_trigger_compact).
 // Prefers MCP tool memory_trigger_compact on the configured memory server (MCP-first;
 // no lean HTTP invent). Mutating advisory for RecMem worker — NOT auto-compact product green;
 // NOT Memory GA; dual_write OFF.
@@ -2112,7 +2112,7 @@ func (rt *Runtime) MemoryAdvancedStatus(ctx context.Context) (string, error) {
 	return strings.TrimSpace(b.String()), nil
 }
 
-// MemorySemanticOpts for opt-in tier-4 semantic facts search (s1301 / aion memory_search_semantic).
+// MemorySemanticOpts for opt-in tier-4 semantic facts search (s1301 / mesh memory_search_semantic).
 // Query required. Limit optional (zero → config Limit). Does NOT run on default auto-recall.
 //
 // MCP-first: platform ships MCP tool memory_search_semantic; there is no lean HTTP
@@ -2123,7 +2123,7 @@ type MemorySemanticOpts struct {
 	Limit int
 }
 
-// MemoryIngestEventOpts for opt-in ops/telemetry event ingest (s1301 / aion memory_ingest_event).
+// MemoryIngestEventOpts for opt-in ops/telemetry event ingest (s1301 / mesh memory_ingest_event).
 // Subject + Content required. Optional EventTime, SessionID, SessionSeq, Severity, SourceStream.
 // This is **not** a conversation turn (use MemoryIngestTurn / /memory ingest for turns).
 //
@@ -2148,7 +2148,7 @@ const semanticHonestyFooter = "honesty: tier-4 semantic facts residual · not Me
 // Locked: s138 T1 temporal event telemetry · not conversation turn · not Memory GA · dual_write OFF · MCP-first.
 const ingestEventHonestyFooter = "honesty: s138 T1 temporal event telemetry · not conversation turn · not Memory GA · dual_write OFF · MCP-first"
 
-// semanticFact is a defensive wire shape for aion memory_search_semantic facts.
+// semanticFact is a defensive wire shape for mesh memory_search_semantic facts.
 // Accepts id/summary/full/score when present (memoryHit-like).
 type semanticFact struct {
 	ID      string  `json:"id"`
@@ -2161,7 +2161,7 @@ type memorySemanticResult struct {
 	Facts []semanticFact `json:"facts"`
 }
 
-// memoryIngestEventResult is the aion MCP memory_ingest_event JSON wire shape.
+// memoryIngestEventResult is the mesh MCP memory_ingest_event JSON wire shape.
 // Only fields present on the wire are shown — never invent memory_id.
 type memoryIngestEventResult struct {
 	MemoryID  string `json:"memory_id"`
@@ -2170,7 +2170,7 @@ type memoryIngestEventResult struct {
 	Audited   *bool  `json:"audited"`
 }
 
-// MemorySearchSemantic lists tier-4 semantic facts for a query (s1301 · aion memory_search_semantic).
+// MemorySearchSemantic lists tier-4 semantic facts for a query (s1301 · mesh memory_search_semantic).
 // Prefers MCP tool memory_search_semantic on the configured memory server (MCP-first;
 // no lean HTTP invent). Returns human-readable facts + honesty footer.
 // Empty list is honest empty (facts: (none)) — never invents memories.
@@ -2227,7 +2227,7 @@ func (rt *Runtime) MemorySearchSemantic(ctx context.Context, opts MemorySemantic
 	return truncateBytes(raw+"\n"+semanticHonestyFooter, maxBytes), nil
 }
 
-// MemoryIngestEvent ingests an ops/telemetry event (s1301 · aion memory_ingest_event · s138 T1).
+// MemoryIngestEvent ingests an ops/telemetry event (s1301 · mesh memory_ingest_event · s138 T1).
 // Prefers MCP tool memory_ingest_event on the configured memory server (MCP-first).
 // Subject + Content required. This is **not** a conversation turn — use MemoryIngestTurn for turns.
 // dual_write is intentionally not invoked (MCP-first residual; dual_write OFF for this surface).

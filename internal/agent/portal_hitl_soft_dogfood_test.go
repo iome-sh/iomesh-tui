@@ -147,7 +147,7 @@ func TestPortalHITLSoftDogfoodNeedles_CoverBoard(t *testing.T) {
 	ResetPortalHITLSoftDogfoodSessionState()
 	t.Cleanup(ResetPortalHITLSoftDogfoodSessionState)
 
-	board := AionAgentOnboardingNextPortalHITLLane()
+	board := MeshAgentOnboardingNextPortalHITLLane()
 	for _, want := range portalHITLSoftDogfoodNeedles {
 		if !strings.Contains(board, want) {
 			t.Fatalf("portal-hitl board missing soft-dogfood needle %q in:\n%s", want, board)

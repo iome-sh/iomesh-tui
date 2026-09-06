@@ -5,7 +5,7 @@ description: Residual-honest draft-only GTM AI agent roles (Orchestrator · Cont
 
 # GTM draft-only agent (residual-honest)
 
-Builtin playbook for **GTM specialized AI agent roles** in iomesh-tui: produce **drafts and plans only**. External publish, SNS/email send, and commercial CRM writes stay **human-gated**. Aligns with aion **hermes-grok-marketing-sales-pipeline** Phase 2 local hard gates (drafts only · not fleet runtime · not GA).
+Builtin playbook for **GTM specialized AI agent roles** in iomesh-tui: produce **drafts and plans only**. External publish, SNS/email send, and commercial CRM writes stay **human-gated**. Aligns with mesh **hermes-grok-marketing-sales-pipeline** Phase 2 local hard gates (drafts only · not fleet runtime · not GA).
 
 This skill is **guidance only** — not install APPLY, not Memory GA, not Agent Plugins GA, not auto-publish product.
 
@@ -110,6 +110,6 @@ For **institutional recall** on the operator box, optional **Memory Ops Pack** /
 - **s1347:** runtime injects residual-honest `<gtm-draft-only>` system note on `AttachSkills` (`GtmDraftOnlyAgentGuidanceNote`) — same mold as integrations / memory-advanced notes.
 - Companion builtin: `connector-integrations-setup` (list/plan → portal HITL).
 - Companion builtin: `memory-advanced-agent` (opt-in advanced memory · dual_write OFF · not Memory GA).
-- Aion SSOT hard gates: hermes-grok-marketing-sales-pipeline Phase 2 local (drafts only · human publish · human CRM commercial).
+- Mesh SSOT hard gates: hermes-grok-marketing-sales-pipeline Phase 2 local (drafts only · human publish · human CRM commercial).
 - Slash residual honesty: `/integrations list|plan|status|signing`.
 - Skills are **not** Agent Plugins — see architecture skills + agent-plugins docs.

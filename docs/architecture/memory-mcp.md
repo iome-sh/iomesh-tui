@@ -8,10 +8,10 @@ Product edge ships **`iomesh-memory-mcp`** (stdio **and** streamable HTTP; publi
 |------|---------|
 | `memory_ingest_turn` | Persist a conversation turn (tiered Palace) |
 | `memory_retrieve` | Query memories (optional `session_id`, `since`/`until`, `session_seq`) |
-| `memory_related` | Multi-hop lite related recall (`seed_entity` / `query` / `max_hops`; optional `prefer_shorter_hops` omit=true · s1135 + s1281 / aion s1277) |
+| `memory_related` | Multi-hop lite related recall (`seed_entity` / `query` / `max_hops`; optional `prefer_shorter_hops` omit=true · s1135 + s1281 / mesh s1277) |
 | `ops_digest_export` | Ops heartbeat digest export (`window` / `horizon` / `limit`; s1200 opt-in; MCP + HTTP) |
 | `memory_facts_as_of` | Bi-temporal lite validity listing (`as_of` required RFC3339; optional `entity` / `query` / `session_id` / `limit`; s1276 opt-in; **MCP-first** — no lean HTTP invent) |
-| `memory_supersede_entity` | A3 lite entity supersession (`entity` required; optional `as_of`; **HITL** · s1282 / aion s640; **MCP-first** — no lean HTTP invent) |
+| `memory_supersede_entity` | A3 lite entity supersession (`entity` required; optional `as_of`; **HITL** · s1282 / mesh s640; **MCP-first** — no lean HTTP invent) |
 | `memory_patterns_list` | Ops pulse Beta pattern list (shipped s1287 · MCP; no lean HTTP invent) |
 | `memory_anomalies_list` | Ops pulse Beta anomaly list (shipped s1287 · MCP; no lean HTTP invent) |
 | `memory_timeline` | Temporal timeline slice (s1296 slash: `/memory timeline`; MCP-first) |
@@ -35,27 +35,27 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 | **3+** | **done (v0.4.0 agent)** | Agent auto-recall + `/memory recall` prefer sync HTTP when mesh **or** `[memory].endpoint` sidecar is set; MCP fallback |
 | **3 temporal (s1068)** | **done** | Sync retrieve options: `since`/`until`/`session_seq` on lean HTTP + auto-recall config + `/memory recall` flags |
 | **3 related multi-hop (s1135)** | **done (opt-in)** | Sync `POST /v1|/v5/memory/related` + MCP `memory_related` fallback; `/memory related`; default auto-recall stays single-hop |
-| **3 related hop ranking (s1281)** | **done (opt-in)** | `prefer_shorter_hops` on HTTP + MCP `memory_related` (omit = kernel default **true**; `--legacy-sort` → false); aion s1277 parity; hop ranking path-aware lite · multi-hop lite ≠ graph RAG |
+| **3 related hop ranking (s1281)** | **done (opt-in)** | `prefer_shorter_hops` on HTTP + MCP `memory_related` (omit = kernel default **true**; `--legacy-sort` → false); mesh s1277 parity; hop ranking path-aware lite · multi-hop lite ≠ graph RAG |
 | **3 ops digest (s1200)** | **done (opt-in)** | Sync `POST /v1|/v5/memory/ops_digest` + MCP `ops_digest_export` fallback; `/memory digest`; ops GA-path · knowledge/analytical Beta |
-| **3 facts-as-of (s1276)** | **done (opt-in · MCP-first)** | MCP `memory_facts_as_of` (aion Beta K4 lite); `/memory facts-as-of`; bi-temporal lite · not full dual-clock Graphiti · no lean HTTP route today |
-| **3 supersede HITL (s1282)** | **done (opt-in · MCP-first · HITL)** | MCP `memory_supersede_entity` (aion A3 lite / s640); `/memory supersede --entity … --i-confirm`; mutating closes `valid_until`; not NLP contradiction · no lean HTTP invent |
+| **3 facts-as-of (s1276)** | **done (opt-in · MCP-first)** | MCP `memory_facts_as_of` (mesh Beta K4 lite); `/memory facts-as-of`; bi-temporal lite · not full dual-clock Graphiti · no lean HTTP route today |
+| **3 supersede HITL (s1282)** | **done (opt-in · MCP-first · HITL)** | MCP `memory_supersede_entity` (mesh A3 lite / s640); `/memory supersede --entity … --i-confirm`; mutating closes `valid_until`; not NLP contradiction · no lean HTTP invent |
 | **3 patterns/anomalies (s1287)** | **done (opt-in · MCP ops pulse Beta)** | `/memory patterns|anomalies` + MCP `memory_patterns_list` / `memory_anomalies_list` when present; ops pulse Beta · not medical · no invent GA window engine · no lean HTTP invent |
 | **3 advanced agent skill (s1288)** | **done (docs + builtin skill)** | Builtin skill `memory-advanced-agent` residual-honest playbook for advanced surfaces; docs inventory lock; skill-only (no product path invent) |
 | **3 advanced agent system note (s1291)** | **done (AttachMCP inject)** | Residual-honest `<memory-advanced>` system note (`MemoryAdvancedAgentGuidanceNote`) injected on `AttachMCP` (mirror integrations s1251); steers opt-in advanced memory locks |
 | **3 timeline + compact-status (s1296)** | **done (opt-in · MCP-first · read-only compact)** | `/memory timeline` → MCP `memory_timeline`; `/memory compact-status` → MCP `memory_compact_status`; temporal timeline · filters before limit · Palace tier counts residual · not Memory GA · dual_write OFF · mutating compact deferred to s1311 HITL · no lean HTTP invent |
 | **3 semantic + ingest-event (s1301)** | **done (opt-in · MCP-first)** | `/memory semantic` → MCP `memory_search_semantic` (tier-4 semantic facts residual · empty ≠ invent); `/memory ingest-event` → MCP `memory_ingest_event` (s138 T1 temporal event telemetry · not conversation turn · never invent memory_id); not Memory GA · dual_write OFF · no lean HTTP invent |
-| **3 local-edge Docker attach docs (s1308)** | **done (docs only)** | Operator/agent docs for attaching **local-edge Docker** Memory MCP streamable HTTP (prefer product `iomesh-memory-mcp` compose; peer aion **s1306** private compose residual + **s1307**); TUI `[[mcp.servers]]` URL attach · dual_write OFF · local-primary · hosted Palace sunset · **not** Memory GA · docker edge ≠ invent GA · no public registry tag claim |
-| **3 edge OSS Option A install honesty (s1453)** | **done (docs + onboard memory lane)** | Residual-honest edge install story: product MCP host **`iomesh-memory-mcp`** · kernel `github.com/iome-sh/memory` · aion broker **private** · dual_write OFF · not Memory GA · Palace sunset · mesh optional for pull · **OSS path ≠ invent public flip complete** |
-| **3 M2 lean host attach tip (s1458)** | **done (docs + onboard memory lane)** | Residual-honest **M2 lean edge host** attach when built from `github.com/iome-sh/iomesh-memory-mcp`: go run/build · streamable HTTP `http://127.0.0.1:8080/mcp` or stdio · dual_write OFF · not Memory GA · aion broker private · scaffold/M2 · tool parity may be lean vs platform residual · **PASS ≠ invent full platform sidecar parity** · keeps Option A honesty |
+| **3 local-edge Docker attach docs (s1308)** | **done (docs only)** | Operator/agent docs for attaching **local-edge Docker** Memory MCP streamable HTTP (prefer product `iomesh-memory-mcp` compose; peer mesh **s1306** private compose residual + **s1307**); TUI `[[mcp.servers]]` URL attach · dual_write OFF · local-primary · hosted Palace sunset · **not** Memory GA · docker edge ≠ invent GA · no public registry tag claim |
+| **3 edge OSS Option A install honesty (s1453)** | **done (docs + onboard memory lane)** | Residual-honest edge install story: product MCP host **`iomesh-memory-mcp`** · kernel `github.com/iome-sh/memory` · control-plane / broker **private** · dual_write OFF · not Memory GA · Palace sunset · mesh optional for pull · **OSS path ≠ invent public flip complete** |
+| **3 M2 lean host attach tip (s1458)** | **done (docs + onboard memory lane)** | Residual-honest **M2 lean edge host** attach when built from `github.com/iome-sh/iomesh-memory-mcp`: go run/build · streamable HTTP `http://127.0.0.1:8080/mcp` or stdio · dual_write OFF · not Memory GA · control-plane / broker private · scaffold/M2 · tool parity may be lean vs platform residual · **PASS ≠ invent full platform sidecar parity** · keeps Option A honesty |
 | **3 M3 edge dogfood tip (s1463)** | **done (docs + onboard memory lane)** | Residual-honest **M3 edge dogfood** TUI↔`iomesh-memory-mcp` path: build/run from product repo · `docker compose up --build` → image `iomesh-memory-mcp:local` · attach `http://127.0.0.1:8080/mcp` · healthz · stdio alternate · peer mcp `make edge-dogfood-gate` (mention only) · dual_write OFF · not Memory GA · **offline dogfood tip ≠ invent live dogfood as green** · **PASS ≠ invent full platform sidecar parity** · residual PASS ≠ invent public flip (edge packs public as of s1478) · M3 after M2 · M4 later deliberate |
-| **3 M4 public flip readiness tip (s1469)** | **done (docs + onboard memory lane)** | Residual-honest **M4 public flip readiness** tip history: order kernel `github.com/iome-sh/memory` **first** · then `iomesh-memory-mcp` · readiness docs/gates in those repos (mention only) · **readiness tip ≠ invent public flip complete** · residual PASS ≠ invent public flip · dual_write OFF · not Memory GA · aion broker private · M5 signing later after flip · **s1478 supersedes operator tip** (edge packs public) · keeps Option A + M2 + M3 honesty |
-| **3 public product attach (s1478)** | **done (docs + onboard memory lane + product sample plugin)** | Residual-honest **post-public** product edge attach: both `github.com/iome-sh/memory` + `github.com/iome-sh/iomesh-memory-mcp` **PUBLIC** · `go install …@main` / `go get …@main` · **no GOPRIVATE** · HTTP `http://127.0.0.1:8080/mcp` or stdio · docker compose still valid · dual_write OFF · not Memory GA · aion broker **still private** · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · aion broker private · s1517 product-only in-tree sample |
-| **3 E4 MCP client attach dogfood (s1508)** | **done (docs + evidence stamp + onboard memory lane tip)** | Residual-honest **E4 full MCP client attach** dogfood: lean host HTTP → TUI `iomesh mcp --connect` **connected=1 · tools=6** (observed stamp) · dual_write OFF · local-primary · **Edge Memory GA candidacy only** · residual PASS ≠ invent Edge Memory GA declared · not bare Memory GA · not hosted Memory GA · aion broker private · **E10 Open** · tip ≠ invent forever-green product dogfood · evidence [EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md](../EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md) |
-| **3 memory edge usage demo (s1513)** | **done (docs only)** | Residual-honest **utilization/demo example**: signup (optional) → TUI MCP integrations list/plan + portal HITL → local memory install (kernel + `iomesh-memory-mcp`; **not fully automatic**) → attach → show `/memory` + `mcp --connect` usage · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · E10 Open · catalog ≠ Connected · aion broker private · walkthrough [memory-edge-usage-demo.md](./memory-edge-usage-demo.md) |
+| **3 M4 public flip readiness tip (s1469)** | **done (docs + onboard memory lane)** | Residual-honest **M4 public flip readiness** tip history: order kernel `github.com/iome-sh/memory` **first** · then `iomesh-memory-mcp` · readiness docs/gates in those repos (mention only) · **readiness tip ≠ invent public flip complete** · residual PASS ≠ invent public flip · dual_write OFF · not Memory GA · control-plane / broker private · M5 signing later after flip · **s1478 supersedes operator tip** (edge packs public) · keeps Option A + M2 + M3 honesty |
+| **3 public product attach (s1478)** | **done (docs + onboard memory lane + product sample plugin)** | Residual-honest **post-public** product edge attach: both `github.com/iome-sh/memory` + `github.com/iome-sh/iomesh-memory-mcp` **PUBLIC** · `go install …@main` / `go get …@main` · **no GOPRIVATE** · HTTP `http://127.0.0.1:8080/mcp` or stdio · docker compose still valid · dual_write OFF · not Memory GA · control-plane / broker **still private** · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · control-plane / broker private · s1517 product-only in-tree sample |
+| **3 E4 MCP client attach dogfood (s1508)** | **done (docs + evidence stamp + onboard memory lane tip)** | Residual-honest **E4 full MCP client attach** dogfood: lean host HTTP → TUI `iomesh mcp --connect` **connected=1 · tools=6** (observed stamp) · dual_write OFF · local-primary · **Edge Memory GA candidacy only** · residual PASS ≠ invent Edge Memory GA declared · not bare Memory GA · not hosted Memory GA · control-plane / broker private · **E10 Open** · tip ≠ invent forever-green product dogfood · evidence [EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md](../EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md) |
+| **3 memory edge usage demo (s1513)** | **done (docs only)** | Residual-honest **utilization/demo example**: signup (optional) → TUI MCP integrations list/plan + portal HITL → local memory install (kernel + `iomesh-memory-mcp`; **not fully automatic**) → attach → show `/memory` + `mcp --connect` usage · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · E10 Open · catalog ≠ Connected · control-plane / broker private · walkthrough [memory-edge-usage-demo.md](./memory-edge-usage-demo.md) |
 | **3 trigger-compact HITL + advanced status (s1311)** | **done (opt-in · MCP-first · HITL)** | `/memory trigger-compact --i-confirm` → MCP `memory_trigger_compact` (RecMem advisory · mutating HITL · refuse without confirm); `/memory status` prints `MemoryStatusLine` + `MemoryAdvancedStatus` residual inventory (related · facts-as-of · supersede · timeline · compact-status · semantic · ingest-event · patterns · anomalies · digest · trigger-compact); dual_write OFF · not Memory GA · not invent compaction green · no lean HTTP invent |
 | **4 pull (s652)** | **done (M1)** | `iomesh memory pull` — durable mesh consumer → local MCP `memory_ingest_turn` (cost-max local palace; dual_write remains optional audit) |
 
-**Related (not Memory Palace):** agent connector setup slash `/integrations` (s1238/s1242/s1243) uses MCP `list_connector_catalog` / `plan_connector_setup` (aion v178) + `get_webhook_signing_headers` (v30) with residual honesty — see [agent-integrations-setup.md](./agent-integrations-setup.md).
+**Related (not Memory Palace):** agent connector setup slash `/integrations` (s1238/s1242/s1243) uses MCP `list_connector_catalog` / `plan_connector_setup` (mesh v178) + `get_webhook_signing_headers` (v30) with residual honesty — see [agent-integrations-setup.md](./agent-integrations-setup.md).
 
 **Cost-max (s650+):** primary Memory UX is **local Palace** (this TUI + product `iomesh-memory-mcp`). Mesh is **pull egress** of ops events; hosted cloud Palace is **sunset until scale**. Dual-write = optional **audit** only (default OFF).
 
@@ -76,7 +76,7 @@ I/O Mesh cloud (pull egress)  ↔  iomesh-tui  ↔  local memory MCP (Palace)  �
 
 See [llm-cascade.md](./llm-cascade.md) for Ollama install (`ollama serve` / `ollama pull llama3.2`) and env overrides (`OLLAMA_URL` / `OLLAMA_HOST`).
 
-**s765 (Beta · completeness pin):** local edge stack **complete** after s761 first-class Ollama product Shipped — inventory (mesh pull egress ↔ TUI ↔ local memory MCP ↔ Ollama pin) locked by docs + unit tests (`TestDefaultModels_OllamaLocalEdgeCompletenessPin`: catalog name `ollama-llama3.2`, model id `llama3.2`, cost 0, caps `local`+`ollama`, priority after DeepSeek cascade / Premium). Completeness pin **does not** invent new catalog models and **does not** re-claim s761 product body. Peer aion **s764** heartbeat-local-edge-path residual. Local AI ≠ platform GPU · dual_write OFF · Palace sunset · offline unit ≠ live Ollama green · catalog pin ≠ cascade default · not full mesh RBAC GA · no invent GA.
+**s765 (Beta · completeness pin):** local edge stack **complete** after s761 first-class Ollama product Shipped — inventory (mesh pull egress ↔ TUI ↔ local memory MCP ↔ Ollama pin) locked by docs + unit tests (`TestDefaultModels_OllamaLocalEdgeCompletenessPin`: catalog name `ollama-llama3.2`, model id `llama3.2`, cost 0, caps `local`+`ollama`, priority after DeepSeek cascade / Premium). Completeness pin **does not** invent new catalog models and **does not** re-claim s761 product body. Peer mesh **s764** heartbeat-local-edge-path residual. Local AI ≠ platform GPU · dual_write OFF · Palace sunset · offline unit ≠ live Ollama green · catalog pin ≠ cascade default · not full mesh RBAC GA · no invent GA.
 
 #### Local-primary LT honesty (s768 pin)
 
@@ -92,11 +92,11 @@ Honesty pin so TUI surfaces agree with the **cost-max local-primary** charter af
 | **Hosted Palace** | **Sunset** until scale. |
 | **Does not invent** | GA · freemium unlimited palace · platform GPU · full mesh RBAC GA. |
 
-Peer aion **s767** bi-heartbeats local-primary honesty continuum. Unit pin: `TestDefaultMemoryConfig` / config `Default().Memory.DualWrite == false` (s768). Offline unit ≠ live APPLY · Beta · no invent GA.
+Peer mesh **s767** bi-heartbeats local-primary honesty continuum. Unit pin: `TestDefaultMemoryConfig` / config `Default().Memory.DualWrite == false` (s768). Offline unit ≠ live APPLY · Beta · no invent GA.
 
 #### Naming honesty (s771 pin)
 
-Docs **naming honesty** residual after aion **s770** usage-rates honesty (this serial is docs/tests only — **does not** re-claim s761 Ollama product, s765 local-edge completeness, or s768 local-primary LT pin bodies):
+Docs **naming honesty** residual after mesh **s770** usage-rates honesty (this serial is docs/tests only — **does not** re-claim s761 Ollama product, s765 local-edge completeness, or s768 local-primary LT pin bodies):
 
 | Name / phrase | Honest meaning in this TUI |
 |---------------|----------------------------|
@@ -107,11 +107,11 @@ Docs **naming honesty** residual after aion **s770** usage-rates honesty (this s
 | **Local AI** | Customer-edge Ollama · **≠ platform GPU**. |
 | **Does not invent** | GA · freemium unlimited palace · platform GPU · full mesh RBAC GA. |
 
-Peer aion **s770** usage-rates residual · prior TUI **s768** local-primary LT honesty. dual_write OFF · Palace sunset · no invent GA · offline unit ≠ live APPLY · Beta.
+Peer mesh **s770** usage-rates residual · prior TUI **s768** local-primary LT honesty. dual_write OFF · Palace sunset · no invent GA · offline unit ≠ live APPLY · Beta.
 
 #### Buyer claim pin (s774)
 
-OSS / buyer-claim boundary pin peer aion **s773** cost-max claim suite expand (this serial is docs/tests only — **does not** re-claim s761 Ollama product, s765 local-edge completeness, s768 local-primary LT, or s771 naming honesty bodies):
+OSS / buyer-claim boundary pin peer mesh **s773** cost-max claim suite expand (this serial is docs/tests only — **does not** re-claim s761 Ollama product, s765 local-edge completeness, s768 local-primary LT, or s771 naming honesty bodies):
 
 | Surface | May claim | Must not claim |
 |---------|-----------|----------------|
@@ -123,7 +123,7 @@ OSS / buyer-claim boundary pin peer aion **s773** cost-max claim suite expand (t
 | **Hosted Palace** | Sunset until scale | Invent GA · freemium unlimited palace · full mesh RBAC GA |
 | **First-run (s1695)** | TUI OSS + `iomesh-memory-mcp` local-primary only · mesh optional | Mesh required for first-run · pay-to-get-memory invent |
 
-Peer aion **s773** cost-max claim suite expand · prior TUI **s771** naming · **s768** local-primary · **s1695** mesh not first-run required. dual_write OFF · Palace sunset · local AI ≠ platform GPU · no invent GA · offline unit ≠ live APPLY · Beta. Unit pin peer: `TestDefault_DualWriteOff` / `TestDefaultMemoryConfig_DualWriteOff` (s768 body + s771/s774 comment peers).
+Peer mesh **s773** cost-max claim suite expand · prior TUI **s771** naming · **s768** local-primary · **s1695** mesh not first-run required. dual_write OFF · Palace sunset · local AI ≠ platform GPU · no invent GA · offline unit ≠ live APPLY · Beta. Unit pin peer: `TestDefault_DualWriteOff` / `TestDefaultMemoryConfig_DualWriteOff` (s768 body + s771/s774 comment peers).
 
 **Non-goals:** private monorepo imports in public TUI; embedding Qdrant/Palace in-process; dependency on `iomesh-client-sdk-go` or `iomesh-client-sdk-python` (TUI does not package either SDK).
 
@@ -209,7 +209,7 @@ curl -fsS http://127.0.0.1:8080/healthz
 | Host bind | `8080:8080` → MCP path `/mcp`, health `GET /healthz` |
 | Palace volume | under compose bind / volume as documented in product repo |
 
-**Private residual (optional):** aion monorepo may still ship private local-edge compose (historical peer **s1306** / residual **s1307**) — not product naming, not required for public OSS attach, and not an in-tree TUI sample (s1517). dual_write OFF · not Memory GA · aion broker private.
+**Private residual (optional):** private control-plane repo may still ship private local-edge compose (historical peer **s1306** / residual **s1307**) — not product naming, not required for public OSS attach, and not an in-tree TUI sample (s1517). dual_write OFF · not Memory GA · control-plane / broker private.
 
 #### 2. Attach TUI (streamable HTTP MCP)
 
@@ -244,7 +244,7 @@ Env helpers (optional; same as binary path):
 | `IOMESH_MEMORY_TENANT` / `MEMORY_TENANT` | Default tenant |
 | `IOMESH_MEMORY_DUAL_WRITE=1` | Opt-in mesh audit only — **leave unset** for local-primary |
 
-There is **no** separate `MEMORY_MCP_URL` config key in the TUI — point `[[mcp.servers]].url` at the edge. (aion Grok wire scripts may use `MEMORY_MCP_URL` / `AION_MEMORY_MCP_URL` for other hosts; TUI uses TOML `url`.)
+There is **no** separate `MEMORY_MCP_URL` config key in the TUI — point `[[mcp.servers]].url` at the edge. (control-plane wire scripts may use `MEMORY_MCP_URL` / `IOMESH_MEMORY_MCP_URL` for other hosts; TUI uses TOML `url`.)
 
 #### 3. Verify
 
@@ -268,8 +268,8 @@ iomesh
 | **not Memory GA** | Local MCP attach ≠ product Memory GA · multi-tenant cloud palace · full graph RAG |
 | **docker edge ≠ invent GA** | Containerizing product Memory MCP does **not** invent hosted Memory GA, platform GPU, or public registry GA |
 | **image tag** | product local image `iomesh-memory-mcp:local` — do not claim public Hub/GHCR pull GA |
-| **TUI tree** | Does **not** vendor aion compose/Dockerfiles — operators use aion monorepo for `docker compose` |
-| **Peer residual** | aion **s1306** compose body · aion residual **s1307** · TUI docs **s1308** |
+| **TUI tree** | Does **not** vendor private control-plane compose/Dockerfiles — operators use private control-plane repo for `docker compose` |
+| **Peer residual** | peer mesh **s1306** compose body · peer mesh residual **s1307** · TUI docs **s1308** |
 
 See also [Local edge stack (s761/s765)](#local-edge-stack-s761-product--s765-completeness-pin) · [Local-primary LT honesty (s768)](#local-primary-lt-honesty-s768-pin) · [Edge OSS Option A (s1453)](#edge-oss-option-a-s1453) · [mcp.md](./mcp.md) streamable HTTP.
 
@@ -280,10 +280,10 @@ Residual-honest **edge Memory OSS install path** for operators (docs + `/onboard
 | Layer | Role | Honesty |
 |-------|------|---------|
 | **iomesh-tui** | Public MIT agent harness | Already public · local-primary client |
-| **Memory MCP host** | Product name **`iomesh-memory-mcp`** only (public · go install / compose · s1517) | aion broker/CP private · no in-tree residual aion Memory sample |
+| **Memory MCP host** | Product name **`iomesh-memory-mcp`** only (public · go install / compose · s1517) | control-plane / broker private · no in-tree residual private Memory sample |
 | **Kernel** | `github.com/iome-sh/memory` | **Public** (s1478) · `go get …@main` · **no GOPRIVATE** |
 | **Local palace** | FS palace via MCP (`-palace-root` / docker edge) | Hosted Palace **sunset** · dual_write **OFF** |
-| **aion broker / CP** | Private cloud control plane | **Stays private** · not OSS edge pack |
+| **control-plane / broker** | Private cloud control plane | **Stays private** · not OSS edge pack |
 
 **Local-primary stack (what end users install for Memory):**
 
@@ -303,7 +303,7 @@ When built from **`github.com/iome-sh/iomesh-memory-mcp`** (peer free eng M2 sca
 | **Attach** | Streamable HTTP `http://127.0.0.1:8080/mcp` **or** stdio · TUI `[[mcp.servers]]` URL or command |
 | **dual_write** | **OFF** · not primary palace path |
 | **not Memory GA** | M2 lean edge ≠ product Memory GA / multi-tenant hosted palace |
-| **aion broker private** | Cloud broker/CP stays private · not OSS edge pack |
+| **control-plane / broker private** | Cloud broker/CP stays private · not OSS edge pack |
 | **scaffold/M2 residual** | Tool parity may be **lean** vs platform residual sidecar · **PASS ≠ invent full platform sidecar parity** |
 | **public flip** | **OSS path ≠ invent public flip complete** · M2 scaffold ≠ M4 public flip |
 
@@ -321,7 +321,7 @@ TUI ↔ product **`iomesh-memory-mcp`** compose / HTTP / stdio dogfood tip (docs
 | **Offline gate** | Peer mcp `make edge-dogfood-gate` (mention only) · TUI docs this section |
 | **dual_write** | **OFF** · not primary palace path |
 | **not Memory GA** | M3 edge dogfood ≠ product Memory GA / multi-tenant hosted palace |
-| **post-s1478 public edge** | Host/kernel **public** (s1478) · aion broker/CP **still private** · aion broker private · s1517 product-only in-tree sample |
+| **post-s1478 public edge** | Host/kernel **public** (s1478) · control-plane / broker **still private** · control-plane / broker private · s1517 product-only in-tree sample |
 | **compose PASS ≠ public registry** | Local image tag `iomesh-memory-mcp:local` ≠ invent GHCR public pull green |
 | **offline ≠ live dogfood** | **offline dogfood tip ≠ invent live dogfood as green** · residual PASS ≠ live APPLY |
 | **parity / flip** | **PASS ≠ invent full platform sidecar parity** · residual PASS ≠ invent public flip (edge packs public as of s1478) · M3 after M2 · M4 readiness tip history below |
@@ -336,7 +336,7 @@ TUI residual-honest **readiness tip history** (pre-flip). **s1478 supersedes ope
 | **Post-s1478** | Both edge repos **public** · install without GOPRIVATE (see s1478 below) |
 | **dual_write** | **OFF** · not primary palace path |
 | **not Memory GA** | M4 readiness / public flip ≠ product Memory GA / multi-tenant hosted palace |
-| **aion broker private** | Cloud broker/CP stays private · not OSS edge pack · not flipped with edge pack |
+| **control-plane / broker private** | Cloud broker/CP stays private · not OSS edge pack · not flipped with edge pack |
 | **M5 later** | **M5 signing later after flip** · signing residual is post-flip deliberate wave |
 
 **s1478 public product attach (residual-honest · after public flip of both edge repos):**
@@ -349,7 +349,7 @@ TUI residual-honest **readiness tip history** (pre-flip). **s1478 supersedes ope
 | **docker compose** | Still valid in product repo → image `iomesh-memory-mcp:local` · healthz |
 | **dual_write** | **OFF** · not primary palace path |
 | **not Memory GA** | Public OSS edge ≠ invent Memory GA / freemium palace |
-| **aion broker private** | Cloud broker/CP **still private** · aion broker private · s1517 product-only sample |
+| **control-plane / broker private** | Cloud broker/CP **still private** · control-plane / broker private · s1517 product-only sample |
 | **flip complete residual** | Flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · package load ≠ Memory GA |
 | **Product sample plugin** | `examples/agent-plugins/iomesh-memory-mcp` (dogfood primary with hello-iome) |
 
@@ -393,8 +393,8 @@ curl -fsS http://127.0.0.1:8080/healthz
 
 **Also residual attach:**
 
-- Streamable HTTP MCP (local edge docker when available — peer aion s1306 compose; see [Local-edge Docker](#local-edge-docker-memory-mcp-s1308--peer-aion-s1306) above)
-- s1517: in-tree product sample is `examples/agent-plugins/iomesh-memory-mcp` only (residual aion Memory sample removed)
+- Streamable HTTP MCP (local edge docker when available — peer mesh s1306 compose; see [Local-edge Docker](#local-edge-docker-memory-mcp-s1308--peer-mesh-s1306) above)
+- s1517: in-tree product sample is `examples/agent-plugins/iomesh-memory-mcp` only (residual private Memory sample removed)
 - Product sample map: `examples/agent-plugins/iomesh-memory-mcp`
 - Package load ≠ Memory GA · docker edge ≠ invent GA · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · lean surface may lag platform residual · offline dogfood tip ≠ invent live dogfood as green
 - **E4 full MCP client attach dogfood (s1508)** — observed stamp below · **not** forever-green product dogfood
@@ -412,7 +412,7 @@ Residual-honest **full MCP client attach** dogfood for product tip TUI ↔ lean 
 | **Edge Memory GA candidacy only** | Residual candidacy language · **residual PASS ≠ invent Edge Memory GA declared** |
 | **not bare Memory GA** | Attach dogfood ≠ invent bare product Memory GA |
 | **not hosted Memory GA** | Local lean host ≠ multi-tenant hosted / freemium cloud palace |
-| **aion broker private** | Cloud broker/CP stays private · not OSS edge pack |
+| **control-plane / broker private** | Cloud broker/CP stays private · not OSS edge pack |
 | **E10 Open** | Founder/GTM sign-off remains **Open** · tip ≠ invent E10 closed |
 | **tip ≠ invent forever-green** | One observed stamp · not continuous CI green product dogfood |
 
@@ -480,8 +480,8 @@ url = "http://127.0.0.1:18081/mcp"
 | **E4 client attach (s1508)** | Full MCP client attach stamp · `connected=1` · `tools=6` · tip ≠ invent forever-green dogfood |
 | **offline dogfood tip ≠ invent live dogfood as green** | Docs/onboard tip residual · does not claim forever-green live dogfood / Connected |
 | **compose PASS ≠ public registry** | Local image tag ≠ invent public GHCR pull green |
-| **aion broker private** | aion cloud broker/CP stays private · not open-sourced with edge pack |
-| **aion still private** | Cloud broker/CP private · not OSS edge pack · s1517 no in-tree residual aion Memory sample |
+| **control-plane / broker private** | control-plane / broker stays private · not open-sourced with edge pack |
+| **control-plane still private** | Cloud broker/CP private · not OSS edge pack · s1517 no in-tree residual private Memory sample |
 | **flip complete residual ≠ invent Memory GA** | Public edge packs ≠ invent Memory GA / freemium palace |
 | **public OSS ≠ invent platform GA** | Public MIT edge modules ≠ invent multi-tenant platform Memory GA |
 | **PASS ≠ invent full platform sidecar parity** | Lean tool surface may lag platform residual · attach residual ≠ invent full parity |
@@ -521,35 +521,35 @@ Loop: `CreateConsumer` (idempotent) → `ConsumerFetch` → map envelope → MCP
 Primary: connector/`dept.*` or `EVENTS`. Optional: pull `MEMORY_INGEST` when using mesh as audit mirror.  
 When `--filter` / `[memory].pull_filter` is empty and `[memory].tenant` or `[iomesh].tenant` is hierarchical (`dept.*` or contains `.`), default `filter_subject` is `tenant.>` (s660); create/fetch/ack send `X-IOMesh-Tenant` via client auth.
 
-**s705 (Beta):** PASS/summary text and `--json` always emit identity (`stream`, `consumer`, `filter_subject`, `pull_role`, `pull_allow_suffix`, `tenant` — empty string when unset), knobs (`dry_run`, `dual_write` report-only default false, `batch`, `max_wait_ms`, `once`), and counters including `last_error` (empty when none). Print DTO is `MemoryPullStatsPrint` (no omitempty on scraper keys). Does not invent pull success from identity fields alone. Peer create FormatConsumerInfo s696 + status/wait pull identity continuum; peer aion s704. Fail-open empty role/tenant; dual_write default OFF; not full mesh RBAC GA.
+**s705 (Beta):** PASS/summary text and `--json` always emit identity (`stream`, `consumer`, `filter_subject`, `pull_role`, `pull_allow_suffix`, `tenant` — empty string when unset), knobs (`dry_run`, `dual_write` report-only default false, `batch`, `max_wait_ms`, `once`), and counters including `last_error` (empty when none). Print DTO is `MemoryPullStatsPrint` (no omitempty on scraper keys). Does not invent pull success from identity fields alone. Peer create FormatConsumerInfo s696 + status/wait pull identity continuum; peer mesh s704. Fail-open empty role/tenant; dual_write default OFF; not full mesh RBAC GA.
 
-**s717 (Beta):** process evidence always-emit on the same print DTO: `endpoint` / `org` / `workspace` (from `[iomesh]`; empty string honest when unset), `result` (`ok`|`err`), `exit_code` (0 success; 1 hard-fail non-cancel or soft-fail `errors>0 && ingested==0 && !dryRun`), `duration_ms` (wall-clock; 0 if not timed), `ack` knob. Early fail paths (mesh disabled / MCP missing) emit the DTO when possible. Process evidence ≠ invent pull success from identity alone. Peer aion s716 residual after s705. Dual_write default OFF; not full mesh RBAC GA.
+**s717 (Beta):** process evidence always-emit on the same print DTO: `endpoint` / `org` / `workspace` (from `[iomesh]`; empty string honest when unset), `result` (`ok`|`err`), `exit_code` (0 success; 1 hard-fail non-cancel or soft-fail `errors>0 && ingested==0 && !dryRun`), `duration_ms` (wall-clock; 0 if not timed), `ack` knob. Early fail paths (mesh disabled / MCP missing) emit the DTO when possible. Process evidence ≠ invent pull success from identity alone. Peer mesh s716 residual after s705. Dual_write default OFF; not full mesh RBAC GA.
 
-**s747 (Beta · completeness pin):** memory pull process evidence **complete** — identity (s705) + knobs/counters + process evidence (s717) locked by docs + unit tests (`MemoryPullStatsPrint` JSON always-emits `result` / `exit_code` / `endpoint` / `org` / `workspace` on empty and populated paths). Completeness pin **does not** invent new always-emit fields and **does not** re-claim s717 product body. Peer aion s746 residual honesty. Process evidence ≠ invent pull success · dual_write OFF · not full mesh RBAC GA · offline unit ≠ live APPLY · empty honest.
+**s747 (Beta · completeness pin):** memory pull process evidence **complete** — identity (s705) + knobs/counters + process evidence (s717) locked by docs + unit tests (`MemoryPullStatsPrint` JSON always-emits `result` / `exit_code` / `endpoint` / `org` / `workspace` on empty and populated paths). Completeness pin **does not** invent new always-emit fields and **does not** re-claim s717 product body. Peer mesh s746 residual honesty. Process evidence ≠ invent pull success · dual_write OFF · not full mesh RBAC GA · offline unit ≠ live APPLY · empty honest.
 
 **s675 (Beta):** optional `--role` / `[memory].pull_role` → `X-IOMesh-Role` and `--pull-allow-suffix` / `[memory].pull_allow_suffix` → `X-IOMesh-Pull-Allow-Suffix` on authenticated mesh requests (create/fetch/ack). Fail-open when empty (headers omitted). Not full mesh IdP RBAC GA; dual_write remains optional audit (default OFF). Hosted Palace sunset — TUI path is local palace.
 
-**s678 (Beta):** when `--filter` / `pull_filter` is empty, default `filter_subject` is role-aware (`DefaultMemoryPullFilterForRole`): empty role keeps s660; `agent`/`viewer` → `tenant.events.>`; `auditor` → `tenant.audit.>`; `operator`/`admin` → `tenant.>`; `custom` with exactly one allow-suffix token → `tenant.<suffix>.>`; custom multi/no suffix → empty (fail closed). Explicit filter always wins. Peer aion s678; not full mesh RBAC GA.
+**s678 (Beta):** when `--filter` / `pull_filter` is empty, default `filter_subject` is role-aware (`DefaultMemoryPullFilterForRole`): empty role keeps s660; `agent`/`viewer` → `tenant.events.>`; `auditor` → `tenant.audit.>`; `operator`/`admin` → `tenant.>`; `custom` with exactly one allow-suffix token → `tenant.<suffix>.>`; custom multi/no suffix → empty (fail closed). Explicit filter always wins. Peer mesh s678; not full mesh RBAC GA.
 
-**s681 (Beta):** `iomesh mesh consumer create` also accepts `--role` / `[memory].pull_role` and `--pull-allow-suffix` / `[memory].pull_allow_suffix` (sets client `Config.Role` / `PullAllowSuffix` so create auth sends the same headers as memory pull). Empty `--filter` uses the same `DefaultMemoryPullFilterForRole` defaults (IOMesh tenant). Fail-open without role; dual_write default OFF; peer aion s680 continuum — not full mesh RBAC GA.
+**s681 (Beta):** `iomesh mesh consumer create` also accepts `--role` / `[memory].pull_role` and `--pull-allow-suffix` / `[memory].pull_allow_suffix` (sets client `Config.Role` / `PullAllowSuffix` so create auth sends the same headers as memory pull). Empty `--filter` uses the same `DefaultMemoryPullFilterForRole` defaults (IOMesh tenant). Fail-open without role; dual_write default OFF; peer mesh s680 continuum — not full mesh RBAC GA.
 
-**s684 (Beta):** `iomesh mesh consumer fetch` (and ack/nack/delete) accept the same `--role` / `--pull-allow-suffix` flags and config fallbacks so broker fetch validates federated ACL headers (aion s683 continuum). Fail-open without role; dual_write default OFF — not full mesh RBAC GA.
+**s684 (Beta):** `iomesh mesh consumer fetch` (and ack/nack/delete) accept the same `--role` / `--pull-allow-suffix` flags and config fallbacks so broker fetch validates federated ACL headers (mesh s683 continuum). Fail-open without role; dual_write default OFF — not full mesh RBAC GA.
 
-**s687 (Beta):** role=`memory` default filter → `tenant.memory.>` when tenant set (peer aion s686 federated pull memory role; local-palace memory subjects only). Dogfood report always-emits `pull_role` / `pull_allow_suffix` from Client Config (empty when unset) for CI scrapers; dogfood CLI wires `[memory].pull_role` / `pull_allow_suffix` onto Client so the soft consumer probe sends headers + applies role-aware empty-filter defaults. Fail-open without role; dual_write default OFF; not full mesh RBAC GA.
+**s687 (Beta):** role=`memory` default filter → `tenant.memory.>` when tenant set (peer mesh s686 federated pull memory role; local-palace memory subjects only). Dogfood report always-emits `pull_role` / `pull_allow_suffix` from Client Config (empty when unset) for CI scrapers; dogfood CLI wires `[memory].pull_role` / `pull_allow_suffix` onto Client so the soft consumer probe sends headers + applies role-aware empty-filter defaults. Fail-open without role; dual_write default OFF; not full mesh RBAC GA.
 
-**s690 (Beta):** `iomesh mesh status` always-emits `pull_role` / `pull_allow_suffix` (empty when unset) in text and JSON from the same Client Config path (`[memory].pull_role` / `pull_allow_suffix` wired onto Client like dogfood s687). CI scrapers can key stable identity without omitempty gaps. Fail-open without role; dual_write default OFF; not full mesh RBAC GA; peer aion s689 residual gate continuum.
+**s690 (Beta):** `iomesh mesh status` always-emits `pull_role` / `pull_allow_suffix` (empty when unset) in text and JSON from the same Client Config path (`[memory].pull_role` / `pull_allow_suffix` wired onto Client like dogfood s687). CI scrapers can key stable identity without omitempty gaps. Fail-open without role; dual_write default OFF; not full mesh RBAC GA; peer mesh s689 residual gate continuum.
 
-**s693 (Beta):** `iomesh mesh wait` always-emits `pull_role` / `pull_allow_suffix` (empty when unset) in text and JSON from the same Client Config path (`[memory].pull_role` / `pull_allow_suffix` wired onto Client like status s690). CI scrapers can key stable identity without omitempty gaps. Fail-open without role; dual_write default OFF; not full mesh RBAC GA; peer aion s692 Ops Pack floors residual gate continuum.
+**s693 (Beta):** `iomesh mesh wait` always-emits `pull_role` / `pull_allow_suffix` (empty when unset) in text and JSON from the same Client Config path (`[memory].pull_role` / `pull_allow_suffix` wired onto Client like status s690). CI scrapers can key stable identity without omitempty gaps. Fail-open without role; dual_write default OFF; not full mesh RBAC GA; peer mesh s692 Ops Pack floors residual gate continuum.
 
-**s696 (Beta):** `iomesh mesh consumer create` text (`FormatConsumerInfoWithAuth`) and JSON (`ConsumerInfoPrint`) always-emit `pull_role` / `pull_allow_suffix` (empty when unset) next to `filter_subject` from resolved create auth (s681). Wire `ConsumerInfo` decode stays free of auth fields. CI scrapers can key stable identity without omitempty gaps. Fail-open without role; dual_write default OFF; not full mesh RBAC GA; peer aion s695 sales claim continuum.
+**s696 (Beta):** `iomesh mesh consumer create` text (`FormatConsumerInfoWithAuth`) and JSON (`ConsumerInfoPrint`) always-emit `pull_role` / `pull_allow_suffix` (empty when unset) next to `filter_subject` from resolved create auth (s681). Wire `ConsumerInfo` decode stays free of auth fields. CI scrapers can key stable identity without omitempty gaps. Fail-open without role; dual_write default OFF; not full mesh RBAC GA; peer mesh s695 sales claim continuum.
 
-**s705 (Beta):** `iomesh memory pull` always-emits full pull identity + knobs + counters in PASS/summary text and `--json` (`MemoryPullStatsPrint`) so scrapers are not limited to stderr start log. Empty role/tenant/filter honest; dual_write report-only default OFF; peer aion s704 continuum — not full mesh RBAC GA.
+**s705 (Beta):** `iomesh memory pull` always-emits full pull identity + knobs + counters in PASS/summary text and `--json` (`MemoryPullStatsPrint`) so scrapers are not limited to stderr start log. Empty role/tenant/filter honest; dual_write report-only default OFF; peer mesh s704 continuum — not full mesh RBAC GA.
 
-**s717 (Beta):** same surface always-emits process evidence (`endpoint`/`org`/`workspace` empty honest; `result` ok|err; `exit_code` 0|1; `duration_ms`; `ack`) so CI scrapers record intended exit without shell `$?`. Soft-fail and hard-fail set `result=err`/`exit_code=1`; success sets `ok`/`0`. Process evidence ≠ invent pull success. Peer aion s716 residual — dual_write default OFF; not full mesh RBAC GA.
+**s717 (Beta):** same surface always-emits process evidence (`endpoint`/`org`/`workspace` empty honest; `result` ok|err; `exit_code` 0|1; `duration_ms`; `ack`) so CI scrapers record intended exit without shell `$?`. Soft-fail and hard-fail set `result=err`/`exit_code=1`; success sets `ok`/`0`. Process evidence ≠ invent pull success. Peer mesh s716 residual — dual_write default OFF; not full mesh RBAC GA.
 
-**s747 (Beta · completeness pin):** process evidence surface complete (s705 + s717) — unit tests pin always-emit keys; no new DTO fields. Peer aion s746 · process evidence ≠ invent pull success · dual_write OFF · not full mesh RBAC GA · offline unit ≠ live APPLY.
+**s747 (Beta · completeness pin):** process evidence surface complete (s705 + s717) — unit tests pin always-emit keys; no new DTO fields. Peer mesh s746 · process evidence ≠ invent pull success · dual_write OFF · not full mesh RBAC GA · offline unit ≠ live APPLY.
 
-Env: `MEMORY_MCP_HTTP_ADDR` / `AION_MEMORY_MCP_HTTP_ADDR`, path `MEMORY_MCP_HTTP_PATH` (default `/mcp`).
+Env: `MEMORY_MCP_HTTP_ADDR` / `IOMESH_MEMORY_MCP_HTTP_ADDR`, path `MEMORY_MCP_HTTP_PATH` (default `/mcp`).
 
 ### Alternate: stdio
 
@@ -746,7 +746,7 @@ Operators can run **multi-hop lite** related recall without changing default aut
 | Slash | `/memory related --seed person:alice --query "…" --max-hops 2 [--prefer-shorter-hops\|--legacy-sort]` |
 | Hits | Optional `hop_distance` on `MemoryHit` (hop ranking lite · s1067 kernel); formatted as `[hop=N]` |
 
-### prefer_shorter_hops (s1281 · aion s1277)
+### prefer_shorter_hops (s1281 · mesh s1277)
 
 | Rule | Behavior |
 |------|----------|
@@ -893,18 +893,18 @@ Post-surface dual path:
 - Dual-write is **best-effort** stream publish; it does not guarantee Palace persistence by itself.
 - “Native Vertex” / G4S claims are separate (see marketing claim matrix); memory is **Palace via MCP and/or lean HTTP sidecar**, not Vertex.
 - Do not claim temporal pipeline is live unless stage/prod embedding + temporal flags are on.
-- **s1308:** local-edge Docker MCP attach (peer aion s1306) is customer-edge FS palace only — dual_write OFF · hosted Palace sunset · **not** Memory GA · docker edge ≠ invent GA · local image tag ≠ public registry claim.
-- **s1453:** edge OSS Option A residual-honest install story — product host **`iomesh-memory-mcp`** · kernel `github.com/iome-sh/memory` · aion broker **private** · dual_write OFF · not Memory GA · Palace sunset · mesh optional for pull · **OSS path ≠ invent public flip complete**.
-- **s1458:** M2 lean edge host attach tip — when built from `github.com/iome-sh/iomesh-memory-mcp`: go run/build · streamable HTTP `http://127.0.0.1:8080/mcp` or stdio · dual_write OFF · not Memory GA · aion broker private · scaffold/M2 · tool parity may be lean vs platform residual · **PASS ≠ invent full platform sidecar parity** · keeps Option A honesty.
-- **s1463:** M3 edge dogfood tip — TUI↔`iomesh-memory-mcp` compose/HTTP/stdio path: `docker compose up --build` → image `iomesh-memory-mcp:local` · attach `http://127.0.0.1:8080/mcp` · healthz · stdio alternate · peer mcp `make edge-dogfood-gate` (mention only) · dual_write OFF · not Memory GA · host/kernel **public as of s1478** · aion broker private · **offline dogfood tip ≠ invent live dogfood as green** · **PASS ≠ invent full platform sidecar parity** · residual PASS ≠ invent public flip · M3 after M2 · M4 later deliberate · keeps Option A + M2 honesty.
-- **s1469:** M4 public flip readiness tip — order kernel `github.com/iome-sh/memory` **first** · then `iomesh-memory-mcp` · readiness tip history · dual_write OFF · not Memory GA · aion broker private · **M5 signing later after flip** · **s1478 supersedes operator tip** (edge packs public) · keeps Option A + M2 + M3 honesty.
-- **s1478:** public product attach continuum — both edge repos **public** · `go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main` · `go get github.com/iome-sh/memory@main` · **no GOPRIVATE** · HTTP `:8080/mcp` or stdio · docker compose still valid · dual_write OFF · not Memory GA · aion broker **still private** · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · aion broker private · s1517 product-only sample · product sample plugin `iomesh-memory-mcp`.
-- **s1508:** E4 full MCP client attach dogfood — lean host HTTP → TUI `iomesh mcp --connect` observed **connected=1 · tools=6** (UTC `2026-08-09T06:23:34Z` · TUI tip `6b3958a…` · MCP tip `f46afe2…`) · dual_write OFF · local-primary · **Edge Memory GA candidacy only** · residual PASS ≠ invent Edge Memory GA declared · not bare Memory GA · not hosted Memory GA · aion broker private · **E10 Open** · tip ≠ invent forever-green product dogfood · evidence [EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md](../EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md).
-- **s1513:** memory edge usage/demo example — residual-honest walkthrough signup (optional) → integrations list/plan + portal HITL → local kernel+MCP install (**not fully automatic**) → attach → show `/memory` usage · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · E10 Open · catalog ≠ Connected · aion broker private · [memory-edge-usage-demo.md](./memory-edge-usage-demo.md).
+- **s1308:** local-edge Docker MCP attach (peer mesh s1306) is customer-edge FS palace only — dual_write OFF · hosted Palace sunset · **not** Memory GA · docker edge ≠ invent GA · local image tag ≠ public registry claim.
+- **s1453:** edge OSS Option A residual-honest install story — product host **`iomesh-memory-mcp`** · kernel `github.com/iome-sh/memory` · control-plane / broker **private** · dual_write OFF · not Memory GA · Palace sunset · mesh optional for pull · **OSS path ≠ invent public flip complete**.
+- **s1458:** M2 lean edge host attach tip — when built from `github.com/iome-sh/iomesh-memory-mcp`: go run/build · streamable HTTP `http://127.0.0.1:8080/mcp` or stdio · dual_write OFF · not Memory GA · control-plane / broker private · scaffold/M2 · tool parity may be lean vs platform residual · **PASS ≠ invent full platform sidecar parity** · keeps Option A honesty.
+- **s1463:** M3 edge dogfood tip — TUI↔`iomesh-memory-mcp` compose/HTTP/stdio path: `docker compose up --build` → image `iomesh-memory-mcp:local` · attach `http://127.0.0.1:8080/mcp` · healthz · stdio alternate · peer mcp `make edge-dogfood-gate` (mention only) · dual_write OFF · not Memory GA · host/kernel **public as of s1478** · control-plane / broker private · **offline dogfood tip ≠ invent live dogfood as green** · **PASS ≠ invent full platform sidecar parity** · residual PASS ≠ invent public flip · M3 after M2 · M4 later deliberate · keeps Option A + M2 honesty.
+- **s1469:** M4 public flip readiness tip — order kernel `github.com/iome-sh/memory` **first** · then `iomesh-memory-mcp` · readiness tip history · dual_write OFF · not Memory GA · control-plane / broker private · **M5 signing later after flip** · **s1478 supersedes operator tip** (edge packs public) · keeps Option A + M2 + M3 honesty.
+- **s1478:** public product attach continuum — both edge repos **public** · `go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main` · `go get github.com/iome-sh/memory@main` · **no GOPRIVATE** · HTTP `:8080/mcp` or stdio · docker compose still valid · dual_write OFF · not Memory GA · control-plane / broker **still private** · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · control-plane / broker private · s1517 product-only sample · product sample plugin `iomesh-memory-mcp`.
+- **s1508:** E4 full MCP client attach dogfood — lean host HTTP → TUI `iomesh mcp --connect` observed **connected=1 · tools=6** (UTC `2026-08-09T06:23:34Z` · TUI tip `6b3958a…` · MCP tip `f46afe2…`) · dual_write OFF · local-primary · **Edge Memory GA candidacy only** · residual PASS ≠ invent Edge Memory GA declared · not bare Memory GA · not hosted Memory GA · control-plane / broker private · **E10 Open** · tip ≠ invent forever-green product dogfood · evidence [EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md](../EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md).
+- **s1513:** memory edge usage/demo example — residual-honest walkthrough signup (optional) → integrations list/plan + portal HITL → local kernel+MCP install (**not fully automatic**) → attach → show `/memory` usage · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · E10 Open · catalog ≠ Connected · control-plane / broker private · [memory-edge-usage-demo.md](./memory-edge-usage-demo.md).
 
 
 ## s1069 recall efficiency
 
 Client-side short-TTL cache for sync `RetrieveMemory` (`[memory] recall_cache_ttl_ms`, default 3000; `0` disables). Keyed by tenant+session+query+limit+since/until. Fail-open process-local only — not product Memory GA. Snippet early-stop at `max_snippet_bytes`. Auto-recall events always emit retrieve latency (`Nms` / `Nms cache`).
-- **s1517:** drop residual aion Memory sample from TUI tree — product host/docs/onboard/`examples/agent-plugins` use **`iomesh-memory-mcp` only** · aion broker/CP private · dual_write OFF · not Memory GA · no invent platform GA from rename.
+- **s1517:** drop residual private Memory sample from TUI tree — product host/docs/onboard/`examples/agent-plugins` use **`iomesh-memory-mcp` only** · control-plane / broker private · dual_write OFF · not Memory GA · no invent platform GA from rename.
 - **s1525:** advanced Memory install ladder for TUI — optional ONNX on host maximizes semantic; Qdrant not required / not wired lean host search · dual_write OFF · not Memory GA · [memory-advanced-install.md](./memory-advanced-install.md).

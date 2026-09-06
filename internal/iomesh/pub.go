@@ -65,10 +65,10 @@ func (c *Client) Pub(ctx context.Context, subject string, payload []byte, header
 // and no payload echo (pub success ≠ get/fetch). Wire Pub stays lean (error
 // return only).
 //
-// s732: mold StreamDeletePrint s726 + KVPutPrint s729; peer aion s731 residual.
+// s732: mold StreamDeletePrint s726 + KVPutPrint s729; peer mesh s731 residual.
 // s756: completeness pin — docs + unit tests lock PubPrint (s732) with
 // UsagePrint (s738) + KVPutPrint/KVDeletePrint (s729) always-emit keys; does not
-// invent new DTO fields or re-claim s729/s732/s738 product bodies. Peer aion
+// invent new DTO fields or re-claim s729/s732/s738 product bodies. Peer mesh
 // s755 residual. DTO ≠ invent pub success · ephemeral pub ≠ durable stream
 // publish · dual_write OFF · offline unit ≠ live APPLY · not full mesh RBAC GA.
 // Ephemeral POST /v1/pub ≠ durable stream publish. Beta · offline unit ≠ live

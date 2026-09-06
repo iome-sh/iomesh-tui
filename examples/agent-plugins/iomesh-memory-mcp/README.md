@@ -132,6 +132,6 @@ Full ladder + Docker/Podman notes: [memory-advanced-install.md](../../../docs/ar
 - No freemium hosted palace claim
 - No auto dual_write
 - No bundled binary
-- s1517: product-only sample in TUI (no residual aion Memory sample tree)
+- s1517: product-only sample in TUI (no residual private Memory sample tree)
 
 See [docs/architecture/agent-plugins.md](../../../docs/architecture/agent-plugins.md), [memory-mcp.md](../../../docs/architecture/memory-mcp.md), and the end-to-end [memory-edge-usage-demo.md](../../../docs/architecture/memory-edge-usage-demo.md) (s1513).

@@ -56,7 +56,7 @@ Attach after install:
 | public OSS = platform GA | Public edge packages ≠ invent Memory GA / freemium palace |
 | Secrets in plugin.json / mcp.json | Portable package fields must not carry secrets |
 | Map success = tools always available | Connect needs binary on PATH; MCP tools stay **approval-gated** |
-| residual aion Memory sample | **Removed** from TUI tree (s1517) · product host is `iomesh-memory-mcp` only |
+| residual private Memory sample | **Removed** from TUI tree (s1517) · product host is `iomesh-memory-mcp` only |
 
 ## Related
 

@@ -231,7 +231,7 @@ type MemoryRetrieveOptions struct {
 // Multi-hop lite associative recall over entity graph + entry entity tags.
 // At least one of SeedEntity or Query is required. Not full graph RAG; not Memory GA.
 // Hop ranking is path-aware lite (PreferShorterHops); dual_write OFF by default.
-// Parity with peer SDK RetrieveMemoryRelated / platform MCP memory_related (aion s1277).
+// Parity with peer SDK RetrieveMemoryRelated / platform MCP memory_related (mesh s1277).
 type MemoryRelatedOptions struct {
 	SeedEntity string // e.g. person:alice
 	Query      string // optional seed query (derive entities from top hits)
@@ -402,7 +402,7 @@ func (c *Client) RetrieveMemoryRelated(ctx context.Context, tenantID string, opt
 	if sid := strings.TrimSpace(opts.SessionID); sid != "" {
 		bodyMap["session_id"] = sid
 	}
-	// s1281 / aion s1277: only send prefer_shorter_hops when explicitly set (omit = kernel default true).
+	// s1281 / mesh s1277: only send prefer_shorter_hops when explicitly set (omit = kernel default true).
 	if opts.PreferShorterHops != nil {
 		bodyMap["prefer_shorter_hops"] = *opts.PreferShorterHops
 	}
@@ -463,7 +463,7 @@ func (c *Client) RetrieveMemoryRelated(ctx context.Context, tenantID string, opt
 }
 
 // MemoryOpsDigestOptions are request fields for sync POST /v1|/v5/memory/ops_digest (s1200).
-// Parity with aion s1198 HTTP / MCP ops_digest_export (s1197) and peer SDK ExportOpsDigest (s1199).
+// Parity with mesh s1198 HTTP / MCP ops_digest_export (s1197) and peer SDK ExportOpsDigest (s1199).
 // Window defaults to day; Horizon defaults to ops when empty.
 // Honesty: ops GA-path framing · knowledge/analytical Beta · never invent GA ·
 // dual_write OFF · book-demo OFF · not product Memory GA · not full graph RAG.
@@ -485,7 +485,7 @@ type MemoryOpsDigestHonesty struct {
 	Note             string `json:"note,omitempty"`
 }
 
-// MemoryOpsDigestPattern is one pattern signal in an ops digest (aion PatternSignal wire shape).
+// MemoryOpsDigestPattern is one pattern signal in an ops digest (mesh PatternSignal wire shape).
 // Rate claims (%, rate, ratio) must carry n (Count), N (Total), and Window or the TUI rejects them (#369).
 // Delta briefs (#370): a change vs the prior window; no-delta / "what is true" recaps are rejected.
 type MemoryOpsDigestPattern struct {

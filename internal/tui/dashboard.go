@@ -422,7 +422,7 @@ func (d *dashboardState) renderFeed(th Theme, width int) string {
 			case consumeReasonReplayDisabled:
 				b.WriteString(th.Dim.Render("replay_disabled · GET /v1/streams/{name}/messages 403"))
 				b.WriteByte('\n')
-				b.WriteString(th.Dim.Render("needs X-IOMesh-Tenant or AION_MEMORY_REPLAY_ENABLED · not /v52"))
+				b.WriteString(th.Dim.Render("needs X-IOMesh-Tenant or IOMESH_MEMORY_REPLAY_ENABLED · not /v52"))
 			case consumeReasonBrokerUnavailable:
 				b.WriteString(th.Dim.Render("broker_unavailable · consume probe failed"))
 				b.WriteByte('\n')

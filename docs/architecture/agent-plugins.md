@@ -4,7 +4,7 @@
 **Pin:** free eng **s1331** — **opt-in runtime wire** of package skills + MCP into existing Skills / MCP runtimes.  
 **Pin:** free eng **s1336** — operator DX CLI `iomesh plugins list|validate`.
 **Pin:** free eng **s1337** — residual-honest **sample package** [`examples/agent-plugins/hello-iome`](../../examples/agent-plugins/hello-iome) (skills-only dogfood).
-**Pin:** free eng **s1478** / **s1517** — product sample [`examples/agent-plugins/iomesh-memory-mcp`](../../examples/agent-plugins/iomesh-memory-mcp) (stdio map of public product host · dual_write OFF · not Memory GA). Residual aion Memory sample **removed** (s1517).
+**Pin:** free eng **s1478** / **s1517** — product sample [`examples/agent-plugins/iomesh-memory-mcp`](../../examples/agent-plugins/iomesh-memory-mcp) (stdio map of public product host · dual_write OFF · not Memory GA). Residual private Memory sample **removed** (s1517).
 **Pin:** free eng **s1357** — offline residual-honest `iomesh plugins dogfood` (validates **both** product samples; no MCP dial · PATH residual for binary).
 **Pin:** free eng **s1478** — product sample [`examples/agent-plugins/iomesh-memory-mcp`](../../examples/agent-plugins/iomesh-memory-mcp) (public product host stdio map · dogfood primary with hello-iome).
 
@@ -29,7 +29,7 @@ Residual-honest: **package wire ≠ invent Agent Plugins GA**. Not Memory GA. Di
 | Full Agent Plugins client GA | **not claimed** |
 | Sample skills-only package (`hello-iome`) | **done** (s1337 · dogfood primary · opt-in `[plugins]`) |
 | Sample product stdio memory map (`iomesh-memory-mcp`) | **done** (s1478 · public product map · binary on PATH for connect · not Memory GA · dual_write OFF) |
-| Sample residual stdio memory map (`aion-memory-mcp`) | **removed (s1517)** — product sample is `iomesh-memory-mcp` only |
+| Sample residual stdio memory map (private residual Memory sample) | **removed (s1517)** — product sample is `iomesh-memory-mcp` only |
 
 Package API entrypoint:
 
@@ -71,9 +71,9 @@ In-repo **product** dogfood package that **maps** public product edge Memory MCP
 - Discover/map success ≠ process Connected / install APPLY / **Memory GA** · dual_write **OFF** · not freemium hosted palace
 - TOML `[[mcp.servers]]` remains the **primary** attach path; package map is portable dogfood
 
-### `aion-memory-mcp` residual sample — **removed (s1517)**
+### Private residual Memory sample — **removed (s1517)**
 
-The in-tree residual private sample under `examples/agent-plugins/aion-memory-mcp` was **removed**. Product Memory MCP sample is [`iomesh-memory-mcp`](../../examples/agent-plugins/iomesh-memory-mcp) only. aion cloud broker/CP stays private (not OSS edge pack).
+The in-tree residual private sample under `examples/agent-plugins` private residual Memory sample was **removed**. Product Memory MCP sample is [`iomesh-memory-mcp`](../../examples/agent-plugins/iomesh-memory-mcp) only. control-plane / broker stays private (not OSS edge pack).
 
 
 ## Package layout (Agent Plugins 1.0.0)

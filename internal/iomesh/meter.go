@@ -126,7 +126,7 @@ func FormatUsage(s UsageSnapshot) string {
 // ModelUsagePrint is a CLI-side print row for mesh usage --json by_model[].
 // Always emits all fields (empty string / 0 honest) without omitempty gaps.
 //
-// s738: mold CatalogPrint s735 + KVEntryPrint time honesty. Peer aion s737.
+// s738: mold CatalogPrint s735 + KVEntryPrint time honesty. Peer mesh s737.
 // Beta · offline unit ≠ live APPLY · dual_write OFF · not full mesh RBAC GA ·
 // local process meter ≠ remote dashboard · DTO ≠ invent usage success.
 type ModelUsagePrint struct {
@@ -146,10 +146,10 @@ type ModelUsagePrint struct {
 // Wire UsageSnapshot keeps time.Time for in-process rollup; scrapers use this
 // print surface.
 //
-// s738: mold CatalogPrint s735 + PubPrint s732 + KVPutPrint s729; peer aion s737.
+// s738: mold CatalogPrint s735 + PubPrint s732 + KVPutPrint s729; peer mesh s737.
 // s756: completeness pin — docs + unit tests lock UsagePrint (s738) with
 // PubPrint (s732) + KVPutPrint/KVDeletePrint (s729) always-emit keys; does not
-// invent new DTO fields or re-claim s729/s732/s738 product bodies. Peer aion
+// invent new DTO fields or re-claim s729/s732/s738 product bodies. Peer mesh
 // s755 residual. DTO ≠ invent usage success · local process meter ≠ remote
 // dashboard · dual_write OFF · offline unit ≠ live APPLY · not full mesh RBAC GA.
 // Beta · offline unit ≠ live APPLY · empty/0/[] honest · dual_write OFF ·
@@ -202,7 +202,7 @@ func NewUsagePrint(s UsageSnapshot) UsagePrint {
 // "0001-01-01T00:00:00Z", and by_model is always [] not null. Call sites stay
 // FormatUsageJSON(UsageSnapshot). Local process meter — not a remote dashboard.
 //
-// s738: UsagePrint always-emit. Mold CatalogPrint s735. Peer aion s737 residual.
+// s738: UsagePrint always-emit. Mold CatalogPrint s735. Peer mesh s737 residual.
 func FormatUsageJSON(s UsageSnapshot) string {
 	b, err := json.MarshalIndent(NewUsagePrint(s), "", "  ")
 	if err != nil {

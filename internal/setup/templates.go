@@ -36,13 +36,13 @@ type InitOptions struct {
 	// MeshTenant optional.
 	MeshTenant string
 	// MeshOrg optional [iomesh].org / IOMESH_ORG residual (X-IOMesh-Org).
-	// Empty writes a commented org line + fail-open honesty (aion #2721).
+	// Empty writes a commented org line + fail-open honesty (broker empty-org fail-open).
 	MeshOrg string
 	// MeshAPIKeyEnv env var name only (default IOMESH_TOKEN).
 	MeshAPIKeyEnv string
 	// PlatformMCPURL streamable HTTP from portal Agent/MCP panel.
 	PlatformMCPURL string
-	// PlatformMCPName server name (default aion-platform).
+	// PlatformMCPName server name (default iomesh-platform).
 	PlatformMCPName string
 	// PlatformTokenEnv env name for Bearer (default IOMESH_TOKEN).
 	PlatformTokenEnv string
@@ -61,7 +61,7 @@ func DefaultInitOptions() InitOptions {
 		MemoryServer:     "iomesh-memory-mcp",
 		MemoryTenant:     "default",
 		MeshAPIKeyEnv:    "IOMESH_TOKEN",
-		PlatformMCPName:  "aion-platform",
+		PlatformMCPName:  "iomesh-platform",
 		PlatformTokenEnv: "IOMESH_TOKEN",
 		AutoRecall:       true,
 		AutoIngest:       false,
@@ -149,9 +149,9 @@ func BuildManagedFragment(profiles []Profile, opt InitOptions) (string, error) {
 			b.WriteString("# tenant = \"dept.yourorg\"\n")
 		}
 		if org := strings.TrimSpace(opt.MeshOrg); org != "" {
-			fmt.Fprintf(&b, "org = %q  # X-IOMesh-Org · IOMESH_ORG · empty fail-opens (aion #2721)\n", org)
+			fmt.Fprintf(&b, "org = %q  # X-IOMesh-Org · IOMESH_ORG · empty fail-opens (broker empty-org fail-open)\n", org)
 		} else {
-			b.WriteString("# org = \"org_…\"  # X-IOMesh-Org from console /me (org_ + cuid2) · IOMESH_ORG · empty fail-opens (aion #2721 fetch-org filter) · never invent Connected\n")
+			b.WriteString("# org = \"org_…\"  # X-IOMesh-Org from console /me (org_ + cuid2) · IOMESH_ORG · empty fail-opens (broker empty-org fail-open) · never invent Connected\n")
 		}
 		fmt.Fprintf(&b, "api_key_env = %q  # set env; never commit secret values\n", opt.MeshAPIKeyEnv)
 		b.WriteString("emit_dept_streams = true\n")

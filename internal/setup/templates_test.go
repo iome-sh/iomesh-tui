@@ -53,7 +53,7 @@ func TestBuildManagedFragment_All(t *testing.T) {
 		"# org =",
 		"IOMESH_ORG",
 		"fail-open",
-		"aion-platform",
+		"iomesh-platform",
 		"[plugins]",
 		"dirs = [\"/tmp/plugins\"]",
 		"dual_write = false",
@@ -104,7 +104,7 @@ func TestBuildManagedFragment_MeshOrgResidualEmpty(t *testing.T) {
 		"IOMESH_ORG",
 		"X-IOMesh-Org",
 		"fail-open",
-		"aion #2721",
+		"broker empty-org fail-open",
 		"never invent Connected",
 	} {
 		if !strings.Contains(frag, needle) {

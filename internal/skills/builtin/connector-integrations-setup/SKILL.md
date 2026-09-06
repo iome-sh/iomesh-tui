@@ -5,11 +5,11 @@ description: Residual-honest agent path to list/plan connector setup via MCP the
 
 # Connector integrations setup (residual-honest)
 
-Agent path for **connector integrations setup** via aion MCP tools — **not** full install CRUD, **not** OAuth complete without browser, **not** INSTALL_STORE APPLY green.
+Agent path for **connector integrations setup** via mesh MCP tools — **not** full install CRUD, **not** OAuth complete without browser, **not** INSTALL_STORE APPLY green.
 
 ## Workflow
 
-1. **Discover** — call MCP `list_connector_catalog` (aion v178).
+1. **Discover** — call MCP `list_connector_catalog` (mesh v178).
    - Returns `{count, entries[]}` with `id`, `status`, `mesh_layer`, `oauth_install_supported`, `portal_path`.
    - **Catalog status ≠ install Connected.** Status chips (`available` / `beta` / `planned`) are display honesty only.
    - Never invent install green or org Connected counts from the catalog.
@@ -23,7 +23,7 @@ Agent path for **connector integrations setup** via aion MCP tools — **not** f
    - Header parity / scheme / primary header names only.
    - **Discovery only** — no secret mint, no rotate, no invent secrets.
 
-4. **Org installs residual snapshot** — call MCP `list_org_connector_installs` with `org_id` (aion v179 / s1268 · TUI s1271/s1273).
+4. **Org installs residual snapshot** — call MCP `list_org_connector_installs` with `org_id` (mesh v179 / s1268 · TUI s1271/s1273).
    - Residual-honest **fail-open** by default: `available=false`, `status=unavailable`, `installs=null`.
    - **Never invent empty-as-none** — `installs=null` is residual honesty, **not** "none connected".
    - **dual_auth candidacy open** — not product dual-auth live green · **not Connected**.

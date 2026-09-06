@@ -55,7 +55,7 @@ url = "http://127.0.0.1:18081/mcp"
 | **Edge Memory GA candidacy only** | Residual candidacy · **PASS ≠ invent Edge Memory GA declared** |
 | **not bare Memory GA** | Attach stamp ≠ invent bare product Memory GA |
 | **not hosted Memory GA** | Local lean host ≠ multi-tenant hosted palace |
-| **aion broker private** | Cloud broker/CP stays private |
+| **control-plane / broker private** | Cloud broker/CP stays private |
 | **E10 Open** | Founder/GTM sign-off remains open |
 | **tip ≠ invent forever-green** | One observed stamp · not continuous product dogfood green |
 

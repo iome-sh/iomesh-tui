@@ -11,7 +11,7 @@ import (
 // Session-only: default still_human_soft_not_run. Soft offline pass/fail ≠ invent human-gate green · ≠ live APPLY ·
 // ≠ Edge Memory GA declared · ≠ E10 closed · ≠ dual_write ON · ≠ live dogfood · soft offline ≠ invent Connected.
 //
-// Lives in agent so AionAgentHumanGatesHonestyBoard + TUI slash share state
+// Lives in agent so MeshAgentHumanGatesHonestyBoard + TUI slash share state
 // without import cycles (agent cannot import tui).
 
 var stillHumanSoftDogfoodSession struct {
@@ -114,7 +114,7 @@ var stillHumanSoftDogfoodNeedles = []string{
 // dual_write ON · E10 closed · live dogfood.
 // Sets session soft marker (pass/fail). Returns residual-honest operator output.
 func RunStillHumanApplySoftDogfood() string {
-	board := AionAgentHumanGatesHonestyBoard()
+	board := MeshAgentHumanGatesHonestyBoard()
 	var missing []string
 	for _, want := range stillHumanSoftDogfoodNeedles {
 		if !strings.Contains(board, want) {
@@ -126,7 +126,7 @@ func RunStillHumanApplySoftDogfood() string {
 	label := StillHumanSoftSessionLabel()
 
 	var b strings.Builder
-	b.WriteString("aion onboard next still-human APPLY soft offline dogfood (residual-honest · s1574 Wave C continuum · no MCP dial · never start host · not live dogfood):\n")
+	b.WriteString("mesh onboard next still-human APPLY soft offline dogfood (residual-honest · s1574 Wave C continuum · no MCP dial · never start host · not live dogfood):\n")
 	b.WriteString("  Path: soft offline residual check of human-gates board honesty + still-human APPLY open inventory after Wave A–C continuum\n")
 	b.WriteString("  · never dial MCP · never start host · residual PASS ≠ invent Edge Memory GA declared · dual_write stays OFF · E10 Open\n")
 	b.WriteString("  · PASS ≠ invent human-gate green · PASS ≠ live APPLY · open boxes stay open · residual PASS ≠ live dogfood · session soft ≠ live dogfood · soft offline ≠ invent Connected\n")

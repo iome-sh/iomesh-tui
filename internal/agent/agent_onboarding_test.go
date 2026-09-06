@@ -11,9 +11,9 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/skills"
 )
 
-// s1363+s1368+s1372: AionAgentOnboardingGuidanceNote residual-honest needles.
-func TestAionAgentOnboardingStartHere_LeanPath(t *testing.T) {
-	out := AionAgentOnboardingStartHere()
+// s1363+s1368+s1372: MeshAgentOnboardingGuidanceNote residual-honest needles.
+func TestMeshAgentOnboardingStartHere_LeanPath(t *testing.T) {
+	out := MeshAgentOnboardingStartHere()
 	if out == "" {
 		t.Fatal("empty start-here")
 	}
@@ -40,8 +40,8 @@ func TestAionAgentOnboardingStartHere_LeanPath(t *testing.T) {
 	}
 }
 
-func TestAionAgentOnboardingGuidanceNote_HonestyNeedles(t *testing.T) {
-	out := AionAgentOnboardingGuidanceNote()
+func TestMeshAgentOnboardingGuidanceNote_HonestyNeedles(t *testing.T) {
+	out := MeshAgentOnboardingGuidanceNote()
 	if out == "" {
 		t.Fatal("empty guidance note")
 	}
@@ -68,7 +68,7 @@ func TestAionAgentOnboardingGuidanceNote_HonestyNeedles(t *testing.T) {
 		"Memory Ops Pack hidden public",
 		"local memory free OSS",
 		"knowledge/analytical",
-		"aion-agent-onboarding",
+		"mesh-agent-onboarding",
 		"read_skill",
 		"/integrations status",
 		"/onboard checklist",
@@ -130,9 +130,9 @@ func TestAionAgentOnboardingGuidanceNote_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1363+s1368+s1372: AionAgentOnboardingChecklist residual-honest numbered needles.
-func TestAionAgentOnboardingChecklist_HonestyNeedles(t *testing.T) {
-	out := AionAgentOnboardingChecklist()
+// s1363+s1368+s1372: MeshAgentOnboardingChecklist residual-honest numbered needles.
+func TestMeshAgentOnboardingChecklist_HonestyNeedles(t *testing.T) {
+	out := MeshAgentOnboardingChecklist()
 	if out == "" {
 		t.Fatal("empty checklist")
 	}
@@ -192,9 +192,9 @@ func TestAionAgentOnboardingChecklist_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1368: AionAgentOnboardingPortalHandoff residual-honest needles.
-func TestAionAgentOnboardingPortalHandoff_HonestyNeedles(t *testing.T) {
-	out := AionAgentOnboardingPortalHandoff()
+// s1368: MeshAgentOnboardingPortalHandoff residual-honest needles.
+func TestMeshAgentOnboardingPortalHandoff_HonestyNeedles(t *testing.T) {
+	out := MeshAgentOnboardingPortalHandoff()
 	if out == "" {
 		t.Fatal("empty portal handoff")
 	}
@@ -241,9 +241,9 @@ func TestAionAgentOnboardingPortalHandoff_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1368+s1372+s1382: AionAgentOnboardingStatus residual-honest offline static needles.
-func TestAionAgentOnboardingStatus_HonestyNeedles(t *testing.T) {
-	out := AionAgentOnboardingStatus()
+// s1368+s1372+s1382: MeshAgentOnboardingStatus residual-honest offline static needles.
+func TestMeshAgentOnboardingStatus_HonestyNeedles(t *testing.T) {
+	out := MeshAgentOnboardingStatus()
 	if out == "" {
 		t.Fatal("empty status")
 	}
@@ -335,9 +335,9 @@ func TestOSSPackagingHonestyOneLiner_Needles(t *testing.T) {
 	}
 }
 
-// s1372+s1377+s1382+s1402+s1407+s1413+s1417: AionAgentOnboardingNextLanes residual-honest post-onboard continuum needles.
-func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
-	out := AionAgentOnboardingNextLanes()
+// s1372+s1377+s1382+s1402+s1407+s1413+s1417: MeshAgentOnboardingNextLanes residual-honest post-onboard continuum needles.
+func TestMeshAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
+	out := MeshAgentOnboardingNextLanes()
 	if out == "" {
 		t.Fatal("empty next lanes")
 	}
@@ -370,7 +370,7 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"GTM agent GA",
 		"/onboard next gtm",
 		"3.",
-		"iomesh-memory-mcp", // product host (s1517: residual aion sample removed)
+		"iomesh-memory-mcp", // product host (s1517: residual private sample removed)
 		"iomesh-memory-mcp",
 		"github.com/iome-sh/iomesh-memory-mcp",
 		"public product attach",
@@ -378,7 +378,7 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"go install",
 		"no GOPRIVATE",
 		"docker compose still valid",
-		"aion broker private",
+		"control-plane / broker private",
 		"flip complete residual ≠ invent Memory GA",
 		"local-primary",
 		"dual_write OFF",
@@ -550,9 +550,9 @@ func TestAionAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1377: AionAgentOnboardingNextPluginsLane residual-honest plugins dogfood drill needles.
-func TestAionAgentOnboardingNextPluginsLane_HonestyNeedles(t *testing.T) {
-	out := AionAgentOnboardingNextPluginsLane()
+// s1377: MeshAgentOnboardingNextPluginsLane residual-honest plugins dogfood drill needles.
+func TestMeshAgentOnboardingNextPluginsLane_HonestyNeedles(t *testing.T) {
+	out := MeshAgentOnboardingNextPluginsLane()
 	if out == "" {
 		t.Fatal("empty plugins lane")
 	}
@@ -597,9 +597,9 @@ func TestAionAgentOnboardingNextPluginsLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1377: AionAgentOnboardingNextGtmLane residual-honest GTM draft-only drill needles.
-func TestAionAgentOnboardingNextGtmLane_HonestyNeedles(t *testing.T) {
-	out := AionAgentOnboardingNextGtmLane()
+// s1377: MeshAgentOnboardingNextGtmLane residual-honest GTM draft-only drill needles.
+func TestMeshAgentOnboardingNextGtmLane_HonestyNeedles(t *testing.T) {
+	out := MeshAgentOnboardingNextGtmLane()
 	if out == "" {
 		t.Fatal("empty gtm lane")
 	}
@@ -644,9 +644,9 @@ func TestAionAgentOnboardingNextGtmLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1377+s1453+s1458+s1463+s1469+s1478+s1508+s1517+s1695: AionAgentOnboardingNextMemoryLane residual-honest memory local + edge OSS + public product attach + E4 client attach + product-only sample + Ops Pack first-run honesty needles.
-func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
-	out := AionAgentOnboardingNextMemoryLane()
+// s1377+s1453+s1458+s1463+s1469+s1478+s1508+s1517+s1695: MeshAgentOnboardingNextMemoryLane residual-honest memory local + edge OSS + public product attach + E4 client attach + product-only sample + Ops Pack first-run honesty needles.
+func TestMeshAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
+	out := MeshAgentOnboardingNextMemoryLane()
 	if out == "" {
 		t.Fatal("empty memory lane")
 	}
@@ -659,10 +659,10 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 		"github.com/iome-sh/iomesh-memory-mcp",
 		"iomesh-memory-mcp",
 		"TUI OSS",
-		"s1517", // product-only memory sample (iomesh-memory-mcp); aion residual sample removed
+		"s1517", // product-only memory sample (iomesh-memory-mcp); private residual sample removed
 		"product-only memory sample",
-		"aion broker private",
-		"aion still private",
+		"control-plane / broker private",
+		"control-plane still private",
 		"public",
 		"s1478",
 		"s1508",
@@ -758,11 +758,11 @@ func TestAionAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1402+s2057: AionAgentOnboardingNextMeshLane residual-honest mesh streaming lane needles.
+// s1402+s2057: MeshAgentOnboardingNextMeshLane residual-honest mesh streaming lane needles.
 // s2057 adds integrate-app steps (infer · IOMESH_TOKEN · --create --yes · durable · --messages / /dashboard)
 // without dropping s1402 honesty tokens.
-func TestAionAgentOnboardingNextMeshLane_HonestyNeedles(t *testing.T) {
-	out := AionAgentOnboardingNextMeshLane()
+func TestMeshAgentOnboardingNextMeshLane_HonestyNeedles(t *testing.T) {
+	out := MeshAgentOnboardingNextMeshLane()
 	if out == "" {
 		t.Fatal("empty mesh lane")
 	}
@@ -833,9 +833,9 @@ func TestAionAgentOnboardingNextMeshLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1407+s1695: AionAgentOnboardingNextMemoryPullLane residual-honest Ops Pack pull path + first-run honesty needles.
-func TestAionAgentOnboardingNextMemoryPullLane_HonestyNeedles(t *testing.T) {
-	out := AionAgentOnboardingNextMemoryPullLane()
+// s1407+s1695: MeshAgentOnboardingNextMemoryPullLane residual-honest Ops Pack pull path + first-run honesty needles.
+func TestMeshAgentOnboardingNextMemoryPullLane_HonestyNeedles(t *testing.T) {
+	out := MeshAgentOnboardingNextMemoryPullLane()
 	if out == "" {
 		t.Fatal("empty memory-pull lane")
 	}
@@ -896,9 +896,9 @@ func TestAionAgentOnboardingNextMemoryPullLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1542+s1558: AionAgentOnboardingNextSetupLane residual-honest setup lifecycle P1–P7 closeout map needles.
-func TestAionAgentOnboardingNextSetupLane_HonestyNeedles(t *testing.T) {
-	out := AionAgentOnboardingNextSetupLane()
+// s1542+s1558: MeshAgentOnboardingNextSetupLane residual-honest setup lifecycle P1–P7 closeout map needles.
+func TestMeshAgentOnboardingNextSetupLane_HonestyNeedles(t *testing.T) {
+	out := MeshAgentOnboardingNextSetupLane()
 	if out == "" {
 		t.Fatal("empty setup lane")
 	}
@@ -968,12 +968,12 @@ func TestAionAgentOnboardingNextSetupLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1570 Wave C: AionAgentOnboardingNextWizardLane residual-honest guided first-run wizard residual needles.
-func TestAionAgentOnboardingNextWizardLane_HonestyNeedles(t *testing.T) {
+// s1570 Wave C: MeshAgentOnboardingNextWizardLane residual-honest guided first-run wizard residual needles.
+func TestMeshAgentOnboardingNextWizardLane_HonestyNeedles(t *testing.T) {
 	ResetWizardSoftDogfoodSessionState()
 	t.Cleanup(ResetWizardSoftDogfoodSessionState)
 
-	out := AionAgentOnboardingNextWizardLane()
+	out := MeshAgentOnboardingNextWizardLane()
 	if out == "" {
 		t.Fatal("empty wizard lane")
 	}
@@ -1050,9 +1050,9 @@ func TestAionAgentOnboardingNextWizardLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1558 Wave B: AionAgentOnboardingNextJourneyLane residual-honest 7-stage first-run map needles.
-func TestAionAgentOnboardingNextJourneyLane_HonestyNeedles(t *testing.T) {
-	out := AionAgentOnboardingNextJourneyLane()
+// s1558 Wave B: MeshAgentOnboardingNextJourneyLane residual-honest 7-stage first-run map needles.
+func TestMeshAgentOnboardingNextJourneyLane_HonestyNeedles(t *testing.T) {
+	out := MeshAgentOnboardingNextJourneyLane()
 	if out == "" {
 		t.Fatal("empty journey lane")
 	}
@@ -1139,12 +1139,12 @@ func TestAionAgentOnboardingNextJourneyLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1562: AionAgentOnboardingNextPortalHITLLane residual-honest journey stage-5 portal HITL needles.
-func TestAionAgentOnboardingNextPortalHITLLane_HonestyNeedles(t *testing.T) {
+// s1562: MeshAgentOnboardingNextPortalHITLLane residual-honest journey stage-5 portal HITL needles.
+func TestMeshAgentOnboardingNextPortalHITLLane_HonestyNeedles(t *testing.T) {
 	ResetPortalHITLSoftDogfoodSessionState()
 	t.Cleanup(ResetPortalHITLSoftDogfoodSessionState)
 
-	out := AionAgentOnboardingNextPortalHITLLane()
+	out := MeshAgentOnboardingNextPortalHITLLane()
 	if out == "" {
 		t.Fatal("empty portal-hitl lane")
 	}
@@ -1200,12 +1200,12 @@ func TestAionAgentOnboardingNextPortalHITLLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1566: AionAgentOnboardingNextE4Lane residual-honest journey stage-6 E4 client-attach needles.
-func TestAionAgentOnboardingNextE4Lane_HonestyNeedles(t *testing.T) {
+// s1566: MeshAgentOnboardingNextE4Lane residual-honest journey stage-6 E4 client-attach needles.
+func TestMeshAgentOnboardingNextE4Lane_HonestyNeedles(t *testing.T) {
 	ResetE4SoftDogfoodSessionState()
 	t.Cleanup(ResetE4SoftDogfoodSessionState)
 
-	out := AionAgentOnboardingNextE4Lane()
+	out := MeshAgentOnboardingNextE4Lane()
 	if out == "" {
 		t.Fatal("empty e4 lane")
 	}
@@ -1262,12 +1262,12 @@ func TestAionAgentOnboardingNextE4Lane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1578: AionAgentOnboardingNextToolCallLane residual-honest deeper tool-call needles.
-func TestAionAgentOnboardingNextToolCallLane_HonestyNeedles(t *testing.T) {
+// s1578: MeshAgentOnboardingNextToolCallLane residual-honest deeper tool-call needles.
+func TestMeshAgentOnboardingNextToolCallLane_HonestyNeedles(t *testing.T) {
 	ResetToolCallSoftDogfoodSessionState()
 	t.Cleanup(ResetToolCallSoftDogfoodSessionState)
 
-	out := AionAgentOnboardingNextToolCallLane()
+	out := MeshAgentOnboardingNextToolCallLane()
 	if out == "" {
 		t.Fatal("empty tool-call lane")
 	}
@@ -1332,12 +1332,12 @@ func TestAionAgentOnboardingNextToolCallLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1586: AionAgentOnboardingNextE10Lane residual-honest E10 Open reaffirm residual-check needles.
-func TestAionAgentOnboardingNextE10Lane_HonestyNeedles(t *testing.T) {
+// s1586: MeshAgentOnboardingNextE10Lane residual-honest E10 Open reaffirm residual-check needles.
+func TestMeshAgentOnboardingNextE10Lane_HonestyNeedles(t *testing.T) {
 	ResetE10SoftDogfoodSessionState()
 	t.Cleanup(ResetE10SoftDogfoodSessionState)
 
-	out := AionAgentOnboardingNextE10Lane()
+	out := MeshAgentOnboardingNextE10Lane()
 	if out == "" {
 		t.Fatal("empty e10 lane")
 	}
@@ -1392,9 +1392,9 @@ func TestAionAgentOnboardingNextE10Lane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1590: AionAgentOnboardingNextMarketingDemoLane plain-language marketing demo path needles.
-func TestAionAgentOnboardingNextMarketingDemoLane_HonestyNeedles(t *testing.T) {
-	out := AionAgentOnboardingNextMarketingDemoLane()
+// s1590: MeshAgentOnboardingNextMarketingDemoLane plain-language marketing demo path needles.
+func TestMeshAgentOnboardingNextMarketingDemoLane_HonestyNeedles(t *testing.T) {
+	out := MeshAgentOnboardingNextMarketingDemoLane()
 	if out == "" {
 		t.Fatal("empty marketing-demo lane")
 	}
@@ -1488,7 +1488,7 @@ func TestAionAgentOnboardingNextMarketingDemoLane_HonestyNeedles(t *testing.T) {
 		"operator cron",
 		"not a GTM scheduler",
 		"Mesh outbox ingest",
-		"private aion when wired",
+		"private broker when wired",
 		"dry-run default",
 		"Smoke / status tools",
 		"gtm_smoke",
@@ -1529,12 +1529,12 @@ func TestAionAgentOnboardingNextMarketingDemoLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1417+s1422: AionAgentOnboardingNextAgenticLane residual-honest product plane 3 agentic integrations needles.
-func TestAionAgentOnboardingNextAgenticLane_HonestyNeedles(t *testing.T) {
+// s1417+s1422: MeshAgentOnboardingNextAgenticLane residual-honest product plane 3 agentic integrations needles.
+func TestMeshAgentOnboardingNextAgenticLane_HonestyNeedles(t *testing.T) {
 	ResetAgenticListPlanSoftDogfoodSessionState()
 	t.Cleanup(ResetAgenticListPlanSoftDogfoodSessionState)
 
-	out := AionAgentOnboardingNextAgenticLane()
+	out := MeshAgentOnboardingNextAgenticLane()
 	if out == "" {
 		t.Fatal("empty agentic lane")
 	}
@@ -1610,9 +1610,9 @@ func TestAionAgentOnboardingNextAgenticLane_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1432: AionAgentOnboardingNextThreePlanes residual-honest three product planes board needles.
-func TestAionAgentOnboardingNextThreePlanes_HonestyNeedles(t *testing.T) {
-	out := AionAgentOnboardingNextThreePlanes()
+// s1432: MeshAgentOnboardingNextThreePlanes residual-honest three product planes board needles.
+func TestMeshAgentOnboardingNextThreePlanes_HonestyNeedles(t *testing.T) {
+	out := MeshAgentOnboardingNextThreePlanes()
 	if out == "" {
 		t.Fatal("empty three product planes board")
 	}
@@ -1697,9 +1697,9 @@ func TestAionAgentOnboardingNextThreePlanes_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1437: AionAgentOnboardingNextSalesClaims residual-honest sales/buyer claims board needles.
-func TestAionAgentOnboardingNextSalesClaims_HonestyNeedles(t *testing.T) {
-	out := AionAgentOnboardingNextSalesClaims()
+// s1437: MeshAgentOnboardingNextSalesClaims residual-honest sales/buyer claims board needles.
+func TestMeshAgentOnboardingNextSalesClaims_HonestyNeedles(t *testing.T) {
+	out := MeshAgentOnboardingNextSalesClaims()
 	if out == "" {
 		t.Fatal("empty sales claims board")
 	}
@@ -1794,9 +1794,9 @@ func TestAionAgentOnboardingNextSalesClaims_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1442: AionAgentOnboardingNextDemoReadiness residual-honest demo readiness board needles.
-func TestAionAgentOnboardingNextDemoReadiness_HonestyNeedles(t *testing.T) {
-	out := AionAgentOnboardingNextDemoReadiness()
+// s1442: MeshAgentOnboardingNextDemoReadiness residual-honest demo readiness board needles.
+func TestMeshAgentOnboardingNextDemoReadiness_HonestyNeedles(t *testing.T) {
+	out := MeshAgentOnboardingNextDemoReadiness()
 	if out == "" {
 		t.Fatal("empty demo readiness board")
 	}
@@ -1876,10 +1876,10 @@ func TestAionAgentOnboardingNextDemoReadiness_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1427: AionAgentOnboardingNextAgenticDualAuthCandidacy residual-honest dual-auth candidacy needles.
-// s1447: AionAgentOnboardingNextOperatorMatrix residual-honest operator readiness matrix needles.
-func TestAionAgentOnboardingNextOperatorMatrix_HonestyNeedles(t *testing.T) {
-	out := AionAgentOnboardingNextOperatorMatrix()
+// s1427: MeshAgentOnboardingNextAgenticDualAuthCandidacy residual-honest dual-auth candidacy needles.
+// s1447: MeshAgentOnboardingNextOperatorMatrix residual-honest operator readiness matrix needles.
+func TestMeshAgentOnboardingNextOperatorMatrix_HonestyNeedles(t *testing.T) {
+	out := MeshAgentOnboardingNextOperatorMatrix()
 	if out == "" {
 		t.Fatal("empty operator readiness matrix")
 	}
@@ -1978,8 +1978,8 @@ func TestAionAgentOnboardingNextOperatorMatrix_HonestyNeedles(t *testing.T) {
 	}
 }
 
-func TestAionAgentOnboardingNextAgenticDualAuthCandidacy_HonestyNeedles(t *testing.T) {
-	out := AionAgentOnboardingNextAgenticDualAuthCandidacy()
+func TestMeshAgentOnboardingNextAgenticDualAuthCandidacy_HonestyNeedles(t *testing.T) {
+	out := MeshAgentOnboardingNextAgenticDualAuthCandidacy()
 	if out == "" {
 		t.Fatal("empty dual-auth candidacy board")
 	}
@@ -2048,7 +2048,7 @@ func TestAionAgentOnboardingNextAgenticDualAuthCandidacy_HonestyNeedles(t *testi
 }
 
 // s1422: status/export reflect agentic list/plan session soft after dogfood.
-func TestAionAgentOnboardingNextLaneStatus_AgenticListPlanSoftDogfood(t *testing.T) {
+func TestMeshAgentOnboardingNextLaneStatus_AgenticListPlanSoftDogfood(t *testing.T) {
 	ResetAgenticListPlanSoftDogfoodSessionState()
 	agentplugins.ResetSoftDogfoodSessionState()
 	t.Cleanup(func() {
@@ -2057,7 +2057,7 @@ func TestAionAgentOnboardingNextLaneStatus_AgenticListPlanSoftDogfood(t *testing
 	})
 
 	// Default: list_plan_soft_not_run on agentic row
-	out := AionAgentOnboardingNextLaneStatus()
+	out := MeshAgentOnboardingNextLaneStatus()
 	if !strings.Contains(out, "list_plan_soft_not_run") {
 		t.Fatalf("default status want list_plan_soft_not_run:\n%s", out)
 	}
@@ -2074,7 +2074,7 @@ func TestAionAgentOnboardingNextLaneStatus_AgenticListPlanSoftDogfood(t *testing
 
 	// Soft pass via runner
 	_ = RunAgenticListPlanSoftDogfood()
-	out = AionAgentOnboardingNextLaneStatus()
+	out = MeshAgentOnboardingNextLaneStatus()
 	if !strings.Contains(out, "soft_offline_list_plan_session_pass") {
 		t.Fatalf("after pass want soft_offline_list_plan_session_pass:\n%s", out)
 	}
@@ -2103,7 +2103,7 @@ func TestAionAgentOnboardingNextLaneStatus_AgenticListPlanSoftDogfood(t *testing
 
 	// Soft fail
 	SetAgenticListPlanSoftDogfoodSessionState(false)
-	out = AionAgentOnboardingNextLaneStatus()
+	out = MeshAgentOnboardingNextLaneStatus()
 	if !strings.Contains(out, "soft_offline_list_plan_session_fail") {
 		t.Fatalf("after fail want soft_offline_list_plan_session_fail:\n%s", out)
 	}
@@ -2112,7 +2112,7 @@ func TestAionAgentOnboardingNextLaneStatus_AgenticListPlanSoftDogfood(t *testing
 	}
 
 	// Export markdown + JSON follow session
-	exp := AionAgentOnboardingNextLaneStatusExport()
+	exp := MeshAgentOnboardingNextLaneStatusExport()
 	if !strings.Contains(exp, "soft_offline_list_plan_session_fail") {
 		t.Fatalf("export after fail want session fail:\n%s", exp)
 	}
@@ -2123,7 +2123,7 @@ func TestAionAgentOnboardingNextLaneStatus_AgenticListPlanSoftDogfood(t *testing
 		t.Fatalf("export must not invent Connected:\n%s", exp)
 	}
 
-	js := AionAgentOnboardingNextLaneStatusExportJSON()
+	js := MeshAgentOnboardingNextLaneStatusExportJSON()
 	if !strings.Contains(js, `"agentic_list_plan_soft_state": "soft_offline_list_plan_session_fail"`) {
 		t.Fatalf("export JSON want agentic_list_plan_soft_state fail:\n%s", js)
 	}
@@ -2138,14 +2138,14 @@ func TestAionAgentOnboardingNextLaneStatus_AgenticListPlanSoftDogfood(t *testing
 	}
 }
 
-// s1413+s1546+s1550+s1574: AionAgentHumanGatesHonestyBoard residual-honest edge-first needles.
+// s1413+s1546+s1550+s1574: MeshAgentHumanGatesHonestyBoard residual-honest edge-first needles.
 // s1550: edge-first pin — knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect.
 // s1574: Wave C continuum still-human APPLY soft residual reaffirm · open boxes stay open.
-func TestAionAgentHumanGatesHonestyBoard_HonestyNeedles(t *testing.T) {
+func TestMeshAgentHumanGatesHonestyBoard_HonestyNeedles(t *testing.T) {
 	ResetStillHumanSoftDogfoodSessionState()
 	t.Cleanup(ResetStillHumanSoftDogfoodSessionState)
 
-	out := AionAgentHumanGatesHonestyBoard()
+	out := MeshAgentHumanGatesHonestyBoard()
 	if out == "" {
 		t.Fatal("empty human-gates honesty board")
 	}
@@ -2234,8 +2234,8 @@ func TestAionAgentHumanGatesHonestyBoard_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1382: AionAgentOnboardingNextLaneStatus residual-honest lane status board needles.
-func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
+// s1382: MeshAgentOnboardingNextLaneStatus residual-honest lane status board needles.
+func TestMeshAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 	agentplugins.ResetSoftDogfoodSessionState()
 	ResetAgenticListPlanSoftDogfoodSessionState()
 	t.Cleanup(func() {
@@ -2243,7 +2243,7 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		ResetAgenticListPlanSoftDogfoodSessionState()
 	})
 
-	out := AionAgentOnboardingNextLaneStatus()
+	out := MeshAgentOnboardingNextLaneStatus()
 	if out == "" {
 		t.Fatal("empty next lane status board")
 	}
@@ -2300,7 +2300,7 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"flip complete residual ≠ invent Memory GA",
 		"public OSS ≠ invent platform GA",
 		"PASS ≠ invent full platform sidecar parity",
-		"aion broker private",
+		"control-plane / broker private",
 		"s1508",
 		"Edge Memory GA candidacy only",
 		"residual PASS ≠ invent Edge Memory GA declared",
@@ -2394,12 +2394,12 @@ func TestAionAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 }
 
 // s1397: status/export reflect session soft dogfood pass/fail (≠ live dogfood · ≠ invent GA/Connected).
-func TestAionAgentOnboardingNextLaneStatus_SessionSoftDogfood(t *testing.T) {
+func TestMeshAgentOnboardingNextLaneStatus_SessionSoftDogfood(t *testing.T) {
 	agentplugins.ResetSoftDogfoodSessionState()
 	t.Cleanup(agentplugins.ResetSoftDogfoodSessionState)
 
 	// Default: dogfood_not_run
-	out := AionAgentOnboardingNextLaneStatus()
+	out := MeshAgentOnboardingNextLaneStatus()
 	if !strings.Contains(out, "dogfood_not_run") {
 		t.Fatalf("default status want dogfood_not_run:\n%s", out)
 	}
@@ -2409,7 +2409,7 @@ func TestAionAgentOnboardingNextLaneStatus_SessionSoftDogfood(t *testing.T) {
 
 	// Soft pass → session pass label
 	agentplugins.SetSoftDogfoodSessionState(true)
-	out = AionAgentOnboardingNextLaneStatus()
+	out = MeshAgentOnboardingNextLaneStatus()
 	if !strings.Contains(out, "soft_offline_dogfood_session_pass") {
 		t.Fatalf("after pass want soft_offline_dogfood_session_pass:\n%s", out)
 	}
@@ -2433,7 +2433,7 @@ func TestAionAgentOnboardingNextLaneStatus_SessionSoftDogfood(t *testing.T) {
 
 	// Soft fail
 	agentplugins.SetSoftDogfoodSessionState(false)
-	out = AionAgentOnboardingNextLaneStatus()
+	out = MeshAgentOnboardingNextLaneStatus()
 	if !strings.Contains(out, "soft_offline_dogfood_session_fail") {
 		t.Fatalf("after fail want soft_offline_dogfood_session_fail:\n%s", out)
 	}
@@ -2445,7 +2445,7 @@ func TestAionAgentOnboardingNextLaneStatus_SessionSoftDogfood(t *testing.T) {
 	}
 
 	// Export markdown + JSON follow session
-	exp := AionAgentOnboardingNextLaneStatusExport()
+	exp := MeshAgentOnboardingNextLaneStatusExport()
 	if !strings.Contains(exp, "soft_offline_dogfood_session_fail") {
 		t.Fatalf("export after fail want session fail:\n%s", exp)
 	}
@@ -2456,7 +2456,7 @@ func TestAionAgentOnboardingNextLaneStatus_SessionSoftDogfood(t *testing.T) {
 		t.Fatalf("export must not invent Connected/GA:\n%s", exp)
 	}
 
-	js := AionAgentOnboardingNextLaneStatusExportJSON()
+	js := MeshAgentOnboardingNextLaneStatusExportJSON()
 	if !strings.Contains(js, `"plugins_dogfood_state": "soft_offline_dogfood_session_fail"`) {
 		t.Fatalf("export JSON want plugins_dogfood_state fail:\n%s", js)
 	}
@@ -2472,18 +2472,18 @@ func TestAionAgentOnboardingNextLaneStatus_SessionSoftDogfood(t *testing.T) {
 
 	// Pass on export
 	agentplugins.SetSoftDogfoodSessionState(true)
-	exp = AionAgentOnboardingNextLaneStatusExport()
+	exp = MeshAgentOnboardingNextLaneStatusExport()
 	if !strings.Contains(exp, "soft_offline_dogfood_session_pass") {
 		t.Fatalf("export after pass want session pass:\n%s", exp)
 	}
-	js = AionAgentOnboardingNextLaneStatusExportJSON()
+	js = MeshAgentOnboardingNextLaneStatusExportJSON()
 	if !strings.Contains(js, `"plugins_dogfood_state": "soft_offline_dogfood_session_pass"`) {
 		t.Fatalf("export JSON want plugins_dogfood_state pass:\n%s", js)
 	}
 }
 
-// s1387: AionAgentOnboardingNextLaneStatusExport residual-honest markdown export receipt needles.
-func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
+// s1387: MeshAgentOnboardingNextLaneStatusExport residual-honest markdown export receipt needles.
+func TestMeshAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 	agentplugins.ResetSoftDogfoodSessionState()
 	ResetAgenticListPlanSoftDogfoodSessionState()
 	t.Cleanup(func() {
@@ -2491,7 +2491,7 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 		ResetAgenticListPlanSoftDogfoodSessionState()
 	})
 
-	out := AionAgentOnboardingNextLaneStatusExport()
+	out := MeshAgentOnboardingNextLaneStatusExport()
 	if out == "" {
 		t.Fatal("empty next lane status export receipt")
 	}
@@ -2532,7 +2532,7 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 		"flip complete residual ≠ invent Memory GA",
 		"public OSS ≠ invent platform GA",
 		"PASS ≠ invent full platform sidecar parity",
-		"aion broker private",
+		"control-plane / broker private",
 		"s1508",
 		"Edge Memory GA candidacy only",
 		"residual PASS ≠ invent Edge Memory GA declared",
@@ -2607,8 +2607,8 @@ func TestAionAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// s1387: AionAgentOnboardingNextLaneStatusExportJSON residual-honest JSON export needles.
-func TestAionAgentOnboardingNextLaneStatusExportJSON_HonestyNeedles(t *testing.T) {
+// s1387: MeshAgentOnboardingNextLaneStatusExportJSON residual-honest JSON export needles.
+func TestMeshAgentOnboardingNextLaneStatusExportJSON_HonestyNeedles(t *testing.T) {
 	agentplugins.ResetSoftDogfoodSessionState()
 	ResetAgenticListPlanSoftDogfoodSessionState()
 	t.Cleanup(func() {
@@ -2616,7 +2616,7 @@ func TestAionAgentOnboardingNextLaneStatusExportJSON_HonestyNeedles(t *testing.T
 		ResetAgenticListPlanSoftDogfoodSessionState()
 	})
 
-	out := AionAgentOnboardingNextLaneStatusExportJSON()
+	out := MeshAgentOnboardingNextLaneStatusExportJSON()
 	if out == "" {
 		t.Fatal("empty next lane status export JSON")
 	}
@@ -2688,7 +2688,7 @@ func TestAionAgentOnboardingNextLaneStatusExportJSON_HonestyNeedles(t *testing.T
 	}
 }
 
-// s1363: AttachMCP injects <aion-onboarding> system note when MCP manager is present.
+// s1363: AttachMCP injects <mesh-onboarding> system note when MCP manager is present.
 // Mirrors TestAttachMCP_InjectsIntegrationsGuidance / InjectsMemoryAdvancedGuidance.
 func TestAttachMCP_InjectsAionOnboardingGuidance(t *testing.T) {
 	cInR, cInW := io.Pipe()
@@ -2696,7 +2696,7 @@ func TestAttachMCP_InjectsAionOnboardingGuidance(t *testing.T) {
 	go mockIntegrationsMCP(cOutW, cInR)
 
 	mut := false
-	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "aion-scenario", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
+	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "mesh-scenario", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
 	defer cl.Close()
 	if err := cl.InitForTest(context.Background()); err != nil {
 		t.Fatal(err)
@@ -2708,11 +2708,11 @@ func TestAttachMCP_InjectsAionOnboardingGuidance(t *testing.T) {
 	rt.AttachMCP(mgr)
 
 	sys := rt.Messages()[0].Content
-	if !strings.Contains(sys, "<aion-onboarding>") {
-		t.Fatalf("want <aion-onboarding> system note: %s", sys)
+	if !strings.Contains(sys, "<mesh-onboarding>") {
+		t.Fatalf("want <mesh-onboarding> system note: %s", sys)
 	}
-	if !strings.Contains(sys, "</aion-onboarding>") {
-		t.Fatalf("want closed aion-onboarding tag: %s", sys)
+	if !strings.Contains(sys, "</mesh-onboarding>") {
+		t.Fatalf("want closed mesh-onboarding tag: %s", sys)
 	}
 	for _, want := range []string{
 		"list_connector_catalog",
@@ -2721,14 +2721,14 @@ func TestAttachMCP_InjectsAionOnboardingGuidance(t *testing.T) {
 		"not Memory GA",
 		"never invent install green",
 		"portal HITL",
-		"aion-agent-onboarding",
+		"mesh-agent-onboarding",
 		// s1368 needles in injected note
 		"console.iome.sh/settings/agent",
 		"Agent/MCP",
 		"[[mcp.servers]]",
 	} {
 		if !strings.Contains(sys, want) {
-			t.Fatalf("aion-onboarding note missing %q: %s", want, sys)
+			t.Fatalf("mesh-onboarding note missing %q: %s", want, sys)
 		}
 	}
 	// Co-inject with integrations + memory-advanced (s1251 + s1291 + s1363).
@@ -2747,8 +2747,8 @@ func TestAttachMCP_InjectsAionOnboardingGuidance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := cat.Get("aion-agent-onboarding"); !ok {
-		t.Fatalf("want builtin aion-agent-onboarding; names=%v", cat.Names())
+	if _, ok := cat.Get("mesh-agent-onboarding"); !ok {
+		t.Fatalf("want builtin mesh-agent-onboarding; names=%v", cat.Names())
 	}
 }
 
@@ -2788,19 +2788,19 @@ func TestOnboardNextStepLines_HonestyNeedles(t *testing.T) {
 		t.Fatalf("must not invent Connected green:\n%s", out)
 	}
 	// Family alias returns the same residual block.
-	alias := strings.Join(AionAgentOnboardingNextStepLines(), "\n")
+	alias := strings.Join(MeshAgentOnboardingNextStepLines(), "\n")
 	if alias != out {
-		t.Fatalf("AionAgentOnboardingNextStepLines alias mismatch:\n got %q\nwant %q", alias, out)
+		t.Fatalf("MeshAgentOnboardingNextStepLines alias mismatch:\n got %q\nwant %q", alias, out)
 	}
 }
 
 // TestOnboardSurfaces_S1825NextStep pins s1825 next-step footers on onboard maps.
 func TestOnboardSurfaces_S1825NextStep(t *testing.T) {
 	for name, out := range map[string]string{
-		"status":    AionAgentOnboardingStatus(),
-		"checklist": AionAgentOnboardingChecklist(),
-		"next":      AionAgentOnboardingNextLanes(),
-		"portal":    AionAgentOnboardingPortalHandoff(),
+		"status":    MeshAgentOnboardingStatus(),
+		"checklist": MeshAgentOnboardingChecklist(),
+		"next":      MeshAgentOnboardingNextLanes(),
+		"portal":    MeshAgentOnboardingPortalHandoff(),
 	} {
 		for _, want := range []string{
 			"s1825",

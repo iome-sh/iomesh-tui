@@ -498,7 +498,7 @@ func TestFormatKVDelete_AlwaysEmit(t *testing.T) {
 // (s729) always-emit keys via FormatKVPutJSON / FormatKVDeleteJSON / New*
 // helpers (DTO surfaces already always-emit; this serial docs+tests pin
 // completeness, does not invent new fields or re-claim s729 product body). Peer
-// aion s755 residual. No value echo · no pull_role · s714 ≠ mutate residual ·
+// mesh s755 residual. No value echo · no pull_role · s714 ≠ mutate residual ·
 // DTO ≠ invent mutate success · dual_write OFF · offline unit ≠ live APPLY ·
 // not full mesh RBAC GA.
 func TestKVMutatePrint_JSONCompletenessPin(t *testing.T) {

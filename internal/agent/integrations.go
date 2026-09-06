@@ -9,8 +9,8 @@ import (
 )
 
 // MCP tool names for residual-honest agent connector setup
-// (s1238 TUI · peer aion s1237 v178 · s1242 wire parity · s1243 signing ·
-// s1271 list_org_connector_installs residual / aion s1268 v179).
+// (s1238 TUI · peer mesh s1237 v178 · s1242 wire parity · s1243 signing ·
+// s1271 list_org_connector_installs residual / mesh s1268 v179).
 // Not install CRUD · not OAuth complete · not checklist/API-key mint · not secret mint/rotate.
 // list_org_connector_installs is read-only residual-honest (default available=false / installs=null).
 const (
@@ -30,7 +30,7 @@ const (
 
 	// s1263/s1271: residual-honest org install snapshot lines for /integrations status.
 	// When list_org_connector_installs is missing/offline: static residual (portal HITL).
-	// When present: call with org_id (if configured) and format aion v179 fail-open wire —
+	// When present: call with org_id (if configured) and format mesh v179 fail-open wire —
 	// available=false / installs=null is residual honesty, NOT "no installs".
 	// Never invent Connected / empty-as-none / INSTALL_STORE green.
 	statusOrgInstallsUnavailableLine = "org installs: unavailable via agent MCP (portal session HITL only)"
@@ -97,14 +97,14 @@ usage: /integrations [list [--layer operational|knowledge|analytical] | plan <co
            browser HITL · plan ≠ APPLY · catalog ≠ Connected
 honesty: ` + IntegrationsHonestyOneLiner + `
   fail-open when MCP unavailable → portal HITL ` + integrationsPortalURL + `
-  aion MCP v178 list/plan + v30 signing · browser HITL for OAuth · never invent install green`)
+  mesh MCP v178 list/plan + v30 signing · browser HITL for OAuth · never invent install green`)
 }
 
 // IntegrationsOfflineMessage is printed when MCP manager is missing or tools are not connected.
 func IntegrationsOfflineMessage() string {
 	return strings.TrimSpace(`integrations: MCP connector tools unavailable (fail-open).
   portal HITL: `+integrationsPortalURL+`
-  aion MCP tools list_connector_catalog / plan_connector_setup (v178/s1237) · get_webhook_signing_headers (v30) · TUI wire parity s1242/s1243.
+  mesh MCP tools list_connector_catalog / plan_connector_setup (v178/s1237) · get_webhook_signing_headers (v30) · TUI wire parity s1242/s1243.
   `+IntegrationsHonestyOneLiner) + "\n" + strings.Join(IntegrationsNextStepLines(), "\n")
 }
 
@@ -112,7 +112,7 @@ func IntegrationsOfflineMessage() string {
 func IntegrationsToolMissingMessage(tool string) string {
 	return fmt.Sprintf(strings.TrimSpace(`integrations: MCP tool %q not found on any connected server (fail-open).
   portal HITL: %s
-  aion MCP tools list_connector_catalog / plan_connector_setup (v178) · get_webhook_signing_headers (v30).
+  mesh MCP tools list_connector_catalog / plan_connector_setup (v178) · get_webhook_signing_headers (v30).
   %s`), tool, integrationsPortalURL, IntegrationsHonestyOneLiner) + "\n" + strings.Join(IntegrationsNextStepLines(), "\n")
 }
 
@@ -121,7 +121,7 @@ func IntegrationsToolMissingMessage(tool string) string {
 // Fail-open: when MCP/tool unavailable returns residual-honest offline guidance (nil error).
 // Never invents install green; catalog status is display-only honesty (Beta/planned/available).
 //
-// aion v178 wire: {"count":N,"entries":[{id,label,status,mesh_layer,ingress_type,
+// mesh v178 wire: {"count":N,"entries":[{id,label,status,mesh_layer,ingress_type,
 // webhook_path,summary,oauth_install_supported,portal_path}]}.
 func (rt *Runtime) IntegrationsCatalog(ctx context.Context, meshLayer string) (string, error) {
 	layer := strings.ToLower(strings.TrimSpace(meshLayer))
@@ -166,7 +166,7 @@ func (rt *Runtime) IntegrationsCatalog(ctx context.Context, meshLayer string) (s
 // Surfaces portal_url, oauth_mode_hint, signing_headers_tool, next_steps, honesty.notes.
 // Never invents install green. Fail-open when MCP/tool unavailable.
 //
-// aion v178 wire: {connector_id, org_id, connector, portal_url, oauth_install_supported,
+// mesh v178 wire: {connector_id, org_id, connector, portal_url, oauth_install_supported,
 // oauth_mode_hint, signing_headers_tool, next_steps, honesty:{…, notes:[]}}.
 func (rt *Runtime) IntegrationsPlan(ctx context.Context, connectorID string) (string, error) {
 	id := strings.TrimSpace(connectorID)
@@ -197,7 +197,7 @@ func (rt *Runtime) IntegrationsPlan(ctx context.Context, connectorID string) (st
 }
 
 // IntegrationsSigning discovers webhook signing header parity via MCP
-// get_webhook_signing_headers (s1243 · aion v30).
+// get_webhook_signing_headers (s1243 · mesh v30).
 //
 // meshLayerOrConnector: optional mesh_layer (operational|knowledge|analytical) or a
 // connector id for client-side filter. Empty = full catalog.
@@ -212,7 +212,7 @@ func (rt *Runtime) IntegrationsSigning(ctx context.Context, meshLayerOrConnector
 	case "operational", "knowledge", "analytical":
 		args["mesh_layer"] = hint
 	default:
-		// Treat as connector_id hint — aion input is mesh_layer only; filter client-side.
+		// Treat as connector_id hint — mesh input is mesh_layer only; filter client-side.
 		clientFilterID = hint
 	}
 
@@ -253,7 +253,7 @@ func (rt *Runtime) IntegrationsSigning(ctx context.Context, meshLayerOrConnector
 //   - Catalog count ≠ install count (label as catalog honesty only)
 //   - Offline fail-open preserved
 //   - dual_write OFF · book-demo OFF · stub ≠ live · browser HITL · signing discovery only
-//   - list_org_connector_installs is residual-honest read-only (aion s1268 v179) — not install CRUD
+//   - list_org_connector_installs is residual-honest read-only (mesh s1268 v179) — not install CRUD
 func (rt *Runtime) IntegrationsStatus(ctx context.Context) (string, error) {
 	var b strings.Builder
 	b.WriteString("integrations status (s1247 residual-honest operator pulse)\n")
@@ -322,7 +322,7 @@ func (rt *Runtime) IntegrationsStatus(ctx context.Context) (string, error) {
 // statusOrgInstallsSection is the s1263/s1271 residual-honest org install snapshot block.
 // Always emitted. When list_org_connector_installs is offline/missing: static residual
 // (portal HITL · dual-auth candidacy open). When present: optional call with mesh org_id;
-// aion v179 default returns available=false / installs=null (never invent empty-as-none).
+// mesh v179 default returns available=false / installs=null (never invent empty-as-none).
 func (rt *Runtime) statusOrgInstallsSection(ctx context.Context, toolState string) string {
 	if toolState == "" {
 		toolState = rt.mcpToolPresence(mcpToolListOrgConnectorInstalls)
@@ -485,13 +485,13 @@ func isMCPToolMissing(err error) bool {
 
 // --- formatting (JSON fail-open → compact table / plan block) ---
 
-// connectorCatalogItem matches aion v178 ConnectorCatalogEntry (+ legacy aliases).
+// connectorCatalogItem matches mesh v178 ConnectorCatalogEntry (+ legacy aliases).
 type connectorCatalogItem struct {
 	ID        string `json:"id"`
 	Label     string `json:"label"`
 	Status    string `json:"status"`
 	MeshLayer string `json:"mesh_layer"`
-	// OAuthInstallSupported is aion v178 wire (bool). Pointer distinguishes absent vs false.
+	// OAuthInstallSupported is mesh v178 wire (bool). Pointer distinguishes absent vs false.
 	OAuthInstallSupported *bool `json:"oauth_install_supported"`
 	// OAuth is a legacy any-shaped field (bool or string) for pre-v178 servers.
 	OAuth any `json:"oauth"`
@@ -502,10 +502,10 @@ type connectorCatalogItem struct {
 	PortalPath  string `json:"portal_path"`
 }
 
-// connectorCatalogPayload accepts aion v178 {count,entries} and legacy keys.
+// connectorCatalogPayload accepts mesh v178 {count,entries} and legacy keys.
 type connectorCatalogPayload struct {
 	Count      int                    `json:"count"`
-	Entries    []connectorCatalogItem `json:"entries"` // aion v178
+	Entries    []connectorCatalogItem `json:"entries"` // mesh v178
 	Connectors []connectorCatalogItem `json:"connectors"`
 	Items      []connectorCatalogItem `json:"items"`
 	Catalog    []connectorCatalogItem `json:"catalog"`
@@ -528,7 +528,7 @@ func formatConnectorCatalog(raw, layerFilter string) string {
 		if err := json.Unmarshal([]byte(raw), &p); err != nil {
 			return ""
 		}
-		// Prefer aion v178 "entries", then legacy keys.
+		// Prefer mesh v178 "entries", then legacy keys.
 		items = p.Entries
 		if len(items) == 0 {
 			items = p.Connectors
@@ -675,7 +675,7 @@ func oauthYesNo(oauth any, ingressType string) string {
 	return "-"
 }
 
-// connectorPlanPayload matches aion v178 plan_connector_setup (+ s1244 deep links + legacy aliases).
+// connectorPlanPayload matches mesh v178 plan_connector_setup (+ s1244 deep links + legacy aliases).
 type connectorPlanPayload struct {
 	ConnectorID           string                `json:"connector_id"`
 	ID                    string                `json:"id"`
@@ -850,7 +850,7 @@ func honestyNotes(honesty any, notes []string, note string) []string {
 			}
 		}
 	case map[string]any:
-		// aion v178: honesty.notes []string (+ residual bool flags).
+		// mesh v178: honesty.notes []string (+ residual bool flags).
 		if notesRaw, ok := v["notes"]; ok {
 			switch ns := notesRaw.(type) {
 			case []any:
@@ -893,7 +893,7 @@ func honestyNotes(honesty any, notes []string, note string) []string {
 	return out
 }
 
-// webhookSigningPayload matches aion v30 get_webhook_signing_headers output.
+// webhookSigningPayload matches mesh v30 get_webhook_signing_headers output.
 type webhookSigningPayload struct {
 	FleetEnabled bool                  `json:"fleet_enabled"`
 	FleetEnvVar  string                `json:"fleet_env_var"`
@@ -1034,7 +1034,7 @@ func statusHonestyFooter() string {
   `+IntegrationsHonestyOneLiner) + "\n" + strings.Join(IntegrationsNextStepLines(), "\n")
 }
 
-// orgInstallsSnapshotPayload matches aion v179 list_org_connector_installs residual wire.
+// orgInstallsSnapshotPayload matches mesh v179 list_org_connector_installs residual wire.
 // Default path: available=false, status=unavailable, installs=null (never invent empty-as-none).
 type orgInstallsSnapshotPayload struct {
 	OrgID     string `json:"org_id"`
@@ -1048,7 +1048,7 @@ type orgInstallsSnapshotPayload struct {
 	Honesty  any             `json:"honesty"`
 }
 
-// formatOrgInstallsSnapshot formats aion v179 list_org_connector_installs residual wire
+// formatOrgInstallsSnapshot formats mesh v179 list_org_connector_installs residual wire
 // for the status pulse (s1271). Hard locks:
 //   - available=false / status=unavailable is residual honesty, NOT "no installs"
 //   - installs=null never rendered as empty Connected / installs: 0
@@ -1086,7 +1086,7 @@ func formatOrgInstallsSnapshot(raw string) string {
 		fmt.Fprintf(&b, "org installs: list_org_connector_installs · available=false · status=%s\n",
 			firstNonEmpty(status, "unavailable"))
 	} else {
-		// Live dual-auth path (not default aion v179) — still residual: no invent Connected.
+		// Live dual-auth path (not default mesh v179) — still residual: no invent Connected.
 		fmt.Fprintf(&b, "org installs: list_org_connector_installs · available=true · status=%s\n",
 			firstNonEmpty(status, "available"))
 	}
@@ -1173,7 +1173,7 @@ func formatCatalogPulse(raw string) string {
 		if err := json.Unmarshal([]byte(raw), &p); err != nil {
 			return ""
 		}
-		// Prefer aion v178 "entries", then legacy keys (same order as formatConnectorCatalog).
+		// Prefer mesh v178 "entries", then legacy keys (same order as formatConnectorCatalog).
 		items = p.Entries
 		if len(items) == 0 {
 			items = p.Connectors

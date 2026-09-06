@@ -9,11 +9,11 @@ Agent-native path to **bootstrap** local TUI config planes via managed fragment 
 
 Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the operator is at a terminal. Use this skill when planning setup steps in chat.
 
-**Onboard companion (s1542):** residual-honest offline map via `/onboard next setup` (aliases `setup-lifecycle` / `lifecycle` / `setup_lifecycle`) → `AionAgentOnboardingNextSetupLane` — consolidates P1–P7 map story · **setup_not_probed** · dual_write OFF · package wire ≠ Connected · repair apply ≠ invent Connected · dual_write never auto ON · E10 Open · offline static ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA.
+**Onboard companion (s1542):** residual-honest offline map via `/onboard next setup` (aliases `setup-lifecycle` / `lifecycle` / `setup_lifecycle`) → `MeshAgentOnboardingNextSetupLane` — consolidates P1–P7 map story · **setup_not_probed** · dual_write OFF · package wire ≠ Connected · repair apply ≠ invent Connected · dual_write never auto ON · E10 Open · offline static ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA.
 
-**Wave B first-run (s1558):** setup is **stage 4** of the 7-stage edge-user-journey. Full first-run map via companion `/onboard next journey` (aliases `edge-journey` / `user-journey` / `first-run` / `edge_user_journey`) → `AionAgentOnboardingNextJourneyLane` — Signup → Download TUI → TUI auth/keys → Setup wizard → Connectors → Local store → Analyze · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · portal HITL · host not auto · no invent TUI portal SSO · free eng **s1558** · free-floor peer **s1560+** mention only · docs `edge-user-journey.md` · `setup-lifecycle.md` · `memory-edge-usage-demo.md`.
+**Wave B first-run (s1558):** setup is **stage 4** of the 7-stage edge-user-journey. Full first-run map via companion `/onboard next journey` (aliases `edge-journey` / `user-journey` / `first-run` / `edge_user_journey`) → `MeshAgentOnboardingNextJourneyLane` — Signup → Download TUI → TUI auth/keys → Setup wizard → Connectors → Local store → Analyze · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · portal HITL · host not auto · no invent TUI portal SSO · free eng **s1558** · free-floor peer **s1560+** mention only · docs `edge-user-journey.md` · `setup-lifecycle.md` · `memory-edge-usage-demo.md`.
 
-**Wave C first-run wizard residual (s1570):** deeper guided residual via companion `/onboard next wizard` (aliases `first-run-wizard` / `guided` / `wave-c` / `wave_c` / `wizard-residual`) → `AionAgentOnboardingNextWizardLane` · soft `/onboard next wizard dogfood` · NOT invent full interactive auto wizard · free eng **s1570** · free-floor peer **s1572+** mention only.
+**Wave C first-run wizard residual (s1570):** deeper guided residual via companion `/onboard next wizard` (aliases `first-run-wizard` / `guided` / `wave-c` / `wave_c` / `wizard-residual`) → `MeshAgentOnboardingNextWizardLane` · soft `/onboard next wizard dogfood` · NOT invent full interactive auto wizard · free eng **s1570** · free-floor peer **s1572+** mention only.
 
 ## Workflow
 
@@ -21,7 +21,7 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
    - CLI: `iomesh setup init [profiles]`
    - Slash: `/setup init [profiles] [--stdio] [--print-only] [--plugins-dir path] [--memory-url URL] [--mesh-endpoint URL] [--mesh-tenant id] [--mesh-org id] [--platform-mcp-url URL]`
    - Mesh flags write **hooks** (not portal `/v7/mcp`). apiv1 portal URL infers `https://hooks.iome.sh`. Infer ≠ Connected.
-   - `--mesh-org` persists `[iomesh].org` (X-IOMesh-Org / `IOMESH_ORG`). Empty org is residual-honest fail-open (aion #2721 fetch-org filter) — setup must not silently omit the residual.
+   - `--mesh-org` persists `[iomesh].org` (X-IOMesh-Org / `IOMESH_ORG`). Empty org is residual-honest fail-open (broker empty-org fail-open) — setup must not silently omit the residual.
    - After mesh / platform-mcp write: `export IOMESH_TOKEN` → `/setup reload` → `iomesh mesh streams --create --yes` → `--messages` (create ≠ PULSE · mesh pub ephemeral ≠ `/dashboard` consume)
    - Profiles: `local-memory` (default) · `plugins` · `mesh` · `platform-mcp` · `all`
    - Managed block markers: `# BEGIN iomesh-setup-managed` … `# END iomesh-setup-managed`
@@ -159,4 +159,4 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
 - Builtin always merged when skills enabled (`go:embed`)
 - Integrations residual path: skill `connector-integrations-setup` · `/integrations`
 - Memory advanced residual: skill `memory-advanced-agent` · `/memory`
-- Onboarding continuum: skill `aion-agent-onboarding` · `/onboard` · **`/onboard next setup`** (s1542 P1–P7 closeout residual · stage 4) · **`/onboard next journey`** (s1558 Wave B first-run map)
+- Onboarding continuum: skill `mesh-agent-onboarding` · `/onboard` · **`/onboard next setup`** (s1542 P1–P7 closeout residual · stage 4) · **`/onboard next journey`** (s1558 Wave B first-run map)

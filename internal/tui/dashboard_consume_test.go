@@ -153,6 +153,12 @@ func TestProbeDashboardConsume_ReplayDisabled(t *testing.T) {
 	if !strings.Contains(out, "replay_disabled") {
 		t.Fatalf("missing replay_disabled:\n%s", out)
 	}
+	if !strings.Contains(out, "IOMESH_MEMORY_REPLAY_ENABLED") {
+		t.Fatalf("want public IOMESH_MEMORY_REPLAY_ENABLED hint:\n%s", out)
+	}
+	if strings.Contains(out, "AION_MEMORY_REPLAY_ENABLED") {
+		t.Fatalf("must not teach deprecated AION_* env in dashboard UX:\n%s", out)
+	}
 	if strings.Contains(out, "P2 opened") {
 		t.Fatalf("must not show eval seed:\n%s", out)
 	}
@@ -438,7 +444,7 @@ func stackedObservationB64(t *testing.T, eventType, repo string) (wireOuter stri
 }
 
 func TestHeartbeatFromStreamMessage_DoubleB64Envelope(t *testing.T) {
-	outer, once := stackedObservationB64(t, "create", "iome-sh/aion")
+	outer, once := stackedObservationB64(t, "create", "iome-sh/example")
 	for _, tc := range []struct {
 		name    string
 		payload []byte
@@ -446,7 +452,7 @@ func TestHeartbeatFromStreamMessage_DoubleB64Envelope(t *testing.T) {
 		{name: "once-decoded", payload: once},
 		{name: "double-wire", payload: []byte(outer)},
 		{name: "url-safe-once", payload: []byte(base64.URLEncoding.EncodeToString(
-			[]byte(`{"type":"observation","payload":{"event_type":"create","repository":"iome-sh/aion"}}`),
+			[]byte(`{"type":"observation","payload":{"event_type":"create","repository":"iome-sh/example"}}`),
 		))},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -459,11 +465,11 @@ func TestHeartbeatFromStreamMessage_DoubleB64Envelope(t *testing.T) {
 			if strings.HasPrefix(ev.Title, "eyJ") || strings.Contains(ev.Title, "eyJ") {
 				t.Fatalf("title still stacked base64: %q", ev.Title)
 			}
-			if !strings.Contains(ev.Title, "create") && !strings.Contains(ev.Title, "iome-sh/aion") {
+			if !strings.Contains(ev.Title, "create") && !strings.Contains(ev.Title, "iome-sh/example") {
 				t.Fatalf("title=%q want event_type or repo", ev.Title)
 			}
-			if ev.Title != "create · iome-sh/aion" {
-				t.Fatalf("title=%q want create · iome-sh/aion", ev.Title)
+			if ev.Title != "create · iome-sh/example" {
+				t.Fatalf("title=%q want create · iome-sh/example", ev.Title)
 			}
 			if strings.Contains(ev.Title, "P2") || strings.Contains(ev.Title, "checkout") {
 				t.Fatalf("must not invent P2 checkout: %+v", ev)
@@ -479,7 +485,7 @@ func TestHeartbeatFromStreamMessage_TitleSummaryBeatsEnvelope(t *testing.T) {
 	ev := heartbeatFromStreamMessage(iomesh.StreamMessage{
 		Stream:  "OPERATIONAL_EVENTS",
 		Subject: "dept.engineering.events.github",
-		Payload: []byte(`{"type":"observation","payload":{"title":"ship unwrap","summary":"repo note","event_type":"push","repository":"iome-sh/aion"}}`),
+		Payload: []byte(`{"type":"observation","payload":{"title":"ship unwrap","summary":"repo note","event_type":"push","repository":"iome-sh/example"}}`),
 	})
 	if ev.Title != "ship unwrap" {
 		t.Fatalf("title=%q", ev.Title)
@@ -490,7 +496,7 @@ func TestHeartbeatFromStreamMessage_TitleSummaryBeatsEnvelope(t *testing.T) {
 }
 
 func TestProbeDashboardConsume_DoubleB64Envelope(t *testing.T) {
-	outer, _ := stackedObservationB64(t, "create", "iome-sh/aion")
+	outer, _ := stackedObservationB64(t, "create", "iome-sh/example")
 	c := testMeshClient(t, func(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case r.URL.Path == "/v1/streams":
@@ -523,7 +529,7 @@ func TestProbeDashboardConsume_DoubleB64Envelope(t *testing.T) {
 	if strings.Contains(events[0].Title, "eyJ") {
 		t.Fatalf("title still stacked base64: %q", events[0].Title)
 	}
-	if !strings.Contains(events[0].Title, "create") && !strings.Contains(events[0].Title, "iome-sh/aion") {
+	if !strings.Contains(events[0].Title, "create") && !strings.Contains(events[0].Title, "iome-sh/example") {
 		t.Fatalf("title=%q want event_type or repo", events[0].Title)
 	}
 	if strings.Contains(events[0].Title, "P2") || strings.Contains(events[0].Title, "checkout") {
@@ -538,7 +544,7 @@ func TestProbeDashboardConsume_DoubleB64Envelope(t *testing.T) {
 	if strings.Contains(out, "P2 opened") {
 		t.Fatalf("must not mix eval seed:\n%s", out)
 	}
-	if !strings.Contains(out, "iome-sh/aion") && !strings.Contains(out, "create") {
+	if !strings.Contains(out, "iome-sh/example") && !strings.Contains(out, "create") {
 		t.Fatalf("missing unwrapped title:\n%s", out)
 	}
 }

@@ -747,7 +747,7 @@ func TestRetrieveMemoryRelated_DefaultHopsAndLimit(t *testing.T) {
 	}
 }
 
-// s1281: PreferShorterHops false/true sent on body; nil omits (aion s1277 parity).
+// s1281: PreferShorterHops false/true sent on body; nil omits (mesh s1277 parity).
 func TestRetrieveMemoryRelated_PreferShorterHops(t *testing.T) {
 	var gotBody map[string]any
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

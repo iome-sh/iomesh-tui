@@ -11,7 +11,7 @@ import (
 // Session-only: default e4_soft_not_run. Soft offline pass/fail ≠ invent Edge Memory GA declared ·
 // ≠ forever-green product dogfood · ≠ E10 closed · ≠ dual_write ON · ≠ live dogfood · soft offline ≠ invent Connected.
 //
-// Lives in agent so AionAgentOnboardingNextE4Lane board + TUI slash share state
+// Lives in agent so MeshAgentOnboardingNextE4Lane board + TUI slash share state
 // without import cycles (agent cannot import tui).
 
 var e4SoftDogfoodSession struct {
@@ -108,7 +108,7 @@ var e4SoftDogfoodNeedles = []string{
 // Never dials MCP · never starts host · never invents Edge Memory GA declared · dual_write ON · E10 closed · forever-green product dogfood.
 // Sets session soft marker (pass/fail). Returns residual-honest operator output.
 func RunE4SoftDogfood() string {
-	board := AionAgentOnboardingNextE4Lane()
+	board := MeshAgentOnboardingNextE4Lane()
 	var missing []string
 	for _, want := range e4SoftDogfoodNeedles {
 		if !strings.Contains(board, want) {
@@ -120,7 +120,7 @@ func RunE4SoftDogfood() string {
 	label := E4SoftSessionLabel()
 
 	var b strings.Builder
-	b.WriteString("aion onboard next E4 client-attach soft offline dogfood (residual-honest · s1566 · no MCP dial · never start host · not live dogfood):\n")
+	b.WriteString("mesh onboard next E4 client-attach soft offline dogfood (residual-honest · s1566 · no MCP dial · never start host · not live dogfood):\n")
 	b.WriteString("  Path: soft offline residual check of e4 board honesty + E4 client attach path (journey stage 6 local store / MCP attach)\n")
 	b.WriteString("  · never dial MCP · never start host · residual PASS ≠ invent Edge Memory GA declared · dual_write stays OFF · E10 Open\n")
 	b.WriteString("  · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · session soft ≠ live dogfood · soft offline ≠ invent Connected\n")

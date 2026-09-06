@@ -11,7 +11,7 @@ import (
 // Session-only: default list_plan_soft_not_run. Soft offline pass/fail ≠ invent Connected ·
 // ≠ live dogfood · ≠ invent install APPLY · portal HITL still · list_org fail-open ≠ empty-as-none.
 //
-// Lives in agent so AionAgentOnboardingNextAgenticLane board + status/export + TUI slash
+// Lives in agent so MeshAgentOnboardingNextAgenticLane board + status/export + TUI slash
 // share state without import cycles (agent cannot import tui).
 
 var agenticListPlanSoftDogfoodSession struct {
@@ -117,7 +117,7 @@ var agenticListPlanSoftDogfoodNeedles = []string{
 // Never dials MCP · never invents Connected · never invents install APPLY · never claims dual-auth live.
 // Sets session soft marker (pass/fail). Returns residual-honest operator output.
 func RunAgenticListPlanSoftDogfood() string {
-	board := AionAgentOnboardingNextAgenticLane()
+	board := MeshAgentOnboardingNextAgenticLane()
 	var missing []string
 	for _, want := range agenticListPlanSoftDogfoodNeedles {
 		if !strings.Contains(board, want) {
@@ -129,7 +129,7 @@ func RunAgenticListPlanSoftDogfood() string {
 	label := AgenticListPlanSoftSessionLabel()
 
 	var b strings.Builder
-	b.WriteString("aion onboard next agentic list/plan soft offline dogfood (residual-honest · s1422 · no MCP dial · not live dogfood):\n")
+	b.WriteString("mesh onboard next agentic list/plan soft offline dogfood (residual-honest · s1422 · no MCP dial · not live dogfood):\n")
 	b.WriteString("  Path: soft offline residual check of agentic board honesty + proven portal path shapes\n")
 	b.WriteString("  · never dial MCP · never invent Connected · never invent install APPLY · never claim dual-auth live\n")
 	b.WriteString("  · soft offline list/plan ≠ live dogfood · portal HITL still · list_org fail-open ≠ empty-as-none\n")

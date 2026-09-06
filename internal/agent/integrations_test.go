@@ -98,7 +98,7 @@ func TestIntegrationsSigning_OfflineFailOpen(t *testing.T) {
 	}
 }
 
-// s1242: aion v178 wire shape uses entries + oauth_install_supported (not connectors/oauth).
+// s1242: mesh v178 wire shape uses entries + oauth_install_supported (not connectors/oauth).
 func TestFormatConnectorCatalog_V178Entries(t *testing.T) {
 	raw := `{
 		"count": 3,
@@ -161,7 +161,7 @@ func TestFormatConnectorCatalog_LegacyConnectors(t *testing.T) {
 	}
 }
 
-// s1242: plan fixture with aion v178 honesty object + portal_url + oauth_mode_hint + signing_headers_tool.
+// s1242: plan fixture with mesh v178 honesty object + portal_url + oauth_mode_hint + signing_headers_tool.
 func TestFormatConnectorPlan_V178HonestyObject(t *testing.T) {
 	raw := `{
 		"connector_id": "github",
@@ -256,7 +256,7 @@ func TestFormatConnectorPlan_DefaultPortal(t *testing.T) {
 	}
 }
 
-// s1243: signing header table from aion v30 wire.
+// s1243: signing header table from mesh v30 wire.
 func TestFormatWebhookSigning_V30Entries(t *testing.T) {
 	raw := `{
 		"fleet_enabled": false,
@@ -388,7 +388,7 @@ func TestIntegrationsStatus_EmptyManager(t *testing.T) {
 	assertStatusOrgInstallsHonesty(t, out)
 }
 
-// s1247: formatCatalogPulse from aion v178 entries — catalog honesty only, never install green.
+// s1247: formatCatalogPulse from mesh v178 entries — catalog honesty only, never install green.
 func TestFormatCatalogPulse_V178Entries(t *testing.T) {
 	raw := `{
 		"count": 3,
@@ -560,7 +560,7 @@ func TestIntegrationsStatus_MockCatalogPresent(t *testing.T) {
 	go mockIntegrationsMCP(cOutW, cInR)
 
 	mut := false
-	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "aion-scenario", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
+	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "mesh-scenario", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
 	defer cl.Close()
 	if err := cl.InitForTest(context.Background()); err != nil {
 		t.Fatal(err)
@@ -696,7 +696,7 @@ func TestStatusOrgInstallsSection(t *testing.T) {
 
 // --- s1271: list_org_connector_installs residual status wire ---
 
-// TestFormatOrgInstallsSnapshot_V179Unavailable formats aion v179 fail-open fixture.
+// TestFormatOrgInstallsSnapshot_V179Unavailable formats mesh v179 fail-open fixture.
 func TestFormatOrgInstallsSnapshot_V179Unavailable(t *testing.T) {
 	raw := readTestdata(t, "v179_org_installs_unavailable.json")
 	out := formatOrgInstallsSnapshot(raw)
@@ -763,7 +763,7 @@ func TestIntegrationsStatus_S1271OrgInstallsPresentNoOrgID(t *testing.T) {
 	go mockOrgInstallsMCP(cOutW, cInR, "")
 
 	mut := false
-	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "aion-scenario", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
+	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "mesh-scenario", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
 	defer cl.Close()
 	if err := cl.InitForTest(context.Background()); err != nil {
 		t.Fatal(err)
@@ -804,7 +804,7 @@ func TestIntegrationsStatus_S1271OrgInstallsUnavailableFixture(t *testing.T) {
 	go mockOrgInstallsMCP(cOutW, cInR, fixture)
 
 	mut := false
-	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "aion-scenario", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
+	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "mesh-scenario", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
 	defer cl.Close()
 	if err := cl.InitForTest(context.Background()); err != nil {
 		t.Fatal(err)
@@ -901,7 +901,7 @@ func mockOrgInstallsMCP(w io.WriteCloser, r io.Reader, installFixture string) {
 	}
 }
 
-// mockIntegrationsMCP serves tools/list + list_connector_catalog with aion v178 entries.
+// mockIntegrationsMCP serves tools/list + list_connector_catalog with mesh v178 entries.
 func mockIntegrationsMCP(w io.WriteCloser, r io.Reader) {
 	defer w.Close()
 	dec := json.NewDecoder(r)
@@ -996,7 +996,7 @@ func TestAttachMCP_InjectsIntegrationsGuidance(t *testing.T) {
 	go mockIntegrationsMCP(cOutW, cInR)
 
 	mut := false
-	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "aion-scenario", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
+	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "mesh-scenario", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
 	defer cl.Close()
 	if err := cl.InitForTest(context.Background()); err != nil {
 		t.Fatal(err)
@@ -1169,7 +1169,7 @@ func TestIntegrationsStatus_OfflineNoGoldenInvent(t *testing.T) {
 
 // --- s1257: deep-link parity + residual-honest dogfood ---
 
-// TestFormatConnectorPlan_S1257DeepLinkParityGithub asserts aion s1244 field round-trip
+// TestFormatConnectorPlan_S1257DeepLinkParityGithub asserts mesh s1244 field round-trip
 // for github golden fixture: portal_url / portal_detail_url / portal_add_url
 // (template={id}) / deep_links map, and honesty footer never invents install green.
 func TestFormatConnectorPlan_S1257DeepLinkParityGithub(t *testing.T) {

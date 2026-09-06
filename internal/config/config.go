@@ -261,10 +261,10 @@ type MemorySection struct {
 	PullContinuous bool `toml:"pull_continuous"`
 	// PullRole optional X-IOMesh-Role on mesh auth (operator|admin|agent|auditor|viewer|memory|custom).
 	// Fail-open empty → omit header. Beta federated ACL (s675/s687); not full IdP RBAC.
-	// role=memory → default filter tenant.memory.> (peer aion s686).
+	// role=memory → default filter tenant.memory.> (peer mesh s686).
 	PullRole string `toml:"pull_role"`
 	// PullAllowSuffix optional X-IOMesh-Pull-Allow-Suffix (comma-separated tokens for role=custom).
-	// Fail-open empty → omit. s675 / aion s671 peer.
+	// Fail-open empty → omit. s675 / mesh s671 peer.
 	PullAllowSuffix string `toml:"pull_allow_suffix"`
 	// AnalyzeContinuous opt-in in-session analyze ticks on agent Runtime (s1534 P6).
 	// Default OFF. Env: IOMESH_MEMORY_ANALYZE_CONTINUOUS.

@@ -75,7 +75,7 @@ Where secrets and writes live — keep demos honest:
 - **Live HubSpot / Twenty writes** (s1614) need **dual control + tokens on the operator box** (default dry). The marketing-demo path stays **local agent + local memory** only.
 - **Operator GTM status** (s1614) is **private tooling** for operators — **not** a product dashboard claim.
 - **Scheduled GTM dogfood** (s1618) is **operator cron / offline tooling** — not the public TUI. The demo path is not a GTM scheduler.
-- **Mesh outbox ingest** (s1618) is **private aion when wired** (dry-run default) — the demo does **not** invent mesh GTM fleet GA.
+- **Mesh outbox ingest** (s1618) is **private broker when wired** (dry-run default) — the demo does **not** invent mesh GTM fleet GA.
 - **Smoke / status tools** (s1618 · e.g. `gtm_smoke`) are **private operator GTM** — **not** a customer dashboard.
 
 Keep the demo local-first. Skip mesh unless the room already has it configured. Do not invent Memory GA, Connected, dual_write ON, book-demo ON, or mesh GTM fleet GA.

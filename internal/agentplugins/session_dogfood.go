@@ -6,7 +6,7 @@ import "sync"
 // Session-only: default dogfood_not_run. Soft offline pass/fail ≠ invent Agent Plugins GA ·
 // ≠ live dogfood · board/export evidence ≠ invent Connected.
 //
-// Lives in agentplugins so both TUI /plugins slash and agent aion_onboarding can share
+// Lives in agentplugins so both TUI /plugins slash and agent agent_onboarding can share
 // state without import cycles (agent cannot import tui; tui already imports agentplugins).
 
 var softDogfoodSession struct {

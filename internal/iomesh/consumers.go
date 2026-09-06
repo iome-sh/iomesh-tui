@@ -29,7 +29,7 @@ type ConsumerInfo struct {
 // pull_allow_suffix). Whitespace-only is treated as empty. Fail-open empty →
 // Client.auth omits X-IOMesh-Role / X-IOMesh-Pull-Allow-Suffix. Pure: no I/O.
 //
-// Beta federated ACL — not full mesh RBAC GA. Peer aion continuum (s680/s683).
+// Beta federated ACL — not full mesh RBAC GA. Peer mesh continuum (s680/s683).
 func ResolveMeshPullAuth(roleFlag, suffixFlag, configRole, configSuffix string) (role, allowSuffix string) {
 	role = strings.TrimSpace(roleFlag)
 	if role == "" {
@@ -49,7 +49,7 @@ func ResolveMeshPullAuth(roleFlag, suffixFlag, configRole, configSuffix string) 
 // Tenant should be the IOMesh tenant (mesh command pattern). Pure: no I/O.
 //
 // Beta federated ACL headers + defaults — fail-open when role/suffix empty
-// (headers omitted); not full mesh RBAC GA. Peer aion s680 continuum.
+// (headers omitted); not full mesh RBAC GA. Peer mesh s680 continuum.
 func ResolveConsumerCreateAuthAndFilter(explicitFilter, tenant, roleFlag, suffixFlag, configRole, configSuffix string) (filter, role, allowSuffix string) {
 	role, allowSuffix = ResolveMeshPullAuth(roleFlag, suffixFlag, configRole, configSuffix)
 	filter = DefaultMemoryPullFilterForRole(explicitFilter, tenant, role, allowSuffix)
@@ -356,7 +356,7 @@ func NewConsumerInfoPrint(info ConsumerInfo, role, allowSuffix string) ConsumerI
 // FormatConsumerInfoJSON returns indented JSON for stage CI / scrapers.
 // Always emits all ConsumerInfoPrint fields without omitempty gaps.
 // s741: Format*JSON helper completeness (DTO already always-emit s696).
-// Peer aion s740 residual. Mold FormatConsumerFetchJSON / FormatPubJSON.
+// Peer mesh s740 residual. Mold FormatConsumerFetchJSON / FormatPubJSON.
 func FormatConsumerInfoJSON(p ConsumerInfoPrint) string {
 	b, err := json.MarshalIndent(p, "", "  ")
 	if err != nil {
@@ -382,7 +382,7 @@ func FormatConsumerInfo(info ConsumerInfo) string {
 // Pure helper with no network I/O. Use from mesh consumer create with role/
 // suffix resolved via ResolveConsumerCreateAuthAndFilter (s681) so scrapers
 // always see pull identity next to filter_subject. Beta federated ACL;
-// fail-open empty; dual_write default OFF; not full mesh RBAC GA; peer aion
+// fail-open empty; dual_write default OFF; not full mesh RBAC GA; peer mesh
 // s695 sales claim continuum.
 func FormatConsumerInfoWithAuth(info ConsumerInfo, role, allowSuffix string) string {
 	var b strings.Builder
@@ -405,7 +405,7 @@ func FormatConsumerInfoWithAuth(info ConsumerInfo, role, allowSuffix string) str
 // (no auth fields; omitempty on nested scraper-optional keys).
 //
 // s708 outer identity + s723 nested message always-emit. Peer create
-// FormatConsumerInfo s696 + memory-pull s705 continuum; peer aion s707/s722.
+// FormatConsumerInfo s696 + memory-pull s705 continuum; peer mesh s707/s722.
 // Beta · offline unit ≠ live APPLY · empty role / empty/0/""/{} honest ·
 // dual_write OFF · not full mesh RBAC GA · does not invent fetch success from
 // identity fields alone.
@@ -473,7 +473,7 @@ func FormatConsumerFetchJSON(p ConsumerFetchPrint) string {
 // omitempty gaps.
 //
 // s708: peer create FormatConsumerInfo s696 + fetch identity continuum; peer
-// aion s707. Beta · offline unit ≠ live APPLY · empty role honest · dual_write
+// mesh s707. Beta · offline unit ≠ live APPLY · empty role honest · dual_write
 // OFF · not full mesh RBAC GA · does not invent delete success from identity.
 type ConsumerDeletePrint struct {
 	OK              bool   `json:"ok"`
@@ -526,7 +526,7 @@ func FormatConsumerDeleteJSON(p ConsumerDeletePrint) string {
 // lean (no auth fields).
 //
 // s711: peer create FormatConsumerInfo s696 + fetch/delete s708 continuum;
-// peer aion s710 residual. Beta · offline unit ≠ live APPLY · empty role honest
+// peer mesh s710 residual. Beta · offline unit ≠ live APPLY · empty role honest
 // · dual_write OFF · not full mesh RBAC GA · does not invent ack success from
 // identity fields alone.
 type ConsumerAckPrint struct {
