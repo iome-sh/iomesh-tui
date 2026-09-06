@@ -73,7 +73,7 @@ Post-probe next steps are residual-honest (helper `setup.SetupPreflightNextStepL
 |---------|--------|
 | `local-memory` | `[mcp]` + memory server URL/stdio + `[memory]` dual_write=false · pull_continuous=false · analyze_continuous=false |
 | `plugins` | `[plugins] enabled` + dirs |
-| `mesh` | `[iomesh]` endpoint/tenant/org residual + `api_key_env` (`org` field when `--mesh-org` set; otherwise commented `org` + empty fail-open honesty · aion #2721 · `IOMESH_ORG`) |
+| `mesh` | `[iomesh]` endpoint/tenant/org residual + `api_key_env` (`org` field when `--mesh-org` set; otherwise commented `org` + empty fail-open honesty · broker empty-org fail-open · `IOMESH_ORG`) |
 | `platform-mcp` | platform `[[mcp.servers]]` + `oauth_token_env` |
 | `all` | all of the above |
 
@@ -128,7 +128,7 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 | `drift` / `maintain` | report-only `BuildDriftReport` + `FormatDriftText` (s1534 P6 · s1707 dual-path next-step appended) |
 | `repair` | guided `PlanRepair` / `ApplyRepairPlan` (s1538 P7 · plan default · apply requires `--yes` · s1707 dual-path next-step on FormatRepair*) |
 
-Simple flags on slash `init`: `--stdio` · `--print-only` · `--plugins-dir path` · `--memory-url URL` · `--mesh-endpoint URL` · `--mesh-tenant id` · `--mesh-org id` · `--platform-mcp-url URL`. Mesh endpoint writes **hooks** (not portal `/v7/mcp`). When the portal URL is `apiv1.iome.sh`, infer `https://hooks.iome.sh`. Infer ≠ Connected. `--mesh-org` persists `[iomesh].org` / `IOMESH_ORG` (empty writes a commented residual; empty org fail-opens after aion #2721).
+Simple flags on slash `init`: `--stdio` · `--print-only` · `--plugins-dir path` · `--memory-url URL` · `--mesh-endpoint URL` · `--mesh-tenant id` · `--mesh-org id` · `--platform-mcp-url URL`. Mesh endpoint writes **hooks** (not portal `/v7/mcp`). When the portal URL is `apiv1.iome.sh`, infer `https://hooks.iome.sh`. Infer ≠ Connected. `--mesh-org` persists `[iomesh].org` / `IOMESH_ORG` (empty writes a commented residual; empty org fail-opens after broker empty-org fail-open).
 
 **Process config inheritance:** in-session `/setup preflight` (and `/setup` probes that load config: reload · pull start/once · analyze start/once · drift · repair) use the same path the running process loaded (`iomesh --config` / `--repl --config` / `IOMESH_CONFIG` / user default) when slash `--config` is omitted. Slash `--config PATH` still overrides. CLI `iomesh setup preflight --config PATH` is unchanged. Slash `/setup init` still writes the user config path (CLI `--config` remains the custom write target). dual_write **OFF** · not Memory GA · PASS ≠ invent Connected.
 
@@ -269,7 +269,7 @@ Residual-honest offline static continuum for the full setup lifecycle map (no MC
 | Surface | Detail |
 |---------|--------|
 | Slash | `/onboard next setup` (aliases `setup-lifecycle` · `lifecycle` · `setup_lifecycle`) |
-| API | `agent.AionAgentOnboardingNextSetupLane()` |
+| API | `agent.MeshAgentOnboardingNextSetupLane()` |
 | Board vocab | `path_ready` · `residual_only` · **`setup_not_probed`** |
 | Map steps | init → memory host/secrets → preflight → reload → portal HITL → optional pull/analyze → drift → repair plan/apply `--yes` → `/memory digest` still valid |
 | Companion | `/onboard next journey` (s1558 first-run map) · `/onboard next wizard` (s1570 Wave C guided residual) · `memory` · `memory-pull` · `human-gates` · `operator` · skill `setup-lifecycle-agent` · [edge-user-journey.md](./edge-user-journey.md) · [memory-edge-usage-demo.md](./memory-edge-usage-demo.md) |
@@ -283,7 +283,7 @@ Residual-honest offline static first-run map of the 7-stage edge-user-journey (n
 | Surface | Detail |
 |---------|--------|
 | Slash | `/onboard next journey` (aliases `edge-journey` · `user-journey` · `first-run` · `edge_user_journey`) |
-| API | `agent.AionAgentOnboardingNextJourneyLane()` |
+| API | `agent.MeshAgentOnboardingNextJourneyLane()` |
 | Stages | 1 Signup · 2 Download TUI · 3 TUI auth/keys · 4 Setup wizard · 5 Connectors · 6 Local store · 7 Analyze |
 | Stage 4 detail | `/onboard next setup` · `/setup` · this document |
 | Docs | [edge-user-journey.md](./edge-user-journey.md) · this file · [memory-edge-usage-demo.md](./memory-edge-usage-demo.md) |
@@ -298,7 +298,7 @@ Residual-honest offline guided first-run wizard residual after Wave B journey ma
 |---------|--------|
 | Slash | `/onboard next wizard` (aliases `first-run-wizard` · `guided` · `wave-c` · `wave_c` · `wizard-residual`) |
 | Soft dogfood | `/onboard next wizard dogfood` (aliases `soft` · `samples` · `offline` · `wizard-soft`) → `RunFirstRunWizardSoftDogfood` |
-| API | `agent.AionAgentOnboardingNextWizardLane()` |
+| API | `agent.MeshAgentOnboardingNextWizardLane()` |
 | Scope | Deeper guided residual map + soft dogfood · **not** full interactive auto wizard UX |
 | Companion | `/onboard next journey` (Wave B) · setup · portal-hitl · e4 · human-gates |
 | Docs | [edge-user-journey.md](./edge-user-journey.md) Wave C row · this file |

@@ -305,7 +305,7 @@ func (rt *Runtime) ReplaceSkills(cat *skills.Catalog) {
 // Also injects residual-honest integrations guidance (s1251) so the agent uses
 // list → plan → portal HITL without inventing install green, advanced
 // memory guidance (s1291) so multi-hop / HITL supersede / ops pulse stay opt-in,
-// aion agent onboarding guidance (s1363) for TUI ↔ aion CP/MCP residual path,
+// mesh agent onboarding guidance (s1363) for TUI ↔ mesh CP/MCP residual path,
 // and setup lifecycle guidance (s1526 P3) for init/preflight without inventing
 // Connected / Memory GA.
 // System notes upsert by tag (safe to re-attach after ReplaceMCP).
@@ -331,8 +331,8 @@ func (rt *Runtime) attachMCPLocked(mgr *mcp.Manager) {
 	rt.appendSystemNote("integrations", IntegrationsAgentGuidanceNote())
 	// s1291: residual-honest advanced memory agent path (opt-in surfaces only).
 	rt.appendSystemNote("memory-advanced", MemoryAdvancedAgentGuidanceNote())
-	// s1363: residual-honest TUI agent ↔ aion backend onboarding workflow.
-	rt.appendSystemNote("aion-onboarding", AionAgentOnboardingGuidanceNote())
+	// s1363: residual-honest TUI agent ↔ mesh backend onboarding workflow.
+	rt.appendSystemNote("mesh-onboarding", MeshAgentOnboardingGuidanceNote())
 	// s1526 P3: residual-honest setup lifecycle (init/preflight · dual_write OFF).
 	rt.appendSystemNote("setup-lifecycle", setup.SetupLifecycleAgentGuidanceNote())
 }

@@ -1115,7 +1115,7 @@ func applyInferredBroker(cfg *config.Config) {
 }
 
 // applyOrgFlag overlays --org onto [iomesh].org / IOMESH_ORG when the flag is set.
-// Empty flag keeps config/env. Empty org still fail-opens (aion #2721).
+// Empty flag keeps config/env. Empty org still fail-opens (broker empty-org fail-open).
 func applyOrgFlag(cfg *config.Config, org string) {
 	if cfg == nil {
 		return
@@ -1645,7 +1645,7 @@ Create: POST /v1/streams/{stream}/consumers (201 full info; 409 idempotent name-
   Text/JSON always-emit pull_role / pull_allow_suffix next to filter_subject (s696; empty when unset).
   Beta; fail-open; dual_write default OFF; not full mesh RBAC GA.
 Fetch:  POST /v1/streams/{stream}/consumers/{name}/fetch (default batch=1, max_wait 2s).
-  Same --role / --pull-allow-suffix headers (s684; aion validates role on fetch). Fail-open empty.
+  Same --role / --pull-allow-suffix headers (s684; broker validates role on fetch). Fail-open empty.
   Text/JSON always-emit pull identity + knobs + count + messages (s708 ConsumerFetchPrint; empty role honest).
 Ack:    POST .../consumers/{name}/ack body {"seqs":[...]} (optional ack_floor on response).
   Text/JSON always-emit pull identity + op/seqs/ack_floor/count (s711 ConsumerAckPrint; empty role honest).
@@ -1999,7 +1999,7 @@ func cmdMeshConsumerFetch(args []string) int {
 	applyOrgFlag(cfg, *org)
 	applyInferredBroker(cfg)
 	// s684: federated role + allow-suffix on fetch (flags override [memory] config).
-	// Fail-open empty role/suffix → Client.auth omits headers. Peer aion s683 continuum.
+	// Fail-open empty role/suffix → Client.auth omits headers. Peer mesh s683 continuum.
 	pullRole, allowSuffix := iomesh.ResolveMeshPullAuth(
 		*role, *pullAllowSuffix, cfg.Memory.PullRole, cfg.Memory.PullAllowSuffix,
 	)
@@ -2630,13 +2630,13 @@ Honesty: dual_write remains optional audit (default OFF). Hosted Palace sunset u
   has none so iomesh-memory-mcp v0.1.0 memory_ingest_turn can complete. Retrieve without
   a session_id stays unfiltered and finds the private overlay. Catalog list ≠ consume.
   Role/suffix headers are Beta federated ACL (s675); role-aware default filter is s678/s687 Beta —
-  memory → tenant.memory.> (peer aion s686); fail-open when empty — not full IdP RBAC GA.
+  memory → tenant.memory.> (peer mesh s686); fail-open when empty — not full IdP RBAC GA.
   s705: PASS/summary and --json always emit stream/consumer/filter_subject/pull_role/pull_allow_suffix/tenant
-  + knobs (dry_run/dual_write/batch/max_wait_ms/once) + counters; empty identity honest; peer aion s704.
+  + knobs (dry_run/dual_write/batch/max_wait_ms/once) + counters; empty identity honest; peer mesh s704.
   s717: always emit process evidence endpoint/org/workspace (empty honest) + result(ok|err)/exit_code(0|1)
-  + duration_ms/ack; peer aion s716 — process evidence ≠ invent pull success.
+  + duration_ms/ack; peer mesh s716 — process evidence ≠ invent pull success.
   s747: process evidence complete (identity + knobs/counters + process evidence); completeness pin only —
-  no new fields; peer aion s746 — process evidence ≠ invent pull success · dual_write OFF · not full mesh RBAC GA.
+  no new fields; peer mesh s746 — process evidence ≠ invent pull success · dual_write OFF · not full mesh RBAC GA.
 `)
 		return 0
 	default:
@@ -3118,7 +3118,7 @@ func cmdMemoryPull(args []string) int {
 	}
 	// Soft-fail (errors>0 && ingested==0 && !dryRun): result=err, exit_code=1.
 	// Success (incl. cancel with partial progress): result=ok, exit_code=0.
-	// Process evidence ≠ invent pull success from identity alone (s717 / peer aion s716).
+	// Process evidence ≠ invent pull success from identity alone (s717 / peer mesh s716).
 	softFail := st.Errors > 0 && st.Ingested == 0 && !*dryRun
 	if softFail {
 		printMeta.Result = "err"

@@ -174,7 +174,7 @@ func TestStillHumanSoftDogfoodNeedles_CoverBoard(t *testing.T) {
 	ResetStillHumanSoftDogfoodSessionState()
 	t.Cleanup(ResetStillHumanSoftDogfoodSessionState)
 
-	board := AionAgentHumanGatesHonestyBoard()
+	board := MeshAgentHumanGatesHonestyBoard()
 	for _, want := range stillHumanSoftDogfoodNeedles {
 		if !strings.Contains(board, want) {
 			t.Fatalf("human-gates board missing soft-dogfood needle %q in:\n%s", want, board)

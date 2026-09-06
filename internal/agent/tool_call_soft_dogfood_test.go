@@ -180,7 +180,7 @@ func TestToolCallSoftDogfoodNeedles_CoverBoard(t *testing.T) {
 	ResetToolCallSoftDogfoodSessionState()
 	t.Cleanup(ResetToolCallSoftDogfoodSessionState)
 
-	board := AionAgentOnboardingNextToolCallLane()
+	board := MeshAgentOnboardingNextToolCallLane()
 	for _, want := range toolCallSoftDogfoodNeedles {
 		if !strings.Contains(board, want) {
 			t.Fatalf("tool-call board missing soft-dogfood needle %q in:\n%s", want, board)

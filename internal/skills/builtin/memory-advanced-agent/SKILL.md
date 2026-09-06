@@ -134,4 +134,4 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conver
 - Shipped s1296: `/memory timeline|compact-status` MCP-first (read-only compact-status).
 - Shipped s1301: `/memory semantic|ingest-event` MCP-first (tier-4 semantic · s138 T1 event telemetry).
 - Shipped s1311: `/memory trigger-compact --i-confirm` HITL + `/memory status` advanced inventory pulse.
-- Serials: s1135 related · s1281 prefer_shorter_hops · s1282 supersede · s1276 facts-as-of · s1200 digest · s1287 patterns/anomalies · s1288 skill · s1291 system note · s1296 timeline+compact-status · s1301 semantic+ingest-event · s1311 trigger-compact HITL + advanced status · aion s1277 / s640 A3 lite / K4 lite / s138 T1.
+- Serials: s1135 related · s1281 prefer_shorter_hops · s1282 supersede · s1276 facts-as-of · s1200 digest · s1287 patterns/anomalies · s1288 skill · s1291 system note · s1296 timeline+compact-status · s1301 semantic+ingest-event · s1311 trigger-compact HITL + advanced status · mesh s1277 / s640 A3 lite / K4 lite / s138 T1.

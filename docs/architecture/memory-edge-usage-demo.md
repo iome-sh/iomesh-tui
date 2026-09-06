@@ -42,7 +42,7 @@ This is a **runbook-style example**, not a product claim that every step is auto
 | **not Memory GA** | Public OSS edge + TUI attach ≠ invent bare Memory GA |
 | **Edge Memory GA candidacy only** | Residual candidacy · **PASS ≠ invent Edge Memory GA declared** |
 | **E10 Open** | Founder/GTM sign-off remains open · tip ≠ invent E10 closed |
-| **aion broker private** | Cloud control plane stays private · not OSS edge pack · product host is `iomesh-memory-mcp` only |
+| **control-plane / broker private** | Cloud control plane stays private · not OSS edge pack · product host is `iomesh-memory-mcp` only |
 | **integrations ≠ install APPLY** | MCP `list` / `plan` + portal deep links · human finishes OAuth/install in browser |
 | **memory install ≠ fully automatic** | TUI does **not** auto-download/start the MCP host on signup · operator installs host |
 | **kernel “automatic?”** | Kernel is a **library dep** of `iomesh-memory-mcp` at build/install · no separate palace product install for binary path · still not “signup auto-provisions Memory” |
@@ -244,7 +244,7 @@ curl -fsS http://127.0.0.1:8080/healthz
 iomesh-memory-mcp -palace-root ./data/memory-palaces -tenant demo
 ```
 
-s1517: TUI product path is **`iomesh-memory-mcp` only** (in-tree residual aion Memory sample removed) · aion broker/CP stays private.
+s1517: TUI product path is **`iomesh-memory-mcp` only** (in-tree residual private Memory sample removed) · control-plane / broker stays private.
 
 ---
 
@@ -518,7 +518,7 @@ curl -fsS http://127.0.0.1:8080/healthz
 - Invent Edge Memory GA declared / E10 closed / bare Memory GA  
 - dual_write ON as primary path  
 - Freemium multi-tenant hosted palace  
-- Bundle aion private broker into OSS edge  
+- Bundle a private control-plane broker into OSS edge  
 - Claim forever-green live dogfood from one attach stamp  
 
 **Demo success** = operator can **signup (optional)** · **list/plan integrations with HITL honesty** · **install local kernel+MCP host (not fully automatic)** · **attach TUI** · **show `/memory` usage** — residual-honest throughout.

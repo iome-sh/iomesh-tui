@@ -121,7 +121,7 @@ func TestDefaultMemoryPullFilterForRole(t *testing.T) {
 		{name: "viewer", explicit: "", tenant: "dept.eng", role: "viewer", want: "dept.eng.events.>"},
 		{name: "agent case insensitive", explicit: "", tenant: "t", role: "Agent", want: "t.events.>"},
 
-		// memory (s687 / peer aion s686) → tenant.memory.>
+		// memory (s687 / peer mesh s686) → tenant.memory.>
 		{name: "memory hierarchical", explicit: "", tenant: "dept.research", role: "memory", want: "dept.research.memory.>"},
 		{name: "memory plain tenant", explicit: "", tenant: "acme", role: "memory", want: "acme.memory.>"},
 		{name: "memory case insensitive", explicit: "", tenant: "t", role: "Memory", want: "t.memory.>"},
@@ -546,12 +546,12 @@ func TestMemoryPullStatsPrint_PopulatedRoleFilter(t *testing.T) {
 // s747: process-evidence completeness pin — FormatMemoryPullStatsJSON always emits
 // result / exit_code / endpoint / org / workspace on both empty and populated paths
 // (DTO already always-emit s717; this serial locks the complete surface, does not
-// invent new fields or re-claim s717 product body). Peer aion s746 residual.
+// invent new fields or re-claim s717 product body). Peer mesh s746 residual.
 // process evidence ≠ invent pull success · dual_write OFF · offline unit ≠ live APPLY.
 func TestMemoryPullStatsPrint_ProcessEvidenceCompletenessPin(t *testing.T) {
 	t.Parallel()
 
-	// Process evidence keys residual-framed at aion s716 / product s717.
+	// Process evidence keys residual-framed at mesh s716 / product s717.
 	processEvidenceKeys := []string{"result", "exit_code", "endpoint", "org", "workspace"}
 
 	// Empty path: zero meta → keys present, empty/0 honest.

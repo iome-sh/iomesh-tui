@@ -12,7 +12,7 @@ import (
 // ≠ forever-green interactive wizard UX · ≠ dual_write ON · ≠ live dogfood · soft offline ≠ invent Connected ·
 // ≠ invent TUI portal SSO · host not auto.
 //
-// Lives in agent so AionAgentOnboardingNextWizardLane board + TUI slash share state
+// Lives in agent so MeshAgentOnboardingNextWizardLane board + TUI slash share state
 // without import cycles (agent cannot import tui).
 
 var wizardSoftDogfoodSession struct {
@@ -117,7 +117,7 @@ var wizardSoftDogfoodNeedles = []string{
 // TUI portal SSO · auto host · forever-green interactive wizard UX · live dogfood.
 // Sets session soft marker (pass/fail). Returns residual-honest operator output.
 func RunFirstRunWizardSoftDogfood() string {
-	board := AionAgentOnboardingNextWizardLane()
+	board := MeshAgentOnboardingNextWizardLane()
 	var missing []string
 	for _, want := range wizardSoftDogfoodNeedles {
 		if !strings.Contains(board, want) {
@@ -129,7 +129,7 @@ func RunFirstRunWizardSoftDogfood() string {
 	label := WizardSoftSessionLabel()
 
 	var b strings.Builder
-	b.WriteString("aion onboard next first-run wizard soft offline dogfood (residual-honest · s1570 Wave C · no MCP dial · never start host · not live dogfood):\n")
+	b.WriteString("mesh onboard next first-run wizard soft offline dogfood (residual-honest · s1570 Wave C · no MCP dial · never start host · not live dogfood):\n")
 	b.WriteString("  Path: soft offline residual check of wizard board honesty + guided first-run residual map (7 stages)\n")
 	b.WriteString("  · never dial MCP · never start host · residual PASS ≠ invent Edge Memory GA declared · dual_write stays OFF · E10 Open\n")
 	b.WriteString("  · no invent TUI portal SSO · host not auto · residual PASS ≠ invent full interactive auto wizard · session soft ≠ live dogfood · soft offline ≠ invent Connected\n")

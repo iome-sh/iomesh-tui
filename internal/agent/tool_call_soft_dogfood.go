@@ -13,7 +13,7 @@ import (
 // ≠ forever-green product dogfood · ≠ E10 closed · ≠ dual_write ON · ≠ live dogfood · soft offline ≠ invent Connected.
 // Depth residual after E4 attach tools=6: operator map for ingest → retrieve → list → as-of/status (soft offline only).
 //
-// Lives in agent so AionAgentOnboardingNextToolCallLane board + TUI slash share state
+// Lives in agent so MeshAgentOnboardingNextToolCallLane board + TUI slash share state
 // without import cycles (agent cannot import tui).
 
 var toolCallSoftDogfoodSession struct {
@@ -118,7 +118,7 @@ var toolCallSoftDogfoodNeedles = []string{
 // Never dials MCP · never starts host · never invents Edge Memory GA declared · dual_write ON · E10 closed · forever-green product dogfood.
 // Sets session soft marker (pass/fail). Returns residual-honest operator output.
 func RunDeeperToolCallSoftDogfood() string {
-	board := AionAgentOnboardingNextToolCallLane()
+	board := MeshAgentOnboardingNextToolCallLane()
 	var missing []string
 	for _, want := range toolCallSoftDogfoodNeedles {
 		if !strings.Contains(board, want) {
@@ -130,7 +130,7 @@ func RunDeeperToolCallSoftDogfood() string {
 	label := ToolCallSoftSessionLabel()
 
 	var b strings.Builder
-	b.WriteString("aion onboard next deeper tool-call soft offline dogfood (residual-honest · s1578 · no MCP dial · never start host · not live dogfood):\n")
+	b.WriteString("mesh onboard next deeper tool-call soft offline dogfood (residual-honest · s1578 · no MCP dial · never start host · not live dogfood):\n")
 	b.WriteString("  Path: soft offline residual check of tool-call board honesty + deeper tool path after E4 attach (ingest→retrieve→list→as-of)\n")
 	b.WriteString("  · never dial MCP · never start host · residual PASS ≠ invent Edge Memory GA declared · dual_write stays OFF · E10 Open\n")
 	b.WriteString("  · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · session soft ≠ live dogfood · soft offline ≠ invent Connected\n")

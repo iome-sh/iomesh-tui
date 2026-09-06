@@ -125,7 +125,7 @@ func TestAttachMCP_InjectsMemoryAdvancedGuidance(t *testing.T) {
 	go mockIntegrationsMCP(cOutW, cInR)
 
 	mut := false
-	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "aion-scenario", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
+	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "mesh-scenario", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
 	defer cl.Close()
 	if err := cl.InitForTest(context.Background()); err != nil {
 		t.Fatal(err)

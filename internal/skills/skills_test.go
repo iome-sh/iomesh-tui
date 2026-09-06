@@ -551,20 +551,27 @@ func TestS1341SkillDescriptionResidualHonest(t *testing.T) {
 	}
 }
 
-// --- s1363: builtin aion-agent-onboarding skill (residual-honest TUI ↔ aion) ---
+// --- s1363: builtin mesh-agent-onboarding skill (residual-honest TUI ↔ mesh) ---
 
-// TestLoadBuiltin_AionAgentOnboarding proves go:embed loads aion-agent-onboarding.
-func TestLoadBuiltin_AionAgentOnboarding(t *testing.T) {
+// TestLoadBuiltin_MeshAgentOnboarding proves go:embed loads mesh-agent-onboarding.
+func TestLoadBuiltin_MeshAgentOnboarding(t *testing.T) {
 	cat, err := LoadBuiltin()
 	if err != nil {
 		t.Fatal(err)
 	}
-	sk, ok := cat.Get("aion-agent-onboarding")
+	sk, ok := cat.Get("mesh-agent-onboarding")
 	if !ok {
-		t.Fatalf("missing aion-agent-onboarding; names=%v", cat.Names())
+		t.Fatalf("missing mesh-agent-onboarding; names=%v", cat.Names())
 	}
-	if sk.Name != "aion-agent-onboarding" {
+	if sk.Name != "mesh-agent-onboarding" {
 		t.Fatalf("name=%q", sk.Name)
+	}
+	alias, ok := cat.Get("aion-agent-onboarding")
+	if !ok {
+		t.Fatal("deprecated loader alias aion-agent-onboarding must resolve")
+	}
+	if alias.Name != "mesh-agent-onboarding" {
+		t.Fatalf("alias resolved name=%q", alias.Name)
 	}
 	if strings.TrimSpace(sk.Description) == "" {
 		t.Fatal("description empty")
@@ -574,14 +581,14 @@ func TestLoadBuiltin_AionAgentOnboarding(t *testing.T) {
 	}
 }
 
-// TestLoadWithBuiltin_AionAgentOnboardingAlwaysPresent: skill present even with empty dirs.
-func TestLoadWithBuiltin_AionAgentOnboardingAlwaysPresent(t *testing.T) {
+// TestLoadWithBuiltin_MeshAgentOnboardingAlwaysPresent: skill present even with empty dirs.
+func TestLoadWithBuiltin_MeshAgentOnboardingAlwaysPresent(t *testing.T) {
 	cat, err := LoadWithBuiltin(filepath.Join(t.TempDir(), "nope"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := cat.Get("aion-agent-onboarding"); !ok {
-		t.Fatalf("aion-agent-onboarding missing when dirs empty; names=%v", cat.Names())
+	if _, ok := cat.Get("mesh-agent-onboarding"); !ok {
+		t.Fatalf("mesh-agent-onboarding missing when dirs empty; names=%v", cat.Names())
 	}
 	// Prior builtins still present.
 	if _, ok := cat.Get("connector-integrations-setup"); !ok {
@@ -595,13 +602,13 @@ func TestLoadWithBuiltin_AionAgentOnboardingAlwaysPresent(t *testing.T) {
 	}
 }
 
-// TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood pins residual-honest body needles.
-func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
+// TestLoadBuiltin_S1363MeshAgentOnboardingSkillDogfood pins residual-honest body needles.
+func TestLoadBuiltin_S1363MeshAgentOnboardingSkillDogfood(t *testing.T) {
 	cat, err := LoadBuiltin()
 	if err != nil {
 		t.Fatal(err)
 	}
-	sk, ok := cat.Get("aion-agent-onboarding")
+	sk, ok := cat.Get("mesh-agent-onboarding")
 	if !ok {
 		t.Fatalf("skill missing; names=%v", cat.Names())
 	}
@@ -641,7 +648,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"knowledge/analytical",
 		"/onboard",
 		"/integrations status",
-		"aion-onboarding",
+		"mesh-onboarding",
 		"AttachMCP",
 		// s1368 portal Agent/MCP half + TUI half
 		"console.iome.sh/settings/agent",
@@ -662,21 +669,21 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"drafts only",
 		"no auto-send",
 		"human publish",
-		"iomesh-memory-mcp", // product host (s1517: residual aion sample removed)
+		"iomesh-memory-mcp", // product host (s1517: residual private sample removed)
 		"package load ≠ Memory GA",
 		"freemium palace",
-		"AionAgentOnboardingNextLanes",
+		"MeshAgentOnboardingNextLanes",
 		// s1377 per-lane drills
 		"/onboard next plugins",
 		"/onboard next gtm",
 		"/onboard next memory",
-		"AionAgentOnboardingNextPluginsLane",
-		"AionAgentOnboardingNextGtmLane",
-		"AionAgentOnboardingNextMemoryLane",
+		"MeshAgentOnboardingNextPluginsLane",
+		"MeshAgentOnboardingNextGtmLane",
+		"MeshAgentOnboardingNextMemoryLane",
 		"plugins|gtm|memory",
 		// s1453+s1458+s1463+s1469+s1478 edge Memory OSS + public product attach tip
 		"iomesh-memory-mcp",
-		"aion broker private",
+		"control-plane / broker private",
 		"Edge OSS Option A",
 		"github.com/iome-sh/memory",
 		"github.com/iome-sh/iomesh-memory-mcp",
@@ -690,7 +697,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"Palace sunset",
 		// s1402 mesh streaming lane
 		"/onboard next mesh",
-		"AionAgentOnboardingNextMeshLane",
+		"MeshAgentOnboardingNextMeshLane",
 		"streaming org heartbeats",
 		"mesh ≠ memory",
 		"streams_not_probed",
@@ -699,7 +706,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"plugins|gtm|memory|mesh",
 		// s1407 Ops Pack / memory-pull lane
 		"/onboard next memory-pull",
-		"AionAgentOnboardingNextMemoryPullLane",
+		"MeshAgentOnboardingNextMemoryPullLane",
 		"Ops Pack pull path",
 		"pull_not_probed",
 		"Ops Pack ≠ GPU fleet",
@@ -709,7 +716,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"plugins|gtm|memory|mesh|memory-pull",
 		// s1417 agentic integrations product plane 3
 		"/onboard next agentic",
-		"AionAgentOnboardingNextAgenticLane",
+		"MeshAgentOnboardingNextAgenticLane",
 		"product plane 3",
 		"agentic integrations",
 		"MCP list/plan residual-honest",
@@ -731,7 +738,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"list-plan-soft",
 		// s1562 portal HITL stage-5 board + soft dogfood residual
 		"/onboard next portal-hitl",
-		"AionAgentOnboardingNextPortalHITLLane",
+		"MeshAgentOnboardingNextPortalHITLLane",
 		"RunPortalHITLSoftDogfood",
 		"portal_hitl_soft_not_run",
 		"soft_offline_portal_hitl_session_pass",
@@ -745,7 +752,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"stage5",
 		// s1566 E4 client-attach stage-6 board + soft dogfood residual
 		"/onboard next e4",
-		"AionAgentOnboardingNextE4Lane",
+		"MeshAgentOnboardingNextE4Lane",
 		"RunE4SoftDogfood",
 		"e4_soft_not_run",
 		"soft_offline_e4_session_pass",
@@ -764,7 +771,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"e4_attach",
 		// s1578 deeper tool-call residual + soft dogfood
 		"/onboard next tool-call",
-		"AionAgentOnboardingNextToolCallLane",
+		"MeshAgentOnboardingNextToolCallLane",
 		"RunDeeperToolCallSoftDogfood",
 		"tool_call_soft_not_run",
 		"soft_offline_tool_call_session_pass",
@@ -781,7 +788,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"ingest-retrieve",
 		// s1586 E10 Open reaffirm residual-check
 		"/onboard next e10",
-		"AionAgentOnboardingNextE10Lane",
+		"MeshAgentOnboardingNextE10Lane",
 		"RunE10OpenSoftDogfood",
 		"e10_soft_not_run",
 		"soft_offline_e10_session_pass",
@@ -797,7 +804,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"ga-signoff",
 		// s1590 marketing demo path
 		"/onboard next marketing-demo",
-		"AionAgentOnboardingNextMarketingDemoLane",
+		"MeshAgentOnboardingNextMarketingDemoLane",
 		"marketing-demo",
 		"sales-demo",
 		"demo-script",
@@ -814,7 +821,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"residual PASS ≠ invent control plane in MIT repo",
 		// s1570 Wave C first-run wizard residual + soft dogfood
 		"/onboard next wizard",
-		"AionAgentOnboardingNextWizardLane",
+		"MeshAgentOnboardingNextWizardLane",
 		"RunFirstRunWizardSoftDogfood",
 		"wizard_soft_not_run",
 		"soft_offline_wizard_session_pass",
@@ -828,7 +835,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"wave-c",
 		// s1427 agentic dual-auth candidacy depth
 		"/onboard next agentic dual-auth",
-		"AionAgentOnboardingNextAgenticDualAuthCandidacy",
+		"MeshAgentOnboardingNextAgenticDualAuthCandidacy",
 		"dual_auth_candidacy_open",
 		"list_org_unavailable",
 		"tool ship ≠ dual-auth live",
@@ -840,7 +847,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"org-installs",
 		// s1432 three product planes board
 		"/onboard next planes",
-		"AionAgentOnboardingNextThreePlanes",
+		"MeshAgentOnboardingNextThreePlanes",
 		"three product planes",
 		"three-planes",
 		"product-planes",
@@ -854,7 +861,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"Ops Pack ≠ GPU",
 		// s1437 sales/buyer claims board
 		"/onboard next sales",
-		"AionAgentOnboardingNextSalesClaims",
+		"MeshAgentOnboardingNextSalesClaims",
 		"sales/buyer claims",
 		"May claim",
 		"Must not claim",
@@ -867,7 +874,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"Beta multi-tenant",
 		// s1442 demo readiness board
 		"/onboard next demo",
-		"AionAgentOnboardingNextDemoReadiness",
+		"MeshAgentOnboardingNextDemoReadiness",
 		"demo readiness",
 		"Lighthouse",
 		"Landgrab NOT READY",
@@ -879,7 +886,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"residual PASS ≠ logos met",
 		// s1447 operator readiness matrix
 		"/onboard next operator",
-		"AionAgentOnboardingNextOperatorMatrix",
+		"MeshAgentOnboardingNextOperatorMatrix",
 		"operator readiness matrix",
 		"operator-matrix",
 		"ops-matrix",
@@ -893,7 +900,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"portal_hitl_still",
 		// s1542 setup lifecycle P1–P7 closeout residual
 		"/onboard next setup",
-		"AionAgentOnboardingNextSetupLane",
+		"MeshAgentOnboardingNextSetupLane",
 		"setup lifecycle",
 		"setup_not_probed",
 		"setup-lifecycle",
@@ -903,7 +910,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"E10 Open",
 		// s1558 Wave B first-run journey
 		"/onboard next journey",
-		"AionAgentOnboardingNextJourneyLane",
+		"MeshAgentOnboardingNextJourneyLane",
 		"edge-user-journey",
 		"edge-journey",
 		"user-journey",
@@ -914,7 +921,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|e4|tool-call|e10|planes|sales|demo|marketing-demo|operator|setup|journey|wizard|status|export|human-gates",
 		// s1413+s1546+s1550+s1574 human-gates honesty board + still-human APPLY soft dogfood
 		"/onboard next human-gates",
-		"AionAgentHumanGatesHonestyBoard",
+		"MeshAgentHumanGatesHonestyBoard",
 		"edge-first",
 		"knowledge multi-tenant punted",
 		"Slack HMAC punted",
@@ -947,7 +954,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"free-floor peer s1576+",
 		// s1382 lane status board
 		"/onboard next status",
-		"AionAgentOnboardingNextLaneStatus",
+		"MeshAgentOnboardingNextLaneStatus",
 		"dogfood_not_run",
 		"portal_hitl_still",
 		"samples_ok",
@@ -956,7 +963,7 @@ func TestLoadBuiltin_S1363AionAgentOnboardingSkillDogfood(t *testing.T) {
 		"residual_only",
 		// s1387 status export receipt
 		"/onboard next export",
-		"AionAgentOnboardingNextLaneStatusExport",
+		"MeshAgentOnboardingNextLaneStatusExport",
 		"evidence_kind=onboard_next_lane_status_export",
 		"board/export evidence ≠ invent Connected",
 		// s1397 session soft dogfood on status/export
@@ -977,7 +984,7 @@ func TestS1363SkillDescriptionResidualHonest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	sk, ok := cat.Get("aion-agent-onboarding")
+	sk, ok := cat.Get("mesh-agent-onboarding")
 	if !ok {
 		t.Fatal("missing skill")
 	}
@@ -1032,8 +1039,8 @@ func TestLoadWithBuiltin_SetupLifecycleAgentAlwaysPresent(t *testing.T) {
 	if _, ok := cat.Get("connector-integrations-setup"); !ok {
 		t.Fatalf("connector-integrations-setup missing; names=%v", cat.Names())
 	}
-	if _, ok := cat.Get("aion-agent-onboarding"); !ok {
-		t.Fatalf("aion-agent-onboarding missing; names=%v", cat.Names())
+	if _, ok := cat.Get("mesh-agent-onboarding"); !ok {
+		t.Fatalf("mesh-agent-onboarding missing; names=%v", cat.Names())
 	}
 }
 

@@ -128,7 +128,7 @@ func TestCmdSetupInit_MeshPrintOnlyOrgResidual(t *testing.T) {
 		"# org =",
 		"IOMESH_ORG",
 		"fail-open",
-		"aion #2721",
+		"broker empty-org fail-open",
 		`api_key_env = "IOMESH_TOKEN"`,
 	} {
 		if !strings.Contains(got, want) {

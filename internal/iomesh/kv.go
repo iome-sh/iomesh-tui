@@ -285,7 +285,7 @@ func decodeKVKeys(raw []byte) ([]string, error) {
 // KVBucketInfo so broker decode stays lean (omitempty intact on the wire type).
 //
 // s714 always-emit knobs. Peer FormatKVBucketInfo text (s560) + StreamInfoPrint
-// s699/s702 mold. Peer aion s713 lifecycle completeness. Beta · offline unit ≠
+// s699/s702 mold. Peer mesh s713 lifecycle completeness. Beta · offline unit ≠
 // live APPLY · empty/0 honest · dual_write default OFF · does not invent KV
 // success from knobs alone.
 type KVBucketInfoPrint struct {
@@ -314,7 +314,7 @@ func NewKVBucketInfoPrint(info KVBucketInfo) KVBucketInfoPrint {
 // FormatKVBucketInfoJSON returns indented JSON for stage CI / scrapers.
 // Always emits all KVBucketInfoPrint fields without omitempty gaps.
 // s741: Format*JSON helper completeness (DTO already always-emit s714).
-// Peer aion s740 residual. Mold FormatKVPutJSON / FormatPubJSON.
+// Peer mesh s740 residual. Mold FormatKVPutJSON / FormatPubJSON.
 func FormatKVBucketInfoJSON(p KVBucketInfoPrint) string {
 	b, err := json.MarshalIndent(p, "", "  ")
 	if err != nil {
@@ -329,7 +329,7 @@ func FormatKVBucketInfoJSON(p KVBucketInfoPrint) string {
 // gaps. Separate from wire KVEntry so zero created_at is not omitempty-hidden.
 //
 // s714 always-emit. Peer FormatKVEntry text (s560) + StreamInfoPrint s699/s702
-// mold. Peer aion s713. Beta · offline unit ≠ live APPLY · empty/0 honest ·
+// mold. Peer mesh s713. Beta · offline unit ≠ live APPLY · empty/0 honest ·
 // dual_write default OFF · does not invent KV success from knobs alone.
 type KVEntryPrint struct {
 	Bucket    string `json:"bucket"`
@@ -360,7 +360,7 @@ func NewKVEntryPrint(e KVEntry) KVEntryPrint {
 // FormatKVEntryJSON returns indented JSON for stage CI / scrapers.
 // Always emits all KVEntryPrint fields without omitempty gaps.
 // s741: Format*JSON helper completeness (DTO already always-emit s714).
-// Peer aion s740 residual. Mold FormatKVPutJSON / FormatPubJSON.
+// Peer mesh s740 residual. Mold FormatKVPutJSON / FormatPubJSON.
 func FormatKVEntryJSON(p KVEntryPrint) string {
 	b, err := json.MarshalIndent(p, "", "  ")
 	if err != nil {
@@ -373,7 +373,7 @@ func FormatKVEntryJSON(p KVEntryPrint) string {
 // Always emits bucket, prefix (empty when unset), count, and keys ([] when
 // empty) so CI scrapers get a stable envelope rather than a bare string array.
 //
-// s714 list envelope. Peer StreamInfoPrint list mold. Peer aion s713. Beta ·
+// s714 list envelope. Peer StreamInfoPrint list mold. Peer mesh s713. Beta ·
 // offline unit ≠ live APPLY · empty/0 honest · dual_write default OFF.
 type KVKeysPrint struct {
 	Bucket string   `json:"bucket"`
@@ -398,7 +398,7 @@ func NewKVKeysPrint(bucket, prefix string, keys []string) KVKeysPrint {
 // FormatKVKeysJSON returns indented JSON for stage CI / scrapers.
 // Always emits all KVKeysPrint fields without omitempty gaps.
 // s741: Format*JSON helper completeness (DTO already always-emit s714).
-// Peer aion s740 residual. Mold FormatKVPutJSON / FormatPubJSON.
+// Peer mesh s740 residual. Mold FormatKVPutJSON / FormatPubJSON.
 func FormatKVKeysJSON(p KVKeysPrint) string {
 	b, err := json.MarshalIndent(p, "", "  ")
 	if err != nil {
@@ -413,10 +413,10 @@ func FormatKVKeysJSON(p KVKeysPrint) string {
 // value echo on put JSON (mutate success ≠ get). Wire KVPut stays lean
 // (revision, error return only).
 //
-// s729: mold StreamDeletePrint s726 + s714 read DTOs; peer aion s728 residual.
+// s729: mold StreamDeletePrint s726 + s714 read DTOs; peer mesh s728 residual.
 // s756: completeness pin — docs + unit tests lock KVPutPrint/KVDeletePrint
 // (s729) with UsagePrint (s738) + PubPrint (s732) always-emit keys; does not
-// invent new DTO fields or re-claim s729/s732/s738 product bodies. Peer aion
+// invent new DTO fields or re-claim s729/s732/s738 product bodies. Peer mesh
 // s755 residual. DTO ≠ invent mutate success · s714 ≠ mutate residual ·
 // dual_write OFF · offline unit ≠ live APPLY · not full mesh RBAC GA.
 // Closes s714 mutate half-gap. Beta · offline unit ≠ live APPLY · empty/0
@@ -467,7 +467,7 @@ func FormatKVPutJSON(p KVPutPrint) string {
 // see a stable envelope without omitempty gaps. No pull_role invent. Wire
 // KVDelete stays lean (error return only).
 //
-// s729: mold StreamDeletePrint s726 + s714 read DTOs; peer aion s728 residual.
+// s729: mold StreamDeletePrint s726 + s714 read DTOs; peer mesh s728 residual.
 // Closes s714 mutate half-gap. Beta · offline unit ≠ live APPLY · empty
 // honest · dual_write OFF · not full mesh RBAC GA · does not invent delete
 // success when HTTP failed (call only after KVDelete returns nil).

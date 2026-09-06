@@ -185,7 +185,7 @@ func TestE10SoftDogfoodNeedles_CoverBoard(t *testing.T) {
 	ResetE10SoftDogfoodSessionState()
 	t.Cleanup(ResetE10SoftDogfoodSessionState)
 
-	board := AionAgentOnboardingNextE10Lane()
+	board := MeshAgentOnboardingNextE10Lane()
 	for _, want := range e10SoftDogfoodNeedles {
 		if !strings.Contains(board, want) {
 			t.Fatalf("e10 board missing soft residual-check needle %q in:\n%s", want, board)

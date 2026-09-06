@@ -1428,7 +1428,7 @@ func TestFormatStreamMessagesJSON_KeysAndNewline(t *testing.T) {
 // s750: Format*JSON helper completeness pin — names all 7 s741 helpers and locks
 // presence/always-emit behavior (trailing newline · valid JSON · nil list → [] not
 // null). Completeness pin only — does not invent new DTO fields or re-claim s741
-// product body. Peer aion s749 residual.
+// product body. Peer mesh s749 residual.
 // helper completeness ≠ invent new DTO fields · CLI prefer Format*JSON ·
 // dual_write OFF · offline unit ≠ live APPLY · not full mesh RBAC GA.
 func TestFormatJSONHelpers_CompletenessPin(t *testing.T) {
@@ -1515,7 +1515,7 @@ func TestFormatJSONHelpers_CompletenessPin(t *testing.T) {
 // via FormatStreamMessagesJSON / NewStreamMessagesPrint / NewStreamMessagePrint /
 // FormatStreamDeleteJSON / NewStreamDeletePrint (DTO surfaces already always-emit;
 // this serial docs+tests pin completeness, does not invent new fields or re-claim
-// s720/s723/s726 product bodies). Peer aion s758 residual. envelope ≠ invent
+// s720/s723/s726 product bodies). Peer mesh s758 residual. envelope ≠ invent
 // message success · item ≠ invent message success · DTO ≠ invent stream gone ·
 // wire StreamMessage lean · dual_write OFF · offline unit ≠ live APPLY · not
 // full mesh RBAC GA.
@@ -1690,14 +1690,14 @@ func TestStreamsPrint_JSONCompletenessPin(t *testing.T) {
 
 func TestFormatStreamPayloadPreview_PeelsStackedObservation(t *testing.T) {
 	t.Parallel()
-	inner := []byte(`{"event_type":"create","repository":{"full_name":"iome-sh/aion"}}`)
+	inner := []byte(`{"event_type":"create","repository":{"full_name":"iome-sh/example"}}`)
 	env := []byte(`{"v":1,"type":"observation","payload":` + string(inner) + `}`)
 	stacked := []byte(base64.StdEncoding.EncodeToString(env))
 	got := FormatStreamPayloadPreview(stacked)
 	if strings.HasPrefix(got, "eyJ") {
 		t.Fatalf("still stacked: %q", got)
 	}
-	if !strings.Contains(got, "create") || !strings.Contains(got, "iome-sh/aion") {
+	if !strings.Contains(got, "create") || !strings.Contains(got, "iome-sh/example") {
 		t.Fatalf("preview=%q", got)
 	}
 	text := FormatStreamMessagesPrint(NewStreamMessagesPrint("OPERATIONAL_EVENTS", 0, 0, 20, []StreamMessage{{
@@ -1708,5 +1708,23 @@ func TestFormatStreamPayloadPreview_PeelsStackedObservation(t *testing.T) {
 	}
 	if !strings.Contains(text, "dept.engineering.events.github") {
 		t.Fatalf("subject truncated:\n%s", text)
+	}
+}
+
+func TestLookupMemoryReplayEnabled_PrefersIOMESH(t *testing.T) {
+	t.Setenv("IOMESH_MEMORY_REPLAY_ENABLED", "1")
+	t.Setenv("AION_MEMORY_REPLAY_ENABLED", "0")
+	got, deprecated := LookupMemoryReplayEnabled()
+	if got != "1" || deprecated {
+		t.Fatalf("got %q deprecated=%v; want public IOMESH_*", got, deprecated)
+	}
+}
+
+func TestLookupMemoryReplayEnabled_DeprecatedAlias(t *testing.T) {
+	t.Setenv("IOMESH_MEMORY_REPLAY_ENABLED", "")
+	t.Setenv("AION_MEMORY_REPLAY_ENABLED", "true")
+	got, deprecated := LookupMemoryReplayEnabled()
+	if got != "true" || !deprecated {
+		t.Fatalf("got %q deprecated=%v; want deprecated AION_* alias", got, deprecated)
 	}
 }

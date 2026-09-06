@@ -239,7 +239,7 @@ func TestFormatPub_AlwaysEmit(t *testing.T) {
 // s756: mutate/print JSON completeness pin — locks PubPrint (s732) always-emit
 // keys via FormatPubJSON / NewPubPrint (DTO surface already always-emit; this
 // serial docs+tests pin completeness, does not invent new fields or re-claim
-// s732 product body). Peer aion s755 residual. No payload echo · ephemeral pub ≠
+// s732 product body). Peer mesh s755 residual. No payload echo · ephemeral pub ≠
 // durable stream publish · DTO ≠ invent pub success · dual_write OFF · offline
 // unit ≠ live APPLY · not full mesh RBAC GA.
 func TestPubPrint_JSONCompletenessPin(t *testing.T) {

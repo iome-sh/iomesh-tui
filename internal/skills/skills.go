@@ -135,12 +135,22 @@ func (c *Catalog) List() []Skill {
 	return out
 }
 
-// Get returns a skill by name.
+// skillNameAliases maps deprecated public ids to the current builtin name.
+// aion-agent-onboarding is a one-release loader alias for mesh-agent-onboarding (#394).
+var skillNameAliases = map[string]string{
+	"aion-agent-onboarding": "mesh-agent-onboarding",
+}
+
+// Get returns a skill by name. Deprecated aliases resolve to the public id.
 func (c *Catalog) Get(name string) (Skill, bool) {
 	if c == nil {
 		return Skill{}, false
 	}
-	sk, ok := c.byName[sanitizeName(name)]
+	key := sanitizeName(name)
+	if alias, ok := skillNameAliases[key]; ok {
+		key = alias
+	}
+	sk, ok := c.byName[key]
 	return sk, ok
 }
 

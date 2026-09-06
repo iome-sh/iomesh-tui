@@ -47,12 +47,12 @@ type MemoryPullStats struct {
 // Separate from MemoryPullStats so the runtime stats shape stays lean.
 //
 // s705: peer create FormatConsumerInfo s696 + status/wait pull identity continuum;
-// peer aion s704 sales claim suite/retention honesty.
+// peer mesh s704 sales claim suite/retention honesty.
 // s717: process evidence always-emit (endpoint/org/workspace + result/exit_code +
-// duration_ms/ack); peer aion s716 residual.
+// duration_ms/ack); peer mesh s716 residual.
 // s747: process-evidence completeness pin — docs + unit tests lock the complete
 // s705 identity/knobs/counters + s717 process evidence surface; does not invent
-// new always-emit fields or re-claim s717 product body. Peer aion s746 residual.
+// new always-emit fields or re-claim s717 product body. Peer mesh s746 residual.
 // Beta · offline unit ≠ live APPLY · dual_write default OFF (report-only) ·
 // fail-open empty role/tenant · not full mesh RBAC GA · process evidence ≠ invent
 // pull success from identity fields alone.
@@ -224,7 +224,7 @@ func DefaultMemoryPullFilter(explicit, tenant string) string {
 // When filter is empty:
 //   - role empty: s660 — tenant.> only for hierarchical / dept.* tenants
 //   - agent|viewer: tenant.events.> when tenant set
-//   - memory (s687 / peer aion s686): tenant.memory.> when tenant set
+//   - memory (s687 / peer mesh s686): tenant.memory.> when tenant set
 //   - auditor: tenant.audit.> when tenant set
 //   - operator|admin: tenant.> when tenant set
 //   - custom + exactly one allow-suffix token: tenant.<suffix>.>
@@ -254,7 +254,7 @@ func DefaultMemoryPullFilterForRole(explicit, tenant, role, allowSuffix string) 
 	case "agent", "viewer":
 		return tenant + ".events.>"
 	case "memory":
-		// s687: local-palace memory subjects under tenant (peer aion s686).
+		// s687: local-palace memory subjects under tenant (peer mesh s686).
 		return tenant + ".memory.>"
 	case "auditor":
 		return tenant + ".audit.>"

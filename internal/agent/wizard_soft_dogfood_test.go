@@ -180,7 +180,7 @@ func TestWizardSoftDogfoodNeedles_CoverBoard(t *testing.T) {
 	ResetWizardSoftDogfoodSessionState()
 	t.Cleanup(ResetWizardSoftDogfoodSessionState)
 
-	board := AionAgentOnboardingNextWizardLane()
+	board := MeshAgentOnboardingNextWizardLane()
 	for _, want := range wizardSoftDogfoodNeedles {
 		if !strings.Contains(board, want) {
 			t.Fatalf("wizard board missing soft-dogfood needle %q in:\n%s", want, board)

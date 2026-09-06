@@ -89,7 +89,7 @@ env_key = "VERTEX_API_KEY"
 
 **s765 (Beta · completeness pin):** local-edge stack complete after s761 Ollama product — docs + unit tests lock inventory; does not invent catalog models or re-claim s761; catalog pin ≠ cascade default · offline unit ≠ live Ollama green. See [memory-mcp.md](./memory-mcp.md#local-edge-stack-s761-product--s765-completeness-pin).
 
-**s768 (Beta · honesty pin):** local-primary LT memory = local MCP palace + optional Ollama · dual_write default OFF · hosted Palace sunset · $119 = Ops Pack not cloud GPU · peer aion s767. See [memory-mcp.md Local-primary LT honesty](./memory-mcp.md#local-primary-lt-honesty-s768-pin).
+**s768 (Beta · honesty pin):** local-primary LT memory = local MCP palace + optional Ollama · dual_write default OFF · hosted Palace sunset · $119 = Ops Pack not cloud GPU · peer mesh s767. See [memory-mcp.md Local-primary LT honesty](./memory-mcp.md#local-primary-lt-honesty-s768-pin).
 
 ```bash
 # Install + serve (https://ollama.com)

@@ -5,7 +5,7 @@ description: Residual-honest draft-only GTM AI agent roles (Orchestrator · Cont
 
 # GTM draft-only agent (residual-honest)
 
-Builtin playbook for **GTM specialized AI agent roles** in iomesh-tui: produce **drafts and plans only**. External publish, SNS/email send, and commercial CRM writes stay **human-gated**. Aligns with aion **hermes-grok-marketing-sales-pipeline** Phase 2 local hard gates (drafts only · not fleet runtime · not GA).
+Builtin playbook for **GTM specialized AI agent roles** in iomesh-tui: produce **drafts and plans only**. External publish, SNS/email send, and commercial CRM writes stay **human-gated**. Aligns with mesh **hermes-grok-marketing-sales-pipeline** Phase 2 local hard gates (drafts only · not fleet runtime · not GA).
 
 This skill is **guidance only** — not install APPLY, not Memory GA, not Agent Plugins GA, not auto-publish product.
 

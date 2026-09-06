@@ -1539,7 +1539,7 @@ func TestDogfood_MemoryIngestOrgWorkspaceEvidence(t *testing.T) {
 	if !found {
 		t.Fatal(FormatReport(rep))
 	}
-	// Structured JSON fields for stage CI / aion gates (s237).
+	// Structured JSON fields for stage CI / mesh gates (s237).
 	js := FormatReportJSON(rep)
 	var parsed map[string]any
 	if err := json.Unmarshal([]byte(js), &parsed); err != nil {
@@ -4761,7 +4761,7 @@ func TestDogfood_Consumer_Create201OK(t *testing.T) {
 }
 
 // s687: dogfood always-emits pull_role / pull_allow_suffix from Client Config;
-// empty consumer filter + role=memory → tenant.memory.> (peer aion s686).
+// empty consumer filter + role=memory → tenant.memory.> (peer mesh s686).
 func TestDogfood_PullRoleIdentityAndMemoryDefaultFilter(t *testing.T) {
 	var gotRole, gotSuffix, gotFilter string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

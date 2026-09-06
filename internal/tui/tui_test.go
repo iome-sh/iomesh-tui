@@ -973,7 +973,7 @@ func TestHandleSlash_GtmHelpChecklist(t *testing.T) {
 	}
 }
 
-// s1363: /onboard slash — residual-honest TUI agent ↔ aion onboarding guidance.
+// s1363: /onboard slash — residual-honest TUI agent ↔ mesh onboarding guidance.
 func TestHandleSlash_Onboard(t *testing.T) {
 	rt := testRuntime(t)
 	var out bytes.Buffer
@@ -992,7 +992,7 @@ func TestHandleSlash_Onboard(t *testing.T) {
 		"not Memory GA",
 		"portal HITL",
 		"never invent install green",
-		"aion-agent-onboarding",
+		"mesh-agent-onboarding",
 		"read_skill",
 		"console.iome.sh/integrations",
 		// s1368 portal Agent/MCP lane in guidance
@@ -1020,7 +1020,7 @@ func TestHandleSlash_Onboard(t *testing.T) {
 	for _, alias := range []string{"/aion-onboard", "/agent-onboard"} {
 		out.Reset()
 		_, _ = handleSlash(&out, adapter, alias)
-		if !strings.Contains(out.String(), "list_connector_catalog") || !strings.Contains(out.String(), "aion-agent-onboarding") {
+		if !strings.Contains(out.String(), "list_connector_catalog") || !strings.Contains(out.String(), "mesh-agent-onboarding") {
 			t.Fatalf("%s alias: %s", alias, out.String())
 		}
 	}
@@ -1224,7 +1224,7 @@ func TestHandleSlash_OnboardNext(t *testing.T) {
 		"drafts only",
 		"no auto-send",
 		"human publish",
-		"iomesh-memory-mcp", // product host (s1517: residual aion sample removed)
+		"iomesh-memory-mcp", // product host (s1517: residual private sample removed)
 		"local-primary",
 		"dual_write OFF",
 		"package load ≠ Memory GA",
@@ -1383,7 +1383,7 @@ func TestHandleSlash_OnboardNextMemoryLane(t *testing.T) {
 
 	needles := []string{
 		"onboard next memory lane",
-		"iomesh-memory-mcp", // product host (s1517: residual aion sample removed)
+		"iomesh-memory-mcp", // product host (s1517: residual private sample removed)
 		"iomesh-memory-mcp",
 		"github.com/iome-sh/iomesh-memory-mcp",
 		"http://127.0.0.1:8080/mcp",
@@ -1404,8 +1404,8 @@ func TestHandleSlash_OnboardNextMemoryLane(t *testing.T) {
 		"PASS ≠ invent full platform sidecar parity",
 		"flip complete residual ≠ invent Memory GA",
 		"public OSS ≠ invent platform GA",
-		"aion broker private",
-		"aion still private",
+		"control-plane / broker private",
+		"control-plane still private",
 		"Memory Ops Pack",
 		"local-primary",
 		"dual_write OFF",
@@ -3216,7 +3216,7 @@ func TestHandleSlash_OnboardNextE10Lane(t *testing.T) {
 		// Bare e10 must be board, not auto soft residual-check runner.
 		if strings.Contains(s, "E10 Open soft offline residual-check") && strings.Contains(s, "result: PASS") {
 			// board may mention residual-check text; ensure soft runner header is not the primary body.
-			if strings.Contains(s, "aion onboard next E10 Open soft offline residual-check") {
+			if strings.Contains(s, "mesh onboard next E10 Open soft offline residual-check") {
 				t.Fatalf("%s must not auto-run soft residual-check (bare e10 = board):\n%s", line, s)
 			}
 		}

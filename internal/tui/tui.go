@@ -397,7 +397,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			}
 		case "facts-as-of", "facts", "as-of", "asof":
 			// s1276: opt-in bi-temporal lite validity listing via MCP memory_facts_as_of
-			// (aion Beta K4 lite). MCP-first — no lean HTTP facts_as_of route today.
+			// (mesh Beta K4 lite). MCP-first — no lean HTTP facts_as_of route today.
 			// Not auto-recall · not full dual-clock Graphiti · not Memory GA · dual_write OFF.
 			fopts, perr := parseMemoryFactsAsOfArgs(parts[2:])
 			if perr != "" {
@@ -525,7 +525,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			fmt.Fprintln(out, text)
 		case "patterns", "pattern", "pat":
 			// s1287: opt-in ops-pulse pattern listing via MCP memory_patterns_list
-			// (aion s138 T2 · s789 Beta). MCP-first — no lean HTTP patterns invent.
+			// (mesh s138 T2 · s789 Beta). MCP-first — no lean HTTP patterns invent.
 			// Suggestive ops pulse only · not medical diagnosis · not OTel host metrics ·
 			// not invent GA window engine · dual_write OFF · not Memory GA · book-demo OFF.
 			// Empty ≠ invent patterns; offline fail-open residual-honest.
@@ -547,7 +547,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			fmt.Fprintln(out, text)
 		case "anomalies", "anomaly", "anom":
 			// s1287: opt-in ops-pulse anomaly listing via MCP memory_anomalies_list
-			// (aion s138 T2 · s789 Beta). MCP-first — no lean HTTP anomalies invent.
+			// (mesh s138 T2 · s789 Beta). MCP-first — no lean HTTP anomalies invent.
 			// Suggestive ops pulse only · not medical diagnosis · not OTel host metrics ·
 			// not invent GA window engine · dual_write OFF · not Memory GA · book-demo OFF.
 			// Empty ≠ invent anomalies; offline fail-open residual-honest.
@@ -569,7 +569,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			fmt.Fprintln(out, text)
 		case "supersede", "super":
 			// s1282: opt-in HITL A3 lite entity supersession via MCP memory_supersede_entity
-			// (aion s640). Mutating: closes open valid_until windows. MCP-first only.
+			// (mesh s640). Mutating: closes open valid_until windows. MCP-first only.
 			// Require --i-confirm (HITL) — MemorySupersede refuses residual-honestly without it.
 			// Not NLP contradiction · not full dual-clock Graphiti · not Memory GA · dual_write OFF.
 			sopts, perr := parseMemorySupersedeArgs(parts[2:])
@@ -682,7 +682,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		}
 	case "/integrations", "/integration", "/connectors":
 		// s1238/s1242/s1243/s1247: agent/TUI path for connector integrations setup via MCP tools
-		// list_connector_catalog / plan_connector_setup (aion v178) · get_webhook_signing_headers (v30).
+		// list_connector_catalog / plan_connector_setup (mesh v178) · get_webhook_signing_headers (v30).
 		// Residual honesty: browser HITL OAuth · stub ≠ live · dual_write OFF ·
 		// no invent GA · catalog Beta honesty · fail-open when MCP unavailable ·
 		// never invent install green · signing = discovery only (no secret mint).
@@ -869,7 +869,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		fmt.Fprintln(out, agent.GtmDraftOnlyAgentGuidanceNote())
 		fmt.Fprintln(out, "— residual: drafts only · human publish · skill gtm-draft-only-agent via read_skill · dual_write OFF · not Memory GA")
 	case "/onboard", "/aion-onboard", "/agent-onboard":
-		// s1363+s1368+s1372+s1377+s1382+s1387+s1402+s1417: residual-honest TUI agent ↔ aion CP/MCP onboarding guidance.
+		// s1363+s1368+s1372+s1377+s1382+s1387+s1402+s1417: residual-honest TUI agent ↔ mesh CP/MCP onboarding guidance.
 		// Bare /onboard (and aliases) → guidance note + residual footer.
 		// help|checklist|? → numbered onboarding checklist.
 		// portal|agent-mcp|mcp → portal Agent/MCP handoff (mint/copy/probe + TUI [[mcp.servers]]).
@@ -899,14 +899,14 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			sub := strings.ToLower(parts[1])
 			switch sub {
 			case "help", "checklist", "?":
-				fmt.Fprintln(out, agent.AionAgentOnboardingChecklist())
+				fmt.Fprintln(out, agent.MeshAgentOnboardingChecklist())
 				return false, nil
 			case "portal", "agent-mcp", "mcp":
-				fmt.Fprintln(out, agent.AionAgentOnboardingPortalHandoff())
+				fmt.Fprintln(out, agent.MeshAgentOnboardingPortalHandoff())
 				fmt.Fprintln(out, "— residual: portal Agent/MCP handoff · dual_write OFF · not Memory GA · probe only ≠ Memory GA · never invent Connected · portal HITL")
 				return false, nil
 			case "status":
-				fmt.Fprintln(out, agent.AionAgentOnboardingStatus())
+				fmt.Fprintln(out, agent.MeshAgentOnboardingStatus())
 				return false, nil
 			case "next", "after", "continue", "lanes":
 				// s1377: optional lane drill-down; s1382: status|pulse|board lane status board;
@@ -931,39 +931,39 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 					lane := strings.ToLower(parts[2])
 					switch lane {
 					case "plugins", "plugin", "smoke", "dogfood":
-						fmt.Fprintln(out, agent.AionAgentOnboardingNextPluginsLane())
+						fmt.Fprintln(out, agent.MeshAgentOnboardingNextPluginsLane())
 						fmt.Fprintln(out, "— residual: plugins smoke lane · dual_write OFF · not Memory GA · plugins dogfood ≠ Agent Plugins GA · plugins smoke ≠ invent Agent Plugins GA · residual PASS ≠ live dogfood · package load ≠ Memory GA · portal HITL")
 						return false, nil
 					case "gtm", "drafts":
-						fmt.Fprintln(out, agent.AionAgentOnboardingNextGtmLane())
+						fmt.Fprintln(out, agent.MeshAgentOnboardingNextGtmLane())
 						fmt.Fprintln(out, "— residual: gtm draft-only lane · drafts only · no auto-send · human publish · GTM checklist ≠ invent GTM agent GA · dual_write OFF · not Memory GA")
 						return false, nil
 					case "memory", "mcp", "palace":
 						// s1377+s1453+s1458+s1463+s1469+s1478+s1508: local-primary memory + edge OSS + public product attach + E4 client attach tip.
-						fmt.Fprintln(out, agent.AionAgentOnboardingNextMemoryLane())
-						fmt.Fprintln(out, "— residual: memory local lane · dual_write OFF · not Memory GA · package load ≠ Memory GA · ≠ freemium palace · mesh ≠ memory · iomesh-memory-mcp · public product attach · go install · no GOPRIVATE · 8080/mcp · stdio · docker compose still valid · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · PASS ≠ invent full platform sidecar parity · E4 client attach (s1508) · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · aion broker private · aion still private · s1517 product-only memory sample · portal HITL")
+						fmt.Fprintln(out, agent.MeshAgentOnboardingNextMemoryLane())
+						fmt.Fprintln(out, "— residual: memory local lane · dual_write OFF · not Memory GA · package load ≠ Memory GA · ≠ freemium palace · mesh ≠ memory · iomesh-memory-mcp · public product attach · go install · no GOPRIVATE · 8080/mcp · stdio · docker compose still valid · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · PASS ≠ invent full platform sidecar parity · E4 client attach (s1508) · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · control-plane / broker private · control-plane still private · s1517 product-only memory sample · portal HITL")
 						return false, nil
 					case "mesh", "stream", "streams", "heartbeat", "heartbeats", "pull":
 						// s1402: mesh streaming lane (org heartbeats). NOT pulse — pulse stays status board.
 						// bare pull stays mesh (s1407 memory-pull uses memory-pull|ops-pack|pull-path|memorypull|ops_pack).
-						fmt.Fprintln(out, agent.AionAgentOnboardingNextMeshLane())
+						fmt.Fprintln(out, agent.MeshAgentOnboardingNextMeshLane())
 						fmt.Fprintln(out, "— residual: mesh streaming lane · dual_write OFF · not Memory GA · mesh = streaming org heartbeats · mesh ≠ memory · never invent stream green · streams_not_probed · not OTel/APM · pull ≠ freemium hosted palace · rates ~$88/$119 optional")
 						return false, nil
 					case "memory-pull", "ops-pack", "pull-path", "memorypull", "ops_pack":
 						// s1407: Ops Pack pull path. Bare pull stays mesh (s1402).
-						fmt.Fprintln(out, agent.AionAgentOnboardingNextMemoryPullLane())
+						fmt.Fprintln(out, agent.MeshAgentOnboardingNextMemoryPullLane())
 						fmt.Fprintln(out, "— residual: memory-pull Ops Pack lane · dual_write OFF · not Memory GA · pull = mesh → local palace egress · pull ≠ freemium hosted palace · Ops Pack ≠ GPU fleet · pull_not_probed · never invent pull green · package load ≠ Ops Pack entitlement · rates ~$88/$119 optional")
 						return false, nil
 					case "planes", "three-planes", "product-planes", "product", "pillars", "three_planes":
 						// s1432: residual-honest three product planes board (mesh · memory-pull · agentic).
 						// Do NOT steal pulse|board (status) · pull (mesh) · mcp (memory).
-						fmt.Fprintln(out, agent.AionAgentOnboardingNextThreePlanes())
+						fmt.Fprintln(out, agent.MeshAgentOnboardingNextThreePlanes())
 						fmt.Fprintln(out, "— residual: three product planes board · s1432 · no MCP dial · mesh · memory-pull · agentic · streams_not_probed · pull_not_probed · list_plan_not_connected · dual_auth_candidacy_open · dual_write OFF · not Memory GA · never invent stream green / pull green / Connected · residual PASS ≠ live dogfood · PASS ≠ live APPLY · rates ~$88/$119 optional · open boxes stay open")
 						return false, nil
 					case "sales", "claims", "buyer", "claim-matrix", "sales-claims", "buyer-claims":
 						// s1437: residual-honest sales / buyer claims board (may claim / must not claim).
 						// Do NOT steal product|planes (three-planes) · gtm|drafts (GTM) · pulse|board (status).
-						fmt.Fprintln(out, agent.AionAgentOnboardingNextSalesClaims())
+						fmt.Fprintln(out, agent.MeshAgentOnboardingNextSalesClaims())
 						fmt.Fprintln(out, "— residual: sales/buyer claims board · s1437 · no MCP dial · may claim / must not claim · three-planes grounded · dual_write OFF · book-demo OFF · not Memory GA · never invent Connected · dual_auth_candidacy_open · tool ship ≠ dual-auth live · residual PASS ≠ live dogfood · PASS ≠ live APPLY · rates ~$88/$119 optional · open boxes stay open")
 						return false, nil
 					case "demo", "demo-ready", "readiness", "demo-readiness", "lighthouse", "landgrab":
@@ -971,32 +971,32 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 						// Do NOT steal sales|claims (sales claims) · product|planes (three-planes) · pulse|board (status) · gtm|drafts.
 						// Do NOT steal marketing-demo|marketing|sales-demo|demo-script|gtm-demo (s1590 marketing demo path).
 						// landgrab alias stays honesty NOT READY — not invent ready.
-						fmt.Fprintln(out, agent.AionAgentOnboardingNextDemoReadiness())
+						fmt.Fprintln(out, agent.MeshAgentOnboardingNextDemoReadiness())
 						fmt.Fprintln(out, "— residual: demo readiness board · s1442 · no MCP dial · Lighthouse beachhead packaging · book-demo OFF · Landgrab NOT READY · three planes · sales claims · human gates still open · dual_write OFF · not Memory GA · never invent Connected · residual PASS ≠ live dogfood · PASS ≠ live APPLY · residual PASS ≠ logos met · open boxes stay open · rates ~$88/$119 optional · founder-led walkthrough only when scheduled")
 						return false, nil
 					case "marketing-demo", "marketing", "sales-demo", "demo-script", "gtm-demo":
 						// s1590: plain-language marketing demo path (local agent + local memory for videos/sales).
 						// Do NOT steal bare demo|readiness|lighthouse|landgrab (demo readiness) · sales|claims (sales claims) · gtm|drafts (GTM).
-						fmt.Fprintln(out, agent.AionAgentOnboardingNextMarketingDemoLane())
+						fmt.Fprintln(out, agent.MeshAgentOnboardingNextMarketingDemoLane())
 						fmt.Fprintln(out, "— marketing-demo: s1590 · plain-language local agent + local memory script · dual_write OFF · local memory · not Memory GA · mesh optional · never invent Connected · book-demo OFF · free eng s1590 · free-floor peer s1592+ mention only · NOT bare demo (demo readiness) · NOT bare sales · NOT bare gtm")
 						return false, nil
 					case "operator", "operator-matrix", "ops-matrix", "operator-readiness", "ops-readiness", "matrix":
 						// s1447: residual-honest operator readiness matrix (demo · sales · planes · human-gates).
 						// Do NOT steal demo|readiness|lighthouse|landgrab (demo) · sales|claims · product|planes · pulse|board · export|receipt.
-						fmt.Fprintln(out, agent.AionAgentOnboardingNextOperatorMatrix())
+						fmt.Fprintln(out, agent.MeshAgentOnboardingNextOperatorMatrix())
 						fmt.Fprintln(out, "— residual: operator readiness matrix · s1447 · no MCP dial · demo · sales · planes · human-gates · dual-auth candidacy · policy locks residual-honest · dual_write OFF · book-demo OFF · Landgrab NOT READY · not Memory GA · never invent Connected · dual_auth_candidacy_open · tool ship ≠ dual-auth live · residual PASS ≠ live dogfood · PASS ≠ live APPLY · residual PASS ≠ logos met · open boxes stay open · rates ~$88/$119 optional · residual_only · path_ready · still_human · policy_off · not_ready · portal_hitl_still")
 						return false, nil
 					case "setup", "setup-lifecycle", "lifecycle", "setup_lifecycle":
 						// s1542+s1558: residual-honest setup lifecycle P1–P7 closeout residual map (stage 4 of edge-user-journey).
 						// offline static lane ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA.
 						// wizard alias is s1570 Wave C first-run wizard residual (not setup).
-						fmt.Fprintln(out, agent.AionAgentOnboardingNextSetupLane())
+						fmt.Fprintln(out, agent.MeshAgentOnboardingNextSetupLane())
 						fmt.Fprintln(out, "— residual: setup lifecycle lane · s1542+s1558 · stage 4 of edge-user-journey · no MCP dial · P1–P7 closeout residual · dual_write OFF · not Memory GA · package wire ≠ Connected · catalog ≠ Connected · portal HITL · pull ≠ invent Connected · analyze tick ≠ invent green · drift PASS ≠ invent install green · repair apply ≠ invent Connected · dual_write never auto ON · still-human APPLY open · E10 Open · setup_not_probed · offline static lane ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA · Edge Memory GA candidacy only · free eng s1558 · never invent Connected · full first-run: /onboard next journey · guided residual: /onboard next wizard")
 						return false, nil
 					case "journey", "edge-journey", "user-journey", "first-run", "edge_user_journey":
 						// s1558 Wave B: residual-honest 7-stage edge-user-journey first-run map.
 						// Do NOT invent auto memory host · TUI portal SSO · Connected · dual_write ON · Memory GA · agent install APPLY.
-						fmt.Fprintln(out, agent.AionAgentOnboardingNextJourneyLane())
+						fmt.Fprintln(out, agent.MeshAgentOnboardingNextJourneyLane())
 						fmt.Fprintln(out, "— residual: edge-user-journey first-run lane · s1558 Wave B · no MCP dial · 7 stages residual-honest · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · portal HITL · agent MCP cannot write installs · catalog ≠ Connected · book-demo OFF · no invent TUI portal SSO · host not auto · free eng s1558 · free-floor peer s1560+ mention only · never invent Connected · stage 5: /onboard next portal-hitl · Wave C guided residual: /onboard next wizard")
 						return false, nil
 					case "wizard", "first-run-wizard", "guided", "wave-c", "wave_c", "wizard-residual":
@@ -1012,7 +1012,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 								return false, nil
 							}
 						}
-						fmt.Fprintln(out, agent.AionAgentOnboardingNextWizardLane())
+						fmt.Fprintln(out, agent.MeshAgentOnboardingNextWizardLane())
 						fmt.Fprintln(out, "— residual: first-run wizard residual lane · s1570 Wave C · no MCP dial · guided residual map · dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · no invent TUI portal SSO · host not auto · residual PASS ≠ invent full interactive auto wizard · residual PASS ≠ live dogfood · soft offline ≠ invent Connected · free eng s1570 · free-floor peer s1572+ mention only · soft dogfood: /onboard next wizard dogfood · companion: /onboard next journey")
 						return false, nil
 					case "portal-hitl", "hitl", "portal_hitl", "portal-dogfood", "stage5", "connectors-hitl":
@@ -1028,7 +1028,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 								return false, nil
 							}
 						}
-						fmt.Fprintln(out, agent.AionAgentOnboardingNextPortalHITLLane())
+						fmt.Fprintln(out, agent.MeshAgentOnboardingNextPortalHITLLane())
 						fmt.Fprintln(out, "— residual: portal HITL lane · s1562 · journey stage 5 · no MCP dial · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · template= ≠ install APPLY · dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ live dogfood · soft offline ≠ invent Connected · free eng s1562 · free-floor peer s1564+ mention only · soft dogfood: /onboard next portal-hitl dogfood")
 						return false, nil
 					case "e4", "e4-dogfood", "client-attach", "edge-memory-e4", "e4_attach":
@@ -1045,7 +1045,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 								return false, nil
 							}
 						}
-						fmt.Fprintln(out, agent.AionAgentOnboardingNextE4Lane())
+						fmt.Fprintln(out, agent.MeshAgentOnboardingNextE4Lane())
 						fmt.Fprintln(out, "— residual: E4 client-attach lane · s1566 · journey stage 6 · no MCP dial · never start host · E4 client attach · tools=6 · iomesh mcp --connect residual · iomesh-memory-mcp · local-primary · dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · soft offline ≠ invent Connected · free eng s1566 · free-floor peer s1568+ mention only · soft dogfood: /onboard next e4 dogfood · deeper: /onboard next tool-call · E10 Open reaffirm: /onboard next e10")
 						return false, nil
 					case "tool-call", "tool-calls", "deeper-e4", "e4-tools", "ingest-retrieve", "tool_call":
@@ -1061,7 +1061,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 								return false, nil
 							}
 						}
-						fmt.Fprintln(out, agent.AionAgentOnboardingNextToolCallLane())
+						fmt.Fprintln(out, agent.MeshAgentOnboardingNextToolCallLane())
 						fmt.Fprintln(out, "— residual: deeper tool-call lane · s1578 · journey stage 6/7 · no MCP dial · never start host · memory_ingest_turn · memory_retrieve · memory_list · memory_facts_as_of · Partial→client-attach-evidence · companion /onboard next e4 · tools=6 · dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · soft offline ≠ invent Connected · free eng s1578 · free-floor peer s1580+ mention only · soft dogfood: /onboard next tool-call dogfood · E10: /onboard next e10")
 						return false, nil
 					case "e10", "e10-open", "edge-memory-e10", "ga-signoff", "e10_open":
@@ -1078,7 +1078,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 								return false, nil
 							}
 						}
-						fmt.Fprintln(out, agent.AionAgentOnboardingNextE10Lane())
+						fmt.Fprintln(out, agent.MeshAgentOnboardingNextE10Lane())
 						fmt.Fprintln(out, "— residual: E10 Open reaffirm lane · s1586 · Platform residual honesty · no MCP dial · never start host · E10 Open · residual PASS ≠ invent E10 closed · residual PASS ≠ invent Edge Memory GA declared · founder sign-off only if declaring Edge Memory GA · candidacy allowed without E10 · PASS ≠ live APPLY · dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual-check · residual PASS ≠ live dogfood · soft offline ≠ invent Connected · free eng s1586 · free-floor peer s1588+ mention only · soft residual-check: /onboard next e10 dogfood · companion: /onboard next e4 · /onboard next human-gates · OSS packaging")
 						return false, nil
 					case "agentic", "agentic-integrations", "integrations", "list-plan":
@@ -1098,12 +1098,12 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 							case "dual-auth", "candidacy", "list-org", "org-installs", "dual_auth", "dual-auth-candidacy":
 								// s1427: dual-auth candidacy depth (list_org fail-open · tool ship ≠ dual-auth live).
 								// Does NOT steal dogfood|soft|samples|offline|list-plan-soft (s1422 soft dogfood).
-								fmt.Fprintln(out, agent.AionAgentOnboardingNextAgenticDualAuthCandidacy())
+								fmt.Fprintln(out, agent.MeshAgentOnboardingNextAgenticDualAuthCandidacy())
 								fmt.Fprintln(out, "— residual: agentic dual-auth candidacy · s1427 · no MCP dial · dual_auth_candidacy_open · list_org_unavailable · list_org_connector_installs available=false status=unavailable installs=null · never invent empty-as-none · tool ship ≠ dual-auth live · never invent dual-auth live · agent MCP cannot write installs · portal HITL · dual_write OFF · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open")
 								return false, nil
 							}
 						}
-						fmt.Fprintln(out, agent.AionAgentOnboardingNextAgenticLane())
+						fmt.Fprintln(out, agent.MeshAgentOnboardingNextAgenticLane())
 						fmt.Fprintln(out, "— residual: agentic integrations lane · product plane 3 · dual_write OFF · not Memory GA · MCP list/plan residual-honest · plan deep links = browser HITL only · template= ≠ install APPLY · catalog ≠ Connected · list_org fail-open ≠ empty-as-none · list_plan_not_connected · portal_hitl_still · agent MCP cannot write installs · never invent Connected · rates ~$88/$119 optional · soft dogfood: /onboard next agentic dogfood · dual-auth: /onboard next agentic dual-auth · companion portal HITL: /onboard next portal-hitl (s1562)")
 						return false, nil
 					case "human-gates", "human", "gates", "apply-gates", "still-human", "apply-residual":
@@ -1121,46 +1121,46 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 								return false, nil
 							}
 						}
-						fmt.Fprintln(out, agent.AionAgentHumanGatesHonestyBoard())
+						fmt.Fprintln(out, agent.MeshAgentHumanGatesHonestyBoard())
 						fmt.Fprintln(out, "— residual: human-gates honesty board · s1550 edge-first · s1574 Wave C continuum still-human APPLY residual · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ invent Edge Memory GA declared · PASS ≠ invent Connected · PASS ≠ invent human-gate green · PASS ≠ live APPLY · open boxes stay open · knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect · book-demo OFF · leave ON_SIGNAL unset · H1/H2 not launch gate · E10 Open · agent MCP cannot write installs · never invent Connected / INSTALL_STORE green / book-demo as ON · soft dogfood: /onboard next human-gates dogfood · E10 Open reaffirm: /onboard next e10 · free eng s1574 · free-floor peer s1576+ mention only")
 						return false, nil
 					case "status", "pulse", "board":
-						fmt.Fprintln(out, agent.AionAgentOnboardingNextLaneStatus())
+						fmt.Fprintln(out, agent.MeshAgentOnboardingNextLaneStatus())
 						fmt.Fprintln(out, "— residual: next lane status board · dual_write OFF · not Memory GA · session soft ≠ live dogfood · portal_hitl_still · streams_not_probed · pull_not_probed · list_plan_not_connected · never invent Connected/GA/APPLY/stream green/pull green · residual PASS ≠ live dogfood · board/export evidence ≠ invent Connected · mesh ≠ memory")
 						return false, nil
 					case "export", "receipt", "stamp", "evidence":
 						// Optional third token: json → JSON receipt; otherwise markdown.
 						if len(parts) >= 4 && strings.ToLower(parts[3]) == "json" {
-							fmt.Fprintln(out, agent.AionAgentOnboardingNextLaneStatusExportJSON())
+							fmt.Fprintln(out, agent.MeshAgentOnboardingNextLaneStatusExportJSON())
 							fmt.Fprintln(out, "— residual: next lane status export json · evidence_kind=onboard_next_lane_status_export · offline_static · not_live_dogfood · s1387 · session soft ≠ live dogfood · streams_not_probed · pull_not_probed · list_plan_not_connected · board/export evidence ≠ invent Connected · dual_write OFF · not Memory GA · mesh ≠ memory · agentic tip /onboard next agentic · human-gates tip /onboard next human-gates")
 							return false, nil
 						}
-						fmt.Fprintln(out, agent.AionAgentOnboardingNextLaneStatusExport())
+						fmt.Fprintln(out, agent.MeshAgentOnboardingNextLaneStatusExport())
 						fmt.Fprintln(out, "— residual: next lane status export receipt · evidence_kind=onboard_next_lane_status_export · offline_static · not_live_dogfood · s1387 · session soft ≠ live dogfood · streams_not_probed · pull_not_probed · list_plan_not_connected · board/export evidence ≠ invent Connected · dual_write OFF · not Memory GA · mesh ≠ memory · agentic tip /onboard next agentic · human-gates tip /onboard next human-gates")
 						return false, nil
 					default:
 						// Unknown next sub → overview + usage hint listing lanes.
-						fmt.Fprintln(out, agent.AionAgentOnboardingNextLanes())
+						fmt.Fprintln(out, agent.MeshAgentOnboardingNextLanes())
 						fmt.Fprintln(out, "— residual: post-onboard next lanes · dual_write OFF · not Memory GA · plugins dogfood ≠ Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · mesh ≠ memory · portal HITL · board/export evidence ≠ invent Connected · pull_not_probed · list_plan_not_connected · setup_not_probed · PASS ≠ invent human-gate green · Edge Memory GA candidacy only · free eng s1558 · free eng s1562 · free eng s1566 · free eng s1570 · free eng s1574 · free eng s1578 · free eng s1582 · free eng s1586 · free eng s1590 · OSS packaging residual · E10 Open reaffirm · marketing demo path")
 						fmt.Fprintln(out, "— packaging: "+agent.OSSPackagingHonestyOneLiner)
 						fmt.Fprintln(out, "usage: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|e4|tool-call|e10|planes|sales|demo|marketing-demo|operator|setup|journey|wizard|status|export|human-gates]  (Edge OSS path: setup|journey|wizard|memory|e4|portal-hitl|marketing-demo · Platform residual honesty optional residual-check: human-gates|tool-call|e10 · soft residual-check = offline residual honesty · slash dogfood kept for compatibility; lane aliases: plugins→plugin|dogfood · gtm→drafts · memory→mcp|palace · mesh→stream|streams|heartbeat|heartbeats|pull · memory-pull→ops-pack|pull-path|memorypull|ops_pack · agentic→agentic-integrations|integrations|list-plan · portal-hitl→hitl|portal_hitl|portal-dogfood|stage5|connectors-hitl · e4→e4-dogfood|client-attach|edge-memory-e4|e4_attach · tool-call→tool-calls|deeper-e4|e4-tools|ingest-retrieve|tool_call · e10→e10-open|edge-memory-e10|ga-signoff|e10_open · planes→three-planes|product-planes|product|pillars|three_planes · sales→claims|buyer|claim-matrix|sales-claims|buyer-claims · demo→demo-ready|readiness|demo-readiness|lighthouse|landgrab · marketing-demo→marketing|sales-demo|demo-script|gtm-demo · operator→operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix · setup→setup-lifecycle|lifecycle|setup_lifecycle · journey→edge-journey|user-journey|first-run|edge_user_journey · wizard→first-run-wizard|guided|wave-c|wave_c|wizard-residual · status→pulse|board · export→receipt|stamp|evidence · human-gates→human|gates|apply-gates|still-human|apply-residual; soft residual-check dogfood: tool-call dogfood|soft|samples|offline|tool-call-soft · e10 dogfood|soft|samples|offline|e10-soft|residual-check · human-gates dogfood|soft|samples|offline|still-human-soft|apply-soft; parent aliases after|continue|lanes; export json for JSON receipt; pulse stays status board; bare pull stays mesh; bare mcp stays memory; bare portal stays portal handoff; product/planes stay three-planes; landgrab stays Landgrab NOT READY honesty; readiness/lighthouse stay demo board; bare demo stays demo readiness · marketing-demo is the plain-language demo script)")
 						return false, nil
 					}
 				}
-				fmt.Fprintln(out, agent.AionAgentOnboardingNextLanes())
+				fmt.Fprintln(out, agent.MeshAgentOnboardingNextLanes())
 				fmt.Fprintln(out, "— residual: post-onboard next lanes · dual_write OFF · not Memory GA · plugins dogfood ≠ Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · mesh ≠ memory · portal HITL · board/export evidence ≠ invent Connected · pull_not_probed · list_plan_not_connected · setup_not_probed · PASS ≠ invent human-gate green · Edge Memory GA candidacy only · free eng s1558 · free eng s1562 · free eng s1566 · free eng s1570 · free eng s1574 · free eng s1578 · free eng s1582 · free eng s1586 · free eng s1590 · OSS packaging residual · E10 Open reaffirm · marketing demo path")
 				fmt.Fprintln(out, "— packaging: "+agent.OSSPackagingHonestyOneLiner)
 				return false, nil
 			}
 			// Unknown subcommand: still print guidance + usage hint.
-			fmt.Fprintln(out, agent.AionAgentOnboardingGuidanceNote())
-			fmt.Fprintln(out, "— residual: TUI ↔ aion onboarding · dual_write OFF · not Memory GA · never invent Connected · portal HITL · skill aion-agent-onboarding via read_skill")
+			fmt.Fprintln(out, agent.MeshAgentOnboardingGuidanceNote())
+			fmt.Fprintln(out, "— residual: TUI ↔ mesh onboarding · dual_write OFF · not Memory GA · never invent Connected · portal HITL · skill mesh-agent-onboarding via read_skill")
 			fmt.Fprintln(out, "— packaging: "+agent.OSSPackagingHonestyOneLiner)
-			fmt.Fprintln(out, "usage: /onboard [help|checklist|portal|status|next]  (aliases /aion-onboard /agent-onboard; portal aliases agent-mcp|mcp; next aliases after|continue|lanes; next lanes Edge OSS path: setup|journey|wizard|memory|e4|portal-hitl|marketing-demo · Platform residual honesty (optional residual-check): human-gates|tool-call|e10 · also plugins|gtm|mesh|memory-pull|agentic|planes|sales|demo|operator|status|export)")
+			fmt.Fprintln(out, "usage: /onboard [help|checklist|portal|status|next]  (aliases /agent-onboard; portal aliases agent-mcp|mcp; next aliases after|continue|lanes; next lanes Edge OSS path: setup|journey|wizard|memory|e4|portal-hitl|marketing-demo · Platform residual honesty (optional residual-check): human-gates|tool-call|e10 · also plugins|gtm|mesh|memory-pull|agentic|planes|sales|demo|operator|status|export)")
 			return false, nil
 		}
-		fmt.Fprintln(out, agent.AionAgentOnboardingGuidanceNote())
-		fmt.Fprintln(out, "— residual: TUI ↔ aion onboarding · dual_write OFF · not Memory GA · never invent Connected · portal HITL · skill aion-agent-onboarding via read_skill")
+		fmt.Fprintln(out, agent.MeshAgentOnboardingGuidanceNote())
+		fmt.Fprintln(out, "— residual: TUI ↔ mesh onboarding · dual_write OFF · not Memory GA · never invent Connected · portal HITL · skill mesh-agent-onboarding via read_skill")
 		fmt.Fprintln(out, "— packaging: "+agent.OSSPackagingHonestyOneLiner)
 	case "/plugins", "/plugin":
 		// s1392: residual-honest /plugins slash soft offline dogfood.
@@ -1206,7 +1206,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /integrations [list|plan|signing|status]  list/plan a source via MCP, then finish in portal HITL (not install CRUD)
   /setup [init|preflight|portal|reload|pull|analyze|drift|repair]  setup lifecycle (managed config · preflight · portal HITL · hot MCP reload · opt-in continuous pull/analyze · drift report · guided repair; alias /setup-lifecycle; dual_write OFF · not Memory GA · PASS ≠ invent Connected · pull/analyze/repair ≠ invent Connected)
   /gtm [help|checklist|brief]  GTM draft-only guidance, checklist, or palace voc_brief / market_telling (aliases /gtm-draft /gtm-agent; no auto-send; human publish; palace SoR · source=agent-brief · tenant gtm/founder)
-  /onboard [help|checklist|portal|status|next]  start here: portal MCP copy → TUI attach → /integrations list|plan → portal HITL (aliases /aion-onboard /agent-onboard; next wizard|journey|setup|portal-hitl|memory · operator notes /onboard next [plugins|gtm|memory|mesh|export|…])
+  /onboard [help|checklist|portal|status|next]  start here: portal MCP copy → TUI attach → /integrations list|plan → portal HITL (aliases /agent-onboard; next wizard|journey|setup|portal-hitl|memory · operator notes /onboard next [plugins|gtm|memory|mesh|export|…])
   /plugins [help|list|validate|smoke|status]  residual-honest Agent Plugins soft offline smoke (alias /plugin; smoke aliases dogfood|soft|samples|offline; check→validate; Discover ≠ Connected · soft offline ≠ live smoke · ≠ invent Agent Plugins GA)
   /quit                exit
 
@@ -2330,7 +2330,7 @@ func parseIntegrationsPlanArgs(args []string) (connectorID string, errMsg string
 
 // parseIntegrationsSigningArgs extracts optional mesh_layer or connector_id for
 // /integrations signing (s1243). Accepts bare token, --layer, --id, --connector-id.
-// Empty hint = full catalog. Layer values map to aion mesh_layer; other tokens are
+// Empty hint = full catalog. Layer values map to broker mesh_layer; other tokens are
 // treated as connector_id client-side filters.
 func parseIntegrationsSigningArgs(args []string) (hint string, errMsg string) {
 	for i := 0; i < len(args); i++ {
@@ -2980,7 +2980,7 @@ func parseMemoryRelatedArgs(args []string) (seed, query string, opts agent.Memor
 			}
 			opts.Limit = n
 		case "--prefer-shorter-hops", "--prefer_shorter_hops":
-			// Optional value true/false; bare flag = true (s1281 / aion s1277).
+			// Optional value true/false; bare flag = true (s1281 / mesh s1277).
 			if !hasEq {
 				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
 					// Only consume next token when it looks like a bool value.

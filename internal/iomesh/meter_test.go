@@ -219,7 +219,7 @@ func TestUsagePrint_JSONAlwaysEmitPopulated(t *testing.T) {
 // s756: mutate/print JSON completeness pin — locks UsagePrint (s738) always-emit
 // keys via FormatUsageJSON / NewUsagePrint (DTO surface already always-emit; this
 // serial docs+tests pin completeness, does not invent new fields or re-claim
-// s738 product body). Peer aion s755 residual. Zero-time "" never 0001-01-01 ·
+// s738 product body). Peer mesh s755 residual. Zero-time "" never 0001-01-01 ·
 // by_model [] not null · local process meter ≠ remote dashboard · DTO ≠ invent
 // usage success · dual_write OFF · offline unit ≠ live APPLY · not full mesh RBAC GA.
 func TestUsagePrint_JSONCompletenessPin(t *testing.T) {

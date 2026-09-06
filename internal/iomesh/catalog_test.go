@@ -559,7 +559,7 @@ func TestCatalogProductPrint_JSONAlwaysEmitKeys(t *testing.T) {
 // s753: catalog print JSON completeness pin — locks list CatalogPrint (s735) +
 // product CatalogProductPrint (s744) + nested DataProductPrint always-emit keys
 // (DTO surfaces already always-emit; this serial docs+tests pin completeness,
-// does not invent new fields or re-claim s735/s744 product bodies). Peer aion
+// does not invent new fields or re-claim s735/s744 product bodies). Peer mesh
 // s752 residual. DTO ≠ invent catalog/product success · found=false honest ·
 // dual_write OFF · offline unit ≠ live APPLY · not full mesh RBAC GA · Beta catalog.
 func TestCatalogPrint_JSONCompletenessPin(t *testing.T) {

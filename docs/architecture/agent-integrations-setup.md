@@ -1,6 +1,6 @@
 # Agent integrations setup (MCP · residual-honest)
 
-**Pin:** free eng **s1271** (status `list_org_connector_installs` residual wire) + **s1273** (skill/guidance residual installs) · peer aion **s1268** (MCP v179) · **s1267** (opt-in MCP iomesh context headers) · **s1263** (status org-installs honesty) · **s1257** (deep-link parity + skill dogfood) · **s1251** (agent skill + system note) · **s1252** (golden fixtures / s1244 deep links) · **s1247** (status pulse) · **s1242** (TUI v178 wire parity) + **s1243** (signing surface) · prior **s1238** slash · concurrent aion **s1237** (MCP v178 tools) · residual docs **s1239** · free eng concurrent **s1256+** / free-floor peer **s1254**.
+**Pin:** free eng **s1271** (status `list_org_connector_installs` residual wire) + **s1273** (skill/guidance residual installs) · peer mesh **s1268** (MCP v179) · **s1267** (opt-in MCP iomesh context headers) · **s1263** (status org-installs honesty) · **s1257** (deep-link parity + skill dogfood) · **s1251** (agent skill + system note) · **s1252** (golden fixtures / s1244 deep links) · **s1247** (status pulse) · **s1242** (TUI v178 wire parity) + **s1243** (signing surface) · prior **s1238** slash · concurrent mesh **s1237** (MCP v178 tools) · residual docs **s1239** · free eng concurrent **s1256+** / free-floor peer **s1254**.
 
 Agent/TUI path for **connector integrations setup** via MCP tools — not full install CRUD, not OAuth complete, not checklist/API-key mint, not webhook secret mint/rotate.
 
@@ -8,7 +8,7 @@ Agent/TUI path for **connector integrations setup** via MCP tools — not full i
 
 Residual-honest **round-trip dogfood** for plan deep links and the builtin skill (no live install green claim):
 
-1. **Plan deep-link parity** — golden fixtures (`v178_plan_github.json`, `v178_plan_notion.json`) carry aion **s1244** fields:
+1. **Plan deep-link parity** — golden fixtures (`v178_plan_github.json`, `v178_plan_notion.json`) carry mesh **s1244** fields:
    - `portal_url` / `portal_detail_url`
    - `portal_add_url` = `https://console.iome.sh/integrations/add?template={id}`
    - `deep_links` map (`detail`, `add_wizard`, `catalog`, …)
@@ -28,7 +28,7 @@ When MCP is attached (`AttachMCP`), the runtime also injects an **`<integrations
 1. Discover — `list_connector_catalog` (catalog status ≠ install Connected)
 2. Plan — `plan_connector_setup` (portal deep links + honesty notes)
 3. Optional — `get_webhook_signing_headers` (discovery only)
-4. Org installs residual — `list_org_connector_installs` (aion v179 / s1268 · TUI s1271/s1273) — residual-honest fail-open (`available=false` · `installs=null`) · **never invent empty-as-none** · dual_auth candidacy open · not Connected
+4. Org installs residual — `list_org_connector_installs` (mesh v179 / s1268 · TUI s1271/s1273) — residual-honest fail-open (`available=false` · `installs=null`) · **never invent empty-as-none** · dual_auth candidacy open · not Connected
 5. Complete install/OAuth in **browser portal HITL** at https://console.iome.sh/integrations — agent MCP cannot write installs
 6. Operator pulse — slash `/integrations status|list|plan|signing`
 
@@ -82,7 +82,7 @@ All scan connected MCP servers for the bare tool name (same fail-open spirit as 
      - `dual-auth read snapshot: candidacy open · never invent Connected / empty-as-none`
      - `portal: https://console.iome.sh/integrations`
    - **Tool present, no `org_id`** (mesh/iomesh org unset): residual skip-call — `org_id not configured — skip call` · candidacy open · never invent empty-as-none (does **not** invent empty installs)
-   - **Tool present + `org_id`**: call MCP `list_org_connector_installs` (aion s1268 / v179). Default residual wire (`formatOrgInstallsSnapshot`):
+   - **Tool present + `org_id`**: call MCP `list_org_connector_installs` (mesh s1268 / v179). Default residual wire (`formatOrgInstallsSnapshot`):
      - `available=false` · `status=unavailable` · `installs=null`
      - **available=false is residual honesty, not "no installs"** — never invent empty-as-none / Connected
      - Surfaces `reason`, `portal_url`, honesty notes from wire
@@ -114,7 +114,7 @@ Post-surface dual path:
 
 **Honesty:** catalog ≠ Connected · template= ≠ install APPLY · dual_write **OFF** · not Memory GA · free eng **s1727**.
 
-## aion v178 / v30 wire (TUI parse parity · s1242)
+## mesh v178 / v30 wire (TUI parse parity · s1242)
 
 **`list_connector_catalog`** returns:
 
@@ -135,7 +135,7 @@ Post-surface dual path:
 }
 ```
 
-TUI parser prefers `entries` (aion v178); still accepts legacy `connectors` / `items` / `catalog`. OAuth column reads `oauth_install_supported` bool (legacy `oauth` any still supported).
+TUI parser prefers `entries` (mesh v178); still accepts legacy `connectors` / `items` / `catalog`. OAuth column reads `oauth_install_supported` bool (legacy `oauth` any still supported).
 
 **`plan_connector_setup`** returns:
 
@@ -167,7 +167,7 @@ Plan formatter surfaces `portal_url`, `portal_add_url`, `deep_links` (s1244 prov
 
 Golden fixtures (s1252): `internal/agent/testdata/v178_catalog_entries.json`, `v178_plan_github.json`, `v178_plan_notion.json`.
 
-**`get_webhook_signing_headers`** (aion v30) input: optional `mesh_layer`. Output:
+**`get_webhook_signing_headers`** (mesh v30) input: optional `mesh_layer`. Output:
 
 ```json
 {
@@ -216,7 +216,7 @@ When MCP is missing or tools are not connected:
 ```text
 integrations: MCP connector tools unavailable (fail-open).
   portal HITL: https://console.iome.sh/integrations
-  aion MCP tools list_connector_catalog / plan_connector_setup (v178/s1237) · get_webhook_signing_headers (v30) …
+  mesh MCP tools list_connector_catalog / plan_connector_setup (v178/s1237) · get_webhook_signing_headers (v30) …
 ```
 
 No invented catalog rows. No invented plan success. No invented signing secrets.
@@ -233,21 +233,21 @@ No invented catalog rows. No invented plan success. No invented signing secrets.
 
 | Pin | Repo | Role |
 |-----|------|------|
-| s1237 | aion | MCP tools `list_connector_catalog` / `plan_connector_setup` (v178) |
+| s1237 | mesh | MCP tools `list_connector_catalog` / `plan_connector_setup` (v178) |
 | s1238 | iomesh-tui | Slash `/integrations` list/plan/status |
-| s1239 | aion | Residual docs / living surfaces |
+| s1239 | mesh | Residual docs / living surfaces |
 | s1242 | iomesh-tui | v178 wire parse/format parity (`entries`, `oauth_install_supported`, honesty object) |
 | s1243 | iomesh-tui | `/integrations signing` + `IntegrationsSigning` → `get_webhook_signing_headers` |
-| s1244 | aion | Plan deeplink residual (`portal_add_url` · `deep_links`) |
+| s1244 | mesh | Plan deeplink residual (`portal_add_url` · `deep_links`) |
 | **s1247** | **iomesh-tui** | **`/integrations status` residual-honest operator pulse (`IntegrationsStatus` · `formatCatalogPulse`)** |
 | **s1251** | **iomesh-tui** | **Agent skill + `<integrations>` system note (`IntegrationsAgentGuidanceNote` · builtin `connector-integrations-setup`)** |
 | **s1252** | **iomesh-tui** | **Golden fixtures + plan deep_links display parity** |
 | **s1257** | **iomesh-tui** | **Deep-link parity dogfood + skill residual-honest tests (template= · portal_add_url · guidance↔skill needles)** |
 | **s1259** | free-floor peer | free-floor continuum peer (not dual-auth ship) |
-| **s1261** | aion | dual-auth org install read snapshot **candidacy** only (not claimed shipped in TUI) |
+| **s1261** | mesh | dual-auth org install read snapshot **candidacy** only (not claimed shipped in TUI) |
 | **s1263** | **iomesh-tui** | **Status org-installs residual honesty (`statusOrgInstallsSection` · always unavailable via agent MCP · portal HITL · never invent Connected / empty-as-none)** · free eng concurrent s1261+ |
 | **s1267** | **iomesh-tui** | **Opt-in MCP HTTP inject of `X-IOMesh-Tenant`/`Org`/`Workspace` from `[iomesh]`/`[memory]` (`inject_iomesh_context` · never overwrite explicit headers · stdio N/A)** · residual: inject ≠ install green · ≠ dual-auth ship |
-| **s1268** | aion | MCP `list_org_connector_installs` (v179) residual-honest fail-open (`available=false` · `installs=null`) |
+| **s1268** | mesh | MCP `list_org_connector_installs` (v179) residual-honest fail-open (`available=false` · `installs=null`) |
 | **s1271** | **iomesh-tui** | **Status wires `list_org_connector_installs` (`formatOrgInstallsSnapshot` · probe tool · org_id from mesh · fail-open residual · never invent empty-as-none / Connected)** |
 | **s1273** | **iomesh-tui** | **Skill + `<integrations>` guidance mention `list_org_connector_installs` residual fail-open · never invent empty-as-none · dual_auth candidacy open** |
 

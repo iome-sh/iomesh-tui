@@ -11,7 +11,7 @@ import (
 // Session-only: default portal_hitl_soft_not_run. Soft offline pass/fail ≠ invent Connected ·
 // ≠ live dogfood · ≠ invent install APPLY · portal HITL still · soft offline ≠ invent Connected.
 //
-// Lives in agent so AionAgentOnboardingNextPortalHITLLane board + TUI slash share state
+// Lives in agent so MeshAgentOnboardingNextPortalHITLLane board + TUI slash share state
 // without import cycles (agent cannot import tui).
 
 var portalHITLSoftDogfoodSession struct {
@@ -116,7 +116,7 @@ var portalHITLSoftDogfoodNeedles = []string{
 // Never dials MCP · never invents Connected · never invents install APPLY · soft offline ≠ invent Connected.
 // Sets session soft marker (pass/fail). Returns residual-honest operator output.
 func RunPortalHITLSoftDogfood() string {
-	board := AionAgentOnboardingNextPortalHITLLane()
+	board := MeshAgentOnboardingNextPortalHITLLane()
 	var missing []string
 	for _, want := range portalHITLSoftDogfoodNeedles {
 		if !strings.Contains(board, want) {
@@ -128,7 +128,7 @@ func RunPortalHITLSoftDogfood() string {
 	label := PortalHITLSoftSessionLabel()
 
 	var b strings.Builder
-	b.WriteString("aion onboard next portal HITL soft offline dogfood (residual-honest · s1562 · no MCP dial · not live dogfood):\n")
+	b.WriteString("mesh onboard next portal HITL soft offline dogfood (residual-honest · s1562 · no MCP dial · not live dogfood):\n")
 	b.WriteString("  Path: soft offline residual check of portal-hitl board honesty + proven portal path shapes (journey stage 5)\n")
 	b.WriteString("  · never dial MCP · never invent Connected · never invent install APPLY · portal HITL when connect\n")
 	b.WriteString("  · soft offline ≠ invent Connected · residual PASS ≠ live dogfood · session soft ≠ live dogfood · portal HITL still\n")

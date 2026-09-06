@@ -60,7 +60,7 @@ type Config struct {
 	// Env: IOMESH_MEMORY_ENDPOINT / MEMORY_SIDECAR_URL · config [memory].endpoint
 	MemoryEndpoint string
 	// Role is optional federated mesh role for X-IOMesh-Role (operator|admin|agent|auditor|viewer|memory|custom).
-	// Fail-open: empty omits the header (local/dev honesty; not full IdP RBAC). s675/s687 / aion s671/s686 peer.
+	// Fail-open: empty omits the header (local/dev honesty; not full IdP RBAC). s675/s687 / mesh s671/s686 peer.
 	// role=memory → default filter tenant.memory.> via DefaultMemoryPullFilterForRole.
 	Role string
 	// PullAllowSuffix is optional comma-separated literal tokens for role=custom
@@ -498,7 +498,7 @@ func (c *Client) auth(req *http.Request) {
 	if c.cfg.Tenant != "" {
 		req.Header.Set("X-IOMesh-Tenant", c.cfg.Tenant)
 	}
-	// Federated pull ACL headers (s675 / aion M4+ roles + s671 custom suffix). Fail-open: empty → omit.
+	// Federated pull ACL headers (s675 / mesh M4+ roles + s671 custom suffix). Fail-open: empty → omit.
 	if role := strings.TrimSpace(c.cfg.Role); role != "" {
 		req.Header.Set("X-IOMesh-Role", role)
 	}

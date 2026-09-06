@@ -3,7 +3,7 @@
 **Serial:** free eng **s1582** (OSS packaging residual) · residual-honest **public MIT packaging boundary**  
 **Status:** residual-honest SSOT for what public `iomesh-tui` is vs is not  
 **Audience:** OSS readers, operators, residual eng, GTM-adjacent claims review  
-**Planes:** local TUI + public edge Memory (`iomesh-memory-mcp` + kernel) · optional portal/mesh client · **aion private**
+**Planes:** local TUI + public edge Memory (`iomesh-memory-mcp` + kernel) · optional portal/mesh client · **control-plane / broker private**
 
 This document is the **packaging boundary** for the public MIT repo.  
 Edge harness and local-primary path come first. Platform residual honesty rails stay labeled **optional anti-claim residual** — not product claims that this MIT surface is the multi-tenant control plane.
@@ -23,7 +23,7 @@ Edge harness and local-primary path come first. Platform residual honesty rails 
 | Optional mesh **pull** into local store; dual_write default **OFF** | A product that requires dual_write ON or cloud palace as the primary store |
 | Residual-honest operator boards + offline residual-check harnesses (maintainers) | A claim that offline residual PASS is live platform green |
 
-**Public OSS ≠ invent platform GA.** Residual monorepo / private `aion` paths stay private.
+**Public OSS ≠ invent platform GA.** Residual monorepo / private control-plane paths stay private.
 
 ---
 
@@ -76,7 +76,7 @@ Keep soft residual-check harnesses — they are **anti-claim rails**, not live c
 | **Edge Memory GA candidacy only** | Public edge attach path residual may candidacy; **not** bare Memory GA · **not** Edge Memory GA declared · **E10 Open** |
 | **free eng `sNNNN`** | Internal free-engineering residual serial for continuum work · not a public product version claim |
 | **free-floor peer** | Separate free-floor ownership serial continuum · **mention only** · packaging residual does not rewrite free-floor |
-| **control plane** | Private multi-tenant platform (`aion` / portal / install-store fleet) · **not** shipped as open control-plane code in this MIT harness |
+| **control plane** | Private multi-tenant platform (control plane / portal / install-store fleet) · **not** shipped as open control-plane code in this MIT harness |
 
 ---
 
@@ -102,13 +102,13 @@ Example: free eng **s1582** = this OSS packaging residual · free-floor peer **s
 2. **Platform residual honesty (optional · anti-claims · offline residual checks)** — human-gates · soft residual-check (`dogfood` slash) · still-human APPLY · tool-call residual · E10 Open reaffirm (`/onboard next e10` · s1586)  
 
 Bare `/onboard` residual packaging line: `OSSPackagingHonestyOneLiner` in `internal/agent`  
-API continuum overview: `AionAgentOnboardingNextLanes`
+API continuum overview: `MeshAgentOnboardingNextLanes`
 
 ### After /onboard maps (s1825)
 
 Residual-honest **next-step footers** after `/onboard status` · `/onboard checklist` · `/onboard next` lanes map · `/onboard portal` — peer of integrations next-step (s1727) · setup next-step continuum (s1686–s1723).
 
-Helper `OnboardNextStepLines()` (alias `AionAgentOnboardingNextStepLines`) dual path:
+Helper `OnboardNextStepLines()` (alias `MeshAgentOnboardingNextStepLines`) dual path:
 
 1. **If TUI/session running** → `/setup preflight` · `/setup reload` · optional `/integrations list` · `/onboard next portal-hitl|setup|memory`
 2. **Else cold start** → restart `iomesh` · `iomesh setup preflight`
@@ -124,7 +124,7 @@ Helper `OnboardNextStepLines()` (alias `AionAgentOnboardingNextStepLines`) dual 
 - residual PASS ≠ invent control plane in MIT repo  
 - residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ live dogfood  
 - soft residual-check (`… dogfood`) = offline residual honesty check · session soft ≠ live dogfood · ≠ invent platform green  
-- public OSS ≠ invent platform GA · aion broker **private**  
+- public OSS ≠ invent platform GA · control-plane / broker **private**  
 - free eng **s1582** · free-floor peer **s1584+** mention only (do not rewrite free-floor)
 
 ## Non-goals
@@ -142,5 +142,5 @@ Helper `OnboardNextStepLines()` (alias `AionAgentOnboardingNextStepLines`) dual 
 - [memory-edge-usage-demo.md](./memory-edge-usage-demo.md) — usage/demo walkthrough  
 - [../OPEN_SOURCE_AUDIT.md](../OPEN_SOURCE_AUDIT.md) — public launch audit checklist  
 - Root [README.md](../../README.md) — OSS / local-primary table + packaging pointer  
-- Skill `aion-agent-onboarding` — operator continuum  
+- Skill `mesh-agent-onboarding` — operator continuum  
 - free eng **s1582** · free-floor peer **s1584+** mention only  

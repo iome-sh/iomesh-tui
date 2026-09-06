@@ -8,9 +8,9 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/agentplugins"
 )
 
-// AionAgentOnboardingGuidanceNote residual-honest system note (s1363 + s1368 + s1372 + s1377 + s1382 + s1387 + s1402 + s1407 + s1413 + s1417 + s1432 + s1437 + s1442 + s1447 + s1542).
+// MeshAgentOnboardingGuidanceNote residual-honest system note (s1363 + s1368 + s1372 + s1377 + s1382 + s1387 + s1402 + s1407 + s1413 + s1417 + s1432 + s1437 + s1442 + s1447 + s1542).
 // Injected on AttachMCP after integrations + memory-advanced notes.
-// Steers TUI agent ↔ aion CP/MCP onboarding without inventing install green,
+// Steers TUI agent ↔ mesh CP/MCP onboarding without inventing install green,
 // Memory GA, Agent Plugins GA, or dual_write ON.
 // s1368: adds explicit portal Agent/MCP handoff lane (mint key → copy MCP →
 // test invoke probe only) complementary to integrations portal HITL.
@@ -53,7 +53,7 @@ const OSSPackagingHonestyOneLiner = "MIT OSS harness · not control plane · dua
 // dual_write OFF · package wire ≠ Connected · catalog ≠ Connected · agent MCP cannot write installs ·
 // not Memory GA · free eng s1825. Never invent Connected / Memory GA from onboard maps alone.
 //
-// AionAgentOnboardingNextStepLines is the same helper (family alias).
+// MeshAgentOnboardingNextStepLines is the same helper (family alias).
 func OnboardNextStepLines() []string {
 	return []string{
 		"next: dual path residual-honest after onboard maps",
@@ -63,13 +63,13 @@ func OnboardNextStepLines() []string {
 	}
 }
 
-// AionAgentOnboardingNextStepLines is the family-named alias for OnboardNextStepLines (s1825).
-func AionAgentOnboardingNextStepLines() []string { return OnboardNextStepLines() }
+// MeshAgentOnboardingNextStepLines is the family-named alias for OnboardNextStepLines (s1825).
+func MeshAgentOnboardingNextStepLines() []string { return OnboardNextStepLines() }
 
-// AionAgentOnboardingStartHere is the lean first-run path shown above residual
+// MeshAgentOnboardingStartHere is the lean first-run path shown above residual
 // boards (s1982 TUI UX · peer console s1981). Honesty needles stay in the
 // residual body. Never invents Connected / Memory GA / install APPLY.
-func AionAgentOnboardingStartHere() string {
+func MeshAgentOnboardingStartHere() string {
 	return strings.TrimSpace(`start here (TUI agent · MCP · integrations):
   1. Portal: https://console.iome.sh/settings/agent — mint iomesh_ag_* → export IOMESH_TOKEN → copy TUI fragment ([[mcp.servers]] + [iomesh]) → test invoke (stub|live)
   2. TUI: paste both blocks (apiv1 /v7/mcp catalog ≠ hooks.iome.sh streams) → restart / reattach
@@ -80,9 +80,9 @@ func AionAgentOnboardingStartHere() string {
 operator notes: /onboard next  (lanes · residual boards · never invent Connected)`)
 }
 
-func AionAgentOnboardingGuidanceNote() string {
-	return AionAgentOnboardingStartHere() + "\n\n" + strings.TrimSpace(`aion agent onboarding (residual-honest TUI ↔ aion CP/MCP · s1363+s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1546+s1550+s1558+s1562+s1566+s1570+s1574+s1578+s1582+s1586+s1590):
-Point IOMESH/MCP at aion tools — fail-open offline (never invent tool green).
+func MeshAgentOnboardingGuidanceNote() string {
+	return MeshAgentOnboardingStartHere() + "\n\n" + strings.TrimSpace(`mesh agent onboarding (residual-honest TUI ↔ mesh CP/MCP · s1363+s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1546+s1550+s1558+s1562+s1566+s1570+s1574+s1578+s1582+s1586+s1590):
+Point IOMESH/MCP at mesh tools — fail-open offline (never invent tool green).
 
 Connector path (integrations portal HITL · product plane 3 agentic integrations):
 1. Discover: MCP list_connector_catalog — catalog status ≠ install Connected · catalog ≠ Connected
@@ -115,7 +115,7 @@ Memory + operator:
 21. E10 Open reaffirm residual-check (s1586 · Platform residual honesty after OSS packaging): /onboard next e10 — residual PASS ≠ invent E10 closed · residual PASS ≠ invent Edge Memory GA declared · founder sign-off only if declaring Edge Memory GA · candidacy allowed without E10 · soft residual-check /onboard next e10 dogfood · free eng s1586
 22. Marketing demo path (s1590 · videos/sales · local agent + local memory): /onboard next marketing-demo — plain-language operator script · dual_write OFF · local memory · not Memory GA · mesh optional · never invent Connected · free eng s1590
 
-Skill: read_skill aion-agent-onboarding when available
+Skill: read_skill mesh-agent-onboarding when available
 
 Locks (never violate):
 - dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood
@@ -147,7 +147,7 @@ Locks (never violate):
 - E10 Open reaffirm residual-check (s1586): dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent E10 closed · E10 Open · founder sign-off only if declaring Edge Memory GA · candidacy allowed without E10 · PASS ≠ live APPLY · residual PASS ≠ live dogfood · session soft ≠ live dogfood · residual-check · free eng s1586 · free-floor peer s1588+ mention only`)
 }
 
-// AionAgentOnboardingChecklist residual-honest numbered onboarding checklist (s1363 + s1368 + s1372 + s1377 + s1382 + s1387 + s1402 + s1407 + s1413 + s1417 + s1432 + s1437 + s1442 + s1447 + s1542).
+// MeshAgentOnboardingChecklist residual-honest numbered onboarding checklist (s1363 + s1368 + s1372 + s1377 + s1382 + s1387 + s1402 + s1407 + s1413 + s1417 + s1432 + s1437 + s1442 + s1447 + s1542).
 // Used by /onboard help and /onboard checklist — operator HITL only; never invents
 // install green, Memory GA, Agent Plugins GA, dual_write ON, or agent APPLY.
 // s1368: portal Agent/MCP handoff steps (mint/copy/probe) + TUI [[mcp.servers]].
@@ -168,9 +168,9 @@ Locks (never violate):
 // s1562: /onboard next portal-hitl residual-honest journey stage-5 portal HITL + soft offline dogfood.
 // s1566: /onboard next e4 residual-honest journey stage-6 E4 client-attach + soft offline dogfood.
 // s1570 Wave C: /onboard next wizard residual-honest guided first-run wizard residual + soft offline dogfood.
-func AionAgentOnboardingChecklist() string {
-	return AionAgentOnboardingStartHere() + "\n\n" + strings.TrimSpace(`aion agent onboarding checklist (residual-honest · s1363+s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1558+s1562+s1566+s1570 · TUI ↔ aion):
-  1. Point IOMESH/MCP at aion tools (fail-open offline)
+func MeshAgentOnboardingChecklist() string {
+	return MeshAgentOnboardingStartHere() + "\n\n" + strings.TrimSpace(`mesh agent onboarding checklist (residual-honest · s1363+s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1558+s1562+s1566+s1570 · TUI ↔ mesh):
+  1. Point IOMESH/MCP at mesh tools (fail-open offline)
   2. list_connector_catalog — catalog status ≠ Connected
   3. plan_connector_setup → portal deep links (browser HITL · template= ≠ install APPLY)
   4. list_org_connector_installs residual fail-open (available=false ≠ empty-as-none)
@@ -193,12 +193,12 @@ func AionAgentOnboardingChecklist() string {
   Locks: never invent install green / Connected / INSTALL_STORE APPLY · book-demo OFF · Landgrab NOT READY · residual PASS ≠ live dogfood · PASS ≠ live APPLY · rates ~$88/$119 optional · no invent GA knowledge/analytical · catalog status ≠ Connected · portal HITL · drafts only · no auto-send · package load ≠ Memory GA · board/export evidence ≠ invent Connected · mesh = streaming org heartbeats · mesh ≠ memory · never invent stream green · pull ≠ freemium hosted palace · Ops Pack ≠ GPU fleet · pull_not_probed · open boxes stay open · Knowledge Beta→GA cannot invent H1/H2 offline · leave ON_SIGNAL unset · list_plan_not_connected · plan deep links = browser HITL only · template= ≠ install APPLY · dual_auth_candidacy_open · sales claims residual-honest only · residual PASS ≠ logos met · setup_not_probed · package wire ≠ Connected · repair apply ≠ invent Connected · dual_write never auto ON · E10 Open · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ invent Edge Memory GA declared · free eng s1558 · free eng s1562 · free eng s1566 · free eng s1570 · soft offline ≠ invent Connected · free-floor peer s1564+ mention only · free-floor peer s1568+ mention only · free-floor peer s1572+ mention only`) + "\n" + strings.Join(OnboardNextStepLines(), "\n")
 }
 
-// AionAgentOnboardingPortalHandoff residual-honest short block for /onboard portal (s1368).
+// MeshAgentOnboardingPortalHandoff residual-honest short block for /onboard portal (s1368).
 // Portal Agent/MCP lane complementary to integrations portal HITL — mint key /
 // copy MCP connection / test invoke (probe only) + TUI [[mcp.servers]] attach.
 // Never invents install green, Memory GA, or agent write installs.
-func AionAgentOnboardingPortalHandoff() string {
-	return AionAgentOnboardingStartHere() + "\n\n" + strings.TrimSpace(`aion portal Agent/MCP handoff (residual-honest · s1368+s1542):
+func MeshAgentOnboardingPortalHandoff() string {
+	return MeshAgentOnboardingStartHere() + "\n\n" + strings.TrimSpace(`mesh portal Agent/MCP handoff (residual-honest · s1368+s1542):
 Portal half (browser HITL · https://console.iome.sh/settings/agent):
   1. Mint iomesh_ag_* principal (settings only · not install APPLY · export IOMESH_TOKEN)
   2. Settings → Agent/MCP → copy TUI fragment ([[mcp.servers]] portal MCP + [iomesh] hooks)
@@ -218,7 +218,7 @@ TUI half (local config · streamable HTTP):
 Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · never invent install green / Connected / INSTALL_STORE APPLY · list_org fail-open ≠ empty-as-none · catalog ≠ Connected · portal HITL · plugins dogfood ≠ invent Agent Plugins GA · setup closeout residual ≠ invent Edge Memory GA · still-human APPLY open · setup closeout residual ≠ invent APPLY · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · free eng s1562 · free eng s1566 · free eng s1570 · free-floor peer s1564+ mention only · free-floor peer s1568+ mention only · free-floor peer s1572+ mention only`) + "\n" + strings.Join(OnboardNextStepLines(), "\n")
 }
 
-// AionAgentOnboardingStatus residual-honest static offline status lines for /onboard status (s1368 + s1372 + s1377 + s1382 + s1387 + s1402 + s1407 + s1413 + s1417 + s1432 + s1437 + s1442 + s1447 + s1542).
+// MeshAgentOnboardingStatus residual-honest static offline status lines for /onboard status (s1368 + s1372 + s1377 + s1382 + s1387 + s1402 + s1407 + s1413 + s1417 + s1432 + s1437 + s1442 + s1447 + s1542).
 // No MCP dial — operator pulse only. Never invents attach green, install Connected, or Memory GA.
 // s1372: cross-link → /onboard next operator lanes.
 // s1377: lane drills via /onboard next [plugins|gtm|memory].
@@ -235,8 +235,8 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ liv
 // s1542: cross-link → /onboard next setup setup lifecycle P1–P7 closeout map.
 // s1558 Wave B: cross-link → /onboard next journey edge-user-journey first-run map.
 // s1570 Wave C: cross-link → /onboard next wizard guided first-run wizard residual.
-func AionAgentOnboardingStatus() string {
-	return AionAgentOnboardingStartHere() + "\n\n" + strings.TrimSpace(`aion onboard status (residual-honest · offline static · s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1558+s1570):
+func MeshAgentOnboardingStatus() string {
+	return MeshAgentOnboardingStartHere() + "\n\n" + strings.TrimSpace(`mesh onboard status (residual-honest · offline static · s1368+s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1558+s1570):
   MCP attach: expected for full path · fail-open offline (never invent tool green / install green)
   dual_write OFF · local-primary · not Memory GA · book-demo OFF · leave ON_SIGNAL unset
   portal HITL: Agent/MCP mint/copy/probe @ https://console.iome.sh/settings/agent · connectors @ https://console.iome.sh/integrations
@@ -260,7 +260,7 @@ func AionAgentOnboardingStatus() string {
   slash: /onboard portal · /onboard checklist · /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|e4|planes|sales|demo|operator|setup|journey|wizard|status|export|human-gates] · /onboard next status · /onboard next export · /onboard next mesh · /onboard next memory-pull · /onboard next agentic · /onboard next portal-hitl · /onboard next e4 · /onboard next planes · /onboard next sales · /onboard next demo · /onboard next operator · /onboard next setup · /onboard next journey · /onboard next wizard · /onboard next human-gates · /onboard next human-gates dogfood · /integrations status`) + "\n" + strings.Join(OnboardNextStepLines(), "\n")
 }
 
-// AionAgentOnboardingNextLanes residual-honest post-onboard continuum for /onboard next (s1372 + s1377 + s1382 + s1387 + s1402 + s1407 + s1413 + s1417 + s1432 + s1437 + s1442 + s1447 + s1542).
+// MeshAgentOnboardingNextLanes residual-honest post-onboard continuum for /onboard next (s1372 + s1377 + s1382 + s1387 + s1402 + s1407 + s1413 + s1417 + s1432 + s1437 + s1442 + s1447 + s1542).
 // Static offline block — no MCP dial. Lists residual-honest operator lanes after
 // core onboarding (plugins dogfood · GTM drafts · local memory · mesh streaming · Ops Pack pull · agentic integrations · portal HITL still · human gates · sales claims · setup lifecycle).
 // s1377: drill-down via /onboard next plugins|gtm|memory (see lane helpers below).
@@ -283,8 +283,8 @@ func AionAgentOnboardingStatus() string {
 // s1586: E10 Open reaffirm residual-check in Platform residual honesty group (after OSS packaging continuum).
 // s1590: marketing demo path via /onboard next marketing-demo (aliases marketing|sales-demo|demo-script|gtm-demo) — plain-language local agent + memory for videos/sales.
 // Never invents Agent Plugins GA, Memory GA, auto-send, install Connected, stream green, pull green, or human-gate green.
-func AionAgentOnboardingNextLanes() string {
-	return AionAgentOnboardingStartHere() + "\n\n" + strings.TrimSpace(`aion onboard next lanes (residual-honest · post-onboard continuum · s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1558+s1562+s1566+s1570+s1574+s1578+s1582+s1586+s1590 · no MCP dial · OSS packaging residual):
+func MeshAgentOnboardingNextLanes() string {
+	return MeshAgentOnboardingStartHere() + "\n\n" + strings.TrimSpace(`mesh onboard next lanes (residual-honest · post-onboard continuum · s1372+s1377+s1382+s1387+s1402+s1407+s1413+s1417+s1432+s1437+s1442+s1447+s1542+s1558+s1562+s1566+s1570+s1574+s1578+s1582+s1586+s1590 · no MCP dial · OSS packaging residual):
 OSS packaging (s1582 · MIT OSS harness · not control plane · Edge path first · residual PASS ≠ invent control plane in MIT repo):
   packaging: `+OSSPackagingHonestyOneLiner+`
   soft … dogfood = offline residual honesty check (user-facing: residual-check) · session soft ≠ live dogfood · ≠ invent platform green · slash token dogfood kept for compatibility
@@ -296,7 +296,7 @@ OSS packaging (s1582 · MIT OSS harness · not control plane · Edge path first 
      drill: /onboard next plugins (aliases plugin|dogfood) · slash: /plugins dogfood
   2. /gtm checklist + skill gtm-draft-only-agent — drafts only · no auto-send · human publish · GTM checklist ≠ invent GTM agent GA
      drill: /onboard next gtm (alias drafts)
-  3. local-primary Memory edge (TUI + Memory MCP + memory kernel + local palace) — dual_write OFF · package load ≠ Memory GA · ≠ freemium palace · product host iomesh-memory-mcp · aion broker private · public product attach (s1478): go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main · go get github.com/iome-sh/memory@main · no GOPRIVATE · HTTP http://127.0.0.1:8080/mcp or stdio · docker compose still valid · flip complete residual ≠ invent Memory GA
+  3. local-primary Memory edge (TUI + Memory MCP + memory kernel + local palace) — dual_write OFF · package load ≠ Memory GA · ≠ freemium palace · product host iomesh-memory-mcp · control-plane / broker private · public product attach (s1478): go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main · go get github.com/iome-sh/memory@main · no GOPRIVATE · HTTP http://127.0.0.1:8080/mcp or stdio · docker compose still valid · flip complete residual ≠ invent Memory GA
      drill: /onboard next memory (aliases mcp|palace) · companion E4: /onboard next e4 (s1566) · deeper tool-call residual-check: /onboard next tool-call (s1578)
   4. I/O Mesh streaming org heartbeats on dept.* — mesh ≠ memory · not OTel/APM · not hosted Memory Palace · empty streams honest
      drill: /onboard next mesh (aliases stream|streams|heartbeat|heartbeats|pull) · residual soft: /mesh · iomesh mesh status|streams|consumer
@@ -341,11 +341,11 @@ OSS packaging (s1582 · MIT OSS harness · not control plane · Edge path first 
 Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · PASS ≠ invent human-gate green · open boxes stay open · leave ON_SIGNAL unset · Knowledge Beta→GA cannot invent H1/H2 offline · never invent install green / Connected / INSTALL_STORE APPLY · list_org fail-open ≠ empty-as-none · plugins dogfood ≠ invent Agent Plugins GA · drafts only · no auto-send · rates ~$88/$119 optional · package load ≠ Memory GA · board/export evidence ≠ invent Connected · mesh = streaming org heartbeats · mesh ≠ memory · never invent stream green / Connected · not OTel/APM · streams_not_probed honest · pull ≠ freemium hosted palace · Ops Pack ≠ GPU fleet · pull_not_probed honest · never invent pull green · list_plan_not_connected · dual_auth_candidacy_open · plan deep links = browser HITL only · template= ≠ install APPLY · sales claims residual-honest only · demo readiness residual-honest only · Landgrab NOT READY · residual PASS ≠ logos met · marketing demo path dual_write OFF · local memory · mesh optional · never invent Connected · free eng s1590 · free-floor peer s1592+ mention only · operator matrix residual-honest only · setup_not_probed · package wire ≠ Connected · repair apply ≠ invent Connected · dual_write never auto ON · E10 Open · residual PASS ≠ invent E10 closed · setup closeout residual ≠ invent Edge Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ invent Edge Memory GA declared · free eng s1558 · free-floor peer s1560+ mention only · no invent TUI portal SSO · host not auto · free eng s1562 · free-floor peer s1564+ mention only · free eng s1566 · free-floor peer s1568+ mention only · free eng s1570 · free-floor peer s1572+ mention only · free eng s1574 · free-floor peer s1576+ mention only · free eng s1578 · free-floor peer s1580+ mention only · free eng s1582 · free-floor peer s1584+ mention only · free eng s1586 · free-floor peer s1588+ mention only · OSS harness · residual-check · not control plane · residual PASS ≠ invent control plane in MIT repo · soft offline ≠ invent Connected · session soft ≠ live dogfood · portal HITL when connect · tip ≠ invent forever-green product dogfood · residual PASS ≠ invent full interactive auto wizard · still-human APPLY open · Wave C continuum · deeper tool-call residual candidacy only · E10 Open reaffirm residual-check`) + "\n" + strings.Join(OnboardNextStepLines(), "\n")
 }
 
-// AionAgentOnboardingNextPluginsLane residual-honest plugins dogfood drill for /onboard next plugins (s1377+s1392).
+// MeshAgentOnboardingNextPluginsLane residual-honest plugins dogfood drill for /onboard next plugins (s1377+s1392).
 // Static offline — iomesh plugins dogfood + /plugins dogfood path. Never invents Agent Plugins GA,
 // install Connected, dual_write ON, or live dogfood green.
-func AionAgentOnboardingNextPluginsLane() string {
-	return strings.TrimSpace(`aion onboard next plugins lane (residual-honest · s1377+s1392+s1521 · no MCP dial):
+func MeshAgentOnboardingNextPluginsLane() string {
+	return strings.TrimSpace(`mesh onboard next plugins lane (residual-honest · s1377+s1392+s1521 · no MCP dial):
   Path: iomesh plugins smoke · /plugins smoke — offline sample validate only (legacy: iomesh plugins dogfood)
   Samples: examples/agent-plugins/{hello-iome,iomesh-memory-mcp} (product primary)
   Steps:
@@ -364,11 +364,11 @@ func AionAgentOnboardingNextPluginsLane() string {
 Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · never invent install green / Connected / INSTALL_STORE APPLY · plugins dogfood ≠ invent Agent Plugins GA · plugins smoke ≠ invent Agent Plugins GA · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · package load ≠ Memory GA · rates ~$88/$119 optional`)
 }
 
-// AionAgentOnboardingNextGtmLane residual-honest GTM draft-only drill for /onboard next gtm (s1377).
+// MeshAgentOnboardingNextGtmLane residual-honest GTM draft-only drill for /onboard next gtm (s1377).
 // Static offline — /gtm checklist + gtm-draft-only-agent skill. Never invents auto-send,
 // GTM agent GA, suite ops GA, or install Connected.
-func AionAgentOnboardingNextGtmLane() string {
-	return strings.TrimSpace(`aion onboard next gtm lane (residual-honest · s1377 · no MCP dial):
+func MeshAgentOnboardingNextGtmLane() string {
+	return strings.TrimSpace(`mesh onboard next gtm lane (residual-honest · s1377 · no MCP dial):
   Path: /gtm checklist + skill gtm-draft-only-agent — drafts only · no auto-send · human publish
   Steps:
     1. /gtm checklist (or /gtm help) — residual-honest draft-only checklist
@@ -384,22 +384,22 @@ func AionAgentOnboardingNextGtmLane() string {
 Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · drafts only · no auto-send · human publish · GTM checklist ≠ invent GTM agent GA · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · rates ~$88/$119 optional`)
 }
 
-// AionAgentOnboardingNextMemoryLane residual-honest memory local drill for /onboard next memory
+// MeshAgentOnboardingNextMemoryLane residual-honest memory local drill for /onboard next memory
 // (s1377+s1453+s1458+s1463+s1469+s1478+s1508+s1517+s1695).
 // Static offline — local-primary Memory edge (TUI OSS + iomesh-memory-mcp + github.com/iome-sh/memory kernel + local palace).
 // Naming honesty (s1453 Option A · s1517 cleanup): product MCP host = iomesh-memory-mcp only (public edge);
-// aion = private cloud broker/CP (not OSS edge pack; s1517 dropped in-tree residual memory sample). s1458–s1469: M2 lean /
+// control plane = private cloud broker/CP (not OSS edge pack; s1517 dropped in-tree residual memory sample). s1458–s1469: M2 lean /
 // M3 dogfood / M4 readiness history. s1478: both product edge repos are PUBLIC — go install / go get without
 // GOPRIVATE · attach HTTP :8080/mcp or stdio · docker compose still valid · flip complete residual ≠ invent
-// Memory GA · dual_write OFF · aion broker still private · not freemium hosted palace.
+// Memory GA · dual_write OFF · control-plane / broker still private · not freemium hosted palace.
 // s1508: E4 full MCP client attach dogfood tip residual (connected=1 · tools=6 stamp) · Edge Memory GA candidacy
 // only · E10 Open · tip ≠ invent Edge Memory GA declared · tip ≠ invent forever-green product dogfood.
 // s1695: first-run = OSS local-primary only · OSS first-run complete without mesh · Memory Ops Pack optional overlay
 // (not first-run required) · mesh optional · Ops Pack ≠ GPU · not freemium hosted palace · companion memory-pull
 // only when mesh configured.
 // Never invents Memory GA, freemium palace, dual_write ON, install Connected, or live dogfood green.
-func AionAgentOnboardingNextMemoryLane() string {
-	return strings.TrimSpace(`aion onboard next memory lane (residual-honest · s1377+s1453+s1458+s1463+s1469+s1478+s1508+s1517+s1695 · no MCP dial):
+func MeshAgentOnboardingNextMemoryLane() string {
+	return strings.TrimSpace(`mesh onboard next memory lane (residual-honest · s1377+s1453+s1458+s1463+s1469+s1478+s1508+s1517+s1695 · no MCP dial):
   Path: local-primary Memory edge — TUI OSS + iomesh-memory-mcp + github.com/iome-sh/memory kernel + local palace — dual_write OFF
   First-run honesty (s1695): OSS first-run complete without mesh · Ops Pack not first-run required · Memory Ops Pack optional · mesh optional · dual_write OFF · not Memory GA · not freemium hosted palace
   Edge OSS (Option A · s1453+s1458+s1463+s1469+s1478+s1508+s1517 · public product attach continuum):
@@ -413,7 +413,7 @@ func AionAgentOnboardingNextMemoryLane() string {
     · history (s1458–s1469 residual): M2 lean host · M3 edge dogfood tip · M4 public flip readiness (kernel first · then iomesh-memory-mcp) — flip is now complete for edge packs; readiness tip ≠ invent Memory GA
     · s1508 E4 MCP client attach dogfood tip: lean host HTTP → iomesh mcp --connect · connected=1 · tools=6 stamp residual · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · dual_write OFF · not bare Memory GA · not hosted Memory GA · docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md
     · offline gate mention: peer mcp make edge-dogfood-gate (mention only) · TUI docs docs/architecture/memory-mcp.md
-    · dual_write OFF · not Memory GA · aion broker private (cloud CP stays private · not OSS edge pack) · aion still private
+    · dual_write OFF · not Memory GA · control-plane / broker private (cloud CP stays private · not OSS edge pack) · control-plane still private
     · flip complete residual: public OSS edge ≠ invent Memory GA · ≠ freemium palace · dual_write OFF · package load ≠ Memory GA
     · residual: tool parity may be lean vs platform residual · PASS ≠ invent full platform sidecar parity
     · offline dogfood tip ≠ invent live dogfood as green · public product attach ≠ invent platform GA
@@ -424,7 +424,7 @@ func AionAgentOnboardingNextMemoryLane() string {
     2. Kernel (public): go get github.com/iome-sh/memory@main — no GOPRIVATE
     3. Attach local-primary: HTTP http://127.0.0.1:8080/mcp or stdio iomesh-memory-mcp · dual_write OFF · not Memory GA
     4. docker compose still valid: docker compose up --build in github.com/iome-sh/iomesh-memory-mcp → http://127.0.0.1:8080/mcp · curl http://127.0.0.1:8080/healthz · stdio alternate — offline dogfood tip ≠ invent live dogfood as green
-    5. dual_write OFF · local-primary only · not Memory GA · Palace sunset · aion broker private · aion still private · OSS first-run complete without mesh
+    5. dual_write OFF · local-primary only · not Memory GA · Palace sunset · control-plane / broker private · control-plane still private · OSS first-run complete without mesh
     6. Optional: read_skill memory-advanced-agent (opt-in advanced · still dual_write OFF · not Memory GA)
     7. Optional mesh pull only (later path · not first-run required): /onboard next memory-pull · Memory Ops Pack optional (~$119 pull/retain/support · local-primary overlay · Ops Pack ≠ GPU fleet) · mesh optional · dual_write OFF · only when mesh configured
     8. Operator pulse: /memory status · /onboard status · /onboard next operator (fail-open offline · never invent tool green)
@@ -436,19 +436,19 @@ func AionAgentOnboardingNextMemoryLane() string {
     · PASS ≠ invent full platform sidecar parity · tool parity may be lean vs platform residual
     · public product attach (s1478) · no GOPRIVATE · go install · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA
     · E4 client attach (s1508) · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · not bare Memory GA · not hosted Memory GA
-    · kernel first history · then iomesh-memory-mcp · aion broker private · aion still private
+    · kernel first history · then iomesh-memory-mcp · control-plane / broker private · control-plane still private
     · never invent install green / Connected / INSTALL_STORE APPLY
     · catalog ≠ Connected · portal HITL · agent MCP cannot write installs
     · mesh ≠ memory · mesh optional · mesh optional for pull only · memory lane is local-edge palace, not streaming org heartbeats
-    · iomesh-memory-mcp product host only · TUI OSS · aion broker private · s1517 product-only memory sample
+    · iomesh-memory-mcp product host only · TUI OSS · control-plane / broker private · s1517 product-only memory sample
     · rates ~$88 mesh / ~$119 Memory Ops Pack optional · package load ≠ Memory GA · Ops Pack ≠ GPU fleet
   Companion: /onboard next e4 (s1566 · journey stage 6 E4 client-attach soft dogfood residual) · /onboard next e4 dogfood · /onboard next tool-call (s1578 · deeper tool-call residual after attach) · /onboard next tool-call dogfood · /onboard next memory-pull (optional Ops Pack pull path only when mesh configured · s1695 · not first-run required) · /onboard next operator · docs/architecture/memory-mcp.md Edge OSS Option A · public product attach (s1478) · E4 client attach (s1508) · docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md
   Back: /onboard next · /memory status · portal Agent/MCP https://console.iome.sh/settings/agent
 
-Locks: dual_write OFF · book-demo OFF · not Memory GA · Palace sunset · residual PASS ≠ live dogfood · offline dogfood tip ≠ invent live dogfood as green · PASS ≠ live APPLY · PASS ≠ invent full platform sidecar parity · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · no GOPRIVATE · go install · package load ≠ Memory GA · ≠ freemium palace · not freemium hosted palace · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · rates ~$88/$119 optional · Memory Ops Pack optional · Ops Pack not first-run required · OSS first-run complete without mesh · mesh ≠ memory · mesh optional · mesh optional for pull · Ops Pack ≠ GPU fleet · TUI OSS · iomesh-memory-mcp · aion broker private · aion still private · s1517 product-only memory sample (iomesh-memory-mcp) · companion E4 soft residual s1566 · deeper tool-call soft residual s1578 · free eng s1695`)
+Locks: dual_write OFF · book-demo OFF · not Memory GA · Palace sunset · residual PASS ≠ live dogfood · offline dogfood tip ≠ invent live dogfood as green · PASS ≠ live APPLY · PASS ≠ invent full platform sidecar parity · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · no GOPRIVATE · go install · package load ≠ Memory GA · ≠ freemium palace · not freemium hosted palace · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · rates ~$88/$119 optional · Memory Ops Pack optional · Ops Pack not first-run required · OSS first-run complete without mesh · mesh ≠ memory · mesh optional · mesh optional for pull · Ops Pack ≠ GPU fleet · TUI OSS · iomesh-memory-mcp · control-plane / broker private · control-plane still private · s1517 product-only memory sample (iomesh-memory-mcp) · companion E4 soft residual s1566 · deeper tool-call soft residual s1578 · free eng s1695`)
 }
 
-// AionAgentOnboardingNextMeshLane residual-honest mesh streaming lane for /onboard next mesh (s1402+s2057).
+// MeshAgentOnboardingNextMeshLane residual-honest mesh streaming lane for /onboard next mesh (s1402+s2057).
 // Static offline — I/O Mesh = streaming org heartbeats / governed dept.* (product plane 1).
 // After s2055: buyer/operator steps match shipped CLI ( [iomesh] or infer · IOMESH_TOKEN ·
 // --create --yes · durable event · --messages / /dashboard ).
@@ -457,8 +457,8 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · Palace sunset · resi
 // Operator residual soft (status/streams/consumers) · never invent stream green / Connected.
 // Pull honesty: iomesh memory pull = mesh egress into local palace · dual_write OFF · not freemium hosted palace.
 // Rates: existing lock dump ~$88/$119 optional (no new rate needles).
-func AionAgentOnboardingNextMeshLane() string {
-	return strings.TrimSpace(`aion onboard next mesh lane (residual-honest · s1402+s2057 · no MCP dial · product plane 1):
+func MeshAgentOnboardingNextMeshLane() string {
+	return strings.TrimSpace(`mesh onboard next mesh lane (residual-honest · s1402+s2057 · no MCP dial · product plane 1):
   Path: I/O Mesh = streaming org heartbeats on governed dept.* — NOT hosted Memory Palace · not OTel/APM
   Separation: mesh ≠ memory · mesh lane ≠ plugins/gtm lanes · pull ≠ freemium hosted palace · Palace sunset
   Steps (integrate-app · s2055 shipped CLI):
@@ -484,7 +484,7 @@ func AionAgentOnboardingNextMeshLane() string {
 Locks: dual_write OFF · book-demo OFF · not Memory GA · Palace sunset · residual PASS ≠ live dogfood · PASS ≠ live APPLY · mesh = streaming org heartbeats · mesh ≠ memory · not OTel/APM · not medical · never invent stream green / Connected / INSTALL_STORE APPLY · empty streams honest · streams_not_probed · infer ≠ Connected · create ≠ PULSE · mesh pub ephemeral ≠ consume · pull ≠ freemium hosted palace · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · rates ~$88/$119 optional · board/export evidence ≠ invent Connected`)
 }
 
-// AionAgentOnboardingNextMemoryPullLane residual-honest Memory Ops Pack pull path for
+// MeshAgentOnboardingNextMemoryPullLane residual-honest Memory Ops Pack pull path for
 // /onboard next memory-pull (s1407+s1695). Static offline — pull = mesh → local palace egress
 // (iomesh memory pull · CreateConsumer → fetch → map envelope → local MCP memory_ingest_turn → ack).
 // NOT freemium hosted palace · dual_write OFF · not Memory GA · Palace sunset · Ops Pack ≠ GPU fleet.
@@ -493,8 +493,8 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · Palace sunset · resi
 // Mesh base ~$88 is separate · mesh ≠ memory · bare pull alias stays mesh lane (s1402).
 // Honest residual: path_ready · residual_only · pull_not_probed (never invent pull green).
 // s1695: Ops Pack not first-run required · first-run is local OSS only · package load ≠ Ops Pack entitlement.
-func AionAgentOnboardingNextMemoryPullLane() string {
-	return strings.TrimSpace(`aion onboard next memory-pull lane (residual-honest · s1407+s1695 · no MCP dial · Ops Pack pull path):
+func MeshAgentOnboardingNextMemoryPullLane() string {
+	return strings.TrimSpace(`mesh onboard next memory-pull lane (residual-honest · s1407+s1695 · no MCP dial · Ops Pack pull path):
   Path: iomesh memory pull = mesh → local palace egress — CreateConsumer → fetch → map envelope → local MCP memory_ingest_turn → ack
   Product: Memory Ops Pack ~$119 = pull / retain / support · local-primary · TUI OSS + mesh pull entitlement — Ops Pack ≠ GPU fleet · not freemium hosted palace · Palace sunset
   First-run honesty (s1695): Ops Pack not first-run required · first-run is local OSS only · Memory Ops Pack optional commercial overlay · dual_write OFF
@@ -519,7 +519,7 @@ func AionAgentOnboardingNextMemoryPullLane() string {
 Locks: dual_write OFF · book-demo OFF · not Memory GA · Palace sunset · residual PASS ≠ live dogfood · PASS ≠ live APPLY · pull ≠ freemium hosted palace · not freemium hosted palace · Ops Pack ≠ GPU fleet · pull_not_probed · never invent pull green / Connected / INSTALL_STORE APPLY · package load ≠ Ops Pack entitlement · package load ≠ Memory GA · mesh ≠ memory · not first-run required · first-run is local OSS only · Memory Ops Pack optional · local-primary · TUI OSS · rates ~$88/$119 optional · board/export evidence ≠ invent Connected · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · free eng s1695`)
 }
 
-// AionAgentOnboardingNextSetupLane residual-honest setup lifecycle P1–P7 closeout map for
+// MeshAgentOnboardingNextSetupLane residual-honest setup lifecycle P1–P7 closeout map for
 // /onboard next setup (s1542 + s1558 Wave B). Static offline — consolidates setup lifecycle map story:
 // init → memory host · secrets → preflight → reload → portal HITL → optional pull/analyze →
 // drift report-only → guided repair plan/apply --yes · /memory digest still valid.
@@ -531,8 +531,8 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · Palace sunset · resi
 // setup closeout residual ≠ invent Edge Memory GA.
 // Aliases: setup-lifecycle|lifecycle|setup_lifecycle (wizard alias is s1570 Wave C first-run wizard residual — not setup).
 // Companion: /onboard next journey · /onboard next wizard · memory · memory-pull · human-gates · operator · docs setup-lifecycle + edge-user-journey + memory-edge-usage-demo.
-func AionAgentOnboardingNextSetupLane() string {
-	return strings.TrimSpace(`aion onboard next setup lane (residual-honest · s1542+s1558 Wave B · setup lifecycle P1–P7 closeout residual · stage 4 of edge-user-journey · no MCP dial):
+func MeshAgentOnboardingNextSetupLane() string {
+	return strings.TrimSpace(`mesh onboard next setup lane (residual-honest · s1542+s1558 Wave B · setup lifecycle P1–P7 closeout residual · stage 4 of edge-user-journey · no MCP dial):
   Path: setup lifecycle map story — stage 4 of 7-stage edge-user-journey — managed config · preflight · reload · portal HITL · opt-in pull/analyze · drift report · guided repair — dual_write OFF
   Product: setup lifecycle P1–P7 residual closeout (init · preflight · reload · continuous pull · analyze ticks · drift · guided repair) — offline static lane ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA · full first-run map: /onboard next journey (s1558 Wave B) · guided residual: /onboard next wizard (s1570 Wave C)
   Steps:
@@ -562,7 +562,7 @@ func AionAgentOnboardingNextSetupLane() string {
 Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · package wire ≠ Connected · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · pull ≠ invent Connected · analyze tick ≠ invent green · drift PASS ≠ invent install green · repair apply ≠ invent Connected · dual_write never auto ON · still-human APPLY open · E10 Open · setup_not_probed · offline static lane ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA · Edge Memory GA candidacy only · free eng s1558 · never invent install green / Connected / INSTALL_STORE APPLY · board/export evidence ≠ invent Connected`)
 }
 
-// AionAgentOnboardingNextJourneyLane residual-honest 7-stage edge-user-journey first-run map for
+// MeshAgentOnboardingNextJourneyLane residual-honest 7-stage edge-user-journey first-run map for
 // /onboard next journey (s1558 Wave B). Static offline — first-run operator map after Wave A docs
 // SSOT (s1554). Stages: 1 Signup · 2 Download TUI · 3 TUI auth/keys · 4 Setup wizard · 5 Connectors
 // MCP list/plan + portal HITL · 6 Local store iomesh-memory-mcp · 7 Analyze.
@@ -572,8 +572,8 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ liv
 // Companion: /onboard next setup (stage 4 detail) · /onboard next wizard (s1570 Wave C guided residual) ·
 // agentic · memory · human-gates · operator · docs edge-user-journey + setup-lifecycle + memory-edge-usage-demo.
 // free-floor peer s1560+ mention only (do not rewrite free-floor).
-func AionAgentOnboardingNextJourneyLane() string {
-	return strings.TrimSpace(`aion onboard next journey lane (residual-honest · s1558 Wave B · edge-user-journey first-run map · no MCP dial):
+func MeshAgentOnboardingNextJourneyLane() string {
+	return strings.TrimSpace(`mesh onboard next journey lane (residual-honest · s1558 Wave B · edge-user-journey first-run map · no MCP dial):
   Path: 7-stage edge-first first-run map — Signup → Download TUI → TUI auth/keys → Setup wizard → Connectors → Local store → Analyze
   Product: Wave B first-run polish after Wave A docs SSOT (s1554) — residual-honest operator map · free eng s1558 · free-floor peer s1560+ mention only · companion Wave C guided residual: /onboard next wizard (s1570)
   Stages (order residual-honest):
@@ -607,7 +607,7 @@ func AionAgentOnboardingNextJourneyLane() string {
 Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ invent Edge Memory GA declared · portal HITL · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · no invent TUI portal SSO · host not auto · never invent install green / Connected / INSTALL_STORE APPLY · free eng s1558 · free-floor peer s1560+ mention only · stage 5 soft residual s1562 · stage 6 E4 soft residual s1566 · deeper tool-call soft residual s1578 · Wave C wizard residual s1570`)
 }
 
-// AionAgentOnboardingNextWizardLane residual-honest guided first-run wizard residual for
+// MeshAgentOnboardingNextWizardLane residual-honest guided first-run wizard residual for
 // /onboard next wizard (s1570 Wave C). Static offline — deeper guided residual after Wave B
 // journey map (s1558). For stages 1–7: short step + primary residual-honest next action + honesty non-claim.
 // Soft offline dogfood: /onboard next wizard dogfood (session soft ≠ live dogfood · soft offline ≠ invent Connected).
@@ -617,9 +617,9 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candid
 // Aliases: first-run-wizard|guided|wave-c|wave_c|wizard-residual (wizard primary; not setup-lifecycle alias).
 // Companion: /onboard next journey (Wave B map) · setup · portal-hitl · e4 · human-gates.
 // free eng s1570 · free-floor peer s1572+ mention only (do not rewrite free-floor).
-func AionAgentOnboardingNextWizardLane() string {
+func MeshAgentOnboardingNextWizardLane() string {
 	softLabel := WizardSoftSessionLabel()
-	return AionAgentOnboardingStartHere() + "\n\n" + strings.TrimSpace(fmt.Sprintf(`aion onboard next wizard lane (residual-honest · s1570 Wave C · first-run wizard residual · guided residual map · no MCP dial):
+	return MeshAgentOnboardingStartHere() + "\n\n" + strings.TrimSpace(fmt.Sprintf(`mesh onboard next wizard lane (residual-honest · s1570 Wave C · first-run wizard residual · guided residual map · no MCP dial):
   Path: guided first-run wizard residual — deeper residual-honest step map after Wave B journey · NOT invent full interactive auto wizard
   Product: Wave C first-run wizard residual (s1570) after Wave B journey map (s1558) — residual-honest guided residual · free eng s1570 · free-floor peer s1572+ mention only
   Wave C residual scope: deeper guided residual map + soft dogfood · residual PASS ≠ invent full interactive auto wizard · residual PASS ≠ invent Edge Memory GA declared
@@ -667,7 +667,7 @@ func AionAgentOnboardingNextWizardLane() string {
 Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent Edge Memory GA · E10 Open · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · no invent TUI portal SSO · host not auto · residual PASS ≠ invent full interactive auto wizard · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · E10 stays Open (never invent closed) · soft offline ≠ invent Connected · session soft ≠ live dogfood · free eng s1570 · free-floor peer s1572+ mention only · still-human APPLY open · companion /onboard next human-gates dogfood (s1574) · %s`, softLabel, softLabel))
 }
 
-// AionAgentOnboardingNextPortalHITLLane residual-honest journey stage-5 portal HITL connectors
+// MeshAgentOnboardingNextPortalHITLLane residual-honest journey stage-5 portal HITL connectors
 // board for /onboard next portal-hitl (s1562). Static offline — no MCP dial.
 // Path: MCP list/plan → browser portal HITL → human finishes OAuth/install.
 // Stage 5 of edge-user-journey (connectors / portal HITL when connect).
@@ -677,9 +677,9 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candid
 // Aliases: hitl|portal_hitl|portal-dogfood|stage5|connectors-hitl.
 // Companion: /onboard next agentic · /onboard next journey · /onboard next agentic dogfood · soft dogfood residual.
 // free eng s1562 · free-floor peer s1564+ mention only (do not rewrite free-floor).
-func AionAgentOnboardingNextPortalHITLLane() string {
+func MeshAgentOnboardingNextPortalHITLLane() string {
 	softLabel := PortalHITLSoftSessionLabel()
-	return strings.TrimSpace(fmt.Sprintf(`aion onboard next portal-hitl lane (residual-honest · s1562 · journey stage 5 · portal HITL when connect · no MCP dial):
+	return strings.TrimSpace(fmt.Sprintf(`mesh onboard next portal-hitl lane (residual-honest · s1562 · journey stage 5 · portal HITL when connect · no MCP dial):
   Path: MCP list/plan → browser portal HITL → human finishes OAuth/install — agent MCP cannot write installs
   Product: edge-user-journey stage 5 connectors residual — portal HITL when connect · free eng s1562 · free-floor peer s1564+ mention only
   Steps:
@@ -715,7 +715,7 @@ func AionAgentOnboardingNextPortalHITLLane() string {
 Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · template= ≠ install APPLY · agent MCP cannot write installs · portal HITL when connect · portal HITL still · portal_hitl_still · soft offline ≠ invent Connected · session soft ≠ live dogfood · free eng s1562 · free-floor peer s1564+ mention only · %s`, softLabel, softLabel))
 }
 
-// AionAgentOnboardingNextE4Lane residual-honest journey stage-6 E4 client-attach board
+// MeshAgentOnboardingNextE4Lane residual-honest journey stage-6 E4 client-attach board
 // for /onboard next e4 (s1566). Static offline — no MCP dial · never start host.
 // Path: lean iomesh-memory-mcp HTTP host → iomesh mcp --connect · tools=6 stamp residual (s1508 evidence).
 // Stage 6 of edge-user-journey (local store / MCP attach).
@@ -725,9 +725,9 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candid
 // Aliases: e4-dogfood|client-attach|edge-memory-e4|e4_attach.
 // Companion: /onboard next memory · /onboard next journey · /onboard next memory-pull · soft dogfood residual.
 // free eng s1566 · free-floor peer s1568+ mention only (do not rewrite free-floor).
-func AionAgentOnboardingNextE4Lane() string {
+func MeshAgentOnboardingNextE4Lane() string {
 	softLabel := E4SoftSessionLabel()
-	return strings.TrimSpace(fmt.Sprintf(`aion onboard next e4 lane (residual-honest · s1566 · journey stage 6 · E4 client attach · no MCP dial):
+	return strings.TrimSpace(fmt.Sprintf(`mesh onboard next e4 lane (residual-honest · s1566 · journey stage 6 · E4 client attach · no MCP dial):
   Path: local-primary iomesh-memory-mcp lean host HTTP → iomesh mcp --connect · tools=6 stamp residual — never start host from this board
   Product: edge-user-journey stage 6 local store / MCP attach residual — E4 client attach · free eng s1566 · free-floor peer s1568+ mention only
   Steps:
@@ -762,16 +762,16 @@ func AionAgentOnboardingNextE4Lane() string {
 Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · E10 stays Open (never invent closed) · soft offline ≠ invent Connected · session soft ≠ live dogfood · free eng s1566 · free-floor peer s1568+ mention only · companion deeper tool-call s1578 · companion E10 Open reaffirm s1586 · %s`, softLabel, softLabel))
 }
 
-// AionAgentOnboardingNextToolCallLane residual-honest deeper tool-call dogfood board for
+// MeshAgentOnboardingNextToolCallLane residual-honest deeper tool-call dogfood board for
 // /onboard next tool-call (s1578 free eng residual). Static offline — journey stage 6/7 depth
 // after E4 attach (tools=6 / iomesh mcp --connect). Operator map for ingest → retrieve → list →
 // as-of/status soft residual only unless operator runs live. Never dials MCP · never starts host.
 // Soft offline dogfood: /onboard next tool-call dogfood (session soft ≠ live dogfood).
 // Aliases: tool-calls|deeper-e4|e4-tools|ingest-retrieve|tool_call.
 // free eng s1578 · free-floor peer s1580+ mention only (do not rewrite free-floor).
-func AionAgentOnboardingNextToolCallLane() string {
+func MeshAgentOnboardingNextToolCallLane() string {
 	softLabel := ToolCallSoftSessionLabel()
-	return strings.TrimSpace(fmt.Sprintf(`aion onboard next tool-call lane (residual-honest · s1578 · deeper tool-call residual · journey stage 6/7 · no MCP dial):
+	return strings.TrimSpace(fmt.Sprintf(`mesh onboard next tool-call lane (residual-honest · s1578 · deeper tool-call residual · journey stage 6/7 · no MCP dial):
   Path: after lean host + E4 attach · residual-honest operator map for ingest → retrieve → list → as-of/status — soft offline residual only unless operator runs live
   Product: edge-user-journey stage 6/7 depth after E4 client attach (tools=6 stamp residual) — free eng s1578 · free-floor peer s1580+ mention only
   Steps:
@@ -807,7 +807,7 @@ func AionAgentOnboardingNextToolCallLane() string {
 Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · E10 stays Open (never invent closed) · soft offline ≠ invent Connected · session soft ≠ live dogfood · free eng s1578 · free-floor peer s1580+ mention only · Partial→client-attach-evidence · deeper tool-call residual candidacy (not forever-green full product dogfood) · companion E10 Open reaffirm /onboard next e10 (s1586) · %s`, softLabel, softLabel))
 }
 
-// AionAgentOnboardingNextE10Lane residual-honest E10 Open reaffirm residual-check board for
+// MeshAgentOnboardingNextE10Lane residual-honest E10 Open reaffirm residual-check board for
 // /onboard next e10 (s1586 free eng residual). Static offline — pin E10 Open after OSS packaging continuum.
 // Never dials MCP · never starts host. Soft residual-check: /onboard next e10 dogfood.
 // Honesty: residual PASS ≠ invent E10 closed · residual PASS ≠ invent Edge Memory GA declared ·
@@ -817,9 +817,9 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candid
 // Soft residual-check aliases: soft|samples|offline|e10-soft|residual-check.
 // free eng s1586 · free-floor peer s1588+ mention only (do not rewrite free-floor).
 // Platform residual honesty group companion (s1582 packaging continuum).
-func AionAgentOnboardingNextE10Lane() string {
+func MeshAgentOnboardingNextE10Lane() string {
 	softLabel := E10SoftSessionLabel()
-	return strings.TrimSpace(fmt.Sprintf(`aion onboard next e10 lane (residual-honest · s1586 · E10 Open reaffirm · residual-check · no MCP dial):
+	return strings.TrimSpace(fmt.Sprintf(`mesh onboard next e10 lane (residual-honest · s1586 · E10 Open reaffirm · residual-check · no MCP dial):
   Path: residual-honest E10 Open reaffirm after OSS packaging continuum — soft offline residual-check only · never invent E10 closed / Edge Memory GA declared / live APPLY as green
   Product: Platform residual honesty (optional anti-claims) · pin E10 Open · free eng s1586 · free-floor peer s1588+ mention only
   Steps:
@@ -849,7 +849,7 @@ func AionAgentOnboardingNextE10Lane() string {
 Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent E10 closed · E10 Open · founder sign-off only if declaring Edge Memory GA · candidacy allowed without E10 · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · E10 stays Open (never invent closed) · soft offline ≠ invent Connected · session soft ≠ live dogfood · residual-check · MIT harness · not control plane · free eng s1586 · free-floor peer s1588+ mention only · %s`, softLabel, softLabel))
 }
 
-// AionAgentOnboardingNextMarketingDemoLane plain-language marketing demo path for
+// MeshAgentOnboardingNextMarketingDemoLane plain-language marketing demo path for
 // /onboard next marketing-demo (s1590 + s1594 sales talk track + s1598 GTM claim-support +
 // s1602 operator GTM boundary + s1606 GTM wave 6 network/CRM operator paths +
 // s1610 GTM wave 7 Hermes mock dogfood / HubSpot dual-control / sales-loop outbox boundary +
@@ -883,7 +883,7 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candid
 // writes need dual control + tokens on operator box (demo stays local agent+memory) ·
 // operator GTM status is private tooling (not a product dashboard claim) ·
 // s1618: scheduled GTM dogfood = operator cron/offline tooling (not public TUI) · mesh outbox
-// ingest is private aion-when-wired dry-run default (do not invent mesh GTM fleet GA) ·
+// ingest is private broker-when-wired dry-run default (do not invent mesh GTM fleet GA) ·
 // smoke/status tools (gtm_smoke) are private operator GTM (not a customer dashboard) ·
 // s1666: optional mesh clients outside TUI — full mesh client surface for custom services
 // lives in public SDKs (Go iomesh-client-sdk-go · Python iomesh-client-sdk-python Beta ·
@@ -899,8 +899,8 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candid
 // free eng s1590 · s1594 sales talk track · s1598 GTM claim-support · s1602 operator GTM boundary ·
 // s1606 GTM wave 6 · s1610 GTM wave 7 · s1614 GTM wave 8 · s1618 GTM wave 9 ·
 // s1666 free eng Python client SDK peer · free-floor peer s1592+ mention only.
-func AionAgentOnboardingNextMarketingDemoLane() string {
-	return strings.TrimSpace(`aion onboard next marketing-demo path (s1590 · plain-language operator script · local agent + local memory · videos/sales):
+func MeshAgentOnboardingNextMarketingDemoLane() string {
+	return strings.TrimSpace(`mesh onboard next marketing-demo path (s1590 · plain-language operator script · local agent + local memory · videos/sales):
   Purpose: short demo path operators can run for videos and sales walkthroughs — show local agent + local memory working end-to-end
   Audience: demo hosts · sales eng · GTM video capture · free eng s1590 · s1594 sales talk track · s1598 GTM claim-support · s1602 operator GTM boundary · s1606 GTM wave 6 · s1610 GTM wave 7 · s1614 GTM wave 8 · s1618 GTM wave 9 · s1666 free eng Python client SDK peer · free-floor peer s1592+ mention only
 
@@ -946,7 +946,7 @@ func AionAgentOnboardingNextMarketingDemoLane() string {
     · Live HubSpot / Twenty writes (s1614): dual control + tokens on the operator box (default dry) — demo stays local agent + local memory
     · Operator GTM status (s1614): private tooling — not a product dashboard claim
     · Scheduled GTM dogfood (s1618): operator cron / offline tooling — not the public TUI (demo is not a GTM scheduler)
-    · Mesh outbox ingest (s1618): private aion when wired (dry-run default) — do not invent mesh GTM fleet GA
+    · Mesh outbox ingest (s1618): private broker when wired (dry-run default) — do not invent mesh GTM fleet GA
     · Smoke / status tools (s1618 · gtm_smoke): private operator GTM — not a customer dashboard
     · Optional mesh clients outside TUI (s1666): full mesh client surface for custom services lives in public SDKs — Go iomesh-client-sdk-go · Python iomesh-client-sdk-python (Beta · v0.10.x · not invent 1.0 · GitHub release ≠ invent PyPI green) · TUI stays lean (no SDK dep) · marketing-demo does not require either SDK · local agent + local memory remains the demo path
 
@@ -980,7 +980,7 @@ func AionAgentOnboardingNextMarketingDemoLane() string {
 Locks: dual_write OFF · book-demo OFF · not Memory GA · local memory · local-primary · iomesh-memory-mcp · mesh optional · never invent Connected · never invent install green / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · TUI stays lean (no SDK dep) · not invent 1.0 · not invent PyPI green · free eng s1590 · s1594 sales talk track · s1598 GTM claim-support · s1602 operator GTM boundary · s1606 GTM wave 6 · s1610 GTM wave 7 · s1614 GTM wave 8 · s1618 GTM wave 9 · s1666 free eng Python client SDK peer · free-floor peer s1592+ mention only`)
 }
 
-// AionAgentOnboardingNextAgenticLane residual-honest product plane 3 agentic integrations
+// MeshAgentOnboardingNextAgenticLane residual-honest product plane 3 agentic integrations
 // for /onboard next agentic (s1417 + s1422 soft dogfood + portal HITL polish + s1427 dual-auth candidacy tip).
 // Static offline — no MCP dial on this board.
 // MCP list (catalog / list connectors residual-honest · catalog ≠ Connected) ·
@@ -997,9 +997,9 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · local memory · local
 // Aliases: agentic-integrations|integrations|list-plan.
 // DO NOT steal: bare mcp (memory lane) · bare portal/agent-mcp (portal handoff) · bare pull (mesh).
 // portal-hitl|hitl are s1562 portal HITL lane (journey stage 5) — not agentic aliases.
-func AionAgentOnboardingNextAgenticLane() string {
+func MeshAgentOnboardingNextAgenticLane() string {
 	softLabel := AgenticListPlanSoftSessionLabel()
-	return strings.TrimSpace(fmt.Sprintf(`aion onboard next agentic lane (residual-honest · s1417+s1422+s1427 · no MCP dial · product plane 3 · agentic integrations):
+	return strings.TrimSpace(fmt.Sprintf(`mesh onboard next agentic lane (residual-honest · s1417+s1422+s1427 · no MCP dial · product plane 3 · agentic integrations):
   Path: MCP list/plan residual-honest + portal HITL for OAuth/install — agent MCP cannot write installs
   Product plane 3: agentic integrations continuum (post-onboard next lane · complements /onboard portal mint/copy/probe · does not replace human-gates)
   Steps:
@@ -1050,7 +1050,7 @@ func AionAgentOnboardingNextAgenticLane() string {
 Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · list_org fail-open ≠ empty-as-none · plan deep links = browser HITL only · template= ≠ install APPLY · agent MCP cannot write installs · portal HITL · list_plan_not_connected · portal_hitl_still · path_ready · residual_only · soft offline ≠ live dogfood · session soft ≠ live dogfood · rates ~$88/$119 optional · board/export evidence ≠ invent Connected · does not claim dual-auth live for list_org · tool ship ≠ dual-auth live · dual_auth_candidacy_open · companion portal-hitl soft residual s1562 · free-floor peer s1564+ mention only`, softLabel, softLabel))
 }
 
-// AionAgentOnboardingNextAgenticDualAuthCandidacy residual-honest dual-auth candidacy depth
+// MeshAgentOnboardingNextAgenticDualAuthCandidacy residual-honest dual-auth candidacy depth
 // for /onboard next agentic dual-auth (s1427 · product plane 3). Static offline — no MCP dial.
 // Surfaces list_org_connector_installs residual fail-open shape + dual_auth_candidacy_open honesty.
 // tool ship ≠ dual-auth live · PASS ≠ invent dual-auth shipped · never invent empty-as-none
@@ -1059,8 +1059,8 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ liv
 // Aliases (4th token): dual-auth|candidacy|list-org|org-installs|dual_auth|dual-auth-candidacy.
 // DO NOT steal: dogfood|soft|samples|offline|list-plan-soft stay soft dogfood (s1422).
 // Bare /onboard next agentic stays main agentic board.
-func AionAgentOnboardingNextAgenticDualAuthCandidacy() string {
-	return strings.TrimSpace(`aion onboard next agentic dual-auth candidacy (residual-honest · s1427 · no MCP dial · product plane 3 · dual_auth_candidacy_open):
+func MeshAgentOnboardingNextAgenticDualAuthCandidacy() string {
+	return strings.TrimSpace(`mesh onboard next agentic dual-auth candidacy (residual-honest · s1427 · no MCP dial · product plane 3 · dual_auth_candidacy_open):
   Path: list_org_connector_installs residual fail-open + dual-auth candidacy honesty — tool ship ≠ dual-auth live
   Product plane 3 depth: agentic org installs snapshot residual (post agentic lane s1417 · after soft dogfood s1422)
   Snapshot residual (fail-open shape · never invent live dual-auth):
@@ -1093,7 +1093,7 @@ func AionAgentOnboardingNextAgenticDualAuthCandidacy() string {
 Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent dual-auth live · tool ship ≠ dual-auth live · PASS ≠ invent dual-auth shipped · never invent empty-as-none · installs=null not [] · available=false · status=unavailable · dual_auth_candidacy_open · list_org_unavailable · agent MCP cannot write installs · catalog ≠ Connected · never invent Connected · portal session owns install index · session-cookie + org membership only · portal HITL · rates ~$88/$119 optional · board/export evidence ≠ invent Connected · path_ready · residual_only`)
 }
 
-// AionAgentOnboardingNextThreePlanes residual-honest consolidated three product planes board
+// MeshAgentOnboardingNextThreePlanes residual-honest consolidated three product planes board
 // for /onboard next planes (s1432). Static offline — no MCP dial · no invent stream green /
 // pull green / Connected / GA / APPLY. Surfaces product narrative planes:
 //
@@ -1107,8 +1107,8 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ liv
 // Do NOT steal: pulse|board (status) · pull (mesh) · mcp (memory).
 // Cross-links: /onboard next mesh · memory-pull · agentic · agentic dual-auth · agentic dogfood ·
 // status · export · human-gates.
-func AionAgentOnboardingNextThreePlanes() string {
-	return strings.TrimSpace(`aion onboard next three product planes (residual-honest · s1432 · no MCP dial · offline static · not live dogfood · not live APPLY):
+func MeshAgentOnboardingNextThreePlanes() string {
+	return strings.TrimSpace(`mesh onboard next three product planes (residual-honest · s1432 · no MCP dial · offline static · not live dogfood · not live APPLY):
   board (honest vocabulary only — never invent stream green / pull green / Connected / GA / APPLY as success):
 
   plane 1 · Mesh (I/O Mesh streaming · product plane 1):
@@ -1155,7 +1155,7 @@ func AionAgentOnboardingNextThreePlanes() string {
 Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · mesh ≠ memory · never invent stream green / pull green / Connected / INSTALL_STORE APPLY · streams_not_probed · pull_not_probed · Ops Pack ≠ GPU fleet · pull ≠ freemium hosted palace · agent MCP cannot write installs · list_plan_not_connected · portal_hitl_still · dual_auth_candidacy_open · tool ship ≠ dual-auth live · never invent dual-auth live · catalog ≠ Connected · plan deep links = browser HITL only · template= ≠ install APPLY · rates ~$88/$119 optional · no invent GA · board/export evidence ≠ invent Connected · path_ready · residual_only · leave ON_SIGNAL unset · Knowledge Beta→GA cannot invent H1/H2 offline`)
 }
 
-// AionAgentOnboardingNextSalesClaims residual-honest sales / buyer claims board for
+// MeshAgentOnboardingNextSalesClaims residual-honest sales / buyer claims board for
 // /onboard next sales (s1437). Static offline — no MCP dial · no invent Connected /
 // Memory GA / dual-auth live / human-gate green / freemium palace / Ops Pack GPU.
 // Grounded in three product planes (mesh · memory-pull · agentic) via companion
@@ -1171,8 +1171,8 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ liv
 // Aliases: claims|buyer|claim-matrix|sales-claims|buyer-claims.
 // Do NOT steal: product|planes (three-planes) · gtm|drafts (GTM lane) · pulse|board (status).
 // Cross-links: /onboard next planes · mesh · memory-pull · agentic · human-gates · status · export.
-func AionAgentOnboardingNextSalesClaims() string {
-	return strings.TrimSpace(`aion onboard next sales / buyer claims (residual-honest · s1437 · no MCP dial · offline static · not live dogfood · not live APPLY · three-planes grounded):
+func MeshAgentOnboardingNextSalesClaims() string {
+	return strings.TrimSpace(`mesh onboard next sales / buyer claims (residual-honest · s1437 · no MCP dial · offline static · not live dogfood · not live APPLY · three-planes grounded):
   board for founders/sales operators — may claim vs must not claim only (never invent Connected / GA / APPLY as success):
 
   MAY CLAIM (residual-honest · commercial framing only):
@@ -1209,7 +1209,7 @@ func AionAgentOnboardingNextSalesClaims() string {
 Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent Connected / INSTALL_STORE APPLY · mesh ≠ memory · dual_auth_candidacy_open · tool ship ≠ dual-auth live · never invent dual-auth live · drafts only · no auto-send · rates ~$88/$119 optional · Ops Pack ≠ GPU fleet · pull ≠ freemium hosted palace · agent MCP cannot write installs · catalog ≠ Connected · list_plan_not_connected · no invent GA · board/export evidence ≠ invent Connected · leave ON_SIGNAL unset · Knowledge Beta→GA cannot invent H1/H2 offline · PASS ≠ invent human-gate green`)
 }
 
-// AionAgentOnboardingNextDemoReadiness residual-honest demo readiness board for
+// MeshAgentOnboardingNextDemoReadiness residual-honest demo readiness board for
 // /onboard next demo (s1442). Static offline — no MCP dial · no invent book-demo ON /
 // Landgrab READY / Connected / Memory GA / dual-auth live / human-gate green.
 // Surfaces packaging + readiness honesty for founders/operators before public demo:
@@ -1230,8 +1230,8 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ liv
 // pulse|board (status) · gtm|drafts (GTM lane).
 // Cross-links: /onboard next planes · sales · human-gates · status · export · mesh ·
 // memory-pull · agentic.
-func AionAgentOnboardingNextDemoReadiness() string {
-	return strings.TrimSpace(`aion onboard next demo readiness (residual-honest · s1442 · no MCP dial · offline static · not live dogfood · not live APPLY · Lighthouse packaging · Landgrab NOT READY):
+func MeshAgentOnboardingNextDemoReadiness() string {
+	return strings.TrimSpace(`mesh onboard next demo readiness (residual-honest · s1442 · no MCP dial · offline static · not live dogfood · not live APPLY · Lighthouse packaging · Landgrab NOT READY):
   board for founders/operators — demo packaging + readiness honesty only (never invent book-demo as ON / Landgrab as READY / Connected / GA / APPLY as success):
 
   packaging (Lighthouse beachhead · B2B SaaS):
@@ -1278,7 +1278,7 @@ func AionAgentOnboardingNextDemoReadiness() string {
 Locks: dual_write OFF · book-demo OFF · Landgrab NOT READY · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · residual PASS ≠ logos met · open boxes stay open · never invent Connected / INSTALL_STORE APPLY · dual_auth_candidacy_open · tool ship ≠ dual-auth live · never invent dual-auth live · rates ~$88/$119 optional · no invent GA · leave ON_SIGNAL unset · Knowledge Beta→GA cannot invent H1/H2 offline · PASS ≠ invent human-gate green · board/export evidence ≠ invent Connected · founder-led walkthrough only when scheduled · operator runbook ≠ public /demo booking live · never invent book-demo as ON · never invent Landgrab as READY`)
 }
 
-// AionAgentOnboardingNextOperatorMatrix residual-honest operator readiness matrix board for
+// MeshAgentOnboardingNextOperatorMatrix residual-honest operator readiness matrix board for
 // /onboard next operator (s1447). Static offline — no MCP dial · no invent green / Connected /
 // Memory GA / dual-auth live / human-gate green / book-demo ON / Landgrab READY.
 // Consolidates demo · sales · planes · human-gates · dual-auth candidacy · policy locks for
@@ -1299,8 +1299,8 @@ Locks: dual_write OFF · book-demo OFF · Landgrab NOT READY · not Memory GA ·
 // Do NOT steal: demo|readiness|lighthouse|landgrab (demo) · sales|claims · planes|product ·
 // pulse|board (status) · export|receipt.
 // Cross-links: /onboard next demo · sales · planes · human-gates · agentic dual-auth · status · export.
-func AionAgentOnboardingNextOperatorMatrix() string {
-	return strings.TrimSpace(`aion onboard next operator readiness matrix (residual-honest · s1447 · no MCP dial · offline static · not live dogfood · not live APPLY · residual_only · never invent Connected):
+func MeshAgentOnboardingNextOperatorMatrix() string {
+	return strings.TrimSpace(`mesh onboard next operator readiness matrix (residual-honest · s1447 · no MCP dial · offline static · not live dogfood · not live APPLY · residual_only · never invent Connected):
   board for founders/operators — consolidates demo · sales · planes · human-gates readiness honesty only (never invent green / Connected / GA / APPLY as success):
 
   row 1 · Demo readiness (not_ready · residual_only):
@@ -1356,7 +1356,7 @@ func AionAgentOnboardingNextOperatorMatrix() string {
 Locks: dual_write OFF · book-demo OFF · Landgrab NOT READY · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · residual PASS ≠ logos met · open boxes stay open · never invent Connected / INSTALL_STORE APPLY · dual_auth_candidacy_open · tool ship ≠ dual-auth live · never invent dual-auth live · rates ~$88/$119 optional · no invent GA · leave ON_SIGNAL unset · Knowledge Beta→GA cannot invent H1/H2 offline · PASS ≠ invent human-gate green · board/export evidence ≠ invent Connected · residual_only · path_ready · still_human · policy_off · not_ready · portal_hitl_still`)
 }
 
-// AionAgentOnboardingNextLaneStatus residual-honest post-onboard lane status board for
+// MeshAgentOnboardingNextLaneStatus residual-honest post-onboard lane status board for
 // /onboard next status (aliases pulse|board) — free eng s1382 (+ s1387 export · s1397 session soft dogfood · s1402 mesh · s1407 memory-pull · s1417 agentic).
 // Default path: no MCP dial · no invent install green / Connected / GA / APPLY / stream green / pull green.
 // Honest state vocabulary only: path_ready · samples_ok · samples_missing ·
@@ -1371,14 +1371,14 @@ Locks: dual_write OFF · book-demo OFF · Landgrab NOT READY · not Memory GA ·
 // · dual_auth_candidacy_open · list_org_unavailable (never invent dual-auth live · tool ship ≠ dual-auth live).
 // (never invent Connected · session soft ≠ live dogfood · soft offline ≠ invent Connected).
 // Never claims dogfood PASS live, Agent Plugins GA, Memory GA, or install Connected.
-func AionAgentOnboardingNextLaneStatus() string {
+func MeshAgentOnboardingNextLaneStatus() string {
 	samplesState := nextLanePluginsSamplesSoftState()
 	dogfoodState := nextLanePluginsDogfoodSessionState()
 	agenticSoft := AgenticListPlanSoftSessionLabel()
 	// samples_ok|samples_missing is path soft-check only ≠ residual PASS / live dogfood.
 	// dogfoodState is session soft marker only (default dogfood_not_run) — ≠ live dogfood.
 	// agenticSoft is independent session soft for list/plan (default list_plan_soft_not_run).
-	return strings.TrimSpace(fmt.Sprintf(`aion onboard next lane status (residual-honest · s1382+s1397+s1402+s1407+s1417+s1422+s1427 · no MCP dial · not live dogfood):
+	return strings.TrimSpace(fmt.Sprintf(`mesh onboard next lane status (residual-honest · s1382+s1397+s1402+s1407+s1417+s1422+s1427 · no MCP dial · not live dogfood):
   board (honest vocabulary only — never invent connected / ga / apply / stream green / pull green as success):
 
   plugins: %s · %s · path_ready
@@ -1395,7 +1395,7 @@ func AionAgentOnboardingNextLaneStatus() string {
   memory: path_ready · residual_only
     · dual_write OFF · local-primary · package load ≠ Memory GA · ≠ freemium palace · Palace sunset
     · not Memory GA · book-demo OFF · rates ~$88/$119 optional · mesh ≠ memory · mesh optional for pull
-    · edge OSS tip (s1453+s1458+s1463+s1469+s1478+s1508): iomesh-memory-mcp product host · public product attach · go install · no GOPRIVATE · HTTP 8080/mcp or stdio · docker compose still valid · dual_write OFF · not Memory GA · aion broker private · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · PASS ≠ invent full platform sidecar parity · offline dogfood tip ≠ invent live dogfood as green · E4 client attach (s1508) · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood
+    · edge OSS tip (s1453+s1458+s1463+s1469+s1478+s1508): iomesh-memory-mcp product host · public product attach · go install · no GOPRIVATE · HTTP 8080/mcp or stdio · docker compose still valid · dual_write OFF · not Memory GA · control-plane / broker private · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · PASS ≠ invent full platform sidecar parity · offline dogfood tip ≠ invent live dogfood as green · E4 client attach (s1508) · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood
     · drill: /onboard next memory (aliases mcp|palace)
 
   mesh: path_ready · residual_only · streams_not_probed
@@ -1473,7 +1473,7 @@ func AionAgentOnboardingNextLaneStatus() string {
 Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · PASS ≠ invent human-gate green · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · plugins dogfood ≠ invent Agent Plugins GA · session soft ≠ live dogfood · soft offline ≠ live dogfood · drafts only · no auto-send · package load ≠ Memory GA · rates ~$88/$119 optional · board/export evidence ≠ invent Connected · mesh = streaming org heartbeats · mesh ≠ memory · never invent stream green · streams_not_probed · not OTel/APM · pull_not_probed · pull ≠ freemium hosted palace · Ops Pack ≠ GPU fleet · never invent pull green · list_plan_not_connected · plan deep links = browser HITL only · template= ≠ install APPLY · dual_auth_candidacy_open · list_org_unavailable · tool ship ≠ dual-auth live · never invent dual-auth live · setup_not_probed · package wire ≠ Connected · repair apply ≠ invent Connected · dual_write never auto ON · E10 Open · setup closeout residual ≠ invent Edge Memory GA · Knowledge Beta→GA cannot invent H1/H2 offline · leave ON_SIGNAL unset`, samplesState, dogfoodState, agenticSoft))
 }
 
-// AionAgentOnboardingNextLaneStatusExport residual-honest markdown status export receipt
+// MeshAgentOnboardingNextLaneStatusExport residual-honest markdown status export receipt
 // for /onboard next export (aliases receipt|stamp|evidence) — free eng s1387 (+ s1397 session soft · s1402 mesh · s1407 memory-pull · s1417 agentic · s1422 agentic list/plan soft).
 // Offline evidence of the s1382 lane status board vocabulary; plugins dogfood lane reflects
 // session soft marker from /plugins dogfood when present (default dogfood_not_run).
@@ -1484,11 +1484,11 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ liv
 // Header pins evidence_kind=onboard_next_lane_status_export · offline_static ·
 // not_live_dogfood · serial s1387.
 // board/export evidence ≠ invent Connected · session soft ≠ live dogfood.
-func AionAgentOnboardingNextLaneStatusExport() string {
+func MeshAgentOnboardingNextLaneStatusExport() string {
 	samplesState := nextLanePluginsSamplesSoftState()
 	dogfoodState := nextLanePluginsDogfoodSessionState()
 	agenticSoft := AgenticListPlanSoftSessionLabel()
-	return strings.TrimSpace(fmt.Sprintf(`# aion onboard next lane status export receipt
+	return strings.TrimSpace(fmt.Sprintf(`# mesh onboard next lane status export receipt
 
 evidence_kind=onboard_next_lane_status_export
 offline_static=true
@@ -1512,7 +1512,7 @@ gtm: skill_ready · path_ready · residual_only
 memory: path_ready · residual_only
   · dual_write OFF · local-primary · package load ≠ Memory GA · ≠ freemium palace · Palace sunset
   · not Memory GA · book-demo OFF · rates ~$88/$119 optional · mesh ≠ memory · mesh optional for pull
-  · edge OSS tip (s1453+s1458+s1463+s1469+s1478+s1508): iomesh-memory-mcp product host · public product attach · go install · no GOPRIVATE · HTTP 8080/mcp or stdio · docker compose still valid · dual_write OFF · not Memory GA · aion broker private · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · PASS ≠ invent full platform sidecar parity · offline dogfood tip ≠ invent live dogfood as green · E4 client attach (s1508) · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood
+  · edge OSS tip (s1453+s1458+s1463+s1469+s1478+s1508): iomesh-memory-mcp product host · public product attach · go install · no GOPRIVATE · HTTP 8080/mcp or stdio · docker compose still valid · dual_write OFF · not Memory GA · control-plane / broker private · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · PASS ≠ invent full platform sidecar parity · offline dogfood tip ≠ invent live dogfood as green · E4 client attach (s1508) · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood
   · drill: /onboard next memory (aliases mcp|palace)
 
 mesh: path_ready · residual_only · streams_not_probed
@@ -1584,7 +1584,7 @@ portal: portal_hitl_still
 Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · PASS ≠ invent human-gate green · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · plugins dogfood ≠ invent Agent Plugins GA · session soft ≠ live dogfood · soft offline ≠ live dogfood · drafts only · no auto-send · package load ≠ Memory GA · board/export evidence ≠ invent Connected · rates ~$88/$119 optional · mesh = streaming org heartbeats · mesh ≠ memory · never invent stream green · streams_not_probed · pull_not_probed · pull ≠ freemium hosted palace · Ops Pack ≠ GPU fleet · never invent pull green · list_plan_not_connected · plan deep links = browser HITL only · template= ≠ install APPLY · dual_auth_candidacy_open · list_org_unavailable · tool ship ≠ dual-auth live · never invent dual-auth live · setup_not_probed · package wire ≠ Connected · repair apply ≠ invent Connected · dual_write never auto ON · E10 Open · setup closeout residual ≠ invent Edge Memory GA · Knowledge Beta→GA cannot invent H1/H2 offline · leave ON_SIGNAL unset`, samplesState, dogfoodState, agenticSoft))
 }
 
-// nextLaneStatusExportDTO is the offline JSON shape for AionAgentOnboardingNextLaneStatusExportJSON (s1387+s1397+s1422).
+// nextLaneStatusExportDTO is the offline JSON shape for MeshAgentOnboardingNextLaneStatusExportJSON (s1387+s1397+s1422).
 // Honest vocabulary only — never invents Connected/GA/APPLY success.
 // Plugins dogfood session state (s1397): dogfood_not_run default; soft_offline_dogfood_session_pass|fail after /plugins dogfood.
 // Agentic list/plan soft state (s1422): list_plan_soft_not_run default; soft_offline_list_plan_session_pass|fail after /onboard next agentic dogfood.
@@ -1604,7 +1604,7 @@ type nextLaneStatusExportDTO struct {
 	Note                     string            `json:"note"`
 }
 
-// AionAgentOnboardingNextLaneStatusExportJSON residual-honest JSON status export receipt
+// MeshAgentOnboardingNextLaneStatusExportJSON residual-honest JSON status export receipt
 // for /onboard next export json (s1387+s1397+s1402+s1407+s1413+s1417+s1422). Same honesty as markdown; offline only.
 // Reflects session soft dogfood marker when set by /plugins dogfood (≠ live dogfood).
 // Reflects agentic list/plan soft marker when set by /onboard next agentic dogfood (≠ invent Connected).
@@ -1613,7 +1613,7 @@ type nextLaneStatusExportDTO struct {
 // Agentic lane (s1417+s1422): path_ready · residual_only · portal_hitl_still · list_plan_not_connected · <soft label>.
 // s1413: slash tip + honesty locks for human-gates board (still ≠ invent human-gate green / live APPLY).
 // Does NOT run plugins/agentic dogfood itself, dial MCP, or invent install green / Connected / GA / APPLY.
-func AionAgentOnboardingNextLaneStatusExportJSON() string {
+func MeshAgentOnboardingNextLaneStatusExportJSON() string {
 	samplesState := nextLanePluginsSamplesSoftState()
 	dogfoodState := nextLanePluginsDogfoodSessionState()
 	agenticSoft := AgenticListPlanSoftSessionLabel()
@@ -1724,7 +1724,7 @@ func nextLanePluginsDogfoodSessionState() string {
 	return agentplugins.SoftDogfoodSessionLabel()
 }
 
-// AionAgentHumanGatesHonestyBoard residual-honest human-gates status section for operators
+// MeshAgentHumanGatesHonestyBoard residual-honest human-gates status section for operators
 // (/onboard next human-gates · aliases human|gates|apply-gates) — free eng s1413 + s1546 + s1550 edge-first.
 // Static offline — no MCP dial · no gcloud · never invents human-gate green or live APPLY.
 // s1550 edge-first pin (founders): local TUI + iomesh-memory-mcp + optional mesh pull · dual_write OFF ·
@@ -1736,9 +1736,9 @@ func nextLanePluginsDogfoodSessionState() string {
 // residual PASS ≠ invent Edge Memory GA · PASS ≠ invent Connected · agent MCP cannot write installs ·
 // portal HITL when connect · knowledge multi-tenant punted · Slack HMAC punted · H1/H2 not launch gate ·
 // open policy boxes stay honest.
-func AionAgentHumanGatesHonestyBoard() string {
+func MeshAgentHumanGatesHonestyBoard() string {
 	softLabel := StillHumanSoftSessionLabel()
-	return strings.TrimSpace(fmt.Sprintf(`aion human-gates honesty board (residual-honest · s1550 edge-first · s1574 Wave C continuum still-human APPLY residual · no MCP dial):
+	return strings.TrimSpace(fmt.Sprintf(`mesh human-gates honesty board (residual-honest · s1550 edge-first · s1574 Wave C continuum still-human APPLY residual · no MCP dial):
 
   architecture (locked):
     · edge-first local memory · dual_write OFF · hosted palace sunset
@@ -1786,7 +1786,7 @@ func AionAgentHumanGatesHonestyBoard() string {
     · slash: /onboard next human-gates · /onboard next human-gates dogfood · /onboard next e10 · /onboard next e10 dogfood · /onboard next setup · /integrations list|plan|status
     · companion Wave C: /onboard next wizard · /onboard next journey · /onboard next portal-hitl · /onboard next e4
     · companion E10 Open reaffirm (s1586): /onboard next e10 · residual PASS ≠ invent E10 closed · residual PASS ≠ invent Edge Memory GA declared · residual-check
-    · companion aion ops residual: edge-first human gates residual (s1550) · still-human APPLY soft residual (s1574 Wave C continuum)
+    · companion mesh ops residual: edge-first human gates residual (s1550) · still-human APPLY soft residual (s1574 Wave C continuum)
     · never invent Connected / INSTALL_STORE green / Edge Memory GA / book-demo as ON
     · aliases human|gates|apply-gates|still-human|apply-residual · companion /onboard next · /onboard status · /setup portal
 

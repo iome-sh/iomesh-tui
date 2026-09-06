@@ -162,7 +162,7 @@ func TestE4SoftDogfoodNeedles_CoverBoard(t *testing.T) {
 	ResetE4SoftDogfoodSessionState()
 	t.Cleanup(ResetE4SoftDogfoodSessionState)
 
-	board := AionAgentOnboardingNextE4Lane()
+	board := MeshAgentOnboardingNextE4Lane()
 	for _, want := range e4SoftDogfoodNeedles {
 		if !strings.Contains(board, want) {
 			t.Fatalf("e4 board missing soft-dogfood needle %q in:\n%s", want, board)
