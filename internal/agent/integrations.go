@@ -166,6 +166,10 @@ func (rt *Runtime) IntegrationsCatalog(ctx context.Context, meshLayer string) (s
 // Surfaces portal_url, oauth_mode_hint, signing_headers_tool, next_steps, honesty.notes.
 // Never invents install green. Fail-open when MCP/tool unavailable.
 //
+// When meshOrgID() is non-empty, org_id is included in MCP args (same source as
+// /integrations status). Empty org omits org_id (fail-open). Plan remains portal
+// HITL only — plan ≠ APPLY · catalog ≠ Connected · agent cannot write installs.
+//
 // mesh v178 wire: {connector_id, org_id, connector, portal_url, oauth_install_supported,
 // oauth_mode_hint, signing_headers_tool, next_steps, honesty:{…, notes:[]}}.
 func (rt *Runtime) IntegrationsPlan(ctx context.Context, connectorID string) (string, error) {
@@ -175,6 +179,9 @@ func (rt *Runtime) IntegrationsPlan(ctx context.Context, connectorID string) (st
 	}
 	args := map[string]any{
 		"connector_id": id,
+	}
+	if orgID := rt.meshOrgID(); orgID != "" {
+		args["org_id"] = orgID
 	}
 	raw, err := rt.callMCPToolByName(ctx, mcpToolPlanConnectorSetup, args)
 	if err != nil {
@@ -377,7 +384,8 @@ func statusOrgInstallsSection() string {
 }
 
 // meshOrgID returns configured iomesh org id when present (may be empty).
-// Empty → skip list_org_connector_installs call with residual note (never invent).
+// Status: empty → skip list_org_connector_installs call with residual note (never invent).
+// Plan: empty → omit org_id on plan_connector_setup (fail-open).
 func (rt *Runtime) meshOrgID() string {
 	if rt == nil || rt.mesh == nil {
 		return ""
