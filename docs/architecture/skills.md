@@ -37,7 +37,7 @@ Paired with the `<gtm-draft-only>` system note injected on `AttachSkills` (`GtmD
 
 ### Builtin: `mesh-agent-onboarding` (s1363)
 
-Residual-honest TUI agent ↔ mesh CP/MCP onboarding playbook (`/onboard` · `/onboard next` lanes · portal HITL · dual_write OFF · not Memory GA · never invent Connected). Paired with the `<mesh-onboarding>` system note on `AttachMCP` (`MeshAgentOnboardingGuidanceNote`). Deprecated one-release loader alias: `aion-agent-onboarding` (resolves to this skill). Slash `/aion-onboard` remains a silent alias of `/onboard` / `/agent-onboard`.
+Residual-honest TUI agent ↔ mesh CP/MCP onboarding playbook (`/onboard` · `/onboard next` lanes · portal HITL · dual_write OFF · not Memory GA · never invent Connected). Paired with the `<mesh-onboarding>` system note on `AttachMCP` (`MeshAgentOnboardingGuidanceNote`). Public skill id is `mesh-agent-onboarding`.
 
 ## Format
 

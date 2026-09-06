@@ -7,13 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-Honesty note (#394): older CHANGELOG lines may still mention a retired internal control-plane codename. Public language is **IOMESH_*** / mesh / CP / broker / iome. dual_write OFF · not Memory GA · catalog ≠ Connected.
+Honesty note (#394 / #395): older CHANGELOG lines may still mention a retired internal control-plane codename. Public language is **IOMESH_*** / mesh / CP / broker / iome. dual_write OFF · not Memory GA · catalog ≠ Connected.
 
 ### Added
 
 ### Changed
 
-- **Public naming (#394):** Scrub internal control-plane codename leaks from OSS TUI env, UX, skills, configs, and docs. Env `IOMESH_MEMORY_REPLAY_ENABLED` (deprecated one-release read of `AION_MEMORY_REPLAY_ENABLED`). Skill `mesh-agent-onboarding` (deprecated loader alias `aion-agent-onboarding`). MCP setup default `iomesh-platform`. Docs/config/UX use mesh / control-plane / broker / iome.sh. `/aion-onboard` remains a silent slash alias. dual_write **OFF** · not Memory GA · catalog ≠ Connected.
+- **Public naming (#394 / #395):** Scrub internal control-plane codename leaks from OSS TUI env, UX, skills, configs, and docs. Env `IOMESH_MEMORY_REPLAY_ENABLED` (one-release deprecated read of the old `AION_*` name in code only — not in `.env.example`). Skill `mesh-agent-onboarding`. MCP setup default `iomesh-platform`. Docs/config/UX use mesh / control-plane / broker / iome.sh. dual_write **OFF** · not Memory GA · catalog ≠ Connected.
 
 ## [1.1.0] — 2026-09-04
 
