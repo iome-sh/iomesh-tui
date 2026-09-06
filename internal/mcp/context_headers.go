@@ -5,27 +5,29 @@ import "strings"
 // IOMesh multi-tenant context header names (HTTP MCP only; stdio has no headers).
 // s1267 residual-honest opt-in inject — not install APPLY green, not dual-auth ship.
 const (
-	HeaderIOMeshTenant    = "X-IOMesh-Tenant"
-	HeaderIOMeshOrg       = "X-IOMesh-Org"
-	HeaderIOMeshWorkspace = "X-IOMesh-Workspace"
+	HeaderIOMeshTenant     = "X-IOMesh-Tenant"
+	HeaderIOMeshOrg        = "X-IOMesh-Org"
+	HeaderIOMeshWorkspace  = "X-IOMesh-Workspace"
+	HeaderIOMeshDepartment = "X-IOMesh-Department"
 )
 
 // ApplyIOMeshContextHeaders merges multi-tenant context into headers for HTTP MCP.
 //
 // Residual honesty (s1267):
-//   - only non-empty values are set (never invent tenant/org/workspace)
+//   - only non-empty values are set (never invent tenant/org/workspace/department)
 //   - never overwrites an existing explicit header for the same key (case-insensitive)
 //   - inject ≠ install Connected / INSTALL_STORE green / dual-auth install list
 //   - callers must opt in; default config leaves headers unchanged
 //
 // Returns a new map when headers is nil and at least one value is applied; otherwise
 // mutates/returns the (possibly same) map for convenience at ServerConfig build time.
-func ApplyIOMeshContextHeaders(headers map[string]string, tenant, org, workspace string) map[string]string {
+func ApplyIOMeshContextHeaders(headers map[string]string, tenant, org, workspace, department string) map[string]string {
 	type kv struct{ k, v string }
 	candidates := []kv{
 		{HeaderIOMeshTenant, strings.TrimSpace(tenant)},
 		{HeaderIOMeshOrg, strings.TrimSpace(org)},
 		{HeaderIOMeshWorkspace, strings.TrimSpace(workspace)},
+		{HeaderIOMeshDepartment, strings.TrimSpace(department)},
 	}
 	any := false
 	for _, c := range candidates {

@@ -92,6 +92,9 @@ type IOMeshSection struct {
 	// Workspace is optional workspace id for memory entitlements (X-IOMesh-Workspace).
 	// Distinct from [agent].workspace (filesystem path).
 	Workspace string `toml:"workspace"`
+	// Department is optional department id for HTTP MCP context inject (X-IOMesh-Department).
+	// Empty fail-opens (header omitted). Never invent. Env: IOMESH_DEPARTMENT.
+	Department string `toml:"department"`
 	// EmitDeptStreams publishes dept.* operational events when true.
 	EmitDeptStreams bool `toml:"emit_dept_streams"`
 	// ContextPlane injects governed operational context into prompts.
@@ -180,9 +183,10 @@ type MCPSection struct {
 	Enabled        bool            `toml:"enabled"`
 	MaxOutputBytes int             `toml:"max_output_bytes"`
 	Servers        []MCPServerTOML `toml:"servers"`
-	// InjectIOMeshContext (s1267) opt-in: when true, merge X-IOMesh-Tenant/Org/Workspace
-	// into each server's HTTP Headers at ServerConfig build time (non-empty only;
-	// never overwrite explicit headers). Default false — not install green / not dual-auth.
+	// InjectIOMeshContext (s1267) opt-in: when true, merge
+	// X-IOMesh-Tenant/Org/Workspace/Department into each server's HTTP Headers at
+	// ServerConfig build time (non-empty only; never overwrite explicit headers).
+	// Default false — not install green / not dual-auth.
 	// Per-server inject_iomesh_context overrides this. Stdio servers ignore headers.
 	InjectIOMeshContext bool `toml:"inject_iomesh_context"`
 }
@@ -196,12 +200,12 @@ func (m MCPSection) WantsInjectIOMeshContext(s MCPServerTOML) bool {
 	return m.InjectIOMeshContext
 }
 
-// IOMeshMCPContext returns tenant/org/workspace for MCP header inject (s1267).
-// Tenant: [iomesh].tenant, else [memory].tenant. Org/workspace from [iomesh] only.
+// IOMeshMCPContext returns tenant/org/workspace/department for MCP header inject (s1267).
+// Tenant: [iomesh].tenant, else [memory].tenant. Org/workspace/department from [iomesh] only.
 // Empty strings mean "do not send" — never invent values.
-func (c *Config) IOMeshMCPContext() (tenant, org, workspace string) {
+func (c *Config) IOMeshMCPContext() (tenant, org, workspace, department string) {
 	if c == nil {
-		return "", "", ""
+		return "", "", "", ""
 	}
 	tenant = strings.TrimSpace(c.IOMesh.Tenant)
 	if tenant == "" {
@@ -209,7 +213,8 @@ func (c *Config) IOMeshMCPContext() (tenant, org, workspace string) {
 	}
 	org = strings.TrimSpace(c.IOMesh.Org)
 	workspace = strings.TrimSpace(c.IOMesh.Workspace)
-	return tenant, org, workspace
+	department = strings.TrimSpace(c.IOMesh.Department)
+	return tenant, org, workspace, department
 }
 
 // MemorySection configures Memory Palace hooks (auto-recall / auto-ingest).
@@ -526,6 +531,9 @@ func (c *Config) applyEnvOverrides() {
 	}
 	if v := os.Getenv("IOMESH_WORKSPACE"); v != "" {
 		c.IOMesh.Workspace = v
+	}
+	if v := os.Getenv("IOMESH_DEPARTMENT"); v != "" {
+		c.IOMesh.Department = v
 	}
 	if v := os.Getenv("IOMESH_POLICY_MODE"); v != "" {
 		c.IOMesh.PolicyMode = strings.ToLower(strings.TrimSpace(v))
