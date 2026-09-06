@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
-- **MCP opt-in `X-IOMesh-Department` inject (#392):** `[iomesh].department` / `IOMESH_DEPARTMENT` stamps `X-IOMesh-Department` on HTTP MCP when `inject_iomesh_context` is on and the value is non-empty. Same residual rules as Tenant/Org/Workspace: empty omit (never invent); never overwrite an explicit server header. dual_write OFF · not Memory GA · catalog ≠ Connected.
+- **`X-IOMesh-Department` on MCP inject + mesh HTTP auth (#392):** `[iomesh].department` / `IOMESH_DEPARTMENT` stamps `X-IOMesh-Department` (1) on HTTP MCP when `inject_iomesh_context` is on and (2) on mesh client `auth` / entitlement headers alongside Org/Tenant/Workspace. Empty omit (never invent); never overwrite an explicit header. dual_write OFF · not Memory GA · catalog ≠ Connected. Does not twin console #498/#500.
 
 ## [1.1.0] — 2026-09-04
 

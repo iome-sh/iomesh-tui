@@ -1094,7 +1094,7 @@ func (c *Client) Ready(ctx context.Context) error {
 const streamDept = "dept"
 
 // EmitErr is like Emit but returns transport/HTTP errors (for dogfood).
-// Sets X-IOMesh-Org / X-IOMesh-Workspace when configured (remote multi-tenant metering).
+// Sets X-IOMesh-Org / X-IOMesh-Workspace / X-IOMesh-Department when configured (remote multi-tenant metering).
 // Wire: POST /v1/streams/dept/publish with base64 JSON DeptEvent payload (broker stream API).
 func (c *Client) EmitErr(ctx context.Context, ev DeptEvent) error {
 	if !c.Enabled() || !c.cfg.EmitDeptStreams {

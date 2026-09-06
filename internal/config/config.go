@@ -92,8 +92,9 @@ type IOMeshSection struct {
 	// Workspace is optional workspace id for memory entitlements (X-IOMesh-Workspace).
 	// Distinct from [agent].workspace (filesystem path).
 	Workspace string `toml:"workspace"`
-	// Department is optional department id for HTTP MCP context inject (X-IOMesh-Department).
-	// Empty fail-opens (header omitted). Never invent. Env: IOMESH_DEPARTMENT.
+	// Department is optional department id for HTTP MCP inject and mesh HTTP auth
+	// (X-IOMesh-Department). Empty fail-opens (header omitted). Never invent.
+	// Env: IOMESH_DEPARTMENT.
 	Department string `toml:"department"`
 	// EmitDeptStreams publishes dept.* operational events when true.
 	EmitDeptStreams bool `toml:"emit_dept_streams"`

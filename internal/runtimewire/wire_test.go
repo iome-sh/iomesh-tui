@@ -1,7 +1,10 @@
 package runtimewire
 
 import (
+	"context"
 	"log/slog"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -196,6 +199,37 @@ func TestNewMesh_InfersHooksFromPortalMCP(t *testing.T) {
 	}
 	if !cfg.IOMesh.Enabled || cfg.IOMesh.Endpoint != "https://hooks.iome.sh" {
 		t.Fatalf("cfg not filled: %+v", cfg.IOMesh)
+	}
+}
+
+func TestNewMesh_DepartmentAuthHeader(t *testing.T) {
+	var gotDept string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotDept = r.Header.Get("X-IOMesh-Department")
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	cfg := &config.Config{}
+	cfg.IOMesh.Enabled = true
+	cfg.IOMesh.Endpoint = srv.URL
+	cfg.IOMesh.Department = "eng"
+	c, _ := NewMesh(cfg, slog.Default())
+	if err := c.Health(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if gotDept != "eng" {
+		t.Fatalf("X-IOMesh-Department=%q", gotDept)
+	}
+
+	cfg.IOMesh.Department = ""
+	gotDept = "sentinel"
+	c, _ = NewMesh(cfg, slog.Default())
+	if err := c.Health(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if gotDept != "" {
+		t.Fatalf("empty department must omit header, got %q", gotDept)
 	}
 }
 

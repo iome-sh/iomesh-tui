@@ -256,11 +256,12 @@ func TestPublishMemoryIngest_RequiresContentAndTenant(t *testing.T) {
 }
 
 func TestPublishMemoryIngest_OrgWorkspaceHeaders(t *testing.T) {
-	var gotOrg, gotWS, gotTenant string
+	var gotOrg, gotWS, gotTenant, gotDept string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotOrg = r.Header.Get("X-IOMesh-Org")
 		gotWS = r.Header.Get("X-IOMesh-Workspace")
 		gotTenant = r.Header.Get("X-IOMesh-Tenant")
+		gotDept = r.Header.Get("X-IOMesh-Department")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"stream":"MEMORY_INGEST","seq":1}`))
 	}))
@@ -272,6 +273,7 @@ func TestPublishMemoryIngest_OrgWorkspaceHeaders(t *testing.T) {
 		Tenant:      "dept.research",
 		OrgID:       "org_dev-org",
 		WorkspaceID: "ws_alpha",
+		Department:  "eng",
 	}, nil)
 	if _, err := c.PublishMemoryIngest(context.Background(), "dept.research", MemoryEnvelope{Content: "hi"}); err != nil {
 		t.Fatalf("PublishMemoryIngest: %v", err)
@@ -285,13 +287,17 @@ func TestPublishMemoryIngest_OrgWorkspaceHeaders(t *testing.T) {
 	if gotTenant != "dept.research" {
 		t.Fatalf("X-IOMesh-Tenant=%q", gotTenant)
 	}
+	if gotDept != "eng" {
+		t.Fatalf("X-IOMesh-Department=%q", gotDept)
+	}
 }
 
 func TestPublishMemoryIngest_OmitsOrgWorkspaceWhenUnset(t *testing.T) {
-	var hadOrg, hadWS bool
+	var hadOrg, hadWS, hadDept bool
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, hadOrg = r.Header["X-IOMesh-Org"]
 		_, hadWS = r.Header["X-IOMesh-Workspace"]
+		hadDept = r.Header.Get("X-IOMesh-Department") != ""
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{}`))
 	}))
@@ -301,8 +307,60 @@ func TestPublishMemoryIngest_OmitsOrgWorkspaceWhenUnset(t *testing.T) {
 	if _, err := c.PublishMemoryIngest(context.Background(), "t", MemoryEnvelope{Content: "x"}); err != nil {
 		t.Fatal(err)
 	}
-	if hadOrg || hadWS {
-		t.Fatalf("expected no org/workspace headers; hadOrg=%v hadWS=%v", hadOrg, hadWS)
+	if hadOrg || hadWS || hadDept {
+		t.Fatalf("expected no org/workspace/department headers; hadOrg=%v hadWS=%v hadDept=%v", hadOrg, hadWS, hadDept)
+	}
+}
+
+func TestAuth_DepartmentHeader(t *testing.T) {
+	var gotDept string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotDept = r.Header.Get("X-IOMesh-Department")
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Department: "research"}, nil)
+	if err := c.Health(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if gotDept != "research" {
+		t.Fatalf("X-IOMesh-Department=%q", gotDept)
+	}
+
+	cEmpty := New(Config{Enabled: true, Endpoint: srv.URL, Department: "  "}, nil)
+	gotDept = "sentinel"
+	if err := cEmpty.Health(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if gotDept != "" {
+		t.Fatalf("empty department must omit header, got %q", gotDept)
+	}
+}
+
+func TestApplyEntitlementHeaders_DepartmentNoOverwrite(t *testing.T) {
+	c := New(Config{Department: "from_cfg"}, nil)
+	req, err := http.NewRequest(http.MethodGet, "http://127.0.0.1/health", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("X-IOMesh-Department", "explicit")
+	c.applyEntitlementHeaders(req)
+	if got := req.Header.Get("X-IOMesh-Department"); got != "explicit" {
+		t.Fatalf("must not overwrite Department: %q", got)
+	}
+
+	req2, err := http.NewRequest(http.MethodGet, "http://127.0.0.1/health", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req2.Header["x-iomesh-department"] = []string{"dept_lower"}
+	c.applyEntitlementHeaders(req2)
+	if vals := req2.Header["x-iomesh-department"]; len(vals) != 1 || vals[0] != "dept_lower" {
+		t.Fatalf("case-insensitive preserve: %v", req2.Header)
+	}
+	if req2.Header.Get("X-IOMesh-Department") == "from_cfg" {
+		t.Fatalf("must not add canonical overwrite: %v", req2.Header)
 	}
 }
 
