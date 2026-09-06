@@ -160,6 +160,7 @@ func NewMesh(cfg *config.Config, logger *slog.Logger) (*iomesh.Client, config.In
 		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
 		OrgID:           cfg.IOMesh.Org,
 		WorkspaceID:     cfg.IOMesh.Workspace,
+		Department:      cfg.IOMesh.Department,
 		DualWrite:       cfg.Memory.DualWrite,
 		MemoryEndpoint:  cfg.Memory.Endpoint,
 		EmitDeptStreams: cfg.IOMesh.EmitDeptStreams,

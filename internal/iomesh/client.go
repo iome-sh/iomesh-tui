@@ -52,6 +52,9 @@ type Config struct {
 	OrgID string
 	// WorkspaceID is optional workspace scope (X-IOMesh-Workspace on dept emit + memory).
 	WorkspaceID string
+	// Department is optional department id for mesh HTTP auth (X-IOMesh-Department).
+	// Empty fail-opens (header omitted). Never invent. Env: IOMESH_DEPARTMENT / [iomesh].department.
+	Department string
 	// DualWrite mirrors agent [memory].dual_write / IOMESH_MEMORY_DUAL_WRITE for dogfood
 	// JSON evidence (does not gate the memory_ingest probe; default false).
 	DualWrite bool
@@ -127,8 +130,9 @@ func (c *Client) Enabled() bool {
 	return c != nil && c.cfg.Enabled && c.cfg.Endpoint != ""
 }
 
-// applyEntitlementHeaders sets X-IOMesh-Org / X-IOMesh-Workspace for PlanGate / multi-tenant metering.
-// Parity with platform metering Org / Workspace headers (memory dual-write + dept emit).
+// applyEntitlementHeaders sets X-IOMesh-Org / Workspace / Department for PlanGate / multi-tenant metering.
+// Parity with platform metering Org / Workspace / Department headers (memory dual-write + dept emit).
+// Non-empty only (never invent). Department never overwrites an explicit existing header.
 func (c *Client) applyEntitlementHeaders(req *http.Request) {
 	if c == nil || req == nil {
 		return
@@ -139,6 +143,28 @@ func (c *Client) applyEntitlementHeaders(req *http.Request) {
 	if ws := strings.TrimSpace(c.cfg.WorkspaceID); ws != "" {
 		req.Header.Set("X-IOMesh-Workspace", ws)
 	}
+	if dept := strings.TrimSpace(c.cfg.Department); dept != "" {
+		if !httpHeaderKeyPresent(req.Header, "X-IOMesh-Department") {
+			req.Header.Set("X-IOMesh-Department", dept)
+		}
+	}
+}
+
+// httpHeaderKeyPresent reports whether h already has key (HTTP case-insensitive).
+func httpHeaderKeyPresent(h http.Header, key string) bool {
+	if len(h) == 0 {
+		return false
+	}
+	if _, ok := h[http.CanonicalHeaderKey(key)]; ok {
+		return true
+	}
+	want := strings.ToLower(key)
+	for k := range h {
+		if strings.ToLower(k) == want {
+			return true
+		}
+	}
+	return false
 }
 
 // MemoryEndpointConfigured reports whether a dedicated memory sidecar base URL is set.
@@ -505,7 +531,7 @@ func (c *Client) auth(req *http.Request) {
 	if suffix := strings.TrimSpace(c.cfg.PullAllowSuffix); suffix != "" {
 		req.Header.Set("X-IOMesh-Pull-Allow-Suffix", suffix)
 	}
-	// Org/Workspace on every request (ListStreams / ListStreamMessages included).
+	// Org/Workspace/Department on every request (ListStreams / ListStreamMessages included).
 	c.applyEntitlementHeaders(req)
 }
 

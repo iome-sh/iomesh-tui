@@ -1162,6 +1162,7 @@ func cmdMeshWait(args []string) int {
 		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
 		OrgID:           cfg.IOMesh.Org,
 		WorkspaceID:     cfg.IOMesh.Workspace,
+		Department:      cfg.IOMesh.Department,
 		Role:            pullRole,
 		PullAllowSuffix: pullAllowSuffix,
 	}, logger)
@@ -1268,6 +1269,7 @@ func cmdMeshStatus(args []string) int {
 		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
 		OrgID:           cfg.IOMesh.Org,
 		WorkspaceID:     cfg.IOMesh.Workspace,
+		Department:      cfg.IOMesh.Department,
 		EmitDeptStreams: cfg.IOMesh.EmitDeptStreams,
 		ContextPlane:    cfg.IOMesh.ContextPlane,
 		IncludeLineage:  cfg.IOMesh.IncludeLineage,
@@ -1373,6 +1375,7 @@ func cmdMeshCatalog(args []string) int {
 		APIKeyEnv:    cfg.IOMesh.APIKeyEnv,
 		OrgID:        cfg.IOMesh.Org,
 		WorkspaceID:  cfg.IOMesh.Workspace,
+		Department:   cfg.IOMesh.Department,
 		CatalogPlane: true,
 	}, logger)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -1500,6 +1503,7 @@ func cmdMeshStreams(args []string) int {
 		APIKeyEnv:   cfg.IOMesh.APIKeyEnv,
 		OrgID:       cfg.IOMesh.Org,
 		WorkspaceID: cfg.IOMesh.Workspace,
+		Department:  cfg.IOMesh.Department,
 	}, logger)
 	if !mesh.Enabled() {
 		fmt.Fprintln(os.Stderr, "FAIL mesh streams: mesh disabled")
@@ -1759,6 +1763,7 @@ func cmdMeshConsumerAckNack(args []string, nack bool) int {
 		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
 		OrgID:           cfg.IOMesh.Org,
 		WorkspaceID:     cfg.IOMesh.Workspace,
+		Department:      cfg.IOMesh.Department,
 		Role:            pullRole,
 		PullAllowSuffix: allowSuffix,
 	}, logger)
@@ -1839,6 +1844,7 @@ func cmdMeshConsumerDelete(args []string) int {
 		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
 		OrgID:           cfg.IOMesh.Org,
 		WorkspaceID:     cfg.IOMesh.Workspace,
+		Department:      cfg.IOMesh.Department,
 		Role:            pullRole,
 		PullAllowSuffix: allowSuffix,
 	}, logger)
@@ -1918,6 +1924,7 @@ func cmdMeshConsumerCreate(args []string) int {
 		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
 		OrgID:           cfg.IOMesh.Org,
 		WorkspaceID:     cfg.IOMesh.Workspace,
+		Department:      cfg.IOMesh.Department,
 		Role:            pullRole,
 		PullAllowSuffix: allowSuffix,
 	}, logger)
@@ -2010,6 +2017,7 @@ func cmdMeshConsumerFetch(args []string) int {
 		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
 		OrgID:           cfg.IOMesh.Org,
 		WorkspaceID:     cfg.IOMesh.Workspace,
+		Department:      cfg.IOMesh.Department,
 		Role:            pullRole,
 		PullAllowSuffix: allowSuffix,
 	}, logger)
@@ -2093,6 +2101,7 @@ func cmdMeshPub(args []string) int {
 		APIKeyEnv:   cfg.IOMesh.APIKeyEnv,
 		OrgID:       cfg.IOMesh.Org,
 		WorkspaceID: cfg.IOMesh.Workspace,
+		Department:  cfg.IOMesh.Department,
 	}, logger)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -2249,6 +2258,7 @@ func cmdMeshKV(args []string) int {
 		APIKeyEnv:   cfg.IOMesh.APIKeyEnv,
 		OrgID:       cfg.IOMesh.Org,
 		WorkspaceID: cfg.IOMesh.Workspace,
+		Department:  cfg.IOMesh.Department,
 	}, logger)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -2426,6 +2436,7 @@ func cmdMeshDogfood(args []string) int {
 		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
 		OrgID:           cfg.IOMesh.Org,
 		WorkspaceID:     cfg.IOMesh.Workspace,
+		Department:      cfg.IOMesh.Department,
 		DualWrite:       cfg.Memory.DualWrite, // report-only; does not gate memory_ingest probe
 		MemoryEndpoint:  cfg.Memory.Endpoint,  // stage warm sidecar for memory_retrieve
 		EmitDeptStreams: cfg.IOMesh.EmitDeptStreams,
@@ -3007,6 +3018,7 @@ func cmdMemoryPull(args []string) int {
 		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
 		OrgID:           cfg.IOMesh.Org,
 		WorkspaceID:     cfg.IOMesh.Workspace,
+		Department:      cfg.IOMesh.Department,
 		Role:            pullRole,
 		PullAllowSuffix: allowSuffix,
 	}, logger)

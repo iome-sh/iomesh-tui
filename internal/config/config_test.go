@@ -422,12 +422,13 @@ func TestEnv_SubagentsOff(t *testing.T) {
 func TestEnv_IOMeshOrgWorkspace(t *testing.T) {
 	t.Setenv("IOMESH_ORG", "org_from_env")
 	t.Setenv("IOMESH_WORKSPACE", "ws_from_env")
+	t.Setenv("IOMESH_DEPARTMENT", "dept_from_env")
 	cfg, err := Load(filepath.Join(t.TempDir(), "missing.toml"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.IOMesh.Org != "org_from_env" || cfg.IOMesh.Workspace != "ws_from_env" {
-		t.Fatalf("iomesh org/workspace=%+v", cfg.IOMesh)
+	if cfg.IOMesh.Org != "org_from_env" || cfg.IOMesh.Workspace != "ws_from_env" || cfg.IOMesh.Department != "dept_from_env" {
+		t.Fatalf("iomesh org/workspace/department=%+v", cfg.IOMesh)
 	}
 }
 
@@ -482,6 +483,7 @@ inject_iomesh_context = true
 tenant = "acme"
 org = "org_from_iomesh"
 workspace = "ws_alpha"
+department = "eng"
 
 [memory]
 tenant = "memory_only_fallback"
@@ -514,9 +516,9 @@ tenant = "memory_only_fallback"
 	if cfg.MCP.Servers[0].Headers["X-IOMesh-Org"] != "org_explicit" {
 		t.Fatalf("headers parse: %v", cfg.MCP.Servers[0].Headers)
 	}
-	tenant, org, ws := cfg.IOMeshMCPContext()
-	if tenant != "acme" || org != "org_from_iomesh" || ws != "ws_alpha" {
-		t.Fatalf("IOMeshMCPContext=%q %q %q", tenant, org, ws)
+	tenant, org, ws, dept := cfg.IOMeshMCPContext()
+	if tenant != "acme" || org != "org_from_iomesh" || ws != "ws_alpha" || dept != "eng" {
+		t.Fatalf("IOMeshMCPContext=%q %q %q %q", tenant, org, ws, dept)
 	}
 }
 
@@ -534,15 +536,15 @@ func TestDefault_MCPInjectIOMeshContextOff(t *testing.T) {
 func TestIOMeshMCPContext_MemoryTenantFallback(t *testing.T) {
 	cfg := Default()
 	cfg.Memory.Tenant = "dept.research"
-	tenant, org, ws := cfg.IOMeshMCPContext()
+	tenant, org, ws, dept := cfg.IOMeshMCPContext()
 	if tenant != "dept.research" {
 		t.Fatalf("memory tenant fallback=%q", tenant)
 	}
-	if org != "" || ws != "" {
-		t.Fatalf("empty org/ws expected, got %q %q", org, ws)
+	if org != "" || ws != "" || dept != "" {
+		t.Fatalf("empty org/ws/dept expected, got %q %q %q", org, ws, dept)
 	}
 	cfg.IOMesh.Tenant = "iomesh_wins"
-	tenant, _, _ = cfg.IOMeshMCPContext()
+	tenant, _, _, _ = cfg.IOMeshMCPContext()
 	if tenant != "iomesh_wins" {
 		t.Fatalf("iomesh tenant preferred=%q", tenant)
 	}
