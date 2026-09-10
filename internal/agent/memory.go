@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/iome-sh/iomesh-tui/internal/iomesh"
+	"github.com/iome-sh/iomesh-tui/internal/mcp"
 	"github.com/iome-sh/iomesh-tui/internal/router"
 )
 
@@ -617,9 +619,12 @@ func (rt *Runtime) MemoryOpsDigest(ctx context.Context, opts ...MemoryOpsDigestO
 	}
 
 	// Prefer sync ops digest against memory sidecar HTTP when mesh client is live.
+	// Cite-both still consults MCP: sidecar source_hint=palace_timeline must not
+	// drop provenance/tags from the local palace export (#419 residual).
+	var res *iomesh.MemoryOpsDigestResult
 	if rt.syncMemoryReady() {
 		start := time.Now()
-		res, err := rt.mesh.ExportOpsDigest(ctx, rt.memoryTenant(), iomesh.MemoryOpsDigestOptions{
+		httpRes, err := rt.mesh.ExportOpsDigest(ctx, rt.memoryTenant(), iomesh.MemoryOpsDigestOptions{
 			Window:  window,
 			Horizon: horizon,
 			Limit:   fetchLimit,
@@ -629,20 +634,60 @@ func (rt *Runtime) MemoryOpsDigest(ctx context.Context, opts ...MemoryOpsDigestO
 		rt.lastMemoryRetrieveMS.Store(int64(latMS))
 		rt.lastMemoryRetrieveCacheHit.Store(false)
 		if err == nil {
-			finalizeDigestForRequireSources(res, required, fetchLimit, displayLimit)
-			return applyRequireSources(formatOpsDigest(res, maxBytes), res, required), nil
-		}
-		if rt.logger != nil {
+			res = httpRes
+			if len(required) == 0 {
+				finalizeDigestForRequireSources(res, required, fetchLimit, displayLimit)
+				return applyRequireSources(formatOpsDigest(res, maxBytes), res, required), nil
+			}
+		} else if rt.logger != nil {
 			rt.logger.Debug("memory ops_digest sync failed; trying MCP fallback", "err", err, "ms", latMS)
 		}
-		// Fall through to MCP when sidecar path is missing (e.g. broker-only endpoint).
 	}
 
-	if !rt.mcpMemoryReady() {
-		if rt.syncMemoryReady() {
+	if rt.mcpMemoryReady() && (res == nil || len(required) > 0) {
+		mcpRes, mcpText, mcpErr := rt.fetchMCPOpsDigest(ctx, window, horizon, fetchLimit, strings.TrimSpace(call.AsOf), maxBytes)
+		if mcpErr != nil && res == nil {
+			return "", mcpErr
+		}
+		if mcpRes != nil {
+			if res == nil {
+				res = mcpRes
+			} else {
+				res.Receipts = mergeDigestReceipts(res.Receipts, mcpRes.Receipts)
+				if strings.TrimSpace(res.Since) == "" {
+					res.Since = mcpRes.Since
+				}
+				if strings.TrimSpace(res.AsOf) == "" {
+					res.AsOf = mcpRes.AsOf
+				}
+			}
+		} else if res == nil {
+			// Parse failed (truncated pretty JSON, envelope, …). Salvage receipts
+			// so private RCA cannot collapse to cited=(none).
+			if salvaged := salvageDigestReceiptsJSON(mcpText); len(salvaged) > 0 {
+				res = &iomesh.MemoryOpsDigestResult{Receipts: salvaged}
+				fillDigestWindowFromRaw(res, mcpText)
+			}
+		}
+	}
+
+	if res == nil {
+		if rt.syncMemoryReady() && !rt.mcpMemoryReady() {
 			return "", fmt.Errorf("memory ops_digest sync failed and mcp server %q not connected", rt.memory.Server)
 		}
-		return "", fmt.Errorf("mcp server %q not connected (and mesh sync unavailable)", rt.memory.Server)
+		if !rt.mcpMemoryReady() {
+			return "", fmt.Errorf("mcp server %q not connected (and mesh sync unavailable)", rt.memory.Server)
+		}
+		res = digestResultOrStub(nil, fetchLimit)
+	}
+
+	finalizeDigestForRequireSources(res, required, fetchLimit, displayLimit)
+	return applyRequireSources(formatOpsDigest(res, maxBytes), res, required), nil
+}
+
+func (rt *Runtime) fetchMCPOpsDigest(ctx context.Context, window, horizon string, fetchLimit int, asOf string, maxBytes int) (*iomesh.MemoryOpsDigestResult, string, error) {
+	if !rt.mcpMemoryReady() {
+		return nil, "", fmt.Errorf("mcp server %q not connected", rt.memory.Server)
 	}
 	c := rt.mcp.ClientByName(rt.memory.Server)
 	args := map[string]any{
@@ -653,24 +698,19 @@ func (rt *Runtime) MemoryOpsDigest(ctx context.Context, opts ...MemoryOpsDigestO
 	if t := rt.memoryTenant(); t != "" {
 		args["tenant"] = t
 	}
-	if asOf := strings.TrimSpace(call.AsOf); asOf != "" {
+	if asOf != "" {
 		args["as_of"] = asOf
 	}
 	start := time.Now()
-	out, err := c.CallTool(ctx, "ops_digest_export", args)
+	out, err := c.CallToolDetailed(ctx, "ops_digest_export", args, mcp.OpsDigestMaxOutputBytes)
 	latMS := int(time.Since(start).Milliseconds())
 	rt.lastMemoryRetrieveMS.Store(int64(latMS))
 	rt.lastMemoryRetrieveCacheHit.Store(false)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
-	// MCP returns JSON text; try to re-format for operator readability, else pass through.
-	if res, formatted := parseOpsDigestJSON(out, maxBytes); res != nil && formatted != "" {
-		finalizeDigestForRequireSources(res, required, fetchLimit, displayLimit)
-		formatted = formatOpsDigest(res, maxBytes)
-		return applyRequireSources(formatted, res, required), nil
-	}
-	return applyRequireSources(truncateBytes(out, maxBytes), nil, required), nil
+	res := parseOpsDigestFromTool(out.Text, out.Structured, maxBytes)
+	return res, out.Text, nil
 }
 
 // formatOpsDigest turns a sync ExportOpsDigest result into a compact human-readable pack.
@@ -806,29 +846,133 @@ func formatOpsDigestJSON(raw string, maxBytes int) string {
 func parseOpsDigestJSON(raw string, maxBytes int) (*iomesh.MemoryOpsDigestResult, string) {
 	raw = extractJSONObject(raw)
 	if raw == "" || raw[0] != '{' {
+		if salvaged := salvageDigestReceiptsJSON(raw); len(salvaged) > 0 {
+			res := &iomesh.MemoryOpsDigestResult{Receipts: salvaged}
+			fillDigestWindowFromRaw(res, raw)
+			return res, formatOpsDigest(res, maxBytes)
+		}
 		return nil, ""
 	}
 	var res iomesh.MemoryOpsDigestResult
 	if err := json.Unmarshal([]byte(raw), &res); err != nil {
+		if salvaged := salvageDigestReceiptsJSON(raw); len(salvaged) > 0 {
+			res = iomesh.MemoryOpsDigestResult{Receipts: salvaged}
+			fillDigestWindowFromRaw(&res, raw)
+			return &res, formatOpsDigest(&res, maxBytes)
+		}
 		return nil, ""
 	}
 	return &res, formatOpsDigest(&res, maxBytes)
 }
 
-// extractJSONObject pulls the first JSON object from MCP text (leading prose
-// or markdown fences). Returns "" when no object is present.
+func parseOpsDigestFromTool(text string, structured json.RawMessage, maxBytes int) *iomesh.MemoryOpsDigestResult {
+	try := func(s string) *iomesh.MemoryOpsDigestResult {
+		res, _ := parseOpsDigestJSON(s, maxBytes)
+		return res
+	}
+	if len(bytes.TrimSpace(structured)) > 0 && string(bytes.TrimSpace(structured)) != "null" {
+		if res := try(string(structured)); res != nil && len(res.Receipts) > 0 {
+			return res
+		}
+	}
+	if res := try(text); res != nil && len(res.Receipts) > 0 {
+		return res
+	}
+	if salvaged := salvageDigestReceiptsJSON(text); len(salvaged) > 0 {
+		res := &iomesh.MemoryOpsDigestResult{Receipts: salvaged}
+		fillDigestWindowFromRaw(res, text)
+		return res
+	}
+	if len(bytes.TrimSpace(structured)) > 0 && string(bytes.TrimSpace(structured)) != "null" {
+		if res := try(string(structured)); res != nil {
+			return res
+		}
+	}
+	return try(text)
+}
+
+// extractJSONObject pulls a JSON object from MCP text (leading prose or
+// markdown fences). Prefers an object that contains a receipts array so an
+// MCP envelope `{content:[...]}` does not wipe cite classification.
 func extractJSONObject(raw string) string {
 	raw = strings.TrimSpace(raw)
-	i := strings.IndexByte(raw, '{')
-	if i < 0 {
+	var first string
+	for i := 0; i < len(raw); i++ {
+		if raw[i] != '{' {
+			continue
+		}
+		dec := json.NewDecoder(strings.NewReader(raw[i:]))
+		var v json.RawMessage
+		if err := dec.Decode(&v); err != nil {
+			continue
+		}
+		obj := strings.TrimSpace(string(v))
+		if first == "" {
+			first = obj
+		}
+		if digestJSONHasReceipts(obj) {
+			return obj
+		}
+		if inner := unwrapMCPContentText(obj); inner != "" && inner != obj {
+			if got := extractJSONObject(inner); got != "" {
+				return got
+			}
+		}
+	}
+	return first
+}
+
+func unwrapMCPContentText(raw string) string {
+	var env struct {
+		Content []struct {
+			Text string `json:"text"`
+		} `json:"content"`
+	}
+	if json.Unmarshal([]byte(raw), &env) != nil || len(env.Content) == 0 {
 		return ""
 	}
-	dec := json.NewDecoder(strings.NewReader(raw[i:]))
-	var v json.RawMessage
-	if err := dec.Decode(&v); err != nil {
-		return ""
+	var b strings.Builder
+	for _, p := range env.Content {
+		b.WriteString(p.Text)
 	}
-	return strings.TrimSpace(string(v))
+	return strings.TrimSpace(b.String())
+}
+
+func digestJSONHasReceipts(raw string) bool {
+	var probe struct {
+		Receipts json.RawMessage `json:"receipts"`
+		Data     json.RawMessage `json:"data"`
+		Result   json.RawMessage `json:"result"`
+		Pack     json.RawMessage `json:"pack"`
+	}
+	if json.Unmarshal([]byte(raw), &probe) != nil {
+		return false
+	}
+	if looksLikeJSONArray(probe.Receipts) {
+		return true
+	}
+	for _, nest := range []json.RawMessage{probe.Data, probe.Result, probe.Pack} {
+		if !looksLikeJSONObject(nest) {
+			continue
+		}
+		var inner struct {
+			Receipts json.RawMessage `json:"receipts"`
+		}
+		if json.Unmarshal(nest, &inner) == nil && looksLikeJSONArray(inner.Receipts) {
+			return true
+		}
+	}
+	return false
+}
+
+func looksLikeJSONArray(raw json.RawMessage) bool {
+	s := strings.TrimSpace(string(raw))
+	return len(s) > 0 && s[0] == '['
+}
+
+func looksLikeJSONObject(raw json.RawMessage) bool {
+	s := strings.TrimSpace(string(raw))
+	return len(s) > 0 && s[0] == '{'
 }
 
 // MemoryFactsAsOfOpts for opt-in bi-temporal lite validity listing (s1276 / mesh Beta K4 lite).

@@ -172,4 +172,59 @@ func TestConcurrentCalls(t *testing.T) {
 	wg.Wait()
 }
 
+func TestClient_CallToolDetailedKeepsStructured(t *testing.T) {
+	cInR, cInW := io.Pipe()
+	cOutR, cOutW := io.Pipe()
+	go func() {
+		defer cOutW.Close()
+		dec := json.NewDecoder(cInR)
+		for {
+			var req rpcRequest
+			if err := dec.Decode(&req); err != nil {
+				return
+			}
+			var resp rpcResponse
+			resp.JSONRPC = "2.0"
+			resp.ID = req.ID
+			switch req.Method {
+			case "initialize":
+				resp.Result, _ = json.Marshal(initializeResult{ProtocolVersion: ProtocolVersion})
+			case "notifications/initialized":
+				continue
+			case "tools/list":
+				resp.Result, _ = json.Marshal(toolsListResult{Tools: []Tool{{Name: "ops_digest_export"}}})
+			case "tools/call":
+				resp.Result, _ = json.Marshal(callToolResult{
+					Content:           []contentPart{{Type: "text", Text: `{"window":"day","receipts":[`}},
+					StructuredContent: json.RawMessage(`{"window":"day","receipts":[{"id":"p1","source_hint":"palace_timeline"}]}`),
+				})
+			default:
+				resp.Error = &rpcError{Code: -32601, Message: "method not found"}
+			}
+			line, _ := json.Marshal(resp)
+			_, _ = cOutW.Write(append(line, '\n'))
+		}
+	}()
+
+	c := NewClientForTest(ServerConfig{Name: "memory", Command: "x"}, cInW, cOutR, nil)
+	defer c.Close()
+	ctx := context.Background()
+	if err := c.initialize(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err := c.refreshTools(ctx); err != nil {
+		t.Fatal(err)
+	}
+	out, err := c.CallToolDetailed(ctx, "ops_digest_export", map[string]any{"window": "day"}, OpsDigestMaxOutputBytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.Text, `"window":"day"`) {
+		t.Fatalf("text=%q", out.Text)
+	}
+	if !strings.Contains(string(out.Structured), `"source_hint":"palace_timeline"`) {
+		t.Fatalf("structured=%s", out.Structured)
+	}
+}
+
 func boolPtr(b bool) *bool { return &b }

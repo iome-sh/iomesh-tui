@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -533,35 +534,189 @@ type MemoryOpsDigestReceipt struct {
 	Provenance  MemoryOpsDigestProvenance `json:"provenance,omitempty"`
 }
 
-// UnmarshalJSON accepts provenance as an object or string and tags as strings
-// or {source_hint|name|tag|value} objects. source is an alias for source_hint.
+// UnmarshalJSON is fail-open on wire-type drift (numeric id, nested palace
+// entry/content/metadata). One odd field must not drop the receipt — sticky
+// cite reads provenance/tags even when source_hint is palace_timeline.
 func (r *MemoryOpsDigestReceipt) UnmarshalJSON(data []byte) error {
-	var wire struct {
-		ID          string          `json:"id"`
-		EventTime   string          `json:"event_time"`
-		Summary     string          `json:"summary"`
-		SourceHint  string          `json:"source_hint"`
-		Source      string          `json:"source"`
-		Pointer     string          `json:"pointer"`
-		AccountHash string          `json:"account_hash"`
-		Tags        json.RawMessage `json:"tags"`
-		Provenance  json.RawMessage `json:"provenance"`
+	data = bytes.TrimSpace(data)
+	if len(data) == 0 || string(data) == "null" {
+		return nil
 	}
-	if err := json.Unmarshal(data, &wire); err != nil {
+	var m map[string]any
+	if err := json.Unmarshal(data, &m); err != nil {
 		return err
 	}
-	r.ID = wire.ID
-	r.EventTime = wire.EventTime
-	r.Summary = wire.Summary
-	r.SourceHint = strings.TrimSpace(wire.SourceHint)
-	if r.SourceHint == "" {
-		r.SourceHint = strings.TrimSpace(wire.Source)
-	}
-	r.Pointer = wire.Pointer
-	r.AccountHash = wire.AccountHash
-	r.Tags = parseDigestReceiptTags(wire.Tags)
-	r.Provenance = parseDigestReceiptProvenance(wire.Provenance)
+	*r = digestReceiptFromMap(m)
 	return nil
+}
+
+func digestReceiptFromMap(m map[string]any) MemoryOpsDigestReceipt {
+	if m == nil {
+		return MemoryOpsDigestReceipt{}
+	}
+	r := MemoryOpsDigestReceipt{
+		ID:          coerceJSONString(m["id"], m["ID"], m["memory_id"], m["pointer"]),
+		EventTime:   coerceJSONString(m["event_time"], m["EventTime"], m["timestamp"], m["created_at"]),
+		Summary:     coerceJSONString(m["summary"], m["Summary"]),
+		SourceHint:  coerceJSONString(m["source_hint"], m["source"]),
+		Pointer:     coerceJSONString(m["pointer"]),
+		AccountHash: coerceJSONString(m["account_hash"]),
+		Tags:        collectDigestReceiptTags(m),
+		Provenance:  collectDigestReceiptProvenance(m),
+	}
+	if r.Pointer == "" {
+		r.Pointer = r.ID
+	}
+	return r
+}
+
+func collectDigestReceiptTags(m map[string]any) []string {
+	var out []string
+	appendAny := func(v any) {
+		out = append(out, parseDigestTagsFromAny(v)...)
+	}
+	appendAny(m["tags"])
+	appendAny(m["labels"])
+	if content, ok := asJSONMap(m["content"]); ok {
+		appendAny(content["tags"])
+	}
+	if entry, ok := asJSONMap(m["entry"]); ok {
+		appendAny(entry["tags"])
+		if content, ok := asJSONMap(entry["content"]); ok {
+			appendAny(content["tags"])
+		}
+	}
+	if meta, ok := asJSONMap(m["metadata"]); ok {
+		appendAny(meta["tags"])
+		if s := coerceJSONString(meta["source_hint"]); s != "" {
+			out = append(out, "source_hint:"+s)
+		}
+	}
+	return uniqueNonEmptyStrings(out)
+}
+
+func collectDigestReceiptProvenance(m map[string]any) MemoryOpsDigestProvenance {
+	p := parseDigestReceiptProvenanceAny(m["provenance"])
+	if p.SourceHint == "" && p.SourceStep == "" {
+		if entry, ok := asJSONMap(m["entry"]); ok {
+			p = parseDigestReceiptProvenanceAny(entry["provenance"])
+		}
+	}
+	if p.SourceHint == "" && p.SourceStep == "" {
+		if meta, ok := asJSONMap(m["metadata"]); ok {
+			p = parseDigestReceiptProvenanceAny(meta["provenance"])
+			if p.SourceHint == "" {
+				p.SourceHint = coerceJSONString(meta["source_hint"], meta["source"])
+			}
+		}
+	}
+	if p.SourceHint == "" {
+		if content, ok := asJSONMap(m["content"]); ok {
+			p2 := parseDigestReceiptProvenanceAny(content["provenance"])
+			if p2.SourceHint != "" || p2.SourceStep != "" {
+				p = p2
+			}
+		}
+	}
+	return p
+}
+
+func parseDigestTagsFromAny(v any) []string {
+	switch t := v.(type) {
+	case nil:
+		return nil
+	case string:
+		if s := strings.TrimSpace(t); s != "" {
+			return []string{s}
+		}
+	case []any:
+		out := make([]string, 0, len(t))
+		for _, item := range t {
+			switch x := item.(type) {
+			case string:
+				if s := strings.TrimSpace(x); s != "" {
+					out = append(out, s)
+				}
+			case map[string]any:
+				if s := firstString(x, "source_hint", "name", "tag", "value"); s != "" {
+					out = append(out, s)
+				}
+			}
+		}
+		return out
+	case []string:
+		return t
+	}
+	return nil
+}
+
+func parseDigestReceiptProvenanceAny(v any) MemoryOpsDigestProvenance {
+	switch t := v.(type) {
+	case nil:
+		return MemoryOpsDigestProvenance{}
+	case string:
+		return MemoryOpsDigestProvenance{SourceHint: strings.TrimSpace(t)}
+	case map[string]any:
+		return MemoryOpsDigestProvenance{
+			SourceHint: coerceJSONString(t["source_hint"], t["SourceHint"], t["source"]),
+			SourceStep: coerceJSONString(t["source_step"], t["SourceStep"]),
+		}
+	}
+	raw, err := json.Marshal(v)
+	if err != nil {
+		return MemoryOpsDigestProvenance{}
+	}
+	return parseDigestReceiptProvenance(raw)
+}
+
+func asJSONMap(v any) (map[string]any, bool) {
+	m, ok := v.(map[string]any)
+	return m, ok
+}
+
+func coerceJSONString(vals ...any) string {
+	for _, v := range vals {
+		switch t := v.(type) {
+		case nil:
+			continue
+		case string:
+			if s := strings.TrimSpace(t); s != "" {
+				return s
+			}
+		case json.Number:
+			if s := strings.TrimSpace(t.String()); s != "" {
+				return s
+			}
+		case float64:
+			return strconv.FormatInt(int64(t), 10)
+		case int:
+			return strconv.Itoa(t)
+		case int64:
+			return strconv.FormatInt(t, 10)
+		case fmt.Stringer:
+			if s := strings.TrimSpace(t.String()); s != "" {
+				return s
+			}
+		}
+	}
+	return ""
+}
+
+func uniqueNonEmptyStrings(in []string) []string {
+	if len(in) == 0 {
+		return nil
+	}
+	seen := map[string]bool{}
+	out := make([]string, 0, len(in))
+	for _, s := range in {
+		s = strings.TrimSpace(s)
+		if s == "" || seen[s] {
+			continue
+		}
+		seen[s] = true
+		out = append(out, s)
+	}
+	return out
 }
 
 func parseDigestReceiptTags(raw json.RawMessage) []string {
@@ -645,6 +800,108 @@ type MemoryOpsDigestResult struct {
 	FetchedN      int    `json:"-"`
 	FetchedNewest string `json:"-"`
 	FetchedOldest string `json:"-"`
+}
+
+// UnmarshalJSON lifts receipts from nested MCP/sidecar envelopes (data/result/pack)
+// and keeps complete receipts when one array item is malformed. Unknown keys
+// (receipt_selection) are ignored — they do not invent cite-both.
+func (r *MemoryOpsDigestResult) UnmarshalJSON(data []byte) error {
+	data = bytes.TrimSpace(data)
+	if len(data) == 0 || string(data) == "null" {
+		return nil
+	}
+	var raw map[string]any
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	r.Window = coerceJSONString(raw["window"])
+	r.Horizon = coerceJSONString(raw["horizon"])
+	r.AsOf = coerceJSONString(raw["as_of"])
+	r.Since = coerceJSONString(raw["since"])
+	if hraw, err := json.Marshal(raw["honesty"]); err == nil && len(bytes.TrimSpace(hraw)) > 0 && string(hraw) != "null" {
+		_ = json.Unmarshal(hraw, &r.Honesty)
+	}
+	if praw, err := json.Marshal(raw["patterns"]); err == nil {
+		var pats []MemoryOpsDigestPattern
+		if json.Unmarshal(praw, &pats) == nil {
+			r.Patterns = pats
+		}
+	}
+	if draw, err := json.Marshal(raw["decision_stub"]); err == nil && len(bytes.TrimSpace(draw)) > 0 && string(draw) != "null" {
+		_ = json.Unmarshal(draw, &r.DecisionStub)
+	}
+	r.Receipts = liftDigestReceiptsAny(raw)
+	if r.Patterns == nil {
+		r.Patterns = []MemoryOpsDigestPattern{}
+	}
+	if r.Receipts == nil {
+		r.Receipts = []MemoryOpsDigestReceipt{}
+	}
+	return nil
+}
+
+func liftDigestReceiptsAny(root map[string]any) []MemoryOpsDigestReceipt {
+	if root == nil {
+		return nil
+	}
+	candidates := []any{root["receipts"]}
+	for _, nest := range []string{"data", "result", "pack", "export", "ops_digest"} {
+		if child, ok := asJSONMap(root[nest]); ok {
+			candidates = append(candidates, child["receipts"])
+		}
+	}
+	for _, cand := range candidates {
+		if rs := decodeDigestReceiptList(cand); len(rs) > 0 {
+			return rs
+		}
+	}
+	return decodeDigestReceiptList(root["receipts"])
+}
+
+func decodeDigestReceiptList(v any) []MemoryOpsDigestReceipt {
+	switch t := v.(type) {
+	case nil:
+		return nil
+	case []any:
+		out := make([]MemoryOpsDigestReceipt, 0, len(t))
+		for _, item := range t {
+			if m, ok := asJSONMap(item); ok {
+				r := digestReceiptFromMap(m)
+				if strings.TrimSpace(r.ID) == "" && strings.TrimSpace(r.Summary) == "" &&
+					strings.TrimSpace(r.SourceHint) == "" && len(r.Tags) == 0 &&
+					strings.TrimSpace(r.Provenance.SourceHint) == "" {
+					continue
+				}
+				out = append(out, r)
+			}
+		}
+		return out
+	}
+	raw, err := json.Marshal(v)
+	if err != nil {
+		return nil
+	}
+	raw = bytes.TrimSpace(raw)
+	if len(raw) == 0 || raw[0] != '[' {
+		return nil
+	}
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	tok, err := dec.Token()
+	if err != nil || tok != json.Delim('[') {
+		return nil
+	}
+	var out []MemoryOpsDigestReceipt
+	for dec.More() {
+		var item json.RawMessage
+		if err := dec.Decode(&item); err != nil {
+			break
+		}
+		var r MemoryOpsDigestReceipt
+		if json.Unmarshal(item, &r) == nil {
+			out = append(out, r)
+		}
+	}
+	return out
 }
 
 // ExportOpsDigest is sync ops heartbeat digest export (s1200).

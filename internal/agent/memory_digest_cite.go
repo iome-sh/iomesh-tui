@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -251,6 +252,166 @@ func sortReceiptsNewestFirst(receipts []iomesh.MemoryOpsDigestReceipt) {
 		}
 		receipts[j+1] = cur
 	}
+}
+
+func digestResultOrStub(res *iomesh.MemoryOpsDigestResult, fetchLimit int) *iomesh.MemoryOpsDigestResult {
+	if res == nil {
+		res = &iomesh.MemoryOpsDigestResult{}
+	}
+	if res.FetchLimit <= 0 && fetchLimit > 0 {
+		res.FetchLimit = fetchLimit
+	}
+	return res
+}
+
+// mergeDigestReceipts unions MCP palace receipts into the HTTP/sidecar set.
+// Same-id rows keep export source_hint (often palace_timeline) and take
+// provenance/tags from whichever side has them — never invent mesh.
+func mergeDigestReceipts(dst, src []iomesh.MemoryOpsDigestReceipt) []iomesh.MemoryOpsDigestReceipt {
+	if len(src) == 0 {
+		return dst
+	}
+	out := append([]iomesh.MemoryOpsDigestReceipt(nil), dst...)
+	idx := map[string]int{}
+	indexReceipt := func(i int, r iomesh.MemoryOpsDigestReceipt) {
+		idx[receiptPinKey(r)] = i
+		if id := strings.TrimSpace(r.ID); id != "" {
+			idx["id:"+id] = i
+		}
+	}
+	for i, r := range out {
+		indexReceipt(i, r)
+	}
+	for _, r := range src {
+		key := receiptPinKey(r)
+		i, ok := idx[key]
+		if !ok {
+			if id := strings.TrimSpace(r.ID); id != "" {
+				i, ok = idx["id:"+id]
+			}
+		}
+		if ok {
+			out[i] = enrichDigestReceipt(out[i], r)
+			continue
+		}
+		out = append(out, r)
+		indexReceipt(len(out)-1, r)
+	}
+	return out
+}
+
+func enrichDigestReceipt(base, extra iomesh.MemoryOpsDigestReceipt) iomesh.MemoryOpsDigestReceipt {
+	if strings.TrimSpace(base.Provenance.SourceHint) == "" {
+		base.Provenance.SourceHint = extra.Provenance.SourceHint
+	}
+	if strings.TrimSpace(base.Provenance.SourceStep) == "" {
+		base.Provenance.SourceStep = extra.Provenance.SourceStep
+	}
+	base.Tags = unionDigestTags(base.Tags, extra.Tags)
+	if strings.TrimSpace(base.Summary) == "" {
+		base.Summary = extra.Summary
+	}
+	if strings.TrimSpace(base.EventTime) == "" {
+		base.EventTime = extra.EventTime
+	}
+	if strings.TrimSpace(base.Pointer) == "" {
+		base.Pointer = extra.Pointer
+	}
+	return base
+}
+
+func unionDigestTags(a, b []string) []string {
+	if len(b) == 0 {
+		return a
+	}
+	seen := map[string]bool{}
+	out := make([]string, 0, len(a)+len(b))
+	for _, s := range append(append([]string{}, a...), b...) {
+		s = strings.TrimSpace(s)
+		if s == "" || seen[s] {
+			continue
+		}
+		seen[s] = true
+		out = append(out, s)
+	}
+	return out
+}
+
+// salvageDigestReceiptsJSON pulls complete receipt objects from truncated or
+// envelope-wrapped MCP text so a 20KB display cap cannot wipe private RCA.
+func salvageDigestReceiptsJSON(raw string) []iomesh.MemoryOpsDigestReceipt {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+	marker := `"receipts"`
+	idx := strings.Index(raw, marker)
+	if idx < 0 {
+		return nil
+	}
+	rest := raw[idx+len(marker):]
+	brack := strings.IndexByte(rest, '[')
+	if brack < 0 {
+		return nil
+	}
+	dec := json.NewDecoder(strings.NewReader(rest[brack:]))
+	tok, err := dec.Token()
+	if err != nil || tok != json.Delim('[') {
+		return nil
+	}
+	var out []iomesh.MemoryOpsDigestReceipt
+	for dec.More() {
+		var item json.RawMessage
+		if err := dec.Decode(&item); err != nil {
+			break
+		}
+		var r iomesh.MemoryOpsDigestReceipt
+		if json.Unmarshal(item, &r) != nil {
+			continue
+		}
+		if strings.TrimSpace(r.ID) == "" && strings.TrimSpace(r.Summary) == "" &&
+			strings.TrimSpace(r.SourceHint) == "" && len(r.Tags) == 0 {
+			continue
+		}
+		out = append(out, r)
+	}
+	return out
+}
+
+func fillDigestWindowFromRaw(res *iomesh.MemoryOpsDigestResult, raw string) {
+	if res == nil {
+		return
+	}
+	if res.Since == "" {
+		res.Since = jsonStringField(raw, "since")
+	}
+	if res.AsOf == "" {
+		res.AsOf = jsonStringField(raw, "as_of")
+	}
+	if res.Window == "" {
+		res.Window = jsonStringField(raw, "window")
+	}
+	if res.Horizon == "" {
+		res.Horizon = jsonStringField(raw, "horizon")
+	}
+}
+
+func jsonStringField(raw, key string) string {
+	i := strings.Index(raw, `"`+key+`"`)
+	if i < 0 {
+		return ""
+	}
+	rest := raw[i+len(key)+2:]
+	colon := strings.IndexByte(rest, ':')
+	if colon < 0 {
+		return ""
+	}
+	dec := json.NewDecoder(strings.NewReader(strings.TrimSpace(rest[colon+1:])))
+	var s string
+	if dec.Decode(&s) != nil {
+		return ""
+	}
+	return strings.TrimSpace(s)
 }
 
 func formatDigestReceiptWindowReason(res *iomesh.MemoryOpsDigestResult, missing []string) string {
