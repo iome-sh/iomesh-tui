@@ -205,6 +205,14 @@ func (c *Client) InitForTest(ctx context.Context) error {
 }
 
 func (c *Client) Name() string { return c.cfg.Name }
+
+// Config returns the dial config (args/env used for palace-root visibility).
+func (c *Client) Config() ServerConfig {
+	if c == nil {
+		return ServerConfig{}
+	}
+	return c.cfg
+}
 func (c *Client) Mutating() bool {
 	return c.cfg.isMutating()
 }

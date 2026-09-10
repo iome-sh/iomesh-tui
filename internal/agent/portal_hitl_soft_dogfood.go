@@ -104,6 +104,8 @@ var portalHITLSoftDogfoodNeedles = []string{
 	"residual PASS ≠ live dogfood",
 	"soft offline ≠ invent Connected",
 	"session soft ≠ live dogfood",
+	"Air-gap fallback",
+	"no fake Connected",
 	// Companion portal surfaces
 	"console.iome.sh/integrations",
 	"console.iome.sh/settings/agent",

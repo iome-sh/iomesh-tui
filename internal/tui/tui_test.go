@@ -97,6 +97,15 @@ func TestHandleSlash_ModelsAndCost(t *testing.T) {
 	if !strings.Contains(out.String(), "ingest-dir") {
 		t.Fatalf("help missing ingest-dir: %s", out.String())
 	}
+	if !strings.Contains(out.String(), "--require-sources mesh,private") {
+		t.Fatalf("help missing Mode A sticky digest: %s", out.String())
+	}
+	if !strings.Contains(out.String(), "/dashboard ack") {
+		t.Fatalf("help missing digest-miss ACK: %s", out.String())
+	}
+	if strings.Contains(strings.ToLower(out.String()), "aion") {
+		t.Fatalf("/help happy path must not leak aion: %s", out.String())
+	}
 	if !strings.Contains(out.String(), "/integrations") {
 		t.Fatalf("help missing /integrations: %s", out.String())
 	}
@@ -113,6 +122,12 @@ func TestHandleSlash_ModelsAndCost(t *testing.T) {
 	_, _ = handleSlash(&out, adapter, "/memory")
 	if !strings.Contains(out.String(), "memory:") {
 		t.Fatalf("memory status: %q", out.String())
+	}
+	if !strings.Contains(out.String(), "--require-sources mesh,private") {
+		t.Fatalf("bare /memory missing Mode A sticky digest: %q", out.String())
+	}
+	if !strings.Contains(out.String(), "palace:") {
+		t.Fatalf("bare /memory missing palace path: %q", out.String())
 	}
 }
 
@@ -3332,6 +3347,14 @@ func TestHandleSlash_OnboardNextMarketingDemoLane(t *testing.T) {
 		"never invent Connected",
 		"book-demo OFF",
 		"free eng s1590",
+		"/memory digest --require-sources mesh,private",
+		"/dashboard ack",
+		"palace:",
+		"Air-gap fallback",
+		"no fake Connected",
+		"v1.2.0",
+		"v0.1.1+post-pin",
+		"v1.5.8",
 	}
 
 	for _, line := range []string{
@@ -3373,6 +3396,9 @@ func TestHandleSlash_OnboardNextMarketingDemoLane(t *testing.T) {
 		}
 		if strings.Contains(s, "Memory GA shipped") || strings.Contains(s, "book-demo ON") {
 			t.Fatalf("%s must not invent Memory GA shipped / book-demo ON:\n%s", line, s)
+		}
+		if strings.Contains(s, "AION_") || strings.Contains(s, "aion ") {
+			t.Fatalf("%s happy path must not leak aion product naming:\n%s", line, s)
 		}
 	}
 

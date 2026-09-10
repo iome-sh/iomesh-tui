@@ -688,6 +688,7 @@ func MeshAgentOnboardingNextPortalHITLLane() string {
     3. Browser portal HITL @ https://console.iome.sh/integrations — human finishes OAuth/install · portal HITL when connect
     4. Agent/MCP mint/copy/probe companion @ https://console.iome.sh/settings/agent · /onboard portal (complementary · probe only ≠ Memory GA)
     5. Soft offline portal HITL dogfood residual — /onboard next portal-hitl dogfood · soft offline ≠ invent Connected · session soft ≠ live dogfood
+    6. Air-gap fallback when portal HITL blocked — stay local · local RCA on palace disk · /memory digest --require-sources mesh,private miss is honest · ACK via /dashboard ack · no fake Connected
   Proven portal paths (static offline · browser HITL only):
     · /integrations/{id}
     · /integrations/add?template={id}
@@ -704,6 +705,7 @@ func MeshAgentOnboardingNextPortalHITLLane() string {
     · dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only
     · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY
     · soft offline ≠ invent Connected · session soft ≠ live dogfood · open boxes stay open
+    · Air-gap fallback (portal HITL blocked): stay local — local RCA on palace disk · digest miss honest · no fake Connected
     · free eng s1562 · free-floor peer s1564+ mention only (do not rewrite free-floor)
   Companion: /onboard next agentic · /onboard next journey · /onboard next agentic dogfood · /onboard next portal-hitl dogfood · /onboard portal · /integrations list|plan|status · /onboard next human-gates
   Slash: /onboard next portal-hitl (aliases hitl|portal_hitl|portal-dogfood|stage5|connectors-hitl)
@@ -712,7 +714,7 @@ func MeshAgentOnboardingNextPortalHITLLane() string {
   Back: /onboard next · /onboard next journey · /onboard next agentic · /onboard next status · /onboard next export
   Docs: docs/architecture/edge-user-journey.md stage 5 · docs/architecture/agent-integrations-setup.md
 
-Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · template= ≠ install APPLY · agent MCP cannot write installs · portal HITL when connect · portal HITL still · portal_hitl_still · soft offline ≠ invent Connected · session soft ≠ live dogfood · free eng s1562 · free-floor peer s1564+ mention only · %s`, softLabel, softLabel))
+Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · template= ≠ install APPLY · agent MCP cannot write installs · portal HITL when connect · portal HITL still · portal_hitl_still · soft offline ≠ invent Connected · session soft ≠ live dogfood · air-gap fallback no fake Connected · free eng s1562 · free-floor peer s1564+ mention only · %s`, softLabel, softLabel))
 }
 
 // MeshAgentOnboardingNextE4Lane residual-honest journey stage-6 E4 client-attach board
@@ -917,19 +919,29 @@ func MeshAgentOnboardingNextMarketingDemoLane() string {
        · /setup preflight — confirms config shape before attach
        · dual_write OFF (default stays off)
     4. Start / attach iomesh-memory-mcp
-       · go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main
+       · go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.1.1 (published pin; tip v0.1.1+post-pin · @main is post-pin only)
        · run host (HTTP http://127.0.0.1:8080/mcp or stdio) · attach in TUI [[mcp.servers]] or iomesh mcp --connect
        · product host = iomesh-memory-mcp · local-primary only
-    5. Show /memory ingest + recall
-       · /memory status · agent turn that stores a fact · /memory digest or retrieve/recall
-       · demonstrate: agent remembers what you just told it (local palace)
+       · after attach the TUI prints palace: <path> · ls this path (no spelunking)
+    5. Show /memory ingest + recall + Mode A sticky digest
+       · /memory status · /memory ingest <fact> — palace path prints again (buyer can ls)
+       · Mode A sticky: /memory digest --require-sources mesh,private — cite-both or explicit miss
+       · digest miss ≠ known until /dashboard ack (local ritual · no send/pay/ship)
     6. Optional: mesh only if configured
        · mesh is optional — skip entirely for pure local demos
        · if mesh credentials exist: /mesh status · optional /onboard next memory-pull
        · never require mesh for the core local agent + memory story
+    6b. Air-gap fallback when portal HITL blocked
+       · stay local — local RCA on palace disk · digest miss stays honest · no fake Connected
+       · ACK the miss via /dashboard ack · do not invent send/pay/ship
+
+  Published pins (tip class · do not invent GA): TUI v1.2.0 · MCP v0.1.1+post-pin · memory kernel v1.5.8
 
   Sales talk track (optional spoken bullets · s1594 · s1598 · s1602 · s1606 · s1610 · s1614 · s1618 · s1666):
     · Beat: local agent + local memory — ingest a fact, recall it on the laptop (dual_write OFF)
+    · Mode A sticky: /memory digest --require-sources mesh,private — cite-both or say the miss out loud · ACK via /dashboard ack
+    · Palace visibility: after attach/ingest read the printed palace path and ls it
+    · Air-gap: if portal HITL is blocked, stay local (local RCA + honest digest miss) — no fake Connected
     · Claims: check private tool-marketing claims catalog for demoable vs do-not-claim (github.com/iome-sh/tool-marketing · operator-only)
     · Win-back / closed-lost: sales process (humans / HITL) — TUI does not auto-CRM follow-ups
     · SEO / publish: Search Console exports scored offline — no auto rank claims · draft → human approve → Hermes handoff is operator tooling — TUI does not auto-post
@@ -954,6 +966,8 @@ func MeshAgentOnboardingNextMarketingDemoLane() string {
     · Local agent harness with multi-provider LLM / Ollama
     · Local memory via iomesh-memory-mcp + local palace · dual_write OFF
     · Operator can install, attach, ingest, and recall on a laptop
+    · Mode A sticky digest cite-both or explicit miss + visible /dashboard ack
+    · Palace path printed after attach/ingest · air-gap fallback when portal blocked
     · Optional: public Go / Python mesh SDKs for custom services outside the lean TUI (s1666) — not required for this demo
   What not to claim:
     · not Memory GA · do not invent bare Memory GA product green
@@ -977,7 +991,7 @@ func MeshAgentOnboardingNextMarketingDemoLane() string {
     · NOT bare gtm|drafts (GTM draft lane)
   Back: /onboard next · /onboard next memory · /onboard next demo · /onboard next sales
 
-Locks: dual_write OFF · book-demo OFF · not Memory GA · local memory · local-primary · iomesh-memory-mcp · mesh optional · never invent Connected · never invent install green / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · TUI stays lean (no SDK dep) · not invent 1.0 · not invent PyPI green · free eng s1590 · s1594 sales talk track · s1598 GTM claim-support · s1602 operator GTM boundary · s1606 GTM wave 6 · s1610 GTM wave 7 · s1614 GTM wave 8 · s1618 GTM wave 9 · s1666 free eng Python client SDK peer · free-floor peer s1592+ mention only`)
+Locks: dual_write OFF · book-demo OFF · not Memory GA · local memory · local-primary · iomesh-memory-mcp · mesh optional · never invent Connected · never invent install green / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · TUI stays lean (no SDK dep) · not invent 1.0 · not invent PyPI green · Mode A sticky /memory digest --require-sources mesh,private · miss ≠ known until /dashboard ack · no send/pay/ship · palace path printed · air-gap fallback no fake Connected · pins TUI v1.2.0 · MCP v0.1.1+post-pin · memory kernel v1.5.8 · free eng s1590 · s1594 sales talk track · s1598 GTM claim-support · s1602 operator GTM boundary · s1606 GTM wave 6 · s1610 GTM wave 7 · s1614 GTM wave 8 · s1618 GTM wave 9 · s1666 free eng Python client SDK peer · free-floor peer s1592+ mention only`)
 }
 
 // MeshAgentOnboardingNextAgenticLane residual-honest product plane 3 agentic integrations

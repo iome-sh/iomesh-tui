@@ -13,6 +13,7 @@ func MemoryNextStepLines() []string {
 		"next: dual path residual-honest after memory surfaces",
 		"      if TUI/session running → /setup preflight · /setup reload · optional /memory digest · /onboard next memory|memory-pull",
 		"      else cold start → restart iomesh · iomesh setup preflight · optional iomesh memory pull",
+		"      Mode A sticky: /memory digest --require-sources mesh,private — cite-both or explicit miss · miss ≠ known until /dashboard ack (no send/pay/ship)",
 		"note: dual_write OFF · not Memory GA · local-primary · package wire ≠ Connected · soft ≠ invent live dogfood · free eng s1831",
 	}
 }

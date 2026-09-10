@@ -311,6 +311,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		if len(parts) < 2 {
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
 			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] [--require-sources mesh,private] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | trigger-compact --i-confirm | semantic [query|--query ...] [--limit N] | ingest-event --subject <id> --content <text> [--event-time|--session-id|--session-seq|--severity|--source-stream] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | ingest <text> | ingest-dir <path> [--dry-run] [--limit N] | status]")
+			fmt.Fprintln(out, agent.ModeADigestStickyHelp)
 			// s1831: residual-honest dual-path next-step after bare /memory help.
 			for _, line := range agent.MemoryNextStepLines() {
 				fmt.Fprintln(out, line)
@@ -978,7 +979,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 						// s1590: plain-language marketing demo path (local agent + local memory for videos/sales).
 						// Do NOT steal bare demo|readiness|lighthouse|landgrab (demo readiness) · sales|claims (sales claims) · gtm|drafts (GTM).
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextMarketingDemoLane())
-						fmt.Fprintln(out, "— marketing-demo: s1590 · plain-language local agent + local memory script · dual_write OFF · local memory · not Memory GA · mesh optional · never invent Connected · book-demo OFF · free eng s1590 · free-floor peer s1592+ mention only · NOT bare demo (demo readiness) · NOT bare sales · NOT bare gtm")
+						fmt.Fprintln(out, "— marketing-demo: s1590 · plain-language local agent + local memory script · Mode A sticky /memory digest --require-sources mesh,private · palace path printed · air-gap no fake Connected · pins TUI v1.2.0 · MCP v0.1.1+post-pin · memory v1.5.8 · dual_write OFF · local memory · not Memory GA · mesh optional · never invent Connected · book-demo OFF · free eng s1590 · free-floor peer s1592+ mention only · NOT bare demo (demo readiness) · NOT bare sales · NOT bare gtm")
 						return false, nil
 					case "operator", "operator-matrix", "ops-matrix", "operator-readiness", "ops-readiness", "matrix":
 						// s1447: residual-honest operator readiness matrix (demo · sales · planes · human-gates).
@@ -1202,7 +1203,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /dashboard [help|preview|focus|ack]  empty until consume · preview = eval not your org · ack = brief ritual (aliases /heartbeat /mesh-console)
   /mesh                I/O Mesh status + usage
   /catalog [query]     list mesh data products (catalog plane)
-  /memory [recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|ingest-dir|status]  Memory Palace (sync HTTP + MCP; related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · ingest-dir folder overlay · status advanced inventory)
+  /memory [recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|ingest-dir|status]  Memory Palace (sync HTTP + MCP; Mode A sticky: /memory digest --require-sources mesh,private — cite-both or explicit miss · ACK via /dashboard ack · related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · ingest-dir folder overlay · status advanced inventory)
   /integrations [list|plan|signing|status]  list/plan a source via MCP, then finish in portal HITL (not install CRUD)
   /setup [init|preflight|portal|reload|pull|analyze|drift|repair]  setup lifecycle (managed config · preflight · portal HITL · hot MCP reload · opt-in continuous pull/analyze · drift report · guided repair; alias /setup-lifecycle; dual_write OFF · not Memory GA · PASS ≠ invent Connected · pull/analyze/repair ≠ invent Connected)
   /gtm [help|checklist|brief]  GTM draft-only guidance, checklist, or palace voc_brief / market_telling (aliases /gtm-draft /gtm-agent; no auto-send; human publish; palace SoR · source=agent-brief · tenant gtm/founder)
@@ -1502,6 +1503,11 @@ func reloadRuntimeFromConfig(ctx context.Context, out io.Writer, rt runtimeAdapt
 		nTools++
 	}
 	fmt.Fprintf(out, "setup reload: connected=%d tools=%d (package wire · fail-open per server)\n", mgr.Len(), nTools)
+	if rt.rt != nil {
+		fmt.Fprintln(out, rt.rt.PalaceVisibilityLine())
+	} else {
+		fmt.Fprintln(out, agent.ModeAPalaceVisibilityLine(""))
+	}
 	fmt.Fprintln(out, "honesty: dual_write OFF · package wire ≠ Connected · skills re-scanned · Discover/map ≠ install APPLY green · skills re-scan ≠ invent Connected · not Memory GA · not Agent Plugins GA")
 	fmt.Fprintln(out, "note: skills re-scanned on reload · continuous pull/analyze opt-in via /setup pull · /setup analyze · drift /setup drift · repair /setup repair · CLI iomesh memory pull · /memory digest still valid")
 	for _, line := range setup.SetupReloadNextStepLines() {

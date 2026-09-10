@@ -194,4 +194,10 @@ func TestDashboardHelp_MentionsAck(t *testing.T) {
 	if !strings.Contains(h, "no send/pay/ship") {
 		t.Fatalf("help must pin no closed loop:\n%s", h)
 	}
+	if !strings.Contains(h, "--require-sources mesh,private") || !strings.Contains(h, "digest") {
+		t.Fatalf("help must name Mode A digest miss ACK:\n%s", h)
+	}
+	if strings.Contains(strings.ToLower(h), "aion") {
+		t.Fatalf("dashboard help happy path must not leak aion:\n%s", h)
+	}
 }

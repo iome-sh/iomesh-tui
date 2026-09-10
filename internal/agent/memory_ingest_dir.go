@@ -233,7 +233,7 @@ func (rt *Runtime) MemoryIngestDir(ctx context.Context, opts MemoryIngestDirOpts
 	if minted {
 		b.WriteString(" (minted · operator had none)")
 	}
-	fmt.Fprintf(&b, " dual_write=%v · not Memory GA · catalog list ≠ consume · private overlay\n", rt.memory.DualWrite)
+	fmt.Fprintf(&b, " dual_write=%v · not Memory GA · catalog list ≠ consume · private overlay · %s\n", rt.memory.DualWrite, rt.PalaceVisibilityLine())
 	for _, p := range parts {
 		fmt.Fprintf(&b, "  %s\n", p)
 	}
