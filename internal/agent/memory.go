@@ -386,10 +386,12 @@ type MemoryRelatedOpts struct {
 }
 
 // MemoryOpsDigestOpts overrides defaults for one opt-in ops digest export (s1200).
-// Zero/empty fields use defaults: Window=day, Horizon=ops, Limit=20.
-// RequireSources (issue #373): when non-empty (typically mesh,private), the
-// digest must cite each required source via receipt source_hint, or an explicit
-// miss line is printed. Catalog/grant hints never satisfy mesh or private.
+// Zero/empty fields use defaults: Window=day, Horizon=ops, Limit=20
+// (Limit=50 fetch when RequireSources is set and Limit is unset — #419).
+// RequireSources (issue #373/#419): when non-empty (typically mesh,private), the
+// digest must cite each required source via receipt source_hint, provenance, or
+// tags, or an explicit miss + receipt-window reason is printed.
+// Catalog/grant hints never satisfy mesh or private.
 // dual_write stays OFF · not hosted Memory GA · local palace on disk.
 type MemoryOpsDigestOpts struct {
 	Window         string // day|week
@@ -414,6 +416,8 @@ const (
 // ClassifyDigestSourceHint maps a receipt source_hint to mesh|private|catalog|grant|external|"".
 // Empty / unknown hints do not satisfy require-sources. Catalog, grant, and external
 // never satisfy mesh or private. External/sponsored color cannot fill mesh citations.
+// Prefer ClassifyDigestReceipt when provenance/tags may carry source_hint:mesh
+// while the export origin is palace_timeline (#419).
 func ClassifyDigestSourceHint(hint string) string {
 	h := strings.ToLower(strings.TrimSpace(hint))
 	h = strings.ReplaceAll(h, "-", "_")
@@ -495,10 +499,12 @@ func citeDigestReceipt(r iomesh.MemoryOpsDigestReceipt) string {
 	return sum
 }
 
-// FormatRequireSourcesCheck returns an explicit cite-both ok or miss line (#373).
-// Catalog/grant/external receipts never satisfy mesh or private (#370).
-// First-party consume remains the only path that fills mesh citations.
-// dual_write OFF pin always.
+// FormatRequireSourcesCheck returns an explicit cite-both ok or miss line (#373/#419).
+// Classification uses source_hint, provenance, and tags (palace_timeline must not
+// mask source_hint:mesh). Catalog/grant/external receipts never satisfy mesh or
+// private (#370). A miss names the newest-first receipt window when mesh/private
+// is absent from the fetched set. First-party consume remains the only path that
+// fills mesh citations. dual_write OFF pin always.
 func FormatRequireSourcesCheck(res *iomesh.MemoryOpsDigestResult, required []string) string {
 	if len(required) == 0 {
 		return ""
@@ -509,7 +515,7 @@ func FormatRequireSourcesCheck(res *iomesh.MemoryOpsDigestResult, required []str
 	externalSeen := false
 	if res != nil {
 		for _, r := range res.Receipts {
-			switch ClassifyDigestSourceHint(r.SourceHint) {
+			switch ClassifyDigestReceipt(r) {
 			case DigestSourceMesh:
 				present[DigestSourceMesh] = true
 				if meshCite == "" {
@@ -548,6 +554,9 @@ func FormatRequireSourcesCheck(res *iomesh.MemoryOpsDigestResult, required []str
 		}
 		if externalSeen {
 			msg += " · " + digestExternalCitePin
+		}
+		if win := formatDigestReceiptWindowReason(res, missing); win != "" {
+			msg += " · " + win
 		}
 		return msg + " · " + pin + "\n" + ModeADigestMissAckLine
 	}
@@ -600,15 +609,12 @@ func (rt *Runtime) MemoryOpsDigest(ctx context.Context, opts ...MemoryOpsDigestO
 	if horizon == "" {
 		horizon = "ops"
 	}
-	limit := call.Limit
-	if limit <= 0 {
-		limit = 20
-	}
+	required := call.RequireSources
+	fetchLimit, displayLimit := digestCiteLimits(call)
 	maxBytes := rt.memory.MaxSnippetBytes
 	if maxBytes <= 0 {
 		maxBytes = 6000
 	}
-	required := call.RequireSources
 
 	// Prefer sync ops digest against memory sidecar HTTP when mesh client is live.
 	if rt.syncMemoryReady() {
@@ -616,13 +622,14 @@ func (rt *Runtime) MemoryOpsDigest(ctx context.Context, opts ...MemoryOpsDigestO
 		res, err := rt.mesh.ExportOpsDigest(ctx, rt.memoryTenant(), iomesh.MemoryOpsDigestOptions{
 			Window:  window,
 			Horizon: horizon,
-			Limit:   limit,
+			Limit:   fetchLimit,
 			AsOf:    strings.TrimSpace(call.AsOf),
 		})
 		latMS := int(time.Since(start).Milliseconds())
 		rt.lastMemoryRetrieveMS.Store(int64(latMS))
 		rt.lastMemoryRetrieveCacheHit.Store(false)
 		if err == nil {
+			finalizeDigestForRequireSources(res, required, fetchLimit, displayLimit)
 			return applyRequireSources(formatOpsDigest(res, maxBytes), res, required), nil
 		}
 		if rt.logger != nil {
@@ -641,7 +648,7 @@ func (rt *Runtime) MemoryOpsDigest(ctx context.Context, opts ...MemoryOpsDigestO
 	args := map[string]any{
 		"window":  window,
 		"horizon": horizon,
-		"limit":   limit,
+		"limit":   fetchLimit,
 	}
 	if t := rt.memoryTenant(); t != "" {
 		args["tenant"] = t
@@ -658,7 +665,9 @@ func (rt *Runtime) MemoryOpsDigest(ctx context.Context, opts ...MemoryOpsDigestO
 		return "", err
 	}
 	// MCP returns JSON text; try to re-format for operator readability, else pass through.
-	if res, formatted := parseOpsDigestJSON(out, maxBytes); formatted != "" {
+	if res, formatted := parseOpsDigestJSON(out, maxBytes); res != nil && formatted != "" {
+		finalizeDigestForRequireSources(res, required, fetchLimit, displayLimit)
+		formatted = formatOpsDigest(res, maxBytes)
 		return applyRequireSources(formatted, res, required), nil
 	}
 	return applyRequireSources(truncateBytes(out, maxBytes), nil, required), nil
@@ -795,7 +804,7 @@ func formatOpsDigestJSON(raw string, maxBytes int) string {
 // parseOpsDigestJSON parses MCP ops_digest_export JSON for formatting and
 // require-sources checks (#373). Returns (nil, "") when parse fails.
 func parseOpsDigestJSON(raw string, maxBytes int) (*iomesh.MemoryOpsDigestResult, string) {
-	raw = strings.TrimSpace(raw)
+	raw = extractJSONObject(raw)
 	if raw == "" || raw[0] != '{' {
 		return nil, ""
 	}
@@ -804,6 +813,22 @@ func parseOpsDigestJSON(raw string, maxBytes int) (*iomesh.MemoryOpsDigestResult
 		return nil, ""
 	}
 	return &res, formatOpsDigest(&res, maxBytes)
+}
+
+// extractJSONObject pulls the first JSON object from MCP text (leading prose
+// or markdown fences). Returns "" when no object is present.
+func extractJSONObject(raw string) string {
+	raw = strings.TrimSpace(raw)
+	i := strings.IndexByte(raw, '{')
+	if i < 0 {
+		return ""
+	}
+	dec := json.NewDecoder(strings.NewReader(raw[i:]))
+	var v json.RawMessage
+	if err := dec.Decode(&v); err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(v))
 }
 
 // MemoryFactsAsOfOpts for opt-in bi-temporal lite validity listing (s1276 / mesh Beta K4 lite).

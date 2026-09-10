@@ -70,5 +70,5 @@ func patternIsNoDelta(p iomesh.MemoryOpsDigestPattern) bool {
 
 // isExternalDigestReceipt reports source_hint classified as external/sponsored color.
 func isExternalDigestReceipt(r iomesh.MemoryOpsDigestReceipt) bool {
-	return ClassifyDigestSourceHint(r.SourceHint) == DigestSourceExternal
+	return ClassifyDigestReceipt(r) == DigestSourceExternal
 }

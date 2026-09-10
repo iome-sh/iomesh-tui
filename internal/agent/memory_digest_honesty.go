@@ -197,5 +197,8 @@ func formatDigestReceiptLine(i int, r iomesh.MemoryOpsDigestReceipt) string {
 	if hint != "" {
 		fmt.Fprintf(&b, " source=%s", hint)
 	}
+	if class := ClassifyDigestReceipt(r); class != "" && ClassifyDigestSourceHint(r.SourceHint) != class {
+		fmt.Fprintf(&b, " cite=%s", class)
+	}
 	return b.String()
 }
