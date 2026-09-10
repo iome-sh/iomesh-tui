@@ -791,6 +791,11 @@ func TestResolveConsumerCreateAuthAndFilter(t *testing.T) {
 			wantFilter: "acme.events.>", wantRole: "agent",
 		},
 		{
+			name:   "agent org-shaped tenant → dept.*.events.>",
+			tenant: "org_abc", roleFlag: "agent",
+			wantFilter: "dept.*.events.>", wantRole: "agent",
+		},
+		{
 			name:     "flag role overrides config; explicit filter wins",
 			explicit: "dept.ops.>", tenant: "acme",
 			roleFlag: "viewer", configRole: "admin",

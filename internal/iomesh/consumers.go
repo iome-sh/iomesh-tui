@@ -46,6 +46,7 @@ func ResolveMeshPullAuth(roleFlag, suffixFlag, configRole, configSuffix string) 
 // filter_subject for mesh consumer create (s681). Flag values override config
 // ([memory].pull_role / pull_allow_suffix). Empty filter uses
 // DefaultMemoryPullFilterForRole (same role-aware defaults as memory pull s678).
+// Org-shaped tenants remap to dept.* so agent/viewer entitles dept.*.events.*.
 // Tenant should be the IOMesh tenant (mesh command pattern). Pure: no I/O.
 //
 // Beta federated ACL headers + defaults — fail-open when role/suffix empty

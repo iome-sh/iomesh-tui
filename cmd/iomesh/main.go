@@ -1651,7 +1651,7 @@ func cmdMeshConsumer(args []string) int {
 Create: POST /v1/streams/{stream}/consumers (201 full info; 409 idempotent name-only).
   --role / [memory].pull_role → X-IOMesh-Role; --pull-allow-suffix / pull_allow_suffix → allow-suffix.
   Roles: operator|admin|agent|auditor|viewer|memory|custom (s687 memory → tenant.memory.>).
-  Empty --filter → role-aware default (s681/s687; same as memory pull s678).
+  Empty --filter → role-aware default (s681/s687; same as memory pull s678; org_* tenants → dept.*).
   Text/JSON always-emit pull_role / pull_allow_suffix next to filter_subject (s696; empty when unset).
   Beta; fail-open; dual_write default OFF; not full mesh RBAC GA.
 Fetch:  POST /v1/streams/{stream}/consumers/{name}/fetch (default batch=1, max_wait 2s).
@@ -2610,7 +2610,7 @@ Flags (pull):
   --config path         config.toml
   --stream S            durable stream (default: [memory].pull_stream or EVENTS)
   --name C              durable consumer name (required unless config pull_consumer)
-  --filter F            optional filter_subject (role-aware default when empty; s660/s678/s687)
+  --filter F            optional filter_subject (role-aware default when empty; org_* tenants → dept.*.events.> for agent/viewer)
   --batch N             fetch batch (default 8)
   --max-wait dur        long-poll wait (default 2s)
   --once                single fetch cycle then exit
@@ -2647,7 +2647,9 @@ Honesty: dual_write remains optional audit (default OFF). Hosted Palace sunset u
   has none so iomesh-memory-mcp v0.1.0 memory_ingest_turn can complete. Retrieve without
   a session_id stays unfiltered and finds the private overlay. Catalog list ≠ consume.
   Role/suffix headers are Beta federated ACL (s675); role-aware default filter is s678/s687 Beta —
-  memory → tenant.memory.> (peer mesh s686); fail-open when empty — not full IdP RBAC GA.
+  memory → tenant.memory.> (peer mesh s686); org_* tenants remap to dept.* so agent/viewer
+  entitles dept.*.events.* (override: --filter dept.*.events.> or dept.<dept>.events.>).
+  create_ok alone is not proof messages were pulled. Fail-open when empty — not full IdP RBAC GA.
   s705: PASS/summary and --json always emit stream/consumer/filter_subject/pull_role/pull_allow_suffix/tenant
   + knobs (dry_run/dual_write/batch/max_wait_ms/once) + counters; empty identity honest; peer mesh s704.
   s717: always emit process evidence endpoint/org/workspace (empty honest) + result(ok|err)/exit_code(0|1)
@@ -2936,7 +2938,7 @@ func cmdMemoryPull(args []string) int {
 	if allowSuffix == "" {
 		allowSuffix = strings.TrimSpace(cfg.Memory.PullAllowSuffix)
 	}
-	filterSub = iomesh.DefaultMemoryPullFilterForRole(filterSub, pullTenant, pullRole, allowSuffix)
+	filterSub = iomesh.DefaultMemoryPullFilterForRoleWithDept(filterSub, pullTenant, pullRole, allowSuffix, cfg.IOMesh.Department)
 	batchN := *batch
 	if batchN <= 0 {
 		batchN = cfg.Memory.PullBatch
