@@ -20,6 +20,10 @@ type MemoryEnvelope struct {
 	Content    string `json:"content,omitempty"`
 	EventTime  string `json:"event_time,omitempty"`  // RFC3339
 	SessionSeq int    `json:"session_seq,omitempty"` // monotonic within session
+	// SourceHint is optional palace provenance for local MCP ingest.
+	// Durable mesh pull stamps "mesh"; local /memory ingest leaves this empty
+	// so MCP keeps its private default. omitempty — dual_write publish omits it.
+	SourceHint string `json:"source_hint,omitempty"`
 }
 
 // MemoryPubAck is a minimal publish acknowledgement from the broker.

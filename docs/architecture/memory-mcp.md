@@ -521,7 +521,8 @@ iomesh memory pull --stream EVENTS --name tui-local-palace --once --dry-run
 iomesh memory pull --stream EVENTS --name tui-local-palace --once --dry-run --json
 ```
 
-Loop: `CreateConsumer` (idempotent) → `ConsumerFetch` → map envelope → MCP `memory_ingest_turn` → `ConsumerAck`.  
+Loop: `CreateConsumer` (idempotent) → `ConsumerFetch` → map envelope → MCP `memory_ingest_turn` (`source_hint=mesh`) → `ConsumerAck`.  
+Local `/memory ingest` / overlay does **not** invent mesh — those turns stay private. Cite-both (`--require-sources mesh,private`) needs the pull hint so `fetched≥1` on `dept.*.events.*` can cite mesh (companion iomesh-memory-mcp#64).  
 Primary: connector/`dept.*` or `EVENTS`. Optional: pull `MEMORY_INGEST` when using mesh as audit mirror.  
 When `--filter` / `[memory].pull_filter` is empty and `[memory].tenant` or `[iomesh].tenant` is hierarchical (`dept.*` or contains `.`), default `filter_subject` is `tenant.>` (s660); create/fetch/ack send `X-IOMesh-Tenant` via client auth.  
 Org-shaped tenants (`org_*` ids) are **not** subject tokens. Empty `--filter` remaps them to `dept.*` so `agent`/`viewer` defaults to `dept.*.events.>` (or `dept.<department>.events.>` when `[iomesh].department` is a single safe token). This entitles durable wire subjects `dept.<dept>.events.*`. Override: `--filter dept.*.events.>` or `--filter dept.<dept>.events.>`. `create_ok` alone is not proof messages were pulled — check `fetched`. An explicit `org_*.events.>` filter is left as-is and, on `fetched=0`, `last_error` names the mismatch plus the working `dept.*` filter.  

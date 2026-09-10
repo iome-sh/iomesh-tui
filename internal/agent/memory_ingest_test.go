@@ -60,6 +60,9 @@ func TestMemoryIngestTurn_MintsLocalOverlaySessionID(t *testing.T) {
 	if gotArgs["content"] != "Demo note: overlay needle alpha" {
 		t.Fatalf("content=%v", gotArgs["content"])
 	}
+	if hint, ok := gotArgs["source_hint"]; ok {
+		t.Fatalf("local /memory ingest must not invent mesh source_hint; got %v", hint)
+	}
 	if !strings.Contains(out, "session_id=local-overlay") || !strings.Contains(out, "minted") {
 		t.Fatalf("out=%q", out)
 	}
@@ -301,6 +304,9 @@ func TestMemoryIngestDir_MockMCP(t *testing.T) {
 	}
 	if gotArgs["session_id"] != LocalOverlaySessionID {
 		t.Fatalf("session_id=%v", gotArgs["session_id"])
+	}
+	if hint, ok := gotArgs["source_hint"]; ok {
+		t.Fatalf("local overlay ingest-dir must not invent mesh source_hint; got %v", hint)
 	}
 	content, _ := gotArgs["content"].(string)
 	if !strings.Contains(content, "file: notes/alpha.md") || !strings.Contains(content, "Project alpha ships Friday") {

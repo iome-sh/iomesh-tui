@@ -179,7 +179,7 @@ Unknown lane token → overview + usage hint listing `plugins|gtm|memory|mesh|me
 #### D3c. Memory Ops Pack / pull path lane (`/onboard next memory-pull` · s1407+s1695)
 
 3c. **Memory Ops Pack pull path** — residual-honest mesh → local palace **egress** only (optional commercial overlay · **not first-run required**).
-   - Path: `iomesh memory pull` · CreateConsumer → fetch → map envelope → local MCP `memory_ingest_turn` → ack.
+   - Path: `iomesh memory pull` · CreateConsumer → fetch → map envelope → local MCP `memory_ingest_turn` (`source_hint=mesh`) → ack. Local `/memory ingest` stays private.
    - **dual_write OFF** · **not Memory GA** · **Palace sunset** · **pull ≠ freemium hosted palace** · **not freemium hosted palace**.
    - **Ops Pack ≠ GPU fleet** — Memory Ops Pack **~$119** = pull / retain / support · **local-primary** · TUI OSS + mesh pull entitlement (not hosted GPU palace). Mesh base **~$88** is separate.
    - **First-run honesty (s1695):** **Ops Pack not first-run required** · first-run is local OSS only · Memory Ops Pack optional.

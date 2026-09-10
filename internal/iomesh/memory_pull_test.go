@@ -28,6 +28,9 @@ func TestMapStreamMessageToEnvelope_MemoryIngestJSON(t *testing.T) {
 	if env.Content != "hello palace" || env.Role != "user" || env.SessionSeq != 3 {
 		t.Fatalf("env=%+v", env)
 	}
+	if env.SourceHint != MemoryPullSourceHint {
+		t.Fatalf("pull map must stamp source_hint=%q, got %q", MemoryPullSourceHint, env.SourceHint)
+	}
 	if key != "sess-1:3" {
 		t.Fatalf("dedupe key %q", key)
 	}
@@ -43,6 +46,9 @@ func TestMapStreamMessageToEnvelope_GenericEvent(t *testing.T) {
 	if env.Content != "ticket updated" {
 		t.Fatalf("content %q", env.Content)
 	}
+	if env.SourceHint != MemoryPullSourceHint {
+		t.Fatalf("generic event must stamp source_hint=%q, got %q", MemoryPullSourceHint, env.SourceHint)
+	}
 	if key != "ops:7" && key != "ops:0" {
 		// session_seq missing → uses msg.Seq
 		if key != "ops:7" {
@@ -56,6 +62,48 @@ func TestMapStreamMessageToEnvelope_RawText(t *testing.T) {
 	env, _, ok := MapStreamMessageToEnvelope(msg)
 	if !ok || env.Content != "plain log line" {
 		t.Fatalf("env=%+v ok=%v", env, ok)
+	}
+	if env.SourceHint != MemoryPullSourceHint {
+		t.Fatalf("raw text must stamp source_hint=%q, got %q", MemoryPullSourceHint, env.SourceHint)
+	}
+}
+
+func TestMemoryPullIngestArgs_IncludesMeshSourceHint(t *testing.T) {
+	t.Parallel()
+	env := MemoryEnvelope{
+		Role:      "system",
+		Content:   "dept pulse",
+		SessionID: "dept.engineering.events.github",
+		EventTime: "2026-09-10T00:00:00Z",
+	}
+	args := MemoryPullIngestArgs(env, "acme")
+	if args["source_hint"] != MemoryPullSourceHint {
+		t.Fatalf("source_hint=%v want %q (cite-both needs mesh)", args["source_hint"], MemoryPullSourceHint)
+	}
+	if args["role"] != "system" || args["content"] != "dept pulse" {
+		t.Fatalf("args=%v", args)
+	}
+	if args["session_id"] != "dept.engineering.events.github" {
+		t.Fatalf("session_id=%v", args["session_id"])
+	}
+	if args["event_time"] != "2026-09-10T00:00:00Z" {
+		t.Fatalf("event_time=%v", args["event_time"])
+	}
+	if args["tenant"] != "acme" {
+		t.Fatalf("tenant=%v", args["tenant"])
+	}
+	// Empty tenant omitted; envelope hint wins when already stamped.
+	stamped := env
+	stamped.SourceHint = MemoryPullSourceHint
+	args2 := MemoryPullIngestArgs(stamped, "  ")
+	if _, ok := args2["tenant"]; ok {
+		t.Fatalf("empty tenant must omit: %v", args2)
+	}
+	if args2["source_hint"] != MemoryPullSourceHint {
+		t.Fatalf("stamped hint=%v", args2["source_hint"])
+	}
+	if MemoryPullSourceHint != "mesh" {
+		t.Fatalf("stable needle mesh=%q", MemoryPullSourceHint)
 	}
 }
 
@@ -514,6 +562,63 @@ func TestRunMemoryPull_OmitsOrgHeaderWhenUnset(t *testing.T) {
 	}
 	if gotOrg != "" {
 		t.Fatalf("empty org must omit X-IOMesh-Org (fail-open); got %q", gotOrg)
+	}
+}
+
+func TestRunMemoryPull_LocalIngestArgsIncludeMeshSourceHint(t *testing.T) {
+	t.Parallel()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/consumers") && !strings.Contains(r.URL.Path, "/fetch"):
+			_ = json.NewEncoder(w).Encode(map[string]any{"stream": "EVENTS", "name": "tui-local-palace"})
+		case strings.HasSuffix(r.URL.Path, "/fetch"):
+			payload := base64.StdEncoding.EncodeToString([]byte(`{"text":"dept pulse"}`))
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"messages": []map[string]any{{
+					"stream": "EVENTS", "seq": 11, "subject": "dept.engineering.events.github",
+					"payload": payload,
+				}},
+			})
+		case strings.HasSuffix(r.URL.Path, "/ack"):
+			_ = json.NewEncoder(w).Encode(map[string]any{"ack_floor": 11})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL,
+		Tenant: "org_abc", OrgID: "org_abc", Role: "agent", DualWrite: false,
+	}, nil)
+	var gotEnv MemoryEnvelope
+	var gotArgs map[string]any
+	st, err := c.RunMemoryPull(context.Background(), MemoryPullOptions{
+		Stream: "EVENTS", Name: "tui-local-palace", Batch: 1, MaxWait: time.Millisecond,
+		MaxLoops: 1, Ack: true,
+		LocalIngest: func(_ context.Context, env MemoryEnvelope) error {
+			gotEnv = env
+			gotArgs = MemoryPullIngestArgs(env, "acme")
+			return nil
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if st.Fetched < 1 || st.Ingested < 1 {
+		t.Fatalf("want fetched≥1 ingested≥1 stats=%+v", st)
+	}
+	if gotEnv.SourceHint != MemoryPullSourceHint {
+		t.Fatalf("mapped envelope source_hint=%q want %q", gotEnv.SourceHint, MemoryPullSourceHint)
+	}
+	if gotArgs["source_hint"] != MemoryPullSourceHint {
+		t.Fatalf("ingest args source_hint=%v want %q", gotArgs["source_hint"], MemoryPullSourceHint)
+	}
+	if gotArgs["session_id"] != "dept.engineering.events.github" && gotEnv.SessionID != "dept.engineering.events.github" {
+		t.Fatalf("session must keep mesh subject: env=%+v args=%v", gotEnv, gotArgs)
+	}
+	if c.cfg.DualWrite {
+		t.Fatal("dual_write must stay off")
 	}
 }
 

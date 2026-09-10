@@ -220,6 +220,7 @@ func (rt *Runtime) startContinuousMemoryPull(cfg ContinuousPullConfig) error {
 		opt.MaxLoops = 1
 	}
 	if !cfg.DryRun {
+		// source_hint=mesh so cite-both can see pull egress; local /memory ingest stays private.
 		opt.LocalIngest = func(cctx context.Context, env iomesh.MemoryEnvelope) error {
 			// Re-read current MCP manager each call so /setup reload works without restarting pull.
 			rt.mu.Lock()
@@ -232,19 +233,7 @@ func (rt *Runtime) startContinuousMemoryPull(cfg ContinuousPullConfig) error {
 			if cl == nil {
 				return fmt.Errorf("MCP server %q not connected", ingestServer)
 			}
-			args := map[string]any{
-				"role":    env.Role,
-				"content": env.Content,
-			}
-			if env.EventTime != "" {
-				args["event_time"] = env.EventTime
-			}
-			if env.SessionID != "" {
-				args["session_id"] = env.SessionID
-			}
-			if ingestTenant != "" {
-				args["tenant"] = ingestTenant
-			}
+			args := iomesh.MemoryPullIngestArgs(env, ingestTenant)
 			_, err := cl.CallTool(cctx, "memory_ingest_turn", args)
 			return err
 		}
