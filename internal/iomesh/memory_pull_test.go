@@ -81,6 +81,8 @@ func TestDefaultMemoryPullFilter(t *testing.T) {
 		{name: "prefix dept no dot", explicit: "", tenant: "dept", want: "dept.>"},
 		{name: "prefix deptfoo", explicit: "", tenant: "deptfoo", want: "deptfoo.>"},
 		{name: "plain tenant no default", explicit: "", tenant: "acme", want: ""},
+		{name: "org-shaped tenant remaps to dept.*", explicit: "", tenant: "org_abc", want: "dept.*.>"},
+		{name: "org-shaped tenant case", explicit: "", tenant: "ORG_xyz", want: "dept.*.>"},
 		{name: "empty tenant", explicit: "", tenant: "", want: ""},
 		{name: "whitespace tenant", explicit: "", tenant: "  ", want: ""},
 		{name: "whitespace explicit falls through", explicit: "   ", tenant: "dept.eng", want: "dept.eng.>"},
@@ -118,6 +120,8 @@ func TestDefaultMemoryPullFilterForRole(t *testing.T) {
 		// agent / viewer → tenant.events.>
 		{name: "agent hierarchical", explicit: "", tenant: "dept.eng", role: "agent", want: "dept.eng.events.>"},
 		{name: "agent plain tenant", explicit: "", tenant: "acme", role: "agent", want: "acme.events.>"},
+		{name: "agent org-shaped tenant remaps to dept.*", explicit: "", tenant: "org_abc", role: "agent", want: "dept.*.events.>"},
+		{name: "viewer org-shaped tenant remaps to dept.*", explicit: "", tenant: "org_abc", role: "viewer", want: "dept.*.events.>"},
 		{name: "viewer", explicit: "", tenant: "dept.eng", role: "viewer", want: "dept.eng.events.>"},
 		{name: "agent case insensitive", explicit: "", tenant: "t", role: "Agent", want: "t.events.>"},
 
@@ -135,7 +139,11 @@ func TestDefaultMemoryPullFilterForRole(t *testing.T) {
 		// operator / admin → tenant.>
 		{name: "operator hierarchical", explicit: "", tenant: "dept.eng", role: "operator", want: "dept.eng.>"},
 		{name: "admin plain tenant", explicit: "", tenant: "acme", role: "admin", want: "acme.>"},
+		{name: "operator org-shaped tenant remaps to dept.*", explicit: "", tenant: "org_abc", role: "operator", want: "dept.*.>"},
 		{name: "operator case", explicit: "", tenant: "t", role: "OPERATOR", want: "t.>"},
+
+		// explicit org-id filter still wins (honest miss path, not silently rewritten)
+		{name: "explicit org events filter wins", explicit: "org_abc.events.>", tenant: "org_abc", role: "agent", want: "org_abc.events.>"},
 
 		// custom + single suffix → tenant.<suffix>.>
 		{name: "custom one suffix", explicit: "", tenant: "dept.eng", role: "custom", allowSuffix: "ops", want: "dept.eng.ops.>"},
@@ -159,6 +167,165 @@ func TestDefaultMemoryPullFilterForRole(t *testing.T) {
 					tt.explicit, tt.tenant, tt.role, tt.allowSuffix, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestDefaultMemoryPullFilterForRoleWithDept(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name       string
+		tenant     string
+		role       string
+		department string
+		want       string
+	}{
+		{name: "org + department token", tenant: "org_abc", role: "agent", department: "engineering", want: "dept.engineering.events.>"},
+		{name: "org + dept. prefixed department", tenant: "org_abc", role: "agent", department: "dept.eng", want: "dept.eng.events.>"},
+		{name: "org + unsafe department falls back to dept.*", tenant: "org_abc", role: "agent", department: "eng.ops", want: "dept.*.events.>"},
+		{name: "org + wildcard department falls back", tenant: "org_abc", role: "viewer", department: "*", want: "dept.*.events.>"},
+		{name: "dept tenant ignores department", tenant: "dept.research", role: "agent", department: "eng", want: "dept.research.events.>"},
+		{name: "plain tenant ignores department", tenant: "acme", role: "agent", department: "eng", want: "acme.events.>"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := DefaultMemoryPullFilterForRoleWithDept("", tt.tenant, tt.role, "", tt.department)
+			if got != tt.want {
+				t.Fatalf("got %q want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNatsSubjectMatches_OrgEventsMissesDeptEvents(t *testing.T) {
+	t.Parallel()
+	// Hypothesis pin: default org_<id>.events.> does not match durable dept.*.events.*.
+	wire := "dept.engineering.events.github"
+	if natsSubjectMatches(wire, "org_abc.events.>") {
+		t.Fatalf("org_abc.events.> must not match %q", wire)
+	}
+	if !natsSubjectMatches(wire, DefaultDeptEventsPullFilter) {
+		t.Fatalf("%s must match %q", DefaultDeptEventsPullFilter, wire)
+	}
+	if !natsSubjectMatches(wire, "dept.engineering.events.>") {
+		t.Fatalf("dept.engineering.events.> must match %q", wire)
+	}
+	if !natsSubjectMatches(wire, "dept.*.events.*") {
+		t.Fatalf("dept.*.events.* must match %q", wire)
+	}
+	if natsSubjectMatches(wire, "acme.events.>") {
+		t.Fatalf("acme.events.> must not match %q", wire)
+	}
+}
+
+func TestMemoryPullFilterMismatchHint(t *testing.T) {
+	t.Parallel()
+	hint := MemoryPullFilterMismatchHint("org_abc.events.>")
+	if hint == "" {
+		t.Fatal("expected mismatch hint for org_*.events.>")
+	}
+	if !strings.Contains(hint, "org_abc.events.>") {
+		t.Fatalf("hint must name the filter: %s", hint)
+	}
+	if !strings.Contains(hint, DefaultDeptEventsPullFilter) {
+		t.Fatalf("hint must name the working dept.* filter: %s", hint)
+	}
+	if MemoryPullFilterMismatchHint(DefaultDeptEventsPullFilter) != "" {
+		t.Fatal("dept.* filter is not a mismatch")
+	}
+	if MemoryPullFilterMismatchHint("") != "" {
+		t.Fatal("empty filter is not a mismatch")
+	}
+}
+
+func TestRunMemoryPull_OrgTenantDefaultFilterFetchesDeptEvents(t *testing.T) {
+	var gotFilter string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/consumers") && !strings.Contains(r.URL.Path, "/fetch"):
+			var body map[string]any
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			if s, _ := body["filter_subject"].(string); s != "" {
+				gotFilter = s
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{"stream": "EVENTS", "name": "tui-local-palace"})
+		case strings.HasSuffix(r.URL.Path, "/fetch"):
+			if gotFilter == "" || !natsSubjectMatches("dept.engineering.events.github", gotFilter) {
+				_ = json.NewEncoder(w).Encode(map[string]any{"messages": []any{}})
+				return
+			}
+			payload := base64.StdEncoding.EncodeToString([]byte(`{"text":"dept pulse","source":"mesh"}`))
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"messages": []map[string]any{{
+					"stream": "EVENTS", "seq": 11, "subject": "dept.engineering.events.github",
+					"payload": payload,
+				}},
+			})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	c := New(Config{
+		Enabled: true, Endpoint: srv.URL,
+		Tenant: "org_abc", OrgID: "org_abc", Role: "agent", DualWrite: false,
+	}, nil)
+	st, err := c.RunMemoryPull(context.Background(), MemoryPullOptions{
+		Stream: "EVENTS", Name: "tui-local-palace", Batch: 1, MaxWait: time.Millisecond,
+		MaxLoops: 1, DryRun: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !st.CreateOK {
+		t.Fatalf("create_ok=false stats=%+v", st)
+	}
+	if st.Filter != DefaultDeptEventsPullFilter {
+		t.Fatalf("filter=%q want %q (org_* must not become org_*.events.>)", st.Filter, DefaultDeptEventsPullFilter)
+	}
+	if st.Fetched < 1 {
+		t.Fatalf("create_ok alone is not pull success; fetched=%d filter=%q", st.Fetched, st.Filter)
+	}
+	if c.cfg.DualWrite {
+		t.Fatal("dual_write must stay off")
+	}
+}
+
+func TestRunMemoryPull_ExplicitOrgEventsFilterHonestMiss(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/consumers") && !strings.Contains(r.URL.Path, "/fetch"):
+			_ = json.NewEncoder(w).Encode(map[string]any{"stream": "EVENTS", "name": "c"})
+		case strings.HasSuffix(r.URL.Path, "/fetch"):
+			_ = json.NewEncoder(w).Encode(map[string]any{"messages": []any{}})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "org_abc", Role: "agent"}, nil)
+	st, err := c.RunMemoryPull(context.Background(), MemoryPullOptions{
+		Stream: "EVENTS", Name: "c", Filter: "org_abc.events.>",
+		Batch: 1, MaxWait: time.Millisecond, MaxLoops: 1, DryRun: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !st.CreateOK {
+		t.Fatal("expected create_ok")
+	}
+	if st.Fetched != 0 {
+		t.Fatalf("fetched=%d", st.Fetched)
+	}
+	if st.Filter != "org_abc.events.>" {
+		t.Fatalf("explicit filter rewritten: %q", st.Filter)
+	}
+	if !strings.Contains(st.LastError, "does not match durable dept.*.events.*") {
+		t.Fatalf("want honest filter mismatch, got last_error=%q", st.LastError)
+	}
+	if !strings.Contains(st.LastError, DefaultDeptEventsPullFilter) {
+		t.Fatalf("want working dept.* filter path in last_error=%q", st.LastError)
 	}
 }
 

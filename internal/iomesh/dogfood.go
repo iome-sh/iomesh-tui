@@ -750,8 +750,8 @@ func (c *Client) Dogfood(ctx context.Context, opts DogfoodOptions) DogfoodReport
 		rep.Steps = append(rep.Steps, Step{Name: "consumer", Status: StepSkip, Detail: "consumer probe needs stream and name"})
 	} else {
 		// Role-aware default filter when filter empty (same pure path as memory pull / consumer create).
-		consumerFilter = DefaultMemoryPullFilterForRole(
-			consumerFilter, c.Tenant(), c.cfg.Role, c.cfg.PullAllowSuffix,
+		consumerFilter = DefaultMemoryPullFilterForRoleWithDept(
+			consumerFilter, c.Tenant(), c.cfg.Role, c.cfg.PullAllowSuffix, c.cfg.Department,
 		)
 		// Identity evidence when both stream+name provided (even if create later fails).
 		rep.ConsumerStream = consumerStream

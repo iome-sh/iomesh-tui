@@ -212,6 +212,11 @@ func FormatMemoryPullStatsJSON(p MemoryPullStatsPrint) string {
 	return string(b) + "\n"
 }
 
+// DefaultDeptEventsPullFilter is the wire-aligned default for org-shaped tenants.
+// Durable connector / org-pulse subjects are dept.<dept>.events.* — not org_<id>.events.>.
+// NATS `>` matches remaining tokens (`dept.*.events.>` entitles `dept.*.events.*`).
+const DefaultDeptEventsPullFilter = "dept.*.events.>"
+
 // DefaultMemoryPullFilter returns an effective consumer filter_subject with empty
 // role (s660). Prefer DefaultMemoryPullFilterForRole when pull role is known.
 // Pure: no I/O.
@@ -231,15 +236,29 @@ func DefaultMemoryPullFilter(explicit, tenant string) string {
 //   - custom + multiple/no suffixes: empty (fail closed; operator must pass --filter)
 //   - unknown role: empty (no invent)
 //
+// Org-shaped tenants (`org_*`) are identity ids, not subject tokens. They are
+// remapped to dept.* (or dept.<department> when a safe department token is set)
+// so the default entitles durable dept.*.events.* wire subjects. Explicit
+// --filter always wins (including a mismatched org_*.events.> — see
+// MemoryPullFilterMismatchHint).
+//
 // Beta federated ACL defaults — not full mesh RBAC GA. Fail-open headers remain
 // separate (empty role/suffix still omit X-IOMesh-* auth headers).
 // Pure: no I/O.
 func DefaultMemoryPullFilterForRole(explicit, tenant, role, allowSuffix string) string {
+	return DefaultMemoryPullFilterForRoleWithDept(explicit, tenant, role, allowSuffix, "")
+}
+
+// DefaultMemoryPullFilterForRoleWithDept is DefaultMemoryPullFilterForRole with
+// an optional department token. When tenant is org-shaped and department is a
+// single safe token (no dots/wildcards), the wire prefix is dept.<department>
+// instead of dept.*. Explicit filter still wins. Pure: no I/O.
+func DefaultMemoryPullFilterForRoleWithDept(explicit, tenant, role, allowSuffix, department string) string {
 	explicit = strings.TrimSpace(explicit)
 	if explicit != "" {
 		return explicit
 	}
-	tenant = strings.TrimSpace(tenant)
+	tenant = memoryPullWireSubjectPrefix(strings.TrimSpace(tenant), department)
 	if tenant == "" {
 		return ""
 	}
@@ -271,6 +290,87 @@ func DefaultMemoryPullFilterForRole(explicit, tenant, role, allowSuffix string) 
 		// Unknown role: do not invent a default filter.
 		return ""
 	}
+}
+
+// memoryPullWireSubjectPrefix maps a configured tenant onto a broker subject prefix.
+// Org ids (org_*) are not subject tokens — durable events live on dept.<dept>.events.*.
+// Hierarchical dept.* / dotted tenants stay as-is. Plain tenants stay as-is.
+// Pure: no I/O.
+func memoryPullWireSubjectPrefix(tenant, department string) string {
+	tenant = strings.TrimSpace(tenant)
+	if tenant == "" {
+		return ""
+	}
+	if !isOrgShapedTenant(tenant) {
+		return tenant
+	}
+	if prefix := deptSubjectPrefixFromDepartment(department); prefix != "" {
+		return prefix
+	}
+	return "dept.*"
+}
+
+func isOrgShapedTenant(tenant string) bool {
+	return strings.HasPrefix(strings.ToLower(strings.TrimSpace(tenant)), "org_")
+}
+
+// deptSubjectPrefixFromDepartment returns dept.<token> when department is a single
+// safe subject token. Empty / dotted / wildcard department → empty (caller uses dept.*).
+func deptSubjectPrefixFromDepartment(department string) string {
+	d := strings.TrimSpace(department)
+	if d == "" {
+		return ""
+	}
+	if strings.HasPrefix(strings.ToLower(d), "dept.") {
+		d = strings.TrimSpace(d[len("dept."):])
+	}
+	if d == "" || strings.ContainsAny(d, ".*> \t") {
+		return ""
+	}
+	return "dept." + d
+}
+
+// MemoryPullFilterMismatchHint names an org-id filter that cannot match durable
+// dept.*.events.* subjects. Empty when the filter is not that mismatch.
+// Does not invent pull success. Pure: no I/O.
+func MemoryPullFilterMismatchHint(filter string) string {
+	filter = strings.TrimSpace(filter)
+	if filter == "" || !isOrgShapedTenant(filter) {
+		return ""
+	}
+	return fmt.Sprintf("filter_subject %q does not match durable dept.*.events.* subjects; pass --filter %s (or dept.<dept>.events.>)",
+		filter, DefaultDeptEventsPullFilter)
+}
+
+// natsSubjectMatches reports whether subject matches a NATS-style filter using
+// * (exactly one token) and > (one or more remaining tokens). Empty filter
+// matches any subject (broker "no filter" meaning). Pure: no I/O.
+func natsSubjectMatches(subject, filter string) bool {
+	subject = strings.TrimSpace(subject)
+	filter = strings.TrimSpace(filter)
+	if filter == "" {
+		return subject != ""
+	}
+	if subject == "" {
+		return false
+	}
+	sParts := strings.Split(subject, ".")
+	fParts := strings.Split(filter, ".")
+	si := 0
+	for fi := 0; fi < len(fParts); fi++ {
+		tok := fParts[fi]
+		if tok == ">" {
+			return si < len(sParts)
+		}
+		if si >= len(sParts) {
+			return false
+		}
+		if tok != "*" && tok != sParts[si] {
+			return false
+		}
+		si++
+	}
+	return si == len(sParts)
 }
 
 // splitPullAllowSuffixTokens splits comma-separated X-IOMesh-Pull-Allow-Suffix
@@ -398,7 +498,8 @@ func (c *Client) RunMemoryPull(ctx context.Context, opt MemoryPullOptions) (Memo
 		return st, fmt.Errorf("memory pull: LocalIngest required unless DryRun")
 	}
 	// s660/s678: default filter_subject from tenant + role when unset (CLI also pre-resolves).
-	opt.Filter = DefaultMemoryPullFilterForRole(opt.Filter, c.Tenant(), c.cfg.Role, c.cfg.PullAllowSuffix)
+	// Org-shaped tenants remap to dept.* (or dept.<department>) so filter matches wire subjects.
+	opt.Filter = DefaultMemoryPullFilterForRoleWithDept(opt.Filter, c.Tenant(), c.cfg.Role, c.cfg.PullAllowSuffix, c.cfg.Department)
 	st.Stream = opt.Stream
 	st.Consumer = opt.Name
 	st.Filter = opt.Filter
@@ -411,9 +512,11 @@ func (c *Client) RunMemoryPull(ctx context.Context, opt MemoryPullOptions) (Memo
 	seen := map[string]struct{}{}
 	for {
 		if ctx.Err() != nil {
+			applyMemoryPullFilterMissHint(&st)
 			return st, ctx.Err()
 		}
 		if opt.MaxLoops > 0 && st.Loops >= opt.MaxLoops {
+			applyMemoryPullFilterMissHint(&st)
 			return st, nil
 		}
 		st.Loops++
@@ -435,6 +538,7 @@ func (c *Client) RunMemoryPull(ctx context.Context, opt MemoryPullOptions) (Memo
 		}
 		if len(msgs) == 0 {
 			if opt.MaxLoops > 0 && st.Loops >= opt.MaxLoops {
+				applyMemoryPullFilterMissHint(&st)
 				return st, nil
 			}
 			continue
@@ -497,6 +601,19 @@ func (c *Client) RunMemoryPull(ctx context.Context, opt MemoryPullOptions) (Memo
 				st.Acked += len(ackSeqs)
 			}
 		}
+	}
+}
+
+// applyMemoryPullFilterMissHint records an honest last_error when create
+// succeeded but fetched=0 and filter_subject is an org-id events filter that
+// cannot match dept.*.events.*. Does not invent pull success. create_ok alone
+// is not proof messages were pulled.
+func applyMemoryPullFilterMissHint(st *MemoryPullStats) {
+	if st == nil || st.Fetched > 0 || strings.TrimSpace(st.LastError) != "" {
+		return
+	}
+	if hint := MemoryPullFilterMismatchHint(st.Filter); hint != "" {
+		st.LastError = hint
 	}
 }
 

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- **Memory pull default filter for org-shaped tenants (#412):** `iomesh memory pull` no longer defaults `filter_subject` to `org_<id>.events.>` when `[memory]`/`[iomesh].tenant` is an org id. Org ids are remapped to `dept.*` (or `dept.<department>` when set) so `agent`/`viewer` entitles durable `dept.*.events.*` subjects. `create_ok` alone is not pull success — check `fetched`. Explicit `org_*.events.>` still wins and, on `fetched=0`, `last_error` names the mismatch plus `--filter dept.*.events.>`. dual_write **OFF**.
 - **OSS staging-host scrub (#410 / iomesh #316):** Buyer-facing example/comments no longer hardcode `*.staging.iome.sh`. Scoped to example config, setup-lifecycle docs, and setup honesty comment/note — placeholders `hooks.*` / `apiv1.*` / `hooks.example.com`. Private infer maps stay. dual_write **OFF** · not Memory GA · catalog ≠ Connected · infer ≠ Connected.
 - **Setup comment honesty (#407):** `[iomesh].endpoint` comments no longer stamp CP `apiv1.*` as a broker streams endpoint. Example config and setup-managed fragments name `hooks.*` as streams/consumers and `apiv1.*` as portal/catalog CP. Preflight warns (does not invent Connected) when the residual endpoint host looks like `apiv1.*`. dual_write **OFF** · not Memory GA · catalog ≠ Connected · infer ≠ Connected.
 

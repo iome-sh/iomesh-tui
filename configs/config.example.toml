@@ -226,7 +226,7 @@ enabled = false
 # dual_write = false     # opt-in audit only: mesh MEMORY_INGEST (IOMESH_MEMORY_DUAL_WRITE=1); not primary palace
 # pull_stream = "EVENTS" # iomesh memory pull — durable stream (s652 cost-max M1)
 # pull_consumer = "tui-local-palace"
-# pull_filter = ""
+# pull_filter = ""         # empty → role-aware default; org_* tenants remap to dept.*.events.> (agent/viewer). Override: "dept.*.events.>" or "dept.<dept>.events.>"
 # pull_batch = 8
 # pull_max_wait_ms = 2000
 # pull_continuous = false  # opt-in in-session continuous pull (s1530 P5; default OFF; needs pull_consumer)
