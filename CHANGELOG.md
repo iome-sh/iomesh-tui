@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.1] — 2026-09-10
+
 ### Fixed
 - **Mode A palace path honesty (#402 leftover_is_bind):** `/memory status` no longer presents `~/.iomesh/palace` as the ls target when that path DNE and HTTP MCP has no stdio `-palace-root` args. Wire `[memory] palace_root` + `IOMESH_MEMORY_PALACE_ROOT` (keep `PALACE_ROOT`) into `MemoryConfig.PalaceRoot`. Default DNE → residual (`unset or DNE · set palace_root to match MCP -palace-root`) — never invent Connected / Memory GA. Setup `local-memory` writes `palace_root` and documents HTTP MCP must match process `-palace-root`. Stdio args parsing unchanged. dual_write **OFF** · catalog ≠ Connected.
 
@@ -892,7 +894,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/iome-sh/iomesh-tui/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/iome-sh/iomesh-tui/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/iome-sh/iomesh-tui/compare/v1.0.0...v1.1.0
