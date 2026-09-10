@@ -511,15 +511,113 @@ type MemoryOpsDigestPattern struct {
 	Delta *bool `json:"delta,omitempty"`
 }
 
+// MemoryOpsDigestProvenance is optional palace provenance on a digest receipt.
+// Cite-both reads source_hint here when receipt.source_hint is the export
+// origin (palace_timeline) rather than the stamped mesh/private class.
+type MemoryOpsDigestProvenance struct {
+	SourceHint string `json:"source_hint,omitempty"`
+	SourceStep string `json:"source_step,omitempty"`
+}
+
 // MemoryOpsDigestReceipt is one timeline receipt in an ops digest pack.
 // Display defaults to pointers + hashes — not raw customer text (#369 / FR-31).
+// Tags / Provenance are optional wire extras (palace source_hint:mesh) — never invented.
 type MemoryOpsDigestReceipt struct {
-	ID          string `json:"id,omitempty"`
-	EventTime   string `json:"event_time,omitempty"`
-	Summary     string `json:"summary,omitempty"`      // wire may carry text; formatter hashes it
-	SourceHint  string `json:"source_hint,omitempty"`  // e.g. palace_timeline or ticket URL
-	Pointer     string `json:"pointer,omitempty"`      // preferred ticket/URL/id pointer
-	AccountHash string `json:"account_hash,omitempty"` // stable account fingerprint (no PII)
+	ID          string                    `json:"id,omitempty"`
+	EventTime   string                    `json:"event_time,omitempty"`
+	Summary     string                    `json:"summary,omitempty"`     // wire may carry text; formatter hashes it
+	SourceHint  string                    `json:"source_hint,omitempty"` // e.g. palace_timeline or ticket URL
+	Pointer     string                    `json:"pointer,omitempty"`     // preferred ticket/URL/id pointer
+	AccountHash string                    `json:"account_hash,omitempty"`
+	Tags        []string                  `json:"tags,omitempty"`
+	Provenance  MemoryOpsDigestProvenance `json:"provenance,omitempty"`
+}
+
+// UnmarshalJSON accepts provenance as an object or string and tags as strings
+// or {source_hint|name|tag|value} objects. source is an alias for source_hint.
+func (r *MemoryOpsDigestReceipt) UnmarshalJSON(data []byte) error {
+	var wire struct {
+		ID          string          `json:"id"`
+		EventTime   string          `json:"event_time"`
+		Summary     string          `json:"summary"`
+		SourceHint  string          `json:"source_hint"`
+		Source      string          `json:"source"`
+		Pointer     string          `json:"pointer"`
+		AccountHash string          `json:"account_hash"`
+		Tags        json.RawMessage `json:"tags"`
+		Provenance  json.RawMessage `json:"provenance"`
+	}
+	if err := json.Unmarshal(data, &wire); err != nil {
+		return err
+	}
+	r.ID = wire.ID
+	r.EventTime = wire.EventTime
+	r.Summary = wire.Summary
+	r.SourceHint = strings.TrimSpace(wire.SourceHint)
+	if r.SourceHint == "" {
+		r.SourceHint = strings.TrimSpace(wire.Source)
+	}
+	r.Pointer = wire.Pointer
+	r.AccountHash = wire.AccountHash
+	r.Tags = parseDigestReceiptTags(wire.Tags)
+	r.Provenance = parseDigestReceiptProvenance(wire.Provenance)
+	return nil
+}
+
+func parseDigestReceiptTags(raw json.RawMessage) []string {
+	raw = bytes.TrimSpace(raw)
+	if len(raw) == 0 || string(raw) == "null" {
+		return nil
+	}
+	var strs []string
+	if err := json.Unmarshal(raw, &strs); err == nil {
+		return strs
+	}
+	var anyTags []any
+	if err := json.Unmarshal(raw, &anyTags); err != nil {
+		return nil
+	}
+	out := make([]string, 0, len(anyTags))
+	for _, v := range anyTags {
+		switch t := v.(type) {
+		case string:
+			if s := strings.TrimSpace(t); s != "" {
+				out = append(out, s)
+			}
+		case map[string]any:
+			if s := firstString(t, "source_hint", "name", "tag", "value"); s != "" {
+				out = append(out, s)
+			}
+		}
+	}
+	return out
+}
+
+func parseDigestReceiptProvenance(raw json.RawMessage) MemoryOpsDigestProvenance {
+	raw = bytes.TrimSpace(raw)
+	if len(raw) == 0 || string(raw) == "null" {
+		return MemoryOpsDigestProvenance{}
+	}
+	if raw[0] == '"' {
+		var s string
+		if json.Unmarshal(raw, &s) == nil {
+			return MemoryOpsDigestProvenance{SourceHint: strings.TrimSpace(s)}
+		}
+	}
+	var p MemoryOpsDigestProvenance
+	if json.Unmarshal(raw, &p) == nil && (strings.TrimSpace(p.SourceHint) != "" || strings.TrimSpace(p.SourceStep) != "") {
+		p.SourceHint = strings.TrimSpace(p.SourceHint)
+		p.SourceStep = strings.TrimSpace(p.SourceStep)
+		return p
+	}
+	var m map[string]any
+	if json.Unmarshal(raw, &m) != nil {
+		return MemoryOpsDigestProvenance{}
+	}
+	return MemoryOpsDigestProvenance{
+		SourceHint: firstString(m, "source_hint", "SourceHint", "source"),
+		SourceStep: firstString(m, "source_step", "SourceStep"),
+	}
 }
 
 // MemoryOpsDigestDecisionStub is a human-owned decision scaffold (not auto-apply).
@@ -541,6 +639,12 @@ type MemoryOpsDigestResult struct {
 	DecisionStub MemoryOpsDigestDecisionStub `json:"decision_stub"`
 	// Path is the successful API path (v1 or v5 fallback).
 	Path string `json:"-"`
+	// Fetch window metadata is TUI-side (not always on the wire). Used when
+	// --require-sources misses a class so the miss line can name the receipt set.
+	FetchLimit    int    `json:"-"`
+	FetchedN      int    `json:"-"`
+	FetchedNewest string `json:"-"`
+	FetchedOldest string `json:"-"`
 }
 
 // ExportOpsDigest is sync ops heartbeat digest export (s1200).
