@@ -143,8 +143,8 @@ func TestBuildManagedFragment_MeshEndpointAPIv1Honesty(t *testing.T) {
 	if !strings.Contains(frag, "portal/catalog CP") || !strings.Contains(frag, "not broker streams") {
 		t.Fatalf("apiv1 endpoint must not be labeled broker streams:\n%s", frag)
 	}
-	if !strings.Contains(frag, "hooks.staging.iome.sh") {
-		t.Fatalf("want hooks residual in comment:\n%s", frag)
+	if !strings.Contains(frag, "hooks.*") && !strings.Contains(frag, "hooks.example.com") {
+		t.Fatalf("want hooks placeholder/pattern in comment:\n%s", frag)
 	}
 	if strings.Contains(frag, `endpoint = "https://apiv1.staging.iome.sh"  # broker streams`) {
 		t.Fatalf("must not stamp apiv1 as broker streams:\n%s", frag)
@@ -248,8 +248,7 @@ func TestExampleConfig_IOMeshEndpointHonesty(t *testing.T) {
 	}
 	txt := string(b)
 	for _, want := range []string{
-		"hooks.iome.sh",
-		"hooks.staging.iome.sh",
+		"hooks.example.com",
 		"apiv1.* is portal/catalog CP",
 		"not a broker streams endpoint",
 		"Catalog ≠ Connected",
@@ -257,6 +256,9 @@ func TestExampleConfig_IOMeshEndpointHonesty(t *testing.T) {
 		if !strings.Contains(txt, want) {
 			t.Fatalf("example config missing honesty needle %q", want)
 		}
+	}
+	if strings.Contains(txt, "staging.iome.sh") {
+		t.Fatal("example config must not hardcode *.staging.iome.sh")
 	}
 	if strings.Contains(txt, `endpoint = "https://apiv1`) {
 		t.Fatal("example config must not set [iomesh].endpoint to apiv1")

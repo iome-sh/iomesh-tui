@@ -54,7 +54,7 @@ const meshOrgEmptyNote = "mesh org empty — X-IOMesh-Org omitted · hosted brok
 // meshPortalAPIv1AsBrokerNote is residual-honest when [iomesh].endpoint host
 // looks like apiv1.* (portal/catalog CP). Streams/consumers live on hooks.*.
 // Warn only — do not invent Connected / Memory GA.
-const meshPortalAPIv1AsBrokerNote = "mesh endpoint host looks like apiv1.* — that is portal/catalog CP, not broker streams · streams/consumers live on hooks.* (e.g. hooks.staging.iome.sh) · catalog ≠ Connected · infer ≠ Connected"
+const meshPortalAPIv1AsBrokerNote = "mesh endpoint host looks like apiv1.* — that is portal/catalog CP, not broker streams · streams/consumers live on hooks.* (e.g. hooks.example.com) · catalog ≠ Connected · infer ≠ Connected"
 
 // Preflight loads config and probes local memory when configured.
 // Fail-open: network errors become notes, not invented green.
