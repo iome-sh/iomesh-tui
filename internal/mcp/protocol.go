@@ -50,8 +50,16 @@ type callToolParams struct {
 }
 
 type callToolResult struct {
-	Content []contentPart `json:"content"`
-	IsError bool          `json:"isError"`
+	Content           []contentPart   `json:"content"`
+	IsError           bool            `json:"isError"`
+	StructuredContent json.RawMessage `json:"structuredContent,omitempty"`
+}
+
+// ToolCallOutput is one tools/call payload. Text may be display-truncated;
+// Structured is the untruncated MCP structuredContent object when the host sent one.
+type ToolCallOutput struct {
+	Text       string
+	Structured json.RawMessage
 }
 
 type contentPart struct {

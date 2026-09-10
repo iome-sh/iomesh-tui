@@ -5,6 +5,7 @@ package mcp
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -25,6 +26,11 @@ const ProtocolVersion = "2024-11-05"
 
 // DefaultMaxOutputBytes caps tools/call text results.
 const DefaultMaxOutputBytes = 20_000
+
+// OpsDigestMaxOutputBytes is the text cap for ops_digest_export. Pretty-printed
+// cite-both packs (limit 50) exceed DefaultMaxOutputBytes and used to truncate
+// mid-JSON so sticky require-sources parsed nothing (cited=(none)).
+const OpsDigestMaxOutputBytes = 256 << 10
 
 // ServerConfig describes one MCP server (stdio and/or HTTP).
 // Set Command for stdio, or URL for streamable HTTP. URL wins if both set.
@@ -394,8 +400,18 @@ func formatPromptContent(raw json.RawMessage) string {
 
 // CallTool invokes tools/call and returns concatenated text content.
 func (c *Client) CallTool(ctx context.Context, name string, arguments map[string]any) (string, error) {
+	out, err := c.CallToolDetailed(ctx, name, arguments, 0)
+	if err != nil {
+		return "", err
+	}
+	return out.Text, nil
+}
+
+// CallToolDetailed invokes tools/call and keeps structuredContent (untruncated)
+// plus display text capped at maxText (0 → client default).
+func (c *Client) CallToolDetailed(ctx context.Context, name string, arguments map[string]any, maxText int) (ToolCallOutput, error) {
 	if c.closed.Load() {
-		return "", fmt.Errorf("mcp: client closed")
+		return ToolCallOutput{}, fmt.Errorf("mcp: client closed")
 	}
 	timeout := time.Duration(c.cfg.ToolTimeoutSec) * time.Second
 	if timeout <= 0 {
@@ -406,7 +422,7 @@ func (c *Client) CallTool(ctx context.Context, name string, arguments map[string
 
 	var res callToolResult
 	if err := c.call(ctx, "tools/call", callToolParams{Name: name, Arguments: arguments}, &res); err != nil {
-		return "", err
+		return ToolCallOutput{}, err
 	}
 	var b strings.Builder
 	for _, p := range res.Content {
@@ -415,11 +431,21 @@ func (c *Client) CallTool(ctx context.Context, name string, arguments map[string
 		}
 	}
 	text := b.String()
+	if maxText <= 0 {
+		maxText = c.maxOut
+	}
 	if res.IsError {
-		return "", fmt.Errorf("mcp tool error: %s", security.Redact(truncate(text, c.maxOut)))
+		return ToolCallOutput{}, fmt.Errorf("mcp tool error: %s", security.Redact(truncate(text, maxText)))
 	}
 	text = security.Redact(text)
-	return truncate(text, c.maxOut), nil
+	structured := json.RawMessage(bytes.TrimSpace(res.StructuredContent))
+	if len(structured) == 0 || string(structured) == "null" {
+		structured = nil
+	}
+	return ToolCallOutput{
+		Text:       truncate(text, maxText),
+		Structured: structured,
+	}, nil
 }
 
 func (c *Client) call(ctx context.Context, method string, params any, result any) error {
