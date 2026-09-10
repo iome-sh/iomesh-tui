@@ -94,9 +94,9 @@ system_prompt_label = "iomesh-tui"
 [iomesh]
 enabled = false
 # Streams/consumers live on hooks.* (broker). apiv1.* is portal/catalog CP — not a broker streams endpoint.
-# endpoint = "https://hooks.iome.sh"          # prod broker streams
-# endpoint = "https://hooks.staging.iome.sh"  # staging broker streams
-# Do not set [iomesh].endpoint to https://apiv1.iome.sh or https://apiv1.staging.iome.sh (/v7/mcp catalog).
+# endpoint = "https://hooks.iome.sh"           # prod broker streams
+# endpoint = "https://hooks.<env>.iome.sh"     # env broker streams (pattern; or $IOMESH_ENDPOINT)
+# Do not set [iomesh].endpoint to https://apiv1.iome.sh or https://apiv1.<env>.iome.sh (/v7/mcp catalog).
 # Catalog ≠ Connected · infer ≠ Connected
 # tenant = "acme"
 # org = "org_…"             # optional: X-IOMesh-Org from console /me (org_ + cuid2). IOMESH_ORG. Empty fail-opens (broker empty-org fail-open). Name slugs are legacy aliases.

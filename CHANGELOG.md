@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- **OSS staging-host scrub (#410):** Public example/comments no longer hardcode `*.staging.iome.sh`. Example config, setup-managed honesty comments, preflight notes, and setup-lifecycle docs teach `hooks.*` vs `apiv1.*` via pattern form (`hooks.<env>.iome.sh`) or `$IOMESH_ENDPOINT`. Private `InferHooksEndpoint` prod/staging maps stay. dual_write **OFF** · not Memory GA · catalog ≠ Connected · infer ≠ Connected.
 - **Setup comment honesty (#407):** `[iomesh].endpoint` comments no longer stamp CP `apiv1.*` as a broker streams endpoint. Example config and setup-managed fragments name `hooks.*` as streams/consumers and `apiv1.*` as portal/catalog CP. Preflight warns (does not invent Connected) when the residual endpoint host looks like `apiv1.*`. dual_write **OFF** · not Memory GA · catalog ≠ Connected · infer ≠ Connected.
 
 ## [1.3.1] — 2026-09-10
