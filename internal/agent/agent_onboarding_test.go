@@ -847,6 +847,7 @@ func TestMeshAgentOnboardingNextMemoryPullLane_HonestyNeedles(t *testing.T) {
 		"mesh → local palace",
 		"CreateConsumer",
 		"memory_ingest_turn",
+		"source_hint=mesh",
 		"dual_write OFF",
 		"not freemium hosted palace",
 		"not Memory GA",

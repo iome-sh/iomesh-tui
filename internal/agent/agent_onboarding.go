@@ -495,14 +495,14 @@ Locks: dual_write OFF · book-demo OFF · not Memory GA · Palace sunset · resi
 // s1695: Ops Pack not first-run required · first-run is local OSS only · package load ≠ Ops Pack entitlement.
 func MeshAgentOnboardingNextMemoryPullLane() string {
 	return strings.TrimSpace(`mesh onboard next memory-pull lane (residual-honest · s1407+s1695 · no MCP dial · Ops Pack pull path):
-  Path: iomesh memory pull = mesh → local palace egress — CreateConsumer → fetch → map envelope → local MCP memory_ingest_turn → ack
+  Path: iomesh memory pull = mesh → local palace egress — CreateConsumer → fetch → map envelope → local MCP memory_ingest_turn (source_hint=mesh) → ack
   Product: Memory Ops Pack ~$119 = pull / retain / support · local-primary · TUI OSS + mesh pull entitlement — Ops Pack ≠ GPU fleet · not freemium hosted palace · Palace sunset
   First-run honesty (s1695): Ops Pack not first-run required · first-run is local OSS only · Memory Ops Pack optional commercial overlay · dual_write OFF
   Separation: mesh ≠ memory · mesh base ~$88 separate · pull ≠ freemium hosted palace · dual_write OFF · package load ≠ Ops Pack entitlement
   Steps:
     1. Residual soft: iomesh memory pull --dry-run / config [memory] pull_stream · pull_consumer · pull_filter (fail-open offline · never invent pull green)
     2. Durable consumer residual: CreateConsumer on mesh stream (requires --yes when mutating · residual soft only)
-    3. Fetch → map envelope → local MCP memory_ingest_turn → ack (dual_write OFF · local-primary only)
+    3. Fetch → map envelope → local MCP memory_ingest_turn (source_hint=mesh) → ack (dual_write OFF · local-primary only · local ingest stays private)
     4. Operator pulse: /onboard next status · /onboard next export — board shows pull_not_probed until operator probes
   Honesty:
     · pull = mesh → local palace egress · dual_write OFF · not freemium hosted palace · not Memory GA · Palace sunset

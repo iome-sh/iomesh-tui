@@ -2608,8 +2608,8 @@ func cmdMemory(args []string) int {
 	case "help", "-h", "--help":
 		fmt.Fprint(os.Stderr, `iomesh memory — local-first Memory Palace operators (cost-max M1)
 
-  iomesh memory pull         durable mesh pull → local MCP memory_ingest_turn
-  iomesh memory ingest       ingest text via MCP memory_ingest_turn (session_id minted)
+  iomesh memory pull         durable mesh pull → local MCP memory_ingest_turn (source_hint=mesh)
+  iomesh memory ingest       ingest text via MCP memory_ingest_turn (session_id minted; private)
   iomesh memory ingest-dir   folder ingest into private overlay (session_id minted)
 
 Flags (pull):
@@ -3114,19 +3114,7 @@ func cmdMemoryPull(args []string) int {
 			tenant = strings.TrimSpace(cfg.IOMesh.Tenant)
 		}
 		opt.LocalIngest = func(cctx context.Context, env iomesh.MemoryEnvelope) error {
-			args := map[string]any{
-				"role":    env.Role,
-				"content": env.Content,
-			}
-			if env.EventTime != "" {
-				args["event_time"] = env.EventTime
-			}
-			if env.SessionID != "" {
-				args["session_id"] = env.SessionID
-			}
-			if tenant != "" {
-				args["tenant"] = tenant
-			}
+			args := iomesh.MemoryPullIngestArgs(env, tenant)
 			_, err := cl.CallTool(cctx, "memory_ingest_turn", args)
 			return err
 		}

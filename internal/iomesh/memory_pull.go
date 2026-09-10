@@ -8,6 +8,12 @@ import (
 	"time"
 )
 
+// MemoryPullSourceHint is the classified source stamped on durable mesh pull
+// ingest so cite-both digests can see mesh. MCP defaults an omitted hint to private.
+// Companion: iomesh-memory-mcp#64 accepts optional source_hint on memory_ingest_turn;
+// until that lands, MCP should ignore the unknown field.
+const MemoryPullSourceHint = "mesh"
+
 // MemoryPullOptions configures RunMemoryPull (mesh durable consumer → local ingest).
 // Cost-max M1 (s652): pull egress fills customer-local Palace; dual_write remains optional audit.
 type MemoryPullOptions struct {
@@ -463,6 +469,37 @@ func splitPullAllowSuffixTokens(s string) []string {
 	return out
 }
 
+// MemoryPullIngestArgs builds MCP memory_ingest_turn arguments for one pulled
+// envelope. Always includes source_hint (mesh, or env.SourceHint when already set)
+// so palace provenance is classified mesh. Local /memory ingest must not use this
+// helper — those paths stay private. dual_write stays off.
+func MemoryPullIngestArgs(env MemoryEnvelope, tenant string) map[string]any {
+	hint := strings.TrimSpace(env.SourceHint)
+	if hint == "" {
+		hint = MemoryPullSourceHint
+	}
+	args := map[string]any{
+		"role":        env.Role,
+		"content":     env.Content,
+		"source_hint": hint,
+	}
+	if env.EventTime != "" {
+		args["event_time"] = env.EventTime
+	}
+	if env.SessionID != "" {
+		args["session_id"] = env.SessionID
+	}
+	if strings.TrimSpace(tenant) != "" {
+		args["tenant"] = strings.TrimSpace(tenant)
+	}
+	return args
+}
+
+func stampMemoryPullSourceHint(env MemoryEnvelope) MemoryEnvelope {
+	env.SourceHint = MemoryPullSourceHint
+	return env
+}
+
 // MapStreamMessageToEnvelope converts a durable-fetch message into a MemoryEnvelope for local ingest.
 // Supports:
 //   - MEMORY_INGEST style JSON (type memory_ingest / fields content, role, session_id, session_seq, event_time)
@@ -470,6 +507,7 @@ func splitPullAllowSuffixTokens(s string) []string {
 //   - raw text payload (connector events)
 //
 // Returns ok=false when there is no ingestible content.
+// Successful maps stamp SourceHint=mesh (pull path only; local ingest does not use this mapper).
 func MapStreamMessageToEnvelope(msg StreamMessage) (MemoryEnvelope, string /*dedupeKey*/, bool) {
 	payload := bytesTrimSpace(msg.Payload)
 	if len(payload) == 0 {
@@ -485,7 +523,7 @@ func MapStreamMessageToEnvelope(msg StreamMessage) (MemoryEnvelope, string /*ded
 		if env.SessionSeq > 0 && strings.TrimSpace(env.SessionID) != "" {
 			dedupe = env.SessionID + ":" + fmt.Sprintf("%d", env.SessionSeq)
 		}
-		return env, dedupe, true
+		return stampMemoryPullSourceHint(env), dedupe, true
 	}
 
 	// Generic event JSON — prefer common text fields.
@@ -518,14 +556,14 @@ func MapStreamMessageToEnvelope(msg StreamMessage) (MemoryEnvelope, string /*ded
 			if et == "" && !msg.Timestamp.IsZero() {
 				et = msg.Timestamp.UTC().Format(time.RFC3339)
 			}
-			return MemoryEnvelope{
+			return stampMemoryPullSourceHint(MemoryEnvelope{
 				Type:       memoryEnvelopeIngest,
 				SessionID:  sid,
 				Role:       role,
 				Content:    content,
 				EventTime:  et,
 				SessionSeq: seq,
-			}, dedupe, true
+			}), dedupe, true
 		}
 	}
 
@@ -538,14 +576,14 @@ func MapStreamMessageToEnvelope(msg StreamMessage) (MemoryEnvelope, string /*ded
 	if !msg.Timestamp.IsZero() {
 		et = msg.Timestamp.UTC().Format(time.RFC3339)
 	}
-	return MemoryEnvelope{
+	return stampMemoryPullSourceHint(MemoryEnvelope{
 		Type:       memoryEnvelopeIngest,
 		SessionID:  msg.Subject,
 		Role:       "system",
 		Content:    text,
 		EventTime:  et,
 		SessionSeq: int(msg.Seq),
-	}, dedupe, true
+	}), dedupe, true
 }
 
 // RunMemoryPull creates (idempotent) a durable consumer and loops fetch → map → local ingest → ack.

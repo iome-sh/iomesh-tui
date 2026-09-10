@@ -139,6 +139,22 @@ func TestStartContinuousMemoryPullOnce_SameValidation(t *testing.T) {
 	}
 }
 
+func TestContinuousMemoryPull_IngestArgsIncludeMeshSourceHint(t *testing.T) {
+	// In-session LocalIngest uses MemoryPullIngestArgs (same as CLI iomesh memory pull).
+	env := iomesh.MemoryEnvelope{
+		Role:      "system",
+		Content:   "dept pulse",
+		SessionID: "dept.engineering.events.github",
+	}
+	args := iomesh.MemoryPullIngestArgs(env, "acme")
+	if args["source_hint"] != iomesh.MemoryPullSourceHint {
+		t.Fatalf("continuous pull ingest must pass source_hint=%q, got %v", iomesh.MemoryPullSourceHint, args["source_hint"])
+	}
+	if iomesh.MemoryPullSourceHint != "mesh" {
+		t.Fatalf("stable needle mesh=%q", iomesh.MemoryPullSourceHint)
+	}
+}
+
 func TestClose_StopsContinuousPull_NoHang(t *testing.T) {
 	rt := testRT(t, t.TempDir())
 	// Close with no pull running must succeed.
