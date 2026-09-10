@@ -143,9 +143,9 @@ func BuildManagedFragment(profiles []Profile, opt InitOptions) (string, error) {
 		b.WriteString("[iomesh]\n")
 		b.WriteString("enabled = true\n")
 		if meshEP != "" {
-			fmt.Fprintf(&b, "endpoint = %q  # broker streams; not portal /v7/mcp\n", meshEP)
+			fmt.Fprintf(&b, "endpoint = %q  # %s\n", meshEP, meshEndpointHonestyComment(meshEP))
 		} else {
-			b.WriteString("# endpoint = \"https://hooks.iome.sh\"  # broker; portal MCP is catalog only\n")
+			b.WriteString("# endpoint = \"https://hooks.iome.sh\"  # broker streams (hooks.*); portal apiv1.* is catalog CP only\n")
 		}
 		if t := strings.TrimSpace(opt.MeshTenant); t != "" {
 			fmt.Fprintf(&b, "tenant = %q\n", t)
@@ -236,6 +236,15 @@ func BuildManagedFragment(profiles []Profile, opt InitOptions) (string, error) {
 	}
 
 	return b.String(), nil
+}
+
+// meshEndpointHonestyComment names CP vs broker for the written [iomesh] endpoint.
+// Never stamps apiv1.* as “broker streams”. Infer ≠ Connected · catalog ≠ Connected.
+func meshEndpointHonestyComment(meshEP string) string {
+	if config.LooksLikePortalAPIv1(meshEP) {
+		return "portal/catalog CP — not broker streams; streams/consumers are hooks.* (e.g. hooks.staging.iome.sh) · infer ≠ Connected"
+	}
+	return "broker streams (hooks.*); portal apiv1.* is catalog CP only"
 }
 
 // ProfilesWantMesh reports whether init includes mesh or platform-mcp (or all).

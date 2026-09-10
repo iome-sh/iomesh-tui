@@ -20,7 +20,7 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
 1. **Init managed config** — write residual-honest fragment into user `config.toml`.
    - CLI: `iomesh setup init [profiles]`
    - Slash: `/setup init [profiles] [--stdio] [--print-only] [--plugins-dir path] [--memory-url URL] [--mesh-endpoint URL] [--mesh-tenant id] [--mesh-org id] [--platform-mcp-url URL]`
-   - Mesh flags write **hooks** (not portal `/v7/mcp`). apiv1 portal URL infers `https://hooks.iome.sh`. Infer ≠ Connected.
+   - Mesh flags write **hooks** (not portal `/v7/mcp`). apiv1 portal URL infers `https://hooks.iome.sh`. Infer ≠ Connected. `[iomesh].endpoint` comments never call `apiv1.*` a broker streams host — that is portal/catalog CP; streams/consumers are `hooks.*`. Preflight warns (does not invent Connected) when the residual endpoint host looks like `apiv1.*`.
    - `--mesh-org` persists `[iomesh].org` (X-IOMesh-Org / `IOMESH_ORG`). Empty org is residual-honest fail-open (broker empty-org fail-open) — setup must not silently omit the residual.
    - After mesh / platform-mcp write: `export IOMESH_TOKEN` → `/setup reload` → `iomesh mesh streams --create --yes` → `--messages` (create ≠ PULSE · mesh pub ephemeral ≠ `/dashboard` consume)
    - Profiles: `local-memory` (default) · `plugins` · `mesh` · `platform-mcp` · `all`

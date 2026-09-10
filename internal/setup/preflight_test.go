@@ -134,6 +134,74 @@ func TestPreflight_MeshOrgEmptyNote(t *testing.T) {
 	}
 }
 
+func TestPreflight_PortalAPIv1EndpointWarn(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.toml")
+	opt := DefaultInitOptions()
+	opt.MeshEndpoint = "https://apiv1.staging.iome.sh"
+	opt.MeshOrg = "org_a"
+	frag, err := BuildManagedFragment([]Profile{ProfileMesh}, opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := config.WriteSetupManagedFragment(path, frag); err != nil {
+		t.Fatal(err)
+	}
+	rep, err := Preflight(context.Background(), path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(rep.MeshEndpoint, "apiv1.staging.iome.sh") {
+		t.Fatalf("endpoint=%q", rep.MeshEndpoint)
+	}
+	note := false
+	for _, n := range rep.Notes {
+		if n == meshPortalAPIv1AsBrokerNote || (strings.Contains(n, "apiv1.") &&
+			strings.Contains(n, "not broker streams") &&
+			strings.Contains(n, "hooks.") &&
+			strings.Contains(n, "catalog")) {
+			note = true
+		}
+	}
+	if !note {
+		t.Fatalf("want apiv1-as-broker honesty note: %+v", rep.Notes)
+	}
+	text := FormatPreflightText(rep)
+	if !strings.Contains(text, meshPortalAPIv1AsBrokerNote) {
+		t.Fatalf("text must print apiv1 honesty note:\n%s", text)
+	}
+	if !rep.OK {
+		t.Fatalf("apiv1 endpoint warn must not hard-fail preflight: ok=%v notes=%v", rep.OK, rep.Notes)
+	}
+	if strings.Contains(text, "Connected: yes") {
+		t.Fatalf("must not invent Connected:\n%s", text)
+	}
+}
+
+func TestPreflight_HooksEndpointNoAPIv1Note(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.toml")
+	opt := DefaultInitOptions()
+	opt.MeshEndpoint = "https://hooks.staging.iome.sh"
+	opt.MeshOrg = "org_a"
+	frag, err := BuildManagedFragment([]Profile{ProfileMesh}, opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := config.WriteSetupManagedFragment(path, frag); err != nil {
+		t.Fatal(err)
+	}
+	rep, err := Preflight(context.Background(), path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, n := range rep.Notes {
+		if strings.Contains(n, "apiv1.") && strings.Contains(n, "not broker streams") {
+			t.Fatalf("hooks endpoint must not warn as portal CP: %s", n)
+		}
+	}
+}
+
 func TestPreflight_MeshOrgSetNoFailOpenNote(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.toml")

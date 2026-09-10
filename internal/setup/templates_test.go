@@ -1,6 +1,7 @@
 package setup
 
 import (
+	"os"
 	"strings"
 	"testing"
 )
@@ -121,8 +122,53 @@ func TestBuildManagedFragment_PlatformMCPInfersHooks(t *testing.T) {
 	if !strings.Contains(frag, "[iomesh]") || !strings.Contains(frag, "https://hooks.iome.sh") {
 		t.Fatalf("want inferred broker in:\n%s", frag)
 	}
-	if !strings.Contains(frag, "not portal /v7/mcp") {
+	if !strings.Contains(frag, "broker streams (hooks.*)") || !strings.Contains(frag, "catalog CP") {
 		t.Fatalf("want honesty comment in:\n%s", frag)
+	}
+	if strings.Contains(frag, `endpoint = "https://apiv1`) {
+		t.Fatalf("must not stamp portal CP as [iomesh] endpoint:\n%s", frag)
+	}
+}
+
+func TestBuildManagedFragment_MeshEndpointAPIv1Honesty(t *testing.T) {
+	opt := DefaultInitOptions()
+	opt.MeshEndpoint = "https://apiv1.staging.iome.sh"
+	frag, err := BuildManagedFragment([]Profile{ProfileMesh}, opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(frag, `endpoint = "https://apiv1.staging.iome.sh"`) {
+		t.Fatalf("explicit mesh-endpoint is residual-honest (no silent rewrite):\n%s", frag)
+	}
+	if !strings.Contains(frag, "portal/catalog CP") || !strings.Contains(frag, "not broker streams") {
+		t.Fatalf("apiv1 endpoint must not be labeled broker streams:\n%s", frag)
+	}
+	if !strings.Contains(frag, "hooks.staging.iome.sh") {
+		t.Fatalf("want hooks residual in comment:\n%s", frag)
+	}
+	if strings.Contains(frag, `endpoint = "https://apiv1.staging.iome.sh"  # broker streams`) {
+		t.Fatalf("must not stamp apiv1 as broker streams:\n%s", frag)
+	}
+	if strings.Contains(frag, "Connected: yes") || strings.Contains(frag, "dual_write = true") {
+		t.Fatalf("must not invent Connected / dual_write ON:\n%s", frag)
+	}
+}
+
+func TestBuildManagedFragment_MeshEndpointHooksHonesty(t *testing.T) {
+	opt := DefaultInitOptions()
+	opt.MeshEndpoint = "https://hooks.staging.iome.sh"
+	frag, err := BuildManagedFragment([]Profile{ProfileMesh}, opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(frag, `endpoint = "https://hooks.staging.iome.sh"`) {
+		t.Fatalf("want hooks endpoint:\n%s", frag)
+	}
+	if !strings.Contains(frag, "broker streams (hooks.*)") {
+		t.Fatalf("hooks endpoint may be labeled broker streams:\n%s", frag)
+	}
+	if !strings.Contains(frag, "portal apiv1.* is catalog CP") {
+		t.Fatalf("want CP vs broker contrast:\n%s", frag)
 	}
 }
 
@@ -178,6 +224,45 @@ func TestBuildManagedFragment_MeshOrgPersistsWhenSet(t *testing.T) {
 	}
 	if strings.Contains(frag, "secret") && strings.Contains(frag, "org_a") && strings.Contains(frag, "token=") {
 		t.Fatalf("must not inline secrets next to org:\n%s", frag)
+	}
+}
+
+func TestMeshEndpointHonestyComment(t *testing.T) {
+	apiv1 := meshEndpointHonestyComment("https://apiv1.staging.iome.sh")
+	if strings.Contains(apiv1, "broker streams") && !strings.Contains(apiv1, "not broker streams") {
+		t.Fatalf("apiv1 comment must not call CP a broker: %s", apiv1)
+	}
+	if !strings.Contains(apiv1, "portal/catalog CP") || !strings.Contains(apiv1, "hooks.") {
+		t.Fatalf("apiv1 comment want CP vs hooks: %s", apiv1)
+	}
+	hooks := meshEndpointHonestyComment("https://hooks.staging.iome.sh")
+	if !strings.Contains(hooks, "broker streams (hooks.*)") || !strings.Contains(hooks, "catalog CP") {
+		t.Fatalf("hooks comment want broker vs CP: %s", hooks)
+	}
+}
+
+func TestExampleConfig_IOMeshEndpointHonesty(t *testing.T) {
+	b, err := os.ReadFile("../../configs/config.example.toml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	txt := string(b)
+	for _, want := range []string{
+		"hooks.iome.sh",
+		"hooks.staging.iome.sh",
+		"apiv1.* is portal/catalog CP",
+		"not a broker streams endpoint",
+		"Catalog ≠ Connected",
+	} {
+		if !strings.Contains(txt, want) {
+			t.Fatalf("example config missing honesty needle %q", want)
+		}
+	}
+	if strings.Contains(txt, `endpoint = "https://apiv1`) {
+		t.Fatal("example config must not set [iomesh].endpoint to apiv1")
+	}
+	if strings.Contains(txt, `endpoint = "https://iomesh.example.com"`) {
+		t.Fatal("example config must not use a generic host that hides hooks vs apiv1")
 	}
 }
 
