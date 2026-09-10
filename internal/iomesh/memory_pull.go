@@ -314,6 +314,78 @@ func isOrgShapedTenant(tenant string) bool {
 	return strings.HasPrefix(strings.ToLower(strings.TrimSpace(tenant)), "org_")
 }
 
+// isDeptFamilyFilter reports whether filter_subject is in the durable dept.* family.
+func isDeptFamilyFilter(filter string) bool {
+	return strings.HasPrefix(strings.ToLower(strings.TrimSpace(filter)), "dept.")
+}
+
+// filterSubjectUnderTenant reports whether filter_subject is namespaced under tenant
+// (exact match or tenant. prefix). Broker Role+Tenant ACL requires this. Pure: no I/O.
+func filterSubjectUnderTenant(filter, tenant string) bool {
+	filter = strings.ToLower(strings.TrimSpace(filter))
+	tenant = strings.ToLower(strings.TrimSpace(tenant))
+	if filter == "" || tenant == "" {
+		return false
+	}
+	return filter == tenant || strings.HasPrefix(filter, tenant+".")
+}
+
+// OmitPullRoleForDeptFilter reports whether X-IOMesh-Role and the Role-gated
+// X-IOMesh-Tenant bind must be omitted so a dept.* consumer can be created.
+// Broker: Role without Tenant → 400; Role + Tenant requires filter_subject under
+// that tenant. Org-shaped tenants remapped to dept.* fail that check. Proven
+// create is no-Role 201. Does not change broker ACL. Pure: no I/O.
+func OmitPullRoleForDeptFilter(filter, tenant, role string) bool {
+	if strings.TrimSpace(role) == "" {
+		return false
+	}
+	if !isDeptFamilyFilter(filter) {
+		return false
+	}
+	return !filterSubjectUnderTenant(filter, tenant)
+}
+
+// ApplyDeptPullWireAuth returns the Role and Tenant that should be sent on the
+// wire for a pull/create. When OmitPullRoleForDeptFilter is true, both are
+// empty (headers omitted). Configured identity for print/scrapers is unchanged.
+// Pure: no I/O.
+func ApplyDeptPullWireAuth(filter, tenant, role string) (wireRole, wireTenant string) {
+	role = strings.TrimSpace(role)
+	tenant = strings.TrimSpace(tenant)
+	if OmitPullRoleForDeptFilter(filter, tenant, role) {
+		return "", ""
+	}
+	return role, tenant
+}
+
+// MemoryPullRoleTenantACLHint names the Role/Tenant/filter ACL when a dept.*
+// filter cannot be created under a Role+Tenant bind. Empty when the combo is
+// compatible. Does not invent pull success. Pure: no I/O.
+func MemoryPullRoleTenantACLHint(filter, tenant, role string) string {
+	role = strings.TrimSpace(role)
+	tenant = strings.TrimSpace(tenant)
+	filter = strings.TrimSpace(filter)
+	if !OmitPullRoleForDeptFilter(filter, tenant, role) {
+		return ""
+	}
+	if tenant == "" {
+		return "Role requires Tenant; dept.* consumer create omits X-IOMesh-Role (broker no-Role create)"
+	}
+	return fmt.Sprintf("Role + Tenant %q requires filter_subject under that tenant; dept.* filter %q omits Role and Role-gated Tenant (broker no-Role create)", tenant, filter)
+}
+
+// withoutRoleGatedTenantBind returns a shallow client copy with Role and Tenant
+// cleared so create/fetch/ack omit those headers. Org/Department stay.
+func (c *Client) withoutRoleGatedTenantBind() *Client {
+	if c == nil {
+		return nil
+	}
+	clone := *c
+	clone.cfg.Role = ""
+	clone.cfg.Tenant = ""
+	return &clone
+}
+
 // deptSubjectPrefixFromDepartment returns dept.<token> when department is a single
 // safe subject token. Empty / dotted / wildcard department → empty (caller uses dept.*).
 func deptSubjectPrefixFromDepartment(department string) string {
@@ -499,12 +571,25 @@ func (c *Client) RunMemoryPull(ctx context.Context, opt MemoryPullOptions) (Memo
 	}
 	// s660/s678: default filter_subject from tenant + role when unset (CLI also pre-resolves).
 	// Org-shaped tenants remap to dept.* (or dept.<department>) so filter matches wire subjects.
-	opt.Filter = DefaultMemoryPullFilterForRoleWithDept(opt.Filter, c.Tenant(), c.cfg.Role, c.cfg.PullAllowSuffix, c.cfg.Department)
+	configuredRole := c.cfg.Role
+	configuredTenant := c.Tenant()
+	opt.Filter = DefaultMemoryPullFilterForRoleWithDept(opt.Filter, configuredTenant, configuredRole, c.cfg.PullAllowSuffix, c.cfg.Department)
 	st.Stream = opt.Stream
 	st.Consumer = opt.Name
 	st.Filter = opt.Filter
 
-	if _, err := c.CreateConsumer(ctx, opt.Stream, opt.Name, opt.Filter); err != nil {
+	// dept.* + Role + org (or other off-tenant) Tenant cannot create: omit Role and
+	// the Role-gated Tenant bind. Proven path is no-Role 201. dual_write stays off.
+	pull := c
+	if OmitPullRoleForDeptFilter(opt.Filter, configuredTenant, configuredRole) {
+		pull = c.withoutRoleGatedTenantBind()
+	}
+
+	if _, err := pull.CreateConsumer(ctx, opt.Stream, opt.Name, opt.Filter); err != nil {
+		st.LastError = err.Error()
+		if hint := MemoryPullRoleTenantACLHint(opt.Filter, configuredTenant, configuredRole); hint != "" {
+			st.LastError = st.LastError + "; " + hint
+		}
 		return st, fmt.Errorf("memory pull create consumer: %w", err)
 	}
 	st.CreateOK = true
@@ -521,7 +606,7 @@ func (c *Client) RunMemoryPull(ctx context.Context, opt MemoryPullOptions) (Memo
 		}
 		st.Loops++
 
-		msgs, err := c.ConsumerFetch(ctx, opt.Stream, opt.Name, opt.Batch, opt.MaxWait)
+		msgs, err := pull.ConsumerFetch(ctx, opt.Stream, opt.Name, opt.Batch, opt.MaxWait)
 		if err != nil {
 			st.Errors++
 			st.LastError = err.Error()
@@ -594,7 +679,7 @@ func (c *Client) RunMemoryPull(ctx context.Context, opt MemoryPullOptions) (Memo
 			}
 		}
 		if opt.Ack && len(ackSeqs) > 0 {
-			if _, err := c.ConsumerAck(ctx, opt.Stream, opt.Name, ackSeqs...); err != nil {
+			if _, err := pull.ConsumerAck(ctx, opt.Stream, opt.Name, ackSeqs...); err != nil {
 				st.Errors++
 				st.LastError = err.Error()
 			} else {

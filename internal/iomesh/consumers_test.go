@@ -177,6 +177,59 @@ func TestCreateConsumer_HTTPError(t *testing.T) {
 	}
 }
 
+func TestCreateConsumer_HTTPErrorIncludesACLBody(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`filter_subject must be under tenant org_abc`))
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "acme", Role: "agent"}, nil)
+	_, err := c.CreateConsumer(context.Background(), "S", "c", "acme.events.>")
+	if err == nil || !strings.Contains(err.Error(), "http 400") {
+		t.Fatalf("err=%v", err)
+	}
+	if !strings.Contains(err.Error(), "filter_subject must be under tenant") {
+		t.Fatalf("want ACL body in err: %v", err)
+	}
+}
+
+func TestCreateConsumer_OrgTenantDeptFilterOmitsRoleAndTenant(t *testing.T) {
+	var gotRole, gotTenant string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotRole = r.Header.Get("X-IOMesh-Role")
+		gotTenant = r.Header.Get("X-IOMesh-Tenant")
+		if gotRole != "" && gotTenant == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`Role requires Tenant`))
+			return
+		}
+		if gotRole != "" && gotTenant != "" {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`filter_subject must be under tenant ` + gotTenant))
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(map[string]any{"stream": "EVENTS", "name": "c", "filter_subject": DefaultDeptEventsPullFilter})
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "org_abc", Role: "agent", DualWrite: false}, nil)
+	info, err := c.CreateConsumer(context.Background(), "EVENTS", "c", DefaultDeptEventsPullFilter)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info == nil || info.Name != "c" {
+		t.Fatalf("info=%+v", info)
+	}
+	if gotRole != "" {
+		t.Fatalf("X-IOMesh-Role=%q want omit", gotRole)
+	}
+	if gotTenant != "" {
+		t.Fatalf("X-IOMesh-Tenant=%q want omit Role-gated bind", gotTenant)
+	}
+}
+
 func TestCreateConsumer_PathEscape(t *testing.T) {
 	var gotPath string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -791,15 +844,26 @@ func TestResolveConsumerCreateAuthAndFilter(t *testing.T) {
 			wantFilter: "acme.events.>", wantRole: "agent",
 		},
 		{
-			name:   "agent org-shaped tenant → dept.*.events.>",
+			name:   "agent org-shaped tenant → dept.*.events.> omits role",
 			tenant: "org_abc", roleFlag: "agent",
-			wantFilter: "dept.*.events.>", wantRole: "agent",
+			wantFilter: "dept.*.events.>", wantRole: "",
+		},
+		{
+			name:     "explicit org events filter keeps role (under tenant)",
+			explicit: "org_abc.events.>", tenant: "org_abc",
+			roleFlag:   "agent",
+			wantFilter: "org_abc.events.>", wantRole: "agent",
 		},
 		{
 			name:     "flag role overrides config; explicit filter wins",
 			explicit: "dept.ops.>", tenant: "acme",
 			roleFlag: "viewer", configRole: "admin",
-			wantFilter: "dept.ops.>", wantRole: "viewer",
+			wantFilter: "dept.ops.>", wantRole: "",
+		},
+		{
+			name:   "dept tenant + agent keeps role (filter under tenant)",
+			tenant: "dept.eng", roleFlag: "agent",
+			wantFilter: "dept.eng.events.>", wantRole: "agent",
 		},
 		{
 			name:   "config role/suffix when flags empty",

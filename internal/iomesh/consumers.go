@@ -47,13 +47,17 @@ func ResolveMeshPullAuth(roleFlag, suffixFlag, configRole, configSuffix string) 
 // ([memory].pull_role / pull_allow_suffix). Empty filter uses
 // DefaultMemoryPullFilterForRole (same role-aware defaults as memory pull s678).
 // Org-shaped tenants remap to dept.* so agent/viewer entitles dept.*.events.*.
-// Tenant should be the IOMesh tenant (mesh command pattern). Pure: no I/O.
+// When the effective filter is dept.* and not under Tenant, the returned role
+// is empty so create omits X-IOMesh-Role (broker Role+Tenant ACL). Callers must
+// also omit Role-gated Tenant via ApplyDeptPullWireAuth. Tenant should be the
+// IOMesh tenant (mesh command pattern). Pure: no I/O.
 //
 // Beta federated ACL headers + defaults — fail-open when role/suffix empty
 // (headers omitted); not full mesh RBAC GA. Peer mesh s680 continuum.
 func ResolveConsumerCreateAuthAndFilter(explicitFilter, tenant, roleFlag, suffixFlag, configRole, configSuffix string) (filter, role, allowSuffix string) {
 	role, allowSuffix = ResolveMeshPullAuth(roleFlag, suffixFlag, configRole, configSuffix)
 	filter = DefaultMemoryPullFilterForRole(explicitFilter, tenant, role, allowSuffix)
+	role, _ = ApplyDeptPullWireAuth(filter, tenant, role)
 	return filter, role, allowSuffix
 }
 
@@ -92,6 +96,12 @@ func (c *Client) CreateConsumer(ctx context.Context, stream, name string, filter
 	}
 	req.Header.Set("Content-Type", "application/json")
 	c.auth(req)
+	// dept.* filter + Role + off-tenant (org_*) Tenant → 400. Omit Role and the
+	// Role-gated Tenant bind; proven create is no-Role 201. Does not change broker ACL.
+	if OmitPullRoleForDeptFilter(reqBody.FilterSubject, c.cfg.Tenant, c.cfg.Role) {
+		req.Header.Del("X-IOMesh-Role")
+		req.Header.Del("X-IOMesh-Tenant")
+	}
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -106,7 +116,7 @@ func (c *Client) CreateConsumer(ctx context.Context, stream, name string, filter
 		return &ConsumerInfo{Stream: stream, Name: name}, nil
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("iomesh consumer: http %d", resp.StatusCode)
+		return nil, consumerHTTPError(resp.StatusCode, raw)
 	}
 	var info ConsumerInfo
 	if len(bytes.TrimSpace(raw)) > 0 {
@@ -173,9 +183,23 @@ func (c *Client) ConsumerFetch(ctx context.Context, stream, name string, batch i
 		return nil, err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("iomesh consumer: http %d", resp.StatusCode)
+		return nil, consumerHTTPError(resp.StatusCode, raw)
 	}
 	return decodeConsumerFetch(raw, stream)
+}
+
+// consumerHTTPError keeps the "http N" token (tests + scrapers) and appends a
+// short body snippet so Role/Tenant/filter ACL 400s are named without inventing
+// a reason from status alone.
+func consumerHTTPError(status int, raw []byte) error {
+	snippet := strings.TrimSpace(string(raw))
+	if len(snippet) > 160 {
+		snippet = snippet[:160]
+	}
+	if snippet == "" {
+		return fmt.Errorf("iomesh consumer: http %d", status)
+	}
+	return fmt.Errorf("iomesh consumer: http %d: %s", status, snippet)
 }
 
 func decodeConsumerFetch(raw []byte, defaultStream string) ([]StreamMessage, error) {

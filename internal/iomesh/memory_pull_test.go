@@ -237,18 +237,93 @@ func TestMemoryPullFilterMismatchHint(t *testing.T) {
 	}
 }
 
+func TestOmitPullRoleForDeptFilter(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name   string
+		filter string
+		tenant string
+		role   string
+		omit   bool
+	}{
+		{name: "agent + org tenant + dept.* default", filter: DefaultDeptEventsPullFilter, tenant: "org_abc", role: "agent", omit: true},
+		{name: "agent + org tenant + concrete dept", filter: "dept.engineering.events.github", tenant: "org_abc", role: "agent", omit: true},
+		{name: "agent + empty tenant + dept", filter: DefaultDeptEventsPullFilter, tenant: "", role: "agent", omit: true},
+		{name: "empty role keeps headers", filter: DefaultDeptEventsPullFilter, tenant: "org_abc", role: "", omit: false},
+		{name: "explicit org filter keeps role", filter: "org_abc.events.>", tenant: "org_abc", role: "agent", omit: false},
+		{name: "dept tenant + matching filter keeps role", filter: "dept.eng.events.>", tenant: "dept.eng", role: "agent", omit: false},
+		{name: "plain tenant + matching events keeps role", filter: "acme.events.>", tenant: "acme", role: "agent", omit: false},
+		{name: "viewer + acme + dept filter omits", filter: "dept.ops.>", tenant: "acme", role: "viewer", omit: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := OmitPullRoleForDeptFilter(tt.filter, tt.tenant, tt.role); got != tt.omit {
+				t.Fatalf("OmitPullRoleForDeptFilter(%q,%q,%q)=%v want %v", tt.filter, tt.tenant, tt.role, got, tt.omit)
+			}
+			wr, wt := ApplyDeptPullWireAuth(tt.filter, tt.tenant, tt.role)
+			if tt.omit {
+				if wr != "" || wt != "" {
+					t.Fatalf("wire role=%q tenant=%q want both empty", wr, wt)
+				}
+			} else if wr != strings.TrimSpace(tt.role) || wt != strings.TrimSpace(tt.tenant) {
+				t.Fatalf("wire role=%q tenant=%q want role=%q tenant=%q", wr, wt, tt.role, tt.tenant)
+			}
+		})
+	}
+}
+
+func TestMemoryPullRoleTenantACLHint(t *testing.T) {
+	t.Parallel()
+	hint := MemoryPullRoleTenantACLHint(DefaultDeptEventsPullFilter, "org_abc", "agent")
+	if hint == "" {
+		t.Fatal("expected ACL hint")
+	}
+	if !strings.Contains(hint, "Role") || !strings.Contains(hint, "Tenant") || !strings.Contains(hint, "org_abc") {
+		t.Fatalf("hint must name Role/Tenant/org: %s", hint)
+	}
+	if !strings.Contains(hint, "dept.*") {
+		t.Fatalf("hint must name dept.* filter: %s", hint)
+	}
+	if MemoryPullRoleTenantACLHint("org_abc.events.>", "org_abc", "agent") != "" {
+		t.Fatal("org filter under tenant is not an ACL omit")
+	}
+	if MemoryPullRoleTenantACLHint(DefaultDeptEventsPullFilter, "org_abc", "") != "" {
+		t.Fatal("empty role is not an ACL omit")
+	}
+}
+
 func TestRunMemoryPull_OrgTenantDefaultFilterFetchesDeptEvents(t *testing.T) {
-	var gotFilter string
+	var gotFilter, createRole, createTenant, fetchRole, fetchTenant string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		role := r.Header.Get("X-IOMesh-Role")
+		tenant := r.Header.Get("X-IOMesh-Tenant")
+		if role != "" && tenant == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`Role requires Tenant`))
+			return
+		}
 		switch {
 		case strings.HasSuffix(r.URL.Path, "/consumers") && !strings.Contains(r.URL.Path, "/fetch"):
+			createRole, createTenant = role, tenant
 			var body map[string]any
 			_ = json.NewDecoder(r.Body).Decode(&body)
 			if s, _ := body["filter_subject"].(string); s != "" {
 				gotFilter = s
 			}
+			if role != "" && tenant != "" && !filterSubjectUnderTenant(gotFilter, tenant) {
+				w.WriteHeader(http.StatusBadRequest)
+				_, _ = w.Write([]byte(`filter_subject must be under tenant ` + tenant))
+				return
+			}
 			_ = json.NewEncoder(w).Encode(map[string]any{"stream": "EVENTS", "name": "tui-local-palace"})
 		case strings.HasSuffix(r.URL.Path, "/fetch"):
+			fetchRole, fetchTenant = role, tenant
+			if role != "" && tenant != "" && !filterSubjectUnderTenant(gotFilter, tenant) {
+				w.WriteHeader(http.StatusBadRequest)
+				_, _ = w.Write([]byte(`filter_subject must be under tenant ` + tenant))
+				return
+			}
 			if gotFilter == "" || !natsSubjectMatches("dept.engineering.events.github", gotFilter) {
 				_ = json.NewEncoder(w).Encode(map[string]any{"messages": []any{}})
 				return
@@ -285,6 +360,48 @@ func TestRunMemoryPull_OrgTenantDefaultFilterFetchesDeptEvents(t *testing.T) {
 	}
 	if st.Fetched < 1 {
 		t.Fatalf("create_ok alone is not pull success; fetched=%d filter=%q", st.Fetched, st.Filter)
+	}
+	if createRole != "" || createTenant != "" {
+		t.Fatalf("create Role=%q Tenant=%q want omit (broker ACL)", createRole, createTenant)
+	}
+	if fetchRole != "" || fetchTenant != "" {
+		t.Fatalf("fetch Role=%q Tenant=%q want omit", fetchRole, fetchTenant)
+	}
+	if c.cfg.DualWrite {
+		t.Fatal("dual_write must stay off")
+	}
+	// Original client config is unchanged (clone is pull-scoped).
+	if c.cfg.Role != "agent" || c.cfg.Tenant != "org_abc" {
+		t.Fatalf("client cfg mutated role=%q tenant=%q", c.cfg.Role, c.cfg.Tenant)
+	}
+}
+
+func TestRunMemoryPull_CreateFailureNamesRoleTenantACL(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`filter_subject must be under tenant org_abc`))
+	}))
+	defer srv.Close()
+
+	c := New(Config{Enabled: true, Endpoint: srv.URL, Tenant: "org_abc", Role: "agent", DualWrite: false}, nil)
+	st, err := c.RunMemoryPull(context.Background(), MemoryPullOptions{
+		Stream: "EVENTS", Name: "c", Batch: 1, MaxWait: time.Millisecond,
+		MaxLoops: 1, DryRun: true,
+	})
+	if err == nil {
+		t.Fatal("expected create error")
+	}
+	if st.CreateOK {
+		t.Fatal("create_ok must stay false")
+	}
+	if !strings.Contains(err.Error(), "http 400") {
+		t.Fatalf("err=%v", err)
+	}
+	if !strings.Contains(st.LastError, "filter_subject must be under tenant") {
+		t.Fatalf("last_error must include broker ACL body: %q", st.LastError)
+	}
+	if !strings.Contains(st.LastError, "Role") || !strings.Contains(st.LastError, "Tenant") {
+		t.Fatalf("last_error must name Role/Tenant ACL: %q", st.LastError)
 	}
 	if c.cfg.DualWrite {
 		t.Fatal("dual_write must stay off")

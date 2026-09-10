@@ -1652,6 +1652,7 @@ Create: POST /v1/streams/{stream}/consumers (201 full info; 409 idempotent name-
   --role / [memory].pull_role → X-IOMesh-Role; --pull-allow-suffix / pull_allow_suffix → allow-suffix.
   Roles: operator|admin|agent|auditor|viewer|memory|custom (s687 memory → tenant.memory.>).
   Empty --filter → role-aware default (s681/s687; same as memory pull s678; org_* tenants → dept.*).
+  dept.* filter not under Tenant omits Role and Role-gated Tenant (broker ACL; no-Role create).
   Text/JSON always-emit pull_role / pull_allow_suffix next to filter_subject (s696; empty when unset).
   Beta; fail-open; dual_write default OFF; not full mesh RBAC GA.
 Fetch:  POST /v1/streams/{stream}/consumers/{name}/fetch (default batch=1, max_wait 2s).
@@ -1920,13 +1921,15 @@ func cmdMeshConsumerCreate(args []string) int {
 	// s681: federated role + allow-suffix (flags override [memory] config) + role-aware default filter.
 	// Tenant is IOMesh tenant (mesh command pattern). Fail-open empty role/suffix → omit headers.
 	meshTenant := strings.TrimSpace(cfg.IOMesh.Tenant)
+	configuredRole, _ := iomesh.ResolveMeshPullAuth(*role, *pullAllowSuffix, cfg.Memory.PullRole, cfg.Memory.PullAllowSuffix)
 	filterSub, pullRole, allowSuffix := iomesh.ResolveConsumerCreateAuthAndFilter(
 		*filter, meshTenant, *role, *pullAllowSuffix, cfg.Memory.PullRole, cfg.Memory.PullAllowSuffix,
 	)
+	_, wireTenant := iomesh.ApplyDeptPullWireAuth(filterSub, meshTenant, configuredRole)
 	mesh := iomesh.New(iomesh.Config{
 		Enabled:         cfg.IOMesh.Enabled,
 		Endpoint:        cfg.IOMesh.Endpoint,
-		Tenant:          meshTenant,
+		Tenant:          wireTenant,
 		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
 		OrgID:           cfg.IOMesh.Org,
 		WorkspaceID:     cfg.IOMesh.Workspace,
@@ -1937,6 +1940,9 @@ func cmdMeshConsumerCreate(args []string) int {
 	// Log effective filter/role/suffix once (same honesty as memory pull s675/s678).
 	fmt.Fprintf(os.Stderr, "mesh consumer create filter_subject=%q tenant=%q role=%q pull_allow_suffix=%q\n",
 		filterSub, meshTenant, pullRole, allowSuffix)
+	if configuredRole != "" && pullRole == "" {
+		fmt.Fprintln(os.Stderr, "mesh consumer create: omitted X-IOMesh-Role and Role-gated Tenant for dept.* filter (broker Role+Tenant ACL requires filter_subject under tenant)")
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -2649,7 +2655,10 @@ Honesty: dual_write remains optional audit (default OFF). Hosted Palace sunset u
   Role/suffix headers are Beta federated ACL (s675); role-aware default filter is s678/s687 Beta —
   memory → tenant.memory.> (peer mesh s686); org_* tenants remap to dept.* so agent/viewer
   entitles dept.*.events.* (override: --filter dept.*.events.> or dept.<dept>.events.>).
-  create_ok alone is not proof messages were pulled. Fail-open when empty — not full IdP RBAC GA.
+  Default dept.* pull omits X-IOMesh-Role and the Role-gated Tenant bind when the filter is
+  not under Tenant (broker: Role requires Tenant; Role+Tenant requires filter under tenant).
+  Explicit --filter org_*.events.> still sends Role+Tenant. create_ok alone is not proof
+  messages were pulled. Fail-open when empty — not full IdP RBAC GA.
   s705: PASS/summary and --json always emit stream/consumer/filter_subject/pull_role/pull_allow_suffix/tenant
   + knobs (dry_run/dual_write/batch/max_wait_ms/once) + counters; empty identity honest; peer mesh s704.
   s717: always emit process evidence endpoint/org/workspace (empty honest) + result(ok|err)/exit_code(0|1)
@@ -2976,6 +2985,11 @@ func cmdMemoryPull(args []string) int {
 	if meshTenant == "" {
 		meshTenant = strings.TrimSpace(cfg.Memory.Tenant)
 	}
+	// dept.* filter + Role + org Tenant cannot create (broker ACL). Default
+	// override: omit Role and the Role-gated Tenant bind (proven no-Role 201).
+	configuredRole := pullRole
+	wireRole, wireTenant := iomesh.ApplyDeptPullWireAuth(filterSub, meshTenant, pullRole)
+	pullRole = wireRole
 	// s717: process mesh identity from [iomesh] (empty string honest when unset).
 	meshEndpoint := strings.TrimSpace(cfg.IOMesh.Endpoint)
 	meshOrg := strings.TrimSpace(cfg.IOMesh.Org)
@@ -3022,7 +3036,7 @@ func cmdMemoryPull(args []string) int {
 	mesh := iomesh.New(iomesh.Config{
 		Enabled:         cfg.IOMesh.Enabled,
 		Endpoint:        cfg.IOMesh.Endpoint,
-		Tenant:          meshTenant,
+		Tenant:          wireTenant,
 		APIKeyEnv:       cfg.IOMesh.APIKeyEnv,
 		OrgID:           cfg.IOMesh.Org,
 		WorkspaceID:     cfg.IOMesh.Workspace,
@@ -3040,6 +3054,9 @@ func cmdMemoryPull(args []string) int {
 	// Always log effective filter once at start (s660/s678); role/suffix once (s675). Empty role/suffix = fail-open omit headers.
 	fmt.Fprintf(os.Stderr, "memory pull filter_subject=%q tenant=%q role=%q pull_allow_suffix=%q\n",
 		filterSub, pullTenant, pullRole, allowSuffix)
+	if configuredRole != "" && pullRole == "" {
+		fmt.Fprintf(os.Stderr, "memory pull: omitted X-IOMesh-Role and Role-gated Tenant for dept.* filter (broker Role+Tenant ACL requires filter_subject under tenant)\n")
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
