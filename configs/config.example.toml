@@ -215,6 +215,8 @@ enabled = false
 # enabled = true
 # server = "iomesh-memory-mcp"
 # tenant = "dept.research"
+# palace_root = "/workspace/data/memory-palaces"  # match MCP -palace-root; HTTP URL-only has no stdio args
+# # IOMESH_MEMORY_PALACE_ROOT / PALACE_ROOT · default ~/.iomesh/palace is residual if DNE
 # endpoint = "http://127.0.0.1:8765"  # memory sidecar (stage warm plane); IOMESH_MEMORY_ENDPOINT
 # auto_recall = true     # inject <memory-context> each turn (fail-open; sync then MCP)
 # auto_ingest = false    # opt-in: persist user+assistant after successful turn
@@ -236,7 +238,7 @@ enabled = false
 # recall_until = ""          # optional RFC3339 auto-recall upper bound
 # recall_session_seq
 # recall_cache_ttl_ms = 3000  # s1069 short-TTL sync cache; 0 disables = 0     # optional session_seq filter; 0 omits from body
-# IOMESH_MEMORY=1 · IOMESH_MEMORY_TENANT · IOMESH_MEMORY_ENDPOINT · MEMORY_SIDECAR_URL
+# IOMESH_MEMORY=1 · IOMESH_MEMORY_TENANT · IOMESH_MEMORY_PALACE_ROOT · IOMESH_MEMORY_ENDPOINT · MEMORY_SIDECAR_URL
 # IOMESH_MEMORY_AUTO_RECALL · IOMESH_MEMORY_AUTO_INGEST · IOMESH_MEMORY_DUAL_WRITE
 # IOMESH_MEMORY_RECALL_SINCE · IOMESH_MEMORY_RECALL_UNTIL · IOMESH_MEMORY_RECALL_SESSION_SEQ
 # IOMESH_MEMORY_PULL_ROLE · IOMESH_MEMORY_PULL_ALLOW_SUFFIX · IOMESH_MEMORY_PULL_CONTINUOUS

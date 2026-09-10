@@ -36,6 +36,51 @@ func TestBuildManagedFragment_LocalMemoryDualWriteOff(t *testing.T) {
 	if strings.Contains(frag, "analyze_continuous = true") {
 		t.Fatal("must not set analyze_continuous true by default")
 	}
+	if !strings.Contains(frag, `palace_root = "~/.iomesh/palace"`) {
+		t.Fatalf("HTTP local-memory must write palace_root:\n%s", frag)
+	}
+	for _, needle := range []string{
+		"HTTP MCP URL-only has no stdio -palace-root args",
+		"IOMESH_MEMORY_PALACE_ROOT",
+		"match the MCP process -palace-root",
+		"never invent Connected",
+		"not Memory GA",
+	} {
+		if !strings.Contains(frag, needle) {
+			t.Fatalf("HTTP palace_root honesty missing %q:\n%s", needle, frag)
+		}
+	}
+}
+
+func TestBuildManagedFragment_LocalMemoryPalaceRootKnown(t *testing.T) {
+	opt := DefaultInitOptions()
+	opt.MemoryPalaceRoot = "/workspace/data/memory-palaces"
+	frag, err := BuildManagedFragment([]Profile{ProfileLocalMemory}, opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(frag, `palace_root = "/workspace/data/memory-palaces"`) {
+		t.Fatalf("must write known palace_root:\n%s", frag)
+	}
+	if strings.Contains(frag, "dual_write = true") {
+		t.Fatal("must not set dual_write true")
+	}
+}
+
+func TestBuildManagedFragment_LocalMemoryStdioPalaceRoot(t *testing.T) {
+	opt := DefaultInitOptions()
+	opt.UseStdioMemory = true
+	opt.MemoryPalaceRoot = "/tmp/stdio-palace"
+	frag, err := BuildManagedFragment([]Profile{ProfileLocalMemory}, opt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(frag, `args = ["-palace-root", "/tmp/stdio-palace"`) {
+		t.Fatalf("stdio must keep -palace-root args:\n%s", frag)
+	}
+	if !strings.Contains(frag, `palace_root = "/tmp/stdio-palace"`) {
+		t.Fatalf("stdio must write matching palace_root:\n%s", frag)
+	}
 }
 
 func TestBuildManagedFragment_All(t *testing.T) {

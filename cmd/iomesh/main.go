@@ -206,6 +206,7 @@ func run(args []string) int {
 			Enabled:          true,
 			Server:           cfg.Memory.Server,
 			Tenant:           cfg.Memory.Tenant,
+			PalaceRoot:       cfg.Memory.PalaceRoot,
 			AutoRecall:       cfg.Memory.AutoRecall,
 			AutoIngest:       cfg.Memory.AutoIngest,
 			DualWrite:        cfg.Memory.DualWrite,
@@ -546,6 +547,7 @@ Flags (init):
   --profiles list         csv profiles (alternative to positionals)
   --stdio                 local-memory via stdio command iomesh-memory-mcp
   --memory-url URL        default http://127.0.0.1:8080/mcp
+  --palace-root path      [memory] palace_root (HTTP MCP must match process -palace-root)
   --plugins-dir path      repeatable [plugins].dirs entry
   --mesh-endpoint URL     optional mesh base
   --mesh-tenant id        optional tenant
@@ -574,6 +576,7 @@ func cmdSetupInit(args []string) int {
 	profilesFlag := fs.String("profiles", "", "comma-separated profiles (local-memory|plugins|mesh|platform-mcp|all)")
 	stdio := fs.Bool("stdio", false, "use stdio iomesh-memory-mcp instead of HTTP URL")
 	memoryURL := fs.String("memory-url", "", "memory MCP HTTP URL")
+	palaceRoot := fs.String("palace-root", "", "[memory] palace_root (match MCP -palace-root; HTTP MCP has no stdio args)")
 	meshEP := fs.String("mesh-endpoint", "", "mesh endpoint URL")
 	meshTenant := fs.String("mesh-tenant", "", "mesh tenant")
 	meshOrg := fs.String("mesh-org", "", "mesh org id ([iomesh].org / IOMESH_ORG; X-IOMesh-Org)")
@@ -599,6 +602,9 @@ func cmdSetupInit(args []string) int {
 	opt.UseStdioMemory = *stdio
 	if strings.TrimSpace(*memoryURL) != "" {
 		opt.MemoryHTTPURL = strings.TrimSpace(*memoryURL)
+	}
+	if strings.TrimSpace(*palaceRoot) != "" {
+		opt.MemoryPalaceRoot = strings.TrimSpace(*palaceRoot)
 	}
 	opt.MeshEndpoint = strings.TrimSpace(*meshEP)
 	opt.MeshTenant = strings.TrimSpace(*meshTenant)
@@ -697,7 +703,7 @@ func hoistFlags(args []string) []string {
 			// known flags that take a value
 			name := strings.TrimLeft(a, "-")
 			switch name {
-			case "config", "profiles", "memory-url", "mesh-endpoint", "mesh-tenant",
+			case "config", "profiles", "memory-url", "palace-root", "mesh-endpoint", "mesh-tenant",
 				"mesh-org", "platform-mcp-url", "plugins-dir":
 				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
 					i++

@@ -445,6 +445,7 @@ func (s *Server) newRuntime(cwd string) (*agent.Runtime, *session.Store, error) 
 			Enabled:          true,
 			Server:           cfg.Memory.Server,
 			Tenant:           cfg.Memory.Tenant,
+			PalaceRoot:       cfg.Memory.PalaceRoot,
 			AutoRecall:       cfg.Memory.AutoRecall,
 			AutoIngest:       cfg.Memory.AutoIngest,
 			DualWrite:        cfg.Memory.DualWrite,

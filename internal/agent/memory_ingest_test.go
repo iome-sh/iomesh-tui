@@ -47,7 +47,7 @@ func TestMemoryIngestTurn_MintsLocalOverlaySessionID(t *testing.T) {
 	mgr.Attach(cl)
 
 	rt := &Runtime{
-		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "default", DualWrite: false},
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "default", DualWrite: false, PalaceRoot: t.TempDir()},
 		mcp:    mgr,
 	}
 	out, err := rt.MemoryIngestTurn(context.Background(), "user", "Demo note: overlay needle alpha")

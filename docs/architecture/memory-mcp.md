@@ -170,6 +170,8 @@ mutating = true
 enabled = true
 server = "memory"          # must match [[mcp.servers]].name
 tenant = "dept.research"   # or MEMORY_TENANT / IOMESH_MEMORY_TENANT
+# palace_root = "/workspace/data/memory-palaces"  # match MCP -palace-root; HTTP has no stdio args
+# # IOMESH_MEMORY_PALACE_ROOT / PALACE_ROOT · default ~/.iomesh/palace residual if DNE
 auto_recall = true         # inject <memory-context> each turn (fail-open)
 auto_ingest = false        # opt-in: write user+assistant turns after success
 # dual_write = false       # optional mesh audit only (needs [iomesh]); not primary palace
@@ -230,6 +232,7 @@ mutating = true
 enabled = true
 server = "memory"          # must match [[mcp.servers]].name
 tenant = "dept.research"   # or MEMORY_TENANT / IOMESH_MEMORY_TENANT
+# palace_root = "/data/memory-palaces"  # match MCP / compose -palace-root; HTTP has no stdio args
 auto_recall = true
 auto_ingest = false
 # dual_write = false       # optional mesh audit only · default OFF · not primary palace
@@ -242,6 +245,7 @@ Env helpers (optional; same as binary path):
 | `IOMESH_MCP=1` | Enable `[mcp]` section |
 | `IOMESH_MEMORY=1` | Enable `[memory]` hooks |
 | `IOMESH_MEMORY_TENANT` / `MEMORY_TENANT` | Default tenant |
+| `IOMESH_MEMORY_PALACE_ROOT` / `PALACE_ROOT` | Local palace dir for `/memory status` ls (HTTP MCP has no stdio `-palace-root` args; must match MCP process) |
 | `IOMESH_MEMORY_DUAL_WRITE=1` | Opt-in mesh audit only — **leave unset** for local-primary |
 
 There is **no** separate `MEMORY_MCP_URL` config key in the TUI — point `[[mcp.servers]].url` at the edge. (control-plane wire scripts may use `MEMORY_MCP_URL` / `IOMESH_MEMORY_MCP_URL` for other hosts; TUI uses TOML `url`.)
@@ -594,6 +598,7 @@ Agent tools also appear as `mcp__memory__memory_retrieve` (etc.) when MCP is att
 |-----|--------|
 | `IOMESH_MEMORY=1` | Enable `[memory]` hooks |
 | `IOMESH_MEMORY_TENANT` / `MEMORY_TENANT` | Default tenant for hooks + slash |
+| `IOMESH_MEMORY_PALACE_ROOT` / `PALACE_ROOT` | Local palace dir for `/memory status` ls (HTTP MCP has no stdio `-palace-root`; must match MCP process) |
 | `IOMESH_MEMORY_AUTO_RECALL=0` | Disable per-turn retrieve inject |
 | `IOMESH_MEMORY_AUTO_INGEST=1` | Enable post-turn ingest (MCP and/or dual-write) |
 | `IOMESH_MEMORY_DUAL_WRITE=1` | Also publish async `MEMORY_INGEST` when mesh enabled |
