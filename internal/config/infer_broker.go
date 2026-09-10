@@ -18,11 +18,7 @@ type InferredBroker struct {
 // InferHooksEndpoint maps a portal MCP URL host to the public broker host.
 // Unknown hosts return empty (no invent).
 func InferHooksEndpoint(portalMCPURL string) string {
-	u, err := url.Parse(strings.TrimSpace(portalMCPURL))
-	if err != nil || u.Hostname() == "" {
-		return ""
-	}
-	switch strings.ToLower(u.Hostname()) {
+	switch endpointHostname(portalMCPURL) {
 	case "apiv1.iome.sh":
 		return "https://hooks.iome.sh"
 	case "apiv1.staging.iome.sh":
@@ -30,6 +26,28 @@ func InferHooksEndpoint(portalMCPURL string) string {
 	default:
 		return ""
 	}
+}
+
+// LooksLikePortalAPIv1 reports whether raw looks like a portal/catalog CP host
+// (apiv1.*). Those hosts are not broker streams endpoints.
+// Catalog ≠ Connected · infer ≠ Connected.
+func LooksLikePortalAPIv1(raw string) bool {
+	return strings.HasPrefix(endpointHostname(raw), "apiv1.")
+}
+
+func endpointHostname(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return ""
+	}
+	if !strings.Contains(raw, "://") {
+		raw = "https://" + raw
+	}
+	u, err := url.Parse(raw)
+	if err != nil {
+		return ""
+	}
+	return strings.ToLower(u.Hostname())
 }
 
 // ApplyInferredBroker fills [iomesh] from portal MCP when unset.

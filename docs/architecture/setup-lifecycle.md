@@ -65,7 +65,7 @@ Post-probe next steps are residual-honest (helper `setup.SetupPreflightNextStepL
 | **Host/secrets missing** | Probe not ok · host or env still missing | start `iomesh-memory-mcp` · set secret env · re-run preflight |
 | **Cold start** | Preflight ok · no session / CLI-only | **restart `iomesh`** (CLI has **no** `setup reload`) · then `/setup reload` in session if needed |
 
-**Honesty:** CLI has **no** `iomesh setup reload` · dual_write **OFF** · not Memory GA · catalog ≠ Connected · PASS ≠ invent install green · package wire ≠ Connected · free eng **s1699** (peer of s1686 init next-step).
+**Honesty:** CLI has **no** `iomesh setup reload` · dual_write **OFF** · not Memory GA · catalog ≠ Connected · PASS ≠ invent install green · package wire ≠ Connected · free eng **s1699** (peer of s1686 init next-step). Preflight **warns** (does not invent Connected) when `[iomesh].endpoint` host looks like `apiv1.*` — that is portal/catalog CP, not broker streams; streams/consumers live on `hooks.*`.
 
 ### Profiles
 
@@ -128,7 +128,7 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 | `drift` / `maintain` | report-only `BuildDriftReport` + `FormatDriftText` (s1534 P6 · s1707 dual-path next-step appended) |
 | `repair` | guided `PlanRepair` / `ApplyRepairPlan` (s1538 P7 · plan default · apply requires `--yes` · s1707 dual-path next-step on FormatRepair*) |
 
-Simple flags on slash `init`: `--stdio` · `--print-only` · `--plugins-dir path` · `--memory-url URL` · `--mesh-endpoint URL` · `--mesh-tenant id` · `--mesh-org id` · `--platform-mcp-url URL`. Mesh endpoint writes **hooks** (not portal `/v7/mcp`). When the portal URL is `apiv1.iome.sh`, infer `https://hooks.iome.sh`. Infer ≠ Connected. `--mesh-org` persists `[iomesh].org` / `IOMESH_ORG` (empty writes a commented residual; empty org fail-opens after broker empty-org fail-open).
+Simple flags on slash `init`: `--stdio` · `--print-only` · `--plugins-dir path` · `--memory-url URL` · `--mesh-endpoint URL` · `--mesh-tenant id` · `--mesh-org id` · `--platform-mcp-url URL`. Mesh endpoint writes **hooks** (not portal `/v7/mcp`). When the portal URL is `apiv1.iome.sh`, infer `https://hooks.iome.sh`. Infer ≠ Connected. `[iomesh].endpoint` comments never stamp `apiv1.*` as broker streams — `apiv1.*` is portal/catalog CP; streams/consumers live on `hooks.*` (e.g. `hooks.staging.iome.sh`). Preflight **warns** (does not invent Connected) when the residual endpoint host looks like `apiv1.*`. `--mesh-org` persists `[iomesh].org` / `IOMESH_ORG` (empty writes a commented residual; empty org fail-opens after broker empty-org fail-open).
 
 **Process config inheritance:** in-session `/setup preflight` (and `/setup` probes that load config: reload · pull start/once · analyze start/once · drift · repair) use the same path the running process loaded (`iomesh --config` / `--repl --config` / `IOMESH_CONFIG` / user default) when slash `--config` is omitted. Slash `--config PATH` still overrides. CLI `iomesh setup preflight --config PATH` is unchanged. Slash `/setup init` still writes the user config path (CLI `--config` remains the custom write target). dual_write **OFF** · not Memory GA · PASS ≠ invent Connected.
 

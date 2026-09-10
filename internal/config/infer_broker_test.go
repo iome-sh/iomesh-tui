@@ -10,8 +10,37 @@ func TestInferHooksEndpoint(t *testing.T) {
 	if got := InferHooksEndpoint("https://apiv1.staging.iome.sh/v7/mcp"); got != "https://hooks.staging.iome.sh" {
 		t.Fatalf("stage = %q", got)
 	}
+	if got := InferHooksEndpoint("https://apiv1.staging.iome.sh"); got != "https://hooks.staging.iome.sh" {
+		t.Fatalf("stage bare = %q", got)
+	}
 	if got := InferHooksEndpoint("https://example.invalid/mcp"); got != "" {
 		t.Fatalf("unknown = %q", got)
+	}
+}
+
+func TestLooksLikePortalAPIv1(t *testing.T) {
+	t.Parallel()
+	for _, raw := range []string{
+		"https://apiv1.iome.sh/v7/mcp",
+		"https://apiv1.staging.iome.sh",
+		"https://apiv1.staging.iome.sh/",
+		"apiv1.staging.iome.sh",
+		"APIV1.iome.sh",
+	} {
+		if !LooksLikePortalAPIv1(raw) {
+			t.Fatalf("want portal CP host: %q", raw)
+		}
+	}
+	for _, raw := range []string{
+		"",
+		"https://hooks.iome.sh",
+		"https://hooks.staging.iome.sh",
+		"https://example.invalid",
+		"hooks.iome.sh",
+	} {
+		if LooksLikePortalAPIv1(raw) {
+			t.Fatalf("must not treat as portal CP: %q", raw)
+		}
 	}
 }
 

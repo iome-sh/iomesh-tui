@@ -51,6 +51,11 @@ type PreflightReport struct {
 // dual_write OFF · catalog ≠ Connected · not Memory GA.
 const meshOrgEmptyNote = "mesh org empty — X-IOMesh-Org omitted · hosted brokers isolate catalog/consume by org and may 400 without it · local/dev stays fail-open · set [iomesh].org or IOMESH_ORG · catalog ≠ Connected"
 
+// meshPortalAPIv1AsBrokerNote is residual-honest when [iomesh].endpoint host
+// looks like apiv1.* (portal/catalog CP). Streams/consumers live on hooks.*.
+// Warn only — do not invent Connected / Memory GA.
+const meshPortalAPIv1AsBrokerNote = "mesh endpoint host looks like apiv1.* — that is portal/catalog CP, not broker streams · streams/consumers live on hooks.* (e.g. hooks.staging.iome.sh) · catalog ≠ Connected · infer ≠ Connected"
+
 // Preflight loads config and probes local memory when configured.
 // Fail-open: network errors become notes, not invented green.
 func Preflight(ctx context.Context, cfgPath string) (*PreflightReport, error) {
@@ -100,6 +105,11 @@ func Preflight(ctx context.Context, cfgPath string) (*PreflightReport, error) {
 		// catalog/consume by X-IOMesh-Org and may 400 without it. Local/dev
 		// stays fail-open.
 		rep.Notes = append(rep.Notes, meshOrgEmptyNote)
+	}
+	if config.LooksLikePortalAPIv1(rep.MeshEndpoint) {
+		// Residual-honest warn only: apiv1.* is catalog CP, not broker streams.
+		// Do not invent Connected.
+		rep.Notes = append(rep.Notes, meshPortalAPIv1AsBrokerNote)
 	}
 
 	// Find memory server entry

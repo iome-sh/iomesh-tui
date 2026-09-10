@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- **Setup comment honesty (#407):** `[iomesh].endpoint` comments no longer stamp CP `apiv1.*` as a broker streams endpoint. Example config and setup-managed fragments name `hooks.*` as streams/consumers and `apiv1.*` as portal/catalog CP. Preflight warns (does not invent Connected) when the residual endpoint host looks like `apiv1.*`. dual_write **OFF** · not Memory GA · catalog ≠ Connected · infer ≠ Connected.
+
 ## [1.3.1] — 2026-09-10
 
 ### Fixed
