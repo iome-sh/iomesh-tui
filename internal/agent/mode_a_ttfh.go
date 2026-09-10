@@ -12,7 +12,7 @@ import (
 
 const (
 	// Published tip class (do not invent a newer GA tag).
-	ModeATUIPin    = "v1.2.0"
+	ModeATUIPin    = "v1.3.0"
 	ModeAMCPPin    = "v0.1.1+post-pin" // published v0.1.1; tip may include post-pin commits
 	ModeAMemoryPin = "v1.5.8"
 
