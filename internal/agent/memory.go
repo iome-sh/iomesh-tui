@@ -17,9 +17,12 @@ import (
 // enabled, then MCP tools on a connected server. Optional DualWrite also
 // publishes async MEMORY_INGEST envelopes to the mesh.
 type MemoryConfig struct {
-	Enabled    bool
-	Server     string // MCP server name (default "memory")
-	Tenant     string
+	Enabled bool
+	Server  string // MCP server name (default "memory")
+	Tenant  string
+	// PalaceRoot optional local palace directory for operator visibility (#399).
+	// Empty → MCP -palace-root args, PALACE_ROOT, or ~/.iomesh/palace.
+	PalaceRoot string
 	AutoRecall bool
 	AutoIngest bool
 	// DualWrite publishes memory_ingest to mesh MEMORY_INGEST when mesh client is enabled (fail-open).
@@ -220,18 +223,18 @@ func (rt *Runtime) syncMemoryReady() bool {
 // MemoryStatusLine is a short operator-facing status (slash /memory).
 func (rt *Runtime) MemoryStatusLine() string {
 	if rt == nil {
-		return "memory: no runtime"
+		return "memory: no runtime · " + ModeAPalaceVisibilityLine("")
 	}
 	cfg := rt.memory
 	if !cfg.Enabled {
-		return "memory: hooks disabled (set [memory] enabled=true + MCP server or mesh for sync retrieve)"
+		return "memory: hooks disabled (set [memory] enabled=true + MCP server or mesh for sync retrieve) · " + rt.PalaceVisibilityLine()
 	}
 	connected := false
 	if rt.mcp != nil {
 		connected = rt.mcp.ClientByName(cfg.Server) != nil
 	}
-	return fmt.Sprintf("memory: enabled server=%q mcp=%v sync_http=%v tenant=%q auto_recall=%v auto_ingest=%v dual_write=%v session=%q",
-		cfg.Server, connected, rt.syncMemoryReady(), emptyDash(cfg.Tenant), cfg.AutoRecall, cfg.AutoIngest, cfg.DualWrite, emptyDash(rt.memorySessionID()))
+	return fmt.Sprintf("memory: enabled server=%q mcp=%v sync_http=%v tenant=%q auto_recall=%v auto_ingest=%v dual_write=%v session=%q · %s",
+		cfg.Server, connected, rt.syncMemoryReady(), emptyDash(cfg.Tenant), cfg.AutoRecall, cfg.AutoIngest, cfg.DualWrite, emptyDash(rt.memorySessionID()), rt.PalaceVisibilityLine())
 }
 
 // MemoryRecallOpts overrides config temporal filters for one recall call.
@@ -544,7 +547,7 @@ func FormatRequireSourcesCheck(res *iomesh.MemoryOpsDigestResult, required []str
 		if externalSeen {
 			msg += " · " + digestExternalCitePin
 		}
-		return msg + " · " + pin
+		return msg + " · " + pin + "\n" + ModeADigestMissAckLine
 	}
 	msg := fmt.Sprintf("require-sources: ok · cited=%s", citedStr)
 	if present[DigestSourceMesh] && meshCite != "" {
@@ -2679,6 +2682,7 @@ func (rt *Runtime) MemoryIngestTurn(ctx context.Context, role, content string) (
 		parts = append(parts, "session_id="+sid)
 	}
 	parts = append(parts, fmt.Sprintf("dual_write=%v", rt.memory.DualWrite))
+	parts = append(parts, rt.PalaceVisibilityLine())
 	msg := strings.Join(parts, "; ")
 	if ok {
 		return msg, nil

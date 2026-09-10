@@ -54,6 +54,7 @@ aliases: /heartbeat /mesh-console
   preview     opt-in eval template (iome.sh MeshConsole — not your org)
   focus       tenancy: sre.incidents | eng.ops | cs.tickets | gtm.pipeline
   ack         ACK today's morning brief (local ritual · unread ≠ known · no send/pay/ship)
+              also the visible ACK after /memory digest --require-sources mesh,private miss (Mode A sticky · miss ≠ known)
 fullscreen: esc/q close · tab cycle tenancy · 1-4 jump
 probe:    iomesh mesh streams --messages / broker GET /v1/streams/{name}/messages
           (not portal GET /v52 — cookie-only, TUI must not call it)

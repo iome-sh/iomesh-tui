@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Mode A TTFH polish (#399):** Collision demo chrome for a ≤20 min talk. Slash help + marketing-demo talk-track name sticky `/memory digest --require-sources mesh,private` (cite-both or explicit miss). Digest miss prints a visible ACK that coordinates with existing `/dashboard ack` (#371) — miss ≠ known · no send/pay/ship. After attach/ingest (`/memory status` · `/memory ingest` · `/setup reload`) the TUI prints the local palace path so the buyer can `ls` without spelunking. Air-gap fallback when portal HITL is blocked: local RCA + honest digest miss · no fake Connected. Mode A docs/help name published pins (TUI **v1.2.0** · MCP **v0.1.1+post-pin** · memory **v1.5.8**) — tip class · do not invent GA. Happy-path strings stay free of `aion` / `AION_*` product naming. dual_write **OFF** · not Memory GA · catalog ≠ Connected.
+
+### Changed
+- **Published pin honesty (#399):** README trio table names memory kernel **v1.5.8** and `iomesh-memory-mcp` **v0.1.1+post-pin** (published `v0.1.1`; `@main` is post-pin only). Do not invent a newer GA tag.
 
 ## [1.2.0] — 2026-09-06
 

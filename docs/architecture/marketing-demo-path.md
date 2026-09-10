@@ -20,19 +20,31 @@ Plain-language script for **videos and sales demos** of the local agent harness 
 | **2** | Set LLM key or Ollama | Cloud provider API key, or local Ollama |
 | **3** | `/setup init` local-memory + preflight | Default dual_write **OFF** · `/setup preflight` |
 | **4** | Start / attach `iomesh-memory-mcp` | HTTP `http://127.0.0.1:8080/mcp` or stdio · TUI attach |
-| **5** | Show `/memory` ingest + recall | Agent stores a fact · retrieve / digest / recall |
+| **5** | Show `/memory` ingest + recall + Mode A sticky digest | Agent stores a fact · palace path prints (buyer `ls`) · `/memory digest --require-sources mesh,private` cite-both or explicit miss · miss ≠ known until `/dashboard ack` (no send/pay/ship) |
 | **6** | Optional mesh | **Only if configured** · skip for pure local demos |
 | **6b** | Optional `/dashboard preview` | Landing-page heartbeat live-feed **eval template** (not your org · not Connected · not live APPLY). Bare `/dashboard` stays empty until consume. |
+| **6c** | Air-gap fallback | If portal HITL is blocked: stay local — local RCA on palace disk · digest miss stays honest · **no fake Connected** |
 
 Slash: `/onboard next marketing-demo` (or any alias above).
 
 ---
+
+## Published pins (tip class · do not invent GA)
+
+| Piece | Published pin | Honesty |
+|-------|----------------|---------|
+| TUI (`iomesh-tui`) | **v1.2.0** | SemVer 1.0+ harness · not hosted Memory GA |
+| MCP host (`iomesh-memory-mcp`) | **v0.1.1+post-pin** | Published tag `v0.1.1`; tip may include post-pin commits · do not invent a newer GA tag |
+| Memory kernel (`memory`) | **v1.5.8** | Local palace kernel · not hosted Memory GA |
 
 ## What you can show
 
 - Local **agent** with multi-provider LLM or Ollama  
 - Local **memory** via `iomesh-memory-mcp` + local palace  
 - End-to-end: install → setup → attach → ingest → recall on a laptop  
+- Mode A sticky: `/memory digest --require-sources mesh,private` (cite-both or explicit miss) + visible `/dashboard ack`  
+- Palace path printed after attach/ingest — buyer can `ls` without spelunking  
+- Air-gap fallback when portal HITL is blocked (local RCA + honest digest miss · no fake Connected)  
 
 ## What not to claim
 
@@ -50,13 +62,15 @@ Slash: `/onboard next marketing-demo` (or any alias above).
 
 Short spoken path for a **local agent + local memory** demo (follow the script above live).
 
-1. **Setup story** — “On your laptop: install `iomesh`, set an LLM key or Ollama, `/setup init` with local-memory (dual_write stays **OFF**), attach `iomesh-memory-mcp`.”
-2. **The beat** — “Tell the agent something once; show `/memory` ingest and recall so it comes back from local storage — not a cloud CRM.”
-3. **Claims guardrail** — Before customer-facing wording, check the private GTM **claims catalog** for what is demoable vs do-not-claim: [github.com/iome-sh/tool-marketing](https://github.com/iome-sh/tool-marketing) (private · operator-only · not customer docs).
-4. **Win-back / closed-lost** — Follow-ups are **sales process** (humans / HITL loops). The TUI does **not** auto-push CRM win-back or closed-lost sequences.
-5. **SEO** — We import Search Console exports and score opportunities offline — **no auto rank claims**.
-6. **Publish path** — draft → human approve → Hermes handoff/bind is **operator** tooling; the TUI does **not** auto-post.
-7. **CRM** — Closed-loop metrics are recorded after human CRM actions — the TUI is **not** the CRM.
+1. **Setup story** — “On your laptop: install `iomesh` **v1.2.0**, set an LLM key or Ollama, `/setup init` with local-memory (dual_write stays **OFF**), attach `iomesh-memory-mcp` **v0.1.1+post-pin** (kernel **v1.5.8**).”
+2. **The beat** — “Tell the agent something once; show `/memory` ingest and recall so it comes back from local storage — not a cloud CRM. The TUI prints the palace path — `ls` it.”
+3. **Mode A sticky** — “Run `/memory digest --require-sources mesh,private`. Cite both mesh + private, or say the miss out loud. Miss is not known until `/dashboard ack` — no send, pay, or ship.”
+4. **Air-gap** — “If the portal is blocked, stay local. Local RCA on disk. Digest miss stays honest. Do not invent Connected.”
+5. **Claims guardrail** — Before customer-facing wording, check the private GTM **claims catalog** for what is demoable vs do-not-claim: [github.com/iome-sh/tool-marketing](https://github.com/iome-sh/tool-marketing) (private · operator-only · not customer docs).
+6. **Win-back / closed-lost** — Follow-ups are **sales process** (humans / HITL loops). The TUI does **not** auto-push CRM win-back or closed-lost sequences.
+7. **SEO** — We import Search Console exports and score opportunities offline — **no auto rank claims**.
+8. **Publish path** — draft → human approve → Hermes handoff/bind is **operator** tooling; the TUI does **not** auto-post.
+9. **CRM** — Closed-loop metrics are recorded after human CRM actions — the TUI is **not** the CRM.
 
 ### Operator GTM boundary (s1602 · s1606 · s1610 · s1614 · s1618)
 

@@ -1184,6 +1184,11 @@ func TestMeshAgentOnboardingNextPortalHITLLane_HonestyNeedles(t *testing.T) {
 		"/onboard next agentic dogfood",
 		"free eng s1562",
 		"free-floor peer s1564+",
+		"Air-gap fallback",
+		"portal HITL blocked",
+		"local RCA",
+		"no fake Connected",
+		"/memory digest --require-sources mesh,private",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("portal-hitl lane missing %q in:\n%s", want, out)
@@ -1504,6 +1509,18 @@ func TestMeshAgentOnboardingNextMarketingDemoLane_HonestyNeedles(t *testing.T) {
 		"stays lean",
 		"no SDK dep",
 		"does not require either SDK",
+		// #399 Mode A TTFH polish
+		"/memory digest --require-sources mesh,private",
+		"/dashboard ack",
+		"cite-both",
+		"no send/pay/ship",
+		"palace:",
+		"ls this path",
+		"Air-gap fallback",
+		"no fake Connected",
+		"v1.2.0",
+		"v0.1.1+post-pin",
+		"v1.5.8",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("marketing-demo lane missing %q in:\n%s", want, out)
@@ -1522,6 +1539,9 @@ func TestMeshAgentOnboardingNextMarketingDemoLane_HonestyNeedles(t *testing.T) {
 		"live PyPI green",
 		"PyPI is green",
 		"PyPI published live",
+		"aion",
+		"AION_",
+		"Connected: yes",
 	} {
 		if strings.Contains(out, bad) {
 			t.Fatalf("must not invent %q:\n%s", bad, out)

@@ -28,13 +28,14 @@ Free local eval is three public MIT pieces. Mesh is optional. This is **not** ho
 | Piece | Published pin | Role |
 |-------|----------------|------|
 | [iomesh-tui](https://github.com/iome-sh/iomesh-tui) | **v1.2.0** (`go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.2.0` · [GitHub Release](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.2.0)) | Agent harness / TUI |
-| [memory](https://github.com/iome-sh/memory) | **v1.5.7** | Local palace kernel |
-| [iomesh-memory-mcp](https://github.com/iome-sh/iomesh-memory-mcp) | **`@main`** until the first annotated `v*` tag (README there is honest: `/releases/latest` is 404) | MCP host over the kernel |
+| [memory](https://github.com/iome-sh/memory) | **v1.5.8** | Local palace kernel |
+| [iomesh-memory-mcp](https://github.com/iome-sh/iomesh-memory-mcp) | **v0.1.1+post-pin** (published tag [`v0.1.1`](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.1.1); tip may include post-pin commits · do not invent a newer GA tag) | MCP host over the kernel |
 
 ```bash
 go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.2.0
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main
-# kernel is a Go module consumed by the MCP host: github.com/iome-sh/memory@v1.5.7
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.1.1
+# tip / post-pin: go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main
+# kernel is a Go module consumed by the MCP host: github.com/iome-sh/memory@v1.5.8
 iomesh setup preflight   # or in the TUI: /setup · dual_write stays OFF
 ```
 

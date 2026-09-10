@@ -66,6 +66,9 @@ func TestMemoryIngestTurn_MintsLocalOverlaySessionID(t *testing.T) {
 	if !strings.Contains(out, "dual_write=false") {
 		t.Fatalf("dual_write pin missing: %q", out)
 	}
+	if !strings.Contains(out, "palace:") || !strings.Contains(out, "ls this path") {
+		t.Fatalf("ingest must print palace path: %q", out)
+	}
 	if strings.Contains(out, "Memory GA") && !strings.Contains(out, "not") {
 		t.Fatalf("must not stamp Memory GA: %q", out)
 	}
