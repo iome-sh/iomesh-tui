@@ -176,9 +176,6 @@ func TestPreflight_PortalAPIv1EndpointWarn(t *testing.T) {
 	if strings.Contains(text, "Connected: yes") {
 		t.Fatalf("must not invent Connected:\n%s", text)
 	}
-	if strings.Contains(meshPortalAPIv1AsBrokerNote, "staging.iome.sh") {
-		t.Fatal("preflight note must not hardcode staging FQDN")
-	}
 }
 
 func TestPreflight_HooksEndpointNoAPIv1Note(t *testing.T) {

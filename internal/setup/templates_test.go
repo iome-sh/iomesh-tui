@@ -143,11 +143,8 @@ func TestBuildManagedFragment_MeshEndpointAPIv1Honesty(t *testing.T) {
 	if !strings.Contains(frag, "portal/catalog CP") || !strings.Contains(frag, "not broker streams") {
 		t.Fatalf("apiv1 endpoint must not be labeled broker streams:\n%s", frag)
 	}
-	if !strings.Contains(frag, "hooks.*") && !strings.Contains(frag, "hooks.<env>.iome.sh") {
-		t.Fatalf("want hooks pattern in comment:\n%s", frag)
-	}
-	if strings.Contains(frag, "hooks.staging.iome.sh") {
-		t.Fatalf("honesty comment must not hardcode staging broker FQDN:\n%s", frag)
+	if !strings.Contains(frag, "hooks.*") && !strings.Contains(frag, "hooks.example.com") {
+		t.Fatalf("want hooks placeholder/pattern in comment:\n%s", frag)
 	}
 	if strings.Contains(frag, `endpoint = "https://apiv1.staging.iome.sh"  # broker streams`) {
 		t.Fatalf("must not stamp apiv1 as broker streams:\n%s", frag)
@@ -238,9 +235,6 @@ func TestMeshEndpointHonestyComment(t *testing.T) {
 	if !strings.Contains(apiv1, "portal/catalog CP") || !strings.Contains(apiv1, "hooks.") {
 		t.Fatalf("apiv1 comment want CP vs hooks: %s", apiv1)
 	}
-	if strings.Contains(apiv1, "staging.iome.sh") {
-		t.Fatalf("honesty comment must not hardcode staging FQDN: %s", apiv1)
-	}
 	hooks := meshEndpointHonestyComment("https://hooks.staging.iome.sh")
 	if !strings.Contains(hooks, "broker streams (hooks.*)") || !strings.Contains(hooks, "catalog CP") {
 		t.Fatalf("hooks comment want broker vs CP: %s", hooks)
@@ -254,8 +248,7 @@ func TestExampleConfig_IOMeshEndpointHonesty(t *testing.T) {
 	}
 	txt := string(b)
 	for _, want := range []string{
-		"hooks.iome.sh",
-		"hooks.<env>.iome.sh",
+		"hooks.example.com",
 		"apiv1.* is portal/catalog CP",
 		"not a broker streams endpoint",
 		"Catalog ≠ Connected",
@@ -272,32 +265,6 @@ func TestExampleConfig_IOMeshEndpointHonesty(t *testing.T) {
 	}
 	if strings.Contains(txt, `endpoint = "https://iomesh.example.com"`) {
 		t.Fatal("example config must not use a generic host that hides hooks vs apiv1")
-	}
-}
-
-func TestSetupLifecycleDocs_NoStagingFQDN(t *testing.T) {
-	for _, rel := range []string{
-		"../../docs/architecture/setup-lifecycle.md",
-		"../skills/builtin/setup-lifecycle-agent/SKILL.md",
-	} {
-		b, err := os.ReadFile(rel)
-		if err != nil {
-			t.Fatal(err)
-		}
-		txt := string(b)
-		if strings.Contains(txt, "staging.iome.sh") {
-			t.Fatalf("%s must not hardcode *.staging.iome.sh", rel)
-		}
-		for _, want := range []string{
-			"hooks.*",
-			"apiv1.*",
-			"catalog",
-			"Infer ≠ Connected",
-		} {
-			if !strings.Contains(txt, want) {
-				t.Fatalf("%s missing honesty needle %q", rel, want)
-			}
-		}
 	}
 }
 

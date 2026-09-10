@@ -242,7 +242,7 @@ func BuildManagedFragment(profiles []Profile, opt InitOptions) (string, error) {
 // Never stamps apiv1.* as “broker streams”. Infer ≠ Connected · catalog ≠ Connected.
 func meshEndpointHonestyComment(meshEP string) string {
 	if config.LooksLikePortalAPIv1(meshEP) {
-		return "portal/catalog CP — not broker streams; streams/consumers are hooks.* (e.g. hooks.<env>.iome.sh) · infer ≠ Connected"
+		return "portal/catalog CP — not broker streams; streams/consumers are hooks.* (e.g. hooks.example.com) · infer ≠ Connected"
 	}
 	return "broker streams (hooks.*); portal apiv1.* is catalog CP only"
 }
