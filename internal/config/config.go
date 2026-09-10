@@ -229,7 +229,7 @@ type MemorySection struct {
 	// Endpoint is optional memory sidecar base for sync POST /v1/memory/retrieve.
 	// When set, overrides [iomesh] endpoint for retrieve only (stage warm plane).
 	// Env: IOMESH_MEMORY_ENDPOINT / MEMORY_SIDECAR_URL
-	Endpoint   string `toml:"endpoint"`
+	Endpoint string `toml:"endpoint"`
 	// PalaceRoot is the operator-visible local palace directory (#402 leftover_is_bind).
 	// HTTP MCP URL-only has no stdio -palace-root args; set this (or IOMESH_MEMORY_PALACE_ROOT)
 	// to match the MCP process -palace-root. Empty → ResolvePalaceRoot (args / PALACE_ROOT / default).
