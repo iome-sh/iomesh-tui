@@ -19,6 +19,17 @@ const (
 	// DefaultPalaceRoot is the setup-template local palace (buyer can ls).
 	DefaultPalaceRoot = "~/.iomesh/palace"
 
+	// EnvMemoryPalaceRoot is the TUI-named palace root (#402 leftover_is_bind).
+	// HTTP MCP URL-only has no stdio -palace-root args; set this to match MCP.
+	EnvMemoryPalaceRoot = "IOMESH_MEMORY_PALACE_ROOT"
+
+	// EnvPalaceRoot is the MCP-host fallback already used by ResolvePalaceRoot.
+	EnvPalaceRoot = "PALACE_ROOT"
+
+	// ModeAPalaceRootResidualHint is printed when the resolved path is unset or DNE.
+	// Never invent Connected / Memory GA. HTTP MCP needs palace_root to match -palace-root.
+	ModeAPalaceRootResidualHint = "unset or DNE · set [memory] palace_root / IOMESH_MEMORY_PALACE_ROOT to match MCP -palace-root · never invent Connected · not hosted Memory GA"
+
 	// ModeADigestStickyCommand is the Mode A cite-both walk.
 	ModeADigestStickyCommand = "/memory digest --require-sources mesh,private"
 
@@ -50,6 +61,26 @@ func ModeAPalaceVisibilityLine(path string) string {
 		p = ExpandPalaceRoot(DefaultPalaceRoot)
 	}
 	return "palace: " + p + " · ls this path · local disk · not hosted Memory GA"
+}
+
+// ModeAPalaceRootResidualLine is the honest line when the path is unset or DNE.
+// Do not present a missing default as the ls target. Never invent Connected / Memory GA.
+func ModeAPalaceRootResidualLine(path string) string {
+	p := strings.TrimSpace(path)
+	if p == "" {
+		p = ExpandPalaceRoot(DefaultPalaceRoot)
+	}
+	return "palace: " + p + " " + ModeAPalaceRootResidualHint
+}
+
+// palaceDirExists reports whether p is an existing directory (ls-able palace root).
+func palaceDirExists(p string) bool {
+	p = strings.TrimSpace(p)
+	if p == "" {
+		return false
+	}
+	st, err := os.Stat(p)
+	return err == nil && st.IsDir()
 }
 
 // ParsePalaceRootFromArgs reads -palace-root / --palace-root from MCP host args.
@@ -89,41 +120,76 @@ func ExpandPalaceRoot(raw string) string {
 	return p
 }
 
-// ResolvePalaceRoot picks configured → MCP args → PALACE_ROOT → setup default.
+// ResolvePalaceRoot picks configured → MCP args → IOMESH_MEMORY_PALACE_ROOT → PALACE_ROOT → setup default.
+// HTTP MCP URL-only has empty args; operators must set [memory] palace_root or env to match -palace-root.
 func ResolvePalaceRoot(configured string, mcpArgs []string) string {
-	if p := strings.TrimSpace(configured); p != "" {
-		return ExpandPalaceRoot(p)
-	}
-	if p := ParsePalaceRootFromArgs(mcpArgs); p != "" {
-		return ExpandPalaceRoot(p)
-	}
-	if p := strings.TrimSpace(os.Getenv("PALACE_ROOT")); p != "" {
-		return ExpandPalaceRoot(p)
-	}
-	return ExpandPalaceRoot(DefaultPalaceRoot)
+	path, _ := resolvePalaceRoot(configured, mcpArgs)
+	return path
 }
 
-// PalacePath is the operator-visible local palace directory (#399).
-// Empty runtime falls back to the setup-template default so the buyer can ls.
+func resolvePalaceRoot(configured string, mcpArgs []string) (path string, explicit bool) {
+	if p := strings.TrimSpace(configured); p != "" {
+		return ExpandPalaceRoot(p), true
+	}
+	if p := ParsePalaceRootFromArgs(mcpArgs); p != "" {
+		return ExpandPalaceRoot(p), true
+	}
+	if p := strings.TrimSpace(os.Getenv(EnvMemoryPalaceRoot)); p != "" {
+		return ExpandPalaceRoot(p), true
+	}
+	if p := strings.TrimSpace(os.Getenv(EnvPalaceRoot)); p != "" {
+		return ExpandPalaceRoot(p), true
+	}
+	return ExpandPalaceRoot(DefaultPalaceRoot), false
+}
+
+// mcpPalaceArgs returns -palace-root args from the attached memory MCP client (stdio only).
+// HTTP URL-only clients have empty Args — TUI cannot see the process -palace-root.
+func (rt *Runtime) mcpPalaceArgs() []string {
+	if rt == nil || rt.mcp == nil {
+		return nil
+	}
+	name := strings.TrimSpace(rt.memory.Server)
+	if c := rt.mcp.ClientByName(name); c != nil {
+		return c.Config().Args
+	}
+	if clients := rt.mcp.Clients(); len(clients) == 1 {
+		return clients[0].Config().Args
+	}
+	return nil
+}
+
+// PalacePath is the operator-visible local palace directory (#399/#402).
+// Empty runtime falls back to the setup-template default so the buyer can ls
+// when that directory is the real root.
 func (rt *Runtime) PalacePath() string {
 	if rt == nil {
 		return ExpandPalaceRoot(DefaultPalaceRoot)
 	}
-	var args []string
-	if rt.mcp != nil {
-		name := strings.TrimSpace(rt.memory.Server)
-		if c := rt.mcp.ClientByName(name); c != nil {
-			args = c.Config().Args
-		} else if clients := rt.mcp.Clients(); len(clients) == 1 {
-			args = clients[0].Config().Args
-		}
-	}
-	return ResolvePalaceRoot(rt.memory.PalaceRoot, args)
+	return ResolvePalaceRoot(rt.memory.PalaceRoot, rt.mcpPalaceArgs())
 }
 
 // PalaceVisibilityLine is the attach/ingest chrome line.
+// If the resolved default path DNE and no config/env/args named a root, print residual
+// (path unset or DNE · set palace_root to match MCP -palace-root). Never invent Connected / Memory GA.
 func (rt *Runtime) PalaceVisibilityLine() string {
-	return ModeAPalaceVisibilityLine(rt.PalacePath())
+	if rt == nil {
+		def := ExpandPalaceRoot(DefaultPalaceRoot)
+		if !palaceDirExists(def) {
+			return ModeAPalaceRootResidualLine(def)
+		}
+		return ModeAPalaceVisibilityLine(def)
+	}
+	path, explicit := resolvePalaceRoot(rt.memory.PalaceRoot, rt.mcpPalaceArgs())
+	if palaceDirExists(path) {
+		return ModeAPalaceVisibilityLine(path)
+	}
+	if explicit {
+		// Operator named a root (config/env/args). Print it even if DNE so they can ls / fix.
+		return ModeAPalaceVisibilityLine(path)
+	}
+	// Default fallback DNE (typical HTTP MCP with no args and no palace_root).
+	return ModeAPalaceRootResidualLine(path)
 }
 
 // modeAHappyPathAionRE matches residual product naming on demo chrome.

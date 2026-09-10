@@ -230,6 +230,11 @@ type MemorySection struct {
 	// When set, overrides [iomesh] endpoint for retrieve only (stage warm plane).
 	// Env: IOMESH_MEMORY_ENDPOINT / MEMORY_SIDECAR_URL
 	Endpoint   string `toml:"endpoint"`
+	// PalaceRoot is the operator-visible local palace directory (#402 leftover_is_bind).
+	// HTTP MCP URL-only has no stdio -palace-root args; set this (or IOMESH_MEMORY_PALACE_ROOT)
+	// to match the MCP process -palace-root. Empty → ResolvePalaceRoot (args / PALACE_ROOT / default).
+	// Env: IOMESH_MEMORY_PALACE_ROOT (PALACE_ROOT stays a ResolvePalaceRoot fallback).
+	PalaceRoot string `toml:"palace_root"`
 	AutoRecall bool   `toml:"auto_recall"`
 	AutoIngest bool   `toml:"auto_ingest"`
 	// DualWrite also emits memory_ingest envelopes to MEMORY_INGEST when mesh is enabled.
@@ -608,6 +613,10 @@ func (c *Config) applyEnvOverrides() {
 		c.Memory.Tenant = v
 	} else if v := os.Getenv("MEMORY_TENANT"); v != "" && c.Memory.Tenant == "" {
 		c.Memory.Tenant = v
+	}
+	// #402: HTTP MCP has no stdio -palace-root; TUI needs an explicit root to ls.
+	if v := os.Getenv("IOMESH_MEMORY_PALACE_ROOT"); v != "" {
+		c.Memory.PalaceRoot = v
 	}
 	if v := os.Getenv("IOMESH_MEMORY_AUTO_RECALL"); v != "" {
 		switch strings.ToLower(v) {

@@ -29,6 +29,10 @@ type InitOptions struct {
 	MemoryTenant string
 	// UseStdioMemory if true, emit command=iomesh-memory-mcp instead of URL.
 	UseStdioMemory bool
+	// MemoryPalaceRoot optional [memory] palace_root. Empty → ~/.iomesh/palace.
+	// HTTP MCP URL-only has no stdio -palace-root args; write this to match the
+	// MCP process -palace-root (e.g. /workspace/data/memory-palaces).
+	MemoryPalaceRoot string
 	// PluginsDirs absolute or ~/ paths for [plugins].dirs.
 	PluginsDirs []string
 	// MeshEndpoint optional mesh base URL.
@@ -174,14 +178,21 @@ func BuildManagedFragment(profiles []Profile, opt InitOptions) (string, error) {
 
 	if want[ProfileLocalMemory] {
 		name := opt.MemoryServer
+		palaceRoot := strings.TrimSpace(opt.MemoryPalaceRoot)
+		if palaceRoot == "" {
+			palaceRoot = "~/.iomesh/palace"
+		}
 		b.WriteString("[[mcp.servers]]\n")
 		fmt.Fprintf(&b, "name = %q\n", name)
 		if opt.UseStdioMemory {
 			b.WriteString("command = \"iomesh-memory-mcp\"\n")
-			b.WriteString("args = [\"-palace-root\", \"~/.iomesh/palace\", \"-tenant\", \"" + opt.MemoryTenant + "\"]\n")
+			fmt.Fprintf(&b, "args = [\"-palace-root\", %q, \"-tenant\", %q]\n", palaceRoot, opt.MemoryTenant)
 		} else {
 			fmt.Fprintf(&b, "url = %q\n", opt.MemoryHTTPURL)
 			b.WriteString("allow_loopback = true\n")
+			b.WriteString("# HTTP MCP URL-only has no stdio -palace-root args.\n")
+			b.WriteString("# Set [memory] palace_root / IOMESH_MEMORY_PALACE_ROOT to match the MCP process -palace-root.\n")
+			b.WriteString("# Default ~/.iomesh/palace is residual if DNE · never invent Connected · not Memory GA.\n")
 		}
 		b.WriteString("mutating = true\n\n")
 
@@ -189,6 +200,7 @@ func BuildManagedFragment(profiles []Profile, opt InitOptions) (string, error) {
 		b.WriteString("enabled = true\n")
 		fmt.Fprintf(&b, "server = %q\n", name)
 		fmt.Fprintf(&b, "tenant = %q\n", opt.MemoryTenant)
+		fmt.Fprintf(&b, "palace_root = %q  # match MCP -palace-root · HTTP MCP has no stdio args · IOMESH_MEMORY_PALACE_ROOT\n", palaceRoot)
 		fmt.Fprintf(&b, "auto_recall = %v\n", opt.AutoRecall)
 		fmt.Fprintf(&b, "auto_ingest = %v\n", opt.AutoIngest)
 		b.WriteString("dual_write = false  # OFF · local-primary · setup never invents Memory GA\n")

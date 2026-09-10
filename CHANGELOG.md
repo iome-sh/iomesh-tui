@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- **Mode A palace path honesty (#402 leftover_is_bind):** `/memory status` no longer presents `~/.iomesh/palace` as the ls target when that path DNE and HTTP MCP has no stdio `-palace-root` args. Wire `[memory] palace_root` + `IOMESH_MEMORY_PALACE_ROOT` (keep `PALACE_ROOT`) into `MemoryConfig.PalaceRoot`. Default DNE → residual (`unset or DNE · set palace_root to match MCP -palace-root`) — never invent Connected / Memory GA. Setup `local-memory` writes `palace_root` and documents HTTP MCP must match process `-palace-root`. Stdio args parsing unchanged. dual_write **OFF** · catalog ≠ Connected.
+
 ## [1.3.0] — 2026-09-10
 
 Mode A Collision demo chrome (sticky digest, palace path, air-gap, pin honesty). dual_write OFF · not Memory GA · catalog ≠ Connected.

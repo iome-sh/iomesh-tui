@@ -188,6 +188,37 @@ pull_consumer = "tui-local-palace"
 	}
 }
 
+func TestLoad_MemoryPalaceRoot(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.toml")
+	content := `
+[memory]
+enabled = true
+palace_root = "/workspace/data/memory-palaces"
+`
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Memory.PalaceRoot != "/workspace/data/memory-palaces" {
+		t.Fatalf("palace_root=%q", cfg.Memory.PalaceRoot)
+	}
+}
+
+func TestEnv_MemoryPalaceRoot(t *testing.T) {
+	t.Setenv("IOMESH_MEMORY_PALACE_ROOT", "/workspace/data/memory-palaces")
+	cfg, err := Load(filepath.Join(t.TempDir(), "nope.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Memory.PalaceRoot != "/workspace/data/memory-palaces" {
+		t.Fatalf("IOMESH_MEMORY_PALACE_ROOT=%q", cfg.Memory.PalaceRoot)
+	}
+}
+
 func TestEnv_MemoryPullRoleAndSuffix(t *testing.T) {
 	t.Setenv("IOMESH_MEMORY_PULL_ROLE", "custom")
 	t.Setenv("IOMESH_MEMORY_PULL_ALLOW_SUFFIX", "a,b")

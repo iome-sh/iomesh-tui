@@ -20,8 +20,10 @@ type MemoryConfig struct {
 	Enabled bool
 	Server  string // MCP server name (default "memory")
 	Tenant  string
-	// PalaceRoot optional local palace directory for operator visibility (#399).
-	// Empty → MCP -palace-root args, PALACE_ROOT, or ~/.iomesh/palace.
+	// PalaceRoot optional local palace directory for operator visibility (#399/#402).
+	// From [memory] palace_root / IOMESH_MEMORY_PALACE_ROOT. Empty → MCP stdio
+	// -palace-root args, IOMESH_MEMORY_PALACE_ROOT, PALACE_ROOT, or ~/.iomesh/palace.
+	// HTTP MCP URL-only has no args — set this to match the MCP process -palace-root.
 	PalaceRoot string
 	AutoRecall bool
 	AutoIngest bool

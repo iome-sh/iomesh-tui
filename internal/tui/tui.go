@@ -1230,7 +1230,7 @@ func integrationsHelp() string {
 // setupHelp is bare /setup and help/? copy (s1526 P3+P4 + s1530 P5 + s1534 P6 + s1538 P7 residual honesty).
 // s1723: when IOMESH_PLATFORM_RESIDUAL is on, append PlatformResidualLabelNote (label only · never hides subcommands).
 func setupHelp() string {
-	base := strings.TrimSpace(`usage: /setup [init [profiles] [--stdio] [--print-only] [--plugins-dir path] [--memory-url URL] [--mesh-endpoint URL] [--mesh-tenant id] [--mesh-org id] [--platform-mcp-url URL] | preflight | portal | reload | pull … | analyze … | drift|maintain | repair …]
+	base := strings.TrimSpace(`usage: /setup [init [profiles] [--stdio] [--print-only] [--plugins-dir path] [--memory-url URL] [--palace-root path] [--mesh-endpoint URL] [--mesh-tenant id] [--mesh-org id] [--platform-mcp-url URL] | preflight | portal | reload | pull … | analyze … | drift|maintain | repair …]
   init       write managed config fragment (profiles: local-memory|plugins|mesh|platform-mcp|all; default local-memory; mesh flags write hooks not /v7/mcp; --mesh-org persists [iomesh].org / IOMESH_ORG residual)
   preflight  residual-honest probe (aliases status|check) — inherits process --config / IOMESH_CONFIG unless slash --config; PASS ≠ invent Connected / Memory GA
   portal     browser HITL URLs (integrations + settings/agent)
@@ -1289,6 +1289,15 @@ func handleSetupInit(out io.Writer, args []string) {
 			opt.MemoryHTTPURL = strings.TrimSpace(args[i])
 		case strings.HasPrefix(a, "--memory-url="):
 			opt.MemoryHTTPURL = strings.TrimSpace(strings.TrimPrefix(a, "--memory-url="))
+		case a == "--palace-root" || a == "--palace_root":
+			if i+1 >= len(args) || strings.HasPrefix(args[i+1], "-") {
+				fmt.Fprintln(out, "setup init: --palace-root requires a path (match MCP -palace-root)")
+				return
+			}
+			i++
+			opt.MemoryPalaceRoot = strings.TrimSpace(args[i])
+		case strings.HasPrefix(a, "--palace-root="):
+			opt.MemoryPalaceRoot = strings.TrimSpace(strings.TrimPrefix(a, "--palace-root="))
 		case a == "--mesh-endpoint" || a == "--mesh_endpoint":
 			if i+1 >= len(args) || strings.HasPrefix(args[i+1], "-") {
 				fmt.Fprintln(out, "setup init: --mesh-endpoint requires a URL")
