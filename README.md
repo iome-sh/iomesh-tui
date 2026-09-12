@@ -27,15 +27,14 @@ Free local eval is three public MIT pieces. Mesh is optional. This is **not** ho
 
 | Piece | Published pin | Role |
 |-------|----------------|------|
-| [iomesh-tui](https://github.com/iome-sh/iomesh-tui) | **v1.3.1** (`go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.3.1` · [GitHub Release](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.1)) | Agent harness / TUI |
-| [memory](https://github.com/iome-sh/memory) | **v1.5.8** | Local palace kernel |
-| [iomesh-memory-mcp](https://github.com/iome-sh/iomesh-memory-mcp) | **v0.1.1+post-pin** (published tag [`v0.1.1`](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.1.1); tip may include post-pin commits · do not invent a newer GA tag) | MCP host over the kernel |
+| [iomesh-tui](https://github.com/iome-sh/iomesh-tui) | **v1.3.3** (`go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.3.3` · [GitHub Release](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.3)) | Agent harness / TUI |
+| [memory](https://github.com/iome-sh/memory) | **v1.5.10** | Local palace kernel |
+| [iomesh-memory-mcp](https://github.com/iome-sh/iomesh-memory-mcp) | **v0.3.2** ([GitHub Release](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.3.2) · cite-both companion: optional `source_hint` + `ops_digest_export` provenance/tags) | MCP host over the kernel |
 
 ```bash
-go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.3.1
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.1.1
-# tip / post-pin: go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main
-# kernel is a Go module consumed by the MCP host: github.com/iome-sh/memory@v1.5.8
+go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.3.3
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.3.2
+# kernel is a Go module consumed by the MCP host: github.com/iome-sh/memory@v1.5.10
 iomesh setup preflight   # or in the TUI: /setup · dual_write stays OFF
 ```
 
@@ -45,7 +44,7 @@ Do not sell the trio as hosted Memory GA. dual_write OFF. catalog ≠ Connected.
 - Security model (local sandbox defaults): [SECURITY.md](SECURITY.md)
 - Packaging boundary (MIT vs private platform): [oss-packaging-boundary.md](docs/architecture/oss-packaging-boundary.md)
 
-> **Status:** public open-source **v1.2.x** (stable SemVer 1.0+). Shipped: agent loop · subagents · full-screen TUI · **heartbeat dashboard** · permissions · ACP · skills · MCP client · **local memory attach** · multi-model catalog (DeepSeek · Grok · Gemini · Vertex · Ollama). Optional mesh client when pointed at a broker you run or subscribe to. v1.2 is the MIT harness — not hosted Memory GA, not live HITL closed, not Knowledge/Analytics GA. dual_write OFF. catalog ≠ Connected.
+> **Status:** public open-source **v1.3.x** (stable SemVer 1.0+; latest tag **v1.3.3**). Shipped: agent loop · subagents · full-screen TUI · **heartbeat dashboard** · permissions · ACP · skills · MCP client · **local memory attach** · sticky `/memory digest --require-sources mesh,private` (cite-both) · multi-model catalog (DeepSeek · Grok · Gemini · Vertex · Ollama). Optional mesh client when pointed at a broker you run or subscribe to. v1.3 is the MIT harness — not hosted Memory GA, not live HITL closed, not Knowledge/Analytics GA. dual_write OFF. catalog ≠ Connected.
 
 [![iomesh-tui /dashboard — landing MeshConsole eval template](docs/assets/dashboard-eval.svg)](docs/architecture/tui.md#dashboard-heartbeat-live-feed)
 
@@ -121,7 +120,7 @@ cd iomesh-tui
 make build
 
 # Or install a released version (Go toolchain)
-go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.3.1
+go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.3.3
 # Pin matches latest known tag at docs write; GitHub Releases may be newer — see RELEASING.md
 # Multi-platform archives: GitHub Releases (GoReleaser on v* tags)
 # @latest is the latest semver tag (same as the pin above today), not untagged main

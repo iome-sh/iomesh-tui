@@ -12,9 +12,11 @@ import (
 
 const (
 	// Published tip class (do not invent a newer GA tag).
-	ModeATUIPin    = "v1.3.1"
-	ModeAMCPPin    = "v0.1.1+post-pin" // published v0.1.1; tip may include post-pin commits
-	ModeAMemoryPin = "v1.5.8"
+	// Trio must stay compatible: TUI v1.3.3 cite-both needs MCP v0.3.2
+	// (optional source_hint + ops_digest_export provenance/tags) over kernel v1.5.10.
+	ModeATUIPin    = "v1.3.3"
+	ModeAMCPPin    = "v0.3.2"
+	ModeAMemoryPin = "v1.5.10"
 
 	// DefaultPalaceRoot is the setup-template local palace (buyer can ls).
 	DefaultPalaceRoot = "~/.iomesh/palace"
