@@ -3352,7 +3352,7 @@ func TestHandleSlash_OnboardNextMarketingDemoLane(t *testing.T) {
 		"palace:",
 		"Air-gap fallback",
 		"no fake Connected",
-		"v1.3.3",
+		"v1.3.4",
 		"v0.3.2",
 		"v1.5.10",
 	}

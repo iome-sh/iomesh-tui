@@ -7,8 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.4] — 2026-09-12
+
+Published pin honesty. Companion MCP **v0.3.2** · kernel **v1.5.10**. dual_write **OFF** · not Memory GA · catalog ≠ Connected · do not invent GA.
+
 ### Changed
-- **Published pin honesty:** Local MIT trio table, Mode A pins, and `go install` lines name **TUI v1.3.3** · **MCP v0.3.2** · **memory v1.5.10** (drop leftover v1.5.8 / v0.1.1+post-pin). Compatible with MCP cite-both (`source_hint` + `ops_digest_export` provenance/tags). Default `cmd/iomesh` version string **1.3.3** matches the latest annotated tag. CHANGELOG records already-cut **v1.3.2** / **v1.3.3** instead of leaving those waves under Unreleased. dual_write **OFF** · not Memory GA · catalog ≠ Connected · do not invent GA.
+- **Published pin honesty (#422):** Local MIT trio table, Mode A pins, and `go install` lines name **TUI v1.3.4** · **MCP v0.3.2** · **memory v1.5.10** (drop leftover v1.5.8 / v0.1.1+post-pin). Compatible with MCP cite-both (`source_hint` + `ops_digest_export` provenance/tags). Default `cmd/iomesh` version string **1.3.4**. CHANGELOG records already-cut **v1.3.2** / **v1.3.3**. dual_write **OFF** · not Memory GA · catalog ≠ Connected · do not invent GA.
 
 ## [1.3.3] — 2026-09-10
 
@@ -916,7 +920,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.3...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.4...HEAD
+[1.3.4]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.3...v1.3.4
 [1.3.3]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.0...v1.3.1
