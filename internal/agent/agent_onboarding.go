@@ -919,7 +919,7 @@ func MeshAgentOnboardingNextMarketingDemoLane() string {
        · /setup preflight — confirms config shape before attach
        · dual_write OFF (default stays off)
     4. Start / attach iomesh-memory-mcp
-       · go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.1.1 (published pin; tip v0.1.1+post-pin · @main is post-pin only)
+       · go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.3.2 (published pin · kernel v1.5.10 · do not invent GA)
        · run host (HTTP http://127.0.0.1:8080/mcp or stdio) · attach in TUI [[mcp.servers]] or iomesh mcp --connect
        · product host = iomesh-memory-mcp · local-primary only
        · after attach the TUI prints palace: <path> · ls this path (no spelunking)
@@ -935,7 +935,7 @@ func MeshAgentOnboardingNextMarketingDemoLane() string {
        · stay local — local RCA on palace disk · digest miss stays honest · no fake Connected
        · ACK the miss via /dashboard ack · do not invent send/pay/ship
 
-  Published pins (tip class · do not invent GA): TUI v1.3.1 · MCP v0.1.1+post-pin · memory kernel v1.5.8
+  Published pins (tip class · do not invent GA): TUI v1.3.3 · MCP v0.3.2 · memory kernel v1.5.10
 
   Sales talk track (optional spoken bullets · s1594 · s1598 · s1602 · s1606 · s1610 · s1614 · s1618 · s1666):
     · Beat: local agent + local memory — ingest a fact, recall it on the laptop (dual_write OFF)
@@ -991,7 +991,7 @@ func MeshAgentOnboardingNextMarketingDemoLane() string {
     · NOT bare gtm|drafts (GTM draft lane)
   Back: /onboard next · /onboard next memory · /onboard next demo · /onboard next sales
 
-Locks: dual_write OFF · book-demo OFF · not Memory GA · local memory · local-primary · iomesh-memory-mcp · mesh optional · never invent Connected · never invent install green / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · TUI stays lean (no SDK dep) · not invent 1.0 · not invent PyPI green · Mode A sticky /memory digest --require-sources mesh,private · miss ≠ known until /dashboard ack · no send/pay/ship · palace path printed · air-gap fallback no fake Connected · pins TUI v1.3.1 · MCP v0.1.1+post-pin · memory kernel v1.5.8 · free eng s1590 · s1594 sales talk track · s1598 GTM claim-support · s1602 operator GTM boundary · s1606 GTM wave 6 · s1610 GTM wave 7 · s1614 GTM wave 8 · s1618 GTM wave 9 · s1666 free eng Python client SDK peer · free-floor peer s1592+ mention only`)
+Locks: dual_write OFF · book-demo OFF · not Memory GA · local memory · local-primary · iomesh-memory-mcp · mesh optional · never invent Connected · never invent install green / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · TUI stays lean (no SDK dep) · not invent 1.0 · not invent PyPI green · Mode A sticky /memory digest --require-sources mesh,private · miss ≠ known until /dashboard ack · no send/pay/ship · palace path printed · air-gap fallback no fake Connected · pins TUI v1.3.3 · MCP v0.3.2 · memory kernel v1.5.10 · free eng s1590 · s1594 sales talk track · s1598 GTM claim-support · s1602 operator GTM boundary · s1606 GTM wave 6 · s1610 GTM wave 7 · s1614 GTM wave 8 · s1618 GTM wave 9 · s1666 free eng Python client SDK peer · free-floor peer s1592+ mention only`)
 }
 
 // MeshAgentOnboardingNextAgenticLane residual-honest product plane 3 agentic integrations

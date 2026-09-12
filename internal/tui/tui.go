@@ -979,7 +979,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 						// s1590: plain-language marketing demo path (local agent + local memory for videos/sales).
 						// Do NOT steal bare demo|readiness|lighthouse|landgrab (demo readiness) · sales|claims (sales claims) · gtm|drafts (GTM).
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextMarketingDemoLane())
-						fmt.Fprintln(out, "— marketing-demo: s1590 · plain-language local agent + local memory script · Mode A sticky /memory digest --require-sources mesh,private · palace path printed · air-gap no fake Connected · pins TUI v1.3.1 · MCP v0.1.1+post-pin · memory v1.5.8 · dual_write OFF · local memory · not Memory GA · mesh optional · never invent Connected · book-demo OFF · free eng s1590 · free-floor peer s1592+ mention only · NOT bare demo (demo readiness) · NOT bare sales · NOT bare gtm")
+						fmt.Fprintln(out, "— marketing-demo: s1590 · plain-language local agent + local memory script · Mode A sticky /memory digest --require-sources mesh,private · palace path printed · air-gap no fake Connected · "+agent.ModeAPinHonestyLine()+" · dual_write OFF · local memory · not Memory GA · mesh optional · never invent Connected · book-demo OFF · free eng s1590 · free-floor peer s1592+ mention only · NOT bare demo (demo readiness) · NOT bare sales · NOT bare gtm")
 						return false, nil
 					case "operator", "operator-matrix", "ops-matrix", "operator-readiness", "ops-readiness", "matrix":
 						// s1447: residual-honest operator readiness matrix (demo · sales · planes · human-gates).

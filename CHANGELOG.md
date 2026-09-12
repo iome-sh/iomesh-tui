@@ -7,14 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- **Published pin honesty:** Local MIT trio table, Mode A pins, and `go install` lines name **TUI v1.3.3** · **MCP v0.3.2** · **memory v1.5.10** (drop leftover v1.5.8 / v0.1.1+post-pin). Compatible with MCP cite-both (`source_hint` + `ops_digest_export` provenance/tags). Default `cmd/iomesh` version string **1.3.3** matches the latest annotated tag. CHANGELOG records already-cut **v1.3.2** / **v1.3.3** instead of leaving those waves under Unreleased. dual_write **OFF** · not Memory GA · catalog ≠ Connected · do not invent GA.
+
+## [1.3.3] — 2026-09-10
+
+Cite-both CLOSED-on-live companion to [iomesh-memory-mcp v0.3.2](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.3.2). dual_write **OFF** · not Memory GA.
+
 ### Fixed
-- **Sticky digest cite engagement (#419 residual):** After #420, sticky `--require-sources mesh,private` could print `cited=(none)` with no receipt-window reason when MCP pretty-printed packs were truncated or sidecar `source_hint=palace_timeline` hid palace provenance/tags. Cite now reads `structuredContent` (untruncated), salvages complete receipts from truncated text, lifts nested `entry`/`content`/`metadata` provenance and `source_hint:mesh` tags, and merges MCP palace receipts into the HTTP sidecar set. Miss always names the newest-first window (`limit` / `n` / `since` / `as_of`). Private RCA cannot collapse to `cited=(none)`. Does not invent cite-both. dual_write **OFF** · not Memory GA.
-- **Sticky digest cite window (#419):** `/memory digest --require-sources mesh,private` classifies mesh from receipt `provenance.source_hint` and tags (`source_hint:mesh`) even when export `source_hint` is `palace_timeline`. Sticky cite-both fetches up to the export cap (50) and pins an older mesh-stamped turn into the active receipt set when it is present beside newer private RCA. If mesh is still absent, the miss line names the newest-first receipt window (`limit` / `n` / `since` / `as_of` / newest / oldest) instead of a silent drop. Does not invent cite-both. Pull `source_hint=mesh` stamp (#418) is unchanged. dual_write **OFF** · not Memory GA.
-- **Memory pull stamps `source_hint=mesh` on local ingest (#417):** Durable `iomesh memory pull` and in-session continuous pull now pass `source_hint=mesh` into MCP `memory_ingest_turn` (and stamp it on the mapped envelope). Cite-both digests can see mesh after `fetched≥1` on `dept.*.events.*`. Local `/memory ingest` / overlay stays private (no invented mesh). Depends on iomesh-memory-mcp#64 accepting the optional field — until then MCP should ignore unknown args. dual_write **OFF** · not Memory GA · catalog ≠ Connected.
-- **Memory pull dept.* create with agent role (#415):** After the org→`dept.*` default remap, `pull_role=agent` plus an org Tenant still made consumer create HTTP 400 (Role requires Tenant; Role+Tenant requires `filter_subject` under `org_…`). Default `dept.*` pull now omits `X-IOMesh-Role` and the Role-gated Tenant bind — the broker path that returns 201 without Role. Wire `pull_role` is empty when omitted. Explicit `--filter org_*.events.>` still sends Role+Tenant. Create errors include the broker body and name the Role/Tenant/filter ACL. `create_ok` alone is not pull success — check `fetched`. dual_write **OFF**.
-- **Memory pull default filter for org-shaped tenants (#412):** `iomesh memory pull` no longer defaults `filter_subject` to `org_<id>.events.>` when `[memory]`/`[iomesh].tenant` is an org id. Org ids are remapped to `dept.*` (or `dept.<department>` when set) so `agent`/`viewer` entitles durable `dept.*.events.*` subjects. `create_ok` alone is not pull success — check `fetched`. Explicit `org_*.events.>` still wins and, on `fetched=0`, `last_error` names the mismatch plus `--filter dept.*.events.>`. dual_write **OFF**.
-- **OSS staging-host scrub (#410 / iomesh #316):** Buyer-facing example/comments no longer hardcode `*.staging.iome.sh`. Scoped to example config, setup-lifecycle docs, and setup honesty comment/note — placeholders `hooks.*` / `apiv1.*` / `hooks.example.com`. Private infer maps stay. dual_write **OFF** · not Memory GA · catalog ≠ Connected · infer ≠ Connected.
-- **Setup comment honesty (#407):** `[iomesh].endpoint` comments no longer stamp CP `apiv1.*` as a broker streams endpoint. Example config and setup-managed fragments name `hooks.*` as streams/consumers and `apiv1.*` as portal/catalog CP. Preflight warns (does not invent Connected) when the residual endpoint host looks like `apiv1.*`. dual_write **OFF** · not Memory GA · catalog ≠ Connected · infer ≠ Connected.
+- **Sticky digest cite engagement (#419 residual / #421):** After #420, sticky `--require-sources mesh,private` could print `cited=(none)` with no receipt-window reason when MCP pretty-printed packs were truncated or sidecar `source_hint=palace_timeline` hid palace provenance/tags. Cite now reads `structuredContent` (untruncated), salvages complete receipts from truncated text, lifts nested `entry`/`content`/`metadata` provenance and `source_hint:mesh` tags, and merges MCP palace receipts into the HTTP sidecar set. Miss always names the newest-first window (`limit` / `n` / `since` / `as_of`). Private RCA cannot collapse to `cited=(none)`. Does not invent cite-both.
+- **Sticky digest cite window (#419 / #420):** `/memory digest --require-sources mesh,private` classifies mesh from receipt `provenance.source_hint` and tags (`source_hint:mesh`) even when export `source_hint` is `palace_timeline`. Sticky cite-both fetches up to the export cap (50) and pins an older mesh-stamped turn into the active receipt set when it is present beside newer private RCA. If mesh is still absent, the miss line names the newest-first receipt window (`limit` / `n` / `since` / `as_of` / newest / oldest) instead of a silent drop. Does not invent cite-both. Pull `source_hint=mesh` stamp (#418) is unchanged.
+
+## [1.3.2] — 2026-09-10
+
+Needs [iomesh-memory-mcp v0.3.1+](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.3.1) for optional `source_hint` on `memory_ingest_turn`. dual_write **OFF** · not Memory GA · catalog ≠ Connected.
+
+### Fixed
+- **Memory pull stamps `source_hint=mesh` on local ingest (#417 / #418):** Durable `iomesh memory pull` and in-session continuous pull now pass `source_hint=mesh` into MCP `memory_ingest_turn` (and stamp it on the mapped envelope). Cite-both digests can see mesh after `fetched≥1` on `dept.*.events.*`. Local `/memory ingest` / overlay stays private (no invented mesh).
+- **Memory pull dept.* create with agent role (#415 / #416):** After the org→`dept.*` default remap, `pull_role=agent` plus an org Tenant still made consumer create HTTP 400 (Role requires Tenant; Role+Tenant requires `filter_subject` under `org_…`). Default `dept.*` pull now omits `X-IOMesh-Role` and the Role-gated Tenant bind — the broker path that returns 201 without Role. Wire `pull_role` is empty when omitted. Explicit `--filter org_*.events.>` still sends Role+Tenant. Create errors include the broker body and name the Role/Tenant/filter ACL. `create_ok` alone is not pull success — check `fetched`.
+- **Memory pull default filter for org-shaped tenants (#412 / #414):** `iomesh memory pull` no longer defaults `filter_subject` to `org_<id>.events.>` when `[memory]`/`[iomesh].tenant` is an org id. Org ids are remapped to `dept.*` (or `dept.<department>` when set) so `agent`/`viewer` entitles durable `dept.*.events.*` subjects. `create_ok` alone is not pull success — check `fetched`. Explicit `org_*.events.>` still wins and, on `fetched=0`, `last_error` names the mismatch plus `--filter dept.*.events.>`.
+- **OSS staging-host scrub (#410 / #411 / iomesh #316):** Buyer-facing example/comments no longer hardcode `*.staging.iome.sh`. Scoped to example config, setup-lifecycle docs, and setup honesty comment/note — placeholders `hooks.*` / `apiv1.*` / `hooks.example.com`. Private infer maps stay.
+- **Setup comment honesty (#407 / #408):** `[iomesh].endpoint` comments no longer stamp CP `apiv1.*` as a broker streams endpoint. Example config and setup-managed fragments name `hooks.*` as streams/consumers and `apiv1.*` as portal/catalog CP. Preflight warns (does not invent Connected) when the residual endpoint host looks like `apiv1.*`.
 
 ## [1.3.1] — 2026-09-10
 
@@ -903,7 +916,9 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.3...HEAD
+[1.3.3]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.2...v1.3.3
+[1.3.2]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/iome-sh/iomesh-tui/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/iome-sh/iomesh-tui/compare/v1.1.0...v1.2.0
