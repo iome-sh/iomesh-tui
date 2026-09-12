@@ -1519,7 +1519,7 @@ func TestMeshAgentOnboardingNextMarketingDemoLane_HonestyNeedles(t *testing.T) {
 		"ls this path",
 		"Air-gap fallback",
 		"no fake Connected",
-		"v1.3.3",
+		"v1.3.4",
 		"v0.3.2",
 		"v1.5.10",
 	} {
