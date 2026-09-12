@@ -3395,9 +3395,9 @@ func TestHandleSlash_OnboardNextMarketingDemoLane(t *testing.T) {
 		"palace:",
 		"Air-gap fallback",
 		"no fake Connected",
-		"v1.3.6",
-		"v0.4.1",
-		"v1.5.11",
+		"v1.3.7",
+		"v0.4.2",
+		"v1.5.12",
 	}
 
 	for _, line := range []string{

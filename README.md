@@ -27,14 +27,14 @@ Free local eval is three public MIT pieces. Mesh is optional. Local memory is MI
 
 | Piece | Published pin | Role |
 |-------|----------------|------|
-| [iomesh-tui](https://github.com/iome-sh/iomesh-tui) | **v1.3.6** (`go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.3.6` · [GitHub Release](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.6)) | Agent harness / TUI |
-| [memory](https://github.com/iome-sh/memory) | **v1.5.11** | Local palace kernel (persist-onnx-vec opt-in default **OFF**; extract does not require persist) |
-| [iomesh-memory-mcp](https://github.com/iome-sh/iomesh-memory-mcp) | **v0.4.1** ([GitHub Release](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.4.1) · persist companion · `/memory extract` needs this host (`memory_extract_facts`); cite-both: optional `source_hint` + `ops_digest_export` provenance/tags) | MCP host over the kernel |
+| [iomesh-tui](https://github.com/iome-sh/iomesh-tui) | **v1.3.7** (`go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.3.7` · [GitHub Release](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.7)) | Agent harness / TUI |
+| [memory](https://github.com/iome-sh/memory) | **v1.5.12** | Local palace kernel (persist-onnx-vec opt-in default **OFF**; extract does not require persist) |
+| [iomesh-memory-mcp](https://github.com/iome-sh/iomesh-memory-mcp) | **v0.4.2** ([GitHub Release](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.4.2) · kernel v1.5.12 companion · persist companion · `/memory extract` needs this host (`memory_extract_facts`); cite-both: optional `source_hint` + `ops_digest_export` provenance/tags) | MCP host over the kernel |
 
 ```bash
-go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.3.6
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.1
-# kernel is a Go module consumed by the MCP host: github.com/iome-sh/memory@v1.5.11
+go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.3.7
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.2
+# kernel is a Go module consumed by the MCP host: github.com/iome-sh/memory@v1.5.12
 iomesh setup preflight   # or in the TUI: /setup · dual_write stays OFF
 ```
 
@@ -44,7 +44,7 @@ Memory dual-write defaults off. Catalog list is not consume.
 - Security model (local sandbox defaults): [SECURITY.md](SECURITY.md)
 - Packaging boundary (MIT vs private platform): [oss-packaging-boundary.md](docs/architecture/oss-packaging-boundary.md)
 
-> **Status:** public open-source **v1.3.x** (stable SemVer 1.0+; latest tag **v1.3.6**). Shipped: agent loop · subagents · full-screen TUI · **heartbeat dashboard** · permissions · ACP · skills · MCP client · **local memory attach** · sticky `/memory digest --require-sources mesh,private` (cite-both) · optional `/memory extract` HITL (not auto-ingest) · multi-model catalog (DeepSeek · Grok · Gemini · Vertex · Ollama). Optional mesh client when pointed at a broker you run or subscribe to. v1.3 is the MIT harness. Memory dual-write defaults off. catalog ≠ Connected.
+> **Status:** public open-source **v1.3.x** (stable SemVer 1.0+; latest tag **v1.3.7**). Shipped: agent loop · subagents · full-screen TUI · **heartbeat dashboard** · permissions · ACP · skills · MCP client · **local memory attach** · sticky `/memory digest --require-sources mesh,private` (cite-both) · optional `/memory extract` HITL (not auto-ingest) · multi-model catalog (DeepSeek · Grok · Gemini · Vertex · Ollama). Optional mesh client when pointed at a broker you run or subscribe to. v1.3 is the MIT harness. Memory dual-write defaults off. catalog ≠ Connected.
 
 [![iomesh-tui /dashboard — landing MeshConsole eval template](docs/assets/dashboard-eval.svg)](docs/architecture/tui.md#dashboard-heartbeat-live-feed)
 
@@ -120,7 +120,7 @@ cd iomesh-tui
 make build
 
 # Or install a released version (Go toolchain)
-go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.3.6
+go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.3.7
 # Pin matches latest known tag at docs write; GitHub Releases may be newer — see RELEASING.md
 # Multi-platform archives: GitHub Releases (GoReleaser on v* tags)
 # @latest is the latest semver tag (same as the pin above today), not untagged main

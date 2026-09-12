@@ -1500,9 +1500,9 @@ func TestMeshAgentOnboardingNextMarketingDemoLane_HonestyNeedles(t *testing.T) {
 		"ls this path",
 		"Air-gap fallback",
 		"no fake Connected",
-		"v1.3.6",
-		"v0.4.1",
-		"v1.5.11",
+		"v1.3.7",
+		"v0.4.2",
+		"v1.5.12",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("marketing-demo lane missing %q in:\n%s", want, out)

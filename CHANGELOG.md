@@ -7,10 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.7] — 2026-09-12
+
+Published pin honesty after operator-copy (#428 · #429 · #430) for kernel **v1.5.12**. Companion MCP **v0.4.2** · kernel **v1.5.12**. dual_write **OFF** · not Memory GA · catalog ≠ Connected · persist opt-in · do not invent GA.
+
 ### Changed
-- **Operator copy:** README, architecture how-tos, setup/CLI help, and skill blurbs read as an I/O Mesh OSS client. Catalog list is not consume. Memory dual-write defaults off. Pins stay TUI **v1.3.6** · MCP **v0.4.1** · memory **v1.5.11**.
-- **Public docs:** `docs/OPEN_SOURCE_AUDIT.md` is maintainer process (not a product spec). README and `docs/architecture/oss-packaging-boundary.md` qualify that link. Pins stay TUI **v1.3.6** · MCP **v0.4.1** · memory **v1.5.11**.
-- **Install pins:** Operator how-tos pin MCP **v0.4.1** and memory **v1.5.11** (`@main` is tip of default branch, not a production pin). README first-run keeps the in-session `/setup reload` vs cold restart dual path. Lean host v0.4.1 does **not** advertise platform sidecar tools (`memory_patterns_list` · `memory_anomalies_list` · `memory_timeline` · `memory_ingest_event` · `memory_trigger_compact`; E4 stamp stays `tools=6`). Kernel TTFH pointer: [TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md) — `/memory ingest` three RCA turns then `/memory digest --require-sources mesh,private` (cite-both **or explicit miss**; miss is success). Operator how-tos do not price a commercial add-on on the MIT local path; local memory is free MIT. Pins stay TUI **v1.3.6** · MCP **v0.4.1** · memory **v1.5.11**.
+- **Published pin honesty:** Local MIT trio table, Mode A pins, and `go install` lines name **TUI v1.3.7** · **MCP v0.4.2** (kernel v1.5.12 companion) · **memory v1.5.12** (persist-onnx-vec opt-in default **OFF**). Default `cmd/iomesh` version string **1.3.7**. dual_write **OFF** · not Memory GA · catalog ≠ Connected · persist opt-in · do not invent GA.
+- **Operator copy (#430):** README, architecture how-tos, setup/CLI help, and skill blurbs read as an I/O Mesh OSS client. Catalog list is not consume. Memory dual-write defaults off. Pins TUI **v1.3.7** · MCP **v0.4.2** · memory **v1.5.12**.
+- **Public docs (#428):** `docs/OPEN_SOURCE_AUDIT.md` is maintainer process (not a product spec). README and `docs/architecture/oss-packaging-boundary.md` qualify that link. Pins TUI **v1.3.7** · MCP **v0.4.2** · memory **v1.5.12**.
+- **Install pins (#429):** Operator how-tos pin MCP **v0.4.2** and memory **v1.5.12** (`@main` is tip of default branch, not a production pin). README first-run keeps the in-session `/setup reload` vs cold restart dual path. Lean host v0.4.2 does **not** advertise platform sidecar tools (`memory_patterns_list` · `memory_anomalies_list` · `memory_timeline` · `memory_ingest_event` · `memory_trigger_compact`; E4 stamp stays `tools=6`). Kernel TTFH pointer: [TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md) — `/memory ingest` three RCA turns then `/memory digest --require-sources mesh,private` (cite-both **or explicit miss**; miss is success). Operator how-tos do not price a commercial add-on on the MIT local path; local memory is free MIT. Pins TUI **v1.3.7** · MCP **v0.4.2** · memory **v1.5.12**.
 
 ## [1.3.6] — 2026-09-12
 
@@ -939,7 +944,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.6...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.7...HEAD
+[1.3.7]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.6...v1.3.7
 [1.3.6]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.5...v1.3.6
 [1.3.5]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.4...v1.3.5
 [1.3.4]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.3...v1.3.4
