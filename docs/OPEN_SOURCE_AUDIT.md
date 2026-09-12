@@ -46,7 +46,7 @@ Historical closeout from launch day. Completing this list was **not** a product 
 2. Enable **Private vulnerability reporting** (Settings → Code security)  
 3. Branch protection on `main`: require PR + status check **`ci-success`**  
 4. (Optional) Add topics: `golang`, `llm`, `mcp`, `cli`, `coding-agent`  
-5. First public tag (`v0.1.0`) — **historical**; latest published pin is **v1.3.6** ([RELEASING.md](../RELEASING.md))  
+5. First public tag (`v0.1.0`) — **historical**; latest published pin is **v1.3.7** ([RELEASING.md](../RELEASING.md))  
 6. Do **not** publish private stage endpoints or production mesh URLs in issues/docs  
 
 ## Out of scope for open-source binary

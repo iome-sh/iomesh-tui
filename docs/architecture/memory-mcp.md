@@ -4,7 +4,7 @@ First-class **Agentic Memory Palace** and **temporal recall** for `iomesh-tui`, 
 
 Product edge ships **`iomesh-memory-mcp`** (stdio **and** streamable HTTP; public host for `github.com/iome-sh/memory`) with tools:
 
-Lean MIT host **v0.4.1** does **not** advertise `memory_patterns_list` · `memory_anomalies_list` · `memory_timeline` · `memory_ingest_event` · `memory_trigger_compact` — those are **platform sidecar / MCP-first when present**, not the lean binary. Do not restamp E4 `tools=6` as live `tools=11`. PASS ≠ invent full platform sidecar parity.
+Lean MIT host **v0.4.2** does **not** advertise `memory_patterns_list` · `memory_anomalies_list` · `memory_timeline` · `memory_ingest_event` · `memory_trigger_compact` — those are **platform sidecar / MCP-first when present**, not the lean binary. Do not restamp E4 `tools=6` as live `tools=11`. PASS ≠ invent full platform sidecar parity.
 
 | Tool | Purpose |
 |------|---------|
@@ -14,8 +14,8 @@ Lean MIT host **v0.4.1** does **not** advertise `memory_patterns_list` · `memor
 | `ops_digest_export` | Ops heartbeat digest export (`window` / `horizon` / `limit`; s1200 opt-in; MCP + HTTP) |
 | `memory_facts_as_of` | Bi-temporal lite validity listing (`as_of` required RFC3339; optional `entity` / `query` / `session_id` / `limit`; s1276 opt-in; **MCP-first** — no lean HTTP invent) |
 | `memory_supersede_entity` | A3 lite entity supersession (`entity` required; optional `as_of`; **HITL** · s1282 / mesh s640; **MCP-first** — no lean HTTP invent) |
-| `memory_patterns_list` | Ops pulse Beta pattern list (shipped s1287 · **platform sidecar / MCP-first when present**; not on lean MIT host v0.4.1) |
-| `memory_anomalies_list` | Ops pulse Beta anomaly list (shipped s1287 · **platform sidecar / MCP-first when present**; not on lean MIT host v0.4.1) |
+| `memory_patterns_list` | Ops pulse Beta pattern list (shipped s1287 · **platform sidecar / MCP-first when present**; not on lean MIT host v0.4.2) |
+| `memory_anomalies_list` | Ops pulse Beta anomaly list (shipped s1287 · **platform sidecar / MCP-first when present**; not on lean MIT host v0.4.2) |
 | `memory_timeline` | Temporal timeline slice (s1296 slash: `/memory timeline`; **platform sidecar / MCP-first when present**) |
 | `memory_compact_status` | Palace tier counts + last compaction (s1296 slash: `/memory compact-status`; **read-only**) |
 | `memory_search_semantic` | Tier-4 semantic facts (s1301 slash: `/memory semantic`; MCP-first) |
@@ -52,7 +52,7 @@ Resources: `memory://{tenant}/…` (stats, timeline, session turns, facts).
 | **3 M2 lean host attach tip (s1458)** | **done (docs + onboard memory lane)** | Residual-honest **M2 lean edge host** attach when built from `github.com/iome-sh/iomesh-memory-mcp`: go run/build · streamable HTTP `http://127.0.0.1:8080/mcp` or stdio · dual_write OFF · control-plane / broker private · scaffold/M2 · tool parity may be lean vs platform residual · **PASS ≠ invent full platform sidecar parity** · keeps Option A honesty |
 | **3 M3 edge dogfood tip (s1463)** | **done (docs + onboard memory lane)** | Residual-honest **M3 edge dogfood** TUI↔`iomesh-memory-mcp` path: build/run from product repo · `docker compose up --build` → image `iomesh-memory-mcp:local` · attach `http://127.0.0.1:8080/mcp` · healthz · stdio alternate · peer mcp `make edge-dogfood-gate` (mention only) · dual_write OFF · **offline dogfood tip ≠ invent live dogfood as green** · **PASS ≠ invent full platform sidecar parity** · residual PASS ≠ invent public flip (edge packs public as of s1478) · M3 after M2 · M4 later deliberate |
 | **3 M4 public flip readiness tip (s1469)** | **done (docs + onboard memory lane)** | Residual-honest **M4 public flip readiness** tip history: order kernel `github.com/iome-sh/memory` **first** · then `iomesh-memory-mcp` · readiness docs/gates in those repos (mention only) · **readiness tip ≠ invent public flip complete** · residual PASS ≠ invent public flip · dual_write OFF · control-plane / broker private · M5 signing later after flip · **s1478 supersedes operator tip** (edge packs public) · keeps Option A + M2 + M3 honesty |
-| **3 public product attach (s1478)** | **done (docs + onboard memory lane + product sample plugin)** | Residual-honest **post-public** product edge attach: both `github.com/iome-sh/memory` + `github.com/iome-sh/iomesh-memory-mcp` **PUBLIC** · `go install …@v0.4.1` / `go get …@v1.5.11` · **no GOPRIVATE** · HTTP `http://127.0.0.1:8080/mcp` or stdio · docker compose still valid · dual_write OFF · control-plane / broker **still private** · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · control-plane / broker private · s1517 product-only in-tree sample (`@main` is tip of default branch, not a production pin) |
+| **3 public product attach (s1478)** | **done (docs + onboard memory lane + product sample plugin)** | Residual-honest **post-public** product edge attach: both `github.com/iome-sh/memory` + `github.com/iome-sh/iomesh-memory-mcp` **PUBLIC** · `go install …@v0.4.2` / `go get …@v1.5.12` · **no GOPRIVATE** · HTTP `http://127.0.0.1:8080/mcp` or stdio · docker compose still valid · dual_write OFF · control-plane / broker **still private** · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · control-plane / broker private · s1517 product-only in-tree sample (`@main` is tip of default branch, not a production pin) |
 | **3 E4 MCP client attach dogfood (s1508)** | **done (docs + evidence stamp + onboard memory lane tip)** | Residual-honest **E4 full MCP client attach** dogfood: lean host HTTP → TUI `iomesh mcp --connect` **connected=1 · tools=6** (observed stamp) · dual_write OFF · local-primary · **Edge Memory GA candidacy only** · residual PASS ≠ invent Edge Memory GA declared · not bare Memory GA · not hosted Memory GA · control-plane / broker private · **E10 Open** · tip ≠ invent forever-green product dogfood · evidence [EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md](../EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md) |
 | **3 memory edge usage demo (s1513)** | **done (docs only)** | Residual-honest **utilization/demo example**: signup (optional) → TUI MCP integrations list/plan + portal HITL → local memory install (kernel + `iomesh-memory-mcp`; **not fully automatic**) → attach → show `/memory` + `mcp --connect` usage · dual_write OFF · Edge Memory GA candidacy only · E10 Open · catalog ≠ Connected · control-plane / broker private · walkthrough [memory-edge-usage-demo.md](./memory-edge-usage-demo.md) |
 | **3 trigger-compact HITL + advanced status (s1311)** | **done (opt-in · MCP-first · HITL)** | `/memory trigger-compact --i-confirm` → MCP `memory_trigger_compact` (RecMem advisory · mutating HITL · refuse without confirm); `/memory status` prints `MemoryStatusLine` + `MemoryAdvancedStatus` residual inventory (related · facts-as-of · supersede · timeline · compact-status · semantic · ingest-event · patterns · anomalies · digest · trigger-compact); dual_write OFF · not invent compaction green · no lean HTTP invent |
@@ -288,7 +288,7 @@ Residual-honest **edge Memory OSS install path** for operators (docs + `/onboard
 |-------|------|---------|
 | **iomesh-tui** | Public MIT agent harness | Already public · local-primary client |
 | **Memory MCP host** | Product name **`iomesh-memory-mcp`** only (public · go install / compose · s1517) | control-plane / broker private · no in-tree residual private Memory sample |
-| **Kernel** | `github.com/iome-sh/memory` | **Public** (s1478) · `go get …@v1.5.11` · **no GOPRIVATE** (`@main` is tip of default branch, not a production pin) |
+| **Kernel** | `github.com/iome-sh/memory` | **Public** (s1478) · `go get …@v1.5.12` · **no GOPRIVATE** (`@main` is tip of default branch, not a production pin) |
 | **Local palace** | FS palace via MCP (`-palace-root` / docker edge) | Hosted Palace **sunset** · dual_write **OFF** |
 | **control-plane / broker** | Private cloud control plane | **Stays private** · not OSS edge pack |
 
@@ -350,8 +350,8 @@ TUI residual-honest **readiness tip history** (pre-flip). **s1478 supersedes ope
 
 | Surface | Residual honesty |
 |---------|------------------|
-| **Kernel public** | `go get github.com/iome-sh/memory@v1.5.11` · **no GOPRIVATE** (`@main` is tip of default branch, not a production pin) |
-| **Host public** | `go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.1` (or clone) · **no GOPRIVATE** / PAT |
+| **Kernel public** | `go get github.com/iome-sh/memory@v1.5.12` · **no GOPRIVATE** (`@main` is tip of default branch, not a production pin) |
+| **Host public** | `go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.2` (or clone) · **no GOPRIVATE** / PAT |
 | **Attach** | Streamable HTTP `http://127.0.0.1:8080/mcp` **or** stdio `iomesh-memory-mcp` |
 | **docker compose** | Still valid in product repo → image `iomesh-memory-mcp:local` · healthz |
 | **dual_write** | **OFF** · not primary palace path |
@@ -362,8 +362,8 @@ TUI residual-honest **readiness tip history** (pre-flip). **s1478 supersedes ope
 
 ```bash
 # Public install — no GOPRIVATE / PAT (published pins)
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.1
-go get github.com/iome-sh/memory@v1.5.11
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.2
+go get github.com/iome-sh/memory@v1.5.12
 # Tip of default branch, not a production pin: …@main
 # attach TUI: url = "http://127.0.0.1:8080/mcp"  or  command = "iomesh-memory-mcp"
 ```
@@ -711,7 +711,7 @@ See [mesh-dogfood.md](mesh-dogfood.md) for soft vs strict matrix. Unit coverage:
 
 ## Slash commands
 
-Slash commands that call `memory_patterns_list` · `memory_anomalies_list` · `memory_timeline` · `memory_ingest_event` · `memory_trigger_compact` are **platform sidecar / MCP-first when present** — the public lean host (`iomesh-memory-mcp` v0.4.1) does **not** advertise those tools. Fail-open residual if missing. Do not restamp E4 `tools=6` as live `tools=11`.
+Slash commands that call `memory_patterns_list` · `memory_anomalies_list` · `memory_timeline` · `memory_ingest_event` · `memory_trigger_compact` are **platform sidecar / MCP-first when present** — the public lean host (`iomesh-memory-mcp` v0.4.2) does **not** advertise those tools. Fail-open residual if missing. Do not restamp E4 `tools=6` as live `tools=11`.
 
 | Command | Behavior |
 |---------|----------|
@@ -723,7 +723,7 @@ Slash commands that call `memory_patterns_list` · `memory_anomalies_list` · `m
 | `/memory digest [--window day\|week] [--horizon ops\|knowledge\|analytical\|all] [--limit N] [--require-sources mesh,private]` | Opt-in ops heartbeat digest export (s1200; HTTP + MCP `ops_digest_export`) · **#373** cite-both opt-in (`mesh,private` or explicit miss; catalog/grant/external never count) · **#369** honesty · **#370** delta briefs · **s1831** next-step footer |
 | `/memory facts-as-of\|facts\|as-of --as-of <RFC3339> [--entity …] [--query …] [--limit N]` | Opt-in bi-temporal lite validity listing (s1276; MCP `memory_facts_as_of`; MCP-first) |
 | `/memory supersede\|super --entity <key> [--as-of RFC3339] --i-confirm` | Opt-in HITL A3 lite supersede (s1282; MCP `memory_supersede_entity`; MCP-first; mutating) |
-| `/memory timeline\|tl […]` | Opt-in temporal timeline (s1296; MCP `memory_timeline`; **platform sidecar / MCP-first when present** — not on lean host v0.4.1) |
+| `/memory timeline\|tl […]` | Opt-in temporal timeline (s1296; MCP `memory_timeline`; **platform sidecar / MCP-first when present** — not on lean host v0.4.2) |
 | `/memory compact-status\|compact` | Opt-in Palace tier counts residual (s1296; MCP `memory_compact_status`; read-only) |
 | `/memory trigger-compact\|tcompact --i-confirm` | Opt-in HITL RecMem compact advisory (s1311; MCP `memory_trigger_compact`; **platform sidecar / MCP-first when present**; mutating) |
 | `/memory semantic\|sem [query]` | Opt-in tier-4 semantic facts (s1301; MCP `memory_search_semantic`) |
@@ -914,7 +914,7 @@ Post-surface dual path:
 - **s1458:** M2 lean edge host attach tip — when built from `github.com/iome-sh/iomesh-memory-mcp`: go run/build · streamable HTTP `http://127.0.0.1:8080/mcp` or stdio · dual_write OFF · control-plane / broker private · scaffold/M2 · tool parity may be lean vs platform residual · **PASS ≠ invent full platform sidecar parity** · keeps Option A honesty.
 - **s1463:** M3 edge dogfood tip — TUI↔`iomesh-memory-mcp` compose/HTTP/stdio path: `docker compose up --build` → image `iomesh-memory-mcp:local` · attach `http://127.0.0.1:8080/mcp` · healthz · stdio alternate · peer mcp `make edge-dogfood-gate` (mention only) · dual_write OFF · host/kernel **public as of s1478** · control-plane / broker private · **offline dogfood tip ≠ invent live dogfood as green** · **PASS ≠ invent full platform sidecar parity** · residual PASS ≠ invent public flip · M3 after M2 · M4 later deliberate · keeps Option A + M2 honesty.
 - **s1469:** M4 public flip readiness tip — order kernel `github.com/iome-sh/memory` **first** · then `iomesh-memory-mcp` · readiness tip history · dual_write OFF · control-plane / broker private · **M5 signing later after flip** · **s1478 supersedes operator tip** (edge packs public) · keeps Option A + M2 + M3 honesty.
-- **s1478:** public product attach continuum — both edge repos **public** · `go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.1` · `go get github.com/iome-sh/memory@v1.5.11` · **no GOPRIVATE** · HTTP `:8080/mcp` or stdio · docker compose still valid · dual_write OFF · control-plane / broker **still private** · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · control-plane / broker private · s1517 product-only sample · product sample plugin `iomesh-memory-mcp` (`@main` is tip of default branch, not a production pin).
+- **s1478:** public product attach continuum — both edge repos **public** · `go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.2` · `go get github.com/iome-sh/memory@v1.5.12` · **no GOPRIVATE** · HTTP `:8080/mcp` or stdio · docker compose still valid · dual_write OFF · control-plane / broker **still private** · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · control-plane / broker private · s1517 product-only sample · product sample plugin `iomesh-memory-mcp` (`@main` is tip of default branch, not a production pin).
 - **s1508:** E4 full MCP client attach dogfood — lean host HTTP → TUI `iomesh mcp --connect` observed **connected=1 · tools=6** (UTC `2026-08-09T06:23:34Z` · TUI tip `6b3958a…` · MCP tip `f46afe2…`) · dual_write OFF · local-primary · **Edge Memory GA candidacy only** · residual PASS ≠ invent Edge Memory GA declared · not bare Memory GA · not hosted Memory GA · control-plane / broker private · **E10 Open** · tip ≠ invent forever-green product dogfood · evidence [EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md](../EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md).
 - **s1513:** memory edge usage/demo example — residual-honest walkthrough signup (optional) → integrations list/plan + portal HITL → local kernel+MCP install (**not fully automatic**) → attach → show `/memory` usage · dual_write OFF · Edge Memory GA candidacy only · E10 Open · catalog ≠ Connected · control-plane / broker private · [memory-edge-usage-demo.md](./memory-edge-usage-demo.md).
 

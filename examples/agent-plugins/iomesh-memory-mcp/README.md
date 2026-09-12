@@ -12,7 +12,7 @@ Residual-honest **stdio map** sample package for operator dogfood of iomesh-tui 
 | dual_write | **OFF** (unchanged) |
 | freemium hosted palace | **not** claimed |
 | secrets in package JSON | **none** — portable map only |
-| public install | `go install …@v0.4.1` · **no GOPRIVATE** / PAT (`@main` is tip of default branch, not a production pin) |
+| public install | `go install …@v0.4.2` · **no GOPRIVATE** / PAT (`@main` is tip of default branch, not a production pin) |
 | connect | requires **`iomesh-memory-mcp` on PATH** · fail-open if missing |
 | advanced ONNX | optional `MEMORY_ONNX_MODEL_PATH` on **host** · improves semantic · not required |
 | Qdrant | **not required** · lean host search `qdrant=off` · not invent cloud palace |
@@ -36,9 +36,9 @@ iomesh-memory-mcp/
 Both product edge modules are **public** — no `GOPRIVATE` / PAT:
 
 ```bash
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.1
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.2
 # optional kernel pin:
-go get github.com/iome-sh/memory@v1.5.11
+go get github.com/iome-sh/memory@v1.5.12
 # Tip of default branch, not a production pin: …@main
 ```
 

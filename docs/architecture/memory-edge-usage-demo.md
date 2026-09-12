@@ -194,7 +194,7 @@ For ONNX embeddings, durable palace knobs, and residual-honest Qdrant notes, see
 |-------|------------|------------------------|
 | **TUI signup → memory** | **No** | Signup does not download or start a palace |
 | **`iomesh-memory-mcp` host** | **No (operator step)** | `go install` / clone+build / `docker compose` |
-| **Kernel `github.com/iome-sh/memory`** | **Mostly as dependency** | Pulled when building/installing the MCP host; library pin also `go get …@v1.5.11` (`@main` is tip of default branch, not a production pin) |
+| **Kernel `github.com/iome-sh/memory`** | **Mostly as dependency** | Pulled when building/installing the MCP host; library pin also `go get …@v1.5.12` (`@main` is tip of default branch, not a production pin) |
 | **Palace directory** | **On first write** | Created under `-palace-root` / `PALACE_ROOT` when tools ingest |
 | **TUI attach config** | **No** | Operator sets `[[mcp.servers]]` + `[memory]` (or opt-in Agent Plugin map) |
 | **Agent Plugins sample map** | **Opt-in only** | `[plugins] enabled = true` + `dirs` — default **disabled** · map ≠ Connected |
@@ -203,13 +203,13 @@ For ONNX embeddings, durable palace knobs, and residual-honest Qdrant notes, see
 
 ```bash
 # 1) Product MCP host (preferred install surface · published pin)
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.1
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.2
 # confirm:
 which iomesh-memory-mcp
 # Tip of default branch, not a production pin: …iomesh-memory-mcp@main
 
 # 2) Kernel pin (optional explicit; already dep of host at build time)
-go get github.com/iome-sh/memory@v1.5.11
+go get github.com/iome-sh/memory@v1.5.12
 ```
 
 **Run host — HTTP preferred (demo / multi-client):**
@@ -449,7 +449,7 @@ git clone https://github.com/iome-sh/iomesh-tui.git && cd iomesh-tui && make bui
 export DEEPSEEK_API_KEY=…   # or use -m ollama-llama3.2
 
 # B) Memory host (other shell)
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.1
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.2
 mkdir -p /tmp/demo-palace
 iomesh-memory-mcp -palace-root /tmp/demo-palace -tenant demo -http-addr :8080 -http-path /mcp
 

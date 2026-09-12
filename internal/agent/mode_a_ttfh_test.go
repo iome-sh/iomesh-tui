@@ -12,17 +12,17 @@ import (
 )
 
 func TestModeAPins_PublishedTipClass(t *testing.T) {
-	if ModeATUIPin != "v1.3.6" {
+	if ModeATUIPin != "v1.3.7" {
 		t.Fatalf("TUI pin=%q", ModeATUIPin)
 	}
-	if ModeAMCPPin != "v0.4.1" {
-		t.Fatalf("MCP pin=%q want v0.4.1 (persist companion · do not invent GA)", ModeAMCPPin)
+	if ModeAMCPPin != "v0.4.2" {
+		t.Fatalf("MCP pin=%q want v0.4.2 (kernel v1.5.12 companion · do not invent GA)", ModeAMCPPin)
 	}
-	if ModeAMemoryPin != "v1.5.11" {
+	if ModeAMemoryPin != "v1.5.12" {
 		t.Fatalf("memory pin=%q", ModeAMemoryPin)
 	}
 	line := ModeAPinHonestyLine()
-	for _, want := range []string{"v1.3.6", "v0.4.1", "v1.5.11", "do not invent GA", "tip class"} {
+	for _, want := range []string{"v1.3.7", "v0.4.2", "v1.5.12", "do not invent GA", "tip class"} {
 		if !strings.Contains(line, want) {
 			t.Fatalf("pin line missing %q: %s", want, line)
 		}

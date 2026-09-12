@@ -32,9 +32,9 @@ Slash: `/onboard next marketing-demo` (or any alias above).
 
 | Piece | Published pin | Notes |
 |-------|----------------|---------|
-| TUI (`iomesh-tui`) | **v1.3.6** | SemVer 1.0+ harness · local MIT client |
-| MCP host (`iomesh-memory-mcp`) | **v0.4.1** | Published tag · persist companion · extract (`memory_extract_facts`) · cite-both (`source_hint` + digest provenance/tags) |
-| Memory kernel (`memory`) | **v1.5.11** | Local palace kernel · persist-onnx-vec opt-in default OFF |
+| TUI (`iomesh-tui`) | **v1.3.7** | SemVer 1.0+ harness · local MIT client |
+| MCP host (`iomesh-memory-mcp`) | **v0.4.2** | Published tag · kernel v1.5.12 companion · persist companion · extract (`memory_extract_facts`) · cite-both (`source_hint` + digest provenance/tags) |
+| Memory kernel (`memory`) | **v1.5.12** | Local palace kernel · persist-onnx-vec opt-in default OFF |
 
 ## What you can show
 
@@ -61,7 +61,7 @@ Slash: `/onboard next marketing-demo` (or any alias above).
 
 Short spoken path for a **local agent + local memory** demo (follow the script above live).
 
-1. **Setup story** — “On your laptop: install `iomesh` **v1.3.6**, set an LLM key or Ollama, `/setup init` with local-memory (dual_write stays **OFF**), attach `iomesh-memory-mcp` **v0.4.1** (kernel **v1.5.11**; persist opt-in default **OFF**; `/memory extract` needs this host).”
+1. **Setup story** — “On your laptop: install `iomesh` **v1.3.7**, set an LLM key or Ollama, `/setup init` with local-memory (dual_write stays **OFF**), attach `iomesh-memory-mcp` **v0.4.2** (kernel **v1.5.12**; persist opt-in default **OFF**; `/memory extract` needs this host).”
 2. **The beat** — “Tell the agent something once; show `/memory` ingest and recall so it comes back from local storage — not a cloud CRM. The TUI prints the palace path — `ls` it.”
 3. **Mode A sticky** — “Run `/memory digest --require-sources mesh,private`. Cite both mesh + private, or say the miss out loud. Honest miss is success. Do not invent mesh. Miss is not known until `/dashboard ack` — no send, pay, or ship. Kernel walking skeleton: [TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md). ”
 4. **Air-gap** — “If the portal is blocked, stay local. Local RCA on disk. Digest miss stays honest. Do not invent Connected.”
