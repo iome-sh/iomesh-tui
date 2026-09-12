@@ -18,6 +18,7 @@ Product edge ships **`iomesh-memory-mcp`** (stdio **and** streamable HTTP; publi
 | `memory_compact_status` | Palace tier counts + last compaction (s1296 slash: `/memory compact-status`; **read-only**) |
 | `memory_search_semantic` | Tier-4 semantic facts (s1301 slash: `/memory semantic`; MCP-first) |
 | `memory_ingest_event` | Ops/telemetry event ingest (s1301 slash: `/memory ingest-event`; s138 T1; **not** conversation turn) |
+| `memory_extract_facts` | Optional HITL structural extract after persist (TUI `/memory extract`; **not** auto-ingest; **not** NLP). Presence is host-dependent — residual if missing; do not invent facts |
 | `memory_trigger_compact` | Mutating RecMem compaction advisory — **HITL wired** (s1311 slash: `/memory trigger-compact --i-confirm`) |
 | compact / other ops helpers | Residual ops helpers (not product Memory GA) |
 
@@ -723,7 +724,8 @@ See [mesh-dogfood.md](mesh-dogfood.md) for soft vs strict matrix. Unit coverage:
 | `/memory semantic\|sem [query]` | Opt-in tier-4 semantic facts (s1301; MCP `memory_search_semantic`) |
 | `/memory ingest-event\|event --subject … --content …` | Opt-in s138 T1 event telemetry (s1301; MCP `memory_ingest_event`; not conversation turn) |
 | `/memory patterns` / `/memory anomalies` | Opt-in MCP ops pulse Beta lists (shipped s1287; `memory_patterns_list` / `memory_anomalies_list`; when present) |
-| `/memory ingest <text>` | Ingest a user turn (MCP and/or dual-write). `session_id` is minted as `local-overlay` when the operator has none (`iomesh-memory-mcp` v0.1.0 requires it). Retrieve without a session stays unfiltered and finds the overlay. |
+| `/memory ingest <text>` | Ingest a user turn (MCP and/or dual-write). `session_id` is minted as `local-overlay` when the operator has none (`iomesh-memory-mcp` v0.1.0 requires it). Retrieve without a session stays unfiltered and finds the overlay. Does **not** auto-extract facts. |
+| `/memory extract [memory_id]` / `--id <id>` | Optional HITL structural extract after persist (MCP `memory_extract_facts`). `memory_id` required (fail closed). Tool missing on host → residual (do not invent facts). not NLP · not Memory GA · dual_write OFF · never auto after ingest. |
 | `/memory ingest-dir <path> [--dry-run] [--limit N]` | Folder ingest into the private overlay (`#384`). Workspace path jail. Same minted `session_id`. CLI: `iomesh memory ingest-dir`. When `[iomesh].org` / `IOMESH_ORG` is set, mesh ingest (dual-write path) sends `X-IOMesh-Org`. Empty org fail-opens. dual_write default **OFF**. Catalog list ≠ consume. |
 
 ## Ops heartbeat digest (s1200 · opt-in)

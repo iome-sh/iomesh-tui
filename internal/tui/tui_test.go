@@ -97,6 +97,9 @@ func TestHandleSlash_ModelsAndCost(t *testing.T) {
 	if !strings.Contains(out.String(), "ingest-dir") {
 		t.Fatalf("help missing ingest-dir: %s", out.String())
 	}
+	if !strings.Contains(out.String(), "extract") {
+		t.Fatalf("help missing extract: %s", out.String())
+	}
 	if !strings.Contains(out.String(), "--require-sources mesh,private") {
 		t.Fatalf("help missing Mode A sticky digest: %s", out.String())
 	}
@@ -128,6 +131,9 @@ func TestHandleSlash_ModelsAndCost(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "palace:") {
 		t.Fatalf("bare /memory missing palace path: %q", out.String())
+	}
+	if !strings.Contains(out.String(), "extract") {
+		t.Fatalf("bare /memory missing extract: %q", out.String())
 	}
 }
 
@@ -644,6 +650,69 @@ func TestParseMemoryIngestDirArgs(t *testing.T) {
 	_, badFlag := parseMemoryIngestDirArgs([]string{"--unknown"})
 	if badFlag == "" {
 		t.Fatal("expected unknown flag")
+	}
+}
+
+func TestParseMemoryExtractArgs(t *testing.T) {
+	id, errMsg := parseMemoryExtractArgs([]string{"mem_abc"})
+	if errMsg != "" || id != "mem_abc" {
+		t.Fatalf("positional id=%q err=%q", id, errMsg)
+	}
+	id2, err2 := parseMemoryExtractArgs([]string{"--id", "mem_flag"})
+	if err2 != "" || id2 != "mem_flag" {
+		t.Fatalf("--id id=%q err=%q", id2, err2)
+	}
+	id3, err3 := parseMemoryExtractArgs([]string{"--id=mem_eq"})
+	if err3 != "" || id3 != "mem_eq" {
+		t.Fatalf("--id= id=%q err=%q", id3, err3)
+	}
+	id4, err4 := parseMemoryExtractArgs([]string{"--memory-id", "mem_long"})
+	if err4 != "" || id4 != "mem_long" {
+		t.Fatalf("--memory-id id=%q err=%q", id4, err4)
+	}
+	id5, err5 := parseMemoryExtractArgs([]string{"--memory_id=mem_us"})
+	if err5 != "" || id5 != "mem_us" {
+		t.Fatalf("--memory_id= id=%q err=%q", id5, err5)
+	}
+	empty, emptyErr := parseMemoryExtractArgs(nil)
+	if emptyErr != "" || empty != "" {
+		t.Fatalf("empty id=%q err=%q", empty, emptyErr)
+	}
+	_, badFlag := parseMemoryExtractArgs([]string{"--unknown"})
+	if badFlag == "" {
+		t.Fatal("expected unknown flag")
+	}
+	_, extra := parseMemoryExtractArgs([]string{"mem_a", "mem_b"})
+	if extra == "" {
+		t.Fatal("expected unexpected extra argument")
+	}
+	_, extraFlag := parseMemoryExtractArgs([]string{"--id", "mem_a", "extra"})
+	if extraFlag == "" {
+		t.Fatal("expected unexpected extra after --id")
+	}
+}
+
+func TestHandleSlash_MemoryExtractUsage(t *testing.T) {
+	rt := testRuntime(t)
+	rt.AttachMemory(agent.MemoryConfig{Enabled: true, Server: "memory", DualWrite: false})
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+	_, err := handleSlash(&out, adapter, "/memory extract")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := out.String()
+	if !strings.Contains(got, "extract") || !strings.Contains(got, "memory_id") {
+		t.Fatalf("usage: %s", got)
+	}
+	if !strings.Contains(got, "not NLP") || !strings.Contains(got, "not Memory GA") {
+		t.Fatalf("honesty missing: %s", got)
+	}
+	if !strings.Contains(got, "dual_write OFF") {
+		t.Fatalf("dual_write pin missing: %s", got)
+	}
+	if strings.Contains(got, "Connected") && !strings.Contains(got, "≠") && !strings.Contains(got, "not") {
+		t.Fatalf("must not invent Connected: %s", got)
 	}
 }
 

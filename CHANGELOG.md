@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Optional `/memory extract` HITL facts (not auto-ingest):** `/memory extract [memory_id]` or `--id <id>` calls MCP `memory_extract_facts` when the memory server is connected. Tenant from `[memory]` when set. `memory_id` required (fail closed). Never auto-runs after `/memory ingest`. Tool missing on host prints residual (do not invent facts). dual_write **OFF** · not NLP · not Memory GA · catalog ≠ Connected.
+
 ## [1.3.4] — 2026-09-12
 
 Published pin honesty. Companion MCP **v0.3.2** · kernel **v1.5.10**. dual_write **OFF** · not Memory GA · catalog ≠ Connected · do not invent GA.
