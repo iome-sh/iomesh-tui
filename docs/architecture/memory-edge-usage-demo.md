@@ -1,6 +1,7 @@
 # Memory edge usage demo (example)
 
-**Serial:** free eng **s1513** · residual-honest **utilization / demo walkthrough** for product tip  
+Residual-honest **utilization / demo walkthrough** for product tip  
+
 **SSOT:** product narrative stages live in **[edge-user-journey.md](./edge-user-journey.md)** (free eng **s1554** · 7-stage edge-first journey) — this file is the **runbook**, not the ownership SSOT.  
 **Audience:** operators, demo hosts, sales eng dogfood, new users  
 **Planes used:** local Memory **kernel** (`github.com/iome-sh/memory`) + product **MCP host** (`iomesh-memory-mcp`) + **iomesh-tui** client
@@ -29,7 +30,7 @@ This is a **runbook-style example**, not a product claim that every step is auto
 | Optional `/setup` map (intro + lifecycle doc) | **4 Setup wizard** | Full detail: [setup-lifecycle.md](./setup-lifecycle.md) |
 | Phase 2 — Integrations | **5 Connectors / events on mesh** | list/plan + portal HITL · catalog ≠ Connected |
 | Phase 3 — Local memory install · Phase 4 — Attach | **6 Local store** | host not auto on signup · dual_write OFF |
-| Phase 5 — Show usage (+ digest / analyze) | **7 Analyze** | `/memory` · digest · optional mesh pull Ops Pack ~$119 |
+| Phase 5 — Show usage (+ digest / analyze) | **7 Analyze** | `/memory` · digest · optional mesh pull (private-platform overlay · **do not invent a priced SKU on the MIT local path**) |
 
 ---
 
@@ -49,8 +50,8 @@ This is a **runbook-style example**, not a product claim that every step is auto
 | **catalog ≠ Connected** | Catalog status chips / plan URLs ≠ org install Connected / INSTALL_STORE green |
 | **attach dogfood ≠ forever-green** | E4 stamp (s1508) is one observed residual · not continuous product dogfood green |
 | **book-demo OFF** | No invent book-a-demo install path |
-| **mesh optional** | Mesh / Ops Pack (~$119 language if any) is **pull/retain/audit/support** only · not required for local-primary Memory |
-| **rates honesty** | Mesh base footprint ~$88 · Memory Ops Pack ~$119 when platform SKUs are mentioned · not cloud GPU palace |
+| **mesh optional** | Optional mesh commercial overlay exists on the private platform · **do not invent a priced SKU on the MIT local path** · local memory is free MIT · not required for local-primary Memory |
+| **rates honesty** | Do **not** invent a priced SKU on the MIT local path · local memory is free MIT · optional mesh overlay stays on the private platform |
 
 Deep architecture: [memory-mcp.md](./memory-mcp.md) · integrations: [agent-integrations-setup.md](./agent-integrations-setup.md) · MCP client: [mcp.md](./mcp.md) · E4 stamp: [EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md](../EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md).
 
@@ -111,7 +112,7 @@ make build          # → ./bin/iomesh
 
 # Or latest tagged release (@latest = latest semver tag, not untagged main)
 go install github.com/iome-sh/iomesh-tui/cmd/iomesh@latest
-# Tip of default branch: go install github.com/iome-sh/iomesh-tui/cmd/iomesh@main
+# Tip of default branch, not a production pin: go install github.com/iome-sh/iomesh-tui/cmd/iomesh@main
 ```
 
 Set at least one LLM key (default cascade uses DeepSeek):
@@ -195,7 +196,7 @@ For ONNX embeddings, durable palace knobs, and residual-honest Qdrant notes, see
 |-------|------------|------------------------|
 | **TUI signup → memory** | **No** | Signup does not download or start a palace |
 | **`iomesh-memory-mcp` host** | **No (operator step)** | `go install` / clone+build / `docker compose` |
-| **Kernel `github.com/iome-sh/memory`** | **Mostly as dependency** | Pulled when building/installing the MCP host; library tip also `go get …@main` |
+| **Kernel `github.com/iome-sh/memory`** | **Mostly as dependency** | Pulled when building/installing the MCP host; library pin also `go get …@v1.5.11` (`@main` is tip of default branch, not a production pin) |
 | **Palace directory** | **On first write** | Created under `-palace-root` / `PALACE_ROOT` when tools ingest |
 | **TUI attach config** | **No** | Operator sets `[[mcp.servers]]` + `[memory]` (or opt-in Agent Plugin map) |
 | **Agent Plugins sample map** | **Opt-in only** | `[plugins] enabled = true` + `dirs` — default **disabled** · map ≠ Connected |
@@ -203,13 +204,14 @@ For ONNX embeddings, durable palace knobs, and residual-honest Qdrant notes, see
 **Product path (public · no `GOPRIVATE` / PAT):**
 
 ```bash
-# 1) Product MCP host (preferred install surface)
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main
+# 1) Product MCP host (preferred install surface · published pin)
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.1
 # confirm:
 which iomesh-memory-mcp
+# Tip of default branch, not a production pin: …iomesh-memory-mcp@main
 
-# 2) Kernel tip (optional explicit; already dep of host at build time)
-go get github.com/iome-sh/memory@main
+# 2) Kernel pin (optional explicit; already dep of host at build time)
+go get github.com/iome-sh/memory@v1.5.11
 ```
 
 **Run host — HTTP preferred (demo / multi-client):**
@@ -389,7 +391,7 @@ Then open portal URL in browser for HITL install. **Do not** claim Connected fro
 
 ### 5f. Optional mesh pull into local palace
 
-Requires `[iomesh]` credentials + Memory Ops Pack entitlement language when commercial SKUs apply:
+Requires `[iomesh]` credentials. Optional mesh commercial overlay exists on the private platform — **do not invent a priced SKU on the MIT local path**; local memory is free MIT:
 
 ```bash
 # Terminal A: local MCP host running
@@ -449,7 +451,7 @@ git clone https://github.com/iome-sh/iomesh-tui.git && cd iomesh-tui && make bui
 export DEEPSEEK_API_KEY=…   # or use -m ollama-llama3.2
 
 # B) Memory host (other shell)
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.1
 mkdir -p /tmp/demo-palace
 iomesh-memory-mcp -palace-root /tmp/demo-palace -tenant demo -http-addr :8080 -http-path /mcp
 

@@ -45,6 +45,7 @@ Slash: `/onboard next marketing-demo` (or any alias above).
 - Mode A sticky: `/memory digest --require-sources mesh,private` (cite-both or explicit miss) + visible `/dashboard ack`  
 - Palace path printed after attach/ingest — buyer can `ls` without spelunking  
 - Air-gap fallback when portal HITL is blocked (local RCA + honest digest miss · no fake Connected)  
+- Kernel TTFH walking skeleton: [TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md) — `/memory ingest` three RCA turns (private overlay) then `/memory digest --require-sources mesh,private` (cite-both **or explicit miss**). Honest miss is success. Do not invent mesh. **E-G1 is not closed.**  
 
 ## What not to claim
 
@@ -64,7 +65,7 @@ Short spoken path for a **local agent + local memory** demo (follow the script a
 
 1. **Setup story** — “On your laptop: install `iomesh` **v1.3.6**, set an LLM key or Ollama, `/setup init` with local-memory (dual_write stays **OFF**), attach `iomesh-memory-mcp` **v0.4.1** (kernel **v1.5.11**; persist opt-in default **OFF**; `/memory extract` needs this host).”
 2. **The beat** — “Tell the agent something once; show `/memory` ingest and recall so it comes back from local storage — not a cloud CRM. The TUI prints the palace path — `ls` it.”
-3. **Mode A sticky** — “Run `/memory digest --require-sources mesh,private`. Cite both mesh + private, or say the miss out loud. Miss is not known until `/dashboard ack` — no send, pay, or ship.”
+3. **Mode A sticky** — “Run `/memory digest --require-sources mesh,private`. Cite both mesh + private, or say the miss out loud. Honest miss is success. Do not invent mesh. Miss is not known until `/dashboard ack` — no send, pay, or ship. Kernel walking skeleton: [TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md). **E-G1 is not closed.**”
 4. **Air-gap** — “If the portal is blocked, stay local. Local RCA on disk. Digest miss stays honest. Do not invent Connected.”
 5. **Claims guardrail** — Before customer-facing wording, check the private GTM **claims catalog** for what is demoable vs do-not-claim: [github.com/iome-sh/tool-marketing](https://github.com/iome-sh/tool-marketing) (private · operator-only · not customer docs).
 6. **Win-back / closed-lost** — Follow-ups are **sales process** (humans / HITL loops). The TUI does **not** auto-push CRM win-back or closed-lost sequences.
@@ -118,6 +119,7 @@ The marketing-demo path stays **local agent + local memory** (script above uncha
 | `/onboard next sales` | May claim / must not claim matrix |
 | [memory-edge-usage-demo.md](./memory-edge-usage-demo.md) | Longer runbook walkthrough |
 | [edge-user-journey.md](./edge-user-journey.md) | 7-stage product narrative SSOT |
+| Kernel TTFH | Walking skeleton · [TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md) · `/memory ingest` three RCA turns then cite-both **or explicit miss** · **E-G1 is not closed** |
 
 ---
 
