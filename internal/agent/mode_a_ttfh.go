@@ -12,10 +12,10 @@ import (
 
 const (
 	// Published tip class (do not invent a newer GA tag).
-	// Trio must stay compatible: TUI v1.3.4 cite-both needs MCP v0.3.2
-	// (optional source_hint + ops_digest_export provenance/tags) over kernel v1.5.10.
-	ModeATUIPin    = "v1.3.4"
-	ModeAMCPPin    = "v0.3.2"
+	// Trio must stay compatible: TUI v1.3.5 extract HITL needs MCP v0.4.0
+	// (memory_extract_facts) over kernel v1.5.10. persist v1.5.11 is optional.
+	ModeATUIPin    = "v1.3.5"
+	ModeAMCPPin    = "v0.4.0"
 	ModeAMemoryPin = "v1.5.10"
 
 	// DefaultPalaceRoot is the setup-template local palace (buyer can ls).
