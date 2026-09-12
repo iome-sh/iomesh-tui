@@ -1521,7 +1521,7 @@ func TestMeshAgentOnboardingNextMarketingDemoLane_HonestyNeedles(t *testing.T) {
 		"no fake Connected",
 		"v1.3.5",
 		"v0.4.0",
-		"v1.5.10",
+		"v1.5.11",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("marketing-demo lane missing %q in:\n%s", want, out)
