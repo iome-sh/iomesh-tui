@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- **README for OSS newcomers:** Hero is one paragraph + MIT trio pins + three install lines; product-boundary table once; dashboard eval-template showcase unchanged.
+
 ## [1.3.7] — 2026-09-12
 
 Published pin honesty after operator-copy (#428 · #429 · #430) for kernel **v1.5.12**. Companion MCP **v0.4.2** · kernel **v1.5.12**. dual_write **OFF** · not Memory GA · catalog ≠ Connected · persist opt-in · do not invent GA.
