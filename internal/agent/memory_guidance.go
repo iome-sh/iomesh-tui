@@ -14,7 +14,7 @@ func MemoryNextStepLines() []string {
 		"      if TUI/session running → /setup preflight · /setup reload · optional /memory digest · /onboard next memory|memory-pull",
 		"      else cold start → restart iomesh · iomesh setup preflight · optional iomesh memory pull",
 		"      Mode A sticky: /memory digest --require-sources mesh,private — cite-both or explicit miss · miss ≠ known until /dashboard ack (no send/pay/ship)",
-		"note: dual_write OFF · not Memory GA · local-primary · package wire ≠ Connected · soft ≠ invent live dogfood · free eng s1831",
+		"note: dual_write OFF · local-primary · package wire ≠ Connected · soft ≠ invent live dogfood · free eng s1831",
 	}
 }
 
@@ -39,7 +39,7 @@ Slash mirrors: /memory related|facts-as-of|supersede|digest|patterns|anomalies|t
 Skill: read_skill memory-advanced-agent when available
 
 Locks (never violate):
-- dual_write OFF · not Memory GA · no invent GA
+- dual_write OFF · no invent GA
 - multi-hop lite ≠ graph RAG · PreferShorterHops omit=true
 - supersede requires HITL / --i-confirm · never silent mutate
 - patterns/anomalies not medical · not OTel · no invent GA window engine

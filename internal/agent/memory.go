@@ -547,7 +547,7 @@ func FormatRequireSourcesCheck(res *iomesh.MemoryOpsDigestResult, required []str
 	if citedStr == "" {
 		citedStr = "(none)"
 	}
-	pin := "dual_write OFF · not Memory GA · local palace on disk"
+	pin := "dual_write OFF · local palace on disk"
 	if len(missing) > 0 {
 		msg := fmt.Sprintf("require-sources: miss · required=%s · cited=%s · missing=%s",
 			strings.Join(required, ","), citedStr, strings.Join(missing, ","))
@@ -825,7 +825,7 @@ func formatOpsDigest(res *iomesh.MemoryOpsDigestResult, maxBytes int) string {
 	if !neverInvent && h.OpsPulse == "" && h.Knowledge == "" {
 		neverInvent = true
 	}
-	fmt.Fprintf(&b, "honesty: ops=%s knowledge=%s analytical=%s never_invent_ga=%v dual_write=%s · not Memory GA · not full graph RAG · %s",
+	fmt.Fprintf(&b, "honesty: ops=%s knowledge=%s analytical=%s never_invent_ga=%v dual_write=%s · not full graph RAG · %s",
 		opsPulse, know, anal, neverInvent, dw, digestHonestyExtraPin)
 	if note := strings.TrimSpace(h.Note); note != "" {
 		fmt.Fprintf(&b, "\n  note: %s", note)
@@ -992,7 +992,7 @@ type MemoryFactsAsOfOpts struct {
 
 // factsAsOfHonestyFooter is the residual-honest pin for facts-as-of output.
 // Locked: bi-temporal lite · not full dual-clock Graphiti · not Memory GA · dual_write OFF.
-const factsAsOfHonestyFooter = "honesty: bi-temporal lite · not full dual-clock Graphiti · not Memory GA · dual_write OFF"
+const factsAsOfHonestyFooter = "honesty: bi-temporal lite · not full dual-clock Graphiti · dual_write OFF"
 
 // memoryFactsAsOfResult is the mesh MCP memory_facts_as_of JSON wire shape.
 type memoryFactsAsOfResult struct {
@@ -1170,7 +1170,7 @@ type MemorySupersedeOpts struct {
 // supersedeHonestyFooter is the residual-honest pin for supersede output (s1282).
 // Locked: A3 lite · not NLP contradiction · not full dual-clock Graphiti · not Memory GA ·
 // dual_write OFF · mutating (valid_until close).
-const supersedeHonestyFooter = "honesty: A3 lite supersede · not NLP contradiction · not full dual-clock Graphiti · not Memory GA · dual_write OFF · mutating (valid_until close)"
+const supersedeHonestyFooter = "honesty: A3 lite supersede · not NLP contradiction · not full dual-clock Graphiti · dual_write OFF · mutating (valid_until close)"
 
 // memorySupersedeResult is the mesh MCP memory_supersede_entity JSON wire shape (s640).
 // Output: { entity, as_of, superseded_count }.
@@ -1338,7 +1338,7 @@ type MemoryAnomaliesOpts struct {
 // Locked: ops pulse Beta · suggestive only · not medical diagnosis · not OTel host metrics ·
 // not invent GA window engine · dual_write OFF · not Memory GA.
 // (s138 T2 · s789 Beta framing; offline analysis; empty ≠ invent patterns/anomalies.)
-const pulseHonestyFooter = "honesty: ops pulse Beta · suggestive only · not medical diagnosis · not OTel host metrics · not invent GA window engine · dual_write OFF · not Memory GA"
+const pulseHonestyFooter = "honesty: ops pulse Beta · suggestive only · not medical diagnosis · not OTel host metrics · not invent GA window engine · dual_write OFF"
 
 // pulseSignal is a defensive wire shape for mesh PatternSignal / AnomalySignal.
 // Typical fields: subject, kind, count, score, summary/note, window — all optional for residual-honest parse.
@@ -1654,11 +1654,11 @@ type MemoryCompactStatusOpts struct{}
 
 // timelineHonestyFooter is the residual-honest pin for timeline output (s1296).
 // Locked: temporal timeline · filters before limit · not Memory GA · dual_write OFF · MCP-first.
-const timelineHonestyFooter = "honesty: temporal timeline · filters before limit · not Memory GA · dual_write OFF · MCP-first (no lean HTTP timeline invent)"
+const timelineHonestyFooter = "honesty: temporal timeline · filters before limit · dual_write OFF · MCP-first (no lean HTTP timeline invent)"
 
 // compactStatusHonestyFooter is the residual-honest pin for compact-status output (s1296).
 // Locked: Palace tier counts residual · not Memory GA · not auto-compact product · dual_write OFF.
-const compactStatusHonestyFooter = "honesty: Palace tier counts residual · not Memory GA · not auto-compact product · dual_write OFF · MCP-first (no lean HTTP invent)"
+const compactStatusHonestyFooter = "honesty: Palace tier counts residual · not auto-compact product · dual_write OFF · MCP-first (no lean HTTP invent)"
 
 // timelineEntry is a defensive wire shape for mesh memory_timeline entries (memoryHit-like).
 // Accepts id/summary/full/score + timestamp or event_time when present.
@@ -2062,7 +2062,7 @@ type MemoryTriggerCompactOpts struct {
 
 // triggerCompactHonestyFooter is the residual-honest pin for trigger-compact output (s1311).
 // Locked: RecMem advisory · not invent compaction green · dual_write OFF · not Memory GA · mutating HITL.
-const triggerCompactHonestyFooter = "honesty: RecMem advisory · not invent compaction green · dual_write OFF · not Memory GA · mutating HITL · MCP-first"
+const triggerCompactHonestyFooter = "honesty: RecMem advisory · not invent compaction green · dual_write OFF · mutating HITL · MCP-first"
 
 // memoryTriggerCompactResult is the mesh MCP memory_trigger_compact JSON wire shape.
 // Output: { triggered, cluster_size }.
@@ -2217,7 +2217,7 @@ var advancedMemoryTools = []struct {
 }
 
 // advancedStatusHonestyFooter is the residual-honest pin for MemoryAdvancedStatus (s1311).
-const advancedStatusHonestyFooter = "honesty: advanced MCP inventory residual · dual_write OFF · not Memory GA · presence ≠ product green · trigger-compact requires HITL · fail-open"
+const advancedStatusHonestyFooter = "honesty: advanced MCP inventory residual · dual_write OFF · presence ≠ product green · trigger-compact requires HITL · fail-open"
 
 // MemoryAdvancedStatus is the residual-honest advanced MCP tool inventory pulse (s1311).
 // Probes MCP tool presence (same discovery as mcpToolPresence; does not invent) when
@@ -2274,9 +2274,9 @@ func (rt *Runtime) MemoryAdvancedStatus(ctx context.Context) (string, error) {
 	b.WriteString("dual_write: OFF (default local-primary honesty)\n")
 	if rt != nil && rt.memory.Enabled && rt.memory.DualWrite {
 		// Config override — still residual; do not invent GA.
-		b.WriteString("  note: config dual_write=true is optional mesh audit only · not Memory GA\n")
+		b.WriteString("  note: config dual_write=true is optional mesh audit only\n")
 	}
-	b.WriteString("not Memory GA · presence ≠ Connected / product green\n")
+	b.WriteString("presence ≠ Connected / product green\n")
 	b.WriteString("integrations: see /integrations status for connector path\n")
 	b.WriteString(advancedStatusHonestyFooter)
 	// s1831: residual-honest dual-path next-step after /memory status inventory.
@@ -2317,11 +2317,11 @@ type MemoryIngestEventOpts struct {
 
 // semanticHonestyFooter is the residual-honest pin for semantic search output (s1301).
 // Locked: tier-4 semantic facts residual · not Memory GA · dual_write OFF · MCP-first.
-const semanticHonestyFooter = "honesty: tier-4 semantic facts residual · not Memory GA · dual_write OFF · MCP-first (no lean HTTP invent) · empty ≠ invent"
+const semanticHonestyFooter = "honesty: tier-4 semantic facts residual · dual_write OFF · MCP-first (no lean HTTP invent) · empty ≠ invent"
 
 // ingestEventHonestyFooter is the residual-honest pin for ingest-event output (s1301).
 // Locked: s138 T1 temporal event telemetry · not conversation turn · not Memory GA · dual_write OFF · MCP-first.
-const ingestEventHonestyFooter = "honesty: s138 T1 temporal event telemetry · not conversation turn · not Memory GA · dual_write OFF · MCP-first"
+const ingestEventHonestyFooter = "honesty: s138 T1 temporal event telemetry · not conversation turn · dual_write OFF · MCP-first"
 
 // semanticFact is a defensive wire shape for mesh memory_search_semantic facts.
 // Accepts id/summary/full/score when present (memoryHit-like).
@@ -2790,7 +2790,7 @@ const memoryExtractFactsTool = "memory_extract_facts"
 
 // extractFactsHonestyFooter is the residual-honest pin for /memory extract.
 // Locked: optional HITL structural extract after persist · not NLP · not Memory GA · dual_write OFF.
-const extractFactsHonestyFooter = "honesty: optional HITL structural extract after persist · not NLP · not Memory GA · dual_write OFF"
+const extractFactsHonestyFooter = "honesty: optional HITL structural extract after persist · not NLP · dual_write OFF"
 
 // MemoryExtractFacts runs MCP memory_extract_facts for one persisted memory_id.
 // HITL / explicit slash only — never called from MemoryIngestTurn or auto-ingest.

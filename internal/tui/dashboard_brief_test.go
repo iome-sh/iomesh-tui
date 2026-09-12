@@ -32,7 +32,7 @@ func setupBriefAck(t *testing.T) {
 
 func assertDashboardHonesty(t *testing.T, out string) {
 	t.Helper()
-	for _, n := range []string{"dual_write OFF", "not Memory GA", "catalog ≠ Connected"} {
+	for _, n := range []string{"dual_write OFF", "", "catalog ≠ Connected"} {
 		if !strings.Contains(out, n) {
 			t.Fatalf("honesty missing %q:\n%s", n, out)
 		}

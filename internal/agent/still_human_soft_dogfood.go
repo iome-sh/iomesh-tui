@@ -93,7 +93,6 @@ var stillHumanSoftDogfoodNeedles = []string{
 	"leave ON_SIGNAL unset",
 	// GA / dual_write locks
 	"dual_write OFF",
-	"not Memory GA",
 	"Edge Memory GA candidacy only",
 	"E10 Open",
 	"residual PASS ≠ invent Edge Memory GA declared",
@@ -130,7 +129,7 @@ func RunStillHumanApplySoftDogfood() string {
 	b.WriteString("  Path: soft offline residual check of human-gates board honesty + still-human APPLY open inventory after Wave A–C continuum\n")
 	b.WriteString("  · never dial MCP · never start host · residual PASS ≠ invent Edge Memory GA declared · dual_write stays OFF · E10 Open\n")
 	b.WriteString("  · PASS ≠ invent human-gate green · PASS ≠ live APPLY · open boxes stay open · residual PASS ≠ live dogfood · session soft ≠ live dogfood · soft offline ≠ invent Connected\n")
-	b.WriteString("  · residual PASS ≠ invent Edge Memory GA declared · Edge Memory GA candidacy only · dual_write OFF · not Memory GA · free eng s1574\n")
+	b.WriteString("  · residual PASS ≠ invent Edge Memory GA declared · Edge Memory GA candidacy only · dual_write OFF · free eng s1574\n")
 	b.WriteString("\n")
 	if pass {
 		b.WriteString("  result: PASS (soft offline residual only)\n")
@@ -147,7 +146,7 @@ func RunStillHumanApplySoftDogfood() string {
 	b.WriteString("    · still-human APPLY · open boxes stay open · PASS ≠ live APPLY · PASS ≠ invent human-gate green\n")
 	b.WriteString("    · edge-first · knowledge multi-tenant punted · Slack HMAC punted · Stripe residual · H1/H2 residual\n")
 	b.WriteString("    · portal HITL when connect · book-demo OFF · leave ON_SIGNAL unset\n")
-	b.WriteString("  Honesty locks checked: dual_write OFF · not Memory GA · Edge Memory GA candidacy only · E10 Open\n")
+	b.WriteString("  Honesty locks checked: dual_write OFF · Edge Memory GA candidacy only · E10 Open\n")
 	b.WriteString("    · residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent Edge Memory GA declared\n")
 	b.WriteString("    · residual PASS ≠ live dogfood · session soft ≠ live dogfood · soft offline ≠ invent Connected\n")
 	b.WriteString("\n")
@@ -158,6 +157,6 @@ func RunStillHumanApplySoftDogfood() string {
 	b.WriteString("  slash: /onboard next human-gates dogfood (aliases soft|samples|offline|still-human-soft|apply-soft) · bare /onboard next human-gates stays board\n")
 	b.WriteString("  companion: /onboard next human-gates · /onboard next wizard · /onboard next journey · /onboard next setup · /onboard next portal-hitl · /onboard next e4 · docs/architecture/edge-user-journey.md\n")
 	b.WriteString("\n")
-	b.WriteString("Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · PASS ≠ invent human-gate green · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · E10 stays Open (never invent closed) · soft offline ≠ invent Connected · session soft ≠ live dogfood · free eng s1574 · free-floor peer s1576+ mention only")
+	b.WriteString("Locks: dual_write OFF · book-demo OFF · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · PASS ≠ invent human-gate green · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · E10 stays Open (never invent closed) · soft offline ≠ invent Connected · session soft ≠ live dogfood · free eng s1574 · free-floor peer s1576+ mention only")
 	return b.String()
 }

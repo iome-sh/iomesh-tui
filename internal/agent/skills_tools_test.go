@@ -33,7 +33,6 @@ func TestSkillsNextStepLines_HonestyNeedles(t *testing.T) {
 		"skills re-scan ≠ invent Connected",
 		"dual_write OFF",
 		"not Agent Plugins GA",
-		"not Memory GA",
 		"s1837",
 	} {
 		if !strings.Contains(out, want) {
@@ -73,7 +72,6 @@ func TestListSkillsReadSkill_S1837NextStepFooter(t *testing.T) {
 		"package wire ≠ Connected",
 		"dual_write OFF",
 		"not Agent Plugins GA",
-		"not Memory GA",
 		"list_skills tool",
 		"/onboard next setup",
 		"restart iomesh",

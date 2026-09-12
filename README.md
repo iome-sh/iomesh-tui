@@ -23,7 +23,7 @@ Official open-source tooling from [IOMesh](https://iome.sh) (**IOMesh Technology
 
 ### Local MIT trio
 
-Free local eval is three public MIT pieces. Mesh is optional. This is **not** hosted memory generally available.
+Free local eval is three public MIT pieces. Mesh is optional. Local memory is MIT; this repo is not hosted memory-as-a-service.
 
 | Piece | Published pin | Role |
 |-------|----------------|------|
@@ -38,13 +38,13 @@ go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.1
 iomesh setup preflight   # or in the TUI: /setup · dual_write stays OFF
 ```
 
-Do not sell the trio as hosted Memory GA. dual_write OFF. catalog ≠ Connected.
+Memory dual-write defaults off. Catalog list is not consume.
 
-- Local memory docs: [memory-mcp.md](docs/architecture/memory-mcp.md) · [setup-lifecycle.md](docs/architecture/setup-lifecycle.md) · [edge-user-journey.md](docs/architecture/edge-user-journey.md) · kernel TTFH walking skeleton: [TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md) (`/memory ingest` three RCA turns · `/memory digest --require-sources mesh,private` cite-both **or explicit miss** · honest miss is success · do not invent mesh · **E-G1 is not closed**)
+- Local memory docs: [memory-mcp.md](docs/architecture/memory-mcp.md) · [setup-lifecycle.md](docs/architecture/setup-lifecycle.md) · [edge-user-journey.md](docs/architecture/edge-user-journey.md) · kernel TTFH walking skeleton: [TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md) (`/memory ingest` three RCA turns · `/memory digest --require-sources mesh,private` cite-both **or explicit miss** · miss is success)
 - Security model (local sandbox defaults): [SECURITY.md](SECURITY.md)
 - Packaging boundary (MIT vs private platform): [oss-packaging-boundary.md](docs/architecture/oss-packaging-boundary.md)
 
-> **Status:** public open-source **v1.3.x** (stable SemVer 1.0+; latest tag **v1.3.6**). Shipped: agent loop · subagents · full-screen TUI · **heartbeat dashboard** · permissions · ACP · skills · MCP client · **local memory attach** · sticky `/memory digest --require-sources mesh,private` (cite-both) · optional `/memory extract` HITL (not auto-ingest) · multi-model catalog (DeepSeek · Grok · Gemini · Vertex · Ollama). Optional mesh client when pointed at a broker you run or subscribe to. v1.3 is the MIT harness — not hosted Memory GA, not live HITL closed, not Knowledge/Analytics GA. dual_write OFF. catalog ≠ Connected.
+> **Status:** public open-source **v1.3.x** (stable SemVer 1.0+; latest tag **v1.3.6**). Shipped: agent loop · subagents · full-screen TUI · **heartbeat dashboard** · permissions · ACP · skills · MCP client · **local memory attach** · sticky `/memory digest --require-sources mesh,private` (cite-both) · optional `/memory extract` HITL (not auto-ingest) · multi-model catalog (DeepSeek · Grok · Gemini · Vertex · Ollama). Optional mesh client when pointed at a broker you run or subscribe to. v1.3 is the MIT harness. Memory dual-write defaults off. catalog ≠ Connected.
 
 [![iomesh-tui /dashboard — landing MeshConsole eval template](docs/assets/dashboard-eval.svg)](docs/architecture/tui.md#dashboard-heartbeat-live-feed)
 
@@ -152,7 +152,7 @@ make smoke-unit                    # offline mesh tests (alias: dogfood-unit)
 
 ### First-run (agent)
 
-Local agent + local memory path (no invent Connected / Memory GA · dual_write default **OFF**). **Mesh not required for first-run** — OSS local-primary only. Local memory is free MIT. Do not invent a priced add-on SKU here.
+Local agent + local memory path (memory dual-write defaults **off**). **Mesh is not required for first-run** — OSS local-primary only. Local memory is free MIT.
 
 1. Set an LLM key (`DEEPSEEK_API_KEY` / `XAI_API_KEY` / …) **or** pin Ollama (`-m ollama-llama3.2`).
 2. Run the TUI: `./bin/iomesh` (or `iomesh` if installed).
@@ -227,7 +227,7 @@ Tenancy            Heartbeat                         Agent tools
 Pulse 18 / min     14:02:39  analytics  gtm.pipeline
 ```
 
-Honesty: default empty until consume · `/dashboard preview` is eval template not your org · `catalog ≠ Connected` · `dual_write OFF` · knowledge/analytics **Beta** · not Memory GA · not live APPLY · **CLIENT** badge only means a mesh client is configured — listed streams ≠ live pulse · **PULSE** only after ≥1 decoded broker message · unacked brief ≠ known (`/dashboard ack` is a local ritual · no send/pay/ship) · `/gtm brief` palace voc_brief is local SoR (not git · no Slack persist · CRM ≠ Connected). Full notes: [tui.md](docs/architecture/tui.md#dashboard-heartbeat-live-feed) · asset: [docs/assets/dashboard-eval.svg](docs/assets/dashboard-eval.svg).
+Notes: default empty until consume · `/dashboard preview` is eval template not your org · `catalog ≠ Connected` · `dual_write OFF` · knowledge/analytics **Beta** · not live APPLY · **CLIENT** badge only means a mesh client is configured — listed streams ≠ live pulse · **PULSE** only after ≥1 decoded broker message · unacked brief ≠ known (`/dashboard ack` is a local ritual · no send/pay/ship) · `/gtm brief` palace voc_brief is local SoR (not git · no Slack persist · CRM ≠ Connected). Full notes: [tui.md](docs/architecture/tui.md#dashboard-heartbeat-live-feed) · asset: [docs/assets/dashboard-eval.svg](docs/assets/dashboard-eval.svg).
 
 ## CLI
 

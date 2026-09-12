@@ -34,7 +34,6 @@ func TestMemoryNextStepLines_HonestyNeedles(t *testing.T) {
 		"iomesh setup preflight",
 		"iomesh memory pull",
 		"dual_write OFF",
-		"not Memory GA",
 		"local-primary",
 		"package wire ≠ Connected",
 		"soft ≠ invent live dogfood",
@@ -65,7 +64,6 @@ func TestMemoryAdvancedStatus_S1831NextStep(t *testing.T) {
 		"/setup reload",
 		"/memory digest",
 		"dual_write OFF",
-		"not Memory GA",
 		"local-primary",
 		"package wire ≠ Connected",
 	} {
@@ -88,7 +86,6 @@ func TestMemoryAdvancedAgentGuidanceNote_HonestyNeedles(t *testing.T) {
 		"not medical",
 		"dual_write OFF",
 		"multi-hop lite",
-		"not Memory GA",
 		"patterns/anomalies",
 		"not OTel",
 		"not invent GA window engine",
@@ -153,7 +150,6 @@ func TestAttachMCP_InjectsMemoryAdvancedGuidance(t *testing.T) {
 		"not medical",
 		"dual_write OFF",
 		"multi-hop lite",
-		"not Memory GA",
 		"patterns/anomalies",
 	} {
 		if !strings.Contains(sys, want) {

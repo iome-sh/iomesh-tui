@@ -19,7 +19,7 @@ signup (portal)  →  install TUI  →  MCP integrations (list/plan + portal HIT
 ```
 
 This is a **runbook-style example**, not a product claim that every step is automatic or GA-green.  
-**Honesty on the setup map:** PASS / pull / analyze / drift OK / repair apply **≠ invent Connected** · not Memory GA · portal HITL still human · no auto-repair without explicit `apply --yes`. See [setup-lifecycle.md](./setup-lifecycle.md).
+**Notes on the setup map:** PASS / pull / analyze / drift OK / repair apply **≠ invent Connected** · portal HITL still human · no auto-repair without explicit `apply --yes`. See [setup-lifecycle.md](./setup-lifecycle.md).
 
 ### Phase → 7-stage SSOT mapping (s1554)
 
@@ -34,13 +34,12 @@ This is a **runbook-style example**, not a product claim that every step is auto
 
 ---
 
-## Honesty hard locks (read first)
+## Limits
 
 | Claim | Truth |
 |-------|--------|
 | **local-primary** | Customer-edge FS palace via MCP host + kernel · not freemium hosted palace |
 | **dual_write** | **OFF** by default · optional mesh audit only · not primary palace |
-| **not Memory GA** | Public OSS edge + TUI attach ≠ invent bare Memory GA |
 | **Edge Memory GA candidacy only** | Residual candidacy · **PASS ≠ invent Edge Memory GA declared** |
 | **E10 Open** | Founder/GTM sign-off remains open · tip ≠ invent E10 closed |
 | **control-plane / broker private** | Cloud control plane stays private · not OSS edge pack · product host is `iomesh-memory-mcp` only |
@@ -49,7 +48,6 @@ This is a **runbook-style example**, not a product claim that every step is auto
 | **kernel “automatic?”** | Kernel is a **library dep** of `iomesh-memory-mcp` at build/install · no separate palace product install for binary path · still not “signup auto-provisions Memory” |
 | **catalog ≠ Connected** | Catalog status chips / plan URLs ≠ org install Connected / INSTALL_STORE green |
 | **attach dogfood ≠ forever-green** | E4 stamp (s1508) is one observed residual · not continuous product dogfood green |
-| **book-demo OFF** | No invent book-a-demo install path |
 | **mesh optional** | Optional mesh commercial overlay exists on the private platform · **do not invent a priced SKU on the MIT local path** · local memory is free MIT · not required for local-primary Memory |
 | **rates honesty** | Do **not** invent a priced SKU on the MIT local path · local memory is free MIT · optional mesh overlay stays on the private platform |
 
@@ -90,7 +88,7 @@ iomesh-tui  ──MCP──►  iomesh-memory-mcp  ──►  memory kernel (Pal
 3. Optionally create an API key / mesh credentials for later `iomesh memory pull` or platform MCP that lists connectors.
 4. Note **org id** / tenant style strings you will use in config (`[iomesh].org`, `[memory].tenant`).
 
-**Honesty**
+**Notes**
 
 | Step | Not invent |
 |------|------------|
@@ -171,7 +169,7 @@ Then **human** opens the portal deep link (e.g. `https://console.iome.sh/integra
 
 Agent guidance on attach also injects residual-honest `<integrations>` notes and builtin skill `connector-integrations-setup`.
 
-### 2c. Honesty (integrations)
+### 2c. Notes (integrations)
 
 | May claim | Must not claim |
 |-----------|----------------|
@@ -304,7 +302,7 @@ enabled = true
 dirs = ["/absolute/path/to/iomesh-tui/examples/agent-plugins/iomesh-memory-mcp"]
 ```
 
-**Honesty:** Discover/map success ≠ process Connected · binary still required on PATH for stdio · package load ≠ Memory GA. Prefer TOML HTTP for demos.
+**Notes:** Discover/map success ≠ process Connected · binary still required on PATH for stdio · package load ≠ Memory GA. Prefer TOML HTTP for demos.
 
 ### 4c. Connect verify
 
@@ -425,7 +423,7 @@ In-session analyze ticks + drift + guided repair (s1534 P6 + s1538 P7 residual-h
 /setup repair apply --yes
 ```
 
-Or set `[memory] analyze_continuous = true` (setup fragment default **false**). **`/memory digest` still valid** as one-shot ops pulse · analyze tick ≠ invent Connected · drift report ≠ invent install green · package wire ≠ Connected · dual_write OFF · not Memory GA · **guided repair** plans from drift · `apply --yes` safe steps only (`reload_mcp` · `start_pull` · `start_analyze`) · refuse without `--yes` · repair apply ≠ invent Connected · portal HITL still human · dual_write never auto-flipped ON · notes for human host/mesh remain manual.
+Or set `[memory] analyze_continuous = true` (setup fragment default **false**). **`/memory digest` still valid** as one-shot ops pulse · analyze tick ≠ invent Connected · drift report ≠ invent install green · package wire ≠ Connected · dual_write OFF · **guided repair** plans from drift · `apply --yes` safe steps only (`reload_mcp` · `start_pull` · `start_analyze`) · refuse without `--yes` · repair apply ≠ invent Connected · portal HITL still human · dual_write never auto-flipped ON · notes for human host/mesh remain manual.
 
 ### 5g. Onboard residual lanes (no live dial)
 

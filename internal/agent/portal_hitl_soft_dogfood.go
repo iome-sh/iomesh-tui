@@ -97,7 +97,6 @@ var portalHITLSoftDogfoodNeedles = []string{
 	// Policy locks
 	"dual_write OFF",
 	"book-demo OFF",
-	"not Memory GA",
 	"Edge Memory GA candidacy only",
 	"residual PASS ≠ invent Edge Memory GA",
 	// Soft / residual honesty
@@ -156,7 +155,7 @@ func RunPortalHITLSoftDogfood() string {
 	b.WriteString("    · console.iome.sh/settings/agent\n")
 	b.WriteString("  Honesty locks checked: portal_hitl_still · portal HITL when connect · portal HITL still\n")
 	b.WriteString("    · catalog ≠ Connected · template= ≠ install APPLY · agent MCP cannot write installs\n")
-	b.WriteString("    · dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only\n")
+	b.WriteString("    · dual_write OFF · book-demo OFF · Edge Memory GA candidacy only\n")
 	b.WriteString("    · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ live dogfood\n")
 	b.WriteString("\n")
 	b.WriteString(fmt.Sprintf("  session marker: %s\n", label))
@@ -166,6 +165,6 @@ func RunPortalHITLSoftDogfood() string {
 	b.WriteString("  slash: /onboard next portal-hitl dogfood (aliases soft|samples|offline|portal-hitl-soft) · bare /onboard next portal-hitl stays board\n")
 	b.WriteString("  companion: /onboard next agentic · /onboard next agentic dogfood · /onboard next journey · /onboard portal mint/copy/probe · /integrations list|plan|status\n")
 	b.WriteString("\n")
-	b.WriteString("Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · template= ≠ install APPLY · agent MCP cannot write installs · portal HITL when connect · portal HITL still · portal_hitl_still · soft offline ≠ invent Connected · session soft ≠ live dogfood · free eng s1562 · free-floor peer s1564+ mention only")
+	b.WriteString("Locks: dual_write OFF · book-demo OFF · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · template= ≠ install APPLY · agent MCP cannot write installs · portal HITL when connect · portal HITL still · portal_hitl_still · soft offline ≠ invent Connected · session soft ≠ live dogfood · free eng s1562 · free-floor peer s1564+ mention only")
 	return b.String()
 }

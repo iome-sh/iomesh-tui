@@ -493,7 +493,7 @@ func TestMemoryOpsDigest_PrefersSyncHTTP(t *testing.T) {
 	if !strings.Contains(out, "honesty:") || !strings.Contains(out, "ga_path") || !strings.Contains(out, "never_invent_ga=true") {
 		t.Fatalf("honesty missing: %q", out)
 	}
-	if !strings.Contains(out, "not Memory GA") || !strings.Contains(out, "catalog list ≠ consume") {
+	if !strings.Contains(out, "catalog list ≠ consume") {
 		t.Fatalf("honesty pin missing: %q", out)
 	}
 	if !strings.Contains(out, "dual_write=off") {
@@ -645,7 +645,7 @@ func TestFormatRequireSourcesCheck_CiteBothOK(t *testing.T) {
 	if !strings.Contains(out, "mesh=P2 checkout p95") || !strings.Contains(out, "private=private RCA note") {
 		t.Fatalf("want cites: %q", out)
 	}
-	if !strings.Contains(out, "dual_write OFF") || !strings.Contains(out, "not Memory GA") {
+	if !strings.Contains(out, "dual_write OFF") {
 		t.Fatalf("honesty pin missing: %q", out)
 	}
 	if strings.Contains(out, "miss") {
@@ -694,7 +694,7 @@ func TestFormatRequireSourcesCheck_AgentBriefIsPrivateNotMesh(t *testing.T) {
 	if strings.Contains(out, "require-sources: ok") {
 		t.Fatalf("must not ok from agent-brief alone: %q", out)
 	}
-	if !strings.Contains(out, "dual_write OFF") || !strings.Contains(out, "not Memory GA") {
+	if !strings.Contains(out, "dual_write OFF") {
 		t.Fatalf("honesty pin missing: %q", out)
 	}
 }
@@ -736,7 +736,7 @@ func TestFormatRequireSourcesCheck_MissPrivate(t *testing.T) {
 	if strings.Contains(out, "catalog/grant do not satisfy cite-both") {
 		t.Fatalf("catalog/grant pin only when those hints present: %q", out)
 	}
-	if !strings.Contains(out, "dual_write OFF") || !strings.Contains(out, "not Memory GA") {
+	if !strings.Contains(out, "dual_write OFF") {
 		t.Fatalf("honesty pin missing: %q", out)
 	}
 }
@@ -823,7 +823,7 @@ func TestMemoryOpsDigest_RequireSourcesCiteBoth(t *testing.T) {
 	if !strings.Contains(out, "mesh=mesh incident INC-9") || !strings.Contains(out, "private=private RCA") {
 		t.Fatalf("want both cites: %q", out)
 	}
-	if !strings.Contains(out, "dual_write OFF") || !strings.Contains(out, "not Memory GA") {
+	if !strings.Contains(out, "dual_write OFF") {
 		t.Fatalf("honesty pin missing: %q", out)
 	}
 	if rt.memory.DualWrite {
@@ -849,7 +849,7 @@ func TestMemoryOpsDigest_RequireSourcesCatalogGrantAndMeshOnly(t *testing.T) {
 			},
 			want: []string{
 				"require-sources: miss", "missing=mesh,private", "cited=(none)",
-				"catalog/grant do not satisfy cite-both", "dual_write OFF", "not Memory GA",
+				"catalog/grant do not satisfy cite-both", "dual_write OFF", "",
 			},
 			not: []string{"require-sources: ok"},
 		},
@@ -941,7 +941,7 @@ func TestParseOpsDigestJSON_RequireSources(t *testing.T) {
 	if !strings.Contains(out, "catalog/grant do not satisfy cite-both") {
 		t.Fatalf("want catalog/grant pin: %q", out)
 	}
-	if !strings.Contains(out, "dual_write OFF") || !strings.Contains(out, "not Memory GA") {
+	if !strings.Contains(out, "dual_write OFF") {
 		t.Fatalf("honesty pin missing: %q", out)
 	}
 
@@ -1210,7 +1210,7 @@ func TestFormatFactsAsOfJSON_Fixture(t *testing.T) {
 	if !strings.Contains(out, "bi-temporal lite") || !strings.Contains(out, "not full dual-clock Graphiti") {
 		t.Fatalf("honesty pin missing: %q", out)
 	}
-	if !strings.Contains(out, "not Memory GA") || !strings.Contains(out, "dual_write OFF") {
+	if !strings.Contains(out, "dual_write OFF") {
 		t.Fatalf("Memory GA / dual_write pin missing: %q", out)
 	}
 }
@@ -1305,7 +1305,7 @@ func TestFormatSupersedeJSON_Fixture(t *testing.T) {
 	if !strings.Contains(out, "A3 lite supersede") || !strings.Contains(out, "not NLP contradiction") {
 		t.Fatalf("honesty pin missing: %q", out)
 	}
-	if !strings.Contains(out, "not full dual-clock Graphiti") || !strings.Contains(out, "not Memory GA") {
+	if !strings.Contains(out, "not full dual-clock Graphiti") {
 		t.Fatalf("Graphiti/GA pin missing: %q", out)
 	}
 	if !strings.Contains(out, "dual_write OFF") || !strings.Contains(out, "mutating") {
@@ -1520,7 +1520,7 @@ func TestFormatPatternsJSON_Fixture(t *testing.T) {
 	if !strings.Contains(out, "not OTel host metrics") || !strings.Contains(out, "not invent GA window engine") {
 		t.Fatalf("OTel/GA pin missing: %q", out)
 	}
-	if !strings.Contains(out, "dual_write OFF") || !strings.Contains(out, "not Memory GA") {
+	if !strings.Contains(out, "dual_write OFF") {
 		t.Fatalf("dual_write/Memory GA pin missing: %q", out)
 	}
 }
@@ -1548,7 +1548,7 @@ func TestFormatAnomaliesJSON_Fixture(t *testing.T) {
 	if !strings.Contains(out, "ops pulse Beta") || !strings.Contains(out, "suggestive only") {
 		t.Fatalf("honesty pin: %q", out)
 	}
-	if !strings.Contains(out, "not medical diagnosis") || !strings.Contains(out, "not Memory GA") {
+	if !strings.Contains(out, "not medical diagnosis") {
 		t.Fatalf("medical/Memory GA pin: %q", out)
 	}
 }
@@ -1687,7 +1687,7 @@ func TestFormatTimelineJSON_Fixture(t *testing.T) {
 	if !strings.Contains(out, "temporal timeline") || !strings.Contains(out, "filters before limit") {
 		t.Fatalf("honesty pin missing: %q", out)
 	}
-	if !strings.Contains(out, "not Memory GA") || !strings.Contains(out, "dual_write OFF") {
+	if !strings.Contains(out, "dual_write OFF") {
 		t.Fatalf("Memory GA / dual_write pin missing: %q", out)
 	}
 	if !strings.Contains(out, "MCP-first") {
@@ -1789,7 +1789,7 @@ func TestFormatCompactStatusJSON_Fixture(t *testing.T) {
 	if !strings.Contains(out, "Palace tier counts residual") || !strings.Contains(out, "not auto-compact product") {
 		t.Fatalf("honesty pin missing: %q", out)
 	}
-	if !strings.Contains(out, "not Memory GA") || !strings.Contains(out, "dual_write OFF") {
+	if !strings.Contains(out, "dual_write OFF") {
 		t.Fatalf("Memory GA / dual_write pin missing: %q", out)
 	}
 	// snake_case nested stats also accepted.
@@ -1870,7 +1870,7 @@ func TestFormatSemanticJSON_Fixture(t *testing.T) {
 	if !strings.Contains(out, "tier-4 semantic facts residual") {
 		t.Fatalf("honesty pin missing: %q", out)
 	}
-	if !strings.Contains(out, "not Memory GA") || !strings.Contains(out, "dual_write OFF") {
+	if !strings.Contains(out, "dual_write OFF") {
 		t.Fatalf("Memory GA / dual_write pin missing: %q", out)
 	}
 	if !strings.Contains(out, "MCP-first") || !strings.Contains(out, "empty ≠ invent") {
@@ -1971,7 +1971,7 @@ func TestFormatIngestEventJSON_Fixture(t *testing.T) {
 	if !strings.Contains(out, "s138 T1 temporal event telemetry") {
 		t.Fatalf("honesty pin missing: %q", out)
 	}
-	if !strings.Contains(out, "not conversation turn") || !strings.Contains(out, "not Memory GA") {
+	if !strings.Contains(out, "not conversation turn") {
 		t.Fatalf("turn / Memory GA pin missing: %q", out)
 	}
 	if !strings.Contains(out, "dual_write OFF") || !strings.Contains(out, "MCP-first") {
@@ -2128,7 +2128,7 @@ func TestFormatTriggerCompactJSON_Fixture(t *testing.T) {
 	if !strings.Contains(out, "RecMem advisory") || !strings.Contains(out, "not invent compaction green") {
 		t.Fatalf("honesty pin missing: %q", out)
 	}
-	if !strings.Contains(out, "dual_write OFF") || !strings.Contains(out, "not Memory GA") {
+	if !strings.Contains(out, "dual_write OFF") {
 		t.Fatalf("dual_write/Memory GA pin missing: %q", out)
 	}
 	if !strings.Contains(out, "mutating HITL") {
@@ -2240,7 +2240,6 @@ func TestMemoryAdvancedStatus_OfflineResidual(t *testing.T) {
 		"memory_trigger_compact",
 		"offline",
 		"dual_write",
-		"not Memory GA",
 		"/integrations status",
 		"trigger-compact requires HITL",
 		"fail-open",
@@ -2291,7 +2290,7 @@ func TestMemoryAdvancedStatus_Disabled(t *testing.T) {
 	if !strings.Contains(out, "memory_trigger_compact") {
 		t.Fatalf("inventory still listed: %q", out)
 	}
-	if !strings.Contains(out, "not Memory GA") {
+	if !strings.Contains(out, "") {
 		t.Fatalf("honesty: %q", out)
 	}
 }

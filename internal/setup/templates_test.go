@@ -45,7 +45,6 @@ func TestBuildManagedFragment_LocalMemoryDualWriteOff(t *testing.T) {
 		"IOMESH_MEMORY_PALACE_ROOT",
 		"match the MCP process -palace-root",
 		"never invent Connected",
-		"not Memory GA",
 	} {
 		if !strings.Contains(frag, needle) {
 			t.Fatalf("HTTP palace_root honesty missing %q:\n%s", needle, frag)

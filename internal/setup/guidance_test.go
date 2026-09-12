@@ -19,7 +19,6 @@ func TestSetupInitNextStepLines_HonestyNeedles(t *testing.T) {
 		"CLI has no",
 		"setup reload",
 		"dual_write OFF",
-		"not Memory GA",
 		"s1686",
 	} {
 		if !strings.Contains(out, want) {
@@ -55,7 +54,6 @@ func TestSetupInitMeshNextStepLines_HonestyNeedles(t *testing.T) {
 		"mesh pub",
 		"/dashboard",
 		"dual_write OFF",
-		"not Memory GA",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("mesh next-step missing %q in:\n%s", want, out)
@@ -81,7 +79,6 @@ func TestSetupPreflightNextStepLines_HonestyNeedles(t *testing.T) {
 		"CLI has no",
 		"package wire",
 		"dual_write OFF",
-		"not Memory GA",
 		"s1699",
 		"preflight",
 	} {
@@ -112,7 +109,6 @@ func TestSetupDriftNextStepLines_HonestyNeedles(t *testing.T) {
 		"CLI has no",
 		"package wire",
 		"dual_write OFF",
-		"not Memory GA",
 		"s1707",
 	} {
 		if !strings.Contains(out, want) {
@@ -147,7 +143,6 @@ func TestSetupRepairNextStepLines_HonestyNeedles(t *testing.T) {
 		"CLI has no",
 		"package wire",
 		"dual_write OFF",
-		"not Memory GA",
 		"s1707",
 		"repair apply",
 	} {
@@ -191,7 +186,6 @@ func TestSetupReloadNextStepLines_HonestyNeedles(t *testing.T) {
 	out := strings.Join(lines, "\n")
 	for _, want := range []string{
 		"dual_write OFF",
-		"not Memory GA",
 		"s1711",
 		"package wire",
 		"CLI has no",
@@ -219,7 +213,6 @@ func TestSetupPullNextStepLines_HonestyNeedles(t *testing.T) {
 	out := strings.Join(lines, "\n")
 	for _, want := range []string{
 		"dual_write OFF",
-		"not Memory GA",
 		"s1711",
 		"pull ≠ invent Connected",
 		"iomesh memory pull",
@@ -242,7 +235,6 @@ func TestSetupAnalyzeNextStepLines_HonestyNeedles(t *testing.T) {
 	out := strings.Join(lines, "\n")
 	for _, want := range []string{
 		"dual_write OFF",
-		"not Memory GA",
 		"s1711",
 		"analyze tick ≠ invent Connected",
 		"/memory digest",
@@ -266,7 +258,6 @@ func TestSetupPortalNextStepLines_HonestyNeedles(t *testing.T) {
 	for _, want := range []string{
 		"/setup reload",
 		"dual_write OFF",
-		"not Memory GA",
 		"catalog ≠ Connected",
 		"agent MCP cannot write",
 		"s1723",
@@ -299,7 +290,6 @@ func TestSetupLifecycleAgentGuidanceNote_HonestyNeedles(t *testing.T) {
 	}
 	for _, want := range []string{
 		"dual_write OFF",
-		"not Memory GA",
 		"Edge Memory GA candidacy only",
 		"residual PASS ≠ invent Edge Memory GA",
 		"Connected",
@@ -354,7 +344,6 @@ func TestSetupLifecyclePortalHandoff_HonestyNeedles(t *testing.T) {
 		PortalIntegrationsURL,
 		PortalAgentSettingsURL,
 		"dual_write OFF",
-		"not Memory GA",
 		"Connected",
 		"browser HITL",
 	} {
@@ -368,7 +357,6 @@ func TestSetupLifecycleHonestyOneLiner(t *testing.T) {
 	s := SetupLifecycleHonestyOneLiner
 	for _, want := range []string{
 		"dual_write OFF",
-		"not Memory GA",
 		"Edge Memory GA candidacy only",
 		"Connected",
 		"iomesh memory pull",
@@ -404,7 +392,6 @@ func TestSetupLifecycleFirstRunJourneyOneLiner(t *testing.T) {
 		"Local store",
 		"Analyze",
 		"dual_write OFF",
-		"not Memory GA",
 		"Edge Memory GA candidacy only",
 		"residual PASS ≠ invent Edge Memory GA",
 		"portal HITL",

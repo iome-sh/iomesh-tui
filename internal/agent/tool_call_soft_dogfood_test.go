@@ -84,7 +84,6 @@ func TestRunDeeperToolCallSoftDogfood_SoftPass(t *testing.T) {
 		"s1566",
 		"Partial→client-attach-evidence",
 		"dual_write OFF",
-		"not Memory GA",
 		"Edge Memory GA candidacy only",
 		"residual PASS ≠ invent Edge Memory GA declared",
 		"E10 Open",

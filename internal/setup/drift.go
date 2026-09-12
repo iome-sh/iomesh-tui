@@ -8,7 +8,7 @@ import (
 )
 
 // DriftHonestyFooter is residual-honest footer on every drift report (report-only · no invent green).
-const DriftHonestyFooter = "dual_write OFF · not Memory GA · drift report ≠ invent install green · package wire ≠ Connected"
+const DriftHonestyFooter = "dual_write OFF · drift report ≠ invent install green · package wire ≠ Connected"
 
 // DriftSnapshot is a residual-honest runtime probe filled by TUI/agent.
 // Compatible field set with agent.Runtime.DriftSnapshot() when that lands (s1534 P6b).
@@ -128,7 +128,7 @@ func BuildDriftReport(cfg *config.Config, snap DriftSnapshot) DriftReport {
 
 	// --- Notes: next steps only (report-only; guided repair is separate /setup repair) ---
 	rep.Notes = append(rep.Notes,
-		"drift is report-only · guided repair via /setup repair plan · apply --yes (safe steps only) · dual_write OFF · not Memory GA",
+		"drift is report-only · guided repair via /setup repair plan · apply --yes (safe steps only) · dual_write OFF",
 		"next steps when mismatched: /setup repair plan · /setup repair apply --yes · /setup reload · /setup pull start · /setup analyze start · start memory host",
 		"package wire / drift PASS ≠ invent Connected · CLI iomesh memory pull still valid · dual_write never auto ON",
 	)
@@ -151,7 +151,7 @@ func BuildDriftReport(cfg *config.Config, snap DriftSnapshot) DriftReport {
 // FormatDriftText returns a residual-honest human report (always includes honesty footer).
 func FormatDriftText(rep DriftReport) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "setup drift (report-only · residual-honest · not Memory GA · ≠ invent Connected)\n")
+	fmt.Fprintf(&b, "setup drift (report-only · residual-honest · ≠ invent Connected)\n")
 	fmt.Fprintf(&b, "  ok: %v  (dual_write honest + no critical contradictions · never invent install green)\n", rep.OK)
 	fmt.Fprintf(&b, "  config: present=%v dual_write=%v honest_off=%v memory.enabled=%v\n",
 		rep.ConfigPresent, rep.DualWriteConfig, rep.DualWriteHonest, rep.MemoryEnabled)

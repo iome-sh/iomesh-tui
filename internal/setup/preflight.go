@@ -63,7 +63,7 @@ func Preflight(ctx context.Context, cfgPath string) (*PreflightReport, error) {
 		ctx = context.Background()
 	}
 	rep := &PreflightReport{
-		Honesty: "dual_write OFF · not Memory GA · catalog ≠ Connected · portal HITL · setup PASS ≠ invent install green",
+		Honesty: "dual_write OFF · catalog ≠ Connected · portal HITL · setup PASS ≠ invent install green",
 		Notes:   []string{},
 		State:   "not_started",
 	}
@@ -240,7 +240,7 @@ func FormatPreflightText(r *PreflightReport) string {
 		return "setup preflight: nil report\n"
 	}
 	var b strings.Builder
-	fmt.Fprintf(&b, "setup preflight (residual-honest · not Memory GA · catalog ≠ Connected)\n")
+	fmt.Fprintf(&b, "setup preflight (residual-honest · catalog ≠ Connected)\n")
 	fmt.Fprintf(&b, "  state: %s\n", r.State)
 	fmt.Fprintf(&b, "  ok: %v  (probe path · never invent install green)\n", r.OK)
 	fmt.Fprintf(&b, "  config: present=%v path=%s\n", r.ConfigPresent, r.ConfigPath)

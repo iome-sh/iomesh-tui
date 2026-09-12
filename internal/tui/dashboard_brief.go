@@ -91,7 +91,7 @@ func ackTodayBrief() (string, error) {
 	rec := briefAckRecord{
 		Day:     briefDayKey(now),
 		AckedAt: now.UTC().Format(time.RFC3339),
-		Note:    "dashboard ritual · dual_write OFF · not Memory GA · no send/pay/ship",
+		Note:    "dashboard ritual · dual_write OFF · no send/pay/ship",
 	}
 	raw, err := json.MarshalIndent(rec, "", "  ")
 	if err != nil {

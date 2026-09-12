@@ -7,7 +7,7 @@ description: Residual-honest draft-only GTM AI agent roles (Orchestrator · Cont
 
 Builtin playbook for **GTM specialized AI agent roles** in iomesh-tui: produce **drafts and plans only**. External publish, SNS/email send, and commercial CRM writes stay **human-gated**. Aligns with mesh **hermes-grok-marketing-sales-pipeline** Phase 2 local hard gates (drafts only · not fleet runtime · not GA).
 
-This skill is **guidance only** — not install APPLY, not Memory GA, not Agent Plugins GA, not auto-publish product.
+This skill is **guidance only** — not install APPLY, not Agent Plugins GA, not auto-publish product.
 
 ## Specialized roles (drafts / plans only)
 
@@ -51,7 +51,6 @@ When grounding GTM work on mesh connectors:
 | Lock | Meaning |
 |------|---------|
 | dual_write OFF | Local-primary memory honesty unchanged; do not claim dual_write ON |
-| not Memory GA | GTM drafts ≠ invent Memory Palace / graph RAG product green |
 | book-demo OFF | No invent book-a-demo install or publish automation path |
 | residual PASS ≠ live dogfood | Offline skill / gate PASS is not live publish, live AAA, or live APPLY |
 | never invent Connected | Catalog / plan / status never invent install green / Connected |
@@ -74,14 +73,14 @@ Named palace artifact for later RevOps / GTM and founder-laptop briefs. **SoR is
 - **Cadence** `daily|weekly|on_threshold`. Daily (and on_threshold) refused below volume floor — thin n=3 does not fire a daily cron.
 - **One RevOps recipe:** `support_theme` only, same metadata contract as incidents (id, event_time, summary, source_hint, pointer, account_hash, kind, subject). ≤3 first-party sources (`mesh`, `private`, `github`). Not a seven-source “market truth” MCP.
 - **Hands off this plane:** win-back and price change are refused.
-- dual_write **OFF** · not Memory GA · no Slack persist · CRM ≠ Connected · catalog ≠ Connected.
+- dual_write **OFF** · no Slack persist · CRM ≠ Connected · catalog ≠ Connected.
 
 ## Optional Memory Ops Pack
 
 For **institutional recall** on the operator box, optional **Memory Ops Pack** / local-primary palace MCP may ground context (prior drafts, account notes, campaign memos).
 
 - Use residual-honest memory tools already wired (`memory_retrieve`, advanced surfaces via `memory-advanced-agent` when needed).
-- **Local-primary** · dual_write **OFF** · **not freemium palace** · **not Memory GA**.
+- **Local-primary** · dual_write **OFF** · **not freemium palace**.
 - Do not invent palace hits, digests, or dual_write green when offline.
 
 ## Workflow (agent)
@@ -109,7 +108,7 @@ For **institutional recall** on the operator box, optional **Memory Ops Pack** /
 - Builtin skill always available when skills enabled (**s1341** · molds s1251 connector + s1288 memory-advanced).
 - **s1347:** runtime injects residual-honest `<gtm-draft-only>` system note on `AttachSkills` (`GtmDraftOnlyAgentGuidanceNote`) — same mold as integrations / memory-advanced notes.
 - Companion builtin: `connector-integrations-setup` (list/plan → portal HITL).
-- Companion builtin: `memory-advanced-agent` (opt-in advanced memory · dual_write OFF · not Memory GA).
+- Companion builtin: `memory-advanced-agent` (opt-in advanced memory · dual_write OFF).
 - Mesh SSOT hard gates: hermes-grok-marketing-sales-pipeline Phase 2 local (drafts only · human publish · human CRM commercial).
 - Slash residual honesty: `/integrations list|plan|status|signing`.
 - Skills are **not** Agent Plugins — see architecture skills + agent-plugins docs.

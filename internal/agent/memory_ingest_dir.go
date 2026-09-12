@@ -175,7 +175,7 @@ func FormatIngestDirPlan(plan IngestDirPlan, sid string, minted, dryRun bool) st
 	if minted {
 		b.WriteString(" (minted · operator had none)")
 	}
-	b.WriteString(" dual_write=off · not Memory GA · catalog list ≠ consume · private overlay\n")
+	b.WriteString(" dual_write=off · catalog list ≠ consume · private overlay\n")
 	for _, f := range plan.Files {
 		fmt.Fprintf(&b, "  %s (%d bytes)\n", f.Rel, f.Size)
 	}
@@ -233,7 +233,7 @@ func (rt *Runtime) MemoryIngestDir(ctx context.Context, opts MemoryIngestDirOpts
 	if minted {
 		b.WriteString(" (minted · operator had none)")
 	}
-	fmt.Fprintf(&b, " dual_write=%v · not Memory GA · catalog list ≠ consume · private overlay · %s\n", rt.memory.DualWrite, rt.PalaceVisibilityLine())
+	fmt.Fprintf(&b, " dual_write=%v · catalog list ≠ consume · private overlay · %s\n", rt.memory.DualWrite, rt.PalaceVisibilityLine())
 	for _, p := range parts {
 		fmt.Fprintf(&b, "  %s\n", p)
 	}

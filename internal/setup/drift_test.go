@@ -35,7 +35,6 @@ func TestBuildDriftReport_HonestyNeedles(t *testing.T) {
 	text := FormatDriftText(rep)
 	for _, needle := range []string{
 		"dual_write OFF",
-		"not Memory GA",
 		"≠ invent install green",
 		"package wire ≠ Connected",
 		"report-only",
@@ -231,7 +230,6 @@ func TestFormatDriftText_DualPathNextStep(t *testing.T) {
 		"CLI has no",
 		"package wire",
 		"dual_write OFF",
-		"not Memory GA",
 		"s1707",
 	} {
 		if !strings.Contains(text, want) {

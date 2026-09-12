@@ -9,10 +9,10 @@ const (
 )
 
 // SetupLifecycleHonestyOneLiner is the bare /setup status honesty line (s1526 P3 + s1530 P5 + s1534 P6 + s1538 P7 + s1558 Wave B).
-const SetupLifecycleHonestyOneLiner = "dual_write OFF · not Memory GA · Edge Memory GA candidacy only · catalog ≠ Connected · portal HITL · setup PASS ≠ invent install green · continuous pull opt-in (/setup pull · pull_continuous) · analyze ticks opt-in (/setup analyze · analyze_continuous) · drift report-only (/setup drift) · guided repair (/setup repair · apply --yes only) · CLI iomesh memory pull still valid · /memory digest still valid · pull/analyze/repair ≠ invent Connected · drift ≠ invent install green · repair apply ≠ invent Connected · stage 4 of edge-user-journey · free eng s1558 · full first-run /onboard next journey"
+const SetupLifecycleHonestyOneLiner = "dual_write OFF · Edge Memory GA candidacy only · catalog ≠ Connected · portal HITL · setup PASS ≠ invent install green · continuous pull opt-in (/setup pull · pull_continuous) · analyze ticks opt-in (/setup analyze · analyze_continuous) · drift report-only (/setup drift) · guided repair (/setup repair · apply --yes only) · CLI iomesh memory pull still valid · /memory digest still valid · pull/analyze/repair ≠ invent Connected · drift ≠ invent install green · repair apply ≠ invent Connected · stage 4 of edge-user-journey · free eng s1558 · full first-run /onboard next journey"
 
 // SetupLifecycleFirstRunJourneyOneLiner residual-honest companion for 7-stage first-run map (s1558 Wave B).
-const SetupLifecycleFirstRunJourneyOneLiner = "edge-user-journey 7 stages · free eng s1558 · Signup → Download TUI → TUI auth/keys → Setup wizard (this lifecycle · stage 4) → Connectors portal HITL → Local store iomesh-memory-mcp → Analyze · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · portal HITL · host not auto · no invent TUI portal SSO · free-floor peer s1560+ mention only"
+const SetupLifecycleFirstRunJourneyOneLiner = "edge-user-journey 7 stages · free eng s1558 · Signup → Download TUI → TUI auth/keys → Setup wizard (this lifecycle · stage 4) → Connectors portal HITL → Local store iomesh-memory-mcp → Analyze · dual_write OFF · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · portal HITL · host not auto · no invent TUI portal SSO · free-floor peer s1560+ mention only"
 
 // SetupLifecycleAgentGuidanceNote is the residual-honest system note injected on
 // AttachMCP (s1526 P3 + s1530 P5 + s1534 P6 + s1538 P7 + s1558 Wave B). Steers the LLM: setup init →
@@ -33,7 +33,7 @@ First-run journey map (s1558 · residual-honest · free eng s1558): 1 Signup (po
 8. Skill: read_skill setup-lifecycle-agent when available · operator slash /setup (alias /setup-lifecycle) · companion /onboard next journey (s1558 first-run map) · /onboard next setup (stage 4 detail)
 
 Locks (never violate):
-- dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · book-demo OFF · free eng s1558
+- dual_write OFF · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · book-demo OFF · free eng s1558
 - never invent install green / Connected / INSTALL_STORE APPLY / GA
 - catalog status ≠ install Connected
 - portal HITL for OAuth/install · secrets as env names only · no invent TUI portal SSO · host not auto on signup
@@ -64,7 +64,7 @@ func SetupInitNextStepLines() []string {
 		"next: ensure iomesh-memory-mcp is running (if local-memory) · set secret env vars",
 		"then: if TUI/session already running → /setup preflight · /setup reload (hot-swap MCP + skills · package wire ≠ Connected)",
 		"      else cold start → restart iomesh · iomesh setup preflight",
-		"note: CLI has no `iomesh setup reload` · in-session /setup reload only · dual_write OFF · not Memory GA · catalog ≠ Connected · free eng s1686",
+		"note: CLI has no `iomesh setup reload` · in-session /setup reload only · dual_write OFF · catalog ≠ Connected · free eng s1686",
 	}
 }
 
@@ -76,7 +76,7 @@ func SetupInitMeshNextStepLines() []string {
 		"next (mesh): export IOMESH_TOKEN (env ref · never inline secret) · export IOMESH_ORG or set [iomesh].org (empty fail-opens · broker empty-org fail-open) · /setup reload (hot-swap mesh + MCP · infer ≠ Connected)",
 		"then: iomesh mesh streams --create --yes  # create ≠ PULSE",
 		"      iomesh mesh streams --messages --name OPERATIONAL_EVENTS",
-		"note: listed stream + 0 messages is still empty · catalog MCP ≠ hooks streams · mesh pub ephemeral ≠ /dashboard consume · dual_write OFF · not Memory GA",
+		"note: listed stream + 0 messages is still empty · catalog MCP ≠ hooks streams · mesh pub ephemeral ≠ /dashboard consume · dual_write OFF",
 	}
 }
 
@@ -88,7 +88,7 @@ func SetupPreflightNextStepLines() []string {
 		"next: if preflight ok and TUI/session already running → /setup reload (hot-swap MCP + skills · package wire ≠ Connected)",
 		"      else if host/secrets still missing → start iomesh-memory-mcp · set secret env · re-run preflight",
 		"      else cold start → restart iomesh (CLI has no setup reload) · then /setup reload in session if needed",
-		"note: dual_write OFF · not Memory GA · catalog ≠ Connected · PASS ≠ invent install green · free eng s1699",
+		"note: dual_write OFF · catalog ≠ Connected · PASS ≠ invent install green · free eng s1699",
 	}
 }
 
@@ -100,7 +100,7 @@ func SetupDriftNextStepLines() []string {
 	return []string{
 		"next: if TUI/session running → /setup repair plan · /setup repair apply --yes (safe only) · /setup reload when MCP drift · optional /setup pull|analyze start",
 		"      else cold start → fix host/config · iomesh setup preflight · restart iomesh (CLI has no setup drift/repair/reload)",
-		"note: drift report-only · dual_write OFF · package wire ≠ Connected · not Memory GA · free eng s1707",
+		"note: drift report-only · dual_write OFF · package wire ≠ Connected · free eng s1707",
 	}
 }
 
@@ -112,7 +112,7 @@ func SetupRepairNextStepLines() []string {
 	return []string{
 		"next: if TUI/session running → re-run /setup drift · /setup reload after safe apply · optional pull/analyze",
 		"      else cold start → restart iomesh · iomesh setup preflight (CLI has no setup repair/reload)",
-		"note: repair apply ≠ invent Connected · dual_write OFF · dual_write never auto ON · package wire ≠ Connected · not Memory GA · free eng s1707",
+		"note: repair apply ≠ invent Connected · dual_write OFF · dual_write never auto ON · package wire ≠ Connected · free eng s1707",
 	}
 }
 
@@ -123,7 +123,7 @@ func SetupReloadNextStepLines() []string {
 	return []string{
 		"next: optional /setup pull start (mesh+consumer) · /setup analyze start · /setup drift for residual",
 		"      re-run /setup preflight if host/secrets still missing · portal HITL for installs",
-		"note: reload in-session only · CLI has no `iomesh setup reload` · package wire ≠ Connected · dual_write OFF · not Memory GA · free eng s1711",
+		"note: reload in-session only · CLI has no `iomesh setup reload` · package wire ≠ Connected · dual_write OFF · free eng s1711",
 	}
 }
 
@@ -133,7 +133,7 @@ func SetupReloadNextStepLines() []string {
 func SetupPullNextStepLines() []string {
 	return []string{
 		"next: if TUI/session running → /setup pull start|once after mesh+pull_consumer · /setup pull status · optional /setup analyze|drift",
-		"      else cold CLI → iomesh memory pull (still valid) · dual_write OFF · not Memory GA",
+		"      else cold CLI → iomesh memory pull (still valid) · dual_write OFF",
 		"note: pull ≠ invent Connected · pull_continuous opt-in · CLI iomesh memory pull still valid · free eng s1711",
 	}
 }
@@ -144,7 +144,7 @@ func SetupPullNextStepLines() []string {
 func SetupAnalyzeNextStepLines() []string {
 	return []string{
 		"next: if TUI/session running → /setup analyze start|once · /setup analyze status · optional /setup drift",
-		"      else one-shot → /memory digest still valid · dual_write OFF · not Memory GA",
+		"      else one-shot → /memory digest still valid · dual_write OFF",
 		"note: analyze tick ≠ invent Connected · analyze_continuous opt-in · /memory digest still valid · free eng s1711",
 	}
 }
@@ -158,6 +158,6 @@ func SetupPortalNextStepLines() []string {
 	return []string{
 		"next: complete OAuth/install in browser HITL · then if TUI/session running → /setup preflight · /setup reload (package wire ≠ Connected)",
 		"      else cold start → restart iomesh · iomesh setup preflight (CLI has no setup portal/reload)",
-		"note: agent MCP cannot write installs · catalog ≠ Connected · dual_write OFF · not Memory GA · free eng s1723",
+		"note: agent MCP cannot write installs · catalog ≠ Connected · dual_write OFF · free eng s1723",
 	}
 }

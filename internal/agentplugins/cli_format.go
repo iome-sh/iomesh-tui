@@ -10,7 +10,7 @@ import (
 
 // ResidualCLIHonesty is the residual-honest one-liner for plugins CLI footers (s1336).
 // list/validate ≠ invent Agent Plugins GA · dual_write OFF · Discover ≠ Connected · not Memory GA · book-demo OFF.
-const ResidualCLIHonesty = "honesty: list/validate ≠ invent Agent Plugins GA · dual_write OFF · Discover ≠ Connected · not Memory GA · book-demo OFF"
+const ResidualCLIHonesty = "honesty: list/validate ≠ invent Agent Plugins GA · dual_write OFF · Discover ≠ Connected · book-demo OFF"
 
 // PluginsOptInMessage is printed when no dirs are available and [plugins] is default-off.
 const PluginsOptInMessage = "[plugins] is opt-in (default enabled=false). Set [plugins].dirs or pass -dir for one-shot list/validate. package wire ≠ invent Agent Plugins GA."

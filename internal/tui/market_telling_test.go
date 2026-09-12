@@ -33,7 +33,6 @@ func assertMarketTellingHonesty(t *testing.T, out string) {
 	t.Helper()
 	for _, n := range []string{
 		"dual_write OFF",
-		"not Memory GA",
 		"not git SoR",
 		"no Slack persist",
 		"catalog ≠ Connected",
@@ -440,7 +439,6 @@ func TestMarketTellingHelp_MentionsContract(t *testing.T) {
 		"support-theme",
 		"not git SoR",
 		"dual_write OFF",
-		"not Memory GA",
 		"no Slack persist",
 		"CRM ≠ Connected",
 		"win-back",

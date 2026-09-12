@@ -1,6 +1,6 @@
 ---
 name: memory-advanced-agent
-description: Residual-honest agent path for advanced memory surfaces (related hops · supersede HITL · facts-as-of · digest · patterns/anomalies · timeline · compact-status · trigger-compact HITL · semantic · ingest-event · status inventory) — not Memory GA · dual_write OFF
+description: Residual-honest agent path for advanced memory surfaces (related hops · supersede HITL · facts-as-of · digest · patterns/anomalies · timeline · compact-status · trigger-compact HITL · semantic · ingest-event · status inventory) — dual_write OFF
 ---
 
 # Memory advanced agent (residual-honest)
@@ -40,7 +40,7 @@ Agent path for **advanced Memory Palace surfaces** already wired in iomesh-tui (
 | `/memory trigger-compact --i-confirm` (s1311 · HITL) | `memory_trigger_compact` | **MCP-first only** — mutating RecMem advisory; HITL required; no invent lean HTTP |
 | `/memory semantic\|search-semantic\|sem [query\|--query …] [--limit N]` (s1301) | `memory_search_semantic` | **MCP-first only** — tier-4 semantic facts residual; empty ≠ invent |
 | `/memory ingest-event\|event --subject <id> --content <text> […]` (s1301) | `memory_ingest_event` | **MCP-first only** — s138 T1 temporal event telemetry; not conversation turn |
-| `/memory status` (s1311 advanced inventory) | (presence probe only) | Residual inventory of advanced MCP tools · dual_write OFF · not Memory GA |
+| `/memory status` (s1311 advanced inventory) | (presence probe only) | Residual inventory of advanced MCP tools · dual_write OFF |
 
 Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conversation turns via `/memory ingest`; folder overlay via `/memory ingest-dir` / `iomesh memory ingest-dir` — session_id minted as `local-overlay` when the operator has none) — see architecture docs.
 
@@ -55,7 +55,7 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conver
 3. **Multi-hop related (opt-in)** — call `memory_related` with `seed_entity` and/or `query`, optional `max_hops`, `limit`, `tenant`, `session_id`.
    - `prefer_shorter_hops`: **omit = kernel default true** (path-aware hop ranking lite · s1067/s1277/s1281).
    - Pass `prefer_shorter_hops: false` only for legacy seed-first sort (`--legacy-sort` / `--no-prefer-shorter-hops`).
-   - multi-hop lite ≠ full graph RAG · hop ranking path-aware lite · not Memory GA.
+   - multi-hop lite ≠ full graph RAG · hop ranking path-aware lite.
 
 4. **Facts-as-of (opt-in · MCP-first)** — call `memory_facts_as_of` with required `as_of` (RFC3339). Optional `entity`, `query`, `limit`, `session_id`, `tenant`.
    - K4 bi-temporal **lite** · not full dual-clock Graphiti · empty facts ≠ invent memories.
@@ -72,18 +72,18 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conver
    - Ops pulse Beta · not medical · not invent GA window engine · dual_write OFF.
 
 8. **Timeline (s1296 · MCP-first · opt-in)** — call `memory_timeline` with optional `since`, `until`, `query`, `limit`, `session_id`, `tenant`.
-   - Temporal timeline · filters before limit · empty entries ≠ invent memories · not Memory GA.
+   - Temporal timeline · filters before limit · empty entries ≠ invent memories.
 
 9. **Compact-status (s1296 · MCP-first · read-only)** — call `memory_compact_status` with optional `tenant`.
    - Palace tier counts residual · last_compaction from wire only · not auto-compact product · never invent compaction green.
 
 10. **Trigger-compact (s1311 · MCP-first · HITL mutating)** — call `memory_trigger_compact` only after **explicit human confirm**.
     - Slash requires `--i-confirm` (aliases `--confirm` / `--yes`). Agent must refuse residual-honestly without HITL.
-    - Mutating RecMem advisory: publishes `memory.compact.trigger` · **not** invent compaction green · **not** auto-compact product · dual_write OFF · not Memory GA.
+    - Mutating RecMem advisory: publishes `memory.compact.trigger` · **not** invent compaction green · **not** auto-compact product · dual_write OFF.
     - Never invent `triggered` / `cluster_size` offline.
 
 11. **Semantic (s1301 · MCP-first · opt-in)** — call `memory_search_semantic` with required `query`, optional `limit`, `tenant`.
-    - Tier-4 semantic facts residual · empty facts ≠ invent memories · not Memory GA · dual_write OFF.
+    - Tier-4 semantic facts residual · empty facts ≠ invent memories · dual_write OFF.
 
 12. **Ingest-event (s1301 · MCP-first · opt-in)** — call `memory_ingest_event` with required `subject` + `content`, optional `event_time` / `session_id` / `session_seq` / `severity` / `source_stream` / `tenant`.
     - s138 T1 temporal event telemetry · **not** conversation turn (use `memory_ingest_turn` / `/memory ingest`) · never invent memory_id offline · dual_write OFF.
@@ -101,14 +101,13 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conver
 | K4 lite ≠ dual-clock | facts-as-of is bi-temporal lite validity listing — not full dual-clock Graphiti KG |
 | patterns/anomalies not medical | Ops pulse Beta lists only — not clinical/diagnostic claims |
 | dual_write OFF | Default dual-write audit OFF; local-primary palace honesty |
-| not Memory GA | Advanced surfaces are residual/Beta/lite — do not invent product Memory GA |
 | no invent GA | No invent GA window engine, lean HTTP for supersede/facts-as-of/patterns/timeline/compact, or empty-as-success |
 | opt-in only | Never auto multi-hop on default recall; never auto-mutate supersede / trigger-compact |
 | fail-open | Offline / missing tool → residual status, not invented payloads |
 | empty ≠ invent | Empty facts / zero superseded_count / empty digest / empty timeline / empty semantic = honest empty |
 | compact-status read-only | Tier counts residual only — not auto-compact product · not invent compaction green |
 | trigger_compact requires HITL (s1311) | `memory_trigger_compact` is mutating RecMem advisory — **HITL shipped** via `/memory trigger-compact --i-confirm` · not invent compaction green |
-| semantic tier-4 residual | `memory_search_semantic` · not Memory GA · empty ≠ invent (s1301) |
+| semantic tier-4 residual | `memory_search_semantic` · empty ≠ invent (s1301) |
 | ingest-event ≠ turn | s138 T1 telemetry event · not conversation turn · never invent memory_id (s1301) |
 
 ## Non-goals (never do)

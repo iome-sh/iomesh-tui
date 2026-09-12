@@ -21,7 +21,7 @@ Skill: read_skill gtm-draft-only-agent when available
 
 Locks (never violate):
 - drafts only · no auto-send · human publish · human CRM commercial
-- dual_write OFF · not Memory GA · book-demo OFF
+- dual_write OFF · book-demo OFF
 - never invent install green / Connected / INSTALL_STORE APPLY / suite ops GA
 - residual PASS ≠ live dogfood publish`)
 }
@@ -35,6 +35,6 @@ func GtmDraftChecklist() string {
   2. Human publish / human CRM commercial
   3. Salesforce = GA CRM; HubSpot + GTM suite Beta multi-tenant; guerrilla global-only
   4. Connector install = portal HITL (not agent APPLY)
-  5. dual_write OFF · not Memory GA · book-demo OFF
+  5. dual_write OFF · book-demo OFF
   6. Skill: read_skill gtm-draft-only-agent`)
 }

@@ -8,7 +8,7 @@
 This document is the **packaging boundary** for the public MIT repo.  
 Edge harness and local-primary path come first. Platform residual honesty rails stay labeled **optional anti-claim residual** — not product claims that this MIT surface is the multi-tenant control plane.
 
-**Honesty one-liner:** MIT OSS · dual_write **OFF** · not Memory GA · Edge Memory GA **candidacy only** · book-demo **OFF** · residual PASS ≠ invent control plane in MIT repo · soft residual-check (`… dogfood` slash token) = offline residual honesty check · session soft ≠ live dogfood · free eng **s1582** · free-floor peer **s1584+** mention only.
+**Summary:** MIT OSS · dual_write **OFF** · Edge Memory GA **candidacy only** · residual PASS ≠ invent control plane in MIT repo · soft residual-check (`… dogfood` slash token) = offline residual honesty check · session soft ≠ live dogfood · free eng **s1582** · free-floor peer **s1584+** mention only.
 
 ---
 
@@ -55,10 +55,9 @@ These rails exist so residual eng and operators **do not invent** platform green
 | **Still-human APPLY soft residual** | Reaffirm open boxes after Wave A–C continuum | `/onboard next human-gates dogfood` |
 | **Tool-call residual** | Deeper E4 path map residual (ingest→retrieve→list→as-of) without inventing GA | `/onboard next tool-call` · soft residual-check |
 | **E10 Open reaffirm (s1586)** | Pin E10 Open after packaging continuum; residual PASS ≠ invent E10 closed / Edge Memory GA declared | `/onboard next e10` · soft residual-check `/onboard next e10 dogfood` |
-| **Book-demo OFF locks** | Never invent book-demo ON / public booking live | boards: demo · sales · human-gates · Locks lines |
 | **Serial stamps (`sNNNN`)** | Internal residual/roadmap labels in CHANGELOG/docs | free eng serials · free-floor peer mention only |
 
-**Locks shared with Edge path:** dual_write **OFF** · not Memory GA · Edge Memory GA **candidacy only** · book-demo **OFF** · residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent E10 closed · residual PASS ≠ invent control plane in MIT repo · E10 Open · catalog ≠ Connected · portal HITL when connect.
+**Locks shared with Edge path:** dual_write **OFF** · Edge Memory GA **candidacy only** · residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent E10 closed · residual PASS ≠ invent control plane in MIT repo · E10 Open · catalog ≠ Connected · portal HITL when connect.
 
 Keep soft residual-check harnesses — they are **anti-claim rails**, not live customer dogfood.
 
@@ -106,21 +105,21 @@ API continuum overview: `MeshAgentOnboardingNextLanes`
 
 ### After /onboard maps (s1825)
 
-Residual-honest **next-step footers** after `/onboard status` · `/onboard checklist` · `/onboard next` lanes map · `/onboard portal` — peer of integrations next-step (s1727) · setup next-step continuum (s1686–s1723).
+Residual-honest **next-step footers** after `/onboard status` · `/onboard checklist` · `/onboard next` lanes map · `/onboard portal` — peer of integrations next-step (s1727) · setup next-step continuum (setup continuum).
 
 Helper `OnboardNextStepLines()` (alias `MeshAgentOnboardingNextStepLines`) dual path:
 
 1. **If TUI/session running** → `/setup preflight` · `/setup reload` · optional `/integrations list` · `/onboard next portal-hitl|setup|memory`
 2. **Else cold start** → restart `iomesh` · `iomesh setup preflight`
 
-**Honesty:** dual_write **OFF** · package wire ≠ Connected · catalog ≠ Connected · agent MCP cannot write installs · not Memory GA · free eng **s1825**. Never invent Connected / Memory GA from onboard maps alone.
+**Notes:** dual_write **OFF** · package wire ≠ Connected · catalog ≠ Connected · agent MCP cannot write installs · free eng **s1825**. Never invent Connected / Memory GA from onboard maps alone.
 
 ---
 
-## Honesty locks (never invent)
+## Limits
 
 - MIT OSS harness · **not** control plane in this repo  
-- dual_write **OFF** · book-demo **OFF** · not Memory GA · Edge Memory GA **candidacy only**  
+- dual_write **OFF** · Edge Memory GA **candidacy only**  
 - residual PASS ≠ invent control plane in MIT repo  
 - residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ live dogfood  
 - soft residual-check (`… dogfood`) = offline residual honesty check · session soft ≠ live dogfood · ≠ invent platform green  

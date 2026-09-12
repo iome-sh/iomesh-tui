@@ -9,7 +9,7 @@ This guide layers **requirements that improve Memory quality** for the TUI path.
 
 ---
 
-## Honesty locks
+## Limits
 
 | Claim | Truth |
 |-------|--------|
@@ -18,7 +18,6 @@ This guide layers **requirements that improve Memory quality** for the TUI path.
 | **Qdrant** | **Not required** for TUI `/memory` · lean host search reports `qdrant=off` · kernel has optional VectorStore for custom Go |
 | **Docker / Podman** | Host: product compose or binary · Qdrant container only if you experiment with kernel VectorStore residual |
 | **dual_write** | **OFF** · local-primary |
-| **not Memory GA** | Advanced install ≠ invent bare / Edge / hosted Memory GA |
 | **package / map** | Sample plugin map ≠ Connected / Agent Plugins GA |
 
 ---
@@ -126,7 +125,7 @@ Once MCP is attached, use residual-honest advanced inventory:
 /memory trigger-compact --i-confirm  # HITL
 ```
 
-Builtin skill **`memory-advanced-agent`** steers agents; skill-only · dual_write OFF · not Memory GA.  
+Builtin skill **`memory-advanced-agent`** steers agents; skill-only · dual_write OFF.  
 Tools available depend on lean host surface (often **tools=6** on product host) — **PASS ≠ invent full platform sidecar parity**.
 
 ---
@@ -160,7 +159,7 @@ docker compose up --build
 ```
 
 **Requirements:** disk for model · CPU (or ORT/CUDA residual per kernel docs) · more RAM than hash path.  
-**Honesty:** ONNX ≠ Memory GA · dual_write OFF · Qdrant still off for lean host.
+**Notes:** ONNX ≠ Memory GA · dual_write OFF · Qdrant still off for lean host.
 
 ---
 
