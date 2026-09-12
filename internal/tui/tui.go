@@ -310,7 +310,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 	case "/memory", "/mem":
 		if len(parts) < 2 {
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
-			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] [--require-sources mesh,private] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | trigger-compact --i-confirm | semantic [query|--query ...] [--limit N] | ingest-event --subject <id> --content <text> [--event-time|--session-id|--session-seq|--severity|--source-stream] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | ingest <text> | ingest-dir <path> [--dry-run] [--limit N] | status]")
+			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] [--require-sources mesh,private] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | trigger-compact --i-confirm | semantic [query|--query ...] [--limit N] | ingest-event --subject <id> --content <text> [--event-time|--session-id|--session-seq|--severity|--source-stream] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | ingest <text> | extract [--id] <memory_id> | ingest-dir <path> [--dry-run] [--limit N] | status]")
 			fmt.Fprintln(out, agent.ModeADigestStickyHelp)
 			// s1831: residual-honest dual-path next-step after bare /memory help.
 			for _, line := range agent.MemoryNextStepLines() {
@@ -624,13 +624,37 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 				return false, nil
 			}
 			fmt.Fprintln(out, text)
+		case "extract", "extract-facts":
+			// HITL structural extract after persist via MCP memory_extract_facts.
+			// Explicit slash only — never auto-run after /memory ingest.
+			// memory_id required (fail closed). Tool missing on host → residual, do not invent facts.
+			// Optional HITL structural extract after persist · not NLP · not Memory GA · dual_write OFF.
+			eid, perr := parseMemoryExtractArgs(parts[2:])
+			if perr != "" {
+				fmt.Fprintf(out, "memory extract: %s\nusage: /memory extract [memory_id] | /memory extract --id <id>\n", perr)
+				return false, nil
+			}
+			if strings.TrimSpace(eid) == "" {
+				fmt.Fprintln(out, "usage: /memory extract [memory_id] | /memory extract --id <id>\n  optional HITL structural extract after persist · not NLP · not Memory GA · dual_write OFF")
+				return false, nil
+			}
+			text, err := rt.rt.MemoryExtractFacts(context.Background(), eid)
+			if err != nil {
+				fmt.Fprintf(out, "memory extract: %v\n", err)
+				return false, nil
+			}
+			if strings.TrimSpace(text) == "" {
+				fmt.Fprintln(out, "(extract empty · do not invent facts · not NLP · dual_write OFF)")
+				return false, nil
+			}
+			fmt.Fprintln(out, text)
 		default:
 			// Treat remainder as recall query: /memory what did we decide
 			// (also accepts --since/--until when first token is not a known subcommand)
 			q, ropts := parseMemoryRecallArgs(parts[1:])
 			text, err := rt.rt.MemoryRecallWithOpts(context.Background(), q, ropts)
 			if err != nil {
-				fmt.Fprintf(out, "memory: %v (try /memory status|recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|ingest-dir)\n", err)
+				fmt.Fprintf(out, "memory: %v (try /memory status|recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|extract|ingest-dir)\n", err)
 				return false, nil
 			}
 			if strings.TrimSpace(text) == "" {
@@ -1203,7 +1227,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /dashboard [help|preview|focus|ack]  empty until consume · preview = eval not your org · ack = brief ritual (aliases /heartbeat /mesh-console)
   /mesh                I/O Mesh status + usage
   /catalog [query]     list mesh data products (catalog plane)
-  /memory [recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|ingest-dir|status]  Memory Palace (sync HTTP + MCP; Mode A sticky: /memory digest --require-sources mesh,private — cite-both or explicit miss · ACK via /dashboard ack · related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · ingest-dir folder overlay · status advanced inventory)
+  /memory [recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|extract|ingest-dir|status]  Memory Palace (sync HTTP + MCP; Mode A sticky: /memory digest --require-sources mesh,private — cite-both or explicit miss · ACK via /dashboard ack · related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · extract HITL structural facts after persist (not NLP) · ingest-dir folder overlay · status advanced inventory)
   /integrations [list|plan|signing|status]  list/plan a source via MCP, then finish in portal HITL (not install CRUD)
   /setup [init|preflight|portal|reload|pull|analyze|drift|repair]  setup lifecycle (managed config · preflight · portal HITL · hot MCP reload · opt-in continuous pull/analyze · drift report · guided repair; alias /setup-lifecycle; dual_write OFF · not Memory GA · PASS ≠ invent Connected · pull/analyze/repair ≠ invent Connected)
   /gtm [help|checklist|brief]  GTM draft-only guidance, checklist, or palace voc_brief / market_telling (aliases /gtm-draft /gtm-agent; no auto-send; human publish; palace SoR · source=agent-brief · tenant gtm/founder)
@@ -2864,6 +2888,41 @@ func parseMemoryTriggerCompactArgs(args []string) (opts agent.MemoryTriggerCompa
 		}
 	}
 	return opts, ""
+}
+
+// parseMemoryExtractArgs extracts HITL structural extract flags.
+// Supports: --id / --memory-id / --memory_id, or a single positional memory_id.
+// Rejects unknown flags and extra positional tokens. Empty id is fail-closed by the caller.
+func parseMemoryExtractArgs(args []string) (memoryID string, errMsg string) {
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		key, val, hasEq := splitFlagKV(a)
+		switch key {
+		case "--id", "--memory-id", "--memory_id":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			id := strings.TrimSpace(val)
+			if memoryID != "" && id != "" {
+				return "", "unexpected argument " + id
+			}
+			if id != "" {
+				memoryID = id
+			}
+		default:
+			if strings.HasPrefix(a, "-") {
+				return "", "unknown flag " + a
+			}
+			if memoryID != "" {
+				return "", "unexpected argument " + a
+			}
+			memoryID = strings.TrimSpace(a)
+		}
+	}
+	return memoryID, ""
 }
 
 // parseMemoryFactsAsOfArgs extracts bi-temporal lite validity flags (s1276).

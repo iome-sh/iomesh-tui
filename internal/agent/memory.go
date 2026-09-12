@@ -2209,6 +2209,7 @@ var advancedMemoryTools = []struct {
 	{"memory_compact_status", "compact-status", "read-only"},
 	{"memory_search_semantic", "semantic", "tier-4 residual"},
 	{"memory_ingest_event", "ingest-event", "s138 T1 · not turn"},
+	{"memory_extract_facts", "extract", "HITL structural · not NLP"},
 	{"memory_patterns_list", "patterns", "ops pulse Beta"},
 	{"memory_anomalies_list", "anomalies", "ops pulse Beta"},
 	{"ops_digest_export", "digest", "ops GA-path framing"},
@@ -2222,7 +2223,7 @@ const advancedStatusHonestyFooter = "honesty: advanced MCP inventory residual ·
 // Probes MCP tool presence (same discovery as mcpToolPresence; does not invent) when
 // the memory server path is connected; fail-open offline/missing. Lists key advanced
 // surfaces: related, facts-as-of, supersede, timeline, compact-status, semantic,
-// ingest-event, patterns, anomalies, ops digest, trigger-compact.
+// ingest-event, extract, patterns, anomalies, ops digest, trigger-compact.
 //
 // Always includes dual_write OFF + not Memory GA + integrations one-liner pointer.
 // Does not call tools (presence probe only) — no invent of tool results.
@@ -2782,9 +2783,216 @@ func formatMemoryHits(hits []iomesh.MemoryHit, maxBytes int) string {
 	return b.String()
 }
 
+// memoryExtractFactsTool is the MCP HITL structural extract after persist.
+// Parallel MCP host PR; published pins may not list it — residual "not on host",
+// never invent facts. Never auto-run from MemoryIngestTurn.
+const memoryExtractFactsTool = "memory_extract_facts"
+
+// extractFactsHonestyFooter is the residual-honest pin for /memory extract.
+// Locked: optional HITL structural extract after persist · not NLP · not Memory GA · dual_write OFF.
+const extractFactsHonestyFooter = "honesty: optional HITL structural extract after persist · not NLP · not Memory GA · dual_write OFF"
+
+// MemoryExtractFacts runs MCP memory_extract_facts for one persisted memory_id.
+// HITL / explicit slash only — never called from MemoryIngestTurn or auto-ingest.
+// Requires MCP memory server connected. Passes tenant when set. dual_write stays OFF
+// (not passed ON). memory_id required (fail closed). Tool missing on host is a
+// residual — do not invent facts. MCP-first (no lean HTTP invent).
+func (rt *Runtime) MemoryExtractFacts(ctx context.Context, memoryID string) (string, error) {
+	if rt == nil || !rt.memory.Enabled {
+		return "", fmt.Errorf("memory hooks disabled")
+	}
+	memoryID = strings.TrimSpace(memoryID)
+	if memoryID == "" {
+		return "", fmt.Errorf("memory_id required")
+	}
+	maxBytes := rt.memory.MaxSnippetBytes
+	if maxBytes <= 0 {
+		maxBytes = 6000
+	}
+
+	if !rt.mcpMemoryReady() {
+		return formatExtractFactsOffline(rt.memory.Server, memoryID), nil
+	}
+	if known, present := rt.memoryHostHasTool(memoryExtractFactsTool); known && !present {
+		return formatExtractFactsToolMissing(rt.memory.Server, memoryID), nil
+	}
+
+	c := rt.mcp.ClientByName(rt.memory.Server)
+	args := map[string]any{
+		"memory_id": memoryID,
+	}
+	if t := rt.memoryTenant(); t != "" {
+		args["tenant"] = t
+	}
+	// dual_write stays OFF — do not pass it ON (local-primary honesty).
+	start := time.Now()
+	out, err := c.CallTool(ctx, memoryExtractFactsTool, args)
+	latMS := int(time.Since(start).Milliseconds())
+	rt.lastMemoryRetrieveMS.Store(int64(latMS))
+	rt.lastMemoryRetrieveCacheHit.Store(false)
+	if err != nil {
+		if extractFactsToolMissingErr(err) {
+			return formatExtractFactsToolMissing(rt.memory.Server, memoryID), nil
+		}
+		return formatExtractFactsCallFailed(memoryID, err), nil
+	}
+	if formatted := formatExtractFactsJSON(out, memoryID, maxBytes); formatted != "" {
+		return formatted, nil
+	}
+	raw := strings.TrimSpace(out)
+	if raw == "" {
+		return formatExtractFacts(memoryID, nil, maxBytes), nil
+	}
+	return truncateBytes(raw+"\n"+extractFactsHonestyFooter, maxBytes), nil
+}
+
+// memoryHostHasTool reports whether the configured memory MCP server listed the
+// named tool. inventoryKnown is false when tools/list is empty or the client is
+// missing (do not treat unknown inventory as "not on host").
+func (rt *Runtime) memoryHostHasTool(name string) (inventoryKnown, present bool) {
+	if rt == nil || rt.mcp == nil {
+		return false, false
+	}
+	c := rt.mcp.ClientByName(rt.memory.Server)
+	if c == nil {
+		return false, false
+	}
+	tools := c.Tools()
+	if len(tools) == 0 {
+		return false, false
+	}
+	for _, t := range tools {
+		if t.Name == name {
+			return true, true
+		}
+	}
+	return true, false
+}
+
+func extractFactsToolMissingErr(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	if strings.Contains(msg, "mcp tool missing") || strings.Contains(msg, "unknown tool") {
+		return true
+	}
+	return strings.Contains(msg, "tool") && strings.Contains(msg, "not found")
+}
+
+func formatExtractFactsOffline(server, memoryID string) string {
+	if server == "" {
+		server = "memory"
+	}
+	return fmt.Sprintf(
+		"extract memory_id=%s\nstatus: unavailable · mcp server %q not connected · MCP-first (no lean HTTP invent)\n%s · fail-open (do not invent facts)",
+		emptyDash(memoryID), server, extractFactsHonestyFooter,
+	)
+}
+
+func formatExtractFactsToolMissing(server, memoryID string) string {
+	if server == "" {
+		server = "memory"
+	}
+	return fmt.Sprintf(
+		"extract memory_id=%s\nstatus: unavailable · mcp tool %q not on host %q · MCP-first (no lean HTTP invent)\n%s · fail-open (do not invent facts)",
+		emptyDash(memoryID), memoryExtractFactsTool, server, extractFactsHonestyFooter,
+	)
+}
+
+func formatExtractFactsCallFailed(memoryID string, err error) string {
+	msg := "error"
+	if err != nil {
+		msg = err.Error()
+	}
+	return fmt.Sprintf(
+		"extract memory_id=%s\nstatus: unavailable · mcp call failed: %s\n%s · fail-open (do not invent facts)",
+		emptyDash(memoryID), msg, extractFactsHonestyFooter,
+	)
+}
+
+func formatExtractFacts(memoryID string, facts []string, maxBytes int) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "extract memory_id=%s\n", emptyDash(memoryID))
+	if len(facts) == 0 {
+		b.WriteString("facts: (none)\n")
+	} else {
+		fmt.Fprintf(&b, "facts (%d):\n", len(facts))
+		for i, f := range facts {
+			text := strings.TrimSpace(f)
+			if text == "" {
+				text = "(empty)"
+			}
+			const maxFactText = 240
+			if utf8.RuneCountInString(text) > maxFactText {
+				runes := []rune(text)
+				text = string(runes[:maxFactText]) + "…"
+			}
+			line := fmt.Sprintf("  %d. %s\n", i+1, text)
+			if maxBytes > 0 && b.Len()+len(line)+len(extractFactsHonestyFooter) > maxBytes {
+				break
+			}
+			b.WriteString(line)
+		}
+	}
+	b.WriteString(extractFactsHonestyFooter)
+	return truncateBytes(b.String(), maxBytes)
+}
+
+func formatExtractFactsJSON(raw, memoryID string, maxBytes int) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw[0] != '{' {
+		return ""
+	}
+	var probe map[string]any
+	if err := json.Unmarshal([]byte(raw), &probe); err != nil {
+		return ""
+	}
+	id := strings.TrimSpace(memoryID)
+	if v, ok := probe["memory_id"].(string); ok && strings.TrimSpace(v) != "" {
+		id = strings.TrimSpace(v)
+	}
+	facts := extractFactStrings(probe["facts"])
+	if len(facts) == 0 {
+		facts = extractFactStrings(probe["extracted_facts"])
+	}
+	return formatExtractFacts(id, facts, maxBytes)
+}
+
+func extractFactStrings(v any) []string {
+	arr, ok := v.([]any)
+	if !ok || len(arr) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(arr))
+	for _, item := range arr {
+		if s := extractFactString(item); s != "" {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+func extractFactString(v any) string {
+	switch t := v.(type) {
+	case string:
+		return strings.TrimSpace(t)
+	case map[string]any:
+		for _, k := range []string{"summary", "full", "text", "fact", "id"} {
+			if s, ok := t[k].(string); ok {
+				if s = strings.TrimSpace(s); s != "" {
+					return s
+				}
+			}
+		}
+	}
+	return ""
+}
+
 // MemoryIngestTurn persists a turn via MCP (when connected) and/or dual-write
 // MEMORY_INGEST (when DualWrite + mesh enabled). Dual-write is independent and fail-open
 // relative to MCP; at least one path must succeed for a nil error.
+// Does not call memory_extract_facts — extract is HITL / explicit /memory extract only.
 func (rt *Runtime) MemoryIngestTurn(ctx context.Context, role, content string) (string, error) {
 	if rt == nil || !rt.memory.Enabled {
 		return "", fmt.Errorf("memory hooks disabled")

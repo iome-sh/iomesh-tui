@@ -2233,6 +2233,7 @@ func TestMemoryAdvancedStatus_OfflineResidual(t *testing.T) {
 		"memory_compact_status",
 		"memory_search_semantic",
 		"memory_ingest_event",
+		"memory_extract_facts",
 		"memory_patterns_list",
 		"memory_anomalies_list",
 		"ops_digest_export",
