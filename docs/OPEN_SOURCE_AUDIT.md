@@ -1,6 +1,10 @@
 # Open-source launch audit
 
-Checklist completed for making **iomesh-tui** a public repository. Re-run before each major release.
+**Maintainer process residual** — not a product spec and not a user guide. Visibility is already **public MIT**. Operators: [README.md](../README.md) · [SECURITY.md](../SECURITY.md).
+
+Checklist completed for making **iomesh-tui** a public repository. Visibility flip is **complete** (public MIT). Re-run the process bar before each major release. Do **not** re-run a visibility flip.
+
+Honesty locks: dual_write **OFF** · **not Memory GA** · catalog ≠ Connected. Public MIT ≠ Memory GA.
 
 ## Security
 
@@ -34,13 +38,15 @@ Checklist completed for making **iomesh-tui** a public repository. Re-run before
 | Dependabot (gomod + actions) | Present |
 | README quick start + security callouts | Present |
 
-## Maintainer actions after going public
+## Maintainer actions after going public (visibility already public)
 
-1. GitHub → **Settings → General → Danger Zone → Change visibility → Public**  
+Historical closeout from launch day. Completing this list was **not** a product claim and **does not** require flipping visibility again.
+
+1. GitHub visibility → Public (**done** — flip complete). Do not re-run a visibility flip.  
 2. Enable **Private vulnerability reporting** (Settings → Code security)  
 3. Branch protection on `main`: require PR + status check **`ci-success`**  
 4. (Optional) Add topics: `golang`, `llm`, `mcp`, `cli`, `coding-agent`  
-5. Cut `v0.1.0` when ready ([RELEASING.md](../RELEASING.md))  
+5. First public tag (`v0.1.0`) — **historical**; latest published pin is **v1.3.6** ([RELEASING.md](../RELEASING.md))  
 6. Do **not** publish private stage endpoints or production mesh URLs in issues/docs  
 
 ## Out of scope for open-source binary
@@ -48,3 +54,5 @@ Checklist completed for making **iomesh-tui** a public repository. Re-run before
 - Multi-tenant remote agent hosting  
 - OS-level sandbox (Seatbelt/bubblewrap) — recommended for untrusted workloads, not bundled  
 - Guarantees about third-party LLM/MCP availability  
+- Re-doing the visibility flip (deliberate maintainer act already done)  
+- Inventing Memory GA / dual_write ON / catalog Connected from residual PASS  
