@@ -13,10 +13,10 @@ import (
 const (
 	// Published tip class (do not invent a newer GA tag).
 	// Trio must stay compatible: TUI v1.3.5 extract HITL needs MCP v0.4.0
-	// (memory_extract_facts) over kernel v1.5.10. persist v1.5.11 is optional.
+	// (memory_extract_facts) over kernel v1.5.11. persist-onnx-vec is opt-in default OFF.
 	ModeATUIPin    = "v1.3.5"
 	ModeAMCPPin    = "v0.4.0"
-	ModeAMemoryPin = "v1.5.10"
+	ModeAMemoryPin = "v1.5.11"
 
 	// DefaultPalaceRoot is the setup-template local palace (buyer can ls).
 	DefaultPalaceRoot = "~/.iomesh/palace"

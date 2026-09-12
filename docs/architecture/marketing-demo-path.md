@@ -35,7 +35,7 @@ Slash: `/onboard next marketing-demo` (or any alias above).
 |-------|----------------|---------|
 | TUI (`iomesh-tui`) | **v1.3.5** | SemVer 1.0+ harness · not hosted Memory GA |
 | MCP host (`iomesh-memory-mcp`) | **v0.4.0** | Published tag · extract companion (`memory_extract_facts`) · cite-both (`source_hint` + digest provenance/tags) · do not invent GA |
-| Memory kernel (`memory`) | **v1.5.10** | Local palace kernel · not hosted Memory GA |
+| Memory kernel (`memory`) | **v1.5.11** | Local palace kernel · persist-onnx-vec opt-in default OFF · not hosted Memory GA |
 
 ## What you can show
 
@@ -62,7 +62,7 @@ Slash: `/onboard next marketing-demo` (or any alias above).
 
 Short spoken path for a **local agent + local memory** demo (follow the script above live).
 
-1. **Setup story** — “On your laptop: install `iomesh` **v1.3.5**, set an LLM key or Ollama, `/setup init` with local-memory (dual_write stays **OFF**), attach `iomesh-memory-mcp` **v0.4.0** (kernel **v1.5.10**; `/memory extract` needs this host).”
+1. **Setup story** — “On your laptop: install `iomesh` **v1.3.5**, set an LLM key or Ollama, `/setup init` with local-memory (dual_write stays **OFF**), attach `iomesh-memory-mcp` **v0.4.0** (kernel **v1.5.11**; persist opt-in default **OFF**; `/memory extract` needs this host).”
 2. **The beat** — “Tell the agent something once; show `/memory` ingest and recall so it comes back from local storage — not a cloud CRM. The TUI prints the palace path — `ls` it.”
 3. **Mode A sticky** — “Run `/memory digest --require-sources mesh,private`. Cite both mesh + private, or say the miss out loud. Miss is not known until `/dashboard ack` — no send, pay, or ship.”
 4. **Air-gap** — “If the portal is blocked, stay local. Local RCA on disk. Digest miss stays honest. Do not invent Connected.”

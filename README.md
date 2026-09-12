@@ -28,13 +28,13 @@ Free local eval is three public MIT pieces. Mesh is optional. This is **not** ho
 | Piece | Published pin | Role |
 |-------|----------------|------|
 | [iomesh-tui](https://github.com/iome-sh/iomesh-tui) | **v1.3.5** (`go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.3.5` · [GitHub Release](https://github.com/iome-sh/iomesh-tui/releases/tag/v1.3.5)) | Agent harness / TUI |
-| [memory](https://github.com/iome-sh/memory) | **v1.5.10** | Local palace kernel (persist **v1.5.11** is opt-in; extract does not require it) |
+| [memory](https://github.com/iome-sh/memory) | **v1.5.11** | Local palace kernel (persist-onnx-vec opt-in default **OFF**; extract does not require persist) |
 | [iomesh-memory-mcp](https://github.com/iome-sh/iomesh-memory-mcp) | **v0.4.0** ([GitHub Release](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.4.0) · `/memory extract` needs this host (`memory_extract_facts`); cite-both: optional `source_hint` + `ops_digest_export` provenance/tags) | MCP host over the kernel |
 
 ```bash
 go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.3.5
 go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.0
-# kernel is a Go module consumed by the MCP host: github.com/iome-sh/memory@v1.5.10
+# kernel is a Go module consumed by the MCP host: github.com/iome-sh/memory@v1.5.11
 iomesh setup preflight   # or in the TUI: /setup · dual_write stays OFF
 ```
 

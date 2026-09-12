@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- **Published pin honesty:** Local MIT trio table, Mode A pins, and `go install` lines name memory kernel **v1.5.11** (persist-onnx-vec opt-in default **OFF**). TUI stays **v1.3.5** · MCP **v0.4.0**. dual_write **OFF** · not Memory GA · catalog ≠ Connected · do not invent GA.
+
 ## [1.3.5] — 2026-09-12
 
 Optional `/memory extract` HITL (explicit slash only · not auto-ingest). Companion MCP **v0.4.0** (`memory_extract_facts`) · kernel **v1.5.10**. dual_write **OFF** · not Memory GA · catalog ≠ Connected.

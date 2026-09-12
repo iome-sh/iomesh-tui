@@ -3423,7 +3423,7 @@ func TestHandleSlash_OnboardNextMarketingDemoLane(t *testing.T) {
 		"no fake Connected",
 		"v1.3.5",
 		"v0.4.0",
-		"v1.5.10",
+		"v1.5.11",
 	}
 
 	for _, line := range []string{
