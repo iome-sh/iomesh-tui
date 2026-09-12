@@ -7,8 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.6] — 2026-09-12
+
+Published pin honesty after #426 (kernel **v1.5.11** persist opt-in). Companion MCP **v0.4.1** · kernel **v1.5.11**. dual_write **OFF** · not Memory GA · catalog ≠ Connected · persist opt-in · do not invent GA.
+
 ### Changed
-- **Published pin honesty:** Local MIT trio table, Mode A pins, and `go install` lines name memory kernel **v1.5.11** (persist-onnx-vec opt-in default **OFF**). TUI stays **v1.3.5** · MCP **v0.4.0**. dual_write **OFF** · not Memory GA · catalog ≠ Connected · do not invent GA.
+- **Published pin honesty (#426):** Local MIT trio table, Mode A pins, and `go install` lines name **TUI v1.3.6** · **MCP v0.4.1** (persist companion) · **memory v1.5.11** (persist-onnx-vec opt-in default **OFF**). Default `cmd/iomesh` version string **1.3.6**. dual_write **OFF** · not Memory GA · catalog ≠ Connected · persist opt-in · do not invent GA.
 
 ## [1.3.5] — 2026-09-12
 
@@ -930,7 +934,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.5...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.6...HEAD
+[1.3.6]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.5...v1.3.6
 [1.3.5]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.4...v1.3.5
 [1.3.4]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.3...v1.3.4
 [1.3.3]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.2...v1.3.3
