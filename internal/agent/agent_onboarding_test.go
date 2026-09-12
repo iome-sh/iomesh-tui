@@ -1519,8 +1519,8 @@ func TestMeshAgentOnboardingNextMarketingDemoLane_HonestyNeedles(t *testing.T) {
 		"ls this path",
 		"Air-gap fallback",
 		"no fake Connected",
-		"v1.3.4",
-		"v0.3.2",
+		"v1.3.5",
+		"v0.4.0",
 		"v1.5.10",
 	} {
 		if !strings.Contains(out, want) {

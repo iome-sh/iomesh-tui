@@ -7,8 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.5] — 2026-09-12
+
+Optional `/memory extract` HITL (explicit slash only · not auto-ingest). Companion MCP **v0.4.0** (`memory_extract_facts`) · kernel **v1.5.10**. dual_write **OFF** · not Memory GA · catalog ≠ Connected.
+
 ### Added
-- **Optional `/memory extract` HITL facts (not auto-ingest):** `/memory extract [memory_id]` or `--id <id>` calls MCP `memory_extract_facts` when the memory server is connected. Tenant from `[memory]` when set. `memory_id` required (fail closed). Never auto-runs after `/memory ingest`. Tool missing on host prints residual (do not invent facts). dual_write **OFF** · not NLP · not Memory GA · catalog ≠ Connected.
+- **Optional `/memory extract` HITL facts (not auto-ingest) (#424):** `/memory extract [memory_id]` or `--id <id>` calls MCP `memory_extract_facts` when the memory server is connected. Tenant from `[memory]` when set. `memory_id` required (fail closed). Never auto-runs after `/memory ingest`. Tool missing on host prints residual (do not invent facts). dual_write **OFF** · not NLP · not Memory GA · catalog ≠ Connected.
 
 ## [1.3.4] — 2026-09-12
 
@@ -923,7 +927,8 @@ First public tagged release of the I/O Mesh TUI coding agent.
 - Residual-risk documentation for public operators ([SECURITY.md](SECURITY.md), [docs/security.md](docs/security.md))
 - ACP loopback Origin hardening; path-jail and scrubbing defaults documented
 
-[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.4...HEAD
+[Unreleased]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.5...HEAD
+[1.3.5]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.4...v1.3.5
 [1.3.4]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.3...v1.3.4
 [1.3.3]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.2...v1.3.3
 [1.3.2]: https://github.com/iome-sh/iomesh-tui/compare/v1.3.1...v1.3.2
