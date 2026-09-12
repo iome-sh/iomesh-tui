@@ -378,7 +378,6 @@ func TestLoadBuiltin_S1288MemoryAdvancedSkillDogfood(t *testing.T) {
 		"HITL",
 		"K4",
 		"dual_write OFF",
-		"not Memory GA",
 		"no invent",
 		"/memory related",
 		"/memory supersede",
@@ -416,9 +415,6 @@ func TestS1288SkillDescriptionResidualHonest(t *testing.T) {
 	}
 	if !strings.Contains(sk.Description, "Residual-honest") && !strings.Contains(sk.Description, "residual-honest") {
 		t.Fatalf("description not residual-honest: %q", sk.Description)
-	}
-	if !strings.Contains(sk.Description, "not Memory GA") && !strings.Contains(strings.ToLower(sk.Description), "not memory ga") {
-		t.Fatalf("description should say not Memory GA: %q", sk.Description)
 	}
 	if !strings.Contains(sk.Description, "dual_write OFF") && !strings.Contains(strings.ToLower(sk.Description), "dual_write") {
 		t.Fatalf("description should mention dual_write OFF: %q", sk.Description)
@@ -511,7 +507,6 @@ func TestLoadBuiltin_S1341GtmDraftOnlySkillDogfood(t *testing.T) {
 		"Salesforce",
 		"GA CRM",
 		"dual_write OFF",
-		"not Memory GA",
 		"book-demo OFF",
 		"residual PASS ≠ live dogfood",
 		"Memory Ops Pack",
@@ -637,7 +632,6 @@ func TestLoadBuiltin_S1363MeshAgentOnboardingSkillDogfood(t *testing.T) {
 		"cannot write installs",
 		"dual_write OFF",
 		"local-primary",
-		"not Memory GA",
 		"book-demo OFF",
 		"residual PASS ≠ live dogfood",
 		"never invent install green",
@@ -927,7 +921,6 @@ func TestLoadBuiltin_S1363MeshAgentOnboardingSkillDogfood(t *testing.T) {
 		"Slack HMAC punted",
 		"portal HITL when connect",
 		"dual_write OFF",
-		"not Memory GA",
 		"Edge Memory GA candidacy only",
 		"residual PASS ≠ invent Edge Memory GA",
 		"PASS ≠ invent Connected",
@@ -1057,7 +1050,6 @@ func TestLoadBuiltin_S1526SetupLifecycleAgentSkillDogfood(t *testing.T) {
 	}
 	for _, want := range []string{
 		"dual_write OFF",
-		"not Memory GA",
 		"Connected",
 		"portal HITL",
 		"iomesh setup",
@@ -1081,7 +1073,7 @@ func TestLoadBuiltin_S1526SetupLifecycleAgentSkillDogfood(t *testing.T) {
 			}
 		}
 	}
-	if !strings.Contains(sk.Description, "dual_write OFF") && !strings.Contains(sk.Description, "not Memory GA") {
+	if !strings.Contains(sk.Description, "dual_write OFF") {
 		t.Fatalf("description should carry honesty: %q", sk.Description)
 	}
 	// Body must lock dual_write OFF (refuse true is OK; invent GA claim is not).

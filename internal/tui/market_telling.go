@@ -30,7 +30,7 @@ const (
 	MarketTellingFileName      = "market_telling.json"
 	MarketTellingDailyFloor    = 8
 	MarketTellingRecipeName    = "support_theme"
-	marketTellingHonestyFooter = "dual_write OFF · not Memory GA · not git SoR · no Slack persist · catalog ≠ Connected · CRM ≠ Connected"
+	marketTellingHonestyFooter = "dual_write OFF · not git SoR · no Slack persist · catalog ≠ Connected · CRM ≠ Connected"
 
 	LedgerShipped   = "shipped"
 	LedgerMoved     = "moved"
@@ -134,7 +134,7 @@ func emptyMarketTelling() PalaceMarketTelling {
 		Cadence: PalaceCadence{
 			Floor: MarketTellingDailyFloor,
 		},
-		Note: "palace SoR · source=agent-brief · tenant gtm/founder · dual_write OFF · not Memory GA",
+		Note: "palace SoR · source=agent-brief · tenant gtm/founder · dual_write OFF",
 	}
 }
 
@@ -188,7 +188,7 @@ func saveMarketTelling(doc PalaceMarketTelling) (string, error) {
 		doc.Cadence.Floor = MarketTellingDailyFloor
 	}
 	if strings.TrimSpace(doc.Note) == "" {
-		doc.Note = "palace SoR · source=agent-brief · tenant gtm/founder · dual_write OFF · not Memory GA"
+		doc.Note = "palace SoR · source=agent-brief · tenant gtm/founder · dual_write OFF"
 	}
 	raw, err := json.MarshalIndent(doc, "", "  ")
 	if err != nil {

@@ -76,7 +76,6 @@ func TestRunE10OpenSoftDogfood_SoftPass(t *testing.T) {
 		"residual PASS ≠ invent E10 closed",
 		"residual PASS ≠ invent Edge Memory GA declared",
 		"Edge Memory GA candidacy only",
-		"not Memory GA",
 		"dual_write OFF",
 		"book-demo OFF",
 		"founder sign-off only if declaring Edge Memory GA",

@@ -531,7 +531,7 @@ func cmdSetup(args []string) int {
 }
 
 func printSetupUsage() {
-	fmt.Fprint(os.Stderr, `iomesh setup — agent-native setup lifecycle (s1525 · residual-honest · s1686)
+	fmt.Fprint(os.Stderr, `iomesh setup — agent-native setup lifecycle
 
   iomesh setup init [profiles]   write managed config fragment (default: local-memory)
   iomesh setup preflight         probe config + local memory healthz (not invent Connected)
@@ -562,9 +562,9 @@ Flags (preflight):
 After init: memory host (if local-memory) · secret env vars ·
   TUI already running → /setup preflight · /setup reload · else cold start → restart iomesh · iomesh setup preflight.
 
-Honesty: dual_write OFF · not Memory GA · secrets via env refs only ·
+Notes: memory dual-write defaults off · secrets via env refs only ·
   portal HITL for OAuth/install · setup PASS ≠ invent Connected / INSTALL_STORE green ·
-  package wire ≠ Connected · free eng s1686.
+  package wire ≠ Connected.
   Continuous pull: iomesh memory pull (in-session /setup pull). Analyze: /memory digest.
 `)
 }
@@ -764,8 +764,8 @@ Flags (list|validate):
 Flags (smoke):
   -module-root path     module root containing examples/agent-plugins/* (default: walk up from cwd for go.mod)
 
-Honesty: list/validate/smoke ≠ invent Agent Plugins GA · dual_write OFF · Discover ≠ Connected ·
-  not Memory GA · PATH residual for binary · book-demo OFF. [plugins] is opt-in (default enabled=false).
+Notes: list/validate/smoke ≠ invent Agent Plugins GA · dual_write OFF · Discover ≠ Connected ·
+  PATH residual for binary. [plugins] is opt-in (default enabled=false).
   Fail-open discover (list); validate surfaces fatals and exits non-zero. Smoke = discover/validate
   only (no MCP dial / connect). Runtime wire is separate (s1331). dogfood remains a legacy alias.
 `)
@@ -2648,7 +2648,7 @@ Flags (ingest-dir):
   --tenant T            palace tenant (default [memory].tenant)
   -C dir                workspace root for path jail (default cwd)
 
-Honesty: dual_write remains optional audit (default OFF). Hosted Palace sunset until scale.
+Notes: memory dual-write remains optional audit (default OFF). Hosted Palace sunset until scale.
   /memory ingest and iomesh memory ingest mint session_id=local-overlay when the operator
   has none so iomesh-memory-mcp v0.1.0 memory_ingest_turn can complete. Retrieve without
   a session_id stays unfiltered and finds the private overlay. Catalog list ≠ consume.
@@ -2738,7 +2738,7 @@ func cmdMemoryIngest(args []string) int {
 	if minted {
 		fmt.Print(" (minted · operator had none)")
 	}
-	fmt.Printf(" dual_write=%v · not Memory GA · catalog list ≠ consume\n", cfg.Memory.DualWrite)
+	fmt.Printf(" dual_write=%v · catalog list ≠ consume\n", cfg.Memory.DualWrite)
 	if s := strings.TrimSpace(out); s != "" {
 		fmt.Println(s)
 	}
@@ -2841,7 +2841,7 @@ func cmdMemoryIngestDir(args []string) int {
 	if minted {
 		fmt.Print(" (minted · operator had none)")
 	}
-	fmt.Printf(" dual_write=%v · not Memory GA · catalog list ≠ consume · private overlay\n", cfg.Memory.DualWrite)
+	fmt.Printf(" dual_write=%v · catalog list ≠ consume · private overlay\n", cfg.Memory.DualWrite)
 	for _, line := range lines {
 		fmt.Printf("  %s\n", line)
 	}

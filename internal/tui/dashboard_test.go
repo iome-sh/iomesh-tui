@@ -32,7 +32,6 @@ func TestDashboardSnapshot_LandingParityAndHonesty(t *testing.T) {
 		"/dashboard preview",
 		"dual_write OFF",
 		"catalog ≠ Connected",
-		"not Memory GA",
 		"not live APPLY",
 		"eval template",
 		DashboardBetaEmptyHonesty,

@@ -85,7 +85,6 @@ var e10SoftDogfoodNeedles = []string{
 	"residual PASS ≠ invent E10 closed",
 	"residual PASS ≠ invent Edge Memory GA declared",
 	"Edge Memory GA candidacy only",
-	"not Memory GA",
 	"dual_write OFF",
 	"book-demo OFF",
 	// Founder / APPLY honesty
@@ -129,7 +128,7 @@ func RunE10OpenSoftDogfood() string {
 	b.WriteString("  Path: soft offline residual check of e10 board honesty + E10 Open reaffirm after OSS packaging continuum\n")
 	b.WriteString("  · never dial MCP · never start host · residual PASS ≠ invent E10 closed · residual PASS ≠ invent Edge Memory GA declared · dual_write stays OFF · E10 Open\n")
 	b.WriteString("  · residual PASS ≠ live dogfood · session soft ≠ live dogfood · soft offline ≠ invent Connected · PASS ≠ live APPLY · free eng s1586\n")
-	b.WriteString("  · Edge Memory GA candidacy only · dual_write OFF · book-demo OFF · not Memory GA · residual-check\n")
+	b.WriteString("  · Edge Memory GA candidacy only · dual_write OFF · book-demo OFF · residual-check\n")
 	b.WriteString("\n")
 	if pass {
 		b.WriteString("  result: PASS (soft offline residual only)\n")
@@ -144,10 +143,10 @@ func RunE10OpenSoftDogfood() string {
 	b.WriteString("\n")
 	b.WriteString("  E10 Open residual path checked (static offline):\n")
 	b.WriteString("    · E10 Open · residual PASS ≠ invent E10 closed · residual PASS ≠ invent Edge Memory GA declared\n")
-	b.WriteString("    · Edge Memory GA candidacy only · not Memory GA · dual_write OFF · book-demo OFF\n")
+	b.WriteString("    · Edge Memory GA candidacy only · dual_write OFF · book-demo OFF\n")
 	b.WriteString("    · founder sign-off only if declaring Edge Memory GA · candidacy allowed without E10 · PASS ≠ live APPLY\n")
 	b.WriteString("  Companion residual checked: /onboard next e4 · /onboard next human-gates · OSS packaging · MIT harness · not control plane\n")
-	b.WriteString("  Honesty locks checked: dual_write OFF · not Memory GA · Edge Memory GA candidacy only · E10 Open\n")
+	b.WriteString("  Honesty locks checked: dual_write OFF · Edge Memory GA candidacy only · E10 Open\n")
 	b.WriteString("    · residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent E10 closed\n")
 	b.WriteString("    · residual PASS ≠ live dogfood · session soft ≠ live dogfood · soft offline ≠ invent Connected · residual-check\n")
 	b.WriteString("\n")
@@ -158,6 +157,6 @@ func RunE10OpenSoftDogfood() string {
 	b.WriteString("  slash: /onboard next e10 dogfood (aliases soft|samples|offline|e10-soft|residual-check) · bare /onboard next e10 stays board\n")
 	b.WriteString("  companion: /onboard next e4 · /onboard next human-gates · /onboard next tool-call · /onboard next · docs/architecture/oss-packaging-boundary.md · docs/architecture/edge-user-journey.md · docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md\n")
 	b.WriteString("\n")
-	b.WriteString("Locks: dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent E10 closed · E10 Open · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · E10 stays Open (never invent closed) · soft offline ≠ invent Connected · session soft ≠ live dogfood · residual-check · free eng s1586 · free-floor peer s1588+ mention only")
+	b.WriteString("Locks: dual_write OFF · book-demo OFF · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent E10 closed · E10 Open · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · E10 stays Open (never invent closed) · soft offline ≠ invent Connected · session soft ≠ live dogfood · residual-check · free eng s1586 · free-floor peer s1588+ mention only")
 	return b.String()
 }

@@ -409,7 +409,6 @@ func TestFormatRepairPlan_DualPathNextStep(t *testing.T) {
 			"CLI has no",
 			"package wire",
 			"dual_write OFF",
-			"not Memory GA",
 			"s1707",
 			"repair apply",
 		} {
@@ -444,7 +443,6 @@ func assertHonestyFooter(t *testing.T, text string) {
 	t.Helper()
 	needles := []string{
 		"dual_write OFF",
-		"not Memory GA",
 		"repair apply ≠ invent Connected",
 		"package wire ≠ Connected",
 	}

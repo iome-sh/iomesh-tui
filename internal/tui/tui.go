@@ -406,7 +406,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 				return false, nil
 			}
 			if strings.TrimSpace(fopts.AsOf) == "" {
-				fmt.Fprintln(out, "usage: /memory facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N]\n  bi-temporal lite validity listing (opt-in; not auto-recall; not full dual-clock Graphiti; not Memory GA)")
+				fmt.Fprintln(out, "usage: /memory facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N]\n  bi-temporal lite validity listing (opt-in; not auto-recall; not full dual-clock Graphiti)")
 				return false, nil
 			}
 			text, err := rt.rt.MemoryFactsAsOf(context.Background(), fopts)
@@ -488,7 +488,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 				return false, nil
 			}
 			if strings.TrimSpace(sopts.Query) == "" {
-				fmt.Fprintln(out, "usage: /memory semantic [--query ...] [--limit N] [query words…]\n  tier-4 semantic facts residual (opt-in; not auto-recall; not Memory GA; dual_write OFF)")
+				fmt.Fprintln(out, "usage: /memory semantic [--query ...] [--limit N] [query words…]\n  tier-4 semantic facts residual (opt-in; not auto-recall; dual_write OFF)")
 				return false, nil
 			}
 			text, err := rt.rt.MemorySearchSemantic(context.Background(), sopts)
@@ -511,7 +511,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 				return false, nil
 			}
 			if strings.TrimSpace(eopts.Subject) == "" || strings.TrimSpace(eopts.Content) == "" {
-				fmt.Fprintln(out, "usage: /memory ingest-event --subject <id> --content <text> [--event-time RFC3339] [--session-id id] [--session-seq N] [--severity info|warning|error|critical] [--source-stream name]\n  s138 T1 temporal event telemetry (opt-in; not conversation turn; not Memory GA; dual_write OFF)")
+				fmt.Fprintln(out, "usage: /memory ingest-event --subject <id> --content <text> [--event-time RFC3339] [--session-id id] [--session-seq N] [--severity info|warning|error|critical] [--source-stream name]\n  s138 T1 temporal event telemetry (opt-in; not conversation turn; dual_write OFF)")
 				return false, nil
 			}
 			text, err := rt.rt.MemoryIngestEvent(context.Background(), eopts)
@@ -579,7 +579,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 				return false, nil
 			}
 			if strings.TrimSpace(sopts.Entity) == "" {
-				fmt.Fprintln(out, "usage: /memory supersede --entity <key> [--as-of RFC3339] --i-confirm\n  A3 lite supersede (HITL mutating; closes valid_until; not NLP contradiction; not Memory GA)")
+				fmt.Fprintln(out, "usage: /memory supersede --entity <key> [--as-of RFC3339] --i-confirm\n  A3 lite supersede (HITL mutating; closes valid_until; not NLP contradiction)")
 				return false, nil
 			}
 			text, err := rt.rt.MemorySupersede(context.Background(), sopts)
@@ -635,7 +635,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 				return false, nil
 			}
 			if strings.TrimSpace(eid) == "" {
-				fmt.Fprintln(out, "usage: /memory extract [memory_id] | /memory extract --id <id>\n  optional HITL structural extract after persist · not NLP · not Memory GA · dual_write OFF")
+				fmt.Fprintln(out, "usage: /memory extract [memory_id] | /memory extract --id <id>\n  optional HITL structural extract after persist · not NLP · dual_write OFF")
 				return false, nil
 			}
 			text, err := rt.rt.MemoryExtractFacts(context.Background(), eid)
@@ -887,12 +887,12 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			}
 			// Unknown subcommand: still print guidance + usage hint for help/checklist.
 			fmt.Fprintln(out, agent.GtmDraftOnlyAgentGuidanceNote())
-			fmt.Fprintln(out, "— residual: drafts only · human publish · skill gtm-draft-only-agent via read_skill · dual_write OFF · not Memory GA")
+			fmt.Fprintln(out, "— residual: drafts only · human publish · skill gtm-draft-only-agent via read_skill · dual_write OFF")
 			fmt.Fprintln(out, "usage: /gtm [help|checklist|brief]  (aliases /gtm-draft /gtm-agent)")
 			return false, nil
 		}
 		fmt.Fprintln(out, agent.GtmDraftOnlyAgentGuidanceNote())
-		fmt.Fprintln(out, "— residual: drafts only · human publish · skill gtm-draft-only-agent via read_skill · dual_write OFF · not Memory GA")
+		fmt.Fprintln(out, "— residual: drafts only · human publish · skill gtm-draft-only-agent via read_skill · dual_write OFF")
 	case "/onboard", "/aion-onboard", "/agent-onboard":
 		// s1363+s1368+s1372+s1377+s1382+s1387+s1402+s1417: residual-honest TUI agent ↔ mesh CP/MCP onboarding guidance.
 		// Bare /onboard (and aliases) → guidance note + residual footer.
@@ -928,7 +928,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 				return false, nil
 			case "portal", "agent-mcp", "mcp":
 				fmt.Fprintln(out, agent.MeshAgentOnboardingPortalHandoff())
-				fmt.Fprintln(out, "— residual: portal Agent/MCP handoff · dual_write OFF · not Memory GA · probe only ≠ Memory GA · never invent Connected · portal HITL")
+				fmt.Fprintln(out, "— residual: portal Agent/MCP handoff · dual_write OFF · probe only ≠ Memory GA · never invent Connected · portal HITL")
 				return false, nil
 			case "status":
 				fmt.Fprintln(out, agent.MeshAgentOnboardingStatus())
@@ -957,39 +957,39 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 					switch lane {
 					case "plugins", "plugin", "smoke", "dogfood":
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextPluginsLane())
-						fmt.Fprintln(out, "— residual: plugins smoke lane · dual_write OFF · not Memory GA · plugins dogfood ≠ Agent Plugins GA · plugins smoke ≠ invent Agent Plugins GA · residual PASS ≠ live dogfood · package load ≠ Memory GA · portal HITL")
+						fmt.Fprintln(out, "— residual: plugins smoke lane · dual_write OFF · plugins dogfood ≠ Agent Plugins GA · plugins smoke ≠ invent Agent Plugins GA · residual PASS ≠ live dogfood · package load ≠ Memory GA · portal HITL")
 						return false, nil
 					case "gtm", "drafts":
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextGtmLane())
-						fmt.Fprintln(out, "— residual: gtm draft-only lane · drafts only · no auto-send · human publish · GTM checklist ≠ invent GTM agent GA · dual_write OFF · not Memory GA")
+						fmt.Fprintln(out, "— residual: gtm draft-only lane · drafts only · no auto-send · human publish · GTM checklist ≠ invent GTM agent GA · dual_write OFF")
 						return false, nil
 					case "memory", "mcp", "palace":
 						// s1377+s1453+s1458+s1463+s1469+s1478+s1508: local-primary memory + edge OSS + public product attach + E4 client attach tip.
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextMemoryLane())
-						fmt.Fprintln(out, "— residual: memory local lane · dual_write OFF · not Memory GA · package load ≠ Memory GA · ≠ freemium palace · mesh ≠ memory · iomesh-memory-mcp · public product attach · go install · no GOPRIVATE · 8080/mcp · stdio · docker compose still valid · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · PASS ≠ invent full platform sidecar parity · E4 client attach (s1508) · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · control-plane / broker private · control-plane still private · s1517 product-only memory sample · portal HITL")
+						fmt.Fprintln(out, "— residual: memory local lane · dual_write OFF · package load ≠ Memory GA · ≠ freemium palace · mesh ≠ memory · iomesh-memory-mcp · public product attach · go install · no GOPRIVATE · 8080/mcp · stdio · docker compose still valid · flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · PASS ≠ invent full platform sidecar parity · E4 client attach (s1508) · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · control-plane / broker private · control-plane still private · s1517 product-only memory sample · portal HITL")
 						return false, nil
 					case "mesh", "stream", "streams", "heartbeat", "heartbeats", "pull":
 						// s1402: mesh streaming lane (org heartbeats). NOT pulse — pulse stays status board.
 						// bare pull stays mesh (s1407 memory-pull uses memory-pull|ops-pack|pull-path|memorypull|ops_pack).
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextMeshLane())
-						fmt.Fprintln(out, "— residual: mesh streaming lane · dual_write OFF · not Memory GA · mesh = streaming org heartbeats · mesh ≠ memory · never invent stream green · streams_not_probed · not OTel/APM · pull ≠ freemium hosted palace · rates ~$88/$119 optional")
+						fmt.Fprintln(out, "— residual: mesh streaming lane · dual_write OFF · mesh = streaming org heartbeats · mesh ≠ memory · never invent stream green · streams_not_probed · not OTel/APM · pull ≠ freemium hosted palace · rates ~$88/$119 optional")
 						return false, nil
 					case "memory-pull", "ops-pack", "pull-path", "memorypull", "ops_pack":
 						// s1407: Ops Pack pull path. Bare pull stays mesh (s1402).
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextMemoryPullLane())
-						fmt.Fprintln(out, "— residual: memory-pull Ops Pack lane · dual_write OFF · not Memory GA · pull = mesh → local palace egress · pull ≠ freemium hosted palace · Ops Pack ≠ GPU fleet · pull_not_probed · never invent pull green · package load ≠ Ops Pack entitlement · rates ~$88/$119 optional")
+						fmt.Fprintln(out, "— residual: memory-pull Ops Pack lane · dual_write OFF · pull = mesh → local palace egress · pull ≠ freemium hosted palace · Ops Pack ≠ GPU fleet · pull_not_probed · never invent pull green · package load ≠ Ops Pack entitlement · rates ~$88/$119 optional")
 						return false, nil
 					case "planes", "three-planes", "product-planes", "product", "pillars", "three_planes":
 						// s1432: residual-honest three product planes board (mesh · memory-pull · agentic).
 						// Do NOT steal pulse|board (status) · pull (mesh) · mcp (memory).
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextThreePlanes())
-						fmt.Fprintln(out, "— residual: three product planes board · s1432 · no MCP dial · mesh · memory-pull · agentic · streams_not_probed · pull_not_probed · list_plan_not_connected · dual_auth_candidacy_open · dual_write OFF · not Memory GA · never invent stream green / pull green / Connected · residual PASS ≠ live dogfood · PASS ≠ live APPLY · rates ~$88/$119 optional · open boxes stay open")
+						fmt.Fprintln(out, "— residual: three product planes board · s1432 · no MCP dial · mesh · memory-pull · agentic · streams_not_probed · pull_not_probed · list_plan_not_connected · dual_auth_candidacy_open · dual_write OFF · never invent stream green / pull green / Connected · residual PASS ≠ live dogfood · PASS ≠ live APPLY · rates ~$88/$119 optional · open boxes stay open")
 						return false, nil
 					case "sales", "claims", "buyer", "claim-matrix", "sales-claims", "buyer-claims":
 						// s1437: residual-honest sales / buyer claims board (may claim / must not claim).
 						// Do NOT steal product|planes (three-planes) · gtm|drafts (GTM) · pulse|board (status).
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextSalesClaims())
-						fmt.Fprintln(out, "— residual: sales/buyer claims board · s1437 · no MCP dial · may claim / must not claim · three-planes grounded · dual_write OFF · book-demo OFF · not Memory GA · never invent Connected · dual_auth_candidacy_open · tool ship ≠ dual-auth live · residual PASS ≠ live dogfood · PASS ≠ live APPLY · rates ~$88/$119 optional · open boxes stay open")
+						fmt.Fprintln(out, "— residual: sales/buyer claims board · s1437 · no MCP dial · may claim / must not claim · three-planes grounded · dual_write OFF · book-demo OFF · never invent Connected · dual_auth_candidacy_open · tool ship ≠ dual-auth live · residual PASS ≠ live dogfood · PASS ≠ live APPLY · rates ~$88/$119 optional · open boxes stay open")
 						return false, nil
 					case "demo", "demo-ready", "readiness", "demo-readiness", "lighthouse", "landgrab":
 						// s1442: residual-honest demo readiness board (Lighthouse · book-demo OFF · Landgrab NOT READY).
@@ -997,32 +997,32 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 						// Do NOT steal marketing-demo|marketing|sales-demo|demo-script|gtm-demo (s1590 marketing demo path).
 						// landgrab alias stays honesty NOT READY — not invent ready.
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextDemoReadiness())
-						fmt.Fprintln(out, "— residual: demo readiness board · s1442 · no MCP dial · Lighthouse beachhead packaging · book-demo OFF · Landgrab NOT READY · three planes · sales claims · human gates still open · dual_write OFF · not Memory GA · never invent Connected · residual PASS ≠ live dogfood · PASS ≠ live APPLY · residual PASS ≠ logos met · open boxes stay open · rates ~$88/$119 optional · founder-led walkthrough only when scheduled")
+						fmt.Fprintln(out, "— residual: demo readiness board · s1442 · no MCP dial · Lighthouse beachhead packaging · book-demo OFF · Landgrab NOT READY · three planes · sales claims · human gates still open · dual_write OFF · never invent Connected · residual PASS ≠ live dogfood · PASS ≠ live APPLY · residual PASS ≠ logos met · open boxes stay open · rates ~$88/$119 optional · founder-led walkthrough only when scheduled")
 						return false, nil
 					case "marketing-demo", "marketing", "sales-demo", "demo-script", "gtm-demo":
 						// s1590: plain-language marketing demo path (local agent + local memory for videos/sales).
 						// Do NOT steal bare demo|readiness|lighthouse|landgrab (demo readiness) · sales|claims (sales claims) · gtm|drafts (GTM).
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextMarketingDemoLane())
-						fmt.Fprintln(out, "— marketing-demo: s1590 · plain-language local agent + local memory script · Mode A sticky /memory digest --require-sources mesh,private · palace path printed · air-gap no fake Connected · "+agent.ModeAPinHonestyLine()+" · dual_write OFF · local memory · not Memory GA · mesh optional · never invent Connected · book-demo OFF · free eng s1590 · free-floor peer s1592+ mention only · NOT bare demo (demo readiness) · NOT bare sales · NOT bare gtm")
+						fmt.Fprintln(out, "— marketing-demo: s1590 · plain-language local agent + local memory script · Mode A sticky /memory digest --require-sources mesh,private · palace path printed · air-gap no fake Connected · "+agent.ModeAPinHonestyLine()+" · dual_write OFF · local memory · mesh optional · never invent Connected · book-demo OFF · free eng s1590 · free-floor peer s1592+ mention only · NOT bare demo (demo readiness) · NOT bare sales · NOT bare gtm")
 						return false, nil
 					case "operator", "operator-matrix", "ops-matrix", "operator-readiness", "ops-readiness", "matrix":
 						// s1447: residual-honest operator readiness matrix (demo · sales · planes · human-gates).
 						// Do NOT steal demo|readiness|lighthouse|landgrab (demo) · sales|claims · product|planes · pulse|board · export|receipt.
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextOperatorMatrix())
-						fmt.Fprintln(out, "— residual: operator readiness matrix · s1447 · no MCP dial · demo · sales · planes · human-gates · dual-auth candidacy · policy locks residual-honest · dual_write OFF · book-demo OFF · Landgrab NOT READY · not Memory GA · never invent Connected · dual_auth_candidacy_open · tool ship ≠ dual-auth live · residual PASS ≠ live dogfood · PASS ≠ live APPLY · residual PASS ≠ logos met · open boxes stay open · rates ~$88/$119 optional · residual_only · path_ready · still_human · policy_off · not_ready · portal_hitl_still")
+						fmt.Fprintln(out, "— residual: operator readiness matrix · s1447 · no MCP dial · demo · sales · planes · human-gates · dual-auth candidacy · policy locks residual-honest · dual_write OFF · book-demo OFF · Landgrab NOT READY · never invent Connected · dual_auth_candidacy_open · tool ship ≠ dual-auth live · residual PASS ≠ live dogfood · PASS ≠ live APPLY · residual PASS ≠ logos met · open boxes stay open · rates ~$88/$119 optional · residual_only · path_ready · still_human · policy_off · not_ready · portal_hitl_still")
 						return false, nil
 					case "setup", "setup-lifecycle", "lifecycle", "setup_lifecycle":
 						// s1542+s1558: residual-honest setup lifecycle P1–P7 closeout residual map (stage 4 of edge-user-journey).
 						// offline static lane ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA.
 						// wizard alias is s1570 Wave C first-run wizard residual (not setup).
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextSetupLane())
-						fmt.Fprintln(out, "— residual: setup lifecycle lane · s1542+s1558 · stage 4 of edge-user-journey · no MCP dial · P1–P7 closeout residual · dual_write OFF · not Memory GA · package wire ≠ Connected · catalog ≠ Connected · portal HITL · pull ≠ invent Connected · analyze tick ≠ invent green · drift PASS ≠ invent install green · repair apply ≠ invent Connected · dual_write never auto ON · still-human APPLY open · E10 Open · setup_not_probed · offline static lane ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA · Edge Memory GA candidacy only · free eng s1558 · never invent Connected · full first-run: /onboard next journey · guided residual: /onboard next wizard")
+						fmt.Fprintln(out, "— residual: setup lifecycle lane · s1542+s1558 · stage 4 of edge-user-journey · no MCP dial · P1–P7 closeout residual · dual_write OFF · package wire ≠ Connected · catalog ≠ Connected · portal HITL · pull ≠ invent Connected · analyze tick ≠ invent green · drift PASS ≠ invent install green · repair apply ≠ invent Connected · dual_write never auto ON · still-human APPLY open · E10 Open · setup_not_probed · offline static lane ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA · Edge Memory GA candidacy only · free eng s1558 · never invent Connected · full first-run: /onboard next journey · guided residual: /onboard next wizard")
 						return false, nil
 					case "journey", "edge-journey", "user-journey", "first-run", "edge_user_journey":
 						// s1558 Wave B: residual-honest 7-stage edge-user-journey first-run map.
 						// Do NOT invent auto memory host · TUI portal SSO · Connected · dual_write ON · Memory GA · agent install APPLY.
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextJourneyLane())
-						fmt.Fprintln(out, "— residual: edge-user-journey first-run lane · s1558 Wave B · no MCP dial · 7 stages residual-honest · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · portal HITL · agent MCP cannot write installs · catalog ≠ Connected · book-demo OFF · no invent TUI portal SSO · host not auto · free eng s1558 · free-floor peer s1560+ mention only · never invent Connected · stage 5: /onboard next portal-hitl · Wave C guided residual: /onboard next wizard")
+						fmt.Fprintln(out, "— residual: edge-user-journey first-run lane · s1558 Wave B · no MCP dial · 7 stages residual-honest · dual_write OFF · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · portal HITL · agent MCP cannot write installs · catalog ≠ Connected · book-demo OFF · no invent TUI portal SSO · host not auto · free eng s1558 · free-floor peer s1560+ mention only · never invent Connected · stage 5: /onboard next portal-hitl · Wave C guided residual: /onboard next wizard")
 						return false, nil
 					case "wizard", "first-run-wizard", "guided", "wave-c", "wave_c", "wizard-residual":
 						// s1570 Wave C: residual-honest guided first-run wizard residual + soft offline dogfood.
@@ -1033,12 +1033,12 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 							switch sub {
 							case "dogfood", "soft", "samples", "offline", "wizard-soft":
 								fmt.Fprintln(out, agent.RunFirstRunWizardSoftDogfood())
-								fmt.Fprintln(out, "— residual: first-run wizard soft offline dogfood · s1570 Wave C · no MCP dial · never start host · soft offline ≠ invent Connected · residual PASS ≠ live dogfood · session soft ≠ live dogfood · residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent full interactive auto wizard · E10 Open · dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · no invent TUI portal SSO · host not auto · free eng s1570 · free-floor peer s1572+ mention only")
+								fmt.Fprintln(out, "— residual: first-run wizard soft offline dogfood · s1570 Wave C · no MCP dial · never start host · soft offline ≠ invent Connected · residual PASS ≠ live dogfood · session soft ≠ live dogfood · residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent full interactive auto wizard · E10 Open · dual_write OFF · book-demo OFF · Edge Memory GA candidacy only · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · no invent TUI portal SSO · host not auto · free eng s1570 · free-floor peer s1572+ mention only")
 								return false, nil
 							}
 						}
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextWizardLane())
-						fmt.Fprintln(out, "— residual: first-run wizard residual lane · s1570 Wave C · no MCP dial · guided residual map · dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · no invent TUI portal SSO · host not auto · residual PASS ≠ invent full interactive auto wizard · residual PASS ≠ live dogfood · soft offline ≠ invent Connected · free eng s1570 · free-floor peer s1572+ mention only · soft dogfood: /onboard next wizard dogfood · companion: /onboard next journey")
+						fmt.Fprintln(out, "— residual: first-run wizard residual lane · s1570 Wave C · no MCP dial · guided residual map · dual_write OFF · book-demo OFF · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · no invent TUI portal SSO · host not auto · residual PASS ≠ invent full interactive auto wizard · residual PASS ≠ live dogfood · soft offline ≠ invent Connected · free eng s1570 · free-floor peer s1572+ mention only · soft dogfood: /onboard next wizard dogfood · companion: /onboard next journey")
 						return false, nil
 					case "portal-hitl", "hitl", "portal_hitl", "portal-dogfood", "stage5", "connectors-hitl":
 						// s1562: journey stage-5 portal HITL connectors board + soft offline dogfood residual.
@@ -1049,12 +1049,12 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 							switch sub {
 							case "dogfood", "soft", "samples", "offline", "portal-hitl-soft":
 								fmt.Fprintln(out, agent.RunPortalHITLSoftDogfood())
-								fmt.Fprintln(out, "— residual: portal HITL soft offline dogfood · s1562 · no MCP dial · soft offline ≠ invent Connected · residual PASS ≠ live dogfood · session soft ≠ live dogfood · portal HITL still · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · template= ≠ install APPLY · dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · free eng s1562 · free-floor peer s1564+ mention only")
+								fmt.Fprintln(out, "— residual: portal HITL soft offline dogfood · s1562 · no MCP dial · soft offline ≠ invent Connected · residual PASS ≠ live dogfood · session soft ≠ live dogfood · portal HITL still · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · template= ≠ install APPLY · dual_write OFF · book-demo OFF · Edge Memory GA candidacy only · free eng s1562 · free-floor peer s1564+ mention only")
 								return false, nil
 							}
 						}
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextPortalHITLLane())
-						fmt.Fprintln(out, "— residual: portal HITL lane · s1562 · journey stage 5 · no MCP dial · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · template= ≠ install APPLY · dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ live dogfood · soft offline ≠ invent Connected · free eng s1562 · free-floor peer s1564+ mention only · soft dogfood: /onboard next portal-hitl dogfood")
+						fmt.Fprintln(out, "— residual: portal HITL lane · s1562 · journey stage 5 · no MCP dial · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · template= ≠ install APPLY · dual_write OFF · book-demo OFF · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ live dogfood · soft offline ≠ invent Connected · free eng s1562 · free-floor peer s1564+ mention only · soft dogfood: /onboard next portal-hitl dogfood")
 						return false, nil
 					case "e4", "e4-dogfood", "client-attach", "edge-memory-e4", "e4_attach":
 						// s1566: journey stage-6 E4 client-attach board + soft offline dogfood residual.
@@ -1066,12 +1066,12 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 							switch sub {
 							case "dogfood", "soft", "samples", "offline", "e4-soft":
 								fmt.Fprintln(out, agent.RunE4SoftDogfood())
-								fmt.Fprintln(out, "— residual: E4 client-attach soft offline dogfood · s1566 · no MCP dial · never start host · soft offline ≠ invent Connected · residual PASS ≠ live dogfood · session soft ≠ live dogfood · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · free eng s1566 · free-floor peer s1568+ mention only")
+								fmt.Fprintln(out, "— residual: E4 client-attach soft offline dogfood · s1566 · no MCP dial · never start host · soft offline ≠ invent Connected · residual PASS ≠ live dogfood · session soft ≠ live dogfood · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · dual_write OFF · book-demo OFF · Edge Memory GA candidacy only · free eng s1566 · free-floor peer s1568+ mention only")
 								return false, nil
 							}
 						}
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextE4Lane())
-						fmt.Fprintln(out, "— residual: E4 client-attach lane · s1566 · journey stage 6 · no MCP dial · never start host · E4 client attach · tools=6 · iomesh mcp --connect residual · iomesh-memory-mcp · local-primary · dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · soft offline ≠ invent Connected · free eng s1566 · free-floor peer s1568+ mention only · soft dogfood: /onboard next e4 dogfood · deeper: /onboard next tool-call · E10 Open reaffirm: /onboard next e10")
+						fmt.Fprintln(out, "— residual: E4 client-attach lane · s1566 · journey stage 6 · no MCP dial · never start host · E4 client attach · tools=6 · iomesh mcp --connect residual · iomesh-memory-mcp · local-primary · dual_write OFF · book-demo OFF · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · soft offline ≠ invent Connected · free eng s1566 · free-floor peer s1568+ mention only · soft dogfood: /onboard next e4 dogfood · deeper: /onboard next tool-call · E10 Open reaffirm: /onboard next e10")
 						return false, nil
 					case "tool-call", "tool-calls", "deeper-e4", "e4-tools", "ingest-retrieve", "tool_call":
 						// s1578: deeper tool-call residual board + soft offline dogfood after E4 attach.
@@ -1082,12 +1082,12 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 							switch sub {
 							case "dogfood", "soft", "samples", "offline", "tool-call-soft":
 								fmt.Fprintln(out, agent.RunDeeperToolCallSoftDogfood())
-								fmt.Fprintln(out, "— residual: deeper tool-call soft offline dogfood · s1578 · no MCP dial · never start host · soft offline ≠ invent Connected · residual PASS ≠ live dogfood · session soft ≠ live dogfood · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · free eng s1578 · free-floor peer s1580+ mention only")
+								fmt.Fprintln(out, "— residual: deeper tool-call soft offline dogfood · s1578 · no MCP dial · never start host · soft offline ≠ invent Connected · residual PASS ≠ live dogfood · session soft ≠ live dogfood · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · dual_write OFF · book-demo OFF · Edge Memory GA candidacy only · free eng s1578 · free-floor peer s1580+ mention only")
 								return false, nil
 							}
 						}
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextToolCallLane())
-						fmt.Fprintln(out, "— residual: deeper tool-call lane · s1578 · journey stage 6/7 · no MCP dial · never start host · memory_ingest_turn · memory_retrieve · memory_list · memory_facts_as_of · Partial→client-attach-evidence · companion /onboard next e4 · tools=6 · dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · soft offline ≠ invent Connected · free eng s1578 · free-floor peer s1580+ mention only · soft dogfood: /onboard next tool-call dogfood · E10: /onboard next e10")
+						fmt.Fprintln(out, "— residual: deeper tool-call lane · s1578 · journey stage 6/7 · no MCP dial · never start host · memory_ingest_turn · memory_retrieve · memory_list · memory_facts_as_of · Partial→client-attach-evidence · companion /onboard next e4 · tools=6 · dual_write OFF · book-demo OFF · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · soft offline ≠ invent Connected · free eng s1578 · free-floor peer s1580+ mention only · soft dogfood: /onboard next tool-call dogfood · E10: /onboard next e10")
 						return false, nil
 					case "e10", "e10-open", "edge-memory-e10", "ga-signoff", "e10_open":
 						// s1586: E10 Open reaffirm residual-check after OSS packaging continuum.
@@ -1099,12 +1099,12 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 							switch sub {
 							case "dogfood", "soft", "samples", "offline", "e10-soft", "residual-check":
 								fmt.Fprintln(out, agent.RunE10OpenSoftDogfood())
-								fmt.Fprintln(out, "— residual: E10 Open soft offline residual-check · s1586 · no MCP dial · never start host · soft offline ≠ invent Connected · residual PASS ≠ live dogfood · session soft ≠ live dogfood · residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent E10 closed · E10 Open · dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · PASS ≠ live APPLY · free eng s1586 · free-floor peer s1588+ mention only")
+								fmt.Fprintln(out, "— residual: E10 Open soft offline residual-check · s1586 · no MCP dial · never start host · soft offline ≠ invent Connected · residual PASS ≠ live dogfood · session soft ≠ live dogfood · residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent E10 closed · E10 Open · dual_write OFF · book-demo OFF · Edge Memory GA candidacy only · PASS ≠ live APPLY · free eng s1586 · free-floor peer s1588+ mention only")
 								return false, nil
 							}
 						}
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextE10Lane())
-						fmt.Fprintln(out, "— residual: E10 Open reaffirm lane · s1586 · Platform residual honesty · no MCP dial · never start host · E10 Open · residual PASS ≠ invent E10 closed · residual PASS ≠ invent Edge Memory GA declared · founder sign-off only if declaring Edge Memory GA · candidacy allowed without E10 · PASS ≠ live APPLY · dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · residual-check · residual PASS ≠ live dogfood · soft offline ≠ invent Connected · free eng s1586 · free-floor peer s1588+ mention only · soft residual-check: /onboard next e10 dogfood · companion: /onboard next e4 · /onboard next human-gates · OSS packaging")
+						fmt.Fprintln(out, "— residual: E10 Open reaffirm lane · s1586 · Platform residual honesty · no MCP dial · never start host · E10 Open · residual PASS ≠ invent E10 closed · residual PASS ≠ invent Edge Memory GA declared · founder sign-off only if declaring Edge Memory GA · candidacy allowed without E10 · PASS ≠ live APPLY · dual_write OFF · book-demo OFF · Edge Memory GA candidacy only · residual-check · residual PASS ≠ live dogfood · soft offline ≠ invent Connected · free eng s1586 · free-floor peer s1588+ mention only · soft residual-check: /onboard next e10 dogfood · companion: /onboard next e4 · /onboard next human-gates · OSS packaging")
 						return false, nil
 					case "agentic", "agentic-integrations", "integrations", "list-plan":
 						// s1417: product plane 3 agentic integrations (MCP list/plan residual-honest).
@@ -1118,18 +1118,18 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 							switch sub {
 							case "dogfood", "soft", "samples", "offline", "list-plan-soft":
 								fmt.Fprintln(out, agent.RunAgenticListPlanSoftDogfood())
-								fmt.Fprintln(out, "— residual: agentic list/plan soft offline dogfood · s1422 · no MCP dial · soft offline list/plan ≠ live dogfood · ≠ invent Connected · portal HITL still · list_org fail-open ≠ empty-as-none · session soft ≠ live dogfood · dual_write OFF · not Memory GA · template= ≠ install APPLY · agent MCP cannot write installs · companion portal HITL soft: /onboard next portal-hitl dogfood")
+								fmt.Fprintln(out, "— residual: agentic list/plan soft offline dogfood · s1422 · no MCP dial · soft offline list/plan ≠ live dogfood · ≠ invent Connected · portal HITL still · list_org fail-open ≠ empty-as-none · session soft ≠ live dogfood · dual_write OFF · template= ≠ install APPLY · agent MCP cannot write installs · companion portal HITL soft: /onboard next portal-hitl dogfood")
 								return false, nil
 							case "dual-auth", "candidacy", "list-org", "org-installs", "dual_auth", "dual-auth-candidacy":
 								// s1427: dual-auth candidacy depth (list_org fail-open · tool ship ≠ dual-auth live).
 								// Does NOT steal dogfood|soft|samples|offline|list-plan-soft (s1422 soft dogfood).
 								fmt.Fprintln(out, agent.MeshAgentOnboardingNextAgenticDualAuthCandidacy())
-								fmt.Fprintln(out, "— residual: agentic dual-auth candidacy · s1427 · no MCP dial · dual_auth_candidacy_open · list_org_unavailable · list_org_connector_installs available=false status=unavailable installs=null · never invent empty-as-none · tool ship ≠ dual-auth live · never invent dual-auth live · agent MCP cannot write installs · portal HITL · dual_write OFF · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open")
+								fmt.Fprintln(out, "— residual: agentic dual-auth candidacy · s1427 · no MCP dial · dual_auth_candidacy_open · list_org_unavailable · list_org_connector_installs available=false status=unavailable installs=null · never invent empty-as-none · tool ship ≠ dual-auth live · never invent dual-auth live · agent MCP cannot write installs · portal HITL · dual_write OFF · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open")
 								return false, nil
 							}
 						}
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextAgenticLane())
-						fmt.Fprintln(out, "— residual: agentic integrations lane · product plane 3 · dual_write OFF · not Memory GA · MCP list/plan residual-honest · plan deep links = browser HITL only · template= ≠ install APPLY · catalog ≠ Connected · list_org fail-open ≠ empty-as-none · list_plan_not_connected · portal_hitl_still · agent MCP cannot write installs · never invent Connected · rates ~$88/$119 optional · soft dogfood: /onboard next agentic dogfood · dual-auth: /onboard next agentic dual-auth · companion portal HITL: /onboard next portal-hitl (s1562)")
+						fmt.Fprintln(out, "— residual: agentic integrations lane · product plane 3 · dual_write OFF · MCP list/plan residual-honest · plan deep links = browser HITL only · template= ≠ install APPLY · catalog ≠ Connected · list_org fail-open ≠ empty-as-none · list_plan_not_connected · portal_hitl_still · agent MCP cannot write installs · never invent Connected · rates ~$88/$119 optional · soft dogfood: /onboard next agentic dogfood · dual-auth: /onboard next agentic dual-auth · companion portal HITL: /onboard next portal-hitl (s1562)")
 						return false, nil
 					case "human-gates", "human", "gates", "apply-gates", "still-human", "apply-residual":
 						// s1413+s1546+s1550+s1574: residual-honest human-gates edge-first residual pin + still-human APPLY soft dogfood.
@@ -1142,50 +1142,50 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 							switch sub {
 							case "dogfood", "soft", "samples", "offline", "still-human-soft", "apply-soft":
 								fmt.Fprintln(out, agent.RunStillHumanApplySoftDogfood())
-								fmt.Fprintln(out, "— residual: still-human APPLY soft offline dogfood · s1574 Wave C continuum · no MCP dial · never start host · soft offline ≠ invent Connected · residual PASS ≠ live dogfood · session soft ≠ live dogfood · residual PASS ≠ invent Edge Memory GA declared · PASS ≠ invent human-gate green · PASS ≠ live APPLY · open boxes stay open · E10 Open · dual_write OFF · book-demo OFF · not Memory GA · Edge Memory GA candidacy only · portal HITL when connect · free eng s1574 · free-floor peer s1576+ mention only")
+								fmt.Fprintln(out, "— residual: still-human APPLY soft offline dogfood · s1574 Wave C continuum · no MCP dial · never start host · soft offline ≠ invent Connected · residual PASS ≠ live dogfood · session soft ≠ live dogfood · residual PASS ≠ invent Edge Memory GA declared · PASS ≠ invent human-gate green · PASS ≠ live APPLY · open boxes stay open · E10 Open · dual_write OFF · book-demo OFF · Edge Memory GA candidacy only · portal HITL when connect · free eng s1574 · free-floor peer s1576+ mention only")
 								return false, nil
 							}
 						}
 						fmt.Fprintln(out, agent.MeshAgentHumanGatesHonestyBoard())
-						fmt.Fprintln(out, "— residual: human-gates honesty board · s1550 edge-first · s1574 Wave C continuum still-human APPLY residual · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ invent Edge Memory GA declared · PASS ≠ invent Connected · PASS ≠ invent human-gate green · PASS ≠ live APPLY · open boxes stay open · knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect · book-demo OFF · leave ON_SIGNAL unset · H1/H2 not launch gate · E10 Open · agent MCP cannot write installs · never invent Connected / INSTALL_STORE green / book-demo as ON · soft dogfood: /onboard next human-gates dogfood · E10 Open reaffirm: /onboard next e10 · free eng s1574 · free-floor peer s1576+ mention only")
+						fmt.Fprintln(out, "— residual: human-gates honesty board · s1550 edge-first · s1574 Wave C continuum still-human APPLY residual · dual_write OFF · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ invent Edge Memory GA declared · PASS ≠ invent Connected · PASS ≠ invent human-gate green · PASS ≠ live APPLY · open boxes stay open · knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect · book-demo OFF · leave ON_SIGNAL unset · H1/H2 not launch gate · E10 Open · agent MCP cannot write installs · never invent Connected / INSTALL_STORE green / book-demo as ON · soft dogfood: /onboard next human-gates dogfood · E10 Open reaffirm: /onboard next e10 · free eng s1574 · free-floor peer s1576+ mention only")
 						return false, nil
 					case "status", "pulse", "board":
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextLaneStatus())
-						fmt.Fprintln(out, "— residual: next lane status board · dual_write OFF · not Memory GA · session soft ≠ live dogfood · portal_hitl_still · streams_not_probed · pull_not_probed · list_plan_not_connected · never invent Connected/GA/APPLY/stream green/pull green · residual PASS ≠ live dogfood · board/export evidence ≠ invent Connected · mesh ≠ memory")
+						fmt.Fprintln(out, "— residual: next lane status board · dual_write OFF · session soft ≠ live dogfood · portal_hitl_still · streams_not_probed · pull_not_probed · list_plan_not_connected · never invent Connected/GA/APPLY/stream green/pull green · residual PASS ≠ live dogfood · board/export evidence ≠ invent Connected · mesh ≠ memory")
 						return false, nil
 					case "export", "receipt", "stamp", "evidence":
 						// Optional third token: json → JSON receipt; otherwise markdown.
 						if len(parts) >= 4 && strings.ToLower(parts[3]) == "json" {
 							fmt.Fprintln(out, agent.MeshAgentOnboardingNextLaneStatusExportJSON())
-							fmt.Fprintln(out, "— residual: next lane status export json · evidence_kind=onboard_next_lane_status_export · offline_static · not_live_dogfood · s1387 · session soft ≠ live dogfood · streams_not_probed · pull_not_probed · list_plan_not_connected · board/export evidence ≠ invent Connected · dual_write OFF · not Memory GA · mesh ≠ memory · agentic tip /onboard next agentic · human-gates tip /onboard next human-gates")
+							fmt.Fprintln(out, "— residual: next lane status export json · evidence_kind=onboard_next_lane_status_export · offline_static · not_live_dogfood · s1387 · session soft ≠ live dogfood · streams_not_probed · pull_not_probed · list_plan_not_connected · board/export evidence ≠ invent Connected · dual_write OFF · mesh ≠ memory · agentic tip /onboard next agentic · human-gates tip /onboard next human-gates")
 							return false, nil
 						}
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextLaneStatusExport())
-						fmt.Fprintln(out, "— residual: next lane status export receipt · evidence_kind=onboard_next_lane_status_export · offline_static · not_live_dogfood · s1387 · session soft ≠ live dogfood · streams_not_probed · pull_not_probed · list_plan_not_connected · board/export evidence ≠ invent Connected · dual_write OFF · not Memory GA · mesh ≠ memory · agentic tip /onboard next agentic · human-gates tip /onboard next human-gates")
+						fmt.Fprintln(out, "— residual: next lane status export receipt · evidence_kind=onboard_next_lane_status_export · offline_static · not_live_dogfood · s1387 · session soft ≠ live dogfood · streams_not_probed · pull_not_probed · list_plan_not_connected · board/export evidence ≠ invent Connected · dual_write OFF · mesh ≠ memory · agentic tip /onboard next agentic · human-gates tip /onboard next human-gates")
 						return false, nil
 					default:
 						// Unknown next sub → overview + usage hint listing lanes.
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextLanes())
-						fmt.Fprintln(out, "— residual: post-onboard next lanes · dual_write OFF · not Memory GA · plugins dogfood ≠ Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · mesh ≠ memory · portal HITL · board/export evidence ≠ invent Connected · pull_not_probed · list_plan_not_connected · setup_not_probed · PASS ≠ invent human-gate green · Edge Memory GA candidacy only · free eng s1558 · free eng s1562 · free eng s1566 · free eng s1570 · free eng s1574 · free eng s1578 · free eng s1582 · free eng s1586 · free eng s1590 · OSS packaging residual · E10 Open reaffirm · marketing demo path")
+						fmt.Fprintln(out, "— residual: post-onboard next lanes · dual_write OFF · plugins dogfood ≠ Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · mesh ≠ memory · portal HITL · board/export evidence ≠ invent Connected · pull_not_probed · list_plan_not_connected · setup_not_probed · PASS ≠ invent human-gate green · Edge Memory GA candidacy only · free eng s1558 · free eng s1562 · free eng s1566 · free eng s1570 · free eng s1574 · free eng s1578 · free eng s1582 · free eng s1586 · free eng s1590 · OSS packaging residual · E10 Open reaffirm · marketing demo path")
 						fmt.Fprintln(out, "— packaging: "+agent.OSSPackagingHonestyOneLiner)
 						fmt.Fprintln(out, "usage: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|e4|tool-call|e10|planes|sales|demo|marketing-demo|operator|setup|journey|wizard|status|export|human-gates]  (Edge OSS path: setup|journey|wizard|memory|e4|portal-hitl|marketing-demo · Platform residual honesty optional residual-check: human-gates|tool-call|e10 · soft residual-check = offline residual honesty · slash dogfood kept for compatibility; lane aliases: plugins→plugin|dogfood · gtm→drafts · memory→mcp|palace · mesh→stream|streams|heartbeat|heartbeats|pull · memory-pull→ops-pack|pull-path|memorypull|ops_pack · agentic→agentic-integrations|integrations|list-plan · portal-hitl→hitl|portal_hitl|portal-dogfood|stage5|connectors-hitl · e4→e4-dogfood|client-attach|edge-memory-e4|e4_attach · tool-call→tool-calls|deeper-e4|e4-tools|ingest-retrieve|tool_call · e10→e10-open|edge-memory-e10|ga-signoff|e10_open · planes→three-planes|product-planes|product|pillars|three_planes · sales→claims|buyer|claim-matrix|sales-claims|buyer-claims · demo→demo-ready|readiness|demo-readiness|lighthouse|landgrab · marketing-demo→marketing|sales-demo|demo-script|gtm-demo · operator→operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix · setup→setup-lifecycle|lifecycle|setup_lifecycle · journey→edge-journey|user-journey|first-run|edge_user_journey · wizard→first-run-wizard|guided|wave-c|wave_c|wizard-residual · status→pulse|board · export→receipt|stamp|evidence · human-gates→human|gates|apply-gates|still-human|apply-residual; soft residual-check dogfood: tool-call dogfood|soft|samples|offline|tool-call-soft · e10 dogfood|soft|samples|offline|e10-soft|residual-check · human-gates dogfood|soft|samples|offline|still-human-soft|apply-soft; parent aliases after|continue|lanes; export json for JSON receipt; pulse stays status board; bare pull stays mesh; bare mcp stays memory; bare portal stays portal handoff; product/planes stay three-planes; landgrab stays Landgrab NOT READY honesty; readiness/lighthouse stay demo board; bare demo stays demo readiness · marketing-demo is the plain-language demo script)")
 						return false, nil
 					}
 				}
 				fmt.Fprintln(out, agent.MeshAgentOnboardingNextLanes())
-				fmt.Fprintln(out, "— residual: post-onboard next lanes · dual_write OFF · not Memory GA · plugins dogfood ≠ Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · mesh ≠ memory · portal HITL · board/export evidence ≠ invent Connected · pull_not_probed · list_plan_not_connected · setup_not_probed · PASS ≠ invent human-gate green · Edge Memory GA candidacy only · free eng s1558 · free eng s1562 · free eng s1566 · free eng s1570 · free eng s1574 · free eng s1578 · free eng s1582 · free eng s1586 · free eng s1590 · OSS packaging residual · E10 Open reaffirm · marketing demo path")
+				fmt.Fprintln(out, "— residual: post-onboard next lanes · dual_write OFF · plugins dogfood ≠ Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · mesh ≠ memory · portal HITL · board/export evidence ≠ invent Connected · pull_not_probed · list_plan_not_connected · setup_not_probed · PASS ≠ invent human-gate green · Edge Memory GA candidacy only · free eng s1558 · free eng s1562 · free eng s1566 · free eng s1570 · free eng s1574 · free eng s1578 · free eng s1582 · free eng s1586 · free eng s1590 · OSS packaging residual · E10 Open reaffirm · marketing demo path")
 				fmt.Fprintln(out, "— packaging: "+agent.OSSPackagingHonestyOneLiner)
 				return false, nil
 			}
 			// Unknown subcommand: still print guidance + usage hint.
 			fmt.Fprintln(out, agent.MeshAgentOnboardingGuidanceNote())
-			fmt.Fprintln(out, "— residual: TUI ↔ mesh onboarding · dual_write OFF · not Memory GA · never invent Connected · portal HITL · skill mesh-agent-onboarding via read_skill")
+			fmt.Fprintln(out, "— residual: TUI ↔ mesh onboarding · dual_write OFF · never invent Connected · portal HITL · skill mesh-agent-onboarding via read_skill")
 			fmt.Fprintln(out, "— packaging: "+agent.OSSPackagingHonestyOneLiner)
 			fmt.Fprintln(out, "usage: /onboard [help|checklist|portal|status|next]  (aliases /agent-onboard; portal aliases agent-mcp|mcp; next aliases after|continue|lanes; next lanes Edge OSS path: setup|journey|wizard|memory|e4|portal-hitl|marketing-demo · Platform residual honesty (optional residual-check): human-gates|tool-call|e10 · also plugins|gtm|mesh|memory-pull|agentic|planes|sales|demo|operator|status|export)")
 			return false, nil
 		}
 		fmt.Fprintln(out, agent.MeshAgentOnboardingGuidanceNote())
-		fmt.Fprintln(out, "— residual: TUI ↔ mesh onboarding · dual_write OFF · not Memory GA · never invent Connected · portal HITL · skill mesh-agent-onboarding via read_skill")
+		fmt.Fprintln(out, "— residual: TUI ↔ mesh onboarding · dual_write OFF · never invent Connected · portal HITL · skill mesh-agent-onboarding via read_skill")
 		fmt.Fprintln(out, "— packaging: "+agent.OSSPackagingHonestyOneLiner)
 	case "/plugins", "/plugin":
 		// s1392: residual-honest /plugins slash soft offline dogfood.
@@ -1229,7 +1229,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /catalog [query]     list mesh data products (catalog plane)
   /memory [recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|extract|ingest-dir|status]  Memory Palace (sync HTTP + MCP; Mode A sticky: /memory digest --require-sources mesh,private — cite-both or explicit miss · ACK via /dashboard ack · related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · extract HITL structural facts after persist (not NLP) · ingest-dir folder overlay · status advanced inventory)
   /integrations [list|plan|signing|status]  list/plan a source via MCP, then finish in portal HITL (not install CRUD)
-  /setup [init|preflight|portal|reload|pull|analyze|drift|repair]  setup lifecycle (managed config · preflight · portal HITL · hot MCP reload · opt-in continuous pull/analyze · drift report · guided repair; alias /setup-lifecycle; dual_write OFF · not Memory GA · PASS ≠ invent Connected · pull/analyze/repair ≠ invent Connected)
+  /setup [init|preflight|portal|reload|pull|analyze|drift|repair]  setup lifecycle (managed config · preflight · portal HITL · hot MCP reload · opt-in continuous pull/analyze · drift report · guided repair; alias /setup-lifecycle; dual_write OFF · PASS ≠ invent Connected · pull/analyze/repair ≠ invent Connected)
   /gtm [help|checklist|brief]  GTM draft-only guidance, checklist, or palace voc_brief / market_telling (aliases /gtm-draft /gtm-agent; no auto-send; human publish; palace SoR · source=agent-brief · tenant gtm/founder)
   /onboard [help|checklist|portal|status|next]  start here: portal MCP copy → TUI attach → /integrations list|plan → portal HITL (aliases /agent-onboard; next wizard|journey|setup|portal-hitl|memory · operator notes /onboard next [plugins|gtm|memory|mesh|export|…])
   /plugins [help|list|validate|smoke|status]  residual-honest Agent Plugins soft offline smoke (alias /plugin; smoke aliases dogfood|soft|samples|offline; check→validate; Discover ≠ Connected · soft offline ≠ live smoke · ≠ invent Agent Plugins GA)
@@ -1269,10 +1269,10 @@ honesty: ` + setup.SetupLifecycleHonestyOneLiner + `
   secrets via env names only · portal HITL for OAuth/install · continuous pull/analyze opt-in
   skill: read_skill setup-lifecycle-agent · system note <setup-lifecycle> on AttachMCP
   reload: dual_write OFF · skills re-scanned · package wire ≠ Connected · does not invent install green · skills re-scan ≠ invent Connected
-  pull: dual_write OFF · not Memory GA · pull ≠ invent Connected · CLI iomesh memory pull still valid
-  analyze: dual_write OFF · not Memory GA · analyze tick ≠ invent Connected · /memory digest still valid
-  drift: dual_write OFF · not Memory GA · drift report ≠ invent install green · package wire ≠ Connected
-  repair: dual_write OFF · not Memory GA · repair apply ≠ invent Connected · package wire ≠ Connected · portal HITL still human · safe steps only · no auto-repair without apply --yes`)
+  pull: dual_write OFF · pull ≠ invent Connected · CLI iomesh memory pull still valid
+  analyze: dual_write OFF · analyze tick ≠ invent Connected · /memory digest still valid
+  drift: dual_write OFF · drift report ≠ invent install green · package wire ≠ Connected
+  repair: dual_write OFF · repair apply ≠ invent Connected · package wire ≠ Connected · portal HITL still human · safe steps only · no auto-repair without apply --yes`)
 	if note := setup.PlatformResidualLabelNote(); note != "" {
 		return base + "\n" + note
 	}
@@ -1280,7 +1280,7 @@ honesty: ` + setup.SetupLifecycleHonestyOneLiner + `
 }
 
 // setupPullHonesty is printed on every /setup pull output (s1530 P5 residual honesty).
-const setupPullHonesty = "honesty: dual_write OFF · not Memory GA · pull ≠ invent Connected · CLI iomesh memory pull still valid"
+const setupPullHonesty = "honesty: dual_write OFF · pull ≠ invent Connected · CLI iomesh memory pull still valid"
 
 // handleSetupInit parses simple /setup init args and writes (or prints) managed fragment.
 func handleSetupInit(out io.Writer, args []string) {
@@ -1389,7 +1389,7 @@ func handleSetupInit(out io.Writer, args []string) {
 		if !strings.HasSuffix(frag, "\n") {
 			fmt.Fprintln(out)
 		}
-		fmt.Fprintln(out, "honesty: dual_write OFF · not Memory GA · catalog ≠ Connected · portal HITL · setup PASS ≠ invent install green")
+		fmt.Fprintln(out, "honesty: dual_write OFF · catalog ≠ Connected · portal HITL · setup PASS ≠ invent install green")
 		return
 	}
 	path, err := config.WriteSetupManagedUser(frag)
@@ -1525,7 +1525,7 @@ func reloadRuntimeFromConfig(ctx context.Context, out io.Writer, rt runtimeAdapt
 	}
 	if mgr == nil {
 		fmt.Fprintln(out, "setup reload: MCP feature off or no servers configured — detached")
-		fmt.Fprintln(out, "honesty: dual_write OFF · package wire ≠ Connected · skills re-scan ≠ invent Connected · not Memory GA · not Agent Plugins GA · portal HITL for installs")
+		fmt.Fprintln(out, "honesty: dual_write OFF · package wire ≠ Connected · skills re-scan ≠ invent Connected · not Agent Plugins GA · portal HITL for installs")
 		for _, line := range setup.SetupReloadNextStepLines() {
 			fmt.Fprintln(out, line)
 		}
@@ -1541,7 +1541,7 @@ func reloadRuntimeFromConfig(ctx context.Context, out io.Writer, rt runtimeAdapt
 	} else {
 		fmt.Fprintln(out, agent.ModeAPalaceVisibilityLine(""))
 	}
-	fmt.Fprintln(out, "honesty: dual_write OFF · package wire ≠ Connected · skills re-scanned · Discover/map ≠ install APPLY green · skills re-scan ≠ invent Connected · not Memory GA · not Agent Plugins GA")
+	fmt.Fprintln(out, "honesty: dual_write OFF · package wire ≠ Connected · skills re-scanned · Discover/map ≠ install APPLY green · skills re-scan ≠ invent Connected · not Agent Plugins GA")
 	fmt.Fprintln(out, "note: skills re-scanned on reload · continuous pull/analyze opt-in via /setup pull · /setup analyze · drift /setup drift · repair /setup repair · CLI iomesh memory pull · /memory digest still valid")
 	for _, line := range setup.SetupReloadNextStepLines() {
 		fmt.Fprintln(out, line)
@@ -1580,7 +1580,7 @@ func setupPullHelp() string {
   start    start continuous pull (MaxLoops=0; loads [memory] pull_*; --once · --dry-run · --config path)
   once     single fetch cycle (MaxLoops=1; same knobs as start)
   stop     cancel in-session continuous pull (no-op when idle)
-honesty: dual_write OFF · not Memory GA · pull ≠ invent Connected · CLI iomesh memory pull still valid
+honesty: dual_write OFF · pull ≠ invent Connected · CLI iomesh memory pull still valid
   opt-in only · pull_continuous=true is config opt-in · setup fragment defaults pull_continuous=false`)
 }
 
@@ -1700,7 +1700,7 @@ func handleSetupPullStart(out io.Writer, rt runtimeAdapter, args []string, once 
 	fmt.Fprintf(out, "setup pull %s: started %s\n", label, mode)
 	fmt.Fprintf(out, "stream=%s consumer=%s filter=%q batch=%d max_wait_ms=%d server=%s\n",
 		pullCfg.Stream, pullCfg.Consumer, pullCfg.Filter, pullCfg.Batch, pullCfg.MaxWaitMS, pullCfg.Server)
-	fmt.Fprintln(out, "note: pull running ≠ invent Connected · dual_write OFF · not Memory GA")
+	fmt.Fprintln(out, "note: pull running ≠ invent Connected · dual_write OFF")
 	fmt.Fprintln(out, setupPullHonesty)
 	for _, line := range setup.SetupPullNextStepLines() {
 		fmt.Fprintln(out, line)
@@ -1754,7 +1754,7 @@ func handleSetupPullStop(out io.Writer, rt runtimeAdapter) {
 }
 
 // setupAnalyzeHonesty is printed on every /setup analyze output (s1534 P6 residual honesty).
-const setupAnalyzeHonesty = "honesty: dual_write OFF · not Memory GA · analyze tick ≠ invent Connected · /memory digest still valid"
+const setupAnalyzeHonesty = "honesty: dual_write OFF · analyze tick ≠ invent Connected · /memory digest still valid"
 
 // handleSetupAnalyze dispatches /setup analyze [status|start|once|stop] (s1534 P6).
 // Bare /setup analyze → status. Residual-honest: dual_write OFF · not Memory GA ·
@@ -1788,7 +1788,7 @@ func setupAnalyzeHelp() string {
   start    start continuous analyze ticks (loads [memory] analyze_*; --mode status|digest · --interval N · --window day|week · --config path)
   once     single analyze tick then exit (same knobs as start)
   stop     cancel in-session analyze tick loop (no-op when idle)
-honesty: dual_write OFF · not Memory GA · analyze tick ≠ invent Connected · /memory digest still valid
+honesty: dual_write OFF · analyze tick ≠ invent Connected · /memory digest still valid
   opt-in only · analyze_continuous=true is config opt-in · setup fragment defaults analyze_continuous=false`)
 }
 
@@ -1976,7 +1976,7 @@ func handleSetupAnalyzeStart(out io.Writer, rt runtimeAdapter, args []string, on
 	}
 	fmt.Fprintf(out, "setup analyze %s: started %s mode=%s interval_sec=%d window=%q\n",
 		label, mode, tickCfg.Mode, tickCfg.IntervalSec, tickCfg.Window)
-	fmt.Fprintln(out, "note: analyze running ≠ invent Connected · dual_write OFF · not Memory GA · /memory digest still valid")
+	fmt.Fprintln(out, "note: analyze running ≠ invent Connected · dual_write OFF · /memory digest still valid")
 	fmt.Fprintln(out, setupAnalyzeHonesty)
 	for _, line := range setup.SetupAnalyzeNextStepLines() {
 		fmt.Fprintln(out, line)
@@ -2089,11 +2089,11 @@ func setupDriftHelp() string {
 	return strings.TrimSpace(`usage: /setup drift [--config path]
   report-only config intent vs runtime snapshot (alias: /setup maintain)
   residual next-steps notes · guided repair via /setup repair (plan · apply --yes)
-honesty: dual_write OFF · not Memory GA · drift report ≠ invent install green · package wire ≠ Connected`)
+honesty: dual_write OFF · drift report ≠ invent install green · package wire ≠ Connected`)
 }
 
 // setupRepairHonesty is printed on every /setup repair output (s1538 P7 residual honesty).
-const setupRepairHonesty = "honesty: dual_write OFF · not Memory GA · repair apply ≠ invent Connected · package wire ≠ Connected · portal HITL still human"
+const setupRepairHonesty = "honesty: dual_write OFF · repair apply ≠ invent Connected · package wire ≠ Connected · portal HITL still human"
 
 // handleSetupRepair dispatches /setup repair [plan|apply] (s1538 P7).
 // Bare /setup repair → plan only (FormatRepairPlan from current drift).
@@ -2122,7 +2122,7 @@ func setupRepairHelp() string {
 	return strings.TrimSpace(`usage: /setup repair [plan|apply] [--config path] [--yes]
   plan    residual-honest repair plan from current drift (default; bare /setup repair)
   apply   apply safe steps only; requires --yes (refuse without --yes · no auto-repair)
-honesty: dual_write OFF · not Memory GA · repair apply ≠ invent Connected · package wire ≠ Connected · portal HITL still human
+honesty: dual_write OFF · repair apply ≠ invent Connected · package wire ≠ Connected · portal HITL still human
   safe steps only (reload_mcp · start_pull · start_analyze) · notes for human host/mesh/dual_write
   dual_write never auto-flipped ON · apply success ≠ invent Connected / Memory GA`)
 }

@@ -619,7 +619,6 @@ func TestIntegrationsNextStepLines_HonestyNeedles(t *testing.T) {
 		"plan ≠ APPLY",
 		"browser HITL",
 		"dual_write OFF",
-		"not Memory GA",
 		"s1727",
 		"/setup reload",
 		"portal-hitl",

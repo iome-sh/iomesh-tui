@@ -136,7 +136,7 @@ func TestListIngestDirFiles_TextAndSkipBinary(t *testing.T) {
 			t.Fatalf("plan missing %q: %s", want, text)
 		}
 	}
-	if strings.Contains(text, "Memory GA") && !strings.Contains(text, "not Memory GA") {
+	if strings.Contains(text, "Memory GA") {
 		t.Fatalf("must not stamp Memory GA: %s", text)
 	}
 }

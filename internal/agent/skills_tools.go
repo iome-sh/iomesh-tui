@@ -28,7 +28,7 @@ func SkillsNextStepLines() []string {
 		"next: dual path residual-honest after skills list/read or skills reload",
 		"      if TUI/session running → /setup preflight · /setup reload (skills re-scan · package wire ≠ Connected) · optional list_skills tool · /onboard next setup",
 		"      else cold start → restart iomesh · iomesh setup preflight",
-		"note: skills re-scan ≠ invent Connected · package wire ≠ Connected · dual_write OFF · not Agent Plugins GA · not Memory GA · free eng s1837",
+		"note: skills re-scan ≠ invent Connected · package wire ≠ Connected · dual_write OFF · not Agent Plugins GA · free eng s1837",
 	}
 }
 

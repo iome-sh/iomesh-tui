@@ -175,7 +175,6 @@ func TestSamplesSoftState(t *testing.T) {
 		"soft offline dogfood ≠ invent Agent Plugins GA",
 		"dual_write OFF",
 		"Discover ≠ Connected",
-		"not Memory GA",
 		"residual PASS ≠ live dogfood",
 		"package load ≠ Memory GA",
 	} {

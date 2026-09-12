@@ -7,7 +7,7 @@ import (
 )
 
 // RepairHonestyFooter residual-honest footer.
-const RepairHonestyFooter = "dual_write OFF · not Memory GA · repair apply ≠ invent Connected · package wire ≠ Connected · portal HITL still human"
+const RepairHonestyFooter = "dual_write OFF · repair apply ≠ invent Connected · package wire ≠ Connected · portal HITL still human"
 
 // RepairKind classifies a guided repair step.
 type RepairKind string
@@ -126,7 +126,7 @@ func PlanRepair(rep DriftReport) RepairPlan {
 // FormatRepairPlan residual-honest human text for /setup repair (plan/dry-run).
 func FormatRepairPlan(plan RepairPlan) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "setup repair plan (guided · residual-honest · not Memory GA · ≠ invent Connected)\n")
+	fmt.Fprintf(&b, "setup repair plan (guided · residual-honest · ≠ invent Connected)\n")
 	if plan.DryRun {
 		fmt.Fprintf(&b, "  mode: dry-run (no apply)\n")
 	} else {
@@ -161,7 +161,7 @@ func FormatRepairResult(plan RepairPlan) string {
 	if plan.DryRun {
 		mode = "dry-run"
 	}
-	fmt.Fprintf(&b, "setup repair result (%s · residual-honest · not Memory GA · ≠ invent Connected)\n", mode)
+	fmt.Fprintf(&b, "setup repair result (%s · residual-honest · ≠ invent Connected)\n", mode)
 	fmt.Fprintf(&b, "  applied=%d failed=%d skipped=%d steps=%d\n",
 		plan.Applied, plan.Failed, plan.Skipped, len(plan.Steps))
 	for i, s := range plan.Steps {

@@ -268,7 +268,7 @@ func TestFormatPreflightText_DualPathNextStep(t *testing.T) {
 	text := FormatPreflightText(&PreflightReport{
 		State:   "not_started",
 		OK:      false,
-		Honesty: "dual_write OFF · not Memory GA · catalog ≠ Connected",
+		Honesty: "dual_write OFF · catalog ≠ Connected",
 		Notes:   []string{},
 	})
 	for _, want := range []string{
@@ -277,7 +277,6 @@ func TestFormatPreflightText_DualPathNextStep(t *testing.T) {
 		"CLI has no",
 		"package wire",
 		"dual_write OFF",
-		"not Memory GA",
 		"s1699",
 		"preflight",
 	} {

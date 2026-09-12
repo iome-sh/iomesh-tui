@@ -86,7 +86,6 @@ func TestRunFirstRunWizardSoftDogfood_SoftPass(t *testing.T) {
 		"/onboard next journey",
 		"dual_write OFF",
 		"book-demo OFF",
-		"not Memory GA",
 		"Edge Memory GA candidacy only",
 		"residual PASS ≠ invent Edge Memory GA declared",
 		"E10 Open",

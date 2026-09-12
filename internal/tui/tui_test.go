@@ -705,7 +705,7 @@ func TestHandleSlash_MemoryExtractUsage(t *testing.T) {
 	if !strings.Contains(got, "extract") || !strings.Contains(got, "memory_id") {
 		t.Fatalf("usage: %s", got)
 	}
-	if !strings.Contains(got, "not NLP") || !strings.Contains(got, "not Memory GA") {
+	if !strings.Contains(got, "not NLP") {
 		t.Fatalf("honesty missing: %s", got)
 	}
 	if !strings.Contains(got, "dual_write OFF") {
@@ -957,7 +957,6 @@ func TestHandleSlash_GtmDraftOnly(t *testing.T) {
 		"no auto-send",
 		"human publish",
 		"dual_write OFF",
-		"not Memory GA",
 		"Salesforce",
 		"GA CRM",
 		"gtm-draft-only-agent",
@@ -1015,7 +1014,6 @@ func TestHandleSlash_GtmHelpChecklist(t *testing.T) {
 		"not agent APPLY",
 		"5.",
 		"dual_write OFF",
-		"not Memory GA",
 		"book-demo OFF",
 		"6.",
 		"read_skill",
@@ -1073,7 +1071,6 @@ func TestHandleSlash_Onboard(t *testing.T) {
 		"plan_connector_setup",
 		"list_org_connector_installs",
 		"dual_write OFF",
-		"not Memory GA",
 		"portal HITL",
 		"never invent install green",
 		"mesh-agent-onboarding",
@@ -1130,7 +1127,6 @@ func TestHandleSlash_OnboardHelpChecklist(t *testing.T) {
 		"available=false ≠ empty-as-none",
 		"5.",
 		"dual_write OFF",
-		"not Memory GA",
 		"6.",
 		"/integrations status",
 		"console.iome.sh/integrations",
@@ -1221,7 +1217,6 @@ func TestHandleSlash_OnboardPortal(t *testing.T) {
 		"copy TUI fragment",
 		"Test invoke",
 		"stub",
-		"not Memory GA",
 		"[[mcp.servers]]",
 		"streamable HTTP",
 		"/integrations status",
@@ -1269,7 +1264,6 @@ func TestHandleSlash_OnboardStatus(t *testing.T) {
 		"MCP attach",
 		"fail-open offline",
 		"dual_write OFF",
-		"not Memory GA",
 		"portal HITL",
 		"console.iome.sh/settings/agent",
 		"console.iome.sh/integrations",
@@ -1316,7 +1310,6 @@ func TestHandleSlash_OnboardNext(t *testing.T) {
 		"portal HITL",
 		"agent MCP cannot write installs",
 		"catalog ≠ Connected",
-		"not Memory GA",
 		"residual PASS ≠ live dogfood",
 		"never invent install green",
 		"INSTALL_STORE APPLY",
@@ -1372,7 +1365,6 @@ func TestHandleSlash_OnboardNextPluginsLane(t *testing.T) {
 		"plugins dogfood ≠ invent Agent Plugins GA",
 		"residual PASS ≠ live dogfood",
 		"dual_write OFF",
-		"not Memory GA",
 		"package load ≠ Memory GA",
 		"never invent install green",
 		"INSTALL_STORE APPLY",
@@ -1425,7 +1417,6 @@ func TestHandleSlash_OnboardNextGtmLane(t *testing.T) {
 		"GTM agent GA",
 		"GTM checklist ≠ invent GTM agent GA",
 		"dual_write OFF",
-		"not Memory GA",
 		"portal HITL",
 		"agent MCP cannot write installs",
 		"never invent install green",
@@ -1495,7 +1486,6 @@ func TestHandleSlash_OnboardNextMemoryLane(t *testing.T) {
 		"dual_write OFF",
 		"package load ≠ Memory GA",
 		"freemium palace",
-		"not Memory GA",
 		"Palace sunset",
 		"/memory status",
 		"residual PASS ≠ live dogfood",
@@ -1551,7 +1541,6 @@ func TestHandleSlash_OnboardNextMeshLane(t *testing.T) {
 		"streams_not_probed",
 		"never invent stream green",
 		"dual_write OFF",
-		"not Memory GA",
 		"iomesh memory pull",
 		"not freemium hosted palace",
 		"Palace sunset",
@@ -1640,7 +1629,6 @@ func TestHandleSlash_OnboardNextMemoryPullLane(t *testing.T) {
 		"iomesh memory pull",
 		"mesh → local palace",
 		"dual_write OFF",
-		"not Memory GA",
 		"pull_not_probed",
 		"never invent pull green",
 		"Ops Pack ≠ GPU fleet",
@@ -1716,7 +1704,6 @@ func TestHandleSlash_OnboardNextSetupLane(t *testing.T) {
 		"/setup repair plan",
 		"/setup repair apply --yes",
 		"dual_write OFF",
-		"not Memory GA",
 		"package wire ≠ Connected",
 		"repair apply ≠ invent Connected",
 		"dual_write never auto ON",
@@ -1790,7 +1777,6 @@ func TestHandleSlash_OnboardNextWizardLane(t *testing.T) {
 		"/onboard next e4",
 		"/onboard next journey",
 		"dual_write OFF",
-		"not Memory GA",
 		"Edge Memory GA candidacy only",
 		"residual PASS ≠ invent Edge Memory GA declared",
 		"E10 Open",
@@ -1946,7 +1932,6 @@ func TestHandleSlash_OnboardNextJourneyLane(t *testing.T) {
 		"6. Local store",
 		"7. Analyze",
 		"dual_write OFF",
-		"not Memory GA",
 		"Edge Memory GA candidacy only",
 		"residual PASS ≠ invent Edge Memory GA",
 		"portal HITL",
@@ -2097,7 +2082,6 @@ func TestHandleSlash_OnboardNextSalesClaims(t *testing.T) {
 		"MUST NOT CLAIM",
 		"streaming org heartbeats",
 		"dual_write OFF",
-		"not Memory GA",
 		"Salesforce = GA CRM",
 		"HubSpot + GTM suite Beta multi-tenant",
 		"never invent Connected",
@@ -2215,7 +2199,6 @@ func TestHandleSlash_OnboardNextDemoReadiness(t *testing.T) {
 		"book-demo OFF",
 		"Landgrab NOT READY",
 		"dual_write OFF",
-		"not Memory GA",
 		"never invent Connected",
 		"residual PASS ≠ live dogfood",
 		"PASS ≠ live APPLY",
@@ -2365,7 +2348,6 @@ func TestHandleSlash_OnboardNextOperatorMatrix(t *testing.T) {
 		"book-demo OFF",
 		"Landgrab NOT READY",
 		"dual_write OFF",
-		"not Memory GA",
 		"never invent Connected",
 		"dual_auth_candidacy_open",
 		"tool ship ≠ dual-auth live",
@@ -2542,7 +2524,6 @@ func TestHandleSlash_OnboardNextThreePlanes(t *testing.T) {
 		"dual_auth_candidacy_open",
 		"never invent Connected",
 		"dual_write OFF",
-		"not Memory GA",
 		"residual PASS ≠ live dogfood",
 		"PASS ≠ live APPLY",
 	}
@@ -2649,7 +2630,6 @@ func TestHandleSlash_OnboardNextAgenticLane(t *testing.T) {
 		"list_plan_not_connected",
 		"portal_hitl_still",
 		"dual_write OFF",
-		"not Memory GA",
 		"book-demo OFF",
 		"residual PASS ≠ live dogfood",
 		"PASS ≠ live APPLY",
@@ -2764,7 +2744,6 @@ func TestHandleSlash_OnboardNextAgenticDualAuthCandidacy(t *testing.T) {
 		"path_ready",
 		"residual_only",
 		"dual_write OFF",
-		"not Memory GA",
 		"book-demo OFF",
 		"residual PASS ≠ live dogfood",
 		"PASS ≠ live APPLY",
@@ -2976,7 +2955,6 @@ func TestHandleSlash_OnboardNextPortalHITLLane(t *testing.T) {
 		"console.iome.sh/integrations",
 		"console.iome.sh/settings/agent",
 		"dual_write OFF",
-		"not Memory GA",
 		"Edge Memory GA candidacy only",
 		"soft offline ≠ invent Connected",
 		"portal_hitl_soft_not_run",
@@ -3115,7 +3093,6 @@ func TestHandleSlash_OnboardNextE4Lane(t *testing.T) {
 		"local-primary",
 		"docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md",
 		"dual_write OFF",
-		"not Memory GA",
 		"Edge Memory GA candidacy only",
 		"residual PASS ≠ invent Edge Memory GA declared",
 		"E10 Open",
@@ -3193,7 +3170,6 @@ func TestHandleSlash_OnboardNextToolCallLane(t *testing.T) {
 		"tools=6",
 		"iomesh mcp --connect",
 		"dual_write OFF",
-		"not Memory GA",
 		"Edge Memory GA candidacy only",
 		"residual PASS ≠ invent Edge Memory GA declared",
 		"E10 Open",
@@ -3264,7 +3240,6 @@ func TestHandleSlash_OnboardNextE10Lane(t *testing.T) {
 		"candidacy allowed without E10",
 		"PASS ≠ live APPLY",
 		"dual_write OFF",
-		"not Memory GA",
 		"book-demo OFF",
 		"residual-check",
 		"soft offline ≠ invent Connected",
@@ -3411,7 +3386,6 @@ func TestHandleSlash_OnboardNextMarketingDemoLane(t *testing.T) {
 		"/setup init",
 		"/memory",
 		"dual_write OFF",
-		"not Memory GA",
 		"mesh optional",
 		"never invent Connected",
 		"book-demo OFF",
@@ -3687,7 +3661,6 @@ func TestHandleSlash_OnboardNextHumanGates(t *testing.T) {
 		"book-demo OFF",
 		"ON_SIGNAL",
 		"dual_write OFF",
-		"not Memory GA",
 		"Edge Memory GA candidacy only",
 		"residual PASS ≠ invent Edge Memory GA",
 		"residual PASS ≠ invent Edge Memory GA declared",
@@ -3782,7 +3755,6 @@ func TestHandleSlash_OnboardNextStillHumanSoftDogfood(t *testing.T) {
 		"PASS ≠ invent human-gate green",
 		"dual_write OFF",
 		"book-demo OFF",
-		"not Memory GA",
 		"Edge Memory GA candidacy only",
 		"residual PASS ≠ invent Edge Memory GA declared",
 		"E10 Open",
@@ -3874,7 +3846,6 @@ func TestHandleSlash_OnboardNextLaneStatus(t *testing.T) {
 		"list_plan_not_connected",
 		"mesh ≠ memory",
 		"dual_write OFF",
-		"not Memory GA",
 		"package load ≠ Memory GA",
 		"drafts only",
 		"no auto-send",
@@ -3967,7 +3938,6 @@ func TestHandleSlash_OnboardNextLaneStatusExport(t *testing.T) {
 		"portal_hitl_still",
 		"list_plan_not_connected",
 		"dual_write OFF",
-		"not Memory GA",
 		"mesh ≠ memory",
 		"board/export evidence ≠ invent Connected",
 		"never invent install green",
@@ -4212,7 +4182,6 @@ func TestHandleSlash_Plugins(t *testing.T) {
 		"soft offline dogfood ≠ invent Agent Plugins GA",
 		"Discover ≠ Connected",
 		"dual_write OFF",
-		"not Memory GA",
 		"residual PASS ≠ live dogfood",
 		// s1829 residual-honest dual-path next-step
 		"/setup reload",
@@ -4600,7 +4569,6 @@ func TestHandleSlash_SetupLifecycle(t *testing.T) {
 	for _, want := range []string{
 		"usage: /setup",
 		"dual_write OFF",
-		"not Memory GA",
 		"Connected",
 		"preflight",
 		"portal",
@@ -4668,7 +4636,6 @@ func TestHandleSlash_SetupLifecycle(t *testing.T) {
 		"/setup reload",
 		"catalog ≠ Connected",
 		"agent MCP cannot write",
-		"not Memory GA",
 	} {
 		if !strings.Contains(portalOut, want) {
 			t.Fatalf("portal s1723 next-step missing %q in:\n%s", want, portalOut)
@@ -4694,7 +4661,6 @@ func TestHandleSlash_SetupLifecycle(t *testing.T) {
 		"CLI has no",
 		"package wire",
 		"dual_write OFF",
-		"not Memory GA",
 	} {
 		if !strings.Contains(initWrite, want) {
 			t.Fatalf("init write s1686 next-step missing %q in:\n%s", want, initWrite)
@@ -4770,7 +4736,7 @@ func TestHandleSlash_SetupLifecycle(t *testing.T) {
 	missing := filepath.Join(t.TempDir(), "no-such-config.toml")
 	_, _ = handleSlash(&out, adapter, "/setup preflight --config "+missing)
 	pf := out.String()
-	if !strings.Contains(pf, "setup preflight") && !strings.Contains(pf, "not Memory GA") {
+	if !strings.Contains(pf, "setup preflight") {
 		// FormatPreflightText or load error both residual
 		if !strings.Contains(pf, "preflight") {
 			t.Fatalf("preflight output: %s", pf)
@@ -4780,7 +4746,7 @@ func TestHandleSlash_SetupLifecycle(t *testing.T) {
 	if strings.Contains(pf, "Connected: yes") || strings.Contains(pf, "state: Connected") {
 		t.Fatalf("preflight must not invent Connected green: %s", pf)
 	}
-	if !strings.Contains(pf, "not Memory GA") || !strings.Contains(pf, "dual_write") {
+	if !strings.Contains(pf, "dual_write OFF") {
 		t.Fatalf("preflight missing honesty: %s", pf)
 	}
 
@@ -4971,7 +4937,6 @@ func TestHandleSlash_SetupPull(t *testing.T) {
 		"setup pull status",
 		"running: false",
 		"dual_write OFF",
-		"not Memory GA",
 		"pull ≠ invent Connected",
 		"iomesh memory pull",
 		// s1711 dual-path next-step footer
@@ -5016,7 +4981,7 @@ func TestHandleSlash_SetupPull(t *testing.T) {
 	if !strings.Contains(startOut, "pull_consumer") && !strings.Contains(startOut, "mesh disabled") && !strings.Contains(startOut, "no runtime") {
 		t.Fatalf("start should residual-honest fail (consumer/mesh): %s", startOut)
 	}
-	if !strings.Contains(startOut, "dual_write OFF") || !strings.Contains(startOut, "not Memory GA") {
+	if !strings.Contains(startOut, "dual_write OFF") {
 		t.Fatalf("start error missing honesty: %s", startOut)
 	}
 	if strings.Contains(startOut, "Connected green") || strings.Contains(startOut, "Memory GA shipped") {
@@ -5090,7 +5055,6 @@ func TestHandleSlash_SetupAnalyze(t *testing.T) {
 		"setup analyze status",
 		"running: false",
 		"dual_write OFF",
-		"not Memory GA",
 		"analyze tick ≠ invent Connected",
 		"/memory digest still valid",
 		// s1711 dual-path next-step footer
@@ -5131,7 +5095,7 @@ func TestHandleSlash_SetupAnalyze(t *testing.T) {
 	if !strings.Contains(onceOut, "setup analyze once") {
 		t.Fatalf("once path: %s", onceOut)
 	}
-	if !strings.Contains(onceOut, "dual_write OFF") || !strings.Contains(onceOut, "not Memory GA") {
+	if !strings.Contains(onceOut, "dual_write OFF") {
 		t.Fatalf("once missing honesty: %s", onceOut)
 	}
 	if strings.Contains(onceOut, "Connected green") || strings.Contains(onceOut, "Memory GA shipped") {
@@ -5211,7 +5175,6 @@ func TestHandleSlash_SetupDrift(t *testing.T) {
 	for _, want := range []string{
 		"setup drift",
 		"dual_write OFF",
-		"not Memory GA",
 		"≠ invent install green",
 		"package wire ≠ Connected",
 		"report-only",
@@ -5279,7 +5242,6 @@ func TestHandleSlash_SetupRepair(t *testing.T) {
 	for _, want := range []string{
 		"setup repair plan",
 		"dual_write OFF",
-		"not Memory GA",
 		"repair apply ≠ invent Connected",
 		"package wire ≠ Connected",
 	} {
@@ -5312,7 +5274,6 @@ func TestHandleSlash_SetupRepair(t *testing.T) {
 		"refuse without --yes",
 		"no auto-repair",
 		"dual_write OFF",
-		"not Memory GA",
 		"repair apply ≠ invent Connected",
 	} {
 		if !strings.Contains(refuse, want) {
@@ -5334,7 +5295,6 @@ func TestHandleSlash_SetupRepair(t *testing.T) {
 	for _, want := range []string{
 		"setup repair result",
 		"dual_write OFF",
-		"not Memory GA",
 		"repair apply ≠ invent Connected",
 		"package wire ≠ Connected",
 	} {

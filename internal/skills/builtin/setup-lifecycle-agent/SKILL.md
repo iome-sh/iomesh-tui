@@ -1,6 +1,6 @@
 ---
 name: setup-lifecycle-agent
-description: Residual-honest agent-native setup lifecycle (init/preflight · dual_write OFF · not Memory GA · catalog ≠ Connected · portal HITL · not invent install green · continuous pull/analyze opt-in · drift report-only · guided repair apply --yes)
+description: Residual-honest agent-native setup lifecycle (init/preflight · dual_write OFF · catalog ≠ Connected · portal HITL · not invent install green · continuous pull/analyze opt-in · drift report-only · guided repair apply --yes)
 ---
 
 # Setup lifecycle agent (residual-honest · s1526 P3 + s1530 P5 + s1534 P6 + s1538 P7 + s1542 closeout + s1558 Wave B first-run)
@@ -11,7 +11,7 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
 
 **Onboard companion (s1542):** residual-honest offline map via `/onboard next setup` (aliases `setup-lifecycle` / `lifecycle` / `setup_lifecycle`) → `MeshAgentOnboardingNextSetupLane` — consolidates P1–P7 map story · **setup_not_probed** · dual_write OFF · package wire ≠ Connected · repair apply ≠ invent Connected · dual_write never auto ON · E10 Open · offline static ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA.
 
-**Wave B first-run (s1558):** setup is **stage 4** of the 7-stage edge-user-journey. Full first-run map via companion `/onboard next journey` (aliases `edge-journey` / `user-journey` / `first-run` / `edge_user_journey`) → `MeshAgentOnboardingNextJourneyLane` — Signup → Download TUI → TUI auth/keys → Setup wizard → Connectors → Local store → Analyze · dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · portal HITL · host not auto · no invent TUI portal SSO · free eng **s1558** · free-floor peer **s1560+** mention only · docs `edge-user-journey.md` · `setup-lifecycle.md` · `memory-edge-usage-demo.md`.
+**Wave B first-run (s1558):** setup is **stage 4** of the 7-stage edge-user-journey. Full first-run map via companion `/onboard next journey` (aliases `edge-journey` / `user-journey` / `first-run` / `edge_user_journey`) → `MeshAgentOnboardingNextJourneyLane` — Signup → Download TUI → TUI auth/keys → Setup wizard → Connectors → Local store → Analyze · dual_write OFF · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · portal HITL · host not auto · no invent TUI portal SSO · free eng **s1558** · free-floor peer **s1560+** mention only · docs `edge-user-journey.md` · `setup-lifecycle.md` · `memory-edge-usage-demo.md`.
 
 **Wave C first-run wizard residual (s1570):** deeper guided residual via companion `/onboard next wizard` (aliases `first-run-wizard` / `guided` / `wave-c` / `wave_c` / `wizard-residual`) → `MeshAgentOnboardingNextWizardLane` · soft `/onboard next wizard dogfood` · NOT invent full interactive auto wizard · free eng **s1570** · free-floor peer **s1572+** mention only.
 
@@ -43,7 +43,7 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
      - **Preflight ok · TUI/session already running** → **`/setup reload`** (hot-swap MCP + skills · package wire ≠ Connected)
      - **Host/secrets still missing** → start `iomesh-memory-mcp` · set secret env · re-run preflight
      - **Cold CLI / no session** → **restart `iomesh`** (CLI has **no** `setup reload`) · then `/setup reload` in session if needed
-     - **CLI has no `iomesh setup reload`** — in-session `/setup reload` only · dual_write OFF · not Memory GA · free eng **s1699**
+     - **CLI has no `iomesh setup reload`** — in-session `/setup reload` only · dual_write OFF · free eng **s1699**
 
 3. **Portal HITL** — OAuth / connector install still browser session.
    - Slash: `/setup portal`
@@ -53,14 +53,14 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
      - complete OAuth/install in **browser HITL**
      - **TUI/session running** → `/setup preflight` · **`/setup reload`** (package wire ≠ Connected)
      - **Cold CLI / no session** → **restart `iomesh`** · `iomesh setup preflight` (CLI has **no** setup portal/reload)
-     - agent MCP cannot write installs · catalog ≠ Connected · dual_write OFF · not Memory GA · free eng **s1723**
+     - agent MCP cannot write installs · catalog ≠ Connected · dual_write OFF · free eng **s1723**
 
 4. **Hot reload (s1526 P4 · s1670 skills re-scan · s1711 next-step)** — in-session only.
    - Slash: `/setup reload` (hot-swap MCP + re-scan skills · package wire ≠ Connected)
    - **CLI has no `iomesh setup reload`** — in-session only (peers s1686/s1699)
    - After reload (s1711 · `SetupReloadNextStepLines`):
      - optional `/setup pull start` · `/setup analyze start` · `/setup drift` · `/memory digest`
-     - package wire ≠ Connected · dual_write OFF · not Memory GA · skills re-scan ≠ invent Connected · free eng **s1711**
+     - package wire ≠ Connected · dual_write OFF · skills re-scan ≠ invent Connected · free eng **s1711**
 
 5. **Continuous pull (s1530 P5 · residual-honest opt-in · s1711 next-step)** — in-session slash **or** CLI.
    - Slash: `/setup pull` · `/setup pull status` · `/setup pull start` · `/setup pull once` · `/setup pull stop`
@@ -70,7 +70,7 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
    - After pull (s1711 dual path · `SetupPullNextStepLines`):
      - **In-session** → `/setup pull status` · optional `/setup analyze start` · `/setup drift` · `/memory digest`
      - **CLI** → `iomesh memory pull` (once or continuous · mesh + consumer required)
-     - **pull ≠ invent Connected** · dual_write OFF · not Memory GA · free eng **s1711**
+     - **pull ≠ invent Connected** · dual_write OFF · free eng **s1711**
 
 6. **Analyze ticks (s1534 P6 · residual-honest opt-in · s1711 next-step)** — in-session status/digest pulse.
    - Slash: `/setup analyze` · `/setup analyze status` · `/setup analyze start` · `/setup analyze once` · `/setup analyze stop`
@@ -80,7 +80,7 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
    - After analyze (s1711 dual path · `SetupAnalyzeNextStepLines`):
      - **In-session** → `/setup analyze status` · optional `/setup pull start` · `/setup drift` · re-run analyze
      - **One-shot digest** → **`/memory digest`** (still valid · not invent Connected)
-     - **analyze tick ≠ invent Connected** · dual_write OFF · not Memory GA · free eng **s1711**
+     - **analyze tick ≠ invent Connected** · dual_write OFF · free eng **s1711**
 
 7. **Drift / maintain (s1534 P6 · report-only · s1707 dual-path next-step)** — config intent vs runtime snapshot.
    - Slash: `/setup drift` · `/setup maintain` (alias)
@@ -89,7 +89,7 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
    - After drift report (s1707 dual path · peer of s1686/s1699 · `SetupDriftNextStepLines` / `FormatDriftText`):
      - **TUI/session running** → `/setup repair plan` · `/setup repair apply --yes` (safe only) · `/setup reload` when MCP drift · optional `/setup pull|analyze start`
      - **Cold CLI / no session** → fix host/config · `iomesh setup preflight` · **restart `iomesh`** (CLI has **no** setup drift/repair/reload)
-     - dual_write OFF · package wire ≠ Connected · not Memory GA · free eng **s1707**
+     - dual_write OFF · package wire ≠ Connected · free eng **s1707**
    - After drift, optional guided repair (P7) — not automatic without explicit `--yes`
 
 8. **Guided repair (s1538 P7 · explicit --yes only · s1707 dual-path next-step)** — plan from drift · apply safe steps only.
@@ -102,14 +102,13 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
      - **TUI/session running** → re-run `/setup drift` · `/setup reload` after safe apply · optional pull/analyze
      - **Cold CLI / no session** → **restart `iomesh`** · `iomesh setup preflight` (CLI has **no** setup repair/reload)
      - repair apply ≠ invent Connected · dual_write never auto ON · package wire ≠ Connected · free eng **s1707**
-   - dual_write OFF · not Memory GA · package wire ≠ Connected
+   - dual_write OFF · package wire ≠ Connected
 
 ## Honesty locks (never violate)
 
 | Lock | Rule |
 |------|------|
 | dual_write OFF | Managed fragment + setup path never force dual_write ON |
-| not Memory GA | Preflight / init never stamp Memory GA |
 | catalog ≠ Connected | Setup PASS / probe_ok ≠ invent install Connected |
 | portal HITL | OAuth / INSTALL_STORE APPLY stay browser |
 | secrets env names only | `api_key_env` / `oauth_token_env` — no secret values in config |

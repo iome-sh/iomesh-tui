@@ -40,7 +40,7 @@ func TestMemoryExtractFacts_OfflineFailOpen(t *testing.T) {
 	if !strings.Contains(out, "unavailable") || !strings.Contains(out, "not connected") {
 		t.Fatalf("offline: %q", out)
 	}
-	if !strings.Contains(out, "not NLP") || !strings.Contains(out, "not Memory GA") {
+	if !strings.Contains(out, "not NLP") {
 		t.Fatalf("honesty: %q", out)
 	}
 	if !strings.Contains(out, "dual_write OFF") {

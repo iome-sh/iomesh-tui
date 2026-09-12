@@ -81,7 +81,7 @@ func TestFormatRequireSourcesCheck_MeshProvenanceAlongsideNewerPrivate(t *testin
 	if strings.Contains(out, "missing=mesh") || strings.Contains(out, "require-sources: miss") {
 		t.Fatalf("must not miss mesh: %q", out)
 	}
-	if !strings.Contains(out, "dual_write OFF") || !strings.Contains(out, "not Memory GA") {
+	if !strings.Contains(out, "dual_write OFF") {
 		t.Fatalf("honesty pin missing: %q", out)
 	}
 }

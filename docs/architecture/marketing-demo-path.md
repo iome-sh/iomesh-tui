@@ -1,6 +1,5 @@
 # Marketing demo path (local agent + local memory)
 
-**Serial:** free eng **s1590** · sales talk track **s1594** · GTM claim-support **s1598** · operator GTM boundary **s1602** · GTM wave 6 **s1606** · GTM wave 7 **s1610** · GTM wave 8 **s1614** · GTM wave 9 **s1618** · Python SDK peer **s1666**  
 **Audience:** demo hosts, sales eng, GTM video capture  
 **Operator surface:** `/onboard next marketing-demo`  
 **Aliases:** `marketing` · `sales-demo` · `demo-script` · `gtm-demo`
@@ -29,13 +28,13 @@ Slash: `/onboard next marketing-demo` (or any alias above).
 
 ---
 
-## Published pins (tip class · do not invent GA)
+## Published pins (tip class)
 
-| Piece | Published pin | Honesty |
+| Piece | Published pin | Notes |
 |-------|----------------|---------|
-| TUI (`iomesh-tui`) | **v1.3.6** | SemVer 1.0+ harness · not hosted Memory GA |
-| MCP host (`iomesh-memory-mcp`) | **v0.4.1** | Published tag · persist companion · extract (`memory_extract_facts`) · cite-both (`source_hint` + digest provenance/tags) · do not invent GA |
-| Memory kernel (`memory`) | **v1.5.11** | Local palace kernel · persist-onnx-vec opt-in default OFF · not hosted Memory GA |
+| TUI (`iomesh-tui`) | **v1.3.6** | SemVer 1.0+ harness · local MIT client |
+| MCP host (`iomesh-memory-mcp`) | **v0.4.1** | Published tag · persist companion · extract (`memory_extract_facts`) · cite-both (`source_hint` + digest provenance/tags) |
+| Memory kernel (`memory`) | **v1.5.11** | Local palace kernel · persist-onnx-vec opt-in default OFF |
 
 ## What you can show
 
@@ -45,16 +44,15 @@ Slash: `/onboard next marketing-demo` (or any alias above).
 - Mode A sticky: `/memory digest --require-sources mesh,private` (cite-both or explicit miss) + visible `/dashboard ack`  
 - Palace path printed after attach/ingest — buyer can `ls` without spelunking  
 - Air-gap fallback when portal HITL is blocked (local RCA + honest digest miss · no fake Connected)  
-- Kernel TTFH walking skeleton: [TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md) — `/memory ingest` three RCA turns (private overlay) then `/memory digest --require-sources mesh,private` (cite-both **or explicit miss**). Honest miss is success. Do not invent mesh. **E-G1 is not closed.**  
+- Kernel TTFH walking skeleton: [TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md) — `/memory ingest` three RCA turns (private overlay) then `/memory digest --require-sources mesh,private` (cite-both **or explicit miss**). Honest miss is success. Do not invent mesh.   
 
 ## What not to claim
 
 | Claim | Truth |
 |-------|--------|
-| Memory GA | **Not** Memory GA · local edge attach only |
-| Connected | Do **not** invent org install Connected |
-| dual_write ON | Default stays **OFF** |
-| book-demo ON | book-demo **OFF** |
+| Hosted memory | Local edge attach only · not hosted memory-as-a-service |
+| Connected | Catalog / plan is not org install Connected |
+| dual_write ON | Memory dual-write defaults **off** |
 | Mesh required | Mesh is **optional** |
 
 ---
@@ -65,7 +63,7 @@ Short spoken path for a **local agent + local memory** demo (follow the script a
 
 1. **Setup story** — “On your laptop: install `iomesh` **v1.3.6**, set an LLM key or Ollama, `/setup init` with local-memory (dual_write stays **OFF**), attach `iomesh-memory-mcp` **v0.4.1** (kernel **v1.5.11**; persist opt-in default **OFF**; `/memory extract` needs this host).”
 2. **The beat** — “Tell the agent something once; show `/memory` ingest and recall so it comes back from local storage — not a cloud CRM. The TUI prints the palace path — `ls` it.”
-3. **Mode A sticky** — “Run `/memory digest --require-sources mesh,private`. Cite both mesh + private, or say the miss out loud. Honest miss is success. Do not invent mesh. Miss is not known until `/dashboard ack` — no send, pay, or ship. Kernel walking skeleton: [TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md). **E-G1 is not closed.**”
+3. **Mode A sticky** — “Run `/memory digest --require-sources mesh,private`. Cite both mesh + private, or say the miss out loud. Honest miss is success. Do not invent mesh. Miss is not known until `/dashboard ack` — no send, pay, or ship. Kernel walking skeleton: [TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md). ”
 4. **Air-gap** — “If the portal is blocked, stay local. Local RCA on disk. Digest miss stays honest. Do not invent Connected.”
 5. **Claims guardrail** — Before customer-facing wording, check the private GTM **claims catalog** for what is demoable vs do-not-claim: [github.com/iome-sh/tool-marketing](https://github.com/iome-sh/tool-marketing) (private · operator-only · not customer docs).
 6. **Win-back / closed-lost** — Follow-ups are **sales process** (humans / HITL loops). The TUI does **not** auto-push CRM win-back or closed-lost sequences.
@@ -73,38 +71,38 @@ Short spoken path for a **local agent + local memory** demo (follow the script a
 8. **Publish path** — draft → human approve → Hermes handoff/bind is **operator** tooling; the TUI does **not** auto-post.
 9. **CRM** — Closed-loop metrics are recorded after human CRM actions — the TUI is **not** the CRM.
 
-### Operator GTM boundary (s1602 · s1606 · s1610 · s1614 · s1618)
+### Operator GTM boundary
 
 Where secrets and writes live — keep demos honest:
 
 - **Search Console credentials** stay on the **operator machine** (no secrets in git). Demos use offline exports / local tooling — not live API keys in the public TUI.
 - **Hermes exec** for publish runs **outside** the public TUI with operator-held secrets; the TUI does **not** hold social tokens and never auto-posts.
 - **CRM vendor adapters / metrics** are operator GTM (dry-run / human-gated stub). Commercial CRM writes stay **human** — the TUI is not the CRM of record.
-- **Hermes network dispatch** (s1606) is an **operator webhook / private runner** — not the public TUI. Secrets stay outside git and off the demo harness.
-- **HubSpot / Twenty CRM** paths (s1606) are **operator-box OAuth + human approve** — the TUI is not the CRM and does not mint or store CRM OAuth tokens.
+- **Hermes network dispatch** is an **operator webhook / private runner** — not the public TUI. Secrets stay outside git and off the demo harness.
+- **HubSpot / Twenty CRM** paths are **operator-box OAuth + human approve** — the TUI is not the CRM and does not mint or store CRM OAuth tokens.
 - **No social or CRM tokens** live in the public harness (TUI · OSS packaging · customer-facing demo path).
-- **Hermes dogfood** (s1610) uses an **operator mock / daemon** on the operator box — not the public TUI. The demo path is not a Hermes control plane.
-- **HubSpot dual control** (s1610): commercial HubSpot writes need **human approve + write allow flags** on the operator path — the TUI is not CRM and does not dual-control those writes.
-- **Sales-loop mesh outbox** (s1610) is **operator / local envelope wiring** — local outbox emit only. Do **not** invent mesh GTM fleet GA in the demo.
-- **Real Hermes daemon** (s1614) is **operator-run on the operator box** — the public TUI does **not** host or start it.
-- **Live HubSpot / Twenty writes** (s1614) need **dual control + tokens on the operator box** (default dry). The marketing-demo path stays **local agent + local memory** only.
-- **Operator GTM status** (s1614) is **private tooling** for operators — **not** a product dashboard claim.
-- **Scheduled GTM dogfood** (s1618) is **operator cron / offline tooling** — not the public TUI. The demo path is not a GTM scheduler.
-- **Mesh outbox ingest** (s1618) is **private broker when wired** (dry-run default) — the demo does **not** invent mesh GTM fleet GA.
-- **Smoke / status tools** (s1618 · e.g. `gtm_smoke`) are **private operator GTM** — **not** a customer dashboard.
+- **Hermes dogfood** uses an **operator mock / daemon** on the operator box — not the public TUI. The demo path is not a Hermes control plane.
+- **HubSpot dual control:** commercial HubSpot writes need **human approve + write allow flags** on the operator path — the TUI is not CRM and does not dual-control those writes.
+- **Sales-loop mesh outbox** is **operator / local envelope wiring** — local outbox emit only. Do **not** invent mesh GTM fleet GA in the demo.
+- **Real Hermes daemon** is **operator-run on the operator box** — the public TUI does **not** host or start it.
+- **Live HubSpot / Twenty writes** need **dual control + tokens on the operator box** (default dry). The marketing-demo path stays **local agent + local memory** only.
+- **Operator GTM status** is **private tooling** for operators — **not** a product dashboard claim.
+- **Scheduled GTM dogfood** is **operator cron / offline tooling** — not the public TUI. The demo path is not a GTM scheduler.
+- **Mesh outbox ingest** is **private broker when wired** (dry-run default) — the demo does **not** invent mesh GTM fleet GA.
+- **Smoke / status tools** (e.g. `gtm_smoke`) are **private operator GTM** — **not** a customer dashboard.
 
-Keep the demo local-first. Skip mesh unless the room already has it configured. Do not invent Memory GA, Connected, dual_write ON, book-demo ON, or mesh GTM fleet GA.
+Keep the demo local-first. Skip mesh unless the room already has it configured. Catalog list is not consume. Memory dual-write defaults off.
 
-### Optional mesh clients outside TUI (s1666)
+### Optional mesh clients outside TUI 
 
 The marketing-demo path stays **local agent + local memory** (script above unchanged). Operators or services that need mesh I/O from **custom code** (not the TUI harness) should use the public client SDKs:
 
-| Language | Repo | Honesty |
+| Language | Repo | Notes |
 |----------|------|---------|
 | **Go** | [iomesh-client-sdk-go](https://github.com/iome-sh/iomesh-client-sdk-go) | Official MIT full client surface |
 | **Python** | [iomesh-client-sdk-python](https://github.com/iome-sh/iomesh-client-sdk-python) | **Beta** · tip **v0.10.x** · **v0.10 ≠ invent 1.0** · **GitHub release ≠ invent PyPI green** |
 
-**iomesh-tui stays lean** (no Go SDK module dep · no Python SDK packaging). The marketing-demo script does **not** require either SDK. dual_write **OFF** · not Memory GA · book-demo **OFF** · MIT edge Beta.
+**iomesh-tui stays lean** (no Go SDK module dep · no Python SDK packaging). The marketing-demo script does **not** require either SDK. dual_write **OFF** · MIT edge Beta.
 
 ---
 
@@ -119,10 +117,10 @@ The marketing-demo path stays **local agent + local memory** (script above uncha
 | `/onboard next sales` | May claim / must not claim matrix |
 | [memory-edge-usage-demo.md](./memory-edge-usage-demo.md) | Longer runbook walkthrough |
 | [edge-user-journey.md](./edge-user-journey.md) | 7-stage product narrative SSOT |
-| Kernel TTFH | Walking skeleton · [TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md) · `/memory ingest` three RCA turns then cite-both **or explicit miss** · **E-G1 is not closed** |
+| Kernel TTFH | Walking skeleton · [TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md) · `/memory ingest` three RCA turns then cite-both **or explicit miss** |
 
 ---
 
-## Free-floor
+## Related
 
-free eng **s1590** · sales talk track **s1594** · GTM claim-support **s1598** · operator GTM boundary **s1602** · GTM wave 6 **s1606** · GTM wave 7 **s1610** · GTM wave 8 **s1614** · GTM wave 9 **s1618** · Python SDK peer **s1666** · free-floor peer **s1592+** / **s1666** peer mention only (do not rewrite free-floor ownership from this doc).
+Companion how-tos: [memory-edge-usage-demo.md](./memory-edge-usage-demo.md) · [edge-user-journey.md](./edge-user-journey.md) · [memory-mcp.md](./memory-mcp.md).

@@ -66,7 +66,7 @@ func WriteSetupManagedFragment(path, fragment string) error {
 	}
 	block := ManagedBegin + "\n" +
 		"# Owned by `iomesh setup` — re-run setup to refresh; edit outside this block freely.\n" +
-		"# dual_write OFF · not Memory GA · secrets via env refs only · catalog ≠ Connected\n" +
+		"# dual_write OFF · secrets via env refs only · catalog ≠ Connected\n" +
 		frag + "\n" +
 		ManagedEnd + "\n"
 

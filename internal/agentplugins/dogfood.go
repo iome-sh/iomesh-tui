@@ -10,7 +10,7 @@ import (
 // ResidualDogfoodHonesty is the residual-honest footer for `iomesh plugins dogfood` (s1357).
 // dogfood PASS ≠ invent Agent Plugins GA · dual_write OFF · Discover ≠ Connected ·
 // not Memory GA · PATH residual for binary · book-demo OFF.
-const ResidualDogfoodHonesty = "honesty: dogfood PASS ≠ invent Agent Plugins GA · dual_write OFF · Discover ≠ Connected · not Memory GA · PATH residual for binary · book-demo OFF"
+const ResidualDogfoodHonesty = "honesty: dogfood PASS ≠ invent Agent Plugins GA · dual_write OFF · Discover ≠ Connected · PATH residual for binary · book-demo OFF"
 
 // SamplePluginRelPaths returns the in-repo sample package paths relative to module root (s1357+s1478).
 // Order is stable: skills-only hello-iome, then product stdio-map iomesh-memory-mcp.
@@ -183,7 +183,7 @@ func SamplesSoftState(moduleRoot string) string {
 // ResidualSlashHonesty is the residual-honest footer for TUI /plugins slash (s1392).
 // Soft offline dogfood ≠ invent Agent Plugins GA · dual_write OFF · Discover ≠ Connected ·
 // not Memory GA · residual PASS ≠ live dogfood · package load ≠ Memory GA · book-demo OFF.
-const ResidualSlashHonesty = "honesty: soft offline dogfood ≠ invent Agent Plugins GA · dual_write OFF · Discover ≠ Connected · not Memory GA · residual PASS ≠ live dogfood · package load ≠ Memory GA · book-demo OFF · never invent install green / Connected / INSTALL_STORE APPLY"
+const ResidualSlashHonesty = "honesty: soft offline dogfood ≠ invent Agent Plugins GA · dual_write OFF · Discover ≠ Connected · residual PASS ≠ live dogfood · package load ≠ Memory GA · book-demo OFF · never invent install green / Connected / INSTALL_STORE APPLY"
 
 // PluginsNextStepLines residual-honest post /plugins list|validate|smoke|status (s1829).
 // Dual path after discover/validate/smoke: in-session setup continuum vs cold start.

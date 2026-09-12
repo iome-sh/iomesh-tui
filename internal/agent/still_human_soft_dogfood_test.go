@@ -83,7 +83,6 @@ func TestRunStillHumanApplySoftDogfood_SoftPass(t *testing.T) {
 		"book-demo OFF",
 		"leave ON_SIGNAL unset",
 		"dual_write OFF",
-		"not Memory GA",
 		"Edge Memory GA candidacy only",
 		"E10 Open",
 		"residual PASS ≠ invent Edge Memory GA declared",

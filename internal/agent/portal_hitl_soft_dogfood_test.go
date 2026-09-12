@@ -84,7 +84,6 @@ func TestRunPortalHITLSoftDogfood_SoftPass(t *testing.T) {
 		"template= ≠ install APPLY",
 		"dual_write OFF",
 		"book-demo OFF",
-		"not Memory GA",
 		"Edge Memory GA candidacy only",
 		"console.iome.sh/integrations",
 		"console.iome.sh/settings/agent",

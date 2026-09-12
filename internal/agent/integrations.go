@@ -77,7 +77,7 @@ func IntegrationsNextStepLines() []string {
 		"      browser HITL · plan ≠ APPLY · catalog ≠ Connected",
 		"      then if TUI/session running → /setup preflight · /setup reload · optional /onboard next portal-hitl",
 		"      else cold start → restart iomesh · iomesh setup preflight (CLI has no invent install green)",
-		"note: catalog ≠ Connected · template= ≠ install APPLY · dual_write OFF · not Memory GA · free eng s1727",
+		"note: catalog ≠ Connected · template= ≠ install APPLY · dual_write OFF · free eng s1727",
 	}
 }
 

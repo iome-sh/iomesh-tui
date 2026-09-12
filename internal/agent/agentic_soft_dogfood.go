@@ -102,7 +102,6 @@ var agenticListPlanSoftDogfoodNeedles = []string{
 	// Policy locks
 	"dual_write OFF",
 	"book-demo OFF",
-	"not Memory GA",
 	"residual PASS ≠ live dogfood",
 	"PASS ≠ live APPLY",
 	// Companion portal surfaces
@@ -152,7 +151,7 @@ func RunAgenticListPlanSoftDogfood() string {
 	b.WriteString("    · /integrations\n")
 	b.WriteString("  Honesty locks checked: list_plan_not_connected · portal_hitl_still · path_ready · residual_only\n")
 	b.WriteString("    · catalog ≠ Connected · template= ≠ install APPLY · agent MCP cannot write installs\n")
-	b.WriteString("    · list_org fail-open ≠ empty-as-none · dual_write OFF · book-demo OFF · not Memory GA\n")
+	b.WriteString("    · list_org fail-open ≠ empty-as-none · dual_write OFF · book-demo OFF\n")
 	b.WriteString("\n")
 	b.WriteString(fmt.Sprintf("  session marker: %s\n", label))
 	b.WriteString("  note: soft offline list/plan ≠ live dogfood · ≠ invent Connected · portal HITL still · list_org fail-open ≠ empty-as-none\n")
@@ -161,6 +160,6 @@ func RunAgenticListPlanSoftDogfood() string {
 	b.WriteString("  slash: /onboard next agentic dogfood (aliases soft|samples|offline|list-plan-soft) · bare /onboard next agentic stays board\n")
 	b.WriteString("  companion: /onboard portal mint/copy/probe · /integrations list|plan|status · /onboard next human-gates\n")
 	b.WriteString("\n")
-	b.WriteString("Locks: dual_write OFF · book-demo OFF · not Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · list_org fail-open ≠ empty-as-none · plan deep links = browser HITL only · template= ≠ install APPLY · agent MCP cannot write installs · portal HITL · list_plan_not_connected · portal_hitl_still · path_ready · residual_only · soft offline ≠ live dogfood · session soft ≠ live dogfood · rates ~$88/$119 optional · board/export evidence ≠ invent Connected · does not claim dual-auth live for list_org")
+	b.WriteString("Locks: dual_write OFF · book-demo OFF · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · list_org fail-open ≠ empty-as-none · plan deep links = browser HITL only · template= ≠ install APPLY · agent MCP cannot write installs · portal HITL · list_plan_not_connected · portal_hitl_still · path_ready · residual_only · soft offline ≠ live dogfood · session soft ≠ live dogfood · rates ~$88/$119 optional · board/export evidence ≠ invent Connected · does not claim dual-auth live for list_org")
 	return b.String()
 }

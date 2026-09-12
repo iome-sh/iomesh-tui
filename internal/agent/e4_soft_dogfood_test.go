@@ -80,7 +80,6 @@ func TestRunE4SoftDogfood_SoftPass(t *testing.T) {
 		"docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md",
 		"dual_write OFF",
 		"book-demo OFF",
-		"not Memory GA",
 		"Edge Memory GA candidacy only",
 		"residual PASS ≠ invent Edge Memory GA declared",
 		"E10 Open",

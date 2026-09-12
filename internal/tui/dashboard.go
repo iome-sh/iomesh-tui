@@ -21,7 +21,7 @@ const (
 )
 
 // DashboardHonestyOneLiner is the residual lock for /dashboard.
-const DashboardHonestyOneLiner = "no mock live rows · /dashboard preview is eval template not your org · catalog ≠ Connected · dual_write OFF · knowledge/analytics Beta · not Memory GA · demo feed ≠ fleet-GA · not live APPLY · unacked brief ≠ known"
+const DashboardHonestyOneLiner = "no mock live rows · /dashboard preview is eval template not your org · catalog ≠ Connected · dual_write OFF · knowledge/analytics Beta · demo feed ≠ fleet-GA · not live APPLY · unacked brief ≠ known"
 
 // DashboardBetaEmptyHonesty is shown when knowledge or analytics count is 0.
 // Empty pillars stay Beta — not GA. Do not invent events.

@@ -123,7 +123,7 @@ func BuildManagedFragment(profiles []Profile, opt InitOptions) (string, error) {
 	}
 
 	var b strings.Builder
-	b.WriteString("# setup lifecycle fragment — dual_write OFF · not Memory GA · secrets via env only\n")
+	b.WriteString("# setup lifecycle fragment — dual_write OFF · secrets via env only\n")
 	b.WriteString("# catalog ≠ Connected · portal HITL for OAuth/install · agent MCP cannot write installs\n\n")
 
 	// Features / MCP enable when any MCP-related profile
@@ -192,7 +192,7 @@ func BuildManagedFragment(profiles []Profile, opt InitOptions) (string, error) {
 			b.WriteString("allow_loopback = true\n")
 			b.WriteString("# HTTP MCP URL-only has no stdio -palace-root args.\n")
 			b.WriteString("# Set [memory] palace_root / IOMESH_MEMORY_PALACE_ROOT to match the MCP process -palace-root.\n")
-			b.WriteString("# Default ~/.iomesh/palace is residual if DNE · never invent Connected · not Memory GA.\n")
+			b.WriteString("# Default ~/.iomesh/palace is residual if DNE · never invent Connected.\n")
 		}
 		b.WriteString("mutating = true\n\n")
 
@@ -232,7 +232,7 @@ func BuildManagedFragment(profiles []Profile, opt InitOptions) (string, error) {
 			}
 			b.WriteString("]\n")
 		}
-		b.WriteString("# package map ≠ Connected · dual_write OFF · not Memory GA\n")
+		b.WriteString("# package map ≠ Connected · dual_write OFF\n")
 	}
 
 	return b.String(), nil
