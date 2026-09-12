@@ -140,7 +140,7 @@ Helper `OnboardNextStepLines()` (alias `MeshAgentOnboardingNextStepLines`) dual 
 - [setup-lifecycle.md](./setup-lifecycle.md) — `/setup` residual map  
 - [memory-mcp.md](./memory-mcp.md) — Edge OSS attach path  
 - [memory-edge-usage-demo.md](./memory-edge-usage-demo.md) — usage/demo walkthrough  
-- [../OPEN_SOURCE_AUDIT.md](../OPEN_SOURCE_AUDIT.md) — public launch audit checklist  
+- [../OPEN_SOURCE_AUDIT.md](../OPEN_SOURCE_AUDIT.md) — maintainer OSS process residual (not operator how-to; visibility already public)  
 - Root [README.md](../../README.md) — OSS / local-primary table + packaging pointer  
 - Skill `mesh-agent-onboarding` — operator continuum  
 - free eng **s1582** · free-floor peer **s1584+** mention only  

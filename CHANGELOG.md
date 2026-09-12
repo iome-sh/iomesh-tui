@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- **Public-docs hygiene:** `docs/OPEN_SOURCE_AUDIT.md` marked maintainer residual (visibility already public MIT; not a product spec / user guide). README and `docs/architecture/oss-packaging-boundary.md` qualify the audit link as maintainer residual. Drop “change visibility to Public” as a current instruction. Honesty locks unchanged (dual_write OFF · not Memory GA · catalog ≠ Connected). Pins stay TUI **v1.3.6** · MCP **v0.4.1** · memory **v1.5.11**.
+
 ## [1.3.6] — 2026-09-12
 
 Published pin honesty after #426 (kernel **v1.5.11** persist opt-in). Companion MCP **v0.4.1** · kernel **v1.5.11**. dual_write **OFF** · not Memory GA · catalog ≠ Connected · persist opt-in · do not invent GA.

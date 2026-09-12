@@ -285,7 +285,7 @@ Details: [docs/security.md](docs/security.md) · [docs/architecture/permissions.
 
 Index: **[docs/README.md](docs/README.md)** (architecture, MCP, ACP, TUI, mesh smoke, …).
 
-Open-source process: [CONTRIBUTING](CONTRIBUTING.md) · [SUPPORT](SUPPORT.md) · [RELEASING](RELEASING.md) · [CHANGELOG](CHANGELOG.md) · [docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md).
+Open-source process: [CONTRIBUTING](CONTRIBUTING.md) · [SUPPORT](SUPPORT.md) · [RELEASING](RELEASING.md) · [CHANGELOG](CHANGELOG.md). Maintainer OSS process residual (not operator docs; visibility already public MIT): [docs/OPEN_SOURCE_AUDIT.md](docs/OPEN_SOURCE_AUDIT.md).
 
 **Boundary reminder:** deep docs may mention optional mesh client behavior or residual serial stamps for maintainers. That is **edge/client documentation**, not a promise that this repository is the hosted multi-tenant mesh control plane.
 
