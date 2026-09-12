@@ -64,7 +64,7 @@ In-repo **product** dogfood package that **maps** public product edge Memory MCP
 
 - Path: [`examples/agent-plugins/iomesh-memory-mcp`](../../examples/agent-plugins/iomesh-memory-mcp)
 - `mcp.json`: server key `memory`, type `stdio`, command `iomesh-memory-mcp` (skill `iomesh-memory-local`)
-- Public install: `go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main` · **no GOPRIVATE**
+- Public install: `go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.1` · **no GOPRIVATE** (`@main` is tip of default branch, not a production pin)
 - Operator must put binary on **PATH**; connect is fail-open if missing
 - Mapped runtime name: `iomesh-memory-mcp-memory` (`<manifest.name>-<serverName>`)
 - Enable via opt-in `[plugins]` — see that package's [README](../../examples/agent-plugins/iomesh-memory-mcp/README.md)

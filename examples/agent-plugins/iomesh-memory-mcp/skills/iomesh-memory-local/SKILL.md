@@ -21,12 +21,13 @@ This skill is a **playbook only** — guidance text the agent may load when plug
 Both product edge repos are **public** — **no GOPRIVATE** / PAT required:
 
 ```bash
-# Product MCP host (preferred)
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main
+# Product MCP host (preferred published pin)
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.1
 # or: clone github.com/iome-sh/iomesh-memory-mcp && go build ./cmd/iomesh-memory-mcp
+# Tip of default branch, not a production pin: …iomesh-memory-mcp@main
 
-# Kernel module (public tip)
-go get github.com/iome-sh/memory@main
+# Kernel module (published pin)
+go get github.com/iome-sh/memory@v1.5.11
 ```
 
 Attach after install:
@@ -37,7 +38,7 @@ Attach after install:
 
 ## Operator checklist (dogfood)
 
-1. `go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main` — **no GOPRIVATE** · confirm `which iomesh-memory-mcp`.
+1. `go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.1` — **no GOPRIVATE** · confirm `which iomesh-memory-mcp`.
 2. Point `[plugins].dirs` at this package (see package `README.md`).
 3. Set `enabled = true` (opt-in only).
 4. Restart / reload the TUI session so skills catalog merge and plugin MCP map can see this package.

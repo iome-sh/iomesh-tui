@@ -41,7 +41,8 @@ This guide layers **requirements that improve Memory quality** for the TUI path.
 
 ```bash
 # Public install — no GOPRIVATE
-go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@main
+go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.1
+# Tip of default branch, not a production pin: …iomesh-memory-mcp@main
 
 mkdir -p ~/.iomesh/palace
 iomesh-memory-mcp \

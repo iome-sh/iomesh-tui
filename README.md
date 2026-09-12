@@ -40,7 +40,7 @@ iomesh setup preflight   # or in the TUI: /setup · dual_write stays OFF
 
 Do not sell the trio as hosted Memory GA. dual_write OFF. catalog ≠ Connected.
 
-- Local memory docs: [memory-mcp.md](docs/architecture/memory-mcp.md) · [setup-lifecycle.md](docs/architecture/setup-lifecycle.md) · [edge-user-journey.md](docs/architecture/edge-user-journey.md)
+- Local memory docs: [memory-mcp.md](docs/architecture/memory-mcp.md) · [setup-lifecycle.md](docs/architecture/setup-lifecycle.md) · [edge-user-journey.md](docs/architecture/edge-user-journey.md) · kernel TTFH walking skeleton: [TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md) (`/memory ingest` three RCA turns · `/memory digest --require-sources mesh,private` cite-both **or explicit miss** · honest miss is success · do not invent mesh · **E-G1 is not closed**)
 - Security model (local sandbox defaults): [SECURITY.md](SECURITY.md)
 - Packaging boundary (MIT vs private platform): [oss-packaging-boundary.md](docs/architecture/oss-packaging-boundary.md)
 
@@ -156,7 +156,7 @@ Local agent + local memory path (no invent Connected / Memory GA · dual_write d
 
 1. Set an LLM key (`DEEPSEEK_API_KEY` / `XAI_API_KEY` / …) **or** pin Ollama (`-m ollama-llama3.2`).
 2. Run the TUI: `./bin/iomesh` (or `iomesh` if installed).
-3. In-session setup: `/setup init` `local-memory` · `/setup preflight` · start `iomesh-memory-mcp` if needed · `/setup reload` (hot-swaps MCP **and** re-scans skills · package wire ≠ Connected). Cold CLI path: `iomesh setup init` → restart `iomesh` · `iomesh setup preflight` (CLI has **no** `setup reload` · free eng s1686). After preflight, same dual path is printed on the report (in-session `/setup reload` vs cold restart · free eng **s1699**).
+3. In-session setup: `/setup init` `local-memory` · `/setup preflight` · start `iomesh-memory-mcp` if needed · `/setup reload` (hot-swaps MCP **and** re-scans skills · package wire ≠ Connected). Cold CLI path: `iomesh setup init` → restart `iomesh` · `iomesh setup preflight` (CLI has **no** `setup reload`). After preflight, same dual path is printed on the report (in-session `/setup reload` vs cold restart).
 4. Offline maps when you want a residual-honest board (no MCP dial): `/onboard next journey` · `/onboard next setup` · `/onboard next wizard` · `/onboard next marketing-demo` · `/onboard next memory` (local-primary · mesh not first-run required). Optional peek at the landing heartbeat: `/dashboard preview` (eval template · `/dashboard` stays empty until consume · see [below](#dashboard-heartbeat-live-feed)).
 
 Optional: copy [`.env.example`](.env.example) for local env vars (iomesh reads the **process environment**; it does not auto-load `.env` files yet). Copy [`configs/config.example.toml`](configs/config.example.toml) to `~/.iomesh/config.toml` to customize.
