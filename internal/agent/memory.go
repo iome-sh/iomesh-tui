@@ -2874,10 +2874,14 @@ func extractFactsToolMissingErr(err error) bool {
 		return false
 	}
 	msg := strings.ToLower(err.Error())
+	// Do not treat "mcp tool error: memory_id … not found" as a missing tool.
+	if strings.Contains(msg, "memory_id") {
+		return false
+	}
 	if strings.Contains(msg, "mcp tool missing") || strings.Contains(msg, "unknown tool") {
 		return true
 	}
-	return strings.Contains(msg, "tool") && strings.Contains(msg, "not found")
+	return strings.Contains(msg, "tool not found")
 }
 
 func formatExtractFactsOffline(server, memoryID string) string {

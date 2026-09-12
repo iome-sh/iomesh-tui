@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"strings"
 	"testing"
@@ -50,6 +51,26 @@ func TestMemoryExtractFacts_OfflineFailOpen(t *testing.T) {
 	}
 	if strings.Contains(out, "facts: (none)") && !strings.Contains(out, "unavailable") {
 		t.Fatalf("must not invent empty-success: %q", out)
+	}
+}
+
+func TestExtractFactsToolMissingErr(t *testing.T) {
+	if extractFactsToolMissingErr(nil) {
+		t.Fatal("nil")
+	}
+	if !extractFactsToolMissingErr(fmt.Errorf("unknown tool memory_extract_facts")) {
+		t.Fatal("unknown tool")
+	}
+	if !extractFactsToolMissingErr(fmt.Errorf("mcp tool missing")) {
+		t.Fatal("mcp tool missing")
+	}
+	if !extractFactsToolMissingErr(fmt.Errorf("tool not found: memory_extract_facts")) {
+		t.Fatal("tool not found phrase")
+	}
+	// Live tool + missing parent must not look like a missing tool
+	// ("mcp tool error" contains "tool" and "memory_id not found" contains "not found").
+	if extractFactsToolMissingErr(fmt.Errorf(`mcp tool error: memory_id "mem_abc" not found`)) {
+		t.Fatal("memory_id not found must not be tool-missing")
 	}
 }
 
