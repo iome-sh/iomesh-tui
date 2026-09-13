@@ -10,6 +10,154 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/config"
 )
 
+func captureStderr(t *testing.T, fn func()) string {
+	t.Helper()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	old := os.Stderr
+	os.Stderr = w
+	fn()
+	_ = w.Close()
+	os.Stderr = old
+	var buf bytes.Buffer
+	_, _ = io.Copy(&buf, r)
+	return buf.String()
+}
+
+func usagePrimaryBlock(got string) string {
+	i := strings.Index(got, "Usage:")
+	j := strings.Index(got, "\nAdvanced")
+	if i < 0 {
+		return got
+	}
+	if j < 0 || j <= i {
+		return got[i:]
+	}
+	return got[i:j]
+}
+
+func TestPrintUsage_TTFHPrimaryAndAdvanced(t *testing.T) {
+	got := captureStderr(t, printUsage)
+	primary := usagePrimaryBlock(got)
+	for _, want := range []string{
+		"iomesh [flags]",
+		`iomesh --repl`,
+		`iomesh -p "prompt"`,
+		"iomesh setup init|preflight",
+		"iomesh memory ingest",
+		"iomesh mesh smoke",
+		"iomesh models | sessions | mcp | version",
+	} {
+		if !strings.Contains(primary, want) {
+			t.Fatalf("primary Usage missing %q:\n%s", want, primary)
+		}
+	}
+	for _, hide := range []string{
+		"iomesh memory pull",
+		"iomesh plugins",
+		"iomesh agent stdio",
+		"iomesh agent serve",
+		"iomesh mesh pub",
+		"iomesh mesh consumer",
+		"iomesh mesh wait",
+		"iomesh mesh status",
+		"iomesh mesh usage",
+		"iomesh memory ingest-dir",
+		"iomesh skills",
+	} {
+		if strings.Contains(primary, hide) {
+			t.Fatalf("primary Usage must not advertise %q:\n%s", hide, primary)
+		}
+	}
+	adv := got
+	if i := strings.Index(got, "\nAdvanced"); i >= 0 {
+		adv = got[i:]
+		if j := strings.Index(adv, "\nFlags:"); j >= 0 {
+			adv = adv[:j]
+		}
+	}
+	if !strings.Contains(adv, "Advanced") {
+		t.Fatalf("printUsage missing Advanced section:\n%s", got)
+	}
+	for _, want := range []string{
+		"iomesh mesh pub",
+		"iomesh mesh consumer create|delete|ack|nack",
+		"iomesh mesh wait",
+		"iomesh mesh status",
+		"iomesh mesh usage",
+		"iomesh memory pull",
+		"iomesh memory ingest-dir",
+		"iomesh plugins list|validate|smoke",
+		"iomesh agent stdio|serve",
+		"iomesh skills",
+	} {
+		if !strings.Contains(adv, want) {
+			t.Fatalf("Advanced missing %q:\n%s", want, adv)
+		}
+	}
+	if strings.Contains(got, "/gtm") || strings.Contains(got, "/plugins") {
+		t.Fatalf("printUsage must keep /gtm /plugins slash hidden:\n%s", got)
+	}
+}
+
+func TestReadmeCLIFence_TTFHPrimary(t *testing.T) {
+	b, err := os.ReadFile("../../README.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	readme := string(b)
+	start := strings.Index(readme, "## CLI")
+	if start < 0 {
+		t.Fatal("README missing ## CLI")
+	}
+	rest := readme[start:]
+	end := strings.Index(rest[4:], "\n## ")
+	if end < 0 {
+		t.Fatal("README CLI section has no following heading")
+	}
+	cli := rest[:end+4]
+	fenceStart := strings.Index(cli, "```text")
+	fenceEnd := strings.Index(cli, "```\n")
+	if fenceStart < 0 || fenceEnd <= fenceStart {
+		t.Fatalf("README ## CLI missing text fence:\n%s", cli)
+	}
+	// Fence body is between ```text and the closing ``` that follows it.
+	body := cli[fenceStart+len("```text") : fenceEnd]
+	primary := body
+	if i := strings.Index(body, "\nAdvanced:"); i >= 0 {
+		primary = body[:i]
+	}
+	for _, want := range []string{
+		"iomesh [flags]",
+		"iomesh --repl",
+		`iomesh -p "prompt"`,
+		"iomesh setup init|preflight",
+		"iomesh memory ingest",
+		"iomesh mesh smoke",
+		"iomesh models | sessions | mcp | version",
+	} {
+		if !strings.Contains(primary, want) {
+			t.Fatalf("README CLI primary missing %q:\n%s", want, primary)
+		}
+	}
+	if !strings.Contains(body, "Advanced: mesh consumer/pub · memory pull · plugins · agent serve") {
+		t.Fatalf("README CLI missing Advanced one-liner:\n%s", body)
+	}
+	for _, hide := range []string{
+		"iomesh memory pull",
+		"iomesh plugins",
+		"iomesh agent stdio",
+		"iomesh agent serve",
+		"iomesh skills",
+	} {
+		if strings.Contains(primary, hide) {
+			t.Fatalf("README CLI primary must not advertise %q:\n%s", hide, primary)
+		}
+	}
+}
+
 func TestCmdMemory_IngestDirUsage(t *testing.T) {
 	if code := cmdMemory([]string{}); code != 2 {
 		t.Fatalf("empty exit=%d want 2", code)
