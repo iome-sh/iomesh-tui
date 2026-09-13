@@ -47,6 +47,7 @@ func TestPrintUsage_TTFHPrimaryAndAdvanced(t *testing.T) {
 		`iomesh -p "prompt"`,
 		"iomesh setup init|preflight",
 		"iomesh memory ingest",
+		"iomesh ttfh [--unit]",
 		"iomesh mesh smoke",
 		"iomesh models | sessions | mcp | version",
 	} {
@@ -135,6 +136,7 @@ func TestReadmeCLIFence_TTFHPrimary(t *testing.T) {
 		`iomesh -p "prompt"`,
 		"iomesh setup init|preflight",
 		"iomesh memory ingest",
+		"iomesh ttfh",
 		"iomesh mesh smoke",
 		"iomesh models | sessions | mcp | version",
 	} {
@@ -155,6 +157,93 @@ func TestReadmeCLIFence_TTFHPrimary(t *testing.T) {
 		if strings.Contains(primary, hide) {
 			t.Fatalf("README CLI primary must not advertise %q:\n%s", hide, primary)
 		}
+	}
+}
+
+func captureStdout(t *testing.T, fn func()) string {
+	t.Helper()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	old := os.Stdout
+	os.Stdout = w
+	fn()
+	_ = w.Close()
+	os.Stdout = old
+	var buf bytes.Buffer
+	_, _ = io.Copy(&buf, r)
+	return buf.String()
+}
+
+func TestCmdTTFH_Unit(t *testing.T) {
+	t.Setenv("IOMESH_ENDPOINT", "")
+	t.Setenv("IOMESH_MEMORY_DUAL_WRITE", "")
+	t.Setenv("IOMESH_CONFIG", t.TempDir()+"/missing.toml")
+
+	var code int
+	got := captureStdout(t, func() {
+		code = cmdTTFH([]string{"--unit"})
+	})
+	if code != 0 {
+		t.Fatalf("cmdTTFH --unit exit=%d want 0", code)
+	}
+	if !strings.Contains(got, "time-to-first-heartbeat") && !strings.Contains(strings.ToLower(got), "ttfh") {
+		t.Fatalf("missing ttfh / time-to-first-heartbeat:\n%s", got)
+	}
+	for _, want := range []string{
+		"dual_write OFF",
+		"catalog ≠ Connected",
+		"EMPTY",
+		"knowledge Beta empty",
+		"/memory digest --require-sources mesh,private",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("cmdTTFH --unit missing %q:\n%s", want, got)
+		}
+	}
+	for _, bad := range []string{
+		"Connected: yes",
+		"dual_write ON",
+		"Memory GA shipped",
+		"analysis  ops 0",
+	} {
+		if strings.Contains(got, bad) {
+			t.Fatalf("cmdTTFH --unit must not invent %q:\n%s", bad, got)
+		}
+	}
+	if strings.Contains(got, "optional: iomesh mesh smoke") {
+		t.Fatalf("--unit must not print live mesh hint:\n%s", got)
+	}
+}
+
+func TestCmdTTFH_EndpointHintNoDial(t *testing.T) {
+	t.Setenv("IOMESH_ENDPOINT", "https://hooks.iome.sh")
+	t.Setenv("IOMESH_MEMORY_DUAL_WRITE", "")
+	t.Setenv("IOMESH_CONFIG", t.TempDir()+"/missing.toml")
+
+	var code int
+	got := captureStdout(t, func() {
+		code = cmdTTFH(nil)
+	})
+	if code != 0 {
+		t.Fatalf("cmdTTFH exit=%d want 0", code)
+	}
+	want := "optional: iomesh mesh smoke (fail-open · never invent Connected · PULSE only after ≥1 decoded broker message)"
+	if !strings.Contains(got, want) {
+		t.Fatalf("endpoint without --unit missing mesh hint:\n%s", got)
+	}
+	if strings.Contains(got, "Connected: yes") || strings.Contains(got, "dual_write ON") {
+		t.Fatalf("must not invent Connected / dual_write ON:\n%s", got)
+	}
+}
+
+func TestCmdTTFH_BadFlags(t *testing.T) {
+	if code := cmdTTFH([]string{"--nope"}); code != 2 {
+		t.Fatalf("unknown flag exit=%d want 2", code)
+	}
+	if code := cmdTTFH([]string{"live"}); code != 2 {
+		t.Fatalf("unknown arg exit=%d want 2", code)
 	}
 }
 

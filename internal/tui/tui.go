@@ -956,6 +956,17 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 					lane := strings.ToLower(parts[2])
 					switch lane {
 					case "ttfh", "time-to-first-heartbeat", "cite-both":
+						// Bare /onboard next ttfh stays the board. Extra dogfood|soft|samples|offline|residual-check
+						// prints the same offline unit report as iomesh ttfh --unit (walk + EMPTY snapshot).
+						if len(parts) >= 4 {
+							sub := strings.ToLower(parts[3])
+							switch sub {
+							case "dogfood", "soft", "samples", "offline", "residual-check":
+								fmt.Fprintln(out, FormatTTFHUnitReport())
+								fmt.Fprintln(out, "— residual: I/O Mesh TTFH offline smoke · dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · empty until consume · CLIENT ≠ PULSE · no broker dial")
+								return false, nil
+							}
+						}
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextTTFHLane())
 						fmt.Fprintln(out, "— residual: I/O Mesh TTFH · dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · empty until consume · CLIENT ≠ PULSE · miss is success · no send/pay/ship")
 						return false, nil

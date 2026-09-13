@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
+
+	"github.com/iome-sh/iomesh-tui/internal/agent"
 )
 
 // Landing-page MeshConsole parity (iome.sh heartbeat live feed).
@@ -497,6 +499,38 @@ func (d *dashboardState) renderTools(th Theme, width int) string {
 
 func formatDashboardSnapshot(meshAttached bool, focus string) string {
 	return formatDashboardSnapshotMode(meshAttached, focus, false)
+}
+
+// FormatDashboardSnapshot is the REPL-style dashboard snapshot (empty until consume).
+// meshAttached=false is EMPTY — no broker probe, no invented PULSE.
+func FormatDashboardSnapshot(meshAttached bool, focus string) string {
+	return formatDashboardSnapshot(meshAttached, focus)
+}
+
+// FormatTTFHUnitReport is the offline TTFH smoke: walk + EMPTY dashboard honesty.
+// Never dials the broker. Never invents Connected, Memory GA, PULSE, or live APPLY.
+func FormatTTFHUnitReport() string {
+	var b strings.Builder
+	b.WriteString(agent.MeshAgentOnboardingNextTTFHLane())
+	b.WriteString("\n\n")
+	snap := formatDashboardSnapshot(false, "")
+	b.WriteString(snap)
+	out := b.String()
+	for _, lock := range []string{
+		"EMPTY",
+		"empty until consume",
+		"dual_write OFF",
+		"catalog ≠ Connected",
+		"knowledge Beta empty",
+		"CLIENT ≠ PULSE",
+	} {
+		if !strings.Contains(out, lock) {
+			b.WriteByte('\n')
+			b.WriteString(lock)
+			out = b.String()
+		}
+	}
+	return strings.TrimRight(b.String(), "\n")
 }
 
 func formatDashboardSnapshotMode(meshAttached bool, focus string, preview bool) string {
