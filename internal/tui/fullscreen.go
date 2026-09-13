@@ -155,7 +155,7 @@ func newFullscreenModel(ctx context.Context, cancel context.CancelFunc, rt *agen
 	}
 
 	ta := textarea.New()
-	ta.Placeholder = "message or /help  ·  enter send · ctrl+j newline · /dashboard · /theme"
+	ta.Placeholder = "/setup preflight  ·  /memory ingest  ·  /dashboard  ·  /help"
 	ta.Focus()
 	ta.CharLimit = 32 * 1024
 	ta.SetWidth(80)
@@ -183,13 +183,14 @@ func newFullscreenModel(ctx context.Context, cancel context.CancelFunc, rt *agen
 		input:  ta,
 		status: "ready",
 	}
-	m.appendLine(m.theme.Title.Render("iomesh-tui") + "  " + m.theme.Dim.Render("fullscreen · multi-line · theme="+th.Name))
+	m.appendLine(m.theme.Title.Render("iomesh-tui") + "  " + m.theme.Dim.Render("I/O Mesh TTFH · empty until consume"))
 	m.appendLine(m.theme.Status.Render(fmt.Sprintf("workspace %s", rt.Workspace().Root())))
 	if sid := rt.SessionID(); sid != "" {
 		m.appendLine(m.theme.Status.Render("session " + sid))
 	}
 	m.appendLine(m.theme.Status.Render(fmt.Sprintf("model %s  ·  mutating tools prompt y/n/a unless --yolo", displayModel(rt.Router()))))
-	m.appendLine(m.theme.Help.Render("keys: enter send · ctrl+j newline · pgup/pgdn · /dashboard · /theme · ctrl+c quit"))
+	m.appendLine(m.theme.Help.Render("TTFH: /setup preflight · /memory ingest · /dashboard (empty until consume) · /onboard next ttfh · iomesh ttfh --unit"))
+	m.appendLine(m.theme.Dim.Render("dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected"))
 	m.appendLine("")
 	return m
 }
@@ -703,8 +704,12 @@ func (m *fullscreenModel) renderFooter() string {
 	if m.rt != nil {
 		ws = truncate(m.rt.Workspace().Root(), 40)
 	}
-	meta := m.theme.Dim.Render(fmt.Sprintf("%s  ·  %s  ·  enter send · ctrl+j ⏎", ws, m.status))
-	return sep + "\n" + m.input.View() + "\n" + meta
+	meta := fmt.Sprintf("%s  ·  %s  ·  enter send · ctrl+j ⏎", ws, m.status)
+	const ttfhHint = " · /onboard next ttfh"
+	if m.width <= 0 || lipgloss.Width(meta)+lipgloss.Width(ttfhHint) <= m.width {
+		meta += ttfhHint
+	}
+	return sep + "\n" + m.input.View() + "\n" + m.theme.Dim.Render(meta)
 }
 
 // ensure fullscreenModel implements tea.Model.
