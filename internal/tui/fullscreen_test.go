@@ -72,6 +72,37 @@ func TestFullscreenModel_WindowSizeAndView(t *testing.T) {
 	}
 }
 
+func TestFullscreenModel_TTFHFirstRunChrome(t *testing.T) {
+	rt := fsTestRuntime(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	m := newFullscreenModel(ctx, cancel, rt, nil, nil, UIOptions{})
+
+	joined := strings.Join(m.lines, "\n")
+	if !strings.Contains(joined, "TTFH") && !strings.Contains(joined, "/setup preflight") {
+		t.Fatalf("first-run chrome missing TTFH next-action:\n%s", joined)
+	}
+	if !strings.Contains(joined, "/setup preflight") {
+		t.Fatalf("missing /setup preflight:\n%s", joined)
+	}
+	if !strings.Contains(joined, "/memory ingest") {
+		t.Fatalf("missing /memory ingest:\n%s", joined)
+	}
+	if !strings.Contains(joined, "/dashboard") {
+		t.Fatalf("missing /dashboard:\n%s", joined)
+	}
+	ph := m.input.Placeholder
+	if !strings.Contains(ph, "/setup preflight") && !strings.Contains(ph, "/memory ingest") {
+		t.Fatalf("placeholder missing TTFH next-action: %q", ph)
+	}
+	if strings.Contains(joined, "Connected: yes") || strings.Contains(joined, "dual_write ON") {
+		t.Fatalf("first-run chrome invented Connected/dual_write ON:\n%s", joined)
+	}
+	if strings.Contains(ph, "Connected: yes") || strings.Contains(ph, "dual_write ON") {
+		t.Fatalf("placeholder invented Connected/dual_write ON: %q", ph)
+	}
+}
+
 func TestFullscreenModel_SlashQuit(t *testing.T) {
 	rt := fsTestRuntime(t)
 	ctx, cancel := context.WithCancel(context.Background())
