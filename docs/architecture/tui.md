@@ -68,13 +68,13 @@ Landing-page MeshConsole chrome, in the TUI (`/dashboard`, aliases `/heartbeat` 
 ● context://mesh · no live heartbeat · consume missing · sre.incidents     EMPTY
 ──────────────── pulse ────────────────────────────────────────
 ▁▁▂█▃▁▁▁▂█▃▁▁▁
-analysis  ops 0 · knowledge 0 · analytics 0  ·  Beta
-knowledge Beta empty · analytics Beta empty · not GA
+compose  pulse: this feed · empty until consume
 Heartbeat
 no consumed messages · mock eval rows hidden
 next: add [iomesh] endpoint="https://hooks.iome.sh" · then consume GitHub
 portal MCP (apiv1.iome.sh/v7/mcp) is catalog — streams are hooks.iome.sh
 or infer from portal MCP · infer ≠ Connected · do not invent consume
+knowledge Beta empty · analytics Beta empty · not GA
 ```
 
 - REPL `/dashboard` (no args): empty snapshot; **probe** if a mesh client is attached (`ListStreams` then `ListStreamMessages` on the first 4 names — same path as `iomesh mesh streams --messages` / broker `GET /v1/streams/{name}/messages`). **Not** portal `GET /v52` (cookie-only).
@@ -83,7 +83,7 @@ or infer from portal MCP · infer ≠ Connected · do not invent consume
 - Fail-open reasons: `no_streams` · `empty_stream` · `replay_disabled` · `broker_unavailable`. Errors → empty + reason, never the eval seed.
 - **PULSE**-shaped rows only when ≥1 broker message was decoded. Never invent PULSE from eval or from a stream list alone. Create stream ≠ PULSE. Mesh pub is ephemeral and does not fill `/dashboard`.
 - Badge **EMPTY** (no mesh, no consume) / **CLIENT** (mesh attached, no consumed rows) / **PULSE** (≥1 decoded message) / **EVAL** (`/dashboard preview` only).
-- Knowledge / analytics stay **Beta**. Empty knowledge or analytics adds `knowledge Beta empty · analytics Beta empty · not GA`. `catalog ≠ Connected`. `dual_write OFF`. Not Memory GA. Not live APPLY. Kind from subject ≠ GA.
+- Knowledge / analytics stay **Beta**. Empty knowledge or analytics adds `knowledge Beta empty · analytics Beta empty · not GA`. Default EMPTY (no consume, including CLIENT with no messages) is heartbeat-only: no `analysis  ops 0` count row and no Ops Pack pull/insights/decision compose — that honesty lives in the footer. Preview/PULSE still show kind counts. `catalog ≠ Connected`. `dual_write OFF`. Not Memory GA. Not live APPLY. Kind from subject ≠ GA.
 - **Brief ACK (#371):** compose strip shows `brief: UNREAD` until `/dashboard ack`. Unacked ≠ known (fail-open). Optional local palace write (`brief-ack.json` beside user config). ACK does not send/pay/ship.
 - **Market-telling / voc_brief (#372):** `/gtm brief` writes a named palace artifact (`source=agent-brief`, tenant `gtm/founder`) — local palace SoR, not a git file. Ledger: shipped / moved / killed vs falsified + contradiction vs yesterday. Cadence `daily|weekly|on_threshold` (daily refused below volume floor). One RevOps support-theme recipe, same metadata as incidents, ≤3 first-party sources. dual_write OFF · not Memory GA · no Slack persist · CRM ≠ Connected. Hands (win-back, price change) stay off this plane.
 

@@ -24,10 +24,12 @@ const (
 const DashboardHonestyOneLiner = "no mock live rows · /dashboard preview is eval template not your org · catalog ≠ Connected · dual_write OFF · knowledge/analytics Beta · demo feed ≠ fleet-GA · not live APPLY · unacked brief ≠ known"
 
 // DashboardBetaEmptyHonesty is shown when knowledge or analytics count is 0.
+// On EMPTY (no preview, no events) it lives in the footer, not as a fake analysis row.
 // Empty pillars stay Beta — not GA. Do not invent events.
 const DashboardBetaEmptyHonesty = "knowledge Beta empty · analytics Beta empty · not GA"
 
 // Compose already-shipped paths onto /dashboard (pulse, entitled pull, insights, human decision).
+// EMPTY is pulse + brief only (TTFH heartbeat-first). Preview/PULSE keep kind counts + full compose.
 // No new backends. Pull uses iomesh memory pull. Insights use /memory digest.
 // Decision stub never auto-applies. Brief ACK (#371): unread ≠ known; no send/pay/ship.
 const (
@@ -291,18 +293,27 @@ func (d *dashboardState) Render(th Theme, width int) string {
 	rule := th.Dim.Render(strings.Repeat("─", width))
 	spark := th.Mesh.Render(pulseSpark(width, d.phase))
 
+	// True EMPTY (including CLIENT with no messages): heartbeat-only — no 0-count analysis row,
+	// no Ops Pack pull/insights/decision. Preview and PULSE still classify kinds.
+	emptyHeartbeat := !d.Preview && len(d.Events) == 0
+
 	opsN, knN, anN := d.kindCounts()
-	analysis := th.Dim.Render(fmt.Sprintf(
-		"analysis  ops %d · knowledge %d · analytics %d  ·  knowledge/analytics Beta",
-		opsN, knN, anN,
-	))
-	if knN == 0 || anN == 0 {
-		analysis += "\n" + th.Dim.Render(DashboardBetaEmptyHonesty)
+	analysis := ""
+	if !emptyHeartbeat {
+		analysis = th.Dim.Render(fmt.Sprintf(
+			"analysis  ops %d · knowledge %d · analytics %d  ·  knowledge/analytics Beta",
+			opsN, knN, anN,
+		))
+		if knN == 0 || anN == 0 {
+			analysis += "\n" + th.Dim.Render(DashboardBetaEmptyHonesty)
+		}
 	}
 	compose := th.Dim.Render("compose  " + DashboardComposePulse)
-	compose += "\n" + th.Dim.Render(DashboardComposePull)
-	compose += "\n" + th.Dim.Render(DashboardComposeInsights)
-	compose += "\n" + th.Dim.Render(DashboardComposeDecision)
+	if !emptyHeartbeat {
+		compose += "\n" + th.Dim.Render(DashboardComposePull)
+		compose += "\n" + th.Dim.Render(DashboardComposeInsights)
+		compose += "\n" + th.Dim.Render(DashboardComposeDecision)
+	}
 	briefStatus := d.BriefAck
 	if briefStatus == "" {
 		briefStatus = loadBriefAckStatus()
@@ -323,8 +334,16 @@ func (d *dashboardState) Render(th Theme, width int) string {
 	} else if d.MeshAttached {
 		honesty = th.Dim.Render("mesh client attached · no mock live rows · /dashboard preview for eval template · " + DashboardHonestyOneLiner)
 	}
+	if emptyHeartbeat {
+		honesty = th.Dim.Render(DashboardBetaEmptyHonesty) + "\n" + honesty
+	}
 
-	return strings.Join([]string{header, rule, spark, analysis, compose, rule, body, rule, honesty}, "\n")
+	parts := []string{header, rule, spark}
+	if analysis != "" {
+		parts = append(parts, analysis)
+	}
+	parts = append(parts, compose, rule, body, rule, honesty)
+	return strings.Join(parts, "\n")
 }
 
 func (d *dashboardState) renderBody(th Theme, width int) string {

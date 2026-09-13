@@ -36,10 +36,6 @@ func TestDashboardSnapshot_LandingParityAndHonesty(t *testing.T) {
 		"eval template",
 		DashboardBetaEmptyHonesty,
 		DashboardComposePulse,
-		DashboardComposePull,
-		DashboardComposeInsights,
-		DashboardComposeDecision,
-		"never auto-applies",
 		DashboardComposeBriefUnread,
 		"unacked brief ≠ known",
 	}
@@ -49,6 +45,10 @@ func TestDashboardSnapshot_LandingParityAndHonesty(t *testing.T) {
 		}
 	}
 	for _, bad := range []string{
+		"analysis  ops 0",
+		DashboardComposePull,
+		DashboardComposeInsights,
+		DashboardComposeDecision,
 		"Memory GA shipped",
 		"Connected workspace",
 		"live APPLY green",
@@ -66,7 +66,8 @@ func TestDashboardSnapshot_LandingParityAndHonesty(t *testing.T) {
 func TestDashboardCompose_SmokeNeverAutoApplies(t *testing.T) {
 	setupBriefAck(t)
 
-	out := formatDashboardSnapshot(false, "")
+	// Preview/PULSE keep Ops Pack compose; EMPTY is heartbeat-only.
+	out := formatDashboardSnapshotMode(false, "", true)
 	if !strings.Contains(out, DashboardComposePulse) {
 		t.Fatalf("compose smoke missing pulse:\n%s", out)
 	}
@@ -96,7 +97,7 @@ func TestDashboardCompose_SmokeNeverAutoApplies(t *testing.T) {
 func TestDashboardCompose_DigestInsightsStayExistingPath(t *testing.T) {
 	setupBriefAck(t)
 
-	out := formatDashboardSnapshot(false, "")
+	out := formatDashboardSnapshotMode(false, "", true)
 	if !strings.Contains(out, "/memory digest") {
 		t.Fatalf("compose insights must keep /memory digest:\n%s", out)
 	}
@@ -122,6 +123,12 @@ func TestDashboardSnapshot_MeshAttachedLabel(t *testing.T) {
 	}
 	if strings.Contains(out, "P2 opened") {
 		t.Fatalf("default attached view must not show mock eval rows:\n%s", out)
+	}
+	if strings.Contains(out, "analysis  ops 0") {
+		t.Fatalf("CLIENT with no messages must not render analysis count row:\n%s", out)
+	}
+	if strings.Contains(out, DashboardComposePull) {
+		t.Fatalf("CLIENT with no messages must not render Ops Pack pull:\n%s", out)
 	}
 }
 
@@ -236,6 +243,12 @@ func TestDashboardPreview_OptInEvalTemplate(t *testing.T) {
 	}
 	if !strings.Contains(out, "not your org") {
 		t.Fatalf("preview missing not-your-org honesty:\n%s", out)
+	}
+	if !strings.Contains(out, "analysis  ops 3") {
+		t.Fatalf("preview must keep kind counts:\n%s", out)
+	}
+	if !strings.Contains(out, DashboardComposePull) {
+		t.Fatalf("preview must keep Ops Pack pull compose:\n%s", out)
 	}
 }
 
