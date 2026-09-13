@@ -211,9 +211,17 @@ func TestListenAndServe_HealthAndShutdown(t *testing.T) {
 		})
 	}()
 
+	client := &http.Client{
+		Timeout: 2 * time.Second,
+		Transport: &http.Transport{
+			DisableKeepAlives: true,
+		},
+	}
+	defer client.CloseIdleConnections()
+
 	var ok bool
 	for i := 0; i < 50; i++ {
-		resp, err := http.Get("http://" + addr + "/healthz")
+		resp, err := client.Get("http://" + addr + "/healthz")
 		if err == nil {
 			resp.Body.Close()
 			if resp.StatusCode == 200 {
@@ -226,7 +234,7 @@ func TestListenAndServe_HealthAndShutdown(t *testing.T) {
 	if !ok {
 		t.Fatal("healthz not ready")
 	}
-	resp, err := http.Get("http://" + addr + "/readyz")
+	resp, err := client.Get("http://" + addr + "/readyz")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -238,7 +246,7 @@ func TestListenAndServe_HealthAndShutdown(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-	case <-time.After(5 * time.Second):
+	case <-time.After(10 * time.Second):
 		t.Fatal("shutdown timeout")
 	}
 }

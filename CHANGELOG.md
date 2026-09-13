@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- **Go 1.27.0:** Align `go.mod` / CI matrix with memory + iomesh-memory-mcp. README install puts `$(go env GOPATH)/bin` on `PATH` so `iomesh` is found after `go install`. Published pin stays **v1.3.7** (that tag still declares `go 1.26.6`; `GOTOOLCHAIN=auto` still works).
 - **README for OSS newcomers:** Hero is one paragraph + MIT trio pins + three install lines; product-boundary table once; dashboard eval-template showcase unchanged.
 
 ## [1.3.7] — 2026-09-12

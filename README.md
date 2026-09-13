@@ -23,9 +23,13 @@
 | [iomesh-memory-mcp](https://github.com/iome-sh/iomesh-memory-mcp) | **v0.4.2** ([GitHub Release](https://github.com/iome-sh/iomesh-memory-mcp/releases/tag/v0.4.2)) | MCP host over the kernel |
 
 ```bash
+# Requires Go 1.27+ (same as memory + iomesh-memory-mcp; see go.mod).
+# go install writes to $(go env GOPATH)/bin — not your current directory.
+export PATH="$(go env GOPATH)/bin:${PATH}"
 go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.3.7
 go install github.com/iome-sh/iomesh-memory-mcp/cmd/iomesh-memory-mcp@v0.4.2
 # kernel is a Go module consumed by the MCP host: github.com/iome-sh/memory@v1.5.12
+iomesh setup preflight   # or in the TUI: /setup · dual_write stays OFF
 ```
 
 ## Table of contents
@@ -87,7 +91,7 @@ Optional mesh client docs (broker you run or subscribe to): [mesh smoke](docs/ar
 
 ## Quick start
 
-**Requirements:** Go version in [go.mod](go.mod) (CI uses that toolchain).
+**Requirements:** **Go 1.27+** (same as [memory](https://github.com/iome-sh/memory) + [iomesh-memory-mcp](https://github.com/iome-sh/iomesh-memory-mcp); see [go.mod](go.mod)). CI uses that toolchain (`GOTOOLCHAIN=auto`).
 
 ```bash
 # From source
@@ -97,6 +101,7 @@ make build
 
 # Or install a released version (Go toolchain)
 go install github.com/iome-sh/iomesh-tui/cmd/iomesh@v1.3.7
+export PATH="$(go env GOPATH)/bin:${PATH}"  # same as the Local MIT trio fence; go install writes here, not cwd
 # Pin matches latest known tag at docs write; GitHub Releases may be newer — see RELEASING.md
 # Multi-platform archives: GitHub Releases (GoReleaser on v* tags)
 # @latest is the latest semver tag (same as the pin above today), not untagged main
