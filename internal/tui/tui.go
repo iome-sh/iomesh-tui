@@ -310,7 +310,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 	case "/memory", "/mem":
 		if len(parts) < 2 {
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
-			fmt.Fprintln(out, "usage: /memory [recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | digest [--window day|week] [--horizon ops|knowledge|analytical|all] [--limit N] [--require-sources mesh,private] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | trigger-compact --i-confirm | semantic [query|--query ...] [--limit N] | ingest-event --subject <id> --content <text> [--event-time|--session-id|--session-seq|--severity|--source-stream] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | ingest <text> | extract [--id] <memory_id> | ingest-dir <path> [--dry-run] [--limit N] | status]")
+			fmt.Fprintln(out, "usage: /memory [ingest <text> | digest [--require-sources mesh,private] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | status | recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | trigger-compact --i-confirm | semantic [query|--query ...] [--limit N] | ingest-event --subject <id> --content <text> [--event-time|--session-id|--session-seq|--severity|--source-stream] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | extract [--id] <memory_id> | ingest-dir <path> [--dry-run] [--limit N]]")
 			fmt.Fprintln(out, agent.ModeADigestStickyHelp)
 			// s1831: residual-honest dual-path next-step after bare /memory help.
 			for _, line := range agent.MemoryNextStepLines() {
@@ -955,6 +955,10 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 				if len(parts) >= 3 {
 					lane := strings.ToLower(parts[2])
 					switch lane {
+					case "ttfh", "time-to-first-heartbeat", "cite-both":
+						fmt.Fprintln(out, agent.MeshAgentOnboardingNextTTFHLane())
+						fmt.Fprintln(out, "— residual: I/O Mesh TTFH · dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · empty until consume · CLIENT ≠ PULSE · miss is success · no send/pay/ship")
+						return false, nil
 					case "plugins", "plugin", "smoke", "dogfood":
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextPluginsLane())
 						fmt.Fprintln(out, "— residual: plugins smoke lane · dual_write OFF · plugins dogfood ≠ Agent Plugins GA · plugins smoke ≠ invent Agent Plugins GA · residual PASS ≠ live dogfood · package load ≠ Memory GA · portal HITL")
@@ -1164,29 +1168,27 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 						fmt.Fprintln(out, "— residual: next lane status export receipt · evidence_kind=onboard_next_lane_status_export · offline_static · not_live_dogfood · s1387 · session soft ≠ live dogfood · streams_not_probed · pull_not_probed · list_plan_not_connected · board/export evidence ≠ invent Connected · dual_write OFF · mesh ≠ memory · agentic tip /onboard next agentic · human-gates tip /onboard next human-gates")
 						return false, nil
 					default:
-						// Unknown next sub → overview + usage hint listing lanes.
+						// Unknown next sub → TTFH overview + short hidden-lane hint.
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextLanes())
-						fmt.Fprintln(out, "— residual: post-onboard next lanes · dual_write OFF · plugins dogfood ≠ Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · mesh ≠ memory · portal HITL · board/export evidence ≠ invent Connected · pull_not_probed · list_plan_not_connected · setup_not_probed · PASS ≠ invent human-gate green · Edge Memory GA candidacy only · free eng s1558 · free eng s1562 · free eng s1566 · free eng s1570 · free eng s1574 · free eng s1578 · free eng s1582 · free eng s1586 · free eng s1590 · OSS packaging residual · E10 Open reaffirm · marketing demo path")
-						fmt.Fprintln(out, "— packaging: "+agent.OSSPackagingHonestyOneLiner)
-						fmt.Fprintln(out, "usage: /onboard next [plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|e4|tool-call|e10|planes|sales|demo|marketing-demo|operator|setup|journey|wizard|status|export|human-gates]  (Edge OSS path: setup|journey|wizard|memory|e4|portal-hitl|marketing-demo · Platform residual honesty optional residual-check: human-gates|tool-call|e10 · soft residual-check = offline residual honesty · slash dogfood kept for compatibility; lane aliases: plugins→plugin|dogfood · gtm→drafts · memory→mcp|palace · mesh→stream|streams|heartbeat|heartbeats|pull · memory-pull→ops-pack|pull-path|memorypull|ops_pack · agentic→agentic-integrations|integrations|list-plan · portal-hitl→hitl|portal_hitl|portal-dogfood|stage5|connectors-hitl · e4→e4-dogfood|client-attach|edge-memory-e4|e4_attach · tool-call→tool-calls|deeper-e4|e4-tools|ingest-retrieve|tool_call · e10→e10-open|edge-memory-e10|ga-signoff|e10_open · planes→three-planes|product-planes|product|pillars|three_planes · sales→claims|buyer|claim-matrix|sales-claims|buyer-claims · demo→demo-ready|readiness|demo-readiness|lighthouse|landgrab · marketing-demo→marketing|sales-demo|demo-script|gtm-demo · operator→operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix · setup→setup-lifecycle|lifecycle|setup_lifecycle · journey→edge-journey|user-journey|first-run|edge_user_journey · wizard→first-run-wizard|guided|wave-c|wave_c|wizard-residual · status→pulse|board · export→receipt|stamp|evidence · human-gates→human|gates|apply-gates|still-human|apply-residual; soft residual-check dogfood: tool-call dogfood|soft|samples|offline|tool-call-soft · e10 dogfood|soft|samples|offline|e10-soft|residual-check · human-gates dogfood|soft|samples|offline|still-human-soft|apply-soft; parent aliases after|continue|lanes; export json for JSON receipt; pulse stays status board; bare pull stays mesh; bare mcp stays memory; bare portal stays portal handoff; product/planes stay three-planes; landgrab stays Landgrab NOT READY honesty; readiness/lighthouse stay demo board; bare demo stays demo readiness · marketing-demo is the plain-language demo script)")
+						fmt.Fprintln(out, "— residual: I/O Mesh TTFH · dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · empty until consume · CLIENT ≠ PULSE")
+						fmt.Fprintln(out, "usage: /onboard next [ttfh|setup|memory|mesh]  (aliases time-to-first-heartbeat|cite-both; dashboard/digest via /dashboard · /memory digest)")
+						fmt.Fprintln(out, agent.MeshAgentOnboardingLegacyHiddenOneLiner)
 						return false, nil
 					}
 				}
 				fmt.Fprintln(out, agent.MeshAgentOnboardingNextLanes())
-				fmt.Fprintln(out, "— residual: post-onboard next lanes · dual_write OFF · plugins dogfood ≠ Agent Plugins GA · drafts only · no auto-send · package load ≠ Memory GA · mesh ≠ memory · portal HITL · board/export evidence ≠ invent Connected · pull_not_probed · list_plan_not_connected · setup_not_probed · PASS ≠ invent human-gate green · Edge Memory GA candidacy only · free eng s1558 · free eng s1562 · free eng s1566 · free eng s1570 · free eng s1574 · free eng s1578 · free eng s1582 · free eng s1586 · free eng s1590 · OSS packaging residual · E10 Open reaffirm · marketing demo path")
-				fmt.Fprintln(out, "— packaging: "+agent.OSSPackagingHonestyOneLiner)
+				fmt.Fprintln(out, "— residual: I/O Mesh TTFH · dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · empty until consume · CLIENT ≠ PULSE")
 				return false, nil
 			}
 			// Unknown subcommand: still print guidance + usage hint.
 			fmt.Fprintln(out, agent.MeshAgentOnboardingGuidanceNote())
-			fmt.Fprintln(out, "— residual: TUI ↔ mesh onboarding · dual_write OFF · never invent Connected · portal HITL · skill mesh-agent-onboarding via read_skill")
-			fmt.Fprintln(out, "— packaging: "+agent.OSSPackagingHonestyOneLiner)
-			fmt.Fprintln(out, "usage: /onboard [help|checklist|portal|status|next]  (aliases /agent-onboard; portal aliases agent-mcp|mcp; next aliases after|continue|lanes; next lanes Edge OSS path: setup|journey|wizard|memory|e4|portal-hitl|marketing-demo · Platform residual honesty (optional residual-check): human-gates|tool-call|e10 · also plugins|gtm|mesh|memory-pull|agentic|planes|sales|demo|operator|status|export)")
+			fmt.Fprintln(out, "— residual: I/O Mesh TTFH · dual_write OFF · never invent Connected · catalog ≠ Connected · not Memory GA · skill mesh-agent-onboarding via read_skill")
+			fmt.Fprintln(out, "usage: /onboard [help|checklist|status|next]  (TTFH walk; aliases /agent-onboard; next aliases after|continue|lanes; next lanes: ttfh|setup|memory|mesh)")
+			fmt.Fprintln(out, agent.MeshAgentOnboardingLegacyHiddenOneLiner)
 			return false, nil
 		}
 		fmt.Fprintln(out, agent.MeshAgentOnboardingGuidanceNote())
-		fmt.Fprintln(out, "— residual: TUI ↔ mesh onboarding · dual_write OFF · never invent Connected · portal HITL · skill mesh-agent-onboarding via read_skill")
-		fmt.Fprintln(out, "— packaging: "+agent.OSSPackagingHonestyOneLiner)
+		fmt.Fprintln(out, "— residual: I/O Mesh TTFH · dual_write OFF · never invent Connected · catalog ≠ Connected · not Memory GA · skill mesh-agent-onboarding via read_skill")
 	case "/plugins", "/plugin":
 		// s1392: residual-honest /plugins slash soft offline dogfood.
 		// Subcommands: help|? · list · validate · dogfood (aliases soft|samples|offline) · status.
@@ -1224,16 +1226,13 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /sessions            list saved sessions
   /load <id>           restore session
   /cost                session usage meter + sample estimate
-  /dashboard [help|preview|focus|ack]  empty until consume · preview = eval not your org · ack = brief ritual (aliases /heartbeat /mesh-console)
-  /mesh                I/O Mesh status + usage
-  /catalog [query]     list mesh data products (catalog plane)
-  /memory [recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|extract|ingest-dir|status]  Memory Palace (sync HTTP + MCP; Mode A sticky: /memory digest --require-sources mesh,private — cite-both or explicit miss · ACK via /dashboard ack · related multi-hop · digest ops pulse · facts-as-of bi-temporal lite · timeline/compact-status · trigger-compact HITL · semantic tier-4 · ingest-event s138 T1 · patterns/anomalies ops pulse Beta · supersede A3 lite HITL · extract HITL structural facts after persist (not NLP) · ingest-dir folder overlay · status advanced inventory)
-  /integrations [list|plan|signing|status]  list/plan a source via MCP, then finish in portal HITL (not install CRUD)
-  /setup [init|preflight|portal|reload|pull|analyze|drift|repair]  setup lifecycle (managed config · preflight · portal HITL · hot MCP reload · opt-in continuous pull/analyze · drift report · guided repair; alias /setup-lifecycle; dual_write OFF · PASS ≠ invent Connected · pull/analyze/repair ≠ invent Connected)
-  /gtm [help|checklist|brief]  GTM draft-only guidance, checklist, or palace voc_brief / market_telling (aliases /gtm-draft /gtm-agent; no auto-send; human publish; palace SoR · source=agent-brief · tenant gtm/founder)
-  /onboard [help|checklist|portal|status|next]  start here: portal MCP copy → TUI attach → /integrations list|plan → portal HITL (aliases /agent-onboard; next wizard|journey|setup|portal-hitl|memory · operator notes /onboard next [plugins|gtm|memory|mesh|export|…])
-  /plugins [help|list|validate|smoke|status]  residual-honest Agent Plugins soft offline smoke (alias /plugin; smoke aliases dogfood|soft|samples|offline; check→validate; Discover ≠ Connected · soft offline ≠ live smoke · ≠ invent Agent Plugins GA)
+  /setup [init|preflight|reload]  /setup init local-memory · /setup preflight · /setup reload (dual_write OFF · PASS ≠ invent Connected)
+  /memory [ingest|digest|facts-as-of|status|…]  ingest RCA (source_hint=private) · Mode A sticky: /memory digest --require-sources mesh,private — cite-both or explicit miss · ACK via /dashboard ack · facts-as-of · status (advanced: recall|related|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|extract|ingest-dir)
+  /dashboard [help|preview|focus|ack]  empty until consume · preview = eval not your org · PULSE only after ≥1 decoded broker message · CLIENT ≠ PULSE · ack = brief ritual (aliases /heartbeat /mesh-console)
+  /mesh                I/O Mesh status + usage (optional · needs IOMESH_ENDPOINT)
+  /onboard [help|checklist|status|next]  I/O Mesh TTFH: setup → ingest RCA → optional consume/dashboard → cite-both digest (aliases /agent-onboard; /onboard next ttfh)
   /quit                exit
+`+agent.MeshAgentOnboardingLegacyHiddenOneLiner+` · /integrations
 
 Fullscreen keys: enter send · ctrl+j newline · pgup/pgdn scroll
 On mutating tools (write_file, run_shell, apply_worktree, …) you will be prompted:

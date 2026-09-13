@@ -299,6 +299,8 @@ func TestModeAHappyPath_NoAionProductName(t *testing.T) {
 		ModeAPalaceRootResidualLine("/tmp/missing-palace"),
 		ModeADigestStickyCommand,
 		MeshAgentOnboardingNextMarketingDemoLane(),
+		MeshAgentOnboardingNextTTFHLane(),
+		MeshAgentOnboardingStartHere(),
 		MeshAgentOnboardingNextPortalHITLLane(),
 		strings.Join(MemoryNextStepLines(), "\n"),
 	}

@@ -31,7 +31,8 @@ import (
 )
 
 // Overridden at link time by make build: -X main.version=$(VERSION)
-// (must be a var, not const, for -ldflags -X).
+// (must be a var, not const, for -ldflags -X). Published pin is v1.3.7
+// (ModeATUIPin); do not invent a v1.3.8 tag from this string.
 var version = "1.3.7"
 
 func main() {
@@ -3174,7 +3175,7 @@ func newLogger(verbose bool) *slog.Logger {
 }
 
 func printUsage() {
-	fmt.Fprintf(os.Stderr, `iomesh — I/O Mesh coding agent TUI (Go rewrite of Grok Build)
+	fmt.Fprintf(os.Stderr, `iomesh — I/O Mesh coding agent TUI (time-to-first-heartbeat)
 
 Usage:
   iomesh [flags]                 interactive full-screen TUI
@@ -3182,12 +3183,12 @@ Usage:
   iomesh -p "prompt"             headless single prompt
   iomesh -c                      continue latest session
   iomesh --session <id>          resume session by id
+  iomesh setup init|preflight    TTFH setup (local-memory · residual-honest preflight)
+  iomesh memory ingest           TTFH RCA ingest (source_hint=private · --yes)
+  iomesh mesh smoke              optional mesh smoke (needs IOMESH_ENDPOINT · dashboard empty until consume)
   iomesh sessions                list sessions in workspace
   iomesh skills                  list SKILL.md catalogs
   iomesh mcp [--connect]         list configured MCP servers
-  iomesh plugins [list|validate|smoke] Agent Plugins package discover/validate/smoke (opt-in; ≠ GA)
-  iomesh setup init|preflight    setup lifecycle (write managed config · residual-honest preflight)
-  iomesh mesh smoke              I/O Mesh smoke (health/context/emit/pub/memory; needs IOMESH_ENDPOINT)
   iomesh mesh pub                ephemeral POST /v1/pub (--subject --payload|--payload-file --yes; PubPrint always-emit)
   iomesh mesh consumer create    durable pull consumer create (--stream --name --yes)
   iomesh mesh consumer delete    durable pull consumer delete (--stream --name --yes)
@@ -3195,7 +3196,6 @@ Usage:
   iomesh mesh wait               poll mesh Ready until OK (operator preflight)
   iomesh mesh status             operator snapshot (StatusLine + Health/Ready; --strict gates result=err)
   iomesh memory pull             mesh durable pull → local MCP palace (cost-max M1; --yes)
-  iomesh memory ingest           local overlay text ingest (session_id minted; --yes)
   iomesh memory ingest-dir       folder ingest into private overlay (--dry-run|--yes)
   iomesh models                  list configured models
   iomesh agent stdio             ACP JSON-RPC over stdio (IDE integration)
@@ -3220,6 +3220,9 @@ Agent serve (WebSocket) flags:
   --path /acp           WebSocket path
   --token secret        require Bearer or ?token=
 
+TTFH: setup preflight → memory ingest (RCA) → optional mesh smoke / consume → /dashboard (empty until consume · PULSE only after ≥1 decoded broker message · CLIENT ≠ PULSE) → /memory digest --require-sources mesh,private (cite-both or explicit miss) → /dashboard ack (local ritual · no send/pay/ship)
+Honesty: dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · knowledge Beta empty · eval template · not live APPLY
+
 Default model cascade: deepseek-v4-flash → deepseek-v4-pro → grok-4.5
   Optional Google: gemini-2.5-flash|pro (GEMINI_API_KEY) · vertex-gemini-2.5-* (VERTEX_API_KEY + GOOGLE_CLOUD_PROJECT)
 Config: ~/.iomesh/config.toml  (or $IOMESH_CONFIG)
@@ -3231,5 +3234,7 @@ Environment:
   IOMESH_ENDPOINT     enable mesh integration
   IOMESH_MEMORY_ENDPOINT / MEMORY_SIDECAR_URL  sync memory retrieve base (sidecar)
   IOMESH_DEFAULT_MODEL  override default model name
+
+legacy: iomesh plugins [list|validate|smoke]  Agent Plugins package discover/validate/smoke (opt-in; ≠ GA)
 `)
 }

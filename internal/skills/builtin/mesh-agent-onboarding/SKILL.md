@@ -1,13 +1,15 @@
 ---
 name: mesh-agent-onboarding
-description: Residual-honest TUI agent ↔ mesh CP/MCP onboarding (portal Agent/MCP mint/copy/probe · list/plan connectors → portal HITL · memory dual_write OFF · never invent Connected)
+description: Residual-honest I/O Mesh TTFH (setup → RCA ingest → optional consume/dashboard → cite-both digest · dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · portal HITL when connect)
 ---
 
 # Mesh agent onboarding (residual-honest)
 
-Builtin playbook for **onboarding a TUI agent session against mesh CP/MCP** — residual-honest path only. Molds `connector-integrations-setup` + operator onboarding checklist. **Not** install APPLY, **Not** Memory GA, **Not** Agent Plugins GA, **Not** dual_write ON.
+Builtin playbook for **I/O Mesh time-to-first-heartbeat** — residual-honest path only. Molds `connector-integrations-setup` + operator onboarding checklist. **Not** install APPLY, **Not** Memory GA, **Not** Agent Plugins GA, **Not** dual_write ON.
 
-**Start here (s1982):** portal https://console.iome.sh/settings/agent (mint iomesh_ag_* → export IOMESH_TOKEN → copy TUI fragment `[[mcp.servers]]` + `[iomesh]` → test invoke stub|live) → TUI paste both blocks → `/integrations list|plan` → finish in portal HITL at https://console.iome.sh/integrations → `/setup init|preflight|reload` → `/onboard next wizard`. Operator notes: `/onboard next`. Agent MCP cannot write installs · never invent Connected.
+**Start here (TTFH):** LLM key or Ollama → `/setup init local-memory` · `/setup preflight` · `/setup reload` → attach `iomesh-memory-mcp` (local palace) → `/memory ingest` three RCA-shaped turns (`source_hint=private`) → optional `IOMESH_ENDPOINT` consume `/dashboard` (**empty until consume** · **PULSE** only after ≥1 decoded broker message · **CLIENT ≠ PULSE**) → `/memory digest --require-sources mesh,private` (cite-both **or explicit miss**; miss is success) → miss ACK `/dashboard ack` (local ritual · no send/pay/ship). Map: `/onboard next ttfh` (aliases `time-to-first-heartbeat` / `cite-both`). dual_write **OFF** · catalog ≠ Connected · not Memory GA · never invent Connected.
+
+**Hidden lanes still work if typed:** `legacy (hidden): /gtm · /plugins · /onboard next plugins|gtm|marketing-demo|sales|demo|e4|e10|human-gates|planes|agentic|tool-call|portal-hitl|memory-pull|operator|wizard|export`
 
 **OSS packaging boundary (s1582):** MIT OSS harness vs private control plane · Edge OSS path first · optional platform residual honesty / residual-check anti-claims · see `docs/architecture/oss-packaging-boundary.md` · residual PASS ≠ invent control plane in MIT repo · free eng s1582 · free-floor peer s1584+ mention only.
 
@@ -78,8 +80,8 @@ Builtin playbook for **onboarding a TUI agent session against mesh CP/MCP** — 
 
 After core onboarding, residual-honest next operator lanes — static offline only; **never invent** product GA from these steps.
 
-- **Overview:** `/onboard next` (aliases `after` / `continue` / `lanes`) → `MeshAgentOnboardingNextLanes`.
-- **Lane drills (s1377+s1402+s1407+s1417):** `/onboard next <lane>` (also works with parent aliases, e.g. `/onboard after plugins` · `/onboard next mesh` · `/onboard next memory-pull` · `/onboard next agentic`).
+- **Overview (default TTFH):** `/onboard next` (aliases `after` / `continue` / `lanes`) → `MeshAgentOnboardingNextLanes` (setup · memory · mesh · dashboard/digest). `/onboard next ttfh` (aliases `time-to-first-heartbeat` / `cite-both`) → `MeshAgentOnboardingNextTTFHLane`.
+- **Lane drills (hidden still work if typed):** `/onboard next <lane>` (also works with parent aliases, e.g. `/onboard after plugins` · `/onboard next mesh` · `/onboard next memory-pull` · `/onboard next agentic`).
 - **Three product planes board (s1432):** `/onboard next planes` (aliases `three-planes` / `product-planes` / `product` / `pillars` / `three_planes`) → `MeshAgentOnboardingNextThreePlanes` — consolidate mesh · memory-pull · agentic residual-honest · **no invent stream green / pull green / Connected**.
 - **Sales/buyer claims board (s1437):** `/onboard next sales` (aliases `claims` / `buyer` / `claim-matrix` / `sales-claims` / `buyer-claims`) → `MeshAgentOnboardingNextSalesClaims` — may claim / must not claim residual-honest · three-planes grounded · **never invent Connected / Memory GA / dual-auth live**.
 - **Demo readiness board (s1442):** `/onboard next demo` (aliases `demo-ready` / `readiness` / `demo-readiness` / `lighthouse` / `landgrab`) → `MeshAgentOnboardingNextDemoReadiness` — Lighthouse beachhead packaging · book-demo **OFF** · Landgrab **NOT READY** · three planes · sales claims · human gates still open · **never invent Connected / book-demo ON / Landgrab READY**.
@@ -99,6 +101,7 @@ After core onboarding, residual-honest next operator lanes — static offline on
 
 | Lane | Slash | Aliases | API helper |
 |------|-------|---------|------------|
+| ttfh (default) | `/onboard next ttfh` | `time-to-first-heartbeat` · `cite-both` | `MeshAgentOnboardingNextTTFHLane` |
 | plugins | `/onboard next plugins` | `plugin` · `dogfood` | `MeshAgentOnboardingNextPluginsLane` |
 | gtm | `/onboard next gtm` | `drafts` | `MeshAgentOnboardingNextGtmLane` |
 | memory | `/onboard next memory` | `mcp` · `palace` | `MeshAgentOnboardingNextMemoryLane` |

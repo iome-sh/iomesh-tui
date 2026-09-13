@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- **Default TUI/CLI/onboard surface is I/O Mesh TTFH** (setup → RCA ingest → optional mesh consume/dashboard → cite-both digest). Legacy `/gtm` `/plugins` `/onboard next` lanes still work if typed; hidden from default help.
 - **Go 1.27.0:** Align `go.mod` / CI matrix with memory + iomesh-memory-mcp. README install puts `$(go env GOPATH)/bin` on `PATH` so `iomesh` is found after `go install`. Published pin stays **v1.3.7** (that tag still declares `go 1.26.6`; `GOTOOLCHAIN=auto` still works).
 - **README for OSS newcomers:** Hero is one paragraph + MIT trio pins + three install lines; product-boundary table once; dashboard eval-template showcase unchanged.
 

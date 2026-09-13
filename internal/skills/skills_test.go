@@ -621,6 +621,12 @@ func TestLoadBuiltin_S1363MeshAgentOnboardingSkillDogfood(t *testing.T) {
 	}
 	body := sk.Body
 	for _, want := range []string{
+		"/onboard next ttfh",
+		"MeshAgentOnboardingNextTTFHLane",
+		"time-to-first-heartbeat",
+		"cite-both",
+		"source_hint=private",
+		"CLIENT ≠ PULSE",
 		"list_connector_catalog",
 		"plan_connector_setup",
 		"list_org_connector_installs",
