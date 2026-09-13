@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **`iomesh ttfh [--unit]`** offline TTFH smoke (EMPTY dashboard honesty · no broker dial). `/onboard next ttfh dogfood` same residual. Never invents Connected/PULSE.
 
 ### Changed
+- **Default `/onboard` / `/onboard next` residual is TTFH-short** (no packaging dump, no 40-lane usage). Hidden lanes still work if typed.
 - **Fullscreen first-run chrome is TTFH next-actions** (setup/ingest/dashboard), not generic /theme keys. dual_write OFF · catalog ≠ Connected · empty until consume · never invent Connected.
 - **Dashboard 1–4 tenancy is eval-preview, not TTFH consume.** Keys still jump `sre.incidents` / `eng.ops` / `cs.tickets` / `gtm.pipeline` on `/dashboard preview` (MeshConsole seed). First-run EMPTY is broker `/v1` messages · empty until consume. catalog ≠ Connected · dual_write OFF.
 - **CLI usage primary is TTFH** (`iomesh setup` / `memory ingest` / `mesh smoke`); advanced mesh consumer/pub, memory pull, plugins, and agent serve listed separately. Commands still work.

@@ -1084,14 +1084,23 @@ func TestHandleSlash_Onboard(t *testing.T) {
 		"mesh-agent-onboarding",
 		"read_skill",
 		"/onboard next ttfh",
+		"empty until consume",
+		"CLIENT ≠ PULSE",
+		"not Memory GA",
 	} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("/onboard missing %q in:\n%s", want, s)
 		}
 	}
-	// Residual footer (s1363)
+	// Residual footer (s1363) — TTFH-short; no packaging dump.
 	if !strings.Contains(s, "residual:") {
 		t.Fatalf("/onboard missing residual footer: %s", s)
+	}
+	if strings.Contains(s, "— packaging:") || strings.Contains(s, "free eng s1582") || strings.Contains(s, agent.OSSPackagingHonestyOneLiner) {
+		t.Fatalf("/onboard must not dump packaging one-liner: %s", s)
+	}
+	if strings.Contains(s, "plugins|gtm|memory|mesh|memory-pull") || strings.Contains(s, "memory-pull|agentic|portal-hitl") {
+		t.Fatalf("/onboard must not list 40-lane aliases: %s", s)
 	}
 	if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Connected: yes") {
 		t.Fatalf("must not invent dual_write ON / Connected: %s", s)
@@ -1161,11 +1170,20 @@ func TestHandleSlash_OnboardHelpChecklist(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := out.String()
-	if !strings.Contains(s, "I/O Mesh TTFH") || !strings.Contains(s, "usage: /onboard") {
-		t.Fatalf("/onboard bogon want guidance+usage: %s", s)
+	if !strings.Contains(s, "I/O Mesh TTFH") || !strings.Contains(s, "usage: /onboard [help|checklist|status|next]  (TTFH: /onboard next ttfh · setup · memory · mesh)") {
+		t.Fatalf("/onboard bogon want guidance+TTFH usage: %s", s)
+	}
+	if !strings.Contains(s, "legacy (hidden)") {
+		t.Fatalf("/onboard bogon missing hidden one-liner: %s", s)
 	}
 	if !strings.Contains(s, "residual:") {
 		t.Fatalf("/onboard bogon missing residual footer: %s", s)
+	}
+	if strings.Contains(s, "— packaging:") || strings.Contains(s, "free eng s1582") {
+		t.Fatalf("/onboard bogon must not dump packaging: %s", s)
+	}
+	if strings.Contains(s, "plugins|gtm|memory|mesh|memory-pull") {
+		t.Fatalf("/onboard bogon must not list 40-lane aliases: %s", s)
 	}
 
 	// /help mentions /onboard checklist
@@ -1301,6 +1319,18 @@ func TestHandleSlash_OnboardNext(t *testing.T) {
 		}
 		if !strings.Contains(s, "residual:") {
 			t.Fatalf("%s missing residual footer: %s", line, s)
+		}
+		if !strings.Contains(s, "usage: /onboard next [ttfh|setup|memory|mesh]") {
+			t.Fatalf("%s missing TTFH usage: %s", line, s)
+		}
+		if !strings.Contains(s, "legacy (hidden)") {
+			t.Fatalf("%s missing hidden one-liner: %s", line, s)
+		}
+		if strings.Contains(s, "— packaging:") || strings.Contains(s, "free eng s1582") || strings.Contains(s, agent.OSSPackagingHonestyOneLiner) {
+			t.Fatalf("%s must not dump packaging one-liner: %s", line, s)
+		}
+		if strings.Contains(s, "plugins|gtm|memory|mesh|memory-pull") || strings.Contains(s, "memory-pull|agentic|portal-hitl") {
+			t.Fatalf("%s must not list 40-lane aliases: %s", line, s)
 		}
 		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Connected: yes") {
 			t.Fatalf("%s must not invent dual_write ON / Connected: %s", line, s)
@@ -2102,6 +2132,12 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	}
 	if strings.Contains(s, "evidence_kind=onboard_next_lane_status_export") {
 		t.Fatalf("unknown next lane must not emit export receipt: %s", s)
+	}
+	if strings.Contains(s, "— packaging:") || strings.Contains(s, "free eng s1582") {
+		t.Fatalf("unknown next lane must not dump packaging: %s", s)
+	}
+	if strings.Contains(s, "plugins|gtm|memory|mesh|memory-pull") || strings.Contains(s, "memory-pull|agentic|portal-hitl") {
+		t.Fatalf("unknown next lane must not list 40-lane aliases: %s", s)
 	}
 }
 
