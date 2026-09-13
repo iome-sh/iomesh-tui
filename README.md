@@ -216,17 +216,14 @@ Notes: default empty until consume · `/dashboard preview` is eval template not 
 ## CLI
 
 ```text
-iomesh [flags]              full-screen TUI (Bubble Tea)
-iomesh --repl               classic line REPL
-iomesh -p "prompt"          headless one-shot
-iomesh -m <model>           pin logical model
-iomesh -C <dir>             workspace root
-iomesh --yolo               auto-approve mutating tools (full trust)
-iomesh --config <path>      config.toml
-iomesh models | sessions | skills | mcp | version
-iomesh mesh smoke           I/O Mesh smoke (needs IOMESH_ENDPOINT; legacy: dogfood|probe)
-iomesh agent stdio          ACP JSON-RPC over stdio
-iomesh agent serve          ACP WebSocket (default 127.0.0.1:7400/acp)
+iomesh [flags]                 interactive full-screen TUI
+iomesh --repl
+iomesh -p "prompt"
+iomesh setup init|preflight    TTFH setup
+iomesh memory ingest           TTFH RCA ingest
+iomesh mesh smoke              optional (needs IOMESH_ENDPOINT · dashboard empty until consume)
+iomesh models | sessions | mcp | version
+Advanced: mesh consumer/pub · memory pull · plugins · agent serve
 ```
 
 Slash commands (TUI/REPL): `/model`, `/theme`, `/dashboard` (heartbeat live feed · aliases `/heartbeat` `/mesh-console`), `/permissions`, `/subagents`, `/setup`, `/onboard` (`/onboard next ttfh`), `/memory` (ingest RCA · sticky digest cite-both · facts-as-of · status), `/save`, `/sessions`, `/load`, `/cost`, `/help`, `/quit`.  

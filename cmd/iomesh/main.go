@@ -3181,27 +3181,22 @@ Usage:
   iomesh [flags]                 interactive full-screen TUI
   iomesh --repl                  classic line REPL
   iomesh -p "prompt"             headless single prompt
-  iomesh -c                      continue latest session
-  iomesh --session <id>          resume session by id
-  iomesh setup init|preflight    TTFH setup (local-memory · residual-honest preflight)
-  iomesh memory ingest           TTFH RCA ingest (source_hint=private · --yes)
-  iomesh mesh smoke              optional mesh smoke (needs IOMESH_ENDPOINT · dashboard empty until consume)
-  iomesh sessions                list sessions in workspace
-  iomesh skills                  list SKILL.md catalogs
-  iomesh mcp [--connect]         list configured MCP servers
-  iomesh mesh pub                ephemeral POST /v1/pub (--subject --payload|--payload-file --yes; PubPrint always-emit)
-  iomesh mesh consumer create    durable pull consumer create (--stream --name --yes)
-  iomesh mesh consumer delete    durable pull consumer delete (--stream --name --yes)
-  iomesh mesh consumer ack|nack  ack/nack sequences (--stream --name --seq --yes)
+  iomesh setup init|preflight    TTFH setup
+  iomesh memory ingest           TTFH RCA ingest
+  iomesh mesh smoke              optional (needs IOMESH_ENDPOINT · dashboard empty until consume)
+  iomesh models | sessions | mcp | version
+
+Advanced (still work; not first-run):
+  iomesh mesh pub                ephemeral POST /v1/pub (--subject --payload|--payload-file --yes)
+  iomesh mesh consumer create|delete|ack|nack  durable pull consumer
   iomesh mesh wait               poll mesh Ready until OK (operator preflight)
-  iomesh mesh status             operator snapshot (StatusLine + Health/Ready; --strict gates result=err)
-  iomesh memory pull             mesh durable pull → local MCP palace (cost-max M1; --yes)
+  iomesh mesh status             operator snapshot (StatusLine + Health/Ready; --strict)
+  iomesh mesh usage              local process meter (UsagePrint always-emit --json)
+  iomesh memory pull             mesh durable pull → local MCP palace (--yes)
   iomesh memory ingest-dir       folder ingest into private overlay (--dry-run|--yes)
-  iomesh models                  list configured models
-  iomesh agent stdio             ACP JSON-RPC over stdio (IDE integration)
-  iomesh agent serve             ACP JSON-RPC over WebSocket (default 127.0.0.1:7400/acp)
-  iomesh agent --yolo stdio      ACP with auto-approve tools
-  iomesh version
+  iomesh plugins list|validate|smoke  Agent Plugins package discover/validate/smoke (opt-in; ≠ GA)
+  iomesh agent stdio|serve       ACP JSON-RPC (stdio · WebSocket 127.0.0.1:7400/acp)
+  iomesh skills                  list SKILL.md catalogs
 
 Flags:
   -p, --prompt string   headless prompt
@@ -3234,7 +3229,5 @@ Environment:
   IOMESH_ENDPOINT     enable mesh integration
   IOMESH_MEMORY_ENDPOINT / MEMORY_SIDECAR_URL  sync memory retrieve base (sidecar)
   IOMESH_DEFAULT_MODEL  override default model name
-
-legacy: iomesh plugins [list|validate|smoke]  Agent Plugins package discover/validate/smoke (opt-in; ≠ GA)
 `)
 }
