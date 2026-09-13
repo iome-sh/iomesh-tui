@@ -109,17 +109,24 @@ func TestHandleSlash_ModelsAndCost(t *testing.T) {
 	if strings.Contains(strings.ToLower(out.String()), "aion") {
 		t.Fatalf("/help happy path must not leak aion: %s", out.String())
 	}
-	if !strings.Contains(out.String(), "/integrations") {
-		t.Fatalf("help missing /integrations: %s", out.String())
-	}
-	if !strings.Contains(out.String(), "/gtm") {
-		t.Fatalf("help missing /gtm: %s", out.String())
-	}
 	if !strings.Contains(out.String(), "/onboard") {
 		t.Fatalf("help missing /onboard: %s", out.String())
 	}
-	if !strings.Contains(out.String(), "/plugins") {
-		t.Fatalf("help missing /plugins: %s", out.String())
+	if !strings.Contains(out.String(), "/onboard next ttfh") {
+		t.Fatalf("help missing TTFH onboard: %s", out.String())
+	}
+	if !strings.Contains(out.String(), "/setup") {
+		t.Fatalf("help missing /setup: %s", out.String())
+	}
+	if !strings.Contains(out.String(), "CLIENT ≠ PULSE") {
+		t.Fatalf("help missing CLIENT ≠ PULSE: %s", out.String())
+	}
+	helpPrimary := out.String()
+	if i := strings.Index(helpPrimary, "legacy (hidden)"); i >= 0 {
+		helpPrimary = helpPrimary[:i]
+	}
+	if strings.Contains(helpPrimary, "/gtm") || strings.Contains(helpPrimary, "/plugins") || strings.Contains(helpPrimary, "/integrations") {
+		t.Fatalf("primary /help must hide /gtm /plugins /integrations:\n%s", helpPrimary)
 	}
 	out.Reset()
 	_, _ = handleSlash(&out, adapter, "/memory")
@@ -1050,8 +1057,8 @@ func TestHandleSlash_GtmHelpChecklist(t *testing.T) {
 		t.Fatal(err)
 	}
 	help := out.String()
-	if !strings.Contains(help, "/gtm") || !strings.Contains(help, "checklist") {
-		t.Fatalf("/help missing /gtm checklist mention: %s", help)
+	if !strings.Contains(help, "/onboard") {
+		t.Fatalf("/help missing /onboard: %s", help)
 	}
 }
 
@@ -1067,20 +1074,16 @@ func TestHandleSlash_Onboard(t *testing.T) {
 	}
 	s := out.String()
 	for _, want := range []string{
-		"list_connector_catalog",
-		"plan_connector_setup",
-		"list_org_connector_installs",
+		"I/O Mesh TTFH",
+		"/setup init local-memory",
+		"/memory ingest",
+		"/memory digest --require-sources mesh,private",
 		"dual_write OFF",
-		"portal HITL",
-		"never invent install green",
+		"catalog ≠ Connected",
+		"never invent Connected",
 		"mesh-agent-onboarding",
 		"read_skill",
-		"console.iome.sh/integrations",
-		// s1368 portal Agent/MCP lane in guidance
-		"console.iome.sh/settings/agent",
-		"Agent/MCP",
-		"[[mcp.servers]]",
-		"streamable HTTP",
+		"/onboard next ttfh",
 	} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("/onboard missing %q in:\n%s", want, s)
@@ -1101,7 +1104,7 @@ func TestHandleSlash_Onboard(t *testing.T) {
 	for _, alias := range []string{"/aion-onboard", "/agent-onboard"} {
 		out.Reset()
 		_, _ = handleSlash(&out, adapter, alias)
-		if !strings.Contains(out.String(), "list_connector_catalog") || !strings.Contains(out.String(), "mesh-agent-onboarding") {
+		if !strings.Contains(out.String(), "I/O Mesh TTFH") || !strings.Contains(out.String(), "mesh-agent-onboarding") {
 			t.Fatalf("%s alias: %s", alias, out.String())
 		}
 	}
@@ -1115,30 +1118,23 @@ func TestHandleSlash_OnboardHelpChecklist(t *testing.T) {
 
 	needles := []string{
 		"1.",
-		"IOMESH/MCP",
-		"fail-open",
+		"LLM key or Ollama",
 		"2.",
-		"list_connector_catalog",
-		"catalog status ≠ Connected",
+		"/setup init local-memory",
 		"3.",
-		"plan_connector_setup",
-		"4.",
-		"list_org_connector_installs",
-		"available=false ≠ empty-as-none",
-		"5.",
+		"iomesh-memory-mcp",
 		"dual_write OFF",
+		"4.",
+		"/memory ingest",
+		"5.",
+		"/dashboard",
 		"6.",
-		"/integrations status",
-		"console.iome.sh/integrations",
-		"never invent install green",
-		"INSTALL_STORE APPLY",
-		"book-demo OFF",
-		"residual PASS ≠ live dogfood",
-		// s1368
-		"console.iome.sh/settings/agent",
-		"Agent/MCP",
-		"[[mcp.servers]]",
-		"/onboard portal",
+		"/memory digest --require-sources mesh,private",
+		"7.",
+		"/dashboard ack",
+		"never invent Connected",
+		"catalog ≠ Connected",
+		"/onboard next ttfh",
 	}
 
 	for _, line := range []string{"/onboard help", "/onboard checklist", "/aion-onboard help", "/agent-onboard checklist"} {
@@ -1165,7 +1161,7 @@ func TestHandleSlash_OnboardHelpChecklist(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := out.String()
-	if !strings.Contains(s, "list_connector_catalog") || !strings.Contains(s, "usage: /onboard") {
+	if !strings.Contains(s, "I/O Mesh TTFH") || !strings.Contains(s, "usage: /onboard") {
 		t.Fatalf("/onboard bogon want guidance+usage: %s", s)
 	}
 	if !strings.Contains(s, "residual:") {
@@ -1182,25 +1178,11 @@ func TestHandleSlash_OnboardHelpChecklist(t *testing.T) {
 	if !strings.Contains(help, "/onboard") || !strings.Contains(help, "checklist") {
 		t.Fatalf("/help missing /onboard checklist mention: %s", help)
 	}
-	if !strings.Contains(help, "portal") || !strings.Contains(help, "status") {
-		t.Fatalf("/help missing /onboard portal|status mention: %s", help)
+	if !strings.Contains(help, "/onboard next ttfh") {
+		t.Fatalf("/help missing TTFH walk: %s", help)
 	}
-	// s1372: /help mentions /onboard next
-	if !strings.Contains(help, "next") {
-		t.Fatalf("/help missing /onboard next mention: %s", help)
-	}
-	// s1377+s1382+s1387+s1402: /help mentions next [plugins|gtm|memory|mesh|status|export] lanes
-	if !strings.Contains(help, "plugins") || !strings.Contains(help, "gtm") || !strings.Contains(help, "memory") {
-		// help line lists next [plugins|gtm|memory|…] — ensure lane tokens appear near onboard
-		if !strings.Contains(help, "next [plugins|gtm|memory") && !strings.Contains(help, "plugins|gtm|memory") {
-			t.Fatalf("/help missing /onboard next lane drill mention: %s", help)
-		}
-	}
-	if !strings.Contains(help, "mesh") {
-		t.Fatalf("/help missing /onboard next mesh mention: %s", help)
-	}
-	if !strings.Contains(help, "export") {
-		t.Fatalf("/help missing /onboard next export mention: %s", help)
+	if !strings.Contains(help, "cite-both") {
+		t.Fatalf("/help missing cite-both TTFH: %s", help)
 	}
 }
 
@@ -1261,20 +1243,15 @@ func TestHandleSlash_OnboardStatus(t *testing.T) {
 	}
 	s := out.String()
 	for _, want := range []string{
-		"MCP attach",
-		"fail-open offline",
+		"I/O Mesh TTFH",
 		"dual_write OFF",
-		"portal HITL",
-		"console.iome.sh/settings/agent",
-		"console.iome.sh/integrations",
-		"never invent install green",
+		"catalog ≠ Connected",
+		"never invent Connected",
+		"empty until consume",
+		"CLIENT ≠ PULSE",
 		"agent MCP cannot write installs",
-		"residual PASS ≠ live dogfood",
-		"/onboard portal",
-		// s1372 cross-link
+		"/onboard next ttfh",
 		"/onboard next",
-		// s1382 cross-link to lane status board
-		"/onboard next status",
 	} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("/onboard status missing %q in:\n%s", want, s)
@@ -1293,35 +1270,21 @@ func TestHandleSlash_OnboardNext(t *testing.T) {
 
 	needles := []string{
 		"onboard next lanes",
-		"post-onboard continuum",
-		"iomesh plugins dogfood",
-		"offline sample validate",
-		"Agent Plugins GA",
-		"/gtm checklist",
-		"gtm-draft-only-agent",
-		"drafts only",
-		"no auto-send",
-		"human publish",
-		"iomesh-memory-mcp", // product host (s1517: residual private sample removed)
-		"local-primary",
-		"dual_write OFF",
-		"package load ≠ Memory GA",
-		"freemium palace",
-		"portal HITL",
-		"agent MCP cannot write installs",
-		"catalog ≠ Connected",
-		"residual PASS ≠ live dogfood",
-		"never invent install green",
-		"INSTALL_STORE APPLY",
-		// s1377 drill cross-links on overview
-		"/onboard next plugins",
-		"/onboard next gtm",
+		"I/O Mesh TTFH",
+		"/onboard next ttfh",
+		"/onboard next setup",
 		"/onboard next memory",
-		// s1382 status board cross-link
-		"/onboard next status",
-		// s1387 status export receipt cross-link
-		"/onboard next export",
-		"board/export evidence ≠ invent Connected",
+		"/onboard next mesh",
+		"iomesh-memory-mcp",
+		"/memory ingest",
+		"/memory digest --require-sources mesh,private",
+		"dual_write OFF",
+		"catalog ≠ Connected",
+		"not Memory GA",
+		"never invent Connected",
+		"empty until consume",
+		"CLIENT ≠ PULSE",
+		"/dashboard ack",
 	}
 
 	for _, line := range []string{"/onboard next", "/aion-onboard after", "/agent-onboard continue", "/onboard lanes"} {
@@ -1344,6 +1307,44 @@ func TestHandleSlash_OnboardNext(t *testing.T) {
 		}
 		if strings.Contains(s, "Memory GA shipped") || strings.Contains(s, "Agent Plugins GA shipped") {
 			t.Fatalf("%s must not invent Memory/Plugins GA: %s", line, s)
+		}
+		if strings.Contains(s, "/gtm checklist") || strings.Contains(s, "iomesh plugins dogfood") {
+			t.Fatalf("%s default next must not advertise hidden drills: %s", line, s)
+		}
+	}
+}
+
+// /onboard next ttfh (aliases time-to-first-heartbeat|cite-both) — default TTFH walk.
+func TestHandleSlash_OnboardNextTTFHLane(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	needles := []string{
+		"onboard next ttfh lane",
+		"time-to-first-heartbeat",
+		"LLM key or Ollama",
+		"/setup init local-memory",
+		"iomesh-memory-mcp",
+		"/memory ingest",
+		"source_hint=private",
+		"/memory digest --require-sources mesh,private",
+		"/dashboard ack",
+		"dual_write OFF",
+		"never invent Connected",
+		"CLIENT ≠ PULSE",
+	}
+	for _, line := range []string{"/onboard next ttfh", "/onboard next time-to-first-heartbeat", "/onboard next cite-both", "/agent-onboard after ttfh"} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
 		}
 	}
 }
@@ -2004,24 +2005,13 @@ func TestHandleSlash_OnboardNextUnknownLane(t *testing.T) {
 	s := out.String()
 	for _, want := range []string{
 		"onboard next lanes",
-		"post-onboard continuum",
+		"I/O Mesh TTFH",
 		"usage:",
-		"plugins",
-		"gtm",
+		"ttfh",
+		"setup",
 		"memory",
 		"mesh",
-		"memory-pull",
-		"agentic",
-		"planes",
-		"sales",
-		"demo",
-		"operator",
-		"setup",
-		"journey",
-		"wizard",
-		"status",
-		"export",
-		"human-gates",
+		"legacy (hidden)",
 		"residual:",
 	} {
 		if !strings.Contains(s, want) {
@@ -4342,11 +4332,15 @@ func TestHandleSlash_Plugins(t *testing.T) {
 		t.Fatalf("unknown sub: %s", out.String())
 	}
 
-	// /help mentions /plugins
+	// /help does not list /plugins on the primary command block (legacy one-liner is ok).
 	out.Reset()
 	_, _ = handleSlash(&out, adapter, "/help")
-	if !strings.Contains(out.String(), "/plugins") {
-		t.Fatalf("/help missing /plugins: %s", out.String())
+	help := out.String()
+	if i := strings.Index(help, "legacy (hidden)"); i >= 0 {
+		help = help[:i]
+	}
+	if strings.Contains(help, "/plugins") {
+		t.Fatalf("primary /help must hide /plugins:\n%s", help)
 	}
 }
 

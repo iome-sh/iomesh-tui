@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/github/go-mod/go-version/iome-sh/iomesh-tui)](go.mod)
 
-**I/O Mesh TUI** is a Go coding-agent harness inspired by [xAI Grok Build](https://github.com/xai-org/grok-build): multi-provider LLM router, tools/subagents, and first-class **local memory**. Official open-source tooling from [IOMesh](https://iome.sh) (**IOMesh Technology Ltd.**). Install the pin, set an LLM key (or pin Ollama), run `iomesh`, then attach local memory with `/setup`. Mesh client hooks (heartbeats / catalog / pull) are optional when you point at a broker.
+**I/O Mesh TUI** is a Go coding-agent harness inspired by [xAI Grok Build](https://github.com/xai-org/grok-build): multi-provider LLM router, tools/subagents, and first-class **local memory**. Official open-source tooling from [IOMesh](https://iome.sh) (**IOMesh Technology Ltd.**). **Time-to-first-heartbeat:** `/setup` → `/memory ingest` (RCA) → optional consume / `/dashboard` → `/memory digest --require-sources mesh,private` (cite-both **or explicit miss**). Install the pin, set an LLM key (or pin Ollama), run `iomesh`, then attach local memory with `/setup`. Mesh client hooks (heartbeats / catalog / pull) are optional when you point at a broker.
 
 | This public repo **is** | This public repo is **not** |
 |-------------------------|-----------------------------|
@@ -136,7 +136,10 @@ make smoke-unit                    # offline mesh tests (alias: dogfood-unit)
 1. Set an LLM key (`DEEPSEEK_API_KEY` / `XAI_API_KEY` / …) **or** pin Ollama (`-m ollama-llama3.2`).
 2. Run the TUI: `./bin/iomesh` (or `iomesh` if installed).
 3. Attach local memory: `/setup init` `local-memory` · `/setup preflight` · start `iomesh-memory-mcp` if needed · `/setup reload` (hot-swaps MCP **and** re-scans skills). Cold CLI path: `iomesh setup init` → restart `iomesh` · `iomesh setup preflight` (CLI has **no** `setup reload`). After preflight, the report prints the same dual path (in-session `/setup reload` vs cold restart). Memory dual-write stays `dual_write OFF`.
-4. Offline maps: `/onboard next journey` · `/onboard next setup` · `/onboard next wizard` · `/onboard next marketing-demo` · `/onboard next memory`. Optional peek at the landing heartbeat: `/dashboard preview` (`/dashboard` stays empty until consume · see [below](#dashboard-heartbeat-live-feed)).
+4. `/memory ingest` three RCA-shaped turns (`source_hint=private`). CLI: `iomesh memory ingest`.
+5. Optional mesh: set `IOMESH_ENDPOINT` → consume → `/dashboard` (**empty until consume** · **PULSE** only after ≥1 decoded broker message · **CLIENT ≠ PULSE**). CLI: `iomesh mesh smoke` (needs endpoint). Optional peek at the landing heartbeat: `/dashboard preview` (eval template, not your org · see [below](#dashboard-heartbeat-live-feed)).
+6. `/memory digest --require-sources mesh,private` — cite-both **or explicit miss** (miss is success).
+7. Miss ACK: `/dashboard ack` (local ritual · no send/pay/ship). Map: `/onboard next ttfh`.
 
 Optional: copy [`.env.example`](.env.example) for local env vars (iomesh reads the **process environment**; it does not auto-load `.env` files yet). Copy [`configs/config.example.toml`](configs/config.example.toml) to `~/.iomesh/config.toml` to customize.
 
@@ -173,7 +176,6 @@ No GIF of a live tenant. Default `/dashboard` stays **empty** until consume (`Li
 /dashboard preview           # opt-in eval template (not your org)
 /dashboard focus eng.ops     # tenancy
 /dashboard ack               # ACK today's morning brief (unread ≠ known · no send/pay/ship)
-/gtm brief                   # palace market_telling / voc_brief (source=agent-brief · tenant gtm/founder · not git SoR)
 /heartbeat help              # aliases: /heartbeat /mesh-console
 ```
 
@@ -208,7 +210,7 @@ Tenancy            Heartbeat                         Agent tools
 Pulse 18 / min     14:02:39  analytics  gtm.pipeline
 ```
 
-Notes: default empty until consume · `/dashboard preview` is eval template not your org · `catalog ≠ Connected` · knowledge/analytics **Beta** · not live APPLY · **CLIENT** badge only means a mesh client is configured — listed streams ≠ live pulse · **PULSE** only after ≥1 decoded broker message · unacked brief ≠ known (`/dashboard ack` is a local ritual · no send/pay/ship) · `/gtm brief` palace voc_brief is local SoR (not git · no Slack persist · CRM ≠ Connected). Full notes: [tui.md](docs/architecture/tui.md#dashboard-heartbeat-live-feed) · asset: [docs/assets/dashboard-eval.svg](docs/assets/dashboard-eval.svg).
+Notes: default empty until consume · `/dashboard preview` is eval template not your org · `catalog ≠ Connected` · knowledge/analytics **Beta** · knowledge Beta empty · not live APPLY · **CLIENT** badge only means a mesh client is configured — listed streams ≠ live pulse · **CLIENT ≠ PULSE** · **PULSE** only after ≥1 decoded broker message · unacked brief ≠ known (`/dashboard ack` is a local ritual · no send/pay/ship). Full notes: [tui.md](docs/architecture/tui.md#dashboard-heartbeat-live-feed) · asset: [docs/assets/dashboard-eval.svg](docs/assets/dashboard-eval.svg).
 
 ## CLI
 
@@ -226,7 +228,7 @@ iomesh agent stdio          ACP JSON-RPC over stdio
 iomesh agent serve          ACP WebSocket (default 127.0.0.1:7400/acp)
 ```
 
-Slash commands (TUI/REPL): `/model`, `/theme`, `/dashboard` (heartbeat live feed · aliases `/heartbeat` `/mesh-console`), `/permissions`, `/subagents`, `/setup`, `/onboard`, `/memory` (optional `/memory extract` HITL structural facts after persist · not NLP), `/integrations`, `/save`, `/sessions`, `/load`, `/cost`, `/help`, `/quit`.  
+Slash commands (TUI/REPL): `/model`, `/theme`, `/dashboard` (heartbeat live feed · aliases `/heartbeat` `/mesh-console`), `/permissions`, `/subagents`, `/setup`, `/onboard` (`/onboard next ttfh`), `/memory` (ingest RCA · sticky digest cite-both · facts-as-of · status), `/save`, `/sessions`, `/load`, `/cost`, `/help`, `/quit`.  
 Keys (fullscreen): **Enter** send · **Ctrl+J** newline · **y/n/a** tool approval · `/dashboard` overlay (esc close).
 
 ## Configuration

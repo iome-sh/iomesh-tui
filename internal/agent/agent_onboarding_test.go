@@ -19,17 +19,31 @@ func TestMeshAgentOnboardingStartHere_LeanPath(t *testing.T) {
 	}
 	for _, want := range []string{
 		"start here",
-		"console.iome.sh/settings/agent",
-		"copy TUI fragment",
-		"[[mcp.servers]]",
-		"/integrations list",
-		"/integrations plan",
-		"console.iome.sh/integrations",
-		"agent MCP cannot write installs",
-		"/setup init",
-		"/onboard next wizard",
-		"/onboard next",
+		"I/O Mesh TTFH",
+		"LLM key or Ollama",
+		"/setup init local-memory",
+		"/setup preflight",
+		"/setup reload",
+		"iomesh-memory-mcp",
+		"/memory ingest",
+		"source_hint=private",
+		"IOMESH_ENDPOINT",
+		"/dashboard",
+		"empty until consume",
+		"CLIENT ≠ PULSE",
+		"/memory digest --require-sources mesh,private",
+		"cite-both",
+		"explicit miss",
+		"/dashboard ack",
+		"no send/pay/ship",
+		"iomesh setup preflight",
+		"iomesh memory ingest",
+		"iomesh mesh smoke",
+		"/onboard next ttfh",
 		"never invent Connected",
+		"dual_write OFF",
+		"catalog ≠ Connected",
+		"not Memory GA",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("start-here missing %q in:\n%s", want, out)
@@ -37,6 +51,9 @@ func TestMeshAgentOnboardingStartHere_LeanPath(t *testing.T) {
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
 		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
+	}
+	if strings.Contains(out, "/gtm checklist") || strings.Contains(out, "iomesh plugins dogfood") {
+		t.Fatalf("start-here must not advertise hidden lanes: %s", out)
 	}
 }
 
@@ -46,75 +63,33 @@ func TestMeshAgentOnboardingGuidanceNote_HonestyNeedles(t *testing.T) {
 		t.Fatal("empty guidance note")
 	}
 	for _, want := range []string{
-		"list_connector_catalog",
-		"plan_connector_setup",
-		"list_org_connector_installs",
-		"catalog status ≠ install Connected",
-		"available=false",
-		"empty-as-none",
-		"console.iome.sh/integrations",
-		"portal HITL",
-		"agent MCP cannot write installs",
-		"dual_write OFF",
-		"book-demo OFF",
-		"residual PASS ≠ live dogfood",
-		"never invent install green",
-		"Connected",
-		"INSTALL_STORE APPLY",
-		"plugins dogfood",
-		"Agent Plugins GA",
-		"~$132",
-		"Memory Ops Pack hidden public",
-		"local memory free OSS",
-		"knowledge/analytical",
+		"I/O Mesh TTFH",
+		"/setup init local-memory",
+		"iomesh-memory-mcp",
+		"/memory ingest",
+		"source_hint=private",
+		"/memory digest --require-sources mesh,private",
+		"cite-both",
+		"/dashboard ack",
+		"/onboard next ttfh",
 		"mesh-agent-onboarding",
 		"read_skill",
-		"/integrations status",
-		"/onboard checklist",
-		"local-primary",
-		"fail-open",
-		// s1368 portal Agent/MCP lane
-		"console.iome.sh/settings/agent",
-		"Agent/MCP",
-		"iomesh_ag_*",
-		"copy TUI fragment",
-		"test invoke",
-		"stub",
-		"[[mcp.servers]]",
-		"streamable HTTP",
-		"/onboard portal",
-		// s1372 post-onboard continuum cross-link
-		"/onboard next",
-		"drafts only",
-		"no auto-send",
-		"package load ≠ Memory GA",
-		// s1542 setup lifecycle map
-		"/onboard next setup",
-		"setup lifecycle",
-		"setup_not_probed",
-		"repair apply ≠ invent Connected",
-		"E10 Open",
-		// s1546 still-human APPLY reaffirm after setup closeout
-		"setup closeout residual ≠ invent APPLY",
-		"s1546",
-		// s1550 edge-first human-gates residual pin
-		"s1550",
-		"edge-first",
-		"knowledge multi-tenant punted",
-		"Slack HMAC punted",
+		"dual_write OFF",
+		"catalog ≠ Connected",
+		"not Memory GA",
+		"never invent Connected",
+		"never invent install green",
+		"INSTALL_STORE APPLY",
+		"knowledge Beta empty",
+		"eval template",
+		"empty until consume",
+		"not live APPLY",
+		"CLIENT ≠ PULSE",
+		"agent MCP cannot write installs",
 		"portal HITL when connect",
-		// s1558 Wave B first-run journey
-		"/onboard next journey",
-		"edge-user-journey",
-		"s1558",
-		"Edge Memory GA candidacy only",
-		"free eng s1558",
-		// s1570 Wave C first-run wizard residual
-		"/onboard next wizard",
-		"first-run wizard residual",
-		"s1570",
-		"free eng s1570",
-		"free-floor peer s1572+",
+		"package load ≠ Memory GA",
+		"local-primary",
+		MeshAgentOnboardingLegacyHiddenOneLiner,
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("guidance missing %q in:\n%s", want, out)
@@ -127,6 +102,9 @@ func TestMeshAgentOnboardingGuidanceNote_HonestyNeedles(t *testing.T) {
 	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "Agent Plugins GA shipped") {
 		t.Fatalf("must not invent Memory/Plugins GA: %s", out)
 	}
+	if strings.Contains(out, "/gtm checklist") || strings.Contains(out, "iomesh plugins dogfood") {
+		t.Fatalf("default guidance must not advertise hidden drills: %s", out)
+	}
 }
 
 // s1363+s1368+s1372: MeshAgentOnboardingChecklist residual-honest numbered needles.
@@ -137,48 +115,33 @@ func TestMeshAgentOnboardingChecklist_HonestyNeedles(t *testing.T) {
 	}
 	for _, want := range []string{
 		"1.",
-		"IOMESH/MCP",
-		"fail-open",
+		"LLM key or Ollama",
 		"2.",
-		"list_connector_catalog",
-		"catalog status ≠ Connected",
+		"/setup init local-memory",
+		"/setup preflight",
 		"3.",
-		"plan_connector_setup",
-		"portal deep links",
-		"4.",
-		"list_org_connector_installs",
-		"available=false ≠ empty-as-none",
-		"5.",
+		"iomesh-memory-mcp",
 		"dual_write OFF",
-		"local-primary",
-		"plugins dogfood",
-		"Agent Plugins GA",
+		"4.",
+		"/memory ingest",
+		"source_hint=private",
+		"5.",
+		"/dashboard",
+		"empty until consume",
+		"CLIENT ≠ PULSE",
 		"6.",
-		"/integrations status",
-		"/onboard checklist",
-		"console.iome.sh/integrations",
+		"/memory digest --require-sources mesh,private",
+		"cite-both",
+		"7.",
+		"/dashboard ack",
+		"no send/pay/ship",
+		"/onboard next ttfh",
+		"catalog ≠ Connected",
+		"not Memory GA",
+		"never invent Connected",
 		"never invent install green",
-		"Connected",
 		"INSTALL_STORE APPLY",
-		"book-demo OFF",
-		"residual PASS ≠ live dogfood",
-		"~$88/$119",
-		"knowledge/analytical",
-		// s1368 portal Agent/MCP
-		"console.iome.sh/settings/agent",
-		"Agent/MCP",
-		"iomesh_ag_*",
-		"copy TUI fragment",
-		"test invoke",
-		"stub",
-		"[[mcp.servers]]",
-		"streamable HTTP",
-		"/onboard portal",
 		"agent MCP cannot write installs",
-		// s1372 post-onboard continuum cross-link
-		"/onboard next",
-		"drafts only",
-		"no auto-send",
 		"package load ≠ Memory GA",
 	} {
 		if !strings.Contains(out, want) {
@@ -187,6 +150,9 @@ func TestMeshAgentOnboardingChecklist_HonestyNeedles(t *testing.T) {
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
 		t.Fatalf("must not invent dual_write ON / Memory GA: %s", out)
+	}
+	if strings.Contains(out, "/gtm checklist") || strings.Contains(out, "iomesh plugins dogfood") {
+		t.Fatalf("default checklist must not advertise hidden drills: %s", out)
 	}
 }
 
@@ -245,49 +211,25 @@ func TestMeshAgentOnboardingStatus_HonestyNeedles(t *testing.T) {
 		t.Fatal("empty status")
 	}
 	for _, want := range []string{
-		"MCP attach",
-		"fail-open offline",
-		"never invent tool green",
+		"I/O Mesh TTFH",
 		"dual_write OFF",
 		"local-primary",
-		"book-demo OFF",
-		"portal HITL",
-		"console.iome.sh/settings/agent",
-		"console.iome.sh/integrations",
-		"never invent install green",
-		"Connected",
-		"INSTALL_STORE APPLY",
-		"empty-as-none",
 		"catalog ≠ Connected",
+		"not Memory GA",
+		"never invent Connected",
+		"empty until consume",
+		"CLIENT ≠ PULSE",
+		"knowledge Beta empty",
+		"eval template",
+		"not live APPLY",
+		"/dashboard ack",
+		"no send/pay/ship",
 		"agent MCP cannot write installs",
-		"plugins dogfood",
-		"Agent Plugins GA",
-		"residual PASS ≠ live dogfood",
-		"stub",
-		"/onboard portal",
-		"/onboard checklist",
-		"/integrations status",
-		// s1372 cross-link
-		"/onboard next",
-		// s1382 cross-link to lane status board
-		"/onboard next status",
-		// s1387 cross-link to status export receipt
-		"/onboard next export",
-		// s1402 mesh streaming lane
-		"/onboard next mesh",
-		"mesh = streaming org heartbeats",
-		"mesh ≠ memory",
-		// s1407 Ops Pack pull path
-		"/onboard next memory-pull",
-		"pull_not_probed",
-		"Ops Pack ≠ GPU fleet",
-		"pull ≠ freemium hosted palace",
-		// s1542 setup lifecycle map
+		"/onboard next ttfh",
 		"/onboard next setup",
-		"setup_not_probed",
-		"package wire ≠ Connected",
-		"repair apply ≠ invent Connected",
-		"E10 Open",
+		"/onboard next memory",
+		"/onboard next mesh",
+		"/onboard checklist",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("status missing %q in:\n%s", want, out)
@@ -295,6 +237,9 @@ func TestMeshAgentOnboardingStatus_HonestyNeedles(t *testing.T) {
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
 		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
+	}
+	if strings.Contains(out, "/gtm checklist") || strings.Contains(out, "iomesh plugins dogfood") {
+		t.Fatalf("default status must not advertise hidden drills: %s", out)
 	}
 }
 
@@ -330,7 +275,6 @@ func TestOSSPackagingHonestyOneLiner_Needles(t *testing.T) {
 	}
 }
 
-// s1372+s1377+s1382+s1402+s1407+s1413+s1417: MeshAgentOnboardingNextLanes residual-honest post-onboard continuum needles.
 func TestMeshAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 	out := MeshAgentOnboardingNextLanes()
 	if out == "" {
@@ -338,194 +282,44 @@ func TestMeshAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 	}
 	for _, want := range []string{
 		"onboard next lanes",
-		"post-onboard continuum",
+		"I/O Mesh TTFH",
 		"no MCP dial",
-		// s1582 OSS packaging residual groups
-		"Edge OSS path",
-		"Platform residual honesty",
-		"optional · anti-claims · offline residual checks",
-		"residual-check",
-		"not control plane",
-		"OSS harness",
-		"residual PASS ≠ invent control plane in MIT repo",
-		"free eng s1582",
-		"free-floor peer s1584+",
-		"oss-packaging-boundary.md",
-		"1.",
-		"iomesh plugins dogfood",
-		"offline sample validate",
-		"Agent Plugins GA",
-		"/onboard next plugins",
-		"2.",
-		"/gtm checklist",
-		"gtm-draft-only-agent",
-		"drafts only",
-		"no auto-send",
-		"human publish",
-		"GTM agent GA",
-		"/onboard next gtm",
-		"3.",
-		"iomesh-memory-mcp", // product host (s1517: residual private sample removed)
-		"iomesh-memory-mcp",
-		"github.com/iome-sh/iomesh-memory-mcp",
-		"public product attach",
-		"s1478",
-		"go install",
-		"no GOPRIVATE",
-		"docker compose still valid",
-		"control-plane / broker private",
-		"flip complete residual ≠ invent Memory GA",
-		"local-primary",
-		"dual_write OFF",
-		"package load ≠ Memory GA",
-		"freemium palace",
-		"/onboard next memory",
-		// s1402 mesh streaming lane
-		"4.",
-		"I/O Mesh",
-		"streaming org heartbeats",
-		"dept.*",
-		"mesh ≠ memory",
-		"not OTel/APM",
-		"/onboard next mesh",
-		"streams_not_probed",
-		// s1407 Ops Pack pull path
-		"5.",
-		"Memory Ops Pack pull path",
-		"iomesh memory pull",
-		"mesh → local palace",
-		"Ops Pack ≠ GPU fleet",
-		"pull_not_probed",
-		"/onboard next memory-pull",
-		"ops-pack|pull-path|memorypull|ops_pack",
-		"pull stays mesh",
-		// s1417 agentic integrations product plane 3
-		"6.",
-		"agentic integrations",
-		"product plane 3",
-		"MCP list/plan residual-honest",
-		"plan_connector_setup",
-		"/onboard next agentic",
-		"agentic-integrations|integrations|list-plan",
-		"/onboard next portal-hitl",
-		"hitl|portal_hitl|portal-dogfood|stage5|connectors-hitl",
-		"free eng s1562",
-		"list_plan_not_connected",
-		// portal HITL still
-		"7.",
-		"portal HITL",
-		"agent MCP cannot write installs",
-		"catalog ≠ Connected",
-		// s1566 E4 client attach journey stage 6
-		"8.",
-		"E4 client attach",
-		"/onboard next e4",
-		"e4-dogfood|client-attach|edge-memory-e4|e4_attach",
-		"free eng s1566",
-		"tools=6",
-		"iomesh mcp --connect",
-		// s1413 human-gates
-		"9.",
-		"human-gates",
-		"/onboard next human-gates",
-		"human|gates|apply-gates",
-		"PASS ≠ invent human-gate green",
-		"PASS ≠ live APPLY",
-		"open boxes stay open",
-		"Slack HMAC",
-		"Stripe Customers:Write",
-		"H1/H2 INSTALL_STORE",
-		"book-demo OFF",
-		"residual PASS ≠ live dogfood",
-		"never invent install green",
-		"Connected",
-		"INSTALL_STORE APPLY",
-		"empty-as-none",
-		"plugins dogfood",
-		"~$88/$119",
-		// s1382 cross-link to lane status board
-		"/onboard next status",
-		"status board",
-		// s1387 cross-link to status export receipt
-		"/onboard next export",
-		"export receipt",
-		"board/export evidence ≠ invent Connected",
-		// s1432 three product planes cross-link
-		"/onboard next planes",
-		"three product planes",
-		"three-planes|product-planes|product|pillars|three_planes",
-		"dual_auth_candidacy_open",
-		// s1437 sales/buyer claims cross-link
-		"/onboard next sales",
-		"sales/buyer claims",
-		"claims|buyer|claim-matrix|sales-claims|buyer-claims",
-		"may claim / must not claim",
-		"three-planes grounded",
-		// s1442 demo readiness cross-link
-		"/onboard next demo",
-		"demo readiness",
-		"demo-ready|readiness|demo-readiness|lighthouse|landgrab",
-		"Landgrab NOT READY",
-		"book-demo OFF",
-		"residual PASS ≠ logos met",
-		// s1447 operator readiness matrix cross-link
-		"/onboard next operator",
-		"operator readiness matrix",
-		"operator-matrix|ops-matrix|operator-readiness|ops-readiness|matrix",
-		"still_human",
-		"policy_off",
-		"not_ready",
-		// s1542 setup lifecycle P1–P7 closeout residual
+		"/onboard next ttfh",
+		"time-to-first-heartbeat",
+		"cite-both",
 		"/onboard next setup",
-		"setup lifecycle map",
-		"setup-lifecycle|lifecycle|setup_lifecycle",
-		"setup_not_probed",
-		"repair apply ≠ invent Connected",
-		"dual_write never auto ON",
-		"E10 Open",
-		"package wire ≠ Connected",
-		// s1558 Wave B edge-user-journey first-run
-		"/onboard next journey",
-		"edge-user-journey first-run map",
-		"edge-journey|user-journey|first-run|edge_user_journey",
-		"free eng s1558",
-		"Edge Memory GA candidacy only",
-		"residual PASS ≠ invent Edge Memory GA",
-		"no invent TUI portal SSO",
-		"host not auto",
-		"free-floor peer s1560+",
-		// s1570 Wave C first-run wizard residual
-		"/onboard next wizard",
-		"first-run wizard residual",
-		"first-run-wizard|guided|wave-c|wave_c|wizard-residual",
-		"free eng s1570",
-		"free-floor peer s1572+",
-		// s1586 E10 Open reaffirm residual-check (Platform residual honesty)
-		"/onboard next e10",
-		"E10 Open reaffirm",
-		"e10-open|edge-memory-e10|ga-signoff|e10_open",
-		"residual PASS ≠ invent E10 closed",
-		"free eng s1586",
-		"free-floor peer s1588+",
-		// s1590 marketing demo path (Edge OSS / demo-oriented)
-		"/onboard next marketing-demo",
-		"marketing demo path",
-		"marketing|sales-demo|demo-script|gtm-demo",
-		"local agent + local memory",
-		"mesh optional",
-		"free eng s1590",
-		"free-floor peer s1592+",
-		// pulse stays board (not mesh alias)
-		"pulse stays board",
-		"never invent pull green",
-		"pull ≠ freemium hosted palace",
-		"Knowledge Beta→GA cannot invent H1/H2 offline",
-		"leave ON_SIGNAL unset",
-		"template= ≠ install APPLY",
+		"/setup init local-memory",
+		"iomesh setup preflight",
+		"/onboard next memory",
+		"iomesh-memory-mcp",
+		"/memory ingest",
+		"source_hint=private",
+		"iomesh memory ingest",
+		"/onboard next mesh",
+		"IOMESH_ENDPOINT",
+		"/dashboard",
+		"empty until consume",
+		"CLIENT ≠ PULSE",
+		"iomesh mesh smoke",
+		"/memory digest --require-sources mesh,private",
+		"cite-both or explicit miss",
+		"/dashboard ack",
+		"no send/pay/ship",
+		"dual_write OFF",
+		"catalog ≠ Connected",
+		"not Memory GA",
+		"never invent Connected",
+		"knowledge Beta empty",
+		"eval template",
+		"not live APPLY",
+		MeshAgentOnboardingLegacyHiddenOneLiner,
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("next lanes missing %q in:\n%s", want, out)
 		}
+	}
+	if strings.Contains(out, "/gtm checklist") || strings.Contains(out, "iomesh plugins dogfood") {
+		t.Fatalf("default NextLanes must not require hidden drills: %s", out)
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
 		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
@@ -533,14 +327,42 @@ func TestMeshAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "Agent Plugins GA shipped") {
 		t.Fatalf("must not invent Memory/Plugins GA: %s", out)
 	}
-	if strings.Contains(out, "auto-send enabled") || strings.Contains(out, "GTM agent GA shipped") {
-		t.Fatalf("must not invent auto-send / GTM agent GA: %s", out)
+}
+
+func TestMeshAgentOnboardingNextTTFHLane_HonestyNeedles(t *testing.T) {
+	out := MeshAgentOnboardingNextTTFHLane()
+	if out == "" {
+		t.Fatal("empty ttfh lane")
 	}
-	if strings.Contains(out, "stream green: yes") || strings.Contains(out, "streams Connected") {
-		t.Fatalf("must not invent stream green: %s", out)
+	for _, want := range []string{
+		"onboard next ttfh lane",
+		"time-to-first-heartbeat",
+		"LLM key or Ollama",
+		"/setup init local-memory",
+		"iomesh-memory-mcp",
+		"/memory ingest",
+		"source_hint=private",
+		"IOMESH_ENDPOINT",
+		"empty until consume",
+		"CLIENT ≠ PULSE",
+		"/memory digest --require-sources mesh,private",
+		"cite-both",
+		"/dashboard ack",
+		"no send/pay/ship",
+		"dual_write OFF",
+		"catalog ≠ Connected",
+		"not Memory GA",
+		"never invent Connected",
+		"v1.3.7",
+		"v0.4.2",
+		"v1.5.12",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("ttfh lane missing %q in:\n%s", want, out)
+		}
 	}
-	if strings.Contains(out, "pull green: yes") {
-		t.Fatalf("must not invent pull green: %s", out)
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
+		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
 	}
 }
 
@@ -2706,16 +2528,16 @@ func TestAttachMCP_InjectsAionOnboardingGuidance(t *testing.T) {
 		t.Fatalf("want closed mesh-onboarding tag: %s", sys)
 	}
 	for _, want := range []string{
-		"list_connector_catalog",
-		"plan_connector_setup",
+		"I/O Mesh TTFH",
+		"/memory ingest",
+		"/memory digest --require-sources mesh,private",
 		"dual_write OFF",
-		"never invent install green",
-		"portal HITL",
+		"never invent Connected",
+		"catalog ≠ Connected",
+		"not Memory GA",
+		"portal HITL when connect",
 		"mesh-agent-onboarding",
-		// s1368 needles in injected note
-		"console.iome.sh/settings/agent",
-		"Agent/MCP",
-		"[[mcp.servers]]",
+		"/onboard next ttfh",
 	} {
 		if !strings.Contains(sys, want) {
 			t.Fatalf("mesh-onboarding note missing %q: %s", want, sys)
@@ -2755,15 +2577,19 @@ func TestOnboardNextStepLines_HonestyNeedles(t *testing.T) {
 		"TUI/session running",
 		"/setup preflight",
 		"/setup reload",
-		"/integrations list",
-		"portal-hitl",
+		"/memory ingest",
+		"/memory digest --require-sources mesh,private",
+		"/onboard next ttfh",
 		"cold start",
 		"restart iomesh",
 		"iomesh setup preflight",
+		"iomesh memory ingest",
 		"dual_write OFF",
 		"package wire ≠ Connected",
 		"catalog ≠ Connected",
 		"agent MCP cannot write installs",
+		"not Memory GA",
+		"never invent Connected",
 		"s1825",
 	} {
 		if !strings.Contains(out, want) {
