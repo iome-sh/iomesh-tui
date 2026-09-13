@@ -296,6 +296,18 @@ func TestFullscreenModel_DashboardOverlay(t *testing.T) {
 	if !strings.Contains(view, "catalog ≠ Connected") {
 		t.Fatalf("overlay missing honesty:\n%s", view)
 	}
+	if !strings.Contains(view, "1–4 eval tenancy (preview)") {
+		t.Fatalf("overlay footer must label 1–4 as eval preview:\n%s", view)
+	}
+	if !strings.Contains(view, "TTFH consume is broker /v1 messages") {
+		t.Fatalf("overlay footer must name TTFH consume as broker /v1:\n%s", view)
+	}
+	if !strings.Contains(view, "empty until consume") {
+		t.Fatalf("overlay footer missing empty until consume:\n%s", view)
+	}
+	if strings.Contains(view, "1–4 jump") {
+		t.Fatalf("overlay footer must not read 1–4 as consume jump:\n%s", view)
+	}
 
 	mod, _ = fm.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("2")})
 	fm = mod.(*fullscreenModel)

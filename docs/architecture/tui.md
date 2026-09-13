@@ -34,7 +34,7 @@ During **approval**, the footer becomes a focused y/n/a bar.
 | PgDn / Ctrl+D | Scroll transcript down |
 | `/dashboard` | Toggle overlay (empty until consume; probe if mesh attached) |
 | Esc / q | Close dashboard overlay (or dismiss help) |
-| Tab / 1–4 | Dashboard: cycle or jump tenancy |
+| Tab / 1–4 | Dashboard: cycle or jump `sre.incidents` / `eng.ops` / `cs.tickets` / `gtm.pipeline` (eval preview · not TTFH consume) |
 | Ctrl+C | Quit |
 | y / n / a | Approval once / deny / always |
 
@@ -79,7 +79,7 @@ knowledge Beta empty · analytics Beta empty · not GA
 
 - REPL `/dashboard` (no args): empty snapshot; **probe** if a mesh client is attached (`ListStreams` then `ListStreamMessages` on the first 4 names — same path as `iomesh mesh streams --messages` / broker `GET /v1/streams/{name}/messages`). **Not** portal `GET /v52` (cookie-only).
 - When **no mesh client** (`consume missing`): tell the operator to add `[iomesh]` or infer hooks from portal MCP. Infer ≠ Connected. Do **not** invent consume.
-- Fullscreen toggles an overlay. Tick is a no-op unless `/dashboard preview`. On open (non-preview) the same consume probe runs once if `Mesh()` is available. `/setup reload` hot-swaps mesh when `[iomesh]` or inferred hooks change.
+- Fullscreen toggles an overlay. Tick is a no-op unless `/dashboard preview`. On open (non-preview) the same consume probe runs once if `Mesh()` is available. `/setup reload` hot-swaps mesh when `[iomesh]` or inferred hooks change. Fullscreen keys: **esc** / **q** close · **tab** cycle tenancy · **1–4** jump `sre.incidents` / `eng.ops` / `cs.tickets` / `gtm.pipeline` (eval preview · not TTFH consume). TTFH consume is broker `/v1` messages · empty until consume.
 - Fail-open reasons: `no_streams` · `empty_stream` · `replay_disabled` · `broker_unavailable`. Errors → empty + reason, never the eval seed.
 - **PULSE**-shaped rows only when ≥1 broker message was decoded. Never invent PULSE from eval or from a stream list alone. Create stream ≠ PULSE. Mesh pub is ephemeral and does not fill `/dashboard`.
 - Badge **EMPTY** (no mesh, no consume) / **CLIENT** (mesh attached, no consumed rows) / **PULSE** (≥1 decoded message) / **EVAL** (`/dashboard preview` only).

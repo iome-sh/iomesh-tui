@@ -696,7 +696,7 @@ func (m *fullscreenModel) renderFooter() string {
 		return sep + "\n" + hint + "\n" + m.theme.Dim.Render("keyboard focus: approval")
 	}
 	if m.dash != nil {
-		hint := m.theme.Help.Render("esc/q close  ·  tab cycle tenancy  ·  1–4 jump  ·  eval template ≠ Connected")
+		hint := m.theme.Help.Render("esc/q close  ·  tab cycle tenancy  ·  1–4 eval tenancy (preview) · TTFH consume is broker /v1 messages · empty until consume")
 		return sep + "\n" + hint
 	}
 	ws := ""

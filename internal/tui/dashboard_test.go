@@ -341,6 +341,12 @@ func TestReadmeDashboardShowcase(t *testing.T) {
 		"eval template",
 		"empty until consume",
 		"knowledge Beta empty",
+		"1–4",
+		"sre.incidents",
+		"eng.ops",
+		"cs.tickets",
+		"gtm.pipeline",
+		"(eval preview · not TTFH consume)",
 	} {
 		if !strings.Contains(readme, n) {
 			t.Fatalf("README showcase missing %q", n)
@@ -351,6 +357,37 @@ func TestReadmeDashboardShowcase(t *testing.T) {
 	}
 	if strings.Contains(readme, "tenant GIF") && strings.Contains(readme, "live tenant feed as proof") {
 		t.Fatal("README must not sell a tenant GIF as Connected proof")
+	}
+	if strings.Contains(readme, "leftover_is_bind") {
+		t.Fatal("README must not mention leftover_is_bind")
+	}
+	docs, err := os.ReadFile("../../docs/architecture/tui.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tuiDoc := string(docs)
+	if !strings.Contains(tuiDoc, "1–4") || !strings.Contains(tuiDoc, "gtm.pipeline") || !strings.Contains(tuiDoc, "(eval preview · not TTFH consume)") {
+		t.Fatal("tui.md must label 1–4 tenancy as eval preview, not TTFH consume")
+	}
+}
+
+func TestDashboardHelp_EvalPreviewTenancyNotConsume(t *testing.T) {
+	h := dashboardHelp()
+	wantFocus := "eval preview tenancy: sre.incidents | eng.ops | cs.tickets | gtm.pipeline (preview seed · not consume · catalog ≠ Connected)"
+	if !strings.Contains(h, wantFocus) {
+		t.Fatalf("help must label focus tenancy as eval preview, not consume:\n%s", h)
+	}
+	if !strings.Contains(h, "1–4 eval tenancy (preview)") {
+		t.Fatalf("help fullscreen must name 1–4 as eval preview:\n%s", h)
+	}
+	if !strings.Contains(h, "TTFH consume is broker /v1 messages") {
+		t.Fatalf("help must name TTFH consume as broker /v1:\n%s", h)
+	}
+	if !strings.Contains(h, "empty until consume") {
+		t.Fatalf("help must keep empty until consume:\n%s", h)
+	}
+	if strings.Contains(h, "1-4 jump") || strings.Contains(h, "1–4 jump") {
+		t.Fatalf("help must not read 1–4 as consume jump:\n%s", h)
 	}
 }
 
