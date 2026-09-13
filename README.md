@@ -179,7 +179,7 @@ No GIF of a live tenant. Default `/dashboard` stays **empty** until consume (`Li
 /heartbeat help              # aliases: /heartbeat /mesh-console
 ```
 
-Fullscreen keys: **esc** / **q** close · **tab** cycle tenancy · **1–4** jump `sre.incidents` / `eng.ops` / `cs.tickets` / `gtm.pipeline`.
+Fullscreen keys: **esc** / **q** close · **tab** cycle tenancy · **1–4** jump `sre.incidents` / `eng.ops` / `cs.tickets` / `gtm.pipeline` (eval preview · not TTFH consume).
 
 Example (default **EMPTY** — no consume yet; badge **EMPTY** = no mesh client):
 

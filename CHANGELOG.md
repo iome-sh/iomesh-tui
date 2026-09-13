@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- **Dashboard 1–4 tenancy is eval-preview, not TTFH consume.** Keys still jump `sre.incidents` / `eng.ops` / `cs.tickets` / `gtm.pipeline` on `/dashboard preview` (MeshConsole seed). First-run EMPTY is broker `/v1` messages · empty until consume. catalog ≠ Connected · dual_write OFF.
 - **CLI usage primary is TTFH** (`iomesh setup` / `memory ingest` / `mesh smoke`); advanced mesh consumer/pub, memory pull, plugins, and agent serve listed separately. Commands still work.
 - **EMPTY `/dashboard` is TTFH heartbeat-only** (no knowledge/analytics count row, no Ops Pack pull compose). Preview/PULSE still show kind counts. dual_write OFF · catalog ≠ Connected.
 - **Default TUI/CLI/onboard surface is I/O Mesh TTFH** (setup → RCA ingest → optional mesh consume/dashboard → cite-both digest). Legacy `/gtm` `/plugins` `/onboard next` lanes still work if typed; hidden from default help.
