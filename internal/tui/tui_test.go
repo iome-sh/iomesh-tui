@@ -1349,6 +1349,55 @@ func TestHandleSlash_OnboardNextTTFHLane(t *testing.T) {
 	}
 }
 
+func TestHandleSlash_OnboardNextTTFHDogfood(t *testing.T) {
+	rt := testRuntime(t)
+	var out bytes.Buffer
+	adapter := runtimeAdapter{rt: rt}
+
+	needles := []string{
+		"dual_write OFF",
+		"catalog ≠ Connected",
+		"EMPTY",
+		"knowledge Beta empty",
+		"/memory digest --require-sources mesh,private",
+	}
+	forbid := []string{
+		"Connected: yes",
+		"dual_write ON",
+		"Memory GA shipped",
+		"analysis  ops 0",
+	}
+	for _, line := range []string{
+		"/onboard next ttfh dogfood",
+		"/onboard next ttfh soft",
+		"/onboard next ttfh samples",
+		"/onboard next ttfh offline",
+		"/onboard next ttfh residual-check",
+		"/onboard next time-to-first-heartbeat dogfood",
+		"/agent-onboard after ttfh offline",
+	} {
+		out.Reset()
+		_, err := handleSlash(&out, adapter, line)
+		if err != nil {
+			t.Fatalf("%s: %v", line, err)
+		}
+		s := out.String()
+		if !strings.Contains(s, "time-to-first-heartbeat") && !strings.Contains(strings.ToLower(s), "ttfh") {
+			t.Fatalf("%s missing ttfh / time-to-first-heartbeat:\n%s", line, s)
+		}
+		for _, want := range needles {
+			if !strings.Contains(s, want) {
+				t.Fatalf("%s missing %q in:\n%s", line, want, s)
+			}
+		}
+		for _, bad := range forbid {
+			if strings.Contains(s, bad) {
+				t.Fatalf("%s must not invent %q:\n%s", line, bad, s)
+			}
+		}
+	}
+}
+
 // s1377: /onboard next plugins|plugin|dogfood — residual-honest plugins dogfood lane drill.
 func TestHandleSlash_OnboardNextPluginsLane(t *testing.T) {
 	rt := testRuntime(t)

@@ -65,6 +65,8 @@ func run(args []string) int {
 			return cmdMemory(args[1:])
 		case "setup":
 			return cmdSetup(args[1:])
+		case "ttfh":
+			return cmdTTFH(args[1:])
 		case "agent":
 			return cmdAgent(args[1:])
 		case "help", "-h", "--help":
@@ -3166,6 +3168,57 @@ func loadConfig(path string) (*config.Config, error) {
 	return config.LoadUser()
 }
 
+// cmdTTFH is the offline TTFH smoke (walk + EMPTY dashboard). Never dials the broker.
+func cmdTTFH(args []string) int {
+	fs := flag.NewFlagSet("ttfh", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	fs.Usage = printTTFHUsage
+	unitFlag := fs.Bool("unit", false, "offline, no network (default when IOMESH_ENDPOINT unset)")
+	if err := fs.Parse(args); err != nil {
+		if err == flag.ErrHelp {
+			return 0
+		}
+		return 2
+	}
+	if fs.NArg() > 0 {
+		fmt.Fprintf(os.Stderr, "unknown ttfh argument %q\n", fs.Arg(0))
+		printTTFHUsage()
+		return 2
+	}
+
+	endpoint := strings.TrimSpace(os.Getenv("IOMESH_ENDPOINT"))
+	if cfg, err := loadConfig(""); err == nil && cfg != nil {
+		if ep := strings.TrimSpace(cfg.IOMesh.Endpoint); ep != "" {
+			endpoint = ep
+		}
+	}
+
+	fmt.Fprintln(os.Stdout, tui.FormatTTFHUnitReport())
+	fmt.Fprintln(os.Stdout, "dual_write OFF")
+	// Explicit --unit always stays offline. No endpoint → unit by default.
+	// Endpoint set and --unit not set: hint mesh smoke; never dial from this command.
+	if !*unitFlag && endpoint != "" {
+		fmt.Fprintln(os.Stdout, "optional: iomesh mesh smoke (fail-open · never invent Connected · PULSE only after ≥1 decoded broker message)")
+	}
+	return 0
+}
+
+func printTTFHUsage() {
+	fmt.Fprint(os.Stderr, `iomesh ttfh — offline TTFH smoke (dashboard EMPTY · no broker)
+
+Usage:
+  iomesh ttfh [--unit]
+
+Flags:
+  --unit   offline, no network (default when IOMESH_ENDPOINT / config endpoint unset)
+  -h       help
+
+Prints the TTFH walk and EMPTY dashboard snapshot. dual_write OFF.
+Does not dial the broker. Never invents Connected / PULSE / Memory GA / live APPLY.
+When IOMESH_ENDPOINT is set and --unit is not, prints optional iomesh mesh smoke hint.
+`)
+}
+
 func newLogger(verbose bool) *slog.Logger {
 	level := slog.LevelInfo
 	if verbose {
@@ -3183,6 +3236,7 @@ Usage:
   iomesh -p "prompt"             headless single prompt
   iomesh setup init|preflight    TTFH setup
   iomesh memory ingest           TTFH RCA ingest
+  iomesh ttfh [--unit]            TTFH offline smoke (dashboard EMPTY · no broker)
   iomesh mesh smoke              optional (needs IOMESH_ENDPOINT · dashboard empty until consume)
   iomesh models | sessions | mcp | version
 

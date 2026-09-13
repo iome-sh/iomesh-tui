@@ -137,7 +137,7 @@ make smoke-unit                    # offline mesh tests (alias: dogfood-unit)
 2. Run the TUI: `./bin/iomesh` (or `iomesh` if installed).
 3. Attach local memory: `/setup init` `local-memory` · `/setup preflight` · start `iomesh-memory-mcp` if needed · `/setup reload` (hot-swaps MCP **and** re-scans skills). Cold CLI path: `iomesh setup init` → restart `iomesh` · `iomesh setup preflight` (CLI has **no** `setup reload`). After preflight, the report prints the same dual path (in-session `/setup reload` vs cold restart). Memory dual-write stays `dual_write OFF`.
 4. `/memory ingest` three RCA-shaped turns (`source_hint=private`). CLI: `iomesh memory ingest`.
-5. Optional mesh: set `IOMESH_ENDPOINT` → consume → `/dashboard` (**empty until consume** · **PULSE** only after ≥1 decoded broker message · **CLIENT ≠ PULSE**). CLI: `iomesh mesh smoke` (needs endpoint). Optional peek at the landing heartbeat: `/dashboard preview` (eval template, not your org · see [below](#dashboard-heartbeat-live-feed)).
+5. Optional mesh: set `IOMESH_ENDPOINT` → consume → `/dashboard` (**empty until consume** · **PULSE** only after ≥1 decoded broker message · **CLIENT ≠ PULSE**). CLI: `iomesh mesh smoke` (needs endpoint). Optional peek at the landing heartbeat: `/dashboard preview` (eval template, not your org · see [below](#dashboard-heartbeat-live-feed)). Offline TTFH smoke (no broker): `iomesh ttfh --unit` (slash twin: `/onboard next ttfh dogfood`).
 6. `/memory digest --require-sources mesh,private` — cite-both **or explicit miss** (miss is success).
 7. Miss ACK: `/dashboard ack` (local ritual · no send/pay/ship). Map: `/onboard next ttfh`.
 
@@ -221,6 +221,7 @@ iomesh --repl
 iomesh -p "prompt"
 iomesh setup init|preflight    TTFH setup
 iomesh memory ingest           TTFH RCA ingest
+iomesh ttfh [--unit]            TTFH offline smoke (dashboard EMPTY · no broker)
 iomesh mesh smoke              optional (needs IOMESH_ENDPOINT · dashboard empty until consume)
 iomesh models | sessions | mcp | version
 Advanced: mesh consumer/pub · memory pull · plugins · agent serve
