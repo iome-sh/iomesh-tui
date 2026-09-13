@@ -1,6 +1,6 @@
 ---
 name: mesh-agent-onboarding
-description: Residual-honest I/O Mesh TTFH (setup → RCA ingest → optional consume/dashboard → cite-both digest · dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · portal HITL when connect)
+description: Residual-honest I/O Mesh TTFH onboard (`/onboard next ttfh` · setup → RCA ingest → optional consume/dashboard → cite-both digest · dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · portal HITL when connect)
 ---
 
 # Mesh agent onboarding (residual-honest)
