@@ -2564,8 +2564,10 @@ func TestAttachMCP_InjectsAionOnboardingGuidance(t *testing.T) {
 	}
 }
 
-// TestOnboardNextStepLines_HonestyNeedles pins s1825 residual-honest next-step
+// TestOnboardNextStepLines_HonestyNeedles pins residual-honest next-step
 // after /onboard status|checklist|next|portal (peer of IntegrationsNextStepLines s1727).
+// Operator-facing lines keep dual_write OFF · catalog ≠ Connected · not Memory GA
+// and omit the internal s1825 serial.
 func TestOnboardNextStepLines_HonestyNeedles(t *testing.T) {
 	lines := OnboardNextStepLines()
 	if len(lines) == 0 {
@@ -2590,11 +2592,13 @@ func TestOnboardNextStepLines_HonestyNeedles(t *testing.T) {
 		"agent MCP cannot write installs",
 		"not Memory GA",
 		"never invent Connected",
-		"s1825",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("onboard next-step missing %q in:\n%s", want, out)
 		}
+	}
+	if strings.Contains(out, "s1825") || strings.Contains(out, "free eng s1825") {
+		t.Fatalf("onboard next-step must not print internal serial:\n%s", out)
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
 		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", out)
@@ -2609,7 +2613,8 @@ func TestOnboardNextStepLines_HonestyNeedles(t *testing.T) {
 	}
 }
 
-// TestOnboardSurfaces_S1825NextStep pins s1825 next-step footers on onboard maps.
+// TestOnboardSurfaces_S1825NextStep pins next-step footers on onboard maps
+// (dual_write OFF · catalog ≠ Connected · not Memory GA; no printed s1825).
 func TestOnboardSurfaces_S1825NextStep(t *testing.T) {
 	for name, out := range map[string]string{
 		"status":    MeshAgentOnboardingStatus(),
@@ -2618,16 +2623,20 @@ func TestOnboardSurfaces_S1825NextStep(t *testing.T) {
 		"portal":    MeshAgentOnboardingPortalHandoff(),
 	} {
 		for _, want := range []string{
-			"s1825",
 			"/setup preflight",
 			"/setup reload",
 			"package wire ≠ Connected",
+			"catalog ≠ Connected",
 			"agent MCP cannot write installs",
 			"dual_write OFF",
+			"not Memory GA",
 		} {
 			if !strings.Contains(out, want) {
 				t.Fatalf("%s surface missing %q in:\n%s", name, want, out)
 			}
+		}
+		if strings.Contains(out, "free eng s1825") {
+			t.Fatalf("%s must not print internal next-step serial:\n%s", name, out)
 		}
 		if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
 			t.Fatalf("%s must not invent dual_write ON / Memory GA:\n%s", name, out)

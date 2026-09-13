@@ -42,7 +42,8 @@ import (
 // GtmDraftOnlyAgentGuidanceNote / MemoryAdvancedAgentGuidanceNote.
 
 // OSSPackagingHonestyOneLiner residual-honest MIT OSS packaging boundary (s1582).
-// Used on bare /onboard residual packaging line and continuum help. Prefer user-facing
+// Kept for docs / skill / explicit packaging surfaces. Default /onboard and
+// /onboard next do not attach this line (TTFH residual only). Prefer user-facing
 // "residual-check" alongside slash token dogfood. Never invents control plane / Memory GA /
 // dual_write ON / book-demo ON / live dogfood green.
 const OSSPackagingHonestyOneLiner = "MIT OSS harness · not control plane · dual_write OFF · Edge Memory GA candidacy only · book-demo OFF · residual PASS ≠ invent control plane in MIT repo · soft residual-check (… dogfood slash) = offline residual honesty check · session soft ≠ live dogfood · ≠ invent platform green · free eng s1582 · free-floor peer s1584+ mention only · docs/architecture/oss-packaging-boundary.md"
@@ -55,7 +56,8 @@ const MeshAgentOnboardingLegacyHiddenOneLiner = "legacy (hidden): /gtm · /plugi
 // Dual path after status/checklist/next lanes/portal handoff: in-session TTFH continuum
 // vs cold start. Peer of IntegrationsNextStepLines (s1727) · setup next-step continuum (s1686–s1723).
 // dual_write OFF · package wire ≠ Connected · catalog ≠ Connected · agent MCP cannot write installs ·
-// not Memory GA · free eng s1825. Never invent Connected / Memory GA from onboard maps alone.
+// not Memory GA. Never invent Connected / Memory GA from onboard maps alone.
+// Operator-facing note omits the internal s1825 serial.
 //
 // MeshAgentOnboardingNextStepLines is the same helper (family alias).
 func OnboardNextStepLines() []string {
@@ -63,7 +65,7 @@ func OnboardNextStepLines() []string {
 		"next: dual path residual-honest after onboard maps",
 		"      if TUI/session running → /setup preflight · /setup reload · optional /memory ingest · /memory digest --require-sources mesh,private · /onboard next ttfh",
 		"      else cold start → restart iomesh · iomesh setup preflight · optional iomesh memory ingest",
-		"note: dual_write OFF · package wire ≠ Connected · catalog ≠ Connected · agent MCP cannot write installs · not Memory GA · never invent Connected · free eng s1825",
+		"note: dual_write OFF · package wire ≠ Connected · catalog ≠ Connected · agent MCP cannot write installs · not Memory GA · never invent Connected",
 	}
 }
 

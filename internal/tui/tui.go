@@ -1179,27 +1179,29 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 						fmt.Fprintln(out, "— residual: next lane status export receipt · evidence_kind=onboard_next_lane_status_export · offline_static · not_live_dogfood · s1387 · session soft ≠ live dogfood · streams_not_probed · pull_not_probed · list_plan_not_connected · board/export evidence ≠ invent Connected · dual_write OFF · mesh ≠ memory · agentic tip /onboard next agentic · human-gates tip /onboard next human-gates")
 						return false, nil
 					default:
-						// Unknown next sub → TTFH overview + short hidden-lane hint.
+						// Unknown next sub → TTFH overview + short hidden-lane hint (not the 40-lane dump).
 						fmt.Fprintln(out, agent.MeshAgentOnboardingNextLanes())
 						fmt.Fprintln(out, "— residual: I/O Mesh TTFH · dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · empty until consume · CLIENT ≠ PULSE")
-						fmt.Fprintln(out, "usage: /onboard next [ttfh|setup|memory|mesh]  (aliases time-to-first-heartbeat|cite-both; dashboard/digest via /dashboard · /memory digest)")
+						fmt.Fprintln(out, "usage: /onboard next [ttfh|setup|memory|mesh]")
 						fmt.Fprintln(out, agent.MeshAgentOnboardingLegacyHiddenOneLiner)
 						return false, nil
 					}
 				}
 				fmt.Fprintln(out, agent.MeshAgentOnboardingNextLanes())
 				fmt.Fprintln(out, "— residual: I/O Mesh TTFH · dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · empty until consume · CLIENT ≠ PULSE")
+				fmt.Fprintln(out, "usage: /onboard next [ttfh|setup|memory|mesh]")
+				fmt.Fprintln(out, agent.MeshAgentOnboardingLegacyHiddenOneLiner)
 				return false, nil
 			}
-			// Unknown subcommand: still print guidance + usage hint.
+			// Unknown subcommand: TTFH usage + hidden-lane one-liner (not packaging / 40-lane dump).
 			fmt.Fprintln(out, agent.MeshAgentOnboardingGuidanceNote())
-			fmt.Fprintln(out, "— residual: I/O Mesh TTFH · dual_write OFF · never invent Connected · catalog ≠ Connected · not Memory GA · skill mesh-agent-onboarding via read_skill")
-			fmt.Fprintln(out, "usage: /onboard [help|checklist|status|next]  (TTFH walk; aliases /agent-onboard; next aliases after|continue|lanes; next lanes: ttfh|setup|memory|mesh)")
+			fmt.Fprintln(out, "— residual: I/O Mesh TTFH · dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · empty until consume · CLIENT ≠ PULSE")
+			fmt.Fprintln(out, "usage: /onboard [help|checklist|status|next]  (TTFH: /onboard next ttfh · setup · memory · mesh)")
 			fmt.Fprintln(out, agent.MeshAgentOnboardingLegacyHiddenOneLiner)
 			return false, nil
 		}
 		fmt.Fprintln(out, agent.MeshAgentOnboardingGuidanceNote())
-		fmt.Fprintln(out, "— residual: I/O Mesh TTFH · dual_write OFF · never invent Connected · catalog ≠ Connected · not Memory GA · skill mesh-agent-onboarding via read_skill")
+		fmt.Fprintln(out, "— residual: I/O Mesh TTFH · dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · empty until consume · CLIENT ≠ PULSE")
 	case "/plugins", "/plugin":
 		// s1392: residual-honest /plugins slash soft offline dogfood.
 		// Subcommands: help|? · list · validate · dogfood (aliases soft|samples|offline) · status.
