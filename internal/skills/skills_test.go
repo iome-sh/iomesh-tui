@@ -619,6 +619,9 @@ func TestLoadBuiltin_S1363MeshAgentOnboardingSkillDogfood(t *testing.T) {
 	if strings.Contains(sk.Description, "Connected: yes") || strings.Contains(desc, "memory ga shipped") {
 		t.Fatalf("description invents Connected/Memory GA: %q", sk.Description)
 	}
+	if strings.Contains(sk.Description, "optional consume/dashboard") {
+		t.Fatalf("description must not fuse optional consume/dashboard:\n%s", sk.Description)
+	}
 	body := sk.Body
 	for _, want := range []string{
 		"/onboard next ttfh",
@@ -627,6 +630,13 @@ func TestLoadBuiltin_S1363MeshAgentOnboardingSkillDogfood(t *testing.T) {
 		"cite-both",
 		"source_hint=private",
 		"CLIENT ≠ PULSE",
+		"R0",
+		"R1",
+		"Optional mesh",
+		"not overlay PULSE",
+		"parked",
+		"R3",
+		"R4",
 		"list_connector_catalog",
 		"plan_connector_setup",
 		"list_org_connector_installs",
@@ -975,6 +985,16 @@ func TestLoadBuiltin_S1363MeshAgentOnboardingSkillDogfood(t *testing.T) {
 			t.Fatalf("skill body missing %q:\n%s", want, body)
 		}
 	}
+	for _, fused := range []string{
+		"optional consume/dashboard",
+		"optional consume / `/dashboard`",
+		"IOMESH_ENDPOINT consume /dashboard",
+		"IOMESH_ENDPOINT` consume `/dashboard",
+	} {
+		if strings.Contains(body, fused) {
+			t.Fatalf("skill Start here must not fuse %q (R1 --live ≠ R3 overlay PULSE):\n%s", fused, body)
+		}
+	}
 }
 
 // TestS1363SkillDescriptionResidualHonest pins frontmatter honesty.
@@ -999,6 +1019,22 @@ func TestS1363SkillDescriptionResidualHonest(t *testing.T) {
 	}
 	if !strings.Contains(desc, "memory") {
 		t.Fatalf("description should mention memory honesty: %q", sk.Description)
+	}
+	for _, want := range []string{
+		"/onboard next ttfh",
+		"R0–R4",
+		"R1 --live",
+		"R3 overlay PULSE",
+		"dual_write OFF",
+		"catalog ≠ Connected",
+		"not Memory GA",
+	} {
+		if !strings.Contains(sk.Description, want) {
+			t.Fatalf("description missing one-walk needle %q: %q", want, sk.Description)
+		}
+	}
+	if strings.Contains(sk.Description, "optional consume/dashboard") {
+		t.Fatalf("description must not fuse optional consume/dashboard: %q", sk.Description)
 	}
 }
 

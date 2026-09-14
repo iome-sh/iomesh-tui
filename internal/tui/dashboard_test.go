@@ -385,6 +385,9 @@ func TestReadmeDashboardShowcase(t *testing.T) {
 	if strings.Contains(readme, "leftover_is_bind") {
 		t.Fatal("README must not mention leftover_is_bind")
 	}
+	if strings.Contains(readme, "optional consume / `/dashboard`") {
+		t.Fatal("README lede must not fuse optional consume with overlay /dashboard")
+	}
 	docs, err := os.ReadFile("../../docs/architecture/tui.md")
 	if err != nil {
 		t.Fatal(err)
@@ -412,6 +415,12 @@ func TestDashboardHelp_EvalPreviewTenancyNotConsume(t *testing.T) {
 	}
 	if strings.Contains(h, "1-4 jump") || strings.Contains(h, "1–4 jump") {
 		t.Fatalf("help must not read 1–4 as consume jump:\n%s", h)
+	}
+	if !strings.Contains(h, "/dashboard consume is R3 overlay PULSE (parked)") {
+		t.Fatalf("help must name /dashboard consume as R3 overlay PULSE parked:\n%s", h)
+	}
+	if !strings.Contains(h, "R1 is iomesh ttfh --live fail-open, not this page") {
+		t.Fatalf("help must name R1 as ttfh --live, not this page:\n%s", h)
 	}
 }
 

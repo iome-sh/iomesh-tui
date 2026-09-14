@@ -657,6 +657,11 @@ func TestMeshAgentOnboardingNextMeshLane_HonestyNeedles(t *testing.T) {
 		"--messages",
 		"/dashboard",
 		"mesh pub ephemeral ≠ consume",
+		"R1 iomesh ttfh --live",
+		"≠ this lane",
+		"R3 overlay",
+		"parked",
+		"required for E-G1",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("mesh lane missing %q in:\n%s", want, out)
