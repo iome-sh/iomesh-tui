@@ -221,7 +221,7 @@ iomesh --repl
 iomesh -p "prompt"
 iomesh setup init|preflight    TTFH setup
 iomesh memory ingest           TTFH RCA ingest
-iomesh ttfh [--unit]            TTFH offline smoke (dashboard EMPTY · no broker)
+iomesh ttfh [--unit|--live]     TTFH smoke (dashboard EMPTY · --live light consume)
 iomesh mesh smoke              optional (needs IOMESH_ENDPOINT · dashboard empty until consume)
 iomesh models | sessions | mcp | version
 Advanced: mesh consumer/pub · memory pull · plugins · agent serve

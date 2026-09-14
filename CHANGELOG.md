@@ -8,9 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **`iomesh ttfh --live`** light consume probe (fail-open, never invent PULSE). Always prints the offline walk + `dual_write OFF` first. `--unit` wins (stay offline). No endpoint → `live: no IOMESH_ENDPOINT · EMPTY · not PULSE` exit 0. Broker network/4xx/5xx → `live: broker unreachable · EMPTY · not PULSE · not Connected` exit 0. Never invents Connected / Memory GA / `dual_write ON` / live APPLY.
 - **`iomesh ttfh [--unit]`** offline TTFH smoke (EMPTY dashboard honesty · no broker dial). `/onboard next ttfh dogfood` same residual. Never invents Connected/PULSE.
 
 ### Changed
+- **TTFH walk adds patterns / facts-as-of / pull** after miss ACK: `/memory patterns` (Beta · empty ≠ invent · never APPLY) · `/memory facts-as-of` (palace SoT · not Memory GA) · optional `iomesh memory pull` (mesh → local palace · pull ≠ invent Connected). dual_write OFF. `/help` mentions patterns (Beta) and facts-as-of on the primary memory line.
 - **Default `/onboard` / `/onboard next` residual is TTFH-short** (no packaging dump, no 40-lane usage). Hidden lanes still work if typed.
 - **Fullscreen first-run chrome is TTFH next-actions** (setup/ingest/dashboard), not generic /theme keys. dual_write OFF · catalog ≠ Connected · empty until consume · never invent Connected.
 - **Dashboard 1–4 tenancy is eval-preview, not TTFH consume.** Keys still jump `sre.incidents` / `eng.ops` / `cs.tickets` / `gtm.pipeline` on `/dashboard preview` (MeshConsole seed). First-run EMPTY is broker `/v1` messages · empty until consume. catalog ≠ Connected · dual_write OFF.

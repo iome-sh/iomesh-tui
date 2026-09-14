@@ -91,6 +91,15 @@ func TestFullscreenModel_TTFHFirstRunChrome(t *testing.T) {
 	if !strings.Contains(joined, "/dashboard") {
 		t.Fatalf("missing /dashboard:\n%s", joined)
 	}
+	if !strings.Contains(joined, "/memory patterns") {
+		t.Fatalf("missing /memory patterns:\n%s", joined)
+	}
+	if !strings.Contains(joined, "/memory facts-as-of") {
+		t.Fatalf("missing /memory facts-as-of:\n%s", joined)
+	}
+	if !strings.Contains(joined, "empty until consume") {
+		t.Fatalf("missing empty until consume:\n%s", joined)
+	}
 	ph := m.input.Placeholder
 	if !strings.Contains(ph, "/setup preflight") && !strings.Contains(ph, "/memory ingest") {
 		t.Fatalf("placeholder missing TTFH next-action: %q", ph)

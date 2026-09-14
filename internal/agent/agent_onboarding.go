@@ -246,6 +246,12 @@ func MeshAgentOnboardingNextTTFHLane() string {
     6. /memory digest --require-sources mesh,private — cite-both or explicit miss
        · miss is success · do not invent cite-both
     7. Miss ACK: /dashboard ack (local ritual · no send/pay/ship)
+    8. Short-term pattern (hours–days, after consume): /memory patterns [--limit N]
+       · ops pulse Beta · empty ≠ invent patterns · suggestive · never APPLY
+    9. Long-term pattern (weeks–months): /memory facts-as-of --as-of <RFC3339>
+       · palace SoT · not Memory GA · dual_write OFF
+    10. After PULSE (optional): iomesh memory pull
+       · mesh → local palace · dual_write OFF · pull ≠ invent Connected
   Aliases: /onboard next ttfh|time-to-first-heartbeat|cite-both
   Companion: /onboard next setup · /onboard next memory · /onboard next mesh
   ` + ModeAPinHonestyLine() + `

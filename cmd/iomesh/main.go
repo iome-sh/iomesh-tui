@@ -3168,12 +3168,22 @@ func loadConfig(path string) (*config.Config, error) {
 	return config.LoadUser()
 }
 
-// cmdTTFH is the offline TTFH smoke (walk + EMPTY dashboard). Never dials the broker.
+const ttfhLiveTimeout = 5 * time.Second
+
+const (
+	ttfhLiveNoEndpoint  = "live: no IOMESH_ENDPOINT · EMPTY · not PULSE · catalog ≠ Connected · CLIENT ≠ PULSE"
+	ttfhLiveEmpty       = "live: EMPTY until consume · not PULSE · catalog ≠ Connected · CLIENT ≠ PULSE"
+	ttfhLiveUnreachable = "live: broker unreachable · EMPTY · not PULSE · not Connected"
+)
+
+// cmdTTFH is the TTFH smoke (walk + EMPTY dashboard). Default / --unit stay offline.
+// --live is a light consume probe (not full mesh smoke / not catalog APPLY). Fail-open.
 func cmdTTFH(args []string) int {
 	fs := flag.NewFlagSet("ttfh", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 	fs.Usage = printTTFHUsage
-	unitFlag := fs.Bool("unit", false, "offline, no network (default when IOMESH_ENDPOINT unset)")
+	unitFlag := fs.Bool("unit", false, "offline, no network (wins over --live; default when IOMESH_ENDPOINT unset)")
+	liveFlag := fs.Bool("live", false, "light consume probe (fail-open; never invent PULSE)")
 	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
 			return 0
@@ -3186,8 +3196,9 @@ func cmdTTFH(args []string) int {
 		return 2
 	}
 
+	cfg, _ := loadConfig("")
 	endpoint := strings.TrimSpace(os.Getenv("IOMESH_ENDPOINT"))
-	if cfg, err := loadConfig(""); err == nil && cfg != nil {
+	if cfg != nil {
 		if ep := strings.TrimSpace(cfg.IOMesh.Endpoint); ep != "" {
 			endpoint = ep
 		}
@@ -3195,27 +3206,92 @@ func cmdTTFH(args []string) int {
 
 	fmt.Fprintln(os.Stdout, tui.FormatTTFHUnitReport())
 	fmt.Fprintln(os.Stdout, "dual_write OFF")
-	// Explicit --unit always stays offline. No endpoint → unit by default.
-	// Endpoint set and --unit not set: hint mesh smoke; never dial from this command.
-	if !*unitFlag && endpoint != "" {
+	// --unit wins over --live (stay offline). No --live + endpoint: hint mesh smoke; never dial.
+	if *unitFlag {
+		return 0
+	}
+	if *liveFlag {
+		fmt.Fprintln(os.Stdout, ttfhLiveLine(cfg, endpoint))
+		return 0
+	}
+	if endpoint != "" {
 		fmt.Fprintln(os.Stdout, "optional: iomesh mesh smoke (fail-open · never invent Connected · PULSE only after ≥1 decoded broker message)")
 	}
 	return 0
 }
 
+func ttfhLiveLine(cfg *config.Config, endpoint string) string {
+	if strings.TrimSpace(endpoint) == "" {
+		return ttfhLiveNoEndpoint
+	}
+	return probeTTFHLive(cfg, endpoint)
+}
+
+// probeTTFHLive is a light consume probe: Health (fail-open) → GET /v1/streams →
+// GET /v1/streams/{name}/messages?limit=20. Not full mesh smoke. Never APPLY.
+func probeTTFHLive(cfg *config.Config, endpoint string) string {
+	meshCfg := iomesh.Config{
+		Enabled:  true,
+		Endpoint: strings.TrimSpace(endpoint),
+	}
+	if cfg != nil {
+		meshCfg.Tenant = cfg.IOMesh.Tenant
+		meshCfg.APIKeyEnv = cfg.IOMesh.APIKeyEnv
+		meshCfg.OrgID = cfg.IOMesh.Org
+		meshCfg.WorkspaceID = cfg.IOMesh.Workspace
+		meshCfg.Department = cfg.IOMesh.Department
+	}
+	mesh := iomesh.New(meshCfg, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	if mesh == nil || !mesh.Enabled() {
+		return ttfhLiveUnreachable
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), ttfhLiveTimeout)
+	defer cancel()
+
+	// Existing client Health is /health (not /v1/health). Fail-open: do not gate consume.
+	_ = mesh.Health(ctx)
+
+	streams, err := mesh.ListStreams(ctx)
+	if err != nil {
+		return ttfhLiveUnreachable
+	}
+	var name string
+	for _, s := range streams {
+		if n := strings.TrimSpace(s.Name); n != "" {
+			name = n
+			break
+		}
+	}
+	if name == "" {
+		return ttfhLiveEmpty
+	}
+	msgs, err := mesh.ListStreamMessages(ctx, name, iomesh.ListStreamMessagesOptions{Limit: 20})
+	if err != nil {
+		return ttfhLiveUnreachable
+	}
+	n := len(msgs)
+	if n == 0 {
+		return ttfhLiveEmpty
+	}
+	return fmt.Sprintf("live: decoded %d message(s) · /dashboard may PULSE · CLIENT ≠ PULSE until overlay consume · catalog ≠ Connected", n)
+}
+
 func printTTFHUsage() {
-	fmt.Fprint(os.Stderr, `iomesh ttfh — offline TTFH smoke (dashboard EMPTY · no broker)
+	fmt.Fprint(os.Stderr, `iomesh ttfh — TTFH smoke (dashboard EMPTY · --unit offline · --live light consume)
 
 Usage:
-  iomesh ttfh [--unit]
+  iomesh ttfh [--unit|--live]
 
 Flags:
-  --unit   offline, no network (default when IOMESH_ENDPOINT / config endpoint unset)
+  --unit   offline, no network (wins over --live; default when IOMESH_ENDPOINT / config endpoint unset)
+  --live   light consume probe (GET /v1/streams · fail-open · never invent PULSE)
   -h       help
 
-Prints the TTFH walk and EMPTY dashboard snapshot. dual_write OFF.
-Does not dial the broker. Never invents Connected / PULSE / Memory GA / live APPLY.
-When IOMESH_ENDPOINT is set and --unit is not, prints optional iomesh mesh smoke hint.
+Always prints the TTFH walk and EMPTY dashboard snapshot. dual_write OFF.
+--unit never dials. --live without endpoint prints no-IOMESH_ENDPOINT honesty and exits 0.
+--live with endpoint probes streams/messages (~5s). Network/4xx/5xx → broker unreachable, exit 0.
+Never invents Connected / PULSE / Memory GA / live APPLY. catalog ≠ Connected.
 `)
 }
 
@@ -3236,7 +3312,7 @@ Usage:
   iomesh -p "prompt"             headless single prompt
   iomesh setup init|preflight    TTFH setup
   iomesh memory ingest           TTFH RCA ingest
-  iomesh ttfh [--unit]            TTFH offline smoke (dashboard EMPTY · no broker)
+  iomesh ttfh [--unit|--live]     TTFH smoke (EMPTY · --live light consume · never invent PULSE)
   iomesh mesh smoke              optional (needs IOMESH_ENDPOINT · dashboard empty until consume)
   iomesh models | sessions | mcp | version
 
