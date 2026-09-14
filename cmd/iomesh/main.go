@@ -3293,6 +3293,7 @@ Always prints the TTFH walk and EMPTY dashboard snapshot. dual_write OFF.
 --unit never dials. --live without endpoint prints no-IOMESH_ENDPOINT honesty and exits 0.
 --live with endpoint probes streams/messages (~5s). Network/4xx/5xx → broker unreachable, exit 0.
 Never invents Connected / PULSE / Memory GA / live APPLY. catalog ≠ Connected.
+R1 --live ≠ R3 overlay PULSE (parked).
 
 `+agent.TTFHPhasedRolloutLines()+"\n")
 }
@@ -3348,7 +3349,6 @@ Agent serve (WebSocket) flags:
   --path /acp           WebSocket path
   --token secret        require Bearer or ?token=
 
-TTFH: setup preflight → memory ingest (RCA) → optional mesh smoke / consume → /dashboard (empty until consume · PULSE only after ≥1 decoded broker message · CLIENT ≠ PULSE) → /memory digest --require-sources mesh,private (cite-both or explicit miss) → /dashboard ack (local ritual · no send/pay/ship)
 `+agent.TTFHPhasedRolloutLines()+`
 Honesty: dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · knowledge Beta empty · eval template · not live APPLY
 

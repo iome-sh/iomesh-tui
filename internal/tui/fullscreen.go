@@ -155,7 +155,7 @@ func newFullscreenModel(ctx context.Context, cancel context.CancelFunc, rt *agen
 	}
 
 	ta := textarea.New()
-	ta.Placeholder = "/setup preflight  ·  /memory ingest  ·  /dashboard  ·  /help"
+	ta.Placeholder = "/setup preflight  ·  /memory ingest  ·  /onboard next ttfh  ·  /help"
 	ta.Focus()
 	ta.CharLimit = 32 * 1024
 	ta.SetWidth(80)
@@ -189,9 +189,9 @@ func newFullscreenModel(ctx context.Context, cancel context.CancelFunc, rt *agen
 		m.appendLine(m.theme.Status.Render("session " + sid))
 	}
 	m.appendLine(m.theme.Status.Render(fmt.Sprintf("model %s  ·  mutating tools prompt y/n/a unless --yolo", displayModel(rt.Router()))))
-	m.appendLine(m.theme.Help.Render("TTFH: /setup preflight · /memory ingest · /dashboard (empty until consume) · /memory patterns · /memory facts-as-of · /onboard next ttfh · iomesh ttfh --unit · scripts/ttfh-demo.sh"))
-	m.appendLine(m.theme.Dim.Render("rollout: R0 --unit (no mesh) · R1 --live fail-open ≠ overlay PULSE · R2 palace ingest/digest · R3 /dashboard PULSE parked · R4 pull dual_write OFF"))
-	m.appendLine(m.theme.Dim.Render("dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected"))
+	m.appendLine(m.theme.Help.Render(agent.TTFHPhasedRolloutLines()))
+	m.appendLine(m.theme.Help.Render("companion: scripts/ttfh-demo.sh · /onboard next ttfh"))
+	m.appendLine(m.theme.Dim.Render("dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · empty until consume · CLIENT ≠ PULSE"))
 	m.appendLine("")
 	return m
 }

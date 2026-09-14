@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **`iomesh ttfh [--unit]`** offline TTFH smoke (EMPTY dashboard honesty · no broker dial). `/onboard next ttfh dogfood` same residual. Never invents Connected/PULSE.
 
 ### Changed
+- **CLI/help TTFH is one R0–R4 walk.** `iomesh -h` and fullscreen Help drop the fused setup→ingest→optional mesh smoke/consume→`/dashboard` sentence (that mixed R1 `--live` with R3 overlay PULSE). Walk is `TTFHPhasedRolloutLines()` only. dual_write OFF · CLIENT ≠ PULSE · empty until consume · not E-G1.
 - **TTFH first-run is one R0–R4 walk** (`/onboard next ttfh|rollout`). R1 (`ttfh --live` fail-open) is not R3 overlay `/dashboard` PULSE (parked). Mesh optional for R0–R2. dual_write OFF · CLIENT ≠ PULSE · catalog ≠ Connected · not Memory GA · not E-G1.
 - **First-run help points at `scripts/ttfh-demo.sh`** (`iomesh -h` · `iomesh ttfh -h` · fullscreen chrome · `/onboard next ttfh`). dual_write OFF · empty until consume · CLIENT ≠ PULSE.
 - **TTFH walk adds patterns / facts-as-of / pull** after miss ACK: `/memory patterns` (Beta · empty ≠ invent · never APPLY) · `/memory facts-as-of` (palace SoT · not Memory GA) · optional `iomesh memory pull` (mesh → local palace · pull ≠ invent Connected). dual_write OFF. `/help` mentions patterns (Beta) and facts-as-of on the primary memory line.
