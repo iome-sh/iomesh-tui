@@ -117,6 +117,9 @@ func TestPrintUsage_TTFHPrimaryAndAdvanced(t *testing.T) {
 			t.Fatalf("printUsage missing TTFH rollout %q:\n%s", want, got)
 		}
 	}
+	if strings.Contains(got, "optional mesh smoke / consume → /dashboard") {
+		t.Fatalf("printUsage must not fuse optional mesh consume with overlay /dashboard:\n%s", got)
+	}
 }
 
 func TestPrintTTFHUsage_PhasedRollout(t *testing.T) {

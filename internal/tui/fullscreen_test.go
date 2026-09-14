@@ -79,32 +79,27 @@ func TestFullscreenModel_TTFHFirstRunChrome(t *testing.T) {
 	m := newFullscreenModel(ctx, cancel, rt, nil, nil, UIOptions{})
 
 	joined := strings.Join(m.lines, "\n")
-	if !strings.Contains(joined, "TTFH") && !strings.Contains(joined, "/setup preflight") {
-		t.Fatalf("first-run chrome missing TTFH next-action:\n%s", joined)
-	}
-	if !strings.Contains(joined, "/setup preflight") {
-		t.Fatalf("missing /setup preflight:\n%s", joined)
-	}
-	if !strings.Contains(joined, "/memory ingest") {
-		t.Fatalf("missing /memory ingest:\n%s", joined)
-	}
-	if !strings.Contains(joined, "/dashboard") {
-		t.Fatalf("missing /dashboard:\n%s", joined)
-	}
-	if !strings.Contains(joined, "/memory patterns") {
-		t.Fatalf("missing /memory patterns:\n%s", joined)
-	}
-	if !strings.Contains(joined, "/memory facts-as-of") {
-		t.Fatalf("missing /memory facts-as-of:\n%s", joined)
+	if !strings.Contains(joined, "TTFH") {
+		t.Fatalf("first-run chrome missing TTFH:\n%s", joined)
 	}
 	if !strings.Contains(joined, "ttfh-demo.sh") {
 		t.Fatalf("missing ttfh-demo.sh:\n%s", joined)
 	}
-	if !strings.Contains(joined, "rollout") || !strings.Contains(joined, "R0") {
+	if !strings.Contains(joined, "R0") {
 		t.Fatalf("missing TTFH rollout R0:\n%s", joined)
+	}
+	for _, want := range []string{"R1", "R2", "R3", "R4", "/dashboard", "/memory patterns", "facts-as-of", "parked"} {
+		if !strings.Contains(joined, want) {
+			t.Fatalf("first-run Help missing one-walk %q:\n%s", want, joined)
+		}
 	}
 	if !strings.Contains(joined, "empty until consume") {
 		t.Fatalf("missing empty until consume:\n%s", joined)
+	}
+	if strings.Contains(joined, "optional mesh smoke / consume → /dashboard") ||
+		strings.Contains(joined, "/memory ingest · /dashboard") ||
+		strings.Contains(joined, "ingest · /dashboard (empty until consume)") {
+		t.Fatalf("Help must not fuse consume→dashboard as optional mesh:\n%s", joined)
 	}
 	ph := m.input.Placeholder
 	if !strings.Contains(ph, "/setup preflight") && !strings.Contains(ph, "/memory ingest") {
