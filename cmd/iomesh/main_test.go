@@ -52,6 +52,7 @@ func TestPrintUsage_TTFHPrimaryAndAdvanced(t *testing.T) {
 		"iomesh setup init|preflight",
 		"iomesh memory ingest",
 		"iomesh ttfh [--unit|--live]",
+		"scripts/ttfh-demo.sh",
 		"iomesh mesh smoke",
 		"iomesh models | sessions | mcp | version",
 	} {

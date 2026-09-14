@@ -1374,6 +1374,7 @@ func TestHandleSlash_OnboardNextTTFHLane(t *testing.T) {
 		"/dashboard ack",
 		"patterns",
 		"facts-as-of",
+		"ttfh-demo.sh",
 		"memory pull",
 		"never APPLY",
 		"dual_write OFF",
