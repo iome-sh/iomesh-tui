@@ -180,6 +180,27 @@ func captureStdout(t *testing.T, fn func()) string {
 	return buf.String()
 }
 
+func TestTTFHDemoScriptHonesty(t *testing.T) {
+	b, err := os.ReadFile("../../scripts/ttfh-demo.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := string(b)
+	for _, want := range []string{
+		"--unit",
+		"--live",
+		"not E-G1",
+		"CLIENT ≠ PULSE",
+		"dual_write OFF",
+		"patterns",
+		"facts-as-of",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("ttfh-demo.sh missing %q", want)
+		}
+	}
+}
+
 func TestCmdTTFH_Unit(t *testing.T) {
 	t.Setenv("IOMESH_ENDPOINT", "")
 	t.Setenv("IOMESH_MEMORY_DUAL_WRITE", "")
