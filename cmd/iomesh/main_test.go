@@ -2,7 +2,11 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
+	"encoding/json"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
@@ -47,7 +51,7 @@ func TestPrintUsage_TTFHPrimaryAndAdvanced(t *testing.T) {
 		`iomesh -p "prompt"`,
 		"iomesh setup init|preflight",
 		"iomesh memory ingest",
-		"iomesh ttfh [--unit]",
+		"iomesh ttfh [--unit|--live]",
 		"iomesh mesh smoke",
 		"iomesh models | sessions | mcp | version",
 	} {
@@ -215,6 +219,11 @@ func TestCmdTTFH_Unit(t *testing.T) {
 	if strings.Contains(got, "optional: iomesh mesh smoke") {
 		t.Fatalf("--unit must not print live mesh hint:\n%s", got)
 	}
+	for _, want := range []string{"patterns", "facts-as-of", "memory pull", "never APPLY"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("cmdTTFH --unit missing walk %q:\n%s", want, got)
+		}
+	}
 }
 
 func TestCmdTTFH_EndpointHintNoDial(t *testing.T) {
@@ -244,6 +253,167 @@ func TestCmdTTFH_BadFlags(t *testing.T) {
 	}
 	if code := cmdTTFH([]string{"live"}); code != 2 {
 		t.Fatalf("unknown arg exit=%d want 2", code)
+	}
+	if code := cmdTTFH([]string{"--live", "--nope"}); code != 2 {
+		t.Fatalf("--live unknown flag exit=%d want 2", code)
+	}
+}
+
+func TestCmdTTFH_LiveNoEndpoint(t *testing.T) {
+	t.Setenv("IOMESH_ENDPOINT", "")
+	t.Setenv("IOMESH_MEMORY_DUAL_WRITE", "")
+	t.Setenv("IOMESH_CONFIG", t.TempDir()+"/missing.toml")
+
+	var code int
+	got := captureStdout(t, func() {
+		code = cmdTTFH([]string{"--live"})
+	})
+	if code != 0 {
+		t.Fatalf("cmdTTFH --live no endpoint exit=%d want 0", code)
+	}
+	for _, want := range []string{
+		"EMPTY",
+		"not PULSE",
+		"CLIENT ≠ PULSE",
+		ttfhLiveNoEndpoint,
+		"dual_write OFF",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("cmdTTFH --live no endpoint missing %q:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, "Connected: yes") {
+		t.Fatalf("cmdTTFH --live must not invent Connected: yes:\n%s", got)
+	}
+	if strings.Contains(got, "dual_write ON") || strings.Contains(got, "live: broker") {
+		t.Fatalf("cmdTTFH --live no endpoint must not dial/invent:\n%s", got)
+	}
+}
+
+func TestCmdTTFH_UnitWinsOverLive(t *testing.T) {
+	t.Setenv("IOMESH_ENDPOINT", "https://hooks.iome.sh")
+	t.Setenv("IOMESH_MEMORY_DUAL_WRITE", "")
+	t.Setenv("IOMESH_CONFIG", t.TempDir()+"/missing.toml")
+
+	var code int
+	got := captureStdout(t, func() {
+		code = cmdTTFH([]string{"--unit", "--live"})
+	})
+	if code != 0 {
+		t.Fatalf("cmdTTFH --unit --live exit=%d want 0", code)
+	}
+	if strings.Contains(got, "live: broker") || strings.Contains(got, ttfhLiveNoEndpoint) || strings.Contains(got, ttfhLiveUnreachable) {
+		t.Fatalf("--unit --live must stay offline (no live: broker):\n%s", got)
+	}
+	if strings.Contains(got, "optional: iomesh mesh smoke") {
+		t.Fatalf("--unit --live must not print mesh hint:\n%s", got)
+	}
+	if !strings.Contains(got, "dual_write OFF") || !strings.Contains(got, "EMPTY") {
+		t.Fatalf("--unit --live missing offline report:\n%s", got)
+	}
+}
+
+func ttfhLiveEnv(t *testing.T, endpoint string) {
+	t.Helper()
+	t.Setenv("IOMESH_ENDPOINT", endpoint)
+	t.Setenv("IOMESH_MEMORY_DUAL_WRITE", "")
+	t.Setenv("IOMESH_CONFIG", t.TempDir()+"/missing.toml")
+	t.Setenv("IOMESH_TOKEN", "")
+	t.Setenv("IOMESH_API_KEY", "")
+}
+
+func TestCmdTTFH_LiveUnreachableFailOpen(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "nope", http.StatusBadGateway)
+	}))
+	defer srv.Close()
+	ttfhLiveEnv(t, srv.URL)
+
+	var code int
+	got := captureStdout(t, func() {
+		code = cmdTTFH([]string{"--live"})
+	})
+	if code != 0 {
+		t.Fatalf("cmdTTFH --live unreachable exit=%d want 0", code)
+	}
+	if !strings.Contains(got, ttfhLiveUnreachable) {
+		t.Fatalf("missing unreachable honesty:\n%s", got)
+	}
+	if strings.Contains(got, "Connected: yes") || strings.Contains(got, "dual_write ON") {
+		t.Fatalf("must not invent Connected / dual_write ON:\n%s", got)
+	}
+}
+
+func TestCmdTTFH_LiveEmptyStreams(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v1/streams" {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`[]`))
+			return
+		}
+		if r.URL.Path == "/health" || r.URL.Path == "/v1/health" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+	ttfhLiveEnv(t, srv.URL)
+
+	var code int
+	got := captureStdout(t, func() {
+		code = cmdTTFH([]string{"--live"})
+	})
+	if code != 0 {
+		t.Fatalf("cmdTTFH --live empty streams exit=%d want 0", code)
+	}
+	if !strings.Contains(got, ttfhLiveEmpty) {
+		t.Fatalf("missing EMPTY until consume honesty:\n%s", got)
+	}
+	if strings.Contains(got, "live: decoded") || strings.Contains(got, "Connected: yes") {
+		t.Fatalf("empty streams must not invent decode/Connected:\n%s", got)
+	}
+}
+
+func TestCmdTTFH_LiveDecodedMessages(t *testing.T) {
+	payload := base64.StdEncoding.EncodeToString([]byte(`{"ok":true}`))
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case r.URL.Path == "/health" || r.URL.Path == "/v1/health":
+			w.WriteHeader(http.StatusOK)
+		case r.URL.Path == "/v1/streams":
+			_ = json.NewEncoder(w).Encode([]map[string]any{
+				{"name": "EVENTS", "subjects": []string{"dept.events.>"}},
+			})
+		case r.URL.Path == "/v1/streams/EVENTS/messages":
+			_ = json.NewEncoder(w).Encode([]map[string]any{
+				{"stream": "EVENTS", "seq": 1, "subject": "dept.events.a", "payload": payload},
+				{"stream": "EVENTS", "seq": 2, "subject": "dept.events.b", "payload": payload},
+			})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+	ttfhLiveEnv(t, srv.URL)
+
+	var code int
+	got := captureStdout(t, func() {
+		code = cmdTTFH([]string{"--live"})
+	})
+	if code != 0 {
+		t.Fatalf("cmdTTFH --live decoded exit=%d want 0", code)
+	}
+	want := "live: decoded 2 message(s) · /dashboard may PULSE · CLIENT ≠ PULSE until overlay consume · catalog ≠ Connected"
+	if !strings.Contains(got, want) {
+		t.Fatalf("missing decoded honesty:\n%s", got)
+	}
+	if strings.Contains(got, "Connected: yes") || strings.Contains(got, "dual_write ON") {
+		t.Fatalf("must not invent Connected / dual_write ON:\n%s", got)
+	}
+	if strings.Contains(got, "optional: iomesh mesh smoke") {
+		t.Fatalf("--live must not print mesh smoke hint:\n%s", got)
 	}
 }
 

@@ -189,7 +189,7 @@ func newFullscreenModel(ctx context.Context, cancel context.CancelFunc, rt *agen
 		m.appendLine(m.theme.Status.Render("session " + sid))
 	}
 	m.appendLine(m.theme.Status.Render(fmt.Sprintf("model %s  ·  mutating tools prompt y/n/a unless --yolo", displayModel(rt.Router()))))
-	m.appendLine(m.theme.Help.Render("TTFH: /setup preflight · /memory ingest · /dashboard (empty until consume) · /onboard next ttfh · iomesh ttfh --unit"))
+	m.appendLine(m.theme.Help.Render("TTFH: /setup preflight · /memory ingest · /dashboard (empty until consume) · /memory patterns · /memory facts-as-of · /onboard next ttfh · iomesh ttfh --unit"))
 	m.appendLine(m.theme.Dim.Render("dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected"))
 	m.appendLine("")
 	return m

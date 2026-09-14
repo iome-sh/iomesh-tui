@@ -106,6 +106,12 @@ func TestHandleSlash_ModelsAndCost(t *testing.T) {
 	if !strings.Contains(out.String(), "/dashboard ack") {
 		t.Fatalf("help missing digest-miss ACK: %s", out.String())
 	}
+	if !strings.Contains(out.String(), "patterns (Beta)") {
+		t.Fatalf("help missing patterns (Beta): %s", out.String())
+	}
+	if !strings.Contains(out.String(), "facts-as-of") {
+		t.Fatalf("help missing facts-as-of: %s", out.String())
+	}
 	if strings.Contains(strings.ToLower(out.String()), "aion") {
 		t.Fatalf("/help happy path must not leak aion: %s", out.String())
 	}
@@ -1202,6 +1208,12 @@ func TestHandleSlash_OnboardHelpChecklist(t *testing.T) {
 	if !strings.Contains(help, "cite-both") {
 		t.Fatalf("/help missing cite-both TTFH: %s", help)
 	}
+	if !strings.Contains(help, "patterns (Beta)") {
+		t.Fatalf("/help missing patterns (Beta): %s", help)
+	}
+	if !strings.Contains(help, "facts-as-of") {
+		t.Fatalf("/help missing facts-as-of: %s", help)
+	}
 }
 
 // s1368: /onboard portal (and aliases) — residual-honest portal Agent/MCP handoff.
@@ -1360,6 +1372,10 @@ func TestHandleSlash_OnboardNextTTFHLane(t *testing.T) {
 		"source_hint=private",
 		"/memory digest --require-sources mesh,private",
 		"/dashboard ack",
+		"patterns",
+		"facts-as-of",
+		"memory pull",
+		"never APPLY",
 		"dual_write OFF",
 		"never invent Connected",
 		"CLIENT ≠ PULSE",
@@ -1390,6 +1406,10 @@ func TestHandleSlash_OnboardNextTTFHDogfood(t *testing.T) {
 		"EMPTY",
 		"knowledge Beta empty",
 		"/memory digest --require-sources mesh,private",
+		"patterns",
+		"facts-as-of",
+		"memory pull",
+		"never APPLY",
 	}
 	forbid := []string{
 		"Connected: yes",

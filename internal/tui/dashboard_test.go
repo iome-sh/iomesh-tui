@@ -12,6 +12,29 @@ import (
 	"github.com/muesli/termenv"
 )
 
+func TestFormatTTFHUnitReport_WalkPatternsFactsPull(t *testing.T) {
+	out := FormatTTFHUnitReport()
+	for _, want := range []string{
+		"patterns",
+		"facts-as-of",
+		"memory pull",
+		"never APPLY",
+		"dual_write OFF",
+		"EMPTY",
+		"CLIENT ≠ PULSE",
+		"catalog ≠ Connected",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("FormatTTFHUnitReport missing %q\n%s", want, out)
+		}
+	}
+	for _, bad := range []string{"Connected: yes", "dual_write ON", "Memory GA shipped"} {
+		if strings.Contains(out, bad) {
+			t.Fatalf("FormatTTFHUnitReport must not invent %q\n%s", bad, out)
+		}
+	}
+}
+
 func TestDashboardSnapshot_LandingParityAndHonesty(t *testing.T) {
 	setupBriefAck(t)
 	out := formatDashboardSnapshot(false, "")
