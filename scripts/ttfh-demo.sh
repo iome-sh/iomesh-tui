@@ -27,12 +27,6 @@ fi
 
 echo "ttfh-demo: residual-honest · not E-G1 · not Memory GA · dual_write OFF"
 echo "ttfh-demo: never invent PULSE/Connected · empty until consume · CLIENT ≠ PULSE"
-echo "TTFH rollout (phased · mesh not required for R0–R2):"
-echo "  R0  iomesh ttfh --unit                 offline · no mesh"
-echo "  R1  iomesh ttfh --live                 optional fail-open probe · not overlay PULSE"
-echo "  R2  ingest ×3 → digest cite-both-or-miss · /memory patterns (Beta) · facts-as-of"
-echo "  R3  /dashboard consume                 entitled overlay PULSE (parked)"
-echo "  R4  iomesh memory pull                 after PULSE · dual_write OFF"
 echo "ttfh-demo: unit (offline) via ${IOMESH[*]}"
 
 set +e
@@ -61,11 +55,15 @@ else
 fi
 
 echo
-echo "next (do not invent PULSE / Connected / Memory GA / dual_write ON / APPLY):"
-echo "  1. ingest: iomesh memory ingest   # three RCA-shaped turns, source_hint=private"
-echo "  2. digest cite-both-or-miss: /memory digest --require-sources mesh,private"
-echo "  3. patterns (Beta): /memory patterns [--limit N]   # empty ≠ invent · never APPLY"
-echo "  4. facts-as-of: /memory facts-as-of --as-of <RFC3339>   # palace SoT · not Memory GA"
-echo "  5. after PULSE (optional): iomesh memory pull   # mesh → local palace · dual_write OFF · pull ≠ invent Connected"
+echo "Walk (one list · mesh not required for R0–R2 · do not invent PULSE / Connected / Memory GA / dual_write ON / APPLY):"
+echo "  R0  iomesh ttfh --unit                 offline · no mesh · not E-G1"
+echo "  R1  optional iomesh ttfh --live        fail-open probe · EMPTY unless decoded · not overlay PULSE"
+echo "      Optional mesh: IOMESH_ENDPOINT for R1 only. Overlay /dashboard consume is R3, not this."
+echo "  R2  ingest: iomesh memory ingest   # three RCA-shaped turns, source_hint=private"
+echo "      digest cite-both-or-miss: /memory digest --require-sources mesh,private"
+echo "      patterns (Beta): /memory patterns [--limit N]   # empty ≠ invent · never APPLY"
+echo "      facts-as-of: /memory facts-as-of --as-of <RFC3339>   # palace SoT · not Memory GA"
+echo "  R3  /dashboard consume                 entitled overlay PULSE (parked · required for E-G1)"
+echo "  R4  after PULSE (optional): iomesh memory pull   # mesh → local palace · dual_write OFF · pull ≠ invent Connected"
 
 exit 0

@@ -375,13 +375,19 @@ func TestMeshAgentOnboardingNextTTFHLane_HonestyNeedles(t *testing.T) {
 		"v1.5.12",
 		"TTFH rollout",
 		"R0",
+		"R1",
 		"not overlay PULSE",
 		"parked",
+		"R3",
+		"R4",
 		"Optional mesh",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("ttfh lane missing %q in:\n%s", want, out)
 		}
+	}
+	if strings.Contains(out, "Optional mesh: IOMESH_ENDPOINT → consume → /dashboard") {
+		t.Fatalf("Optional mesh must not be overlay consume→/dashboard; that is R3 parked:\n%s", out)
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
 		t.Fatalf("must not invent dual_write ON / Connected: %s", out)

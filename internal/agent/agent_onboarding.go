@@ -85,38 +85,35 @@ func TTFHPhasedRolloutLines() string {
   R4  iomesh memory pull                 after PULSE · dual_write OFF`)
 }
 
-// MeshAgentOnboardingStartHere is the default I/O Mesh TTFH walk (setup → RCA
-// ingest → optional consume/dashboard → cite-both digest). Honesty needles stay
-// in the residual body. Never invents Connected / Memory GA / install APPLY.
+// MeshAgentOnboardingStartHere is the default I/O Mesh TTFH walk (one list,
+// R0–R4). R1 optional --live fail-open is not R3 overlay /dashboard PULSE
+// (parked). Honesty needles stay in the residual body. Never invents
+// Connected / Memory GA / install APPLY.
 func MeshAgentOnboardingStartHere() string {
 	return strings.TrimSpace(`start here (I/O Mesh TTFH · time-to-first-heartbeat):
-  1. LLM key or Ollama (DEEPSEEK_API_KEY / XAI_API_KEY / … or -m ollama-llama3.2)
-  2. /setup init local-memory · /setup preflight · /setup reload
-  3. Attach iomesh-memory-mcp (local palace · dual_write OFF)
-  4. /memory ingest — three RCA-shaped turns (source_hint=private)
-  5. Optional mesh: IOMESH_ENDPOINT → consume → /dashboard (empty until consume · PULSE only after ≥1 decoded broker message · CLIENT ≠ PULSE)
-  6. /memory digest --require-sources mesh,private — cite-both or explicit miss (miss is success)
-  7. Miss ACK: /dashboard ack (local ritual · no send/pay/ship)
+  Walk (one list · TTFH rollout · mesh not required for R0–R2):
+    setup. LLM key or Ollama · /setup init local-memory · /setup preflight · /setup reload · attach iomesh-memory-mcp (not Memory GA)
+    R0  iomesh ttfh --unit                 offline · no mesh · not E-G1
+    R1  optional iomesh ttfh --live        fail-open probe · EMPTY unless decoded · not overlay PULSE
+        Optional mesh: IOMESH_ENDPOINT for R1 only. Overlay /dashboard consume is R3, not this.
+    R2  /memory ingest ×3 (source_hint=private)
+        /memory digest --require-sources mesh,private — cite-both or explicit miss (miss is success)
+        /memory patterns (Beta) · /memory facts-as-of --as-of <RFC3339>
+        Miss ACK: /dashboard ack (local ritual · no send/pay/ship)
+    R3  /dashboard consume                 entitled overlay PULSE (parked · required for E-G1)
+        CLI: iomesh mesh smoke is not overlay PULSE. --live decoded-N is not this.
+    R4  iomesh memory pull                 after PULSE · dual_write OFF · pull ≠ Connected
 CLI: iomesh setup preflight · iomesh memory ingest · iomesh mesh smoke (needs endpoint)
-operator: /onboard next ttfh  (aliases time-to-first-heartbeat|cite-both) · never invent Connected · dual_write OFF · catalog ≠ Connected · not Memory GA
-Mesh consume is optional for R0–R2. Overlay /dashboard PULSE (R3) is required for E-G1 and stays parked.`)
+operator: /onboard next ttfh  (aliases time-to-first-heartbeat|cite-both|rollout) · never invent Connected · dual_write OFF · catalog ≠ Connected · not Memory GA
+empty until consume · CLIENT ≠ PULSE · Mesh consume is optional for R0–R2. Overlay /dashboard PULSE (R3) is required for E-G1 and stays parked.`)
 }
 
 func MeshAgentOnboardingGuidanceNote() string {
 	return MeshAgentOnboardingStartHere() + "\n\n" + strings.TrimSpace(`mesh agent onboarding (I/O Mesh TTFH · residual-honest default surface):
 Local memory first — mesh consume is optional. Fail-open offline (never invent tool green / Connected).
-Mesh consume is optional for R0–R2. Overlay /dashboard PULSE (R3) is required for E-G1 and stays parked.
+Walk is R0–R4 (one list · mesh not required for R0–R2). R1 optional iomesh ttfh --live fail-open is not overlay PULSE. Overlay /dashboard consume is R3, parked (required for E-G1).
 
-Walk:
-1. LLM key or Ollama
-2. /setup init local-memory · /setup preflight · /setup reload
-3. Attach iomesh-memory-mcp (local palace · dual_write OFF · not Memory GA)
-4. /memory ingest — three RCA-shaped turns (source_hint=private)
-5. Optional mesh: IOMESH_ENDPOINT → consume → /dashboard (empty until consume · PULSE only after ≥1 decoded broker message · CLIENT ≠ PULSE)
-6. /memory digest --require-sources mesh,private — cite-both or explicit miss (miss is success)
-7. Miss ACK: /dashboard ack (local ritual · no send/pay/ship)
-
-Lanes: /onboard next ttfh (aliases time-to-first-heartbeat|cite-both) · /onboard next setup · /onboard next memory · /onboard next mesh
+Lanes: /onboard next ttfh (aliases time-to-first-heartbeat|cite-both|rollout) · /onboard next setup · /onboard next memory · /onboard next mesh
 CLI: iomesh setup preflight · iomesh memory ingest · iomesh mesh smoke (needs endpoint)
 Skill: read_skill mesh-agent-onboarding when available
 `+MeshAgentOnboardingLegacyHiddenOneLiner+`
@@ -158,7 +155,7 @@ func MeshAgentOnboardingChecklist() string {
   2. /setup init local-memory · /setup preflight · /setup reload (CLI: iomesh setup preflight)
   3. Attach iomesh-memory-mcp (local palace · dual_write OFF · not Memory GA)
   4. /memory ingest — three RCA-shaped turns (source_hint=private) (CLI: iomesh memory ingest)
-  5. Optional mesh: IOMESH_ENDPOINT → consume → /dashboard (empty until consume · PULSE only after ≥1 decoded broker message · CLIENT ≠ PULSE · CLI: iomesh mesh smoke)
+  5. Optional mesh: IOMESH_ENDPOINT for R1 only (iomesh ttfh --live fail-open · not overlay PULSE). Overlay /dashboard consume is R3 parked (empty until consume · CLIENT ≠ PULSE · CLI: iomesh mesh smoke is not overlay PULSE)
   6. /memory digest --require-sources mesh,private — cite-both or explicit miss (miss is success)
   7. Miss ACK: /dashboard ack (local ritual · no send/pay/ship)
   Lanes: /onboard next ttfh · /onboard next setup · /onboard next memory · /onboard next mesh
@@ -226,14 +223,15 @@ func MeshAgentOnboardingStatus() string {
 // Never invents Connected, Memory GA, dual_write ON, or live APPLY.
 func MeshAgentOnboardingNextLanes() string {
 	return MeshAgentOnboardingStartHere() + "\n\n" + strings.TrimSpace(`mesh onboard next lanes (I/O Mesh TTFH · default surface · no MCP dial):
-  Default walk: /onboard next ttfh (aliases time-to-first-heartbeat|cite-both)
+  Default walk: /onboard next ttfh (aliases time-to-first-heartbeat|cite-both|rollout)
   1. setup — /setup init local-memory · /setup preflight · /setup reload
      drill: /onboard next setup · CLI: iomesh setup preflight
   2. memory — attach iomesh-memory-mcp · /memory ingest three RCA-shaped turns (source_hint=private)
      drill: /onboard next memory · CLI: iomesh memory ingest
-  3. mesh (optional) — IOMESH_ENDPOINT → consume → /dashboard
-     empty until consume · PULSE only after ≥1 decoded broker message · CLIENT ≠ PULSE
-     drill: /onboard next mesh · CLI: iomesh mesh smoke (needs endpoint)
+  3. mesh — R1 optional iomesh ttfh --live (fail-open · EMPTY unless decoded · not overlay PULSE)
+     Optional mesh: IOMESH_ENDPOINT for R1 only. Overlay /dashboard consume is R3, parked (required for E-G1).
+     empty until consume · CLIENT ≠ PULSE · CLI: iomesh mesh smoke is not overlay PULSE
+     drill: /onboard next mesh
   4. digest — /memory digest --require-sources mesh,private — cite-both or explicit miss (miss is success)
      miss ACK: /dashboard ack (local ritual · no send/pay/ship)
 `+MeshAgentOnboardingLegacyHiddenOneLiner+`
@@ -242,36 +240,25 @@ Locks: dual_write OFF · catalog ≠ Connected · not Memory GA · never invent 
 }
 
 // MeshAgentOnboardingNextTTFHLane is the /onboard next ttfh drill (aliases
-// time-to-first-heartbeat|cite-both). Same TTFH walk as default /onboard next.
+// time-to-first-heartbeat|cite-both|rollout). One R0–R4 walk; R1 ≠ R3 overlay PULSE.
+// Do not paste TTFHPhasedRolloutLines() here (CLI/fullscreen still use that helper).
 func MeshAgentOnboardingNextTTFHLane() string {
 	return strings.TrimSpace(`mesh onboard next ttfh lane (I/O Mesh time-to-first-heartbeat · cite-both):
-  Walk (follow in order):
-    1. LLM key or Ollama
-       · export DEEPSEEK_API_KEY / XAI_API_KEY / GEMINI_API_KEY · or pin -m ollama-llama3.2
-    2. /setup init local-memory · /setup preflight · /setup reload
-       · CLI: iomesh setup preflight · dual_write OFF
-    3. Attach iomesh-memory-mcp (local palace)
-       · HTTP http://127.0.0.1:8080/mcp or stdio · palace on local disk · not Memory GA
-    4. /memory ingest — three RCA-shaped turns (source_hint=private)
-       · CLI: iomesh memory ingest · local overlay · never invent mesh from private ingest
-    5. Optional mesh: IOMESH_ENDPOINT → consume → /dashboard
-       · empty until consume · PULSE only after ≥1 decoded broker message · CLIENT ≠ PULSE
-       · CLI: iomesh mesh smoke (needs endpoint)
-       · knowledge Beta empty · eval template · not live APPLY
-    6. /memory digest --require-sources mesh,private — cite-both or explicit miss
-       · miss is success · do not invent cite-both
-    7. Miss ACK: /dashboard ack (local ritual · no send/pay/ship)
-    8. Short-term pattern (hours–days, after consume): /memory patterns [--limit N]
-       · ops pulse Beta · empty ≠ invent patterns · suggestive · never APPLY
-    9. Long-term pattern (weeks–months): /memory facts-as-of --as-of <RFC3339>
-       · palace SoT · not Memory GA · dual_write OFF
-    10. After PULSE (optional): iomesh memory pull
-       · mesh → local palace · dual_write OFF · pull ≠ invent Connected
-  Aliases: /onboard next ttfh|time-to-first-heartbeat|cite-both
+  Walk (one list · TTFH rollout · mesh not required for R0–R2):
+    setup. LLM key or Ollama · /setup init local-memory · attach iomesh-memory-mcp (not Memory GA)
+    R0  iomesh ttfh --unit                 offline · no mesh · not E-G1
+    R1  optional iomesh ttfh --live        fail-open probe · EMPTY unless decoded · not overlay PULSE
+        Optional mesh: IOMESH_ENDPOINT for R1 only. Overlay /dashboard consume is R3, not this.
+    R2  /memory ingest ×3 (source_hint=private)
+        /memory digest --require-sources mesh,private  · cite-both or miss (miss is success)
+        /memory patterns (Beta) · empty ≠ invent · never APPLY · /memory facts-as-of --as-of <RFC3339>
+        Miss ACK: /dashboard ack (local ritual · no send/pay/ship)
+    R3  /dashboard consume                 entitled overlay PULSE (parked · required for E-G1)
+        CLI: iomesh mesh smoke is not overlay PULSE. --live decoded-N is not this.
+    R4  iomesh memory pull                 after PULSE · dual_write OFF · pull ≠ Connected
+  Aliases: /onboard next ttfh|time-to-first-heartbeat|cite-both|rollout
   Companion: /onboard next setup · /onboard next memory · /onboard next mesh
-  Companion: scripts/ttfh-demo.sh (unit then optional --live · not E-G1)
-
-` + TTFHPhasedRolloutLines() + `
+  Companion: scripts/ttfh-demo.sh (R0 then optional R1 · not E-G1)
 
   ` + ModeAPinHonestyLine() + `
 

@@ -133,15 +133,17 @@ make smoke-unit                    # offline mesh tests (alias: dogfood-unit)
 
 ### First-run (agent)
 
+The first-run walk **is** R0–R4 (R1 `iomesh ttfh --live` fail-open ≠ R3 overlay `/dashboard` PULSE, parked).
+
 1. Set an LLM key (`DEEPSEEK_API_KEY` / `XAI_API_KEY` / …) **or** pin Ollama (`-m ollama-llama3.2`).
 2. Run the TUI: `./bin/iomesh` (or `iomesh` if installed).
 3. Attach local memory: `/setup init` `local-memory` · `/setup preflight` · start `iomesh-memory-mcp` if needed · `/setup reload` (hot-swaps MCP **and** re-scans skills). Cold CLI path: `iomesh setup init` → restart `iomesh` · `iomesh setup preflight` (CLI has **no** `setup reload`). After preflight, the report prints the same dual path (in-session `/setup reload` vs cold restart). Memory dual-write stays `dual_write OFF`.
 4. `/memory ingest` three RCA-shaped turns (`source_hint=private`). CLI: `iomesh memory ingest`.
-5. Optional mesh: set `IOMESH_ENDPOINT` → consume → `/dashboard` (**empty until consume** · **PULSE** only after ≥1 decoded broker message · **CLIENT ≠ PULSE**). CLI: `iomesh mesh smoke` (needs endpoint). Optional peek at the landing heartbeat: `/dashboard preview` (eval template, not your org · see [below](#dashboard-heartbeat-live-feed)). Offline TTFH smoke (no broker): `iomesh ttfh --unit` (slash twin: `/onboard next ttfh dogfood`).
+5. Optional mesh: set `IOMESH_ENDPOINT` for **R1** only (`iomesh ttfh --live` fail-open · EMPTY unless decoded · **not overlay PULSE**). Overlay `/dashboard` consume is **R3** (parked · required for E-G1 · **empty until consume** · **CLIENT ≠ PULSE**). CLI: `iomesh mesh smoke` is not overlay PULSE. Optional peek at the landing heartbeat: `/dashboard preview` (eval template, not your org · see [below](#dashboard-heartbeat-live-feed)). Offline TTFH smoke (no broker): `iomesh ttfh --unit` (R0 · slash twin: `/onboard next ttfh dogfood`).
 6. `/memory digest --require-sources mesh,private` — cite-both **or explicit miss** (miss is success).
-7. Miss ACK: `/dashboard ack` (local ritual · no send/pay/ship). Map: `/onboard next ttfh`.
+7. Miss ACK: `/dashboard ack` (local ritual · no send/pay/ship). Map: `/onboard next ttfh` (alias `rollout`).
 
-Residual-honest TTFH demo (unit then optional live; not E-G1): `scripts/ttfh-demo.sh`. Mesh is optional for `--unit` / palace (R0–R2); overlay `/dashboard` PULSE (R3) is required for E-G1 and stays parked.
+Residual-honest TTFH demo (R0 then optional R1; not E-G1): `scripts/ttfh-demo.sh`. Mesh is optional for `--unit` / palace (R0–R2); overlay `/dashboard` PULSE (R3) is required for E-G1 and stays parked.
 
 Optional: copy [`.env.example`](.env.example) for local env vars (iomesh reads the **process environment**; it does not auto-load `.env` files yet). Copy [`configs/config.example.toml`](configs/config.example.toml) to `~/.iomesh/config.toml` to customize.
 
