@@ -391,6 +391,7 @@ func MeshAgentOnboardingNextMeshLane() string {
     3. Create: iomesh mesh streams --create --yes  # create ≠ PULSE (listed stream + 0 messages is still empty)
     4. Durable: wait for a durable event from your app or console tap — empty streams honest · streams_not_probed until operator probes
     5. Consume: iomesh mesh streams --messages · /dashboard (mesh pub ephemeral ≠ consume)
+       TTFH first-run is /onboard next ttfh (R1 iomesh ttfh --live ≠ this lane). This consume step is R3 overlay /dashboard (parked · required for E-G1 · create ≠ PULSE · mesh pub ephemeral ≠ consume).
     Residual soft: /mesh · iomesh mesh status · iomesh mesh consumer (durable pull consumers · residual soft · requires --yes when mutating) · never invent stream green / Connected
     Pull honesty: iomesh memory pull = mesh → local palace egress · dual_write OFF · not freemium hosted palace
   Honesty:

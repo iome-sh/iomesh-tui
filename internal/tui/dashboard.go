@@ -66,6 +66,7 @@ setup:    add [iomesh] or infer hooks from portal MCP (catalog ≠ streams · in
           then console Settings → Mesh routing → Streams (OPERATIONAL_EVENTS)
           or: iomesh mesh streams --create --yes  (create ≠ PULSE)
           then iomesh mesh streams --messages --name OPERATIONAL_EVENTS
+ttfh:     /dashboard consume is R3 overlay PULSE (parked). R1 is iomesh ttfh --live fail-open, not this page.
 honesty: ` + DashboardHonestyOneLiner)
 }
 

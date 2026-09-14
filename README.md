@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Go](https://img.shields.io/github/go-mod/go-version/iome-sh/iomesh-tui)](go.mod)
 
-**I/O Mesh TUI** is a Go coding-agent harness inspired by [xAI Grok Build](https://github.com/xai-org/grok-build): multi-provider LLM router, tools/subagents, and first-class **local memory**. Official open-source tooling from [IOMesh](https://iome.sh) (**IOMesh Technology Ltd.**). **Time-to-first-heartbeat:** `/setup` → `/memory ingest` (RCA) → optional consume / `/dashboard` → `/memory digest --require-sources mesh,private` (cite-both **or explicit miss**). Install the pin, set an LLM key (or pin Ollama), run `iomesh`, then attach local memory with `/setup`. Mesh client hooks (heartbeats / catalog / pull) are optional when you point at a broker.
+**I/O Mesh TUI** is a Go coding-agent harness inspired by [xAI Grok Build](https://github.com/xai-org/grok-build): multi-provider LLM router, tools/subagents, and first-class **local memory**. Official open-source tooling from [IOMesh](https://iome.sh) (**IOMesh Technology Ltd.**). **Time-to-first-heartbeat:** setup → ingest RCA → R0 `--unit` / optional R1 `--live` fail-open ≠ overlay PULSE → R2 digest cite-both-or-miss → R3 `/dashboard` consume parked. Install the pin, set an LLM key (or pin Ollama), run `iomesh`, then attach local memory with `/setup`. Mesh client hooks (heartbeats / catalog / pull) are optional when you point at a broker.
 
 | This public repo **is** | This public repo is **not** |
 |-------------------------|-----------------------------|

@@ -1,13 +1,13 @@
 ---
 name: mesh-agent-onboarding
-description: Residual-honest I/O Mesh TTFH onboard (`/onboard next ttfh` · setup → RCA ingest → optional consume/dashboard → cite-both digest · dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · portal HITL when connect)
+description: Residual-honest I/O Mesh TTFH onboard (`/onboard next ttfh` one walk R0–R4 · R1 --live ≠ R3 overlay PULSE · dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · portal HITL when connect)
 ---
 
 # Mesh agent onboarding (residual-honest)
 
 Builtin playbook for **I/O Mesh time-to-first-heartbeat** — residual-honest path only. Molds `connector-integrations-setup` + operator onboarding checklist. **Not** install APPLY, **Not** Memory GA, **Not** Agent Plugins GA, **Not** dual_write ON.
 
-**Start here (TTFH):** LLM key or Ollama → `/setup init local-memory` · `/setup preflight` · `/setup reload` → attach `iomesh-memory-mcp` (local palace) → `/memory ingest` three RCA-shaped turns (`source_hint=private`) → optional `IOMESH_ENDPOINT` consume `/dashboard` (**empty until consume** · **PULSE** only after ≥1 decoded broker message · **CLIENT ≠ PULSE**) → `/memory digest --require-sources mesh,private` (cite-both **or explicit miss**; miss is success) → miss ACK `/dashboard ack` (local ritual · no send/pay/ship). Map: `/onboard next ttfh` (aliases `time-to-first-heartbeat` / `cite-both`). dual_write **OFF** · catalog ≠ Connected · not Memory GA · never invent Connected.
+**Start here (TTFH):** LLM key or Ollama · `/setup init local-memory` · attach `iomesh-memory-mcp` (not Memory GA) · **R0** `iomesh ttfh --unit` (offline · no mesh) · **R1** optional `iomesh ttfh --live` (fail-open · EMPTY unless decoded · not overlay PULSE). **Optional mesh:** `IOMESH_ENDPOINT` for R1 only. Overlay `/dashboard` consume is R3, not this. **R2** `/memory ingest` ×3 (`source_hint=private`) · `/memory digest --require-sources mesh,private` (cite-both **or miss**; miss is success) · `/memory patterns` (Beta) · `/memory facts-as-of` · miss ACK `/dashboard ack` (local ritual · no send/pay/ship). **R3** `/dashboard` consume (overlay PULSE · parked · required for E-G1 · **empty until consume** · **CLIENT ≠ PULSE**). **R4** `iomesh memory pull` after PULSE · dual_write **OFF** · pull ≠ Connected. Map: `/onboard next ttfh` (aliases `time-to-first-heartbeat`|`cite-both`|`rollout`). dual_write **OFF** · catalog ≠ Connected · not Memory GA · never invent Connected.
 
 **Hidden lanes still work if typed:** `legacy (hidden): /gtm · /plugins · /onboard next plugins|gtm|marketing-demo|sales|demo|e4|e10|human-gates|planes|agentic|tool-call|portal-hitl|memory-pull|operator|wizard|export`
 
