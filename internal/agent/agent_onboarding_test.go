@@ -329,6 +329,18 @@ func TestMeshAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 	}
 }
 
+func TestTTFHPhasedRolloutLines_Canonical(t *testing.T) {
+	want := strings.TrimSpace(`TTFH rollout (phased · mesh not required for R0–R2):
+  R0  iomesh ttfh --unit                 offline · no mesh
+  R1  iomesh ttfh --live                 optional fail-open probe · not overlay PULSE
+  R2  ingest ×3 → digest cite-both-or-miss · /memory patterns (Beta) · facts-as-of
+  R3  /dashboard consume                 entitled overlay PULSE (parked)
+  R4  iomesh memory pull                 after PULSE · dual_write OFF`)
+	if got := TTFHPhasedRolloutLines(); got != want {
+		t.Fatalf("canonical mismatch\n got: %q\nwant: %q", got, want)
+	}
+}
+
 func TestMeshAgentOnboardingNextTTFHLane_HonestyNeedles(t *testing.T) {
 	out := MeshAgentOnboardingNextTTFHLane()
 	if out == "" {
@@ -361,6 +373,11 @@ func TestMeshAgentOnboardingNextTTFHLane_HonestyNeedles(t *testing.T) {
 		"v1.3.7",
 		"v0.4.2",
 		"v1.5.12",
+		"TTFH rollout",
+		"R0",
+		"not overlay PULSE",
+		"parked",
+		"Optional mesh",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("ttfh lane missing %q in:\n%s", want, out)

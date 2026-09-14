@@ -27,6 +27,12 @@ fi
 
 echo "ttfh-demo: residual-honest · not E-G1 · not Memory GA · dual_write OFF"
 echo "ttfh-demo: never invent PULSE/Connected · empty until consume · CLIENT ≠ PULSE"
+echo "TTFH rollout (phased · mesh not required for R0–R2):"
+echo "  R0  iomesh ttfh --unit                 offline · no mesh"
+echo "  R1  iomesh ttfh --live                 optional fail-open probe · not overlay PULSE"
+echo "  R2  ingest ×3 → digest cite-both-or-miss · /memory patterns (Beta) · facts-as-of"
+echo "  R3  /dashboard consume                 entitled overlay PULSE (parked)"
+echo "  R4  iomesh memory pull                 after PULSE · dual_write OFF"
 echo "ttfh-demo: unit (offline) via ${IOMESH[*]}"
 
 set +e
