@@ -17,6 +17,7 @@ func TestFormatTTFHUnitReport_WalkPatternsFactsPull(t *testing.T) {
 	for _, want := range []string{
 		"patterns",
 		"facts-as-of",
+		"ttfh-demo.sh",
 		"memory pull",
 		"never APPLY",
 		"dual_write OFF",

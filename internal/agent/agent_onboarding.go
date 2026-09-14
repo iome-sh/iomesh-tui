@@ -254,6 +254,7 @@ func MeshAgentOnboardingNextTTFHLane() string {
        · mesh → local palace · dual_write OFF · pull ≠ invent Connected
   Aliases: /onboard next ttfh|time-to-first-heartbeat|cite-both
   Companion: /onboard next setup · /onboard next memory · /onboard next mesh
+  Companion: scripts/ttfh-demo.sh (unit then optional --live · not E-G1)
   ` + ModeAPinHonestyLine() + `
 
 Locks: dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · knowledge Beta empty · eval template · empty until consume · not live APPLY · PULSE only after ≥1 decoded broker message · CLIENT ≠ PULSE · miss is success · no send/pay/ship`)
