@@ -190,6 +190,7 @@ func newFullscreenModel(ctx context.Context, cancel context.CancelFunc, rt *agen
 	}
 	m.appendLine(m.theme.Status.Render(fmt.Sprintf("model %s  ·  mutating tools prompt y/n/a unless --yolo", displayModel(rt.Router()))))
 	m.appendLine(m.theme.Help.Render("TTFH: /setup preflight · /memory ingest · /dashboard (empty until consume) · /memory patterns · /memory facts-as-of · /onboard next ttfh · iomesh ttfh --unit · scripts/ttfh-demo.sh"))
+	m.appendLine(m.theme.Dim.Render("rollout: R0 --unit (no mesh) · R1 --live fail-open ≠ overlay PULSE · R2 palace ingest/digest · R3 /dashboard PULSE parked · R4 pull dual_write OFF"))
 	m.appendLine(m.theme.Dim.Render("dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected"))
 	m.appendLine("")
 	return m

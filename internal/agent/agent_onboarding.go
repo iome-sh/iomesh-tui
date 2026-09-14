@@ -72,6 +72,19 @@ func OnboardNextStepLines() []string {
 // MeshAgentOnboardingNextStepLines is the family-named alias for OnboardNextStepLines (s1825).
 func MeshAgentOnboardingNextStepLines() []string { return OnboardNextStepLines() }
 
+// TTFHPhasedRolloutLines is the V1.5 first-run R0–R4 map (SSOT).
+// Mesh is not required for R0–R2. --live is fail-open, not overlay PULSE.
+// Overlay /dashboard consume PULSE (R3) is required for E-G1 and stays parked.
+// dual_write OFF · CLIENT ≠ PULSE · catalog ≠ Connected · not Memory GA.
+func TTFHPhasedRolloutLines() string {
+	return strings.TrimSpace(`TTFH rollout (phased · mesh not required for R0–R2):
+  R0  iomesh ttfh --unit                 offline · no mesh
+  R1  iomesh ttfh --live                 optional fail-open probe · not overlay PULSE
+  R2  ingest ×3 → digest cite-both-or-miss · /memory patterns (Beta) · facts-as-of
+  R3  /dashboard consume                 entitled overlay PULSE (parked)
+  R4  iomesh memory pull                 after PULSE · dual_write OFF`)
+}
+
 // MeshAgentOnboardingStartHere is the default I/O Mesh TTFH walk (setup → RCA
 // ingest → optional consume/dashboard → cite-both digest). Honesty needles stay
 // in the residual body. Never invents Connected / Memory GA / install APPLY.
@@ -85,12 +98,14 @@ func MeshAgentOnboardingStartHere() string {
   6. /memory digest --require-sources mesh,private — cite-both or explicit miss (miss is success)
   7. Miss ACK: /dashboard ack (local ritual · no send/pay/ship)
 CLI: iomesh setup preflight · iomesh memory ingest · iomesh mesh smoke (needs endpoint)
-operator: /onboard next ttfh  (aliases time-to-first-heartbeat|cite-both) · never invent Connected · dual_write OFF · catalog ≠ Connected · not Memory GA`)
+operator: /onboard next ttfh  (aliases time-to-first-heartbeat|cite-both) · never invent Connected · dual_write OFF · catalog ≠ Connected · not Memory GA
+Mesh consume is optional for R0–R2. Overlay /dashboard PULSE (R3) is required for E-G1 and stays parked.`)
 }
 
 func MeshAgentOnboardingGuidanceNote() string {
 	return MeshAgentOnboardingStartHere() + "\n\n" + strings.TrimSpace(`mesh agent onboarding (I/O Mesh TTFH · residual-honest default surface):
 Local memory first — mesh consume is optional. Fail-open offline (never invent tool green / Connected).
+Mesh consume is optional for R0–R2. Overlay /dashboard PULSE (R3) is required for E-G1 and stays parked.
 
 Walk:
 1. LLM key or Ollama
@@ -255,6 +270,9 @@ func MeshAgentOnboardingNextTTFHLane() string {
   Aliases: /onboard next ttfh|time-to-first-heartbeat|cite-both
   Companion: /onboard next setup · /onboard next memory · /onboard next mesh
   Companion: scripts/ttfh-demo.sh (unit then optional --live · not E-G1)
+
+` + TTFHPhasedRolloutLines() + `
+
   ` + ModeAPinHonestyLine() + `
 
 Locks: dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · knowledge Beta empty · eval template · empty until consume · not live APPLY · PULSE only after ≥1 decoded broker message · CLIENT ≠ PULSE · miss is success · no send/pay/ship`)

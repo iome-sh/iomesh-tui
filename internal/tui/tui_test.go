@@ -121,6 +121,12 @@ func TestHandleSlash_ModelsAndCost(t *testing.T) {
 	if !strings.Contains(out.String(), "/onboard next ttfh") {
 		t.Fatalf("help missing TTFH onboard: %s", out.String())
 	}
+	if !strings.Contains(out.String(), "rollout R0–R4") {
+		t.Fatalf("help missing TTFH rollout R0–R4: %s", out.String())
+	}
+	if !strings.Contains(out.String(), "mesh optional until overlay PULSE (parked)") {
+		t.Fatalf("help missing parked overlay PULSE: %s", out.String())
+	}
 	if !strings.Contains(out.String(), "/setup") {
 		t.Fatalf("help missing /setup: %s", out.String())
 	}
@@ -1380,6 +1386,10 @@ func TestHandleSlash_OnboardNextTTFHLane(t *testing.T) {
 		"dual_write OFF",
 		"never invent Connected",
 		"CLIENT ≠ PULSE",
+		"TTFH rollout",
+		"R0",
+		"not overlay PULSE",
+		"parked",
 	}
 	for _, line := range []string{"/onboard next ttfh", "/onboard next time-to-first-heartbeat", "/onboard next cite-both", "/agent-onboard after ttfh"} {
 		out.Reset()

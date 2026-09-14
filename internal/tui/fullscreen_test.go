@@ -100,6 +100,9 @@ func TestFullscreenModel_TTFHFirstRunChrome(t *testing.T) {
 	if !strings.Contains(joined, "ttfh-demo.sh") {
 		t.Fatalf("missing ttfh-demo.sh:\n%s", joined)
 	}
+	if !strings.Contains(joined, "rollout") || !strings.Contains(joined, "R0") {
+		t.Fatalf("missing TTFH rollout R0:\n%s", joined)
+	}
 	if !strings.Contains(joined, "empty until consume") {
 		t.Fatalf("missing empty until consume:\n%s", joined)
 	}

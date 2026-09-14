@@ -3293,7 +3293,8 @@ Always prints the TTFH walk and EMPTY dashboard snapshot. dual_write OFF.
 --unit never dials. --live without endpoint prints no-IOMESH_ENDPOINT honesty and exits 0.
 --live with endpoint probes streams/messages (~5s). Network/4xx/5xx → broker unreachable, exit 0.
 Never invents Connected / PULSE / Memory GA / live APPLY. catalog ≠ Connected.
-`)
+
+`+agent.TTFHPhasedRolloutLines()+"\n")
 }
 
 func newLogger(verbose bool) *slog.Logger {
@@ -3305,7 +3306,7 @@ func newLogger(verbose bool) *slog.Logger {
 }
 
 func printUsage() {
-	fmt.Fprintf(os.Stderr, `iomesh — I/O Mesh coding agent TUI (time-to-first-heartbeat)
+	fmt.Fprint(os.Stderr, `iomesh — I/O Mesh coding agent TUI (time-to-first-heartbeat)
 
 Usage:
   iomesh [flags]                 interactive full-screen TUI
@@ -3348,6 +3349,7 @@ Agent serve (WebSocket) flags:
   --token secret        require Bearer or ?token=
 
 TTFH: setup preflight → memory ingest (RCA) → optional mesh smoke / consume → /dashboard (empty until consume · PULSE only after ≥1 decoded broker message · CLIENT ≠ PULSE) → /memory digest --require-sources mesh,private (cite-both or explicit miss) → /dashboard ack (local ritual · no send/pay/ship)
+`+agent.TTFHPhasedRolloutLines()+`
 Honesty: dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · knowledge Beta empty · eval template · not live APPLY
 
 Default model cascade: deepseek-v4-flash → deepseek-v4-pro → grok-4.5

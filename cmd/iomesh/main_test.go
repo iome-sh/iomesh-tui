@@ -106,6 +106,34 @@ func TestPrintUsage_TTFHPrimaryAndAdvanced(t *testing.T) {
 	if strings.Contains(got, "/gtm") || strings.Contains(got, "/plugins") {
 		t.Fatalf("printUsage must keep /gtm /plugins slash hidden:\n%s", got)
 	}
+	for _, want := range []string{
+		"R0",
+		"R1",
+		"not overlay PULSE",
+		"parked",
+		"R4",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("printUsage missing TTFH rollout %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestPrintTTFHUsage_PhasedRollout(t *testing.T) {
+	got := captureStderr(t, printTTFHUsage)
+	for _, want := range []string{
+		"iomesh ttfh [--unit|--live]",
+		"scripts/ttfh-demo.sh",
+		"R0",
+		"R1",
+		"not overlay PULSE",
+		"parked",
+		"R4",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("printTTFHUsage missing %q:\n%s", want, got)
+		}
+	}
 }
 
 func TestReadmeCLIFence_TTFHPrimary(t *testing.T) {
@@ -195,6 +223,11 @@ func TestTTFHDemoScriptHonesty(t *testing.T) {
 		"dual_write OFF",
 		"patterns",
 		"facts-as-of",
+		"R0",
+		"R1",
+		"not overlay PULSE",
+		"parked",
+		"R4",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("ttfh-demo.sh missing %q", want)
