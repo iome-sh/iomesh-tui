@@ -141,6 +141,8 @@ make smoke-unit                    # offline mesh tests (alias: dogfood-unit)
 6. `/memory digest --require-sources mesh,private` — cite-both **or explicit miss** (miss is success).
 7. Miss ACK: `/dashboard ack` (local ritual · no send/pay/ship). Map: `/onboard next ttfh`.
 
+Residual-honest TTFH demo (unit then optional live; not E-G1): `scripts/ttfh-demo.sh`.
+
 Optional: copy [`.env.example`](.env.example) for local env vars (iomesh reads the **process environment**; it does not auto-load `.env` files yet). Copy [`configs/config.example.toml`](configs/config.example.toml) to `~/.iomesh/config.toml` to customize.
 
 ### Default cascade (auto step-up / fallback)

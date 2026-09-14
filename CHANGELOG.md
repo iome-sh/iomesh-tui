@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Residual-honest `scripts/ttfh-demo.sh`** (unit then optional live; not E-G1). Prefers `iomesh` on PATH else `go run ./cmd/iomesh`. Always `ttfh --unit`; `ttfh --live` when `IOMESH_ENDPOINT` is set (fail-open EMPTY/unreachable). Prints ingest · digest cite-both-or-miss · patterns Beta · facts-as-of · memory pull after PULSE. Exit 0 if unit succeeded. Never curl APPLY · never dual_write ON · never invent PULSE/Connected. dual_write OFF · CLIENT ≠ PULSE · empty until consume · not Memory GA.
 - **`iomesh ttfh --live`** light consume probe (fail-open, never invent PULSE). Always prints the offline walk + `dual_write OFF` first. `--unit` wins (stay offline). No endpoint → `live: no IOMESH_ENDPOINT · EMPTY · not PULSE` exit 0. Broker network/4xx/5xx → `live: broker unreachable · EMPTY · not PULSE · not Connected` exit 0. Never invents Connected / Memory GA / `dual_write ON` / live APPLY.
 - **`iomesh ttfh [--unit]`** offline TTFH smoke (EMPTY dashboard honesty · no broker dial). `/onboard next ttfh dogfood` same residual. Never invents Connected/PULSE.
 
