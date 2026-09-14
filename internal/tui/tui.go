@@ -955,7 +955,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 				if len(parts) >= 3 {
 					lane := strings.ToLower(parts[2])
 					switch lane {
-					case "ttfh", "time-to-first-heartbeat", "cite-both":
+					case "ttfh", "time-to-first-heartbeat", "cite-both", "rollout":
 						// Bare /onboard next ttfh stays the board. Extra dogfood|soft|samples|offline|residual-check
 						// prints the same offline unit report as iomesh ttfh --unit (walk + EMPTY snapshot).
 						if len(parts) >= 4 {
@@ -1243,7 +1243,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /memory [ingest|digest|facts-as-of|patterns|status|…]  ingest RCA (source_hint=private) · Mode A sticky: /memory digest --require-sources mesh,private — cite-both or explicit miss · ACK via /dashboard ack · patterns (Beta) · facts-as-of · status (advanced: recall|related|timeline|compact-status|trigger-compact|semantic|ingest-event|anomalies|supersede|extract|ingest-dir)
   /dashboard [help|preview|focus|ack]  empty until consume · preview = eval not your org · PULSE only after ≥1 decoded broker message · CLIENT ≠ PULSE · ack = brief ritual (aliases /heartbeat /mesh-console)
   /mesh                I/O Mesh status + usage (optional · needs IOMESH_ENDPOINT)
-  /onboard [help|checklist|status|next]  I/O Mesh TTFH: setup → ingest RCA → optional consume/dashboard → cite-both digest (aliases /agent-onboard; /onboard next ttfh) · rollout R0–R4 · mesh optional until overlay PULSE (parked)
+  /onboard [help|checklist|status|next]  I/O Mesh TTFH: one walk R0–R4 (R1 --live ≠ R3 overlay PULSE) · setup → ingest RCA → cite-both digest (aliases /agent-onboard; /onboard next ttfh|rollout) · rollout R0–R4 · mesh optional until overlay PULSE (parked)
   /quit                exit
 `+agent.MeshAgentOnboardingLegacyHiddenOneLiner+` · /integrations
 
