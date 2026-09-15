@@ -257,10 +257,11 @@ func MeshAgentOnboardingNextTTFHLane() string {
         Optional mesh: IOMESH_ENDPOINT for R1 only. Overlay /dashboard consume is R3, not this.
     R2  /memory ingest ×3 (source_hint=private)
         /memory digest --require-sources mesh,private  · cite-both or miss (miss is success)
-        /memory patterns (Beta) · empty ≠ invent · never APPLY · /memory facts-as-of --as-of <RFC3339> [--department support] [--department ops]
+        /memory patterns (Beta) · empty ≠ invent · never APPLY · /memory facts-as-of --as-of <RFC3339> [--department support] [--department ops] [--department sales]
         Miss ACK: /dashboard ack (local ritual · no send/pay/ship)
         Department kit (support): iomesh memory ingest-dir examples/dept-rca/support · private overlay · mesh miss is success · not E-G1
-        Department kits (one palace): ingest-dir examples/dept-rca/support then examples/dept-rca/ops · one-tenant composition · ≠ two-org · leftover_is_bind OPEN · facts-as-of --department support|ops
+        Department kits (one palace): ingest-dir examples/dept-rca/support then examples/dept-rca/ops then examples/dept-rca/sales · one-tenant composition · ≠ two-org · leftover_is_bind OPEN · facts-as-of --department support|ops|sales
+        Department kit (sales): iomesh memory ingest-dir examples/dept-rca/sales · private overlay · facts-as-of before price change 2026-03-01 · mesh miss is success · not E-G1
     R3  /dashboard consume                 entitled overlay PULSE (parked · required for E-G1)
         CLI: iomesh mesh smoke is not overlay PULSE. --live decoded-N is not this.
     R4  iomesh memory pull                 after PULSE · dual_write OFF · pull ≠ Connected
