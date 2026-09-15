@@ -1,8 +1,10 @@
 package agent
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -151,14 +153,17 @@ func TestListIngestDirFiles_TextAndSkipBinary(t *testing.T) {
 		t.Fatalf("skipped=%v", plan.Skipped)
 	}
 
-	text := FormatIngestDirPlan(plan, LocalOverlaySessionID, true, true)
-	for _, want := range []string{"ingest-dir", "dry-run", "local-overlay", "dual_write=off", "catalog list ≠ consume", "private overlay"} {
+	text := FormatIngestDirPlan(plan, LocalOverlaySessionID, true, true, MemoryIngestDirOpts{})
+	for _, want := range []string{"ingest-dir", "dry-run", "local-overlay", "source_hint=private", "dual_write=off", "catalog list ≠ consume", "private overlay"} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("plan missing %q: %s", want, text)
 		}
 	}
 	if strings.Contains(text, "Memory GA") {
 		t.Fatalf("must not stamp Memory GA: %s", text)
+	}
+	if strings.Contains(text, "source_hint=mesh") {
+		t.Fatalf("must not stamp mesh: %s", text)
 	}
 }
 
@@ -173,9 +178,136 @@ func TestListIngestDirFiles_PathJail(t *testing.T) {
 	}
 }
 
+func TestIngestDirCaps_D2(t *testing.T) {
+	if DefaultIngestDirLimit != 128 {
+		t.Fatalf("DefaultIngestDirLimit=%d want 128", DefaultIngestDirLimit)
+	}
+	if MaxIngestDirFileBytes != 64<<10 {
+		t.Fatalf("MaxIngestDirFileBytes=%d want 64KiB", MaxIngestDirFileBytes)
+	}
+	if maxIngestDirSkipReported < 64 {
+		t.Fatalf("maxIngestDirSkipReported=%d want ≥64", maxIngestDirSkipReported)
+	}
+}
+
+func TestListIngestDirFiles_AllowlistPDFAndNoExt(t *testing.T) {
+	root := t.TempDir()
+	overlay := filepath.Join(root, "overlay")
+	if err := os.MkdirAll(overlay, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(overlay, "ok.md"), []byte("ok"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(overlay, "data.JSON"), []byte(`{"k":1}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(overlay, "scan.pdf"), []byte("%PDF-1.4 fake"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(overlay, "blob.bin"), []byte{0x00, 0x01, 0x02}, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(overlay, "noext"), []byte{0x00, 0xff}, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	oversize := bytes.Repeat([]byte("a"), MaxIngestDirFileBytes+1)
+	if err := os.WriteFile(filepath.Join(overlay, "big.md"), oversize, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	ws, err := workspace.Open(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	plan, err := ListIngestDirFiles(ws, "overlay", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := map[string]bool{}
+	for _, f := range plan.Files {
+		seen[filepath.Base(f.Rel)] = true
+	}
+	if !seen["ok.md"] || !seen["data.JSON"] {
+		t.Fatalf("allowlist miss files=%v skipped=%v", seen, plan.Skipped)
+	}
+	if seen["scan.pdf"] || seen["blob.bin"] || seen["noext"] || seen["big.md"] {
+		t.Fatalf("should skip pdf/bin/noext/oversize: %v", seen)
+	}
+	var pdf, bin, noext, big bool
+	for _, s := range plan.Skipped {
+		if strings.Contains(s, "scan.pdf") {
+			pdf = true
+			if !strings.Contains(s, "export text first") {
+				t.Fatalf("pdf skip must say export text first: %s", s)
+			}
+			if strings.Contains(s, "not utf-8") {
+				t.Fatalf("pdf skip must be distinct from not utf-8: %s", s)
+			}
+		}
+		if strings.Contains(s, "blob.bin") {
+			bin = true
+		}
+		if strings.Contains(s, "noext") {
+			noext = true
+		}
+		if strings.Contains(s, "big.md") {
+			big = true
+		}
+	}
+	if !pdf || !bin || !noext || !big {
+		t.Fatalf("skipped=%v", plan.Skipped)
+	}
+}
+
+func TestNormalizeMemoryIngestDirOpts_SourceHintAndTags(t *testing.T) {
+	var opts MemoryIngestDirOpts
+	if err := NormalizeMemoryIngestDirOpts(&opts); err != nil {
+		t.Fatal(err)
+	}
+	if opts.SourceHint != IngestDirSourceHintPrivate {
+		t.Fatalf("default source_hint=%q", opts.SourceHint)
+	}
+	mesh := MemoryIngestDirOpts{SourceHint: "mesh"}
+	err := NormalizeMemoryIngestDirOpts(&mesh)
+	if err == nil || !strings.Contains(err.Error(), "mesh") {
+		t.Fatalf("mesh must be rejected: %v", err)
+	}
+	for _, bad := range []string{"catalog", "grant"} {
+		o := MemoryIngestDirOpts{SourceHint: bad}
+		if err := NormalizeMemoryIngestDirOpts(&o); err == nil {
+			t.Fatalf("expected reject %q", bad)
+		}
+	}
+	dept := MemoryIngestDirOpts{Department: "Support", Scenario: "support"}
+	if err := NormalizeMemoryIngestDirOpts(&dept); err != nil {
+		t.Fatal(err)
+	}
+	if dept.Department != "support" || dept.Scenario != "support" {
+		t.Fatalf("lowercase: %+v", dept)
+	}
+	tags := IngestDirTags(dept)
+	if len(tags) != 2 || tags[0] != "dept:support" || tags[1] != "scenario:support" {
+		t.Fatalf("tags=%v", tags)
+	}
+	sid, minted := ResolveIngestDirSessionID(dept, "cfg-session", "rt-session")
+	if sid != "local-overlay:support" || !minted {
+		t.Fatalf("department mint sid=%q minted=%v", sid, minted)
+	}
+	withSess := dept
+	withSess.SessionID = "explicit"
+	sid2, minted2 := ResolveIngestDirSessionID(withSess, "", "")
+	if sid2 != "explicit" || minted2 {
+		t.Fatalf("explicit session sid=%q minted=%v", sid2, minted2)
+	}
+	badID := MemoryIngestDirOpts{Department: "no spaces"}
+	if err := NormalizeMemoryIngestDirOpts(&badID); err == nil {
+		t.Fatal("expected invalid department")
+	}
+}
+
 func TestListIngestDirFiles_SupportDeptRCAKit(t *testing.T) {
-	if DefaultIngestDirLimit != 32 || MaxIngestDirFileBytes != 32<<10 {
-		t.Fatalf("do not raise ingest-dir caps (D2): limit=%d bytes=%d", DefaultIngestDirLimit, MaxIngestDirFileBytes)
+	if DefaultIngestDirLimit != 128 || MaxIngestDirFileBytes != 64<<10 {
+		t.Fatalf("D2 ingest-dir caps: limit=%d want 128 bytes=%d want 64KiB", DefaultIngestDirLimit, MaxIngestDirFileBytes)
 	}
 	root := moduleRoot(t)
 	rel := filepath.Join("examples", "dept-rca", "support")
@@ -191,7 +323,7 @@ func TestListIngestDirFiles_SupportDeptRCAKit(t *testing.T) {
 	for _, f := range plan.Files {
 		seen[filepath.Base(f.Rel)] = f.Text
 		if f.Size > MaxIngestDirFileBytes {
-			t.Fatalf("%s exceeds 32 KiB: %d", f.Rel, f.Size)
+			t.Fatalf("%s exceeds 64 KiB: %d", f.Rel, f.Size)
 		}
 		if !utf8.ValidString(f.Text) {
 			t.Fatalf("%s is not utf-8", f.Rel)
@@ -238,8 +370,8 @@ func TestListIngestDirFiles_SupportDeptRCAKit(t *testing.T) {
 			t.Fatalf("kit README missing %q", want)
 		}
 	}
-	text := FormatIngestDirPlan(plan, LocalOverlaySessionID, true, true)
-	for _, want := range []string{"ingest-dir dry-run", "private overlay", "dual_write=off"} {
+	text := FormatIngestDirPlan(plan, LocalOverlaySessionID, true, true, MemoryIngestDirOpts{})
+	for _, want := range []string{"ingest-dir dry-run", "private overlay", "dual_write=off", "source_hint=private"} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("dry-run missing %q: %s", want, text)
 		}
@@ -271,6 +403,9 @@ func TestMemoryIngestDir_DryRunNoMCP(t *testing.T) {
 	}
 	if !strings.Contains(out, "session_id=local-overlay") || !strings.Contains(out, "dual_write=off") {
 		t.Fatalf("honesty: %q", out)
+	}
+	if !strings.Contains(out, "source_hint=private") {
+		t.Fatalf("source_hint missing: %q", out)
 	}
 }
 
@@ -399,18 +534,150 @@ func TestMemoryIngestDir_MockMCP(t *testing.T) {
 	if gotArgs["session_id"] != LocalOverlaySessionID {
 		t.Fatalf("session_id=%v", gotArgs["session_id"])
 	}
-	if hint, ok := gotArgs["source_hint"]; ok {
-		t.Fatalf("local overlay ingest-dir must not invent mesh source_hint; got %v", hint)
+	if gotArgs["source_hint"] != IngestDirSourceHintPrivate {
+		t.Fatalf("ingest-dir must pass source_hint=private; got %v", gotArgs["source_hint"])
+	}
+	if _, ok := gotArgs["tags"]; ok {
+		t.Fatalf("tags must be omitted when empty; got %v", gotArgs["tags"])
 	}
 	content, _ := gotArgs["content"].(string)
 	if !strings.Contains(content, "file: notes/alpha.md") || !strings.Contains(content, "Project alpha ships Friday") {
 		t.Fatalf("content=%q", content)
+	}
+	if !strings.Contains(content, "source_hint: private") {
+		t.Fatalf("content header missing source_hint: %q", content)
+	}
+	if strings.Contains(strings.ToLower(content), "source_hint: mesh") || gotArgs["source_hint"] == "mesh" {
+		t.Fatalf("must not stamp mesh: args=%v content=%q", gotArgs, content)
 	}
 	if !strings.Contains(out, "ingest-dir") || !strings.Contains(out, "ingested=1") {
 		t.Fatalf("out=%q", out)
 	}
 	if !strings.Contains(out, "dual_write=false") {
 		t.Fatalf("dual_write pin: %q", out)
+	}
+}
+
+func TestMemoryIngestDir_DepartmentTagsAndSession(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "notes"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "notes", "alpha.md"), []byte("Project alpha ships Friday"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	ws, err := workspace.Open(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var gotArgs map[string]any
+	cInR, cInW := io.Pipe()
+	cOutR, cOutW := io.Pipe()
+	go mockMCPIngestTurn(cOutW, cInR, &gotArgs)
+
+	mut := true
+	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "memory", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
+	defer cl.Close()
+	if err := cl.InitForTest(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	mgr := mcp.NewManagerEmpty(nil)
+	mgr.Attach(cl)
+
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "default", DualWrite: false},
+		mcp:    mgr,
+		ws:     ws,
+	}
+	opts := MemoryIngestDirOpts{Path: "notes", Department: "support", Scenario: "support"}
+	out, err := rt.MemoryIngestDir(context.Background(), opts)
+	if err != nil {
+		t.Fatalf("err=%v out=%q", err, out)
+	}
+	if gotArgs["source_hint"] != IngestDirSourceHintPrivate {
+		t.Fatalf("source_hint=%v", gotArgs["source_hint"])
+	}
+	gotTags := ingestDirTagStrings(gotArgs["tags"])
+	if len(gotTags) != 2 || gotTags[0] != "dept:support" || gotTags[1] != "scenario:support" {
+		t.Fatalf("tags=%v (%T)", gotArgs["tags"], gotArgs["tags"])
+	}
+	if gotArgs["session_id"] != "local-overlay:support" {
+		t.Fatalf("session_id=%v", gotArgs["session_id"])
+	}
+	content, _ := gotArgs["content"].(string)
+	if !strings.Contains(content, "tags: dept:support, scenario:support") {
+		t.Fatalf("content header tags: %q", content)
+	}
+	if !strings.Contains(out, "dept:support") || !strings.Contains(out, "source_hint=private") {
+		t.Fatalf("out=%q", out)
+	}
+
+	dry, err := rt.MemoryIngestDir(context.Background(), MemoryIngestDirOpts{
+		Path: "notes", DryRun: true, Department: "support", Scenario: "support",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"ingest-dir dry-run", "dept:support", "scenario:support", "source_hint=private", "local-overlay:support"} {
+		if !strings.Contains(dry, want) {
+			t.Fatalf("dry-run missing %q: %s", want, dry)
+		}
+	}
+}
+
+func TestMemoryIngestDir_DryRunRejectsMeshHint(t *testing.T) {
+	rt := &Runtime{memory: MemoryConfig{Enabled: true}}
+	_, err := rt.MemoryIngestDir(context.Background(), MemoryIngestDirOpts{Path: "notes", DryRun: true, SourceHint: "mesh"})
+	if err == nil || !strings.Contains(err.Error(), "mesh") {
+		t.Fatalf("mesh source-hint must fail: %v", err)
+	}
+}
+
+func TestCallIngestDirMCP_RetriesWithoutTags(t *testing.T) {
+	calls := 0
+	call := func(_ context.Context, name string, args map[string]any) (string, error) {
+		calls++
+		if name != "memory_ingest_turn" {
+			t.Fatalf("tool=%s", name)
+		}
+		if _, ok := args["tags"]; ok {
+			return "", fmt.Errorf(`mcp tool error: additional properties 'tags' not allowed`)
+		}
+		if args["source_hint"] != IngestDirSourceHintPrivate {
+			t.Fatalf("retry must keep source_hint=private: %v", args["source_hint"])
+		}
+		return "ok", nil
+	}
+	args := map[string]any{
+		"source_hint": IngestDirSourceHintPrivate,
+		"tags":        []string{"dept:support"},
+		"content":     "file: x.md\nsource_hint: private\ntags: dept:support\n\nhi",
+	}
+	out, err := CallIngestDirMCP(context.Background(), call, args)
+	if err != nil || out != "ok" {
+		t.Fatalf("out=%q err=%v", out, err)
+	}
+	if calls != 2 {
+		t.Fatalf("calls=%d want 2", calls)
+	}
+	if _, ok := args["tags"]; ok {
+		t.Fatal("tags should be stripped on retry")
+	}
+}
+
+func ingestDirTagStrings(v any) []string {
+	switch t := v.(type) {
+	case []string:
+		return t
+	case []any:
+		out := make([]string, 0, len(t))
+		for _, x := range t {
+			out = append(out, fmt.Sprint(x))
+		}
+		return out
+	default:
+		return nil
 	}
 }
 
