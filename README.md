@@ -231,7 +231,7 @@ iomesh models | sessions | mcp | version
 Advanced: mesh consumer/pub · memory pull · plugins · agent serve
 ```
 
-Slash commands (TUI/REPL): `/model`, `/theme`, `/dashboard` (heartbeat live feed · aliases `/heartbeat` `/mesh-console`), `/permissions`, `/subagents`, `/setup`, `/onboard` (`/onboard next ttfh`), `/memory` (ingest RCA · sticky digest cite-both · facts-as-of · status), `/save`, `/sessions`, `/load`, `/cost`, `/help`, `/quit`.  
+Slash commands (TUI/REPL): `/model`, `/theme`, `/dashboard` (heartbeat live feed · aliases `/heartbeat` `/mesh-console`), `/permissions`, `/subagents`, `/setup`, `/onboard` (`/onboard next ttfh`), `/memory` (ingest RCA · sticky digest cite-both · facts-as-of / recall `--department` · status), `/save`, `/sessions`, `/load`, `/cost`, `/help`, `/quit`.  
 Keys (fullscreen): **Enter** send · **Ctrl+J** newline · **y/n/a** tool approval · `/dashboard` overlay (esc close).
 
 ## Configuration

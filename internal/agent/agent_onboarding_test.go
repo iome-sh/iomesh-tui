@@ -363,6 +363,7 @@ func TestMeshAgentOnboardingNextTTFHLane_HonestyNeedles(t *testing.T) {
 		"no send/pay/ship",
 		"patterns",
 		"facts-as-of",
+		"[--department support]",
 		"ttfh-demo.sh",
 		"memory pull",
 		"never APPLY",
