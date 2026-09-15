@@ -10,7 +10,7 @@ iomesh memory ingest-dir --dry-run examples/dept-rca/support
 # /memory ingest-dir examples/dept-rca/support --dry-run
 ```
 
-`session_id` mints as `local-overlay` when the walk has none. dual_write stays **OFF**. Catalog list ≠ consume.
+`session_id` mints as `local-overlay` when the walk has none (`--department support` mints `local-overlay:support`). `--source-hint` is **private** only (`mesh` is an error). dual_write stays **OFF**. Catalog list ≠ consume.
 
 ## Files
 

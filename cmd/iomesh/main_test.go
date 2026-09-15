@@ -509,7 +509,7 @@ func TestCmdMemoryHelp_IngestDir(t *testing.T) {
 		t.Fatalf("help exit=%d", code)
 	}
 	got := buf.String()
-	for _, want := range []string{"ingest-dir", "local-overlay", "dual_write", "Catalog list ≠ consume"} {
+	for _, want := range []string{"ingest-dir", "local-overlay", "dual_write", "Catalog list ≠ consume", "--source-hint", "--department", "--scenario", "default 128"} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("help missing %q:\n%s", want, got)
 		}
@@ -525,8 +525,53 @@ func TestCmdMemoryIngestDir_DryRun(t *testing.T) {
 	if err := os.WriteFile(overlay+"/note.md", []byte("alpha needle"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if code := cmdMemoryIngestDir([]string{"-C", root, "--dry-run", "overlay"}); code != 0 {
+	var code int
+	got := captureStdout(t, func() {
+		code = cmdMemoryIngestDir([]string{"-C", root, "--dry-run", "overlay"})
+	})
+	if code != 0 {
 		t.Fatalf("dry-run exit=%d", code)
+	}
+	for _, want := range []string{"ingest-dir dry-run", "overlay/note.md", "source_hint=private", "local-overlay"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("dry-run missing %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestCmdMemoryIngestDir_RejectsMeshSourceHint(t *testing.T) {
+	var code int
+	got := captureStderr(t, func() {
+		code = cmdMemoryIngestDir([]string{"--source-hint", "mesh", "--dry-run", "overlay"})
+	})
+	if code != 2 {
+		t.Fatalf("source-hint mesh exit=%d want 2", code)
+	}
+	if !strings.Contains(got, "mesh") {
+		t.Fatalf("stderr should name mesh: %s", got)
+	}
+}
+
+func TestCmdMemoryIngestDir_DepartmentDryRun(t *testing.T) {
+	root := t.TempDir()
+	overlay := root + "/overlay"
+	if err := os.MkdirAll(overlay, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(overlay+"/note.md", []byte("alpha needle"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var code int
+	got := captureStdout(t, func() {
+		code = cmdMemoryIngestDir([]string{"-C", root, "--dry-run", "--department", "support", "--scenario", "support", "overlay"})
+	})
+	if code != 0 {
+		t.Fatalf("dry-run exit=%d", code)
+	}
+	for _, want := range []string{"dept:support", "scenario:support", "source_hint=private", "local-overlay:support"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("department dry-run missing %q:\n%s", want, got)
+		}
 	}
 }
 

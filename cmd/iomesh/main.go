@@ -2613,7 +2613,7 @@ func cmdMemory(args []string) int {
 
   iomesh memory pull         durable mesh pull → local MCP memory_ingest_turn (source_hint=mesh)
   iomesh memory ingest       ingest text via MCP memory_ingest_turn (session_id minted; private)
-  iomesh memory ingest-dir   folder ingest into private overlay (session_id minted)
+  iomesh memory ingest-dir   folder ingest into private overlay (session_id minted; source_hint=private)
 
 Flags (pull):
   --config path         config.toml
@@ -2645,8 +2645,11 @@ Flags (ingest-dir):
   --config path         config.toml
   --yes                 confirm mutating folder ingest (required unless --dry-run)
   --dry-run             list files only (no MCP)
-  --limit N             max files (default 32)
-  --session-id id       override (default: minted local-overlay when the walk has none)
+  --limit N             max files (default 128)
+  --source-hint hint    private only (default private; mesh/catalog/grant rejected)
+  --department id       tag dept:{id} (lowercase [a-z0-9_-]{1,32})
+  --scenario kit        tag scenario:{kit} (same charset)
+  --session-id id       override (default: minted local-overlay, or local-overlay:{dept} when --department is set)
   --mcp-server name     MCP server name for memory tools (default memory)
   --tenant T            palace tenant (default [memory].tenant)
   -C dir                workspace root for path jail (default cwd)
@@ -2755,7 +2758,10 @@ func cmdMemoryIngestDir(args []string) int {
 		configPath = fs.String("config", "", "config.toml path")
 		yes        = fs.Bool("yes", false, "confirm mutating folder ingest")
 		dryRun     = fs.Bool("dry-run", false, "list files only (no MCP)")
-		limit      = fs.Int("limit", 0, "max files (default 32)")
+		limit      = fs.Int("limit", 0, "max files (default 128)")
+		sourceHint = fs.String("source-hint", "", "private only (default private)")
+		department = fs.String("department", "", "tag dept:{id}")
+		scenario   = fs.String("scenario", "", "tag scenario:{kit}")
 		sessionID  = fs.String("session-id", "", "override session_id (default minted local-overlay)")
 		mcpServer  = fs.String("mcp-server", "", "MCP memory server name")
 		tenantFlag = fs.String("tenant", "", "palace tenant")
@@ -2766,8 +2772,21 @@ func cmdMemoryIngestDir(args []string) int {
 	}
 	dir := strings.TrimSpace(strings.Join(fs.Args(), " "))
 	if dir == "" {
-		fmt.Fprintln(os.Stderr, "usage: iomesh memory ingest-dir [--dry-run|--yes] <path>")
-		fmt.Fprintln(os.Stderr, "  folder ingest; session_id minted as local-overlay when the walk has none")
+		fmt.Fprintln(os.Stderr, "usage: iomesh memory ingest-dir [--dry-run|--yes] [--source-hint private] [--department id] [--scenario kit] <path>")
+		fmt.Fprintln(os.Stderr, "  folder ingest; session_id minted as local-overlay (or local-overlay:{dept}); source_hint=private only")
+		return 2
+	}
+	opts := agent.MemoryIngestDirOpts{
+		Path:       dir,
+		DryRun:     *dryRun,
+		Limit:      *limit,
+		SourceHint: *sourceHint,
+		Department: *department,
+		Scenario:   *scenario,
+		SessionID:  *sessionID,
+	}
+	if err := agent.NormalizeMemoryIngestDirOpts(&opts); err != nil {
+		fmt.Fprintf(os.Stderr, "memory ingest-dir: %v\n", err)
 		return 2
 	}
 	if !*dryRun && !*yes {
@@ -2780,15 +2799,14 @@ func cmdMemoryIngestDir(args []string) int {
 		fmt.Fprintf(os.Stderr, "memory ingest-dir: workspace: %v\n", err)
 		return 1
 	}
-	plan, err := agent.ListIngestDirFiles(ws, dir, *limit)
+	plan, err := agent.ListIngestDirFiles(ws, opts.Path, opts.Limit)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "memory ingest-dir: %v\n", err)
 		return 1
 	}
-	sid := agent.ResolveMemoryIngestSessionID(*sessionID, "")
-	minted := strings.TrimSpace(*sessionID) == ""
+	sid, minted := agent.ResolveIngestDirSessionID(opts, "", "")
 	if *dryRun {
-		fmt.Println(agent.FormatIngestDirPlan(plan, sid, minted, true))
+		fmt.Println(agent.FormatIngestDirPlan(plan, sid, minted, true, opts))
 		return 0
 	}
 	cfg, err := loadConfig(*configPath)
@@ -2817,16 +2835,8 @@ func cmdMemoryIngestDir(args []string) int {
 	failed := 0
 	var lines []string
 	for _, f := range plan.Files {
-		content := "file: " + f.Rel + "\n\n" + f.Text
-		callArgs := map[string]any{
-			"role":       "user",
-			"content":    content,
-			"session_id": sid,
-		}
-		if tenant != "" {
-			callArgs["tenant"] = tenant
-		}
-		out, ierr := cl.CallTool(context.Background(), "memory_ingest_turn", callArgs)
+		callArgs := agent.IngestDirTurnArgs(f, sid, tenant, opts)
+		out, ierr := agent.CallIngestDirMCP(context.Background(), cl.CallTool, callArgs)
 		if ierr != nil {
 			failed++
 			lines = append(lines, f.Rel+": "+ierr.Error())
@@ -2843,6 +2853,15 @@ func cmdMemoryIngestDir(args []string) int {
 		plan.Dir, ingested, failed, len(plan.Skipped), sid)
 	if minted {
 		fmt.Print(" (minted · operator had none)")
+	}
+	if opts.SourceHint != "" {
+		fmt.Printf(" source_hint=%s", opts.SourceHint)
+	}
+	if opts.Department != "" {
+		fmt.Printf(" dept:%s", opts.Department)
+	}
+	if opts.Scenario != "" {
+		fmt.Printf(" scenario:%s", opts.Scenario)
 	}
 	fmt.Printf(" dual_write=%v · catalog list ≠ consume · private overlay\n", cfg.Memory.DualWrite)
 	for _, line := range lines {

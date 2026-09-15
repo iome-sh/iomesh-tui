@@ -310,7 +310,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 	case "/memory", "/mem":
 		if len(parts) < 2 {
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
-			fmt.Fprintln(out, "usage: /memory [ingest <text> | digest [--require-sources mesh,private] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | status | recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | trigger-compact --i-confirm | semantic [query|--query ...] [--limit N] | ingest-event --subject <id> --content <text> [--event-time|--session-id|--session-seq|--severity|--source-stream] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | extract [--id] <memory_id> | ingest-dir <path> [--dry-run] [--limit N]]")
+			fmt.Fprintln(out, "usage: /memory [ingest <text> | digest [--require-sources mesh,private] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | status | recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | trigger-compact --i-confirm | semantic [query|--query ...] [--limit N] | ingest-event --subject <id> --content <text> [--event-time|--session-id|--session-seq|--severity|--source-stream] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | extract [--id] <memory_id> | ingest-dir <path> [--dry-run] [--limit N] [--source-hint private] [--department id] [--scenario kit]]")
 			fmt.Fprintln(out, agent.ModeADigestStickyHelp)
 			// s1831: residual-honest dual-path next-step after bare /memory help.
 			for _, line := range agent.MemoryNextStepLines() {
@@ -594,16 +594,16 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			}
 			fmt.Fprintln(out, text)
 		case "ingest-dir", "ingestdir", "ingest_dir", "idir":
-			// #384: folder ingest into private overlay. session_id minted as
-			// local-overlay when the operator has none. dual_write OFF.
-			// Catalog list ≠ consume. Not hosted Memory GA.
+			// #384 / V1.6 D2: folder ingest into private overlay. session_id
+			// minted as local-overlay (or local-overlay:{dept}). dual_write OFF.
+			// source_hint=private only — never stamp mesh. Catalog list ≠ consume.
 			dopts, perr := parseMemoryIngestDirArgs(parts[2:])
 			if perr != "" {
-				fmt.Fprintf(out, "memory ingest-dir: %s\nusage: /memory ingest-dir <path> [--dry-run] [--limit N]\n", perr)
+				fmt.Fprintf(out, "memory ingest-dir: %s\nusage: /memory ingest-dir <path> [--dry-run] [--limit N] [--source-hint private] [--department id] [--scenario kit]\n", perr)
 				return false, nil
 			}
 			if strings.TrimSpace(dopts.Path) == "" {
-				fmt.Fprintln(out, "usage: /memory ingest-dir <path> [--dry-run] [--limit N]\n  folder ingest into private overlay (session_id minted as local-overlay when the walk has none; dual_write OFF; catalog list ≠ consume)")
+				fmt.Fprintln(out, "usage: /memory ingest-dir <path> [--dry-run] [--limit N] [--source-hint private] [--department id] [--scenario kit]\n  folder ingest into private overlay (session_id minted as local-overlay or local-overlay:{dept}; source_hint=private; dual_write OFF; catalog list ≠ consume)")
 				return false, nil
 			}
 			text, err := rt.rt.MemoryIngestDir(context.Background(), dopts)
@@ -2668,9 +2668,9 @@ func parseMemoryIngestEventArgs(args []string) (opts agent.MemoryIngestEventOpts
 	return opts, ""
 }
 
-// parseMemoryIngestDirArgs extracts folder ingest flags (#384).
-// Supports: --dir / --path, --dry-run / --dry_run, --limit.
-// First non-flag token is the directory path.
+// parseMemoryIngestDirArgs extracts folder ingest flags (#384 · V1.6 D2).
+// Supports: --dir / --path, --dry-run / --dry_run, --limit, --source-hint,
+// --department, --scenario, --session-id. First non-flag token is the directory.
 func parseMemoryIngestDirArgs(args []string) (opts agent.MemoryIngestDirOpts, errMsg string) {
 	var pathParts []string
 	for i := 0; i < len(args); i++ {
@@ -2699,6 +2699,38 @@ func parseMemoryIngestDirArgs(args []string) (opts agent.MemoryIngestDirOpts, er
 				return opts, "invalid --limit"
 			}
 			opts.Limit = n
+		case "--source-hint", "--source_hint":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.SourceHint = strings.TrimSpace(val)
+		case "--department", "--dept":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.Department = strings.TrimSpace(val)
+		case "--scenario":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.Scenario = strings.TrimSpace(val)
+		case "--session-id", "--session_id":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.SessionID = strings.TrimSpace(val)
 		default:
 			if strings.HasPrefix(a, "-") {
 				return opts, "unknown flag " + a
@@ -2708,6 +2740,9 @@ func parseMemoryIngestDirArgs(args []string) (opts agent.MemoryIngestDirOpts, er
 	}
 	if strings.TrimSpace(opts.Path) == "" && len(pathParts) > 0 {
 		opts.Path = strings.Join(pathParts, " ")
+	}
+	if err := agent.NormalizeMemoryIngestDirOpts(&opts); err != nil {
+		return opts, err.Error()
 	}
 	return opts, ""
 }

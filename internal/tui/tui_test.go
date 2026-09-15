@@ -642,7 +642,7 @@ func TestParseMemoryIngestEventArgs(t *testing.T) {
 	}
 }
 
-// #384: /memory ingest-dir flag parser for path / --dry-run / --limit.
+// #384 / V1.6 D2: /memory ingest-dir flag parser for path / --dry-run / --limit / dept tags.
 func TestParseMemoryIngestDirArgs(t *testing.T) {
 	o, errMsg := parseMemoryIngestDirArgs([]string{"notes/overlay", "--dry-run", "--limit", "4"})
 	if errMsg != "" {
@@ -650,6 +650,9 @@ func TestParseMemoryIngestDirArgs(t *testing.T) {
 	}
 	if o.Path != "notes/overlay" || !o.DryRun || o.Limit != 4 {
 		t.Fatalf("opts=%+v", o)
+	}
+	if o.SourceHint != agent.IngestDirSourceHintPrivate {
+		t.Fatalf("default source_hint=%q", o.SourceHint)
 	}
 	o2, errMsg2 := parseMemoryIngestDirArgs([]string{"--dir=palace/in", "--dry_run", "--limit=2"})
 	if errMsg2 != "" {
@@ -669,6 +672,17 @@ func TestParseMemoryIngestDirArgs(t *testing.T) {
 	_, badFlag := parseMemoryIngestDirArgs([]string{"--unknown"})
 	if badFlag == "" {
 		t.Fatal("expected unknown flag")
+	}
+	_, meshHint := parseMemoryIngestDirArgs([]string{"notes", "--source-hint", "mesh"})
+	if meshHint == "" || !strings.Contains(meshHint, "mesh") {
+		t.Fatalf("source-hint mesh must be rejected: %q", meshHint)
+	}
+	dept, deptErr := parseMemoryIngestDirArgs([]string{"examples/dept-rca/support", "--department", "support", "--scenario", "support", "--dry-run"})
+	if deptErr != "" {
+		t.Fatalf("dept err=%q", deptErr)
+	}
+	if dept.Department != "support" || dept.Scenario != "support" || dept.SourceHint != agent.IngestDirSourceHintPrivate {
+		t.Fatalf("dept opts=%+v", dept)
 	}
 }
 
