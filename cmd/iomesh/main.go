@@ -2656,8 +2656,9 @@ Flags (ingest-dir):
 
 Notes: memory dual-write remains optional audit (default OFF). Hosted Palace sunset until scale.
   /memory ingest and iomesh memory ingest mint session_id=local-overlay when the operator
-  has none so iomesh-memory-mcp v0.1.0 memory_ingest_turn can complete. Retrieve without
-  a session_id stays unfiltered and finds the private overlay. Catalog list ≠ consume.
+  has none so iomesh-memory-mcp v0.1.0 memory_ingest_turn can complete. Retrieve and
+  facts-as-of always send the same session_id (minted when the operator has none).
+  Catalog list ≠ consume. Half-write ingest-dir (failed>0) is not a completed ingest.
   Role/suffix headers are Beta federated ACL (s675); role-aware default filter is s678/s687 Beta —
   memory → tenant.memory.> (peer mesh s686); org_* tenants remap to dept.* so agent/viewer
   entitles dept.*.events.* (override: --filter dept.*.events.> or dept.<dept>.events.>).
@@ -2748,6 +2749,8 @@ func cmdMemoryIngest(args []string) int {
 	if s := strings.TrimSpace(out); s != "" {
 		fmt.Println(s)
 	}
+	palace := agent.PalaceProvenancePath(cfg.Memory.PalaceRoot, nil)
+	fmt.Println(agent.FormatPalaceProvenanceLine(palace, sid, agent.ExtractMemoryIDsFromWire(out)))
 	return 0
 }
 
@@ -2807,6 +2810,7 @@ func cmdMemoryIngestDir(args []string) int {
 	sid, minted := agent.ResolveIngestDirSessionID(opts, "", "")
 	if *dryRun {
 		fmt.Println(agent.FormatIngestDirPlan(plan, sid, minted, true, opts))
+		fmt.Println(agent.FormatPalaceProvenanceLine(agent.PalaceProvenancePath("", nil), sid, nil))
 		return 0
 	}
 	cfg, err := loadConfig(*configPath)
@@ -2834,6 +2838,7 @@ func cmdMemoryIngestDir(args []string) int {
 	ingested := 0
 	failed := 0
 	var lines []string
+	var ids []string
 	for _, f := range plan.Files {
 		callArgs := agent.IngestDirTurnArgs(f, sid, tenant, opts)
 		out, ierr := agent.CallIngestDirMCP(context.Background(), cl.CallTool, callArgs)
@@ -2843,6 +2848,7 @@ func cmdMemoryIngestDir(args []string) int {
 			continue
 		}
 		ingested++
+		ids = append(ids, agent.ExtractMemoryIDsFromWire(out)...)
 		if s := strings.TrimSpace(out); s != "" {
 			lines = append(lines, f.Rel+": "+s)
 		} else {
@@ -2870,7 +2876,9 @@ func cmdMemoryIngestDir(args []string) int {
 	for _, s := range plan.Skipped {
 		fmt.Printf("  skip %s\n", s)
 	}
-	if ingested == 0 && failed > 0 {
+	fmt.Println(agent.FormatPalaceProvenanceLine(agent.PalaceProvenancePath(cfg.Memory.PalaceRoot, nil), sid, ids))
+	if agent.IngestDirFailClosed(failed) {
+		fmt.Fprintln(os.Stderr, agent.IngestDirHalfWriteLine)
 		return 1
 	}
 	return 0

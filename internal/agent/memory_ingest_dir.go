@@ -129,13 +129,7 @@ func IngestDirTags(opts MemoryIngestDirOpts) []string {
 // ResolveIngestDirSessionID mints local-overlay:{dept} when department is set
 // and no --session-id. Otherwise configured/runtime, then local-overlay.
 func ResolveIngestDirSessionID(opts MemoryIngestDirOpts, configured, runtime string) (sid string, minted bool) {
-	if s := strings.TrimSpace(opts.SessionID); s != "" {
-		return s, false
-	}
-	if d := strings.TrimSpace(opts.Department); d != "" {
-		return LocalOverlaySessionID + ":" + d, true
-	}
-	return ResolveMemoryIngestSessionID(configured, runtime), strings.TrimSpace(configured) == "" && strings.TrimSpace(runtime) == ""
+	return ResolvePalaceSessionID(opts.SessionID, configured, runtime, opts.Department)
 }
 
 func ingestDirSourceHint(opts MemoryIngestDirOpts) string {
@@ -418,13 +412,15 @@ func (rt *Runtime) MemoryIngestDir(ctx context.Context, opts MemoryIngestDirOpts
 	}
 	sid, minted := ResolveIngestDirSessionID(opts, rt.memory.SessionID, rt.sessionID)
 	if opts.DryRun {
-		return FormatIngestDirPlan(plan, sid, minted, true, opts), nil
+		return rt.withPalaceProvenance(FormatIngestDirPlan(plan, sid, minted, true, opts), sid, nil), nil
 	}
 	if len(plan.Files) == 0 {
-		return FormatIngestDirPlan(plan, sid, minted, false, opts) + "\n(no files ingested · empty ≠ invent overlay)", nil
+		empty := FormatIngestDirPlan(plan, sid, minted, false, opts) + "\n(no files ingested · empty ≠ invent overlay)"
+		return rt.withPalaceProvenance(empty, sid, nil), nil
 	}
 
 	var parts []string
+	var ids []string
 	ingested := 0
 	failed := 0
 	for _, f := range plan.Files {
@@ -435,6 +431,7 @@ func (rt *Runtime) MemoryIngestDir(ctx context.Context, opts MemoryIngestDirOpts
 			continue
 		}
 		ingested++
+		ids = append(ids, extractMemoryIDsFromWire(out)...)
 		if s := strings.TrimSpace(out); s != "" {
 			parts = append(parts, f.Rel+": "+s)
 		} else {
@@ -456,7 +453,9 @@ func (rt *Runtime) MemoryIngestDir(ctx context.Context, opts MemoryIngestDirOpts
 		fmt.Fprintf(&b, "  skip %s\n", s)
 	}
 	msg := strings.TrimRight(b.String(), "\n")
-	if ingested == 0 && failed > 0 {
+	msg = rt.withPalaceProvenance(msg, sid, uniqueMemoryIDs(ids))
+	if IngestDirFailClosed(failed) {
+		msg = msg + "\n" + IngestDirHalfWriteLine
 		return msg, fmt.Errorf("%s", msg)
 	}
 	return msg, nil
