@@ -378,6 +378,90 @@ func TestListIngestDirFiles_SupportDeptRCAKit(t *testing.T) {
 	}
 }
 
+func TestListIngestDirFiles_OpsDeptRCAKit(t *testing.T) {
+	if DefaultIngestDirLimit != 128 || MaxIngestDirFileBytes != 64<<10 {
+		t.Fatalf("D2 ingest-dir caps: limit=%d want 128 bytes=%d want 64KiB", DefaultIngestDirLimit, MaxIngestDirFileBytes)
+	}
+	root := moduleRoot(t)
+	rel := filepath.Join("examples", "dept-rca", "ops")
+	ws, err := workspace.Open(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	plan, err := ListIngestDirFiles(ws, rel, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := map[string]string{}
+	for _, f := range plan.Files {
+		seen[filepath.Base(f.Rel)] = f.Text
+		if f.Size > MaxIngestDirFileBytes {
+			t.Fatalf("%s exceeds 64 KiB: %d", f.Rel, f.Size)
+		}
+		if !utf8.ValidString(f.Text) {
+			t.Fatalf("%s is not utf-8", f.Rel)
+		}
+		if strings.Contains(f.Text, "source_hint=mesh") {
+			t.Fatalf("kit must not stamp mesh on files: %s", f.Rel)
+		}
+	}
+	for _, name := range []string{"README.md", "page.md", "runbook.md", "deploy-note.md"} {
+		body, ok := seen[name]
+		if !ok {
+			t.Fatalf("kit missing %s; files=%v skipped=%v", name, seen, plan.Skipped)
+		}
+		if strings.Contains(body, "leftover_is_bind") && name == "README.md" {
+			t.Fatal("kit README must not mention leftover_is_bind")
+		}
+	}
+	page := seen["page.md"]
+	runbook := seen["runbook.md"]
+	readme := seen["README.md"]
+	for _, want := range []string{"PD-HMAC-5xx", "2026-06-15T14:08:00Z"} {
+		if !strings.Contains(page, want) {
+			t.Fatalf("page missing %q", want)
+		}
+	}
+	if !strings.Contains(runbook, "HMAC 200 is not a consume receipt") {
+		t.Fatal("runbook must state HMAC 200 is not a consume receipt")
+	}
+	kit := readme + page + runbook + seen["deploy-note.md"]
+	for _, want := range []string{
+		"PD-HMAC-5xx",
+		"2026-06-15T14:08:00Z",
+		"HMAC 200 is not a consume receipt",
+		"ingest-dir --yes examples/dept-rca/ops",
+		"private overlay",
+		"dept.ops.events.*",
+		"not E-G1",
+		"not Memory GA",
+	} {
+		if !strings.Contains(kit, want) {
+			t.Fatalf("ops kit missing %q", want)
+		}
+	}
+	for _, want := range []string{
+		"iomesh memory ingest-dir --yes examples/dept-rca/ops",
+		"--dry-run",
+		"private overlay",
+		"dept.ops.events.*",
+		"/memory digest --require-sources mesh,private",
+		"2026-06-15T14:08:00Z",
+		"not E-G1",
+		"not Memory GA",
+	} {
+		if !strings.Contains(readme, want) {
+			t.Fatalf("kit README missing %q", want)
+		}
+	}
+	text := FormatIngestDirPlan(plan, LocalOverlaySessionID, true, true, MemoryIngestDirOpts{})
+	for _, want := range []string{"ingest-dir dry-run", "private overlay", "dual_write=off", "source_hint=private"} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("dry-run missing %q: %s", want, text)
+		}
+	}
+}
+
 func TestMemoryIngestDir_DryRunNoMCP(t *testing.T) {
 	root := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(root, "notes"), 0o755); err != nil {
