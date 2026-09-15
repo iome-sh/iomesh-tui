@@ -55,6 +55,7 @@ func TestPrintUsage_TTFHPrimaryAndAdvanced(t *testing.T) {
 		"iomesh ttfh [--unit|--live]",
 		"scripts/ttfh-demo.sh",
 		"scripts/revops-sitting.sh",
+		"scripts/sev1-cs-packet.sh",
 		"iomesh mesh smoke",
 		"iomesh models | sessions | mcp | version",
 	} {
@@ -297,6 +298,59 @@ func TestRevopsSittingScriptHonesty(t *testing.T) {
 	} {
 		if strings.Contains(got, bad) {
 			t.Fatalf("revops-sitting.sh must not contain %q", bad)
+		}
+	}
+}
+
+func TestSev1CSPacketScriptHonesty(t *testing.T) {
+	b, err := os.ReadFile("../../scripts/sev1-cs-packet.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := string(b)
+	for _, want := range []string{
+		"--department customer_success",
+		"--source-hint private",
+		"examples/dept-rca/customer_success",
+		"/memory digest --require-sources mesh,private",
+		"/dashboard ack",
+		"digest miss ≠ known · ACK via /dashboard ack (local ritual · no send/pay/ship) · local RCA stays on disk",
+		"catalog ≠ Connected",
+		"catalog ≠ heartbeat",
+		"EMPTY until consume",
+		"CLIENT ≠ PULSE",
+		"not E-G1",
+		"leftover_is_bind OPEN",
+		"not overlay PULSE",
+		"--unit",
+		"--dry-run",
+		"--yes",
+		"PD-HMAC-5xx",
+		"sev1-packet.md",
+		"not Memory GA",
+		"dual_write OFF",
+		"command -v iomesh",
+		"go run ./cmd/iomesh",
+		"--live is not overlay PULSE",
+		"CS sitting stays unchecked",
+		"overlay does not GET CRM",
+		"Zendesk pulse does not exist",
+		"V2-F parked",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("sev1-cs-packet.sh missing %q", want)
+		}
+	}
+	for _, bad := range []string{
+		"crm.lost_reason",
+		"billing.churn_reason",
+		"leftover_is_bind close",
+		"leftover_is_bind CLOSED",
+		"Memory GA shipped",
+		"revops-sitting.sh",
+	} {
+		if strings.Contains(got, bad) {
+			t.Fatalf("sev1-cs-packet.sh must not contain %q", bad)
 		}
 	}
 }
