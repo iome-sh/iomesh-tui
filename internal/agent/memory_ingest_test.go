@@ -583,7 +583,7 @@ func TestListIngestDirFiles_CSDeptRCAKit(t *testing.T) {
 			t.Fatalf("kit must not stamp mesh on files: %s", f.Rel)
 		}
 	}
-	for _, name := range []string{"README.md", "health-note.md", "renewal.md", "playbook.md"} {
+	for _, name := range []string{"README.md", "health-note.md", "renewal.md", "playbook.md", "living-memo.md"} {
 		body, ok := seen[name]
 		if !ok {
 			t.Fatalf("kit missing %s; files=%v skipped=%v", name, seen, plan.Skipped)
@@ -594,6 +594,7 @@ func TestListIngestDirFiles_CSDeptRCAKit(t *testing.T) {
 	}
 	health := seen["health-note.md"]
 	readme := seen["README.md"]
+	memo := seen["living-memo.md"]
 	for _, want := range []string{"ACC-1001", "2026-08-15"} {
 		if !strings.Contains(health, want) {
 			t.Fatalf("health-note missing %q", want)
@@ -605,7 +606,40 @@ func TestListIngestDirFiles_CSDeptRCAKit(t *testing.T) {
 	if !strings.Contains(seen["playbook.md"], "health-note.md") {
 		t.Fatal("playbook must point at health-note.md")
 	}
-	kit := readme + health + seen["renewal.md"] + seen["playbook.md"]
+	for _, want := range []string{
+		"id:",
+		"event_time:",
+		"summary:",
+		"source_hint: private",
+		"source_hint=private",
+		"pointer:",
+		"dept.gtm.support.theme",
+		"support.theme",
+		"THM-1001",
+		"2026-08-20T15:00:00Z",
+		"not a health score",
+		"not Memory GA",
+		"does not GET Salesforce/CRM",
+		"ingest-dir is enough",
+	} {
+		if !strings.Contains(memo, want) {
+			t.Fatalf("living-memo missing %q", want)
+		}
+	}
+	for _, bad := range []string{
+		"source_hint=mesh",
+		"crm.lost_reason",
+		"billing.churn_reason",
+		"lost_deal",
+		"leftover_is_bind",
+		"Memory GA shipped",
+		"CRM GET",
+	} {
+		if strings.Contains(memo, bad) {
+			t.Fatalf("living-memo must not contain %q", bad)
+		}
+	}
+	kit := readme + health + seen["renewal.md"] + seen["playbook.md"] + memo
 	for _, want := range []string{
 		"ACC-1001",
 		"2026-08-15",
@@ -650,10 +684,18 @@ func TestListIngestDirFiles_CSDeptRCAKit(t *testing.T) {
 		"2026-08-31T18:00:00Z",
 		"not E-G1",
 		"not Memory GA",
+		"ingest-dir is enough",
+		"Mesh miss is success",
+		"living-memo.md",
+		"support.theme",
+		"--department customer_success",
 	} {
 		if !strings.Contains(readme, want) {
 			t.Fatalf("kit README missing %q", want)
 		}
+	}
+	if strings.Contains(readme, "leftover_is_bind") {
+		t.Fatal("kit README must not mention leftover_is_bind")
 	}
 	text := FormatIngestDirPlan(plan, LocalOverlaySessionID, true, true, MemoryIngestDirOpts{})
 	for _, want := range []string{"ingest-dir dry-run", "private overlay", "dual_write=off", "source_hint=private"} {
