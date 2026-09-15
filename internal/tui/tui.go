@@ -310,7 +310,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 	case "/memory", "/mem":
 		if len(parts) < 2 {
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
-			fmt.Fprintln(out, "usage: /memory [ingest <text> | digest [--require-sources mesh,private] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] [--department id] | status | recall [--since|--until|--session-seq] [--department id] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | trigger-compact --i-confirm | semantic [query|--query ...] [--limit N] | ingest-event --subject <id> --content <text> [--event-time|--session-id|--session-seq|--severity|--source-stream] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | extract [--id] <memory_id> | ingest-dir <path> [--dry-run] [--limit N] [--source-hint private] [--department id] [--scenario kit]]")
+			fmt.Fprintln(out, "usage: /memory [ingest <text> | digest [--require-sources mesh,private] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] [--department id] | status | recall [--since|--until|--session-seq|--session-id] [--department id] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | trigger-compact --i-confirm | semantic [query|--query ...] [--limit N] | ingest-event --subject <id> --content <text> [--event-time|--session-id|--session-seq|--severity|--source-stream] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | extract [--id] <memory_id> | ingest-dir <path> [--dry-run] [--limit N] [--source-hint private] [--department id] [--scenario kit]]")
 			fmt.Fprintln(out, agent.ModeADigestStickyHelp)
 			// s1831: residual-honest dual-path next-step after bare /memory help.
 			for _, line := range agent.MemoryNextStepLines() {
@@ -335,7 +335,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		case "recall", "r":
 			q, ropts, perr := parseMemoryRecallArgs(parts[2:])
 			if perr != "" {
-				fmt.Fprintf(out, "memory recall: %s\nusage: /memory recall [--since|--until|--session-seq] [--department id] [query]\n", perr)
+				fmt.Fprintf(out, "memory recall: %s\nusage: /memory recall [--since|--until|--session-seq|--session-id] [--department id] [query]\n", perr)
 				return false, nil
 			}
 			if strings.TrimSpace(q) == "" {
@@ -657,7 +657,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			// (also accepts --since/--until when first token is not a known subcommand)
 			q, ropts, perr := parseMemoryRecallArgs(parts[1:])
 			if perr != "" {
-				fmt.Fprintf(out, "memory recall: %s\nusage: /memory recall [--since|--until|--session-seq] [--department id] [query]\n", perr)
+				fmt.Fprintf(out, "memory recall: %s\nusage: /memory recall [--since|--until|--session-seq|--session-id] [--department id] [query]\n", perr)
 				return false, nil
 			}
 			text, err := rt.rt.MemoryRecallWithOpts(context.Background(), q, ropts)
@@ -2434,7 +2434,8 @@ func parseIntegrationsSigningArgs(args []string) (hint string, errMsg string) {
 
 // parseMemoryRecallArgs extracts optional temporal flags and the free-text query.
 // Supports: --since RFC3339, --until RFC3339, --session-seq N (also --session_seq),
-// --department / --dept (lowercase [a-z0-9_-]{1,32}), optional --tag.
+// --session-id / --session_id (mint local-overlay when empty), --department / --dept
+// (lowercase [a-z0-9_-]{1,32}), optional --tag.
 // Forms: --since=VALUE or --since VALUE. Remaining tokens join as the query (s1068).
 func parseMemoryRecallArgs(args []string) (query string, opts agent.MemoryRecallOpts, errMsg string) {
 	var qParts []string
@@ -2469,6 +2470,14 @@ func parseMemoryRecallArgs(args []string) (query string, opts agent.MemoryRecall
 				opts.SessionSeq = n
 				opts.SessionSeqSet = true
 			}
+		case "--session-id", "--session_id":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.SessionID = strings.TrimSpace(val)
 		case "--department", "--dept":
 			if !hasEq {
 				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {

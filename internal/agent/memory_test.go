@@ -124,6 +124,46 @@ func TestMemoryRecall_PrefersSyncHTTP(t *testing.T) {
 	if !strings.Contains(out, "full-only hit") {
 		t.Fatalf("expected full fallback: %q", out)
 	}
+	if !strings.Contains(out, "provenance:") || !strings.Contains(out, "session_id=sess-sync") || !strings.Contains(out, "palace=") {
+		t.Fatalf("retrieve provenance: %q", out)
+	}
+	if !strings.Contains(out, "memory_ids=1,2") {
+		t.Fatalf("wire memory ids: %q", out)
+	}
+}
+
+func TestMemoryRecall_MintsLocalOverlaySessionID(t *testing.T) {
+	var gotBody map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&gotBody)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"memories": []map[string]any{
+				{"id": "m1", "summary": "overlay needle"},
+			},
+		})
+	}))
+	defer srv.Close()
+
+	mesh := iomesh.New(iomesh.Config{Enabled: true, Endpoint: srv.URL, Tenant: "dept.x"}, nil)
+	rt := &Runtime{
+		mesh:   mesh,
+		memory: MemoryConfig{Enabled: true, Tenant: "dept.x", Server: "memory", DualWrite: false, PalaceRoot: t.TempDir()},
+	}
+	out, err := rt.MemoryRecall(context.Background(), "overlay")
+	if err != nil {
+		t.Fatalf("MemoryRecall: %v", err)
+	}
+	if gotBody["session_id"] != LocalOverlaySessionID {
+		t.Fatalf("retrieve must always send session_id; got %v", gotBody["session_id"])
+	}
+	if !strings.Contains(out, "provenance:") || !strings.Contains(out, "session_id=local-overlay") || !strings.Contains(out, "palace=") {
+		t.Fatalf("provenance: %q", out)
+	}
+	for _, bad := range []string{"Memory GA", "leftover_is_bind close", "CRM GET", "MTTR", "churn", "LME"} {
+		if strings.Contains(out, bad) {
+			t.Fatalf("forbid %q: %q", bad, out)
+		}
+	}
 }
 
 // s1068: config RecallSince/Until/SessionSeq flow into sync retrieve body.
@@ -515,6 +555,9 @@ func TestMemoryOpsDigest_PrefersSyncHTTP(t *testing.T) {
 	}
 	if strings.Contains(out, "customer said outage") || strings.Contains(out, "deploy finished") {
 		t.Fatalf("raw customer receipt text leaked: %q", out)
+	}
+	if !strings.Contains(out, "provenance:") || !strings.Contains(out, "session_id=sess-digest") || !strings.Contains(out, "palace=") {
+		t.Fatalf("digest provenance: %q", out)
 	}
 	if !strings.Contains(out, "honesty:") || !strings.Contains(out, "ga_path") || !strings.Contains(out, "never_invent_ga=true") {
 		t.Fatalf("honesty missing: %q", out)
@@ -1458,6 +1501,103 @@ func TestMemoryFactsAsOf_Validation(t *testing.T) {
 	}
 }
 
+func TestMemoryFactsAsOf_AlwaysSendsSessionID(t *testing.T) {
+	var gotArgs map[string]any
+	cInR, cInW := io.Pipe()
+	cOutR, cOutW := io.Pipe()
+	go mockMCPFactsAsOf(cOutW, cInR, &gotArgs)
+
+	mut := true
+	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "memory", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
+	defer cl.Close()
+	if err := cl.InitForTest(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	mgr := mcp.NewManagerEmpty(nil)
+	mgr.Attach(cl)
+
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory", DualWrite: false, PalaceRoot: t.TempDir()},
+		mcp:    mgr,
+	}
+	out, err := rt.MemoryFactsAsOf(context.Background(), MemoryFactsAsOfOpts{AsOf: "2026-02-28T18:00:00Z"})
+	if err != nil {
+		t.Fatalf("err=%v out=%q", err, out)
+	}
+	if gotArgs["session_id"] != LocalOverlaySessionID {
+		t.Fatalf("facts-as-of must always send session_id; got %v", gotArgs["session_id"])
+	}
+	if !strings.Contains(out, "provenance:") || !strings.Contains(out, "session_id=local-overlay") || !strings.Contains(out, "palace=") {
+		t.Fatalf("provenance: %q", out)
+	}
+	if !strings.Contains(out, "12 list-units") {
+		t.Fatalf("fact missing: %q", out)
+	}
+	for _, bad := range []string{"Memory GA", "leftover_is_bind close", "CRM GET", "MTTR", "churn", "LME"} {
+		if strings.Contains(out, bad) {
+			t.Fatalf("forbid %q: %q", bad, out)
+		}
+	}
+
+	gotArgs = nil
+	out, err = rt.MemoryFactsAsOf(context.Background(), MemoryFactsAsOfOpts{
+		AsOf:       "2026-08-31T18:00:00Z",
+		Department: "customer_success",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotArgs["session_id"] != "local-overlay:customer_success" {
+		t.Fatalf("department mint: %v", gotArgs["session_id"])
+	}
+	if !strings.Contains(out, "session_id=local-overlay:customer_success") {
+		t.Fatalf("dept provenance: %q", out)
+	}
+}
+
+func TestMemoryRecall_MCPMintsSessionID(t *testing.T) {
+	var gotArgs map[string]any
+	cInR, cInW := io.Pipe()
+	cOutR, cOutW := io.Pipe()
+	go mockMCPRetrieve(cOutW, cInR, &gotArgs)
+
+	mut := true
+	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "memory", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
+	defer cl.Close()
+	if err := cl.InitForTest(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	mgr := mcp.NewManagerEmpty(nil)
+	mgr.Attach(cl)
+
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory", DualWrite: false, PalaceRoot: t.TempDir()},
+		mcp:    mgr,
+	}
+	out, err := rt.MemoryRecallWithOpts(context.Background(), "list-seat", MemoryRecallOpts{})
+	if err != nil {
+		t.Fatalf("err=%v out=%q", err, out)
+	}
+	if gotArgs["session_id"] != LocalOverlaySessionID {
+		t.Fatalf("retrieve must always send session_id; got %v", gotArgs["session_id"])
+	}
+	if !strings.Contains(out, "provenance:") || !strings.Contains(out, "session_id=local-overlay") {
+		t.Fatalf("provenance: %q", out)
+	}
+
+	gotArgs = nil
+	_, err = rt.MemoryRecallWithOpts(context.Background(), "seats", MemoryRecallOpts{
+		SessionID:  "explicit-sess",
+		Department: "sales",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotArgs["session_id"] != "explicit-sess" {
+		t.Fatalf("explicit --session-id wins: %v", gotArgs["session_id"])
+	}
+}
+
 // s1276: formatFactsAsOfJSON returns empty on non-JSON (caller may pass through).
 func TestFormatFactsAsOfJSON_NonJSON(t *testing.T) {
 	if got := formatFactsAsOfJSON("not json", 100, ""); got != "" {
@@ -1684,6 +1824,78 @@ func TestMemorySupersede_MockMCPSuccess(t *testing.T) {
 	}
 	if !strings.Contains(out, "person:alice") || !strings.Contains(out, "A3 lite supersede") {
 		t.Fatalf("format: %q", out)
+	}
+}
+
+func mockMCPFactsAsOf(w io.WriteCloser, r io.Reader, got *map[string]any) {
+	defer w.Close()
+	dec := json.NewDecoder(r)
+	for {
+		var req map[string]any
+		if err := dec.Decode(&req); err != nil {
+			return
+		}
+		id := req["id"]
+		method, _ := req["method"].(string)
+		if method == "notifications/initialized" || id == nil {
+			continue
+		}
+		var result any
+		switch method {
+		case "initialize":
+			result = map[string]any{"protocolVersion": "2024-11-05", "serverInfo": map[string]string{"name": "memory", "version": "1"}}
+		case "tools/list":
+			result = map[string]any{"tools": []map[string]any{{
+				"name": "memory_facts_as_of", "description": "facts as of",
+				"inputSchema": map[string]any{"type": "object"},
+			}}}
+		case "tools/call":
+			if params, _ := req["params"].(map[string]any); params != nil {
+				if args, ok := params["arguments"].(map[string]any); ok && got != nil {
+					*got = args
+				}
+			}
+			payload := `{"as_of":"2026-02-28T18:00:00Z","facts":[{"id":"list-seat","summary":"12 list-units / seat / month until 2026-03-01"}]}`
+			result = map[string]any{"content": []map[string]any{{"type": "text", "text": payload}}}
+		}
+		line, _ := json.Marshal(map[string]any{"jsonrpc": "2.0", "id": id, "result": result})
+		_, _ = w.Write(append(line, '\n'))
+	}
+}
+
+func mockMCPRetrieve(w io.WriteCloser, r io.Reader, got *map[string]any) {
+	defer w.Close()
+	dec := json.NewDecoder(r)
+	for {
+		var req map[string]any
+		if err := dec.Decode(&req); err != nil {
+			return
+		}
+		id := req["id"]
+		method, _ := req["method"].(string)
+		if method == "notifications/initialized" || id == nil {
+			continue
+		}
+		var result any
+		switch method {
+		case "initialize":
+			result = map[string]any{"protocolVersion": "2024-11-05", "serverInfo": map[string]string{"name": "memory", "version": "1"}}
+		case "tools/list":
+			result = map[string]any{"tools": []map[string]any{{
+				"name": "memory_retrieve", "description": "retrieve",
+				"inputSchema": map[string]any{"type": "object"},
+			}}}
+		case "tools/call":
+			if params, _ := req["params"].(map[string]any); params != nil {
+				if args, ok := params["arguments"].(map[string]any); ok && got != nil {
+					*got = args
+				}
+			}
+			payload := `{"memories":[{"id":"m1","summary":"12 list-units list-seat"}]}`
+			result = map[string]any{"content": []map[string]any{{"type": "text", "text": payload}}}
+		}
+		line, _ := json.Marshal(map[string]any{"jsonrpc": "2.0", "id": id, "result": result})
+		_, _ = w.Write(append(line, '\n'))
 	}
 }
 

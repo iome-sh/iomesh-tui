@@ -202,6 +202,14 @@ func TestParseMemoryRecallArgs(t *testing.T) {
 	if err2 != "" || q2 != "plain query" || o2.Since != "" || o2.SessionSeqSet {
 		t.Fatalf("plain q=%q opts=%+v err=%q", q2, o2, err2)
 	}
+	_, oSid, errSid := parseMemoryRecallArgs([]string{"--session-id", "local-overlay:sales", "list-seat"})
+	if errSid != "" || oSid.SessionID != "local-overlay:sales" {
+		t.Fatalf("session-id opts=%+v err=%q", oSid, errSid)
+	}
+	_, oSidEq, errSidEq := parseMemoryRecallArgs([]string{"--session_id=explicit", "q"})
+	if errSidEq != "" || oSidEq.SessionID != "explicit" {
+		t.Fatalf("session_id= opts=%+v err=%q", oSidEq, errSidEq)
+	}
 }
 
 func TestParseMemoryRecallArgs_Department(t *testing.T) {

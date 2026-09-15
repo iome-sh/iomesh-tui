@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iome-sh/iomesh-tui/internal/agent"
 	"github.com/iome-sh/iomesh-tui/internal/config"
 )
 
@@ -586,6 +587,18 @@ func TestCmdMemoryIngestDir_DepartmentDryRun(t *testing.T) {
 		if !strings.Contains(got, want) {
 			t.Fatalf("department dry-run missing %q:\n%s", want, got)
 		}
+	}
+	if !strings.Contains(got, "provenance:") || !strings.Contains(got, "session_id=local-overlay:support") || !strings.Contains(got, "palace=") {
+		t.Fatalf("department dry-run provenance:\n%s", got)
+	}
+}
+
+func TestIngestDirFailClosed_CLIContract(t *testing.T) {
+	if agent.IngestDirFailClosed(0) {
+		t.Fatal("failed=0 is success")
+	}
+	if !agent.IngestDirFailClosed(1) {
+		t.Fatal("ingested=2 failed=1 must not be silent success")
 	}
 }
 

@@ -919,6 +919,101 @@ func TestMemoryIngestDir_DryRunRejectsMeshHint(t *testing.T) {
 	}
 }
 
+func TestMemoryIngestDir_PartialMCPFailIsError(t *testing.T) {
+	root := t.TempDir()
+	notes := filepath.Join(root, "notes")
+	if err := os.MkdirAll(notes, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"alpha.md", "beta.md", "gamma.md"} {
+		if err := os.WriteFile(filepath.Join(notes, name), []byte(name+" needle"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	ws, err := workspace.Open(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cInR, cInW := io.Pipe()
+	cOutR, cOutW := io.Pipe()
+	go mockMCPIngestTurnFailOn(cOutW, cInR, "file: notes/beta.md")
+
+	mut := true
+	cl := mcp.NewClientForTest(mcp.ServerConfig{Name: "memory", Command: "x", Mutating: &mut}, cInW, cOutR, nil)
+	defer cl.Close()
+	if err := cl.InitForTest(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	mgr := mcp.NewManagerEmpty(nil)
+	mgr.Attach(cl)
+
+	rt := &Runtime{
+		memory: MemoryConfig{Enabled: true, Server: "memory", Tenant: "default", DualWrite: false, PalaceRoot: t.TempDir()},
+		mcp:    mgr,
+		ws:     ws,
+	}
+	out, err := rt.MemoryIngestDir(context.Background(), MemoryIngestDirOpts{Path: "notes"})
+	if err == nil {
+		t.Fatalf("partial ingest must not be silent success: out=%q", out)
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, "failed=1") {
+		t.Fatalf("want failed=1: %s", msg)
+	}
+	if !strings.Contains(msg, "ingested=2") {
+		t.Fatalf("want ingested=2: %s", msg)
+	}
+	if !strings.Contains(msg, IngestDirHalfWriteLine) {
+		t.Fatalf("want half-write copy: %s", msg)
+	}
+	if !strings.Contains(msg, "provenance:") || !strings.Contains(msg, "session_id=") || !strings.Contains(msg, "palace=") {
+		t.Fatalf("want provenance footer: %s", msg)
+	}
+	for _, bad := range []string{"leftover_is_bind close", "CRM GET", "MTTR", "churn %", "LME"} {
+		if strings.Contains(msg, bad) {
+			t.Fatalf("forbid %q: %s", bad, msg)
+		}
+	}
+}
+
+func TestDeptRCAKits_DualFiguresStayTwoDatedFacts(t *testing.T) {
+	root := moduleRoot(t)
+	ws, err := workspace.Open(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sales, err := ListIngestDirFiles(ws, filepath.Join("examples", "dept-rca", "sales"), 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cs, err := ListIngestDirFiles(ws, filepath.Join("examples", "dept-rca", "customer_success"), 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	salesText := ""
+	csText := ""
+	for _, f := range sales.Files {
+		salesText += f.Text
+	}
+	for _, f := range cs.Files {
+		csText += f.Text
+	}
+	if !strings.Contains(salesText, "12 list-units") || !strings.Contains(salesText, "2026-03-01") {
+		t.Fatal("sales list-seat dated fact missing")
+	}
+	if !strings.Contains(csText, "entitled_seats") || !strings.Contains(csText, "25") || !strings.Contains(csText, "2026-09-01") {
+		t.Fatal("CS entitled seats dated fact missing")
+	}
+	kit := salesText + "\n" + csText
+	if !strings.Contains(kit, "12 list-units") || !strings.Contains(kit, "25") {
+		t.Fatal("dual figures must stay two dated facts")
+	}
+	if strings.Contains(kit, "LME") || strings.Contains(kit, "lme %") {
+		t.Fatal("must not collapse list-seat and CS seats to a single LME %")
+	}
+}
+
 func TestCallIngestDirMCP_RetriesWithoutTags(t *testing.T) {
 	calls := 0
 	call := func(_ context.Context, name string, args map[string]any) (string, error) {
@@ -967,8 +1062,16 @@ func ingestDirTagStrings(v any) []string {
 }
 
 func mockMCPIngestTurn(w io.WriteCloser, r io.Reader, got *map[string]any) {
+	mockMCPIngestTurnFailOn(w, r, "", got)
+}
+
+func mockMCPIngestTurnFailOn(w io.WriteCloser, r io.Reader, failNeedle string, got ...*map[string]any) {
 	defer w.Close()
 	dec := json.NewDecoder(r)
+	var dst *map[string]any
+	if len(got) > 0 {
+		dst = got[0]
+	}
 	for {
 		var req map[string]any
 		if err := dec.Decode(&req); err != nil {
@@ -989,10 +1092,22 @@ func mockMCPIngestTurn(w io.WriteCloser, r io.Reader, got *map[string]any) {
 				"inputSchema": map[string]any{"type": "object"},
 			}}}
 		case "tools/call":
+			var args map[string]any
 			if params, _ := req["params"].(map[string]any); params != nil {
-				if args, ok := params["arguments"].(map[string]any); ok && got != nil {
-					*got = args
+				if a, ok := params["arguments"].(map[string]any); ok {
+					args = a
+					if dst != nil {
+						*dst = a
+					}
 				}
+			}
+			content, _ := args["content"].(string)
+			if failNeedle != "" && strings.Contains(content, failNeedle) {
+				result = map[string]any{
+					"isError": true,
+					"content": []map[string]any{{"type": "text", "text": "mcp ingest failed: " + failNeedle}},
+				}
+				break
 			}
 			payload := `{"memory_id":"mem_test","tier":1,"tenant":"default","audited":false,"dual_write":"off"}`
 			result = map[string]any{"content": []map[string]any{{"type": "text", "text": payload}}}

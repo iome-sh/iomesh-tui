@@ -150,12 +150,12 @@ func (rt *Runtime) memorySessionID() string {
 // LocalOverlaySessionID is the residual-honest default session_id minted when
 // the operator has no TUI/config session. iomesh-memory-mcp v0.1.0 requires
 // session_id on memory_ingest_turn; the host walk does not invent a conversation
-// session. Retrieve without a session_id stays unfiltered and still finds these
-// private overlay entries. dual_write stays OFF. Not a conversation session.
+// session. Retrieve and facts-as-of always send the same minted session_id so
+// TTFH finds the private overlay. dual_write stays OFF. Not a conversation session.
 const LocalOverlaySessionID = "local-overlay"
 
 // ResolveMemoryIngestSessionID returns configured, then runtime, then local-overlay.
-// Used by /memory ingest, /memory ingest-dir, and iomesh memory ingest[-dir].
+// Used by /memory ingest, /memory ingest-dir, retrieve, facts-as-of, and CLI twins.
 func ResolveMemoryIngestSessionID(configured, runtime string) string {
 	if s := strings.TrimSpace(configured); s != "" {
 		return s
@@ -254,6 +254,9 @@ type MemoryRecallOpts struct {
 	Department string
 	// Tag optional MCP tag (dept:{id} when Department is set and Tag is empty).
 	Tag string
+	// SessionID optional --session-id override. Empty mints local-overlay
+	// (or local-overlay:{dept} when Department is set), same as ingest.
+	SessionID string
 }
 
 // MemoryRecall retrieves context for injection or /memory recall.
@@ -297,6 +300,7 @@ func (rt *Runtime) MemoryRecallWithOpts(ctx context.Context, query string, opts 
 	}
 	dept := strings.TrimSpace(opts.Department)
 	tag := strings.TrimSpace(opts.Tag)
+	sid, _ := rt.palaceSessionID(opts.SessionID, dept)
 
 	// Prefer sync request/response against memory sidecar HTTP when mesh client is live.
 	// HTTP retrieve has no department/tag field today — do not invent HTTP. Department
@@ -304,7 +308,7 @@ func (rt *Runtime) MemoryRecallWithOpts(ctx context.Context, query string, opts 
 	if rt.syncMemoryReady() && dept == "" && tag == "" {
 		key := memoryRecallCacheKey{
 			Tenant:  rt.memoryTenant(),
-			Session: rt.memorySessionID(),
+			Session: sid,
 			Query:   q,
 			Limit:   limit,
 			Since:   since,
@@ -316,14 +320,14 @@ func (rt *Runtime) MemoryRecallWithOpts(ctx context.Context, query string, opts 
 			if rt.logger != nil {
 				rt.logger.Debug("memory sync retrieve cache hit", "tenant", key.Tenant, "query", q, "orig_ms", latMS)
 			}
-			return formatMemoryHits(hits, maxBytes), nil
+			return rt.withPalaceProvenance(formatMemoryHits(hits, maxBytes), sid, memoryIDsFromHits(hits)), nil
 		}
 
 		start := time.Now()
 		res, err := rt.mesh.RetrieveMemoryWithOptions(ctx, rt.memoryTenant(), iomesh.MemoryRetrieveOptions{
 			Query:      q,
 			Limit:      limit,
-			SessionID:  rt.memorySessionID(),
+			SessionID:  sid,
 			SessionSeq: sessionSeq,
 			Since:      since,
 			Until:      until,
@@ -337,7 +341,7 @@ func (rt *Runtime) MemoryRecallWithOpts(ctx context.Context, query string, opts 
 				hits = []iomesh.MemoryHit{}
 			}
 			rt.memoryCache.put(key, hits, latMS)
-			return formatMemoryHits(hits, maxBytes), nil
+			return rt.withPalaceProvenance(formatMemoryHits(hits, maxBytes), sid, memoryIDsFromHits(hits)), nil
 		}
 		rt.lastMemoryRetrieveMS.Store(int64(latMS))
 		rt.lastMemoryRetrieveCacheHit.Store(false)
@@ -358,14 +362,12 @@ func (rt *Runtime) MemoryRecallWithOpts(ctx context.Context, query string, opts 
 	}
 	c := rt.mcp.ClientByName(rt.memory.Server)
 	args := map[string]any{
-		"query": q,
-		"limit": limit,
+		"query":      q,
+		"limit":      limit,
+		"session_id": sid,
 	}
 	if t := rt.memoryTenant(); t != "" {
 		args["tenant"] = t
-	}
-	if sid := rt.memorySessionID(); sid != "" {
-		args["session_id"] = sid
 	}
 	if sessionSeq != 0 {
 		args["session_seq"] = sessionSeq
@@ -385,7 +387,7 @@ func (rt *Runtime) MemoryRecallWithOpts(ctx context.Context, query string, opts 
 	if err != nil {
 		return "", err
 	}
-	return truncateBytes(out, maxBytes), nil
+	return rt.withPalaceProvenance(truncateBytes(out, maxBytes), sid, extractMemoryIDsFromWire(out)), nil
 }
 
 // MemoryRelatedOpts overrides config for one opt-in multi-hop related call (s1135).
@@ -677,7 +679,9 @@ func (rt *Runtime) MemoryOpsDigest(ctx context.Context, opts ...MemoryOpsDigestO
 			res = httpRes
 			if len(required) == 0 {
 				finalizeDigestForRequireSources(res, required, fetchLimit, displayLimit)
-				return applyRequireSources(formatOpsDigest(res, maxBytes), res, required), nil
+				out := applyRequireSources(formatOpsDigest(res, maxBytes), res, required)
+				sid, _ := rt.palaceSessionID("", "")
+				return rt.withPalaceProvenance(out, sid, nil), nil
 			}
 		} else if rt.logger != nil {
 			rt.logger.Debug("memory ops_digest sync failed; trying MCP fallback", "err", err, "ms", latMS)
@@ -722,7 +726,10 @@ func (rt *Runtime) MemoryOpsDigest(ctx context.Context, opts ...MemoryOpsDigestO
 	}
 
 	finalizeDigestForRequireSources(res, required, fetchLimit, displayLimit)
-	return applyRequireSources(formatOpsDigest(res, maxBytes), res, required), nil
+	out := applyRequireSources(formatOpsDigest(res, maxBytes), res, required)
+	sid, _ := rt.palaceSessionID("", "")
+	// session_id is not on MemoryOpsDigestOptions / ops_digest_export today — do not invent it on the wire.
+	return rt.withPalaceProvenance(out, sid, nil), nil
 }
 
 func (rt *Runtime) fetchMCPOpsDigest(ctx context.Context, window, horizon string, fetchLimit int, asOf string, maxBytes int) (*iomesh.MemoryOpsDigestResult, string, error) {
@@ -1079,15 +1086,17 @@ func (rt *Runtime) MemoryFactsAsOf(ctx context.Context, opts MemoryFactsAsOfOpts
 
 	dept := strings.TrimSpace(opts.Department)
 	tag := strings.TrimSpace(opts.Tag)
+	sid, _ := rt.palaceSessionID(opts.SessionID, dept)
 
 	// MCP-first — no lean HTTP /memory/facts_as_of on platform (document, do not invent).
 	if !rt.mcpMemoryReady() {
-		return formatFactsAsOfOffline(rt.memory.Server, asOf, dept), nil
+		return rt.withPalaceProvenance(formatFactsAsOfOffline(rt.memory.Server, asOf, dept), sid, nil), nil
 	}
 	c := rt.mcp.ClientByName(rt.memory.Server)
 	args := map[string]any{
-		"as_of": asOf,
-		"limit": limit,
+		"as_of":      asOf,
+		"limit":      limit,
+		"session_id": sid,
 	}
 	if t := rt.memoryTenant(); t != "" {
 		args["tenant"] = t
@@ -1098,13 +1107,6 @@ func (rt *Runtime) MemoryFactsAsOf(ctx context.Context, opts MemoryFactsAsOfOpts
 	if q := strings.TrimSpace(opts.Query); q != "" {
 		args["query"] = q
 	}
-	sid := strings.TrimSpace(opts.SessionID)
-	if sid == "" {
-		sid = rt.memorySessionID()
-	}
-	if sid != "" {
-		args["session_id"] = sid
-	}
 	applyMemoryDepartmentMCPArgs(args, dept, tag)
 	start := time.Now()
 	out, err := c.CallTool(ctx, "memory_facts_as_of", args)
@@ -1113,17 +1115,18 @@ func (rt *Runtime) MemoryFactsAsOf(ctx context.Context, opts MemoryFactsAsOfOpts
 	rt.lastMemoryRetrieveCacheHit.Store(false)
 	if err != nil {
 		// Fail-open residual-honest call failure — do not invent facts.
-		return formatFactsAsOfCallFailed(asOf, err, dept), nil
+		return rt.withPalaceProvenance(formatFactsAsOfCallFailed(asOf, err, dept), sid, nil), nil
 	}
+	ids := extractMemoryIDsFromWire(out)
 	if formatted := formatFactsAsOfJSON(out, maxBytes, dept); formatted != "" {
-		return formatted, nil
+		return rt.withPalaceProvenance(formatted, sid, ids), nil
 	}
 	// Unknown payload — pass through with honesty footer (never invent structure).
 	raw := strings.TrimSpace(out)
 	if raw == "" {
-		return formatFactsAsOf(asOf, nil, maxBytes, dept), nil
+		return rt.withPalaceProvenance(formatFactsAsOf(asOf, nil, maxBytes, dept), sid, ids), nil
 	}
-	return truncateBytes(raw+"\n"+factsAsOfHonestyFooter, maxBytes), nil
+	return rt.withPalaceProvenance(truncateBytes(raw+"\n"+factsAsOfHonestyFooter, maxBytes), sid, ids), nil
 }
 
 // applyMemoryDepartmentMCPArgs adds department and/or tag=dept:{id} when set.
@@ -3144,6 +3147,7 @@ func (rt *Runtime) MemoryIngestTurn(ctx context.Context, role, content string) (
 	parts = append(parts, fmt.Sprintf("dual_write=%v", rt.memory.DualWrite))
 	parts = append(parts, rt.PalaceVisibilityLine())
 	msg := strings.Join(parts, "; ")
+	msg = rt.withPalaceProvenance(msg, sid, extractMemoryIDsFromWire(msg))
 	if ok {
 		return msg, nil
 	}
