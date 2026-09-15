@@ -556,6 +556,113 @@ func TestListIngestDirFiles_SalesDeptRCAKit(t *testing.T) {
 	}
 }
 
+func TestListIngestDirFiles_CSDeptRCAKit(t *testing.T) {
+	if DefaultIngestDirLimit != 128 || MaxIngestDirFileBytes != 64<<10 {
+		t.Fatalf("D2 ingest-dir caps: limit=%d want 128 bytes=%d want 64KiB", DefaultIngestDirLimit, MaxIngestDirFileBytes)
+	}
+	root := moduleRoot(t)
+	rel := filepath.Join("examples", "dept-rca", "customer_success")
+	ws, err := workspace.Open(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	plan, err := ListIngestDirFiles(ws, rel, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := map[string]string{}
+	for _, f := range plan.Files {
+		seen[filepath.Base(f.Rel)] = f.Text
+		if f.Size > MaxIngestDirFileBytes {
+			t.Fatalf("%s exceeds 64 KiB: %d", f.Rel, f.Size)
+		}
+		if !utf8.ValidString(f.Text) {
+			t.Fatalf("%s is not utf-8", f.Rel)
+		}
+		if strings.Contains(f.Text, "source_hint=mesh") {
+			t.Fatalf("kit must not stamp mesh on files: %s", f.Rel)
+		}
+	}
+	for _, name := range []string{"README.md", "health-note.md", "renewal.md", "playbook.md"} {
+		body, ok := seen[name]
+		if !ok {
+			t.Fatalf("kit missing %s; files=%v skipped=%v", name, seen, plan.Skipped)
+		}
+		if strings.Contains(body, "leftover_is_bind") && name == "README.md" {
+			t.Fatal("kit README must not mention leftover_is_bind")
+		}
+	}
+	health := seen["health-note.md"]
+	readme := seen["README.md"]
+	for _, want := range []string{"ACC-1001", "2026-08-15"} {
+		if !strings.Contains(health, want) {
+			t.Fatalf("health-note missing %q", want)
+		}
+	}
+	if !strings.Contains(seen["renewal.md"], "2026-09-01") {
+		t.Fatal("renewal must have window 2026-09-01")
+	}
+	if !strings.Contains(seen["playbook.md"], "health-note.md") {
+		t.Fatal("playbook must point at health-note.md")
+	}
+	kit := readme + health + seen["renewal.md"] + seen["playbook.md"]
+	for _, want := range []string{
+		"ACC-1001",
+		"2026-08-15",
+		"2026-09-01",
+		"2026-08-31T18:00:00Z",
+		"ingest-dir --yes examples/dept-rca/customer_success",
+		"private overlay",
+		"dept.customer_success.events.*",
+		"not E-G1",
+		"not Memory GA",
+	} {
+		if !strings.Contains(kit, want) {
+			t.Fatalf("cs kit missing %q", want)
+		}
+	}
+	for _, bad := range []string{"$400k", "$400K"} {
+		if strings.Contains(kit, bad) {
+			t.Fatalf("cs kit must not invent ARR %q", bad)
+		}
+	}
+	if i := strings.Index(kit, "$"); i >= 0 && i+1 < len(kit) {
+		c := kit[i+1]
+		if c >= '0' && c <= '9' {
+			end := i + 8
+			if end > len(kit) {
+				end = len(kit)
+			}
+			t.Fatalf("cs kit must not invent ARR dollar amounts: %q", kit[i:end])
+		}
+	}
+	for _, name := range []string{"Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Wilson", "Anderson"} {
+		if strings.Contains(kit, name) {
+			t.Fatalf("cs kit must not use customer last name %q", name)
+		}
+	}
+	for _, want := range []string{
+		"iomesh memory ingest-dir --yes examples/dept-rca/customer_success",
+		"--dry-run",
+		"private overlay",
+		"dept.customer_success.events.*",
+		"/memory digest --require-sources mesh,private",
+		"2026-08-31T18:00:00Z",
+		"not E-G1",
+		"not Memory GA",
+	} {
+		if !strings.Contains(readme, want) {
+			t.Fatalf("kit README missing %q", want)
+		}
+	}
+	text := FormatIngestDirPlan(plan, LocalOverlaySessionID, true, true, MemoryIngestDirOpts{})
+	for _, want := range []string{"ingest-dir dry-run", "private overlay", "dual_write=off", "source_hint=private"} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("dry-run missing %q: %s", want, text)
+		}
+	}
+}
+
 func TestMemoryIngestDir_DryRunNoMCP(t *testing.T) {
 	root := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(root, "notes"), 0o755); err != nil {
