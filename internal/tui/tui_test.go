@@ -1476,8 +1476,10 @@ func TestHandleSlash_OnboardNextTTFHLane(t *testing.T) {
 		"Optional mesh",
 		"dept-rca/support",
 		"dept-rca/sales",
+		"dept-rca/customer_success",
 		"mesh miss is success",
 		"--department sales",
+		"--department customer_success",
 	}
 	for _, line := range []string{"/onboard next ttfh", "/onboard next time-to-first-heartbeat", "/onboard next cite-both", "/onboard next rollout", "/agent-onboard after ttfh"} {
 		out.Reset()
