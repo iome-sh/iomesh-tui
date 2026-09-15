@@ -266,6 +266,7 @@ func MeshAgentOnboardingNextTTFHLane() string {
         Department kit (sales): iomesh memory ingest-dir examples/dept-rca/sales · private overlay · facts-as-of before price change 2026-03-01 · mesh miss is success · not E-G1
         Department kit (CS): iomesh memory ingest-dir examples/dept-rca/customer_success · private overlay · facts-as-of before renewal 2026-09-01 · mesh miss is success · not E-G1
         RevOps sitting (support.theme): scripts/revops-sitting.sh · living-memo in examples/dept-rca/customer_success · ingest-dir --department customer_success · /memory digest --require-sources mesh,private (cite-both or named miss) · mesh miss is success · not E-G1
+        Sev-1 CS packet (PD-HMAC-5xx): scripts/sev1-cs-packet.sh · sev1-packet.md in examples/dept-rca/customer_success · ingest-dir --department customer_success · /memory digest --require-sources mesh,private (cite-both or named miss) · mesh miss is success · Zendesk optional · pulse does not exist · not E-G1
     R3  /dashboard consume                 entitled overlay PULSE (parked · required for E-G1)
         CLI: iomesh mesh smoke is not overlay PULSE. --live decoded-N is not this.
     R4  iomesh memory pull                 after PULSE · dual_write OFF · pull ≠ Connected

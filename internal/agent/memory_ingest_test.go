@@ -583,7 +583,7 @@ func TestListIngestDirFiles_CSDeptRCAKit(t *testing.T) {
 			t.Fatalf("kit must not stamp mesh on files: %s", f.Rel)
 		}
 	}
-	for _, name := range []string{"README.md", "health-note.md", "renewal.md", "playbook.md", "living-memo.md"} {
+	for _, name := range []string{"README.md", "health-note.md", "renewal.md", "playbook.md", "living-memo.md", "sev1-packet.md"} {
 		body, ok := seen[name]
 		if !ok {
 			t.Fatalf("kit missing %s; files=%v skipped=%v", name, seen, plan.Skipped)
@@ -595,6 +595,7 @@ func TestListIngestDirFiles_CSDeptRCAKit(t *testing.T) {
 	health := seen["health-note.md"]
 	readme := seen["README.md"]
 	memo := seen["living-memo.md"]
+	packet := seen["sev1-packet.md"]
 	for _, want := range []string{"ACC-1001", "2026-08-15"} {
 		if !strings.Contains(health, want) {
 			t.Fatalf("health-note missing %q", want)
@@ -639,7 +640,39 @@ func TestListIngestDirFiles_CSDeptRCAKit(t *testing.T) {
 			t.Fatalf("living-memo must not contain %q", bad)
 		}
 	}
-	kit := readme + health + seen["renewal.md"] + seen["playbook.md"] + memo
+	for _, want := range []string{
+		"id:",
+		"event_time:",
+		"summary:",
+		"source_hint: private",
+		"source_hint=private",
+		"pointer:",
+		"PD-HMAC-5xx",
+		"2026-06-15T14:08:00Z",
+		"ingest-dir is enough",
+		"not Memory GA",
+		"does not GET Salesforce/CRM",
+	} {
+		if !strings.Contains(packet, want) {
+			t.Fatalf("sev1-packet missing %q", want)
+		}
+	}
+	for _, bad := range []string{
+		"source_hint=mesh",
+		"leftover_is_bind",
+		"CRM GET",
+		"health score",
+		"MTTR",
+		"churn %",
+		"overlay PULSE",
+		"Zendesk pulse",
+		"Memory GA shipped",
+	} {
+		if strings.Contains(packet, bad) {
+			t.Fatalf("sev1-packet must not contain %q", bad)
+		}
+	}
+	kit := readme + health + seen["renewal.md"] + seen["playbook.md"] + memo + packet
 	for _, want := range []string{
 		"ACC-1001",
 		"2026-08-15",
@@ -689,6 +722,12 @@ func TestListIngestDirFiles_CSDeptRCAKit(t *testing.T) {
 		"living-memo.md",
 		"support.theme",
 		"--department customer_success",
+		"sev1-packet.md",
+		"PD-HMAC-5xx",
+		"2026-06-15T14:08:00Z",
+		"Zendesk optional",
+		"pulse does not exist",
+		"scripts/sev1-cs-packet.sh",
 	} {
 		if !strings.Contains(readme, want) {
 			t.Fatalf("kit README missing %q", want)
