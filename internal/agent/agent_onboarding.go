@@ -85,6 +85,12 @@ func TTFHPhasedRolloutLines() string {
   R4  iomesh memory pull                 after PULSE · dual_write OFF`)
 }
 
+// TTFHStreamsAsDomainPortsLine is V1.6 D4 copy: entitled dept.* streams are
+// domain output ports. Copy only — no consume/pull/facts-as-of backend change.
+func TTFHStreamsAsDomainPortsLine() string {
+	return "dept.* stream = domain output port · /dashboard PULSE = consume-clock (product live?) · palace facts-as-of = long temporal port after R4 pull · kind chips filter consume ≠ palace search · knowledge/analytics Beta empty until a signed event of that kind · pull fail-closed when X-IOMesh-Org/tenant/role set · local fail-open"
+}
+
 // MeshAgentOnboardingStartHere is the default I/O Mesh TTFH walk (one list,
 // R0–R4). R1 optional --live fail-open is not R3 overlay /dashboard PULSE
 // (parked). Honesty needles stay in the residual body. Never invents
@@ -263,7 +269,8 @@ func MeshAgentOnboardingNextTTFHLane() string {
 
   ` + ModeAPinHonestyLine() + `
 
-Locks: dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · knowledge Beta empty · eval template · empty until consume · not live APPLY · PULSE only after ≥1 decoded broker message · CLIENT ≠ PULSE · miss is success · no send/pay/ship`)
+Locks: dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · knowledge Beta empty · eval template · empty until consume · not live APPLY · PULSE only after ≥1 decoded broker message · CLIENT ≠ PULSE · miss is success · no send/pay/ship
+  ` + TTFHStreamsAsDomainPortsLine())
 }
 
 // MeshAgentOnboardingNextPluginsLane residual-honest plugins dogfood drill for /onboard next plugins (s1377+s1392).

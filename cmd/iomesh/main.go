@@ -3314,7 +3314,7 @@ Always prints the TTFH walk and EMPTY dashboard snapshot. dual_write OFF.
 Never invents Connected / PULSE / Memory GA / live APPLY. catalog ≠ Connected.
 R1 --live ≠ R3 overlay PULSE (parked).
 
-`+agent.TTFHPhasedRolloutLines()+"\n")
+`+agent.TTFHPhasedRolloutLines()+"\n"+agent.TTFHStreamsAsDomainPortsLine()+"\n")
 }
 
 func newLogger(verbose bool) *slog.Logger {
@@ -3369,6 +3369,7 @@ Agent serve (WebSocket) flags:
   --token secret        require Bearer or ?token=
 
 `+agent.TTFHPhasedRolloutLines()+`
+`+agent.TTFHStreamsAsDomainPortsLine()+`
 Honesty: dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · knowledge Beta empty · eval template · not live APPLY
 
 Default model cascade: deepseek-v4-flash → deepseek-v4-pro → grok-4.5

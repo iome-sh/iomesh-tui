@@ -215,7 +215,7 @@ Tenancy            Heartbeat                         Agent tools
 Pulse 18 / min     14:02:39  analytics  gtm.pipeline
 ```
 
-Notes: default empty until consume · `/dashboard preview` is eval template not your org · `catalog ≠ Connected` · knowledge/analytics **Beta** · knowledge Beta empty · not live APPLY · **CLIENT** badge only means a mesh client is configured — listed streams ≠ live pulse · **CLIENT ≠ PULSE** · **PULSE** only after ≥1 decoded broker message · unacked brief ≠ known (`/dashboard ack` is a local ritual · no send/pay/ship). Full notes: [tui.md](docs/architecture/tui.md#dashboard-heartbeat-live-feed) · asset: [docs/assets/dashboard-eval.svg](docs/assets/dashboard-eval.svg).
+Notes: default empty until consume · `/dashboard preview` is eval template not your org · `catalog ≠ Connected` · knowledge/analytics **Beta** · knowledge Beta empty · not live APPLY · **CLIENT** badge only means a mesh client is configured — listed streams ≠ live pulse · **CLIENT ≠ PULSE** · **PULSE** only after ≥1 decoded broker message · unacked brief ≠ known (`/dashboard ack` is a local ritual · no send/pay/ship). Entitled `dept.*` streams are domain output ports; `/dashboard` PULSE is the consume-clock (product live?); palace facts-as-of is the long temporal port after R4 pull; kind chips filter consume ≠ palace search; knowledge/analytics stay Beta empty until a signed event of that kind; pull fail-closed when `X-IOMesh-Org`/tenant/role set, local fail-open when unset. Full notes: [tui.md](docs/architecture/tui.md#dashboard-heartbeat-live-feed) · asset: [docs/assets/dashboard-eval.svg](docs/assets/dashboard-eval.svg).
 
 ## CLI
 

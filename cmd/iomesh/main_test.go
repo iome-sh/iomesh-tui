@@ -112,6 +112,13 @@ func TestPrintUsage_TTFHPrimaryAndAdvanced(t *testing.T) {
 		"not overlay PULSE",
 		"parked",
 		"R4",
+		"domain output port",
+		"consume-clock",
+		"after R4 pull",
+		"kind chips filter consume ≠ palace search",
+		"Beta empty until a signed event",
+		"fail-closed",
+		"local fail-open",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("printUsage missing TTFH rollout %q:\n%s", want, got)
@@ -132,6 +139,13 @@ func TestPrintTTFHUsage_PhasedRollout(t *testing.T) {
 		"not overlay PULSE",
 		"parked",
 		"R4",
+		"domain output port",
+		"consume-clock",
+		"after R4 pull",
+		"kind chips filter consume ≠ palace search",
+		"Beta empty until a signed event",
+		"fail-closed",
+		"local fail-open",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("printTTFHUsage missing %q:\n%s", want, got)
