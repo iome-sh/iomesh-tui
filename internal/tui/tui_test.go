@@ -103,6 +103,9 @@ func TestHandleSlash_ModelsAndCost(t *testing.T) {
 	if !strings.Contains(out.String(), "--require-sources mesh,private") {
 		t.Fatalf("help missing Mode A sticky digest: %s", out.String())
 	}
+	if !strings.Contains(out.String(), "no_mesh_pulse") || !strings.Contains(out.String(), "no_private_overlay") {
+		t.Fatalf("help missing named miss classes: %s", out.String())
+	}
 	if !strings.Contains(out.String(), "/dashboard ack") {
 		t.Fatalf("help missing digest-miss ACK: %s", out.String())
 	}
@@ -150,6 +153,9 @@ func TestHandleSlash_ModelsAndCost(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "--require-sources mesh,private") {
 		t.Fatalf("bare /memory missing Mode A sticky digest: %q", out.String())
+	}
+	if !strings.Contains(out.String(), "no_mesh_pulse") {
+		t.Fatalf("bare /memory missing named miss: %q", out.String())
 	}
 	if !strings.Contains(out.String(), "palace:") {
 		t.Fatalf("bare /memory missing palace path: %q", out.String())

@@ -677,6 +677,9 @@ func TestFormatRequireSourcesCheck_CiteBothOK(t *testing.T) {
 	if strings.Contains(out, "miss") {
 		t.Fatalf("must not miss when both present: %q", out)
 	}
+	if strings.Contains(out, "miss_class") {
+		t.Fatalf("ok line must not emit miss_class: %q", out)
+	}
 }
 
 // #373: private-only → explicit miss for mesh; catalog/grant do not satisfy.
@@ -695,11 +698,22 @@ func TestFormatRequireSourcesCheck_MissMesh(t *testing.T) {
 	if !strings.Contains(out, "cited=private") {
 		t.Fatalf("want private cited: %q", out)
 	}
+	if !strings.Contains(out, "miss_class=no_mesh_pulse") {
+		t.Fatalf("want miss_class=no_mesh_pulse: %q", out)
+	}
+	if strings.Contains(out, "no_private_overlay") {
+		t.Fatalf("mesh-only miss must not name no_private_overlay: %q", out)
+	}
 	if !strings.Contains(out, "catalog/grant do not satisfy cite-both") {
 		t.Fatalf("want catalog/grant pin: %q", out)
 	}
 	if strings.Contains(out, "require-sources: ok") {
 		t.Fatalf("must not ok: %q", out)
+	}
+	for _, junk := range []string{"linked_pr_miss", "MTTR", "churn", "CRM GET"} {
+		if strings.Contains(out, junk) {
+			t.Fatalf("miss line must not invent %q: %q", junk, out)
+		}
 	}
 }
 
@@ -713,6 +727,9 @@ func TestFormatRequireSourcesCheck_AgentBriefIsPrivateNotMesh(t *testing.T) {
 	out := FormatRequireSourcesCheck(res, []string{"mesh", "private"})
 	if !strings.Contains(out, "require-sources: miss") || !strings.Contains(out, "missing=mesh") {
 		t.Fatalf("agent-brief must not satisfy mesh: %q", out)
+	}
+	if !strings.Contains(out, "miss_class=no_mesh_pulse") {
+		t.Fatalf("agent-brief mesh miss should name no_mesh_pulse: %q", out)
 	}
 	if !strings.Contains(out, "cited=private") {
 		t.Fatalf("agent-brief should cite private: %q", out)
@@ -737,6 +754,9 @@ func TestFormatRequireSourcesCheck_CatalogGrantOnly(t *testing.T) {
 	if !strings.Contains(out, "miss") || !strings.Contains(out, "missing=mesh,private") {
 		t.Fatalf("want both missing: %q", out)
 	}
+	if !strings.Contains(out, "miss_class=no_mesh_pulse,no_private_overlay") {
+		t.Fatalf("want both miss classes: %q", out)
+	}
 	if !strings.Contains(out, "cited=(none)") {
 		t.Fatalf("want cited none: %q", out)
 	}
@@ -759,11 +779,109 @@ func TestFormatRequireSourcesCheck_MissPrivate(t *testing.T) {
 	if !strings.Contains(out, "cited=mesh") {
 		t.Fatalf("want mesh cited: %q", out)
 	}
+	if !strings.Contains(out, "miss_class=no_private_overlay") {
+		t.Fatalf("want miss_class=no_private_overlay: %q", out)
+	}
+	if strings.Contains(out, "no_mesh_pulse") {
+		t.Fatalf("private-only miss must not name no_mesh_pulse: %q", out)
+	}
 	if strings.Contains(out, "catalog/grant do not satisfy cite-both") {
 		t.Fatalf("catalog/grant pin only when those hints present: %q", out)
 	}
 	if !strings.Contains(out, "dual_write OFF") {
 		t.Fatalf("honesty pin missing: %q", out)
+	}
+}
+
+func TestFormatRequireSourcesCheck_V2ANamedMissClass(t *testing.T) {
+	forbidden := []string{"linked_pr_miss", "MTTR", "churn", "CRM GET", "require-sources: ok"}
+	cases := []struct {
+		name     string
+		receipts []iomesh.MemoryOpsDigestReceipt
+		want     []string
+		not      []string
+		okPath   bool
+	}{
+		{
+			name: "mesh_only_miss",
+			receipts: []iomesh.MemoryOpsDigestReceipt{
+				{ID: "p1", Summary: "local RCA", SourceHint: "palace_timeline"},
+			},
+			want: []string{"require-sources: miss", "missing=mesh", "miss_class=no_mesh_pulse"},
+			not:  append([]string{"no_private_overlay"}, forbidden...),
+		},
+		{
+			name: "private_only_miss",
+			receipts: []iomesh.MemoryOpsDigestReceipt{
+				{ID: "m1", Summary: "mesh incident INC-9", SourceHint: "mesh_stream"},
+			},
+			want: []string{"require-sources: miss", "missing=private", "miss_class=no_private_overlay"},
+			not:  append([]string{"no_mesh_pulse"}, forbidden...),
+		},
+		{
+			name: "both_missing",
+			receipts: []iomesh.MemoryOpsDigestReceipt{
+				{ID: "c1", Summary: "catalog list", SourceHint: "catalog"},
+			},
+			want: []string{
+				"require-sources: miss", "missing=mesh,private", "cited=(none)",
+				"miss_class=no_mesh_pulse,no_private_overlay",
+			},
+			not: forbidden,
+		},
+		{
+			name: "ok_path_no_miss_substring",
+			receipts: []iomesh.MemoryOpsDigestReceipt{
+				{ID: "m1", Summary: "P2 checkout p95", SourceHint: "mesh_stream"},
+				{ID: "p1", Summary: "private RCA note", SourceHint: "palace_timeline"},
+			},
+			want:   []string{"require-sources: ok", "cited=mesh,private", "dual_write OFF"},
+			not:    []string{"miss"},
+			okPath: true,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			out := FormatRequireSourcesCheck(&iomesh.MemoryOpsDigestResult{Receipts: tc.receipts}, []string{"mesh", "private"})
+			for _, want := range tc.want {
+				if !strings.Contains(out, want) {
+					t.Fatalf("missing %q: %q", want, out)
+				}
+			}
+			for _, not := range tc.not {
+				if strings.Contains(out, not) {
+					t.Fatalf("must not contain %q: %q", not, out)
+				}
+			}
+			if !tc.okPath {
+				missIdx := strings.Index(out, "missing=")
+				classIdx := strings.Index(out, "miss_class=")
+				if missIdx < 0 || classIdx < 0 || classIdx < missIdx {
+					t.Fatalf("miss_class= must follow missing=: %q", out)
+				}
+			}
+		})
+	}
+}
+
+func TestDigestCiteBothMissClass(t *testing.T) {
+	if got := digestCiteBothMissClass(nil); got != "" {
+		t.Fatalf("empty missing must not emit miss_class: %q", got)
+	}
+	if got := digestCiteBothMissClass([]string{"catalog"}); got != "" {
+		t.Fatalf("unknown missing must not invent class: %q", got)
+	}
+	if got := digestCiteBothMissClass([]string{"mesh"}); got != "miss_class=no_mesh_pulse" {
+		t.Fatalf("mesh: %q", got)
+	}
+	if got := digestCiteBothMissClass([]string{"private"}); got != "miss_class=no_private_overlay" {
+		t.Fatalf("private: %q", got)
+	}
+	if got := digestCiteBothMissClass([]string{"mesh", "private"}); got != "miss_class=no_mesh_pulse,no_private_overlay" {
+		t.Fatalf("both: %q", got)
+	}
+	if strings.Contains(digestCiteBothMissClass([]string{"mesh"}), "linked_pr_miss") {
+		t.Fatal("must not invent linked_pr_miss from missing=mesh")
 	}
 }
 
@@ -800,6 +918,9 @@ func TestMemoryOpsDigest_RequireSourcesMiss(t *testing.T) {
 	}
 	if !strings.Contains(out, "missing=mesh") || !strings.Contains(out, "cited=private") {
 		t.Fatalf("want private-only cite: %q", out)
+	}
+	if !strings.Contains(out, "miss_class=no_mesh_pulse") {
+		t.Fatalf("want miss_class=no_mesh_pulse: %q", out)
 	}
 	if strings.Contains(out, "palace note") {
 		t.Fatalf("receipts must not paste raw customer summary: %q", out)
@@ -875,6 +996,7 @@ func TestMemoryOpsDigest_RequireSourcesCatalogGrantAndMeshOnly(t *testing.T) {
 			},
 			want: []string{
 				"require-sources: miss", "missing=mesh,private", "cited=(none)",
+				"miss_class=no_mesh_pulse,no_private_overlay",
 				"catalog/grant do not satisfy cite-both", "dual_write OFF", "",
 			},
 			not: []string{"require-sources: ok"},
@@ -886,6 +1008,7 @@ func TestMemoryOpsDigest_RequireSourcesCatalogGrantAndMeshOnly(t *testing.T) {
 			},
 			want: []string{
 				"require-sources: miss", "missing=mesh,private",
+				"miss_class=no_mesh_pulse,no_private_overlay",
 				"catalog/grant do not satisfy cite-both", "dual_write OFF",
 			},
 			not: []string{"require-sources: ok"},
@@ -895,8 +1018,8 @@ func TestMemoryOpsDigest_RequireSourcesCatalogGrantAndMeshOnly(t *testing.T) {
 			receipts: []map[string]any{
 				{"id": "m1", "summary": "mesh incident INC-9", "source_hint": "mesh_stream"},
 			},
-			want: []string{"require-sources: miss", "missing=private", "cited=mesh", "dual_write OFF"},
-			not:  []string{"require-sources: ok", "catalog/grant do not satisfy cite-both"},
+			want: []string{"require-sources: miss", "missing=private", "cited=mesh", "miss_class=no_private_overlay", "dual_write OFF"},
+			not:  []string{"require-sources: ok", "catalog/grant do not satisfy cite-both", "no_mesh_pulse"},
 		},
 	}
 	for _, tc := range cases {

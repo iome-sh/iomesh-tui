@@ -61,6 +61,7 @@ echo "  R1  optional iomesh ttfh --live        fail-open probe · EMPTY unless d
 echo "      Optional mesh: IOMESH_ENDPOINT for R1 only. Overlay /dashboard consume is R3, not this."
 echo "  R2  ingest: iomesh memory ingest   # three RCA-shaped turns, source_hint=private"
 echo "      digest cite-both-or-miss: /memory digest --require-sources mesh,private"
+echo "      named miss: no_mesh_pulse · no_private_overlay · conflict · insufficient_signal · linked_pr_miss (SRE private eval · not MTTR) · public_vs_internal (only if public page) · no_memo · crm_only_restatement"
 echo "      patterns (Beta): /memory patterns [--limit N]   # empty ≠ invent · never APPLY"
 echo "      facts-as-of: /memory facts-as-of --as-of <RFC3339>   # palace SoT · not Memory GA"
 echo "  R3  /dashboard consume                 entitled overlay PULSE (parked · required for E-G1)"

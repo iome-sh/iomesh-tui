@@ -39,10 +39,18 @@ func TestModeADigestSticky_HelpAndMissACK(t *testing.T) {
 	if !strings.Contains(ModeADigestStickyHelp, ModeADigestStickyCommand) {
 		t.Fatalf("help missing sticky command: %s", ModeADigestStickyHelp)
 	}
-	for _, want := range []string{"cite-both", "explicit miss", "/dashboard ack", "no send/pay/ship"} {
+	for _, want := range []string{
+		"cite-both", "explicit miss", "/dashboard ack", "no send/pay/ship",
+		"no_mesh_pulse", "no_private_overlay", "conflict", "insufficient_signal",
+		"linked_pr_miss", "public_vs_internal", "no_memo", "crm_only_restatement",
+		"not MTTR",
+	} {
 		if !strings.Contains(ModeADigestStickyHelp, want) {
 			t.Fatalf("sticky help missing %q: %s", want, ModeADigestStickyHelp)
 		}
+	}
+	if strings.Contains(ModeADigestStickyHelp, "MTTR") && !strings.Contains(ModeADigestStickyHelp, "not MTTR") {
+		t.Fatalf("linked_pr_miss must not claim MTTR: %s", ModeADigestStickyHelp)
 	}
 	for _, want := range []string{"digest miss ≠ known", "/dashboard ack", "no send/pay/ship", "local RCA"} {
 		if !strings.Contains(ModeADigestMissAckLine, want) {
@@ -64,6 +72,9 @@ func TestFormatRequireSourcesCheck_MissPrintsVisibleACK(t *testing.T) {
 	out := FormatRequireSourcesCheck(res, []string{"mesh", "private"})
 	if !strings.Contains(out, "require-sources: miss") || !strings.Contains(out, "missing=mesh") {
 		t.Fatalf("want mesh miss: %q", out)
+	}
+	if !strings.Contains(out, "miss_class=no_mesh_pulse") {
+		t.Fatalf("want named miss_class=no_mesh_pulse: %q", out)
 	}
 	if !strings.Contains(out, ModeADigestMissAckLine) {
 		t.Fatalf("digest miss must print visible ACK:\n%s", out)

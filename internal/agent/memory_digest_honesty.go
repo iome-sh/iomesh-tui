@@ -13,6 +13,7 @@ import (
 
 // Digest honesty (#369 / FR-25 · FR-26 · FR-31) + delta briefs (#370 / FR-24 · FR-30):
 //   - Empty or rejected patterns → insufficient-signal / nothing reliable today (do not invent).
+//     V2-A help aliases insufficient_signal; digest body stays hyphenated.
 //   - Rate-claiming pattern lines require n of N and a window, else rejected.
 //   - No-delta / "what is true" recaps are rejected (briefs must be a change vs prior window).
 //   - Receipts default to pointers + hashes, not raw customer text.

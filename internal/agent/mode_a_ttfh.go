@@ -36,11 +36,19 @@ const (
 	ModeADigestStickyCommand = "/memory digest --require-sources mesh,private"
 
 	// ModeADigestMissAckLine coordinates digest miss with /dashboard ack (#371).
-	// Unacked miss is not known. No send/pay/ship.
+	// Unacked miss is not known. No send/pay/ship. Named classes live on sticky help.
 	ModeADigestMissAckLine = "digest miss ≠ known · ACK via /dashboard ack (local ritual · no send/pay/ship) · local RCA stays on disk"
 
+	// ModeADigestNamedMissVocab is V2-A copy-only class names on the existing
+	// cite-both miss. FormatRequireSourcesCheck only emits no_mesh_pulse /
+	// no_private_overlay from missing=. conflict / linked_pr_miss /
+	// public_vs_internal / no_memo / crm_only_restatement are not computed.
+	// insufficient_signal is a help alias of hyphenated insufficient-signal (#369).
+	// linked_pr_miss is SRE private eval · not MTTR.
+	ModeADigestNamedMissVocab = "no_mesh_pulse · no_private_overlay · conflict · insufficient_signal · linked_pr_miss (SRE private eval · not MTTR) · public_vs_internal (only if public page) · no_memo · crm_only_restatement"
+
 	// ModeADigestStickyHelp is slash-help / talk-track chrome.
-	ModeADigestStickyHelp = "Mode A sticky: /memory digest --require-sources mesh,private — cite-both or explicit miss · miss ≠ known until /dashboard ack (no send/pay/ship)"
+	ModeADigestStickyHelp = "Mode A sticky: /memory digest --require-sources mesh,private — cite-both or explicit miss · miss names " + ModeADigestNamedMissVocab + " · miss ≠ known until /dashboard ack (no send/pay/ship)"
 )
 
 // ModeAPinHonestyLine names current published TUI / MCP / memory tags.
