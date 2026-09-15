@@ -253,6 +253,7 @@ func MeshAgentOnboardingNextTTFHLane() string {
         /memory digest --require-sources mesh,private  · cite-both or miss (miss is success)
         /memory patterns (Beta) · empty ≠ invent · never APPLY · /memory facts-as-of --as-of <RFC3339>
         Miss ACK: /dashboard ack (local ritual · no send/pay/ship)
+        Department kit (support): iomesh memory ingest-dir examples/dept-rca/support · private overlay · mesh miss is success · not E-G1
     R3  /dashboard consume                 entitled overlay PULSE (parked · required for E-G1)
         CLI: iomesh mesh smoke is not overlay PULSE. --live decoded-N is not this.
     R4  iomesh memory pull                 after PULSE · dual_write OFF · pull ≠ Connected

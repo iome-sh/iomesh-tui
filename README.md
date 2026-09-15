@@ -143,7 +143,7 @@ The first-run walk **is** R0–R4 (R1 `iomesh ttfh --live` fail-open ≠ R3 over
 6. `/memory digest --require-sources mesh,private` — cite-both **or explicit miss** (miss is success).
 7. Miss ACK: `/dashboard ack` (local ritual · no send/pay/ship). Map: `/onboard next ttfh` (alias `rollout`).
 
-Residual-honest TTFH demo (R0 then optional R1; not E-G1): `scripts/ttfh-demo.sh`. Mesh is optional for `--unit` / palace (R0–R2); overlay `/dashboard` PULSE (R3) is required for E-G1 and stays parked.
+Residual-honest TTFH demo (R0 then optional R1; not E-G1): `scripts/ttfh-demo.sh`. Mesh is optional for `--unit` / palace (R0–R2); overlay `/dashboard` PULSE (R3) is required for E-G1 and stays parked. Support department RCA kit (private overlay): `iomesh memory ingest-dir --yes examples/dept-rca/support` (or `--dry-run`) · mesh miss is success · not E-G1 · not Memory GA.
 
 Optional: copy [`.env.example`](.env.example) for local env vars (iomesh reads the **process environment**; it does not auto-load `.env` files yet). Copy [`configs/config.example.toml`](configs/config.example.toml) to `~/.iomesh/config.toml` to customize.
 

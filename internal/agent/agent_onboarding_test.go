@@ -381,6 +381,8 @@ func TestMeshAgentOnboardingNextTTFHLane_HonestyNeedles(t *testing.T) {
 		"R3",
 		"R4",
 		"Optional mesh",
+		"dept-rca/support",
+		"mesh miss is success",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("ttfh lane missing %q in:\n%s", want, out)

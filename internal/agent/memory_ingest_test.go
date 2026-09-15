@@ -8,13 +8,34 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/iome-sh/iomesh-tui/internal/iomesh"
 	"github.com/iome-sh/iomesh-tui/internal/mcp"
 	"github.com/iome-sh/iomesh-tui/internal/workspace"
 )
+
+func moduleRoot(t *testing.T) string {
+	t.Helper()
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller failed")
+	}
+	dir := filepath.Dir(file)
+	for {
+		if st, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil && !st.IsDir() {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			t.Fatal("go.mod not found above test file")
+		}
+		dir = parent
+	}
+}
 
 func TestResolveMemoryIngestSessionID(t *testing.T) {
 	if got := ResolveMemoryIngestSessionID("", ""); got != LocalOverlaySessionID {
@@ -149,6 +170,79 @@ func TestListIngestDirFiles_PathJail(t *testing.T) {
 	_, err = ListIngestDirFiles(ws, "/etc", 4)
 	if err == nil {
 		t.Fatal("expected path jail")
+	}
+}
+
+func TestListIngestDirFiles_SupportDeptRCAKit(t *testing.T) {
+	if DefaultIngestDirLimit != 32 || MaxIngestDirFileBytes != 32<<10 {
+		t.Fatalf("do not raise ingest-dir caps (D2): limit=%d bytes=%d", DefaultIngestDirLimit, MaxIngestDirFileBytes)
+	}
+	root := moduleRoot(t)
+	rel := filepath.Join("examples", "dept-rca", "support")
+	ws, err := workspace.Open(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	plan, err := ListIngestDirFiles(ws, rel, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := map[string]string{}
+	for _, f := range plan.Files {
+		seen[filepath.Base(f.Rel)] = f.Text
+		if f.Size > MaxIngestDirFileBytes {
+			t.Fatalf("%s exceeds 32 KiB: %d", f.Rel, f.Size)
+		}
+		if !utf8.ValidString(f.Text) {
+			t.Fatalf("%s is not utf-8", f.Rel)
+		}
+		if strings.Contains(f.Text, "source_hint=mesh") {
+			t.Fatalf("kit must not stamp mesh on files: %s", f.Rel)
+		}
+	}
+	for _, name := range []string{"README.md", "ticket-export.md", "policy.md", "macro.md"} {
+		body, ok := seen[name]
+		if !ok {
+			t.Fatalf("kit missing %s; files=%v skipped=%v", name, seen, plan.Skipped)
+		}
+		if strings.Contains(body, "leftover_is_bind") && name == "README.md" {
+			t.Fatal("kit README must not mention leftover_is_bind")
+		}
+	}
+	ticket := seen["ticket-export.md"]
+	policy := seen["policy.md"]
+	macro := seen["macro.md"]
+	readme := seen["README.md"]
+	for _, want := range []string{"ZD-1001", "unused-seat", "2026-06-15T14:22:00Z"} {
+		if !strings.Contains(ticket, want) {
+			t.Fatalf("ticket-export missing %q", want)
+		}
+	}
+	if !strings.Contains(policy, "14-day") || !strings.Contains(policy, "2026-01-01") {
+		t.Fatal("policy must be 14-day unused-seat refund from 2026-01-01")
+	}
+	if !strings.Contains(macro, "policy.md") {
+		t.Fatal("macro must point at policy.md")
+	}
+	for _, want := range []string{
+		"iomesh memory ingest-dir --yes examples/dept-rca/support",
+		"--dry-run",
+		"private overlay",
+		"dept.support.events.*",
+		"/memory digest --require-sources mesh,private",
+		"2026-06-15T14:22:00Z",
+		"not E-G1",
+		"not Memory GA",
+	} {
+		if !strings.Contains(readme, want) {
+			t.Fatalf("kit README missing %q", want)
+		}
+	}
+	text := FormatIngestDirPlan(plan, LocalOverlaySessionID, true, true)
+	for _, want := range []string{"ingest-dir dry-run", "private overlay", "dual_write=off"} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("dry-run missing %q: %s", want, text)
+		}
 	}
 }
 
