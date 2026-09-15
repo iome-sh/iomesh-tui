@@ -101,6 +101,19 @@ func normalizeIngestDirTagID(kind, s string) (string, error) {
 	return s, nil
 }
 
+// NormalizeMemoryDepartmentFilter validates a department id for facts-as-of / recall.
+// Empty is no extra filter (honest empty ≠ invent). Does not lowercase: MESH is invalid.
+func NormalizeMemoryDepartmentFilter(s string) (string, error) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return "", nil
+	}
+	if !ingestDirTagIDRe.MatchString(s) {
+		return "", fmt.Errorf("department %q invalid (lowercase [a-z0-9_-]{1,32})", s)
+	}
+	return s, nil
+}
+
 // IngestDirTags returns dept:{id} / scenario:{kit} when set.
 func IngestDirTags(opts MemoryIngestDirOpts) []string {
 	var tags []string

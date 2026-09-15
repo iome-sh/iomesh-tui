@@ -112,6 +112,9 @@ func TestHandleSlash_ModelsAndCost(t *testing.T) {
 	if !strings.Contains(out.String(), "facts-as-of") {
 		t.Fatalf("help missing facts-as-of: %s", out.String())
 	}
+	if !strings.Contains(out.String(), "--department") {
+		t.Fatalf("help missing --department: %s", out.String())
+	}
 	if strings.Contains(strings.ToLower(out.String()), "aion") {
 		t.Fatalf("/help happy path must not leak aion: %s", out.String())
 	}
@@ -171,12 +174,15 @@ func TestRunREPL_Quit(t *testing.T) {
 
 // s1068: /memory recall flag parser for temporal since/until/session_seq.
 func TestParseMemoryRecallArgs(t *testing.T) {
-	q, o := parseMemoryRecallArgs([]string{
+	q, o, errMsg := parseMemoryRecallArgs([]string{
 		"--since", "2026-07-01T00:00:00Z",
 		"--until=2026-07-31T23:59:59Z",
 		"--session-seq", "3",
 		"what", "did", "we", "decide",
 	})
+	if errMsg != "" {
+		t.Fatalf("errMsg=%q", errMsg)
+	}
 	if q != "what did we decide" {
 		t.Fatalf("query=%q", q)
 	}
@@ -186,9 +192,35 @@ func TestParseMemoryRecallArgs(t *testing.T) {
 	if !o.SessionSeqSet || o.SessionSeq != 3 {
 		t.Fatalf("session_seq=%+v", o)
 	}
-	q2, o2 := parseMemoryRecallArgs([]string{"plain", "query"})
-	if q2 != "plain query" || o2.Since != "" || o2.SessionSeqSet {
-		t.Fatalf("plain q=%q opts=%+v", q2, o2)
+	q2, o2, err2 := parseMemoryRecallArgs([]string{"plain", "query"})
+	if err2 != "" || q2 != "plain query" || o2.Since != "" || o2.SessionSeqSet {
+		t.Fatalf("plain q=%q opts=%+v err=%q", q2, o2, err2)
+	}
+}
+
+func TestParseMemoryRecallArgs_Department(t *testing.T) {
+	q, o, errMsg := parseMemoryRecallArgs([]string{"--department", "support", "refund", "policy"})
+	if errMsg != "" {
+		t.Fatalf("errMsg=%q", errMsg)
+	}
+	if q != "refund policy" || o.Department != "support" {
+		t.Fatalf("q=%q opts=%+v", q, o)
+	}
+	_, oEq, errEq := parseMemoryRecallArgs([]string{"--dept=support", "q"})
+	if errEq != "" || oEq.Department != "support" {
+		t.Fatalf("dept alias opts=%+v err=%q", oEq, errEq)
+	}
+	_, oTag, errTag := parseMemoryRecallArgs([]string{"--department", "support", "--tag", "dept:support", "q"})
+	if errTag != "" || oTag.Department != "support" || oTag.Tag != "dept:support" {
+		t.Fatalf("tag opts=%+v err=%q", oTag, errTag)
+	}
+	_, _, mesh := parseMemoryRecallArgs([]string{"--department", "MESH", "q"})
+	if mesh == "" || !strings.Contains(mesh, "MESH") || !strings.Contains(mesh, "lowercase") {
+		t.Fatalf("MESH must be rejected: %q", mesh)
+	}
+	_, oEmpty, errEmpty := parseMemoryRecallArgs([]string{"plain"})
+	if errEmpty != "" || oEmpty.Department != "" {
+		t.Fatalf("empty department must not invent filter: %+v err=%q", oEmpty, errEmpty)
 	}
 }
 
@@ -879,6 +911,39 @@ func TestParseMemoryFactsAsOfArgs(t *testing.T) {
 	}
 }
 
+func TestParseMemoryFactsAsOfArgs_Department(t *testing.T) {
+	o, errMsg := parseMemoryFactsAsOfArgs([]string{
+		"--as-of", "2026-08-04T12:00:00Z",
+		"--department", "support",
+	})
+	if errMsg != "" {
+		t.Fatalf("errMsg=%q", errMsg)
+	}
+	if o.AsOf != "2026-08-04T12:00:00Z" || o.Department != "support" {
+		t.Fatalf("opts=%+v", o)
+	}
+	o2, err2 := parseMemoryFactsAsOfArgs([]string{
+		"--as-of=2026-08-04T12:00:00Z",
+		"--dept=support",
+		"--tag=dept:support",
+		"--session-id=sess-1",
+	})
+	if err2 != "" {
+		t.Fatalf("errMsg=%q", err2)
+	}
+	if o2.Department != "support" || o2.Tag != "dept:support" || o2.SessionID != "sess-1" {
+		t.Fatalf("opts=%+v", o2)
+	}
+	_, mesh := parseMemoryFactsAsOfArgs([]string{"--as-of", "2026-08-04T12:00:00Z", "--department", "MESH"})
+	if mesh == "" || !strings.Contains(mesh, "MESH") || !strings.Contains(mesh, "lowercase") {
+		t.Fatalf("MESH must be rejected: %q", mesh)
+	}
+	o3, err3 := parseMemoryFactsAsOfArgs([]string{"--as-of", "2026-08-04T12:00:00Z"})
+	if err3 != "" || o3.Department != "" {
+		t.Fatalf("empty department must not invent filter: %+v err=%q", o3, err3)
+	}
+}
+
 // s1238: /integrations list flag parser for --layer mesh_layer filter.
 func TestParseIntegrationsListArgs(t *testing.T) {
 	layer, errMsg := parseIntegrationsListArgs([]string{"--layer", "knowledge"})
@@ -1234,6 +1299,9 @@ func TestHandleSlash_OnboardHelpChecklist(t *testing.T) {
 	if !strings.Contains(help, "facts-as-of") {
 		t.Fatalf("/help missing facts-as-of: %s", help)
 	}
+	if !strings.Contains(help, "--department") {
+		t.Fatalf("/help missing --department: %s", help)
+	}
 }
 
 // s1368: /onboard portal (and aliases) — residual-honest portal Agent/MCP handoff.
@@ -1394,6 +1462,7 @@ func TestHandleSlash_OnboardNextTTFHLane(t *testing.T) {
 		"/dashboard ack",
 		"patterns",
 		"facts-as-of",
+		"[--department support]",
 		"ttfh-demo.sh",
 		"memory pull",
 		"never APPLY",

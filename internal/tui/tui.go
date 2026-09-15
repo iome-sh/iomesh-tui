@@ -310,7 +310,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 	case "/memory", "/mem":
 		if len(parts) < 2 {
 			fmt.Fprintln(out, rt.rt.MemoryStatusLine())
-			fmt.Fprintln(out, "usage: /memory [ingest <text> | digest [--require-sources mesh,private] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] | status | recall [--since|--until|--session-seq] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | trigger-compact --i-confirm | semantic [query|--query ...] [--limit N] | ingest-event --subject <id> --content <text> [--event-time|--session-id|--session-seq|--severity|--source-stream] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | extract [--id] <memory_id> | ingest-dir <path> [--dry-run] [--limit N] [--source-hint private] [--department id] [--scenario kit]]")
+			fmt.Fprintln(out, "usage: /memory [ingest <text> | digest [--require-sources mesh,private] | facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] [--department id] | status | recall [--since|--until|--session-seq] [--department id] [query] | related --seed <entity> [--query ...] [--max-hops N] [--prefer-shorter-hops|--legacy-sort] | timeline [--since|--until|--session-id|--query|--limit] | compact-status | trigger-compact --i-confirm | semantic [query|--query ...] [--limit N] | ingest-event --subject <id> --content <text> [--event-time|--session-id|--session-seq|--severity|--source-stream] | patterns [--limit N] | anomalies [--limit N] | supersede --entity <key> [--as-of RFC3339] --i-confirm | extract [--id] <memory_id> | ingest-dir <path> [--dry-run] [--limit N] [--source-hint private] [--department id] [--scenario kit]]")
 			fmt.Fprintln(out, agent.ModeADigestStickyHelp)
 			// s1831: residual-honest dual-path next-step after bare /memory help.
 			for _, line := range agent.MemoryNextStepLines() {
@@ -333,7 +333,11 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 				fmt.Fprintln(out, adv)
 			}
 		case "recall", "r":
-			q, ropts := parseMemoryRecallArgs(parts[2:])
+			q, ropts, perr := parseMemoryRecallArgs(parts[2:])
+			if perr != "" {
+				fmt.Fprintf(out, "memory recall: %s\nusage: /memory recall [--since|--until|--session-seq] [--department id] [query]\n", perr)
+				return false, nil
+			}
 			if strings.TrimSpace(q) == "" {
 				q = "*"
 			}
@@ -402,11 +406,11 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			// Not auto-recall · not full dual-clock Graphiti · not Memory GA · dual_write OFF.
 			fopts, perr := parseMemoryFactsAsOfArgs(parts[2:])
 			if perr != "" {
-				fmt.Fprintf(out, "memory facts-as-of: %s\nusage: /memory facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N]\n", perr)
+				fmt.Fprintf(out, "memory facts-as-of: %s\nusage: /memory facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] [--department id]\n", perr)
 				return false, nil
 			}
 			if strings.TrimSpace(fopts.AsOf) == "" {
-				fmt.Fprintln(out, "usage: /memory facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N]\n  bi-temporal lite validity listing (opt-in; not auto-recall; not full dual-clock Graphiti)")
+				fmt.Fprintln(out, "usage: /memory facts-as-of --as-of <RFC3339> [--entity ...] [--query ...] [--limit N] [--department id]\n  bi-temporal lite validity listing (opt-in; not auto-recall; not full dual-clock Graphiti)")
 				return false, nil
 			}
 			text, err := rt.rt.MemoryFactsAsOf(context.Background(), fopts)
@@ -651,7 +655,11 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 		default:
 			// Treat remainder as recall query: /memory what did we decide
 			// (also accepts --since/--until when first token is not a known subcommand)
-			q, ropts := parseMemoryRecallArgs(parts[1:])
+			q, ropts, perr := parseMemoryRecallArgs(parts[1:])
+			if perr != "" {
+				fmt.Fprintf(out, "memory recall: %s\nusage: /memory recall [--since|--until|--session-seq] [--department id] [query]\n", perr)
+				return false, nil
+			}
 			text, err := rt.rt.MemoryRecallWithOpts(context.Background(), q, ropts)
 			if err != nil {
 				fmt.Fprintf(out, "memory: %v (try /memory status|recall|related|digest|facts-as-of|timeline|compact-status|trigger-compact|semantic|ingest-event|patterns|anomalies|supersede|ingest|extract|ingest-dir)\n", err)
@@ -1240,7 +1248,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /load <id>           restore session
   /cost                session usage meter + sample estimate
   /setup [init|preflight|reload]  /setup init local-memory · /setup preflight · /setup reload (dual_write OFF · PASS ≠ invent Connected)
-  /memory [ingest|digest|facts-as-of|patterns|status|…]  ingest RCA (source_hint=private) · Mode A sticky: /memory digest --require-sources mesh,private — cite-both or explicit miss · ACK via /dashboard ack · patterns (Beta) · facts-as-of · status (advanced: recall|related|timeline|compact-status|trigger-compact|semantic|ingest-event|anomalies|supersede|extract|ingest-dir)
+  /memory [ingest|digest|facts-as-of|patterns|status|…]  ingest RCA (source_hint=private) · Mode A sticky: /memory digest --require-sources mesh,private — cite-both or explicit miss · ACK via /dashboard ack · patterns (Beta) · facts-as-of [--department] · status (advanced: recall|related|timeline|compact-status|trigger-compact|semantic|ingest-event|anomalies|supersede|extract|ingest-dir)
   /dashboard [help|preview|focus|ack]  empty until consume · preview = eval not your org · PULSE only after ≥1 decoded broker message · CLIENT ≠ PULSE · ack = brief ritual (aliases /heartbeat /mesh-console)
   /mesh                I/O Mesh status + usage (optional · needs IOMESH_ENDPOINT)
   /onboard [help|checklist|status|next]  I/O Mesh TTFH: one walk R0–R4 (R1 --live ≠ R3 overlay PULSE) · setup → ingest RCA → cite-both digest (aliases /agent-onboard; /onboard next ttfh|rollout) · rollout R0–R4 · mesh optional until overlay PULSE (parked)
@@ -2425,9 +2433,10 @@ func parseIntegrationsSigningArgs(args []string) (hint string, errMsg string) {
 }
 
 // parseMemoryRecallArgs extracts optional temporal flags and the free-text query.
-// Supports: --since RFC3339, --until RFC3339, --session-seq N (also --session_seq).
+// Supports: --since RFC3339, --until RFC3339, --session-seq N (also --session_seq),
+// --department / --dept (lowercase [a-z0-9_-]{1,32}), optional --tag.
 // Forms: --since=VALUE or --since VALUE. Remaining tokens join as the query (s1068).
-func parseMemoryRecallArgs(args []string) (query string, opts agent.MemoryRecallOpts) {
+func parseMemoryRecallArgs(args []string) (query string, opts agent.MemoryRecallOpts, errMsg string) {
 	var qParts []string
 	for i := 0; i < len(args); i++ {
 		a := args[i]
@@ -2460,11 +2469,31 @@ func parseMemoryRecallArgs(args []string) (query string, opts agent.MemoryRecall
 				opts.SessionSeq = n
 				opts.SessionSeqSet = true
 			}
+		case "--department", "--dept":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			d, err := agent.NormalizeMemoryDepartmentFilter(val)
+			if err != nil {
+				return strings.Join(qParts, " "), opts, err.Error()
+			}
+			opts.Department = d
+		case "--tag":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.Tag = strings.TrimSpace(val)
 		default:
 			qParts = append(qParts, a)
 		}
 	}
-	return strings.Join(qParts, " "), opts
+	return strings.Join(qParts, " "), opts, ""
 }
 
 // parseMemoryDigestArgs extracts ops digest flags (s1200 + #373 require-sources).
@@ -2973,7 +3002,8 @@ func parseMemoryExtractArgs(args []string) (memoryID string, errMsg string) {
 }
 
 // parseMemoryFactsAsOfArgs extracts bi-temporal lite validity flags (s1276).
-// Supports: --as-of / --as_of (required), --entity, --query / -q, --limit, --session-id / --session_id.
+// Supports: --as-of / --as_of (required), --entity, --query / -q, --limit, --session-id / --session_id,
+// --department / --dept (lowercase [a-z0-9_-]{1,32}), optional --tag.
 // Remaining free tokens append to query. Returns errMsg when a flag is malformed.
 func parseMemoryFactsAsOfArgs(args []string) (opts agent.MemoryFactsAsOfOpts, errMsg string) {
 	var qParts []string
@@ -3027,6 +3057,26 @@ func parseMemoryFactsAsOfArgs(args []string) (opts agent.MemoryFactsAsOfOpts, er
 				}
 			}
 			opts.SessionID = strings.TrimSpace(val)
+		case "--department", "--dept":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			d, err := agent.NormalizeMemoryDepartmentFilter(val)
+			if err != nil {
+				return opts, err.Error()
+			}
+			opts.Department = d
+		case "--tag":
+			if !hasEq {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+					val = args[i]
+				}
+			}
+			opts.Tag = strings.TrimSpace(val)
 		default:
 			if strings.HasPrefix(a, "-") {
 				return opts, "unknown flag " + a

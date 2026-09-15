@@ -178,6 +178,32 @@ func TestMemoryRecall_TemporalConfigOptions(t *testing.T) {
 	_ = out
 }
 
+func TestMemoryRecallWithOpts_DepartmentSkipsHTTP(t *testing.T) {
+	hit := false
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hit = true
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"memories": []map[string]any{{"summary": "unfiltered"}},
+		})
+	}))
+	defer srv.Close()
+	mesh := iomesh.New(iomesh.Config{Enabled: true, Endpoint: srv.URL, Tenant: "dept.x"}, nil)
+	rt := &Runtime{
+		mesh:   mesh,
+		memory: MemoryConfig{Enabled: true, Tenant: "dept.x", Server: "memory"},
+	}
+	_, err := rt.MemoryRecallWithOpts(context.Background(), "q", MemoryRecallOpts{Department: "support"})
+	if err == nil {
+		t.Fatal("expected MCP-only error when department set and MCP missing")
+	}
+	if !strings.Contains(err.Error(), "MCP-only") {
+		t.Fatalf("err=%v", err)
+	}
+	if hit {
+		t.Fatal("must not invent HTTP retrieve for department filter")
+	}
+}
+
 func TestMaybeInjectMemoryRecall_SyncHTTP(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/v1/memory/retrieve" {
@@ -1194,7 +1220,7 @@ func TestFormatFactsAsOfJSON_Fixture(t *testing.T) {
 			{"id": "f2", "summary": "project alpha active", "full": "longer", "score": 0.7}
 		]
 	}`
-	out := formatFactsAsOfJSON(raw, 6000)
+	out := formatFactsAsOfJSON(raw, 6000, "")
 	if out == "" {
 		t.Fatal("expected formatted output")
 	}
@@ -1217,17 +1243,33 @@ func TestFormatFactsAsOfJSON_Fixture(t *testing.T) {
 
 // s1276: empty facts is residual-honest empty — never invent memories.
 func TestFormatFactsAsOf_EmptyHonest(t *testing.T) {
-	out := formatFactsAsOf("2026-01-01T00:00:00Z", nil, 6000)
+	out := formatFactsAsOf("2026-01-01T00:00:00Z", nil, 6000, "")
 	if !strings.Contains(out, "facts: (none)") {
 		t.Fatalf("empty: %q", out)
 	}
 	if !strings.Contains(out, factsAsOfHonestyFooter) {
 		t.Fatalf("honesty: %q", out)
 	}
+	if strings.Contains(out, "department=") {
+		t.Fatalf("empty department must not invent filter: %q", out)
+	}
 	// Empty facts array from JSON.
-	out2 := formatFactsAsOfJSON(`{"as_of":"2026-06-01T00:00:00Z","facts":[]}`, 6000)
+	out2 := formatFactsAsOfJSON(`{"as_of":"2026-06-01T00:00:00Z","facts":[]}`, 6000, "")
 	if !strings.Contains(out2, "facts: (none)") || !strings.Contains(out2, "as_of=2026-06-01T00:00:00Z") {
 		t.Fatalf("empty json: %q", out2)
+	}
+}
+
+func TestFormatFactsAsOf_DepartmentHeader(t *testing.T) {
+	out := formatFactsAsOf("2026-01-01T00:00:00Z", nil, 6000, "support")
+	if !strings.Contains(out, "facts-as-of as_of=2026-01-01T00:00:00Z department=support") {
+		t.Fatalf("header: %q", out)
+	}
+	if !strings.Contains(out, "facts: (none)") {
+		t.Fatalf("empty-honest: %q", out)
+	}
+	if !strings.Contains(out, factsAsOfHonestyFooter) {
+		t.Fatalf("honesty footer must be unchanged: %q", out)
 	}
 }
 
@@ -1252,9 +1294,26 @@ func TestMemoryFactsAsOf_OfflineFailOpen(t *testing.T) {
 	if !strings.Contains(out, "empty ≠ invent memories") {
 		t.Fatalf("empty≠invent pin: %q", out)
 	}
+	if strings.Contains(out, "department=") {
+		t.Fatalf("empty department must not invent filter: %q", out)
+	}
 	// Must not look like successful empty listing alone.
 	if strings.Contains(out, "facts: (none)") && !strings.Contains(out, "unavailable") {
 		t.Fatalf("must not invent empty-success: %q", out)
+	}
+
+	deptOut, err := rt.MemoryFactsAsOf(context.Background(), MemoryFactsAsOfOpts{
+		AsOf:       "2026-08-04T12:00:00Z",
+		Department: "support",
+	})
+	if err != nil {
+		t.Fatalf("department fail-open: %v", err)
+	}
+	if !strings.Contains(deptOut, "department=support") {
+		t.Fatalf("department header: %q", deptOut)
+	}
+	if !strings.Contains(deptOut, "unavailable") || !strings.Contains(deptOut, factsAsOfHonestyFooter) {
+		t.Fatalf("department honesty: %q", deptOut)
 	}
 }
 
@@ -1278,11 +1337,62 @@ func TestMemoryFactsAsOf_Validation(t *testing.T) {
 
 // s1276: formatFactsAsOfJSON returns empty on non-JSON (caller may pass through).
 func TestFormatFactsAsOfJSON_NonJSON(t *testing.T) {
-	if got := formatFactsAsOfJSON("not json", 100); got != "" {
+	if got := formatFactsAsOfJSON("not json", 100, ""); got != "" {
 		t.Fatalf("got %q", got)
 	}
-	if got := formatFactsAsOfJSON("", 100); got != "" {
+	if got := formatFactsAsOfJSON("", 100, ""); got != "" {
 		t.Fatalf("got %q", got)
+	}
+}
+
+func TestNormalizeMemoryDepartmentFilter(t *testing.T) {
+	got, err := NormalizeMemoryDepartmentFilter("")
+	if err != nil || got != "" {
+		t.Fatalf("empty: got=%q err=%v", got, err)
+	}
+	got, err = NormalizeMemoryDepartmentFilter("  support  ")
+	if err != nil || got != "support" {
+		t.Fatalf("support: got=%q err=%v", got, err)
+	}
+	_, err = NormalizeMemoryDepartmentFilter("MESH")
+	if err == nil || !strings.Contains(err.Error(), "MESH") {
+		t.Fatalf("MESH err=%v", err)
+	}
+	_, err = NormalizeMemoryDepartmentFilter("dept.support")
+	if err == nil {
+		t.Fatal("dot must be rejected")
+	}
+}
+
+func TestApplyMemoryDepartmentMCPArgs(t *testing.T) {
+	empty := map[string]any{"session_id": "sess-1"}
+	applyMemoryDepartmentMCPArgs(empty, "", "")
+	if _, ok := empty["department"]; ok {
+		t.Fatalf("empty department must not invent filter: %v", empty)
+	}
+	if _, ok := empty["tag"]; ok {
+		t.Fatalf("empty tag must not invent filter: %v", empty)
+	}
+	if empty["session_id"] != "sess-1" {
+		t.Fatalf("session_id overwritten: %v", empty)
+	}
+
+	args := map[string]any{"session_id": "sess-1"}
+	applyMemoryDepartmentMCPArgs(args, "support", "")
+	if args["department"] != "support" || args["tag"] != "dept:support" {
+		t.Fatalf("department args=%v", args)
+	}
+	if args["session_id"] != "sess-1" {
+		t.Fatalf("must not overwrite session_id: %v", args)
+	}
+
+	tagged := map[string]any{"session_id": "explicit"}
+	applyMemoryDepartmentMCPArgs(tagged, "support", "dept:custom")
+	if tagged["department"] != "support" || tagged["tag"] != "dept:custom" {
+		t.Fatalf("operator --tag must not be overwritten: %v", tagged)
+	}
+	if tagged["session_id"] != "explicit" {
+		t.Fatalf("session_id overwritten: %v", tagged)
 	}
 }
 

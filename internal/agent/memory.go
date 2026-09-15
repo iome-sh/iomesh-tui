@@ -250,6 +250,10 @@ type MemoryRecallOpts struct {
 	// SessionSeqSet is true when SessionSeq was explicitly provided (including 0 to clear).
 	// When false, config RecallSessionSeq is used.
 	SessionSeqSet bool
+	// Department optional lowercase [a-z0-9_-]{1,32} filter. Empty = no extra filter.
+	Department string
+	// Tag optional MCP tag (dept:{id} when Department is set and Tag is empty).
+	Tag string
 }
 
 // MemoryRecall retrieves context for injection or /memory recall.
@@ -261,7 +265,7 @@ func (rt *Runtime) MemoryRecall(ctx context.Context, query string) (string, erro
 }
 
 // MemoryRecallWithOpts is MemoryRecall with optional per-call temporal overrides
-// (slash /memory recall --since/--until/--session-seq).
+// (slash /memory recall --since/--until/--session-seq [--department]).
 func (rt *Runtime) MemoryRecallWithOpts(ctx context.Context, query string, opts MemoryRecallOpts) (string, error) {
 	if rt == nil || !rt.memory.Enabled {
 		return "", fmt.Errorf("memory hooks disabled")
@@ -291,9 +295,13 @@ func (rt *Runtime) MemoryRecallWithOpts(ctx context.Context, query string, opts 
 	if opts.SessionSeqSet {
 		sessionSeq = opts.SessionSeq
 	}
+	dept := strings.TrimSpace(opts.Department)
+	tag := strings.TrimSpace(opts.Tag)
 
 	// Prefer sync request/response against memory sidecar HTTP when mesh client is live.
-	if rt.syncMemoryReady() {
+	// HTTP retrieve has no department/tag field today — do not invent HTTP. Department
+	// filter is MCP-only so the operator filter is not silently dropped.
+	if rt.syncMemoryReady() && dept == "" && tag == "" {
 		key := memoryRecallCacheKey{
 			Tenant:  rt.memoryTenant(),
 			Session: rt.memorySessionID(),
@@ -340,6 +348,9 @@ func (rt *Runtime) MemoryRecallWithOpts(ctx context.Context, query string, opts 
 	}
 
 	if !rt.mcpMemoryReady() {
+		if dept != "" || tag != "" {
+			return "", fmt.Errorf("department filter is MCP-only (HTTP retrieve has no tag field) · mcp server %q not connected", rt.memory.Server)
+		}
 		if rt.syncMemoryReady() {
 			return "", fmt.Errorf("memory sync retrieve failed and mcp server %q not connected", rt.memory.Server)
 		}
@@ -365,6 +376,7 @@ func (rt *Runtime) MemoryRecallWithOpts(ctx context.Context, query string, opts 
 	if until != "" {
 		args["until"] = until
 	}
+	applyMemoryDepartmentMCPArgs(args, dept, tag)
 	start := time.Now()
 	out, err := c.CallTool(ctx, "memory_retrieve", args)
 	latMS := int(time.Since(start).Milliseconds())
@@ -988,6 +1000,10 @@ type MemoryFactsAsOfOpts struct {
 	Query     string // optional content substring filter
 	SessionID string // optional; empty uses Runtime session
 	Limit     int    // zero → config Limit (default 8)
+	// Department optional lowercase [a-z0-9_-]{1,32} filter. Empty = no extra filter.
+	Department string
+	// Tag optional MCP tag (dept:{id} when Department is set and Tag is empty).
+	Tag string
 }
 
 // factsAsOfHonestyFooter is the residual-honest pin for facts-as-of output.
@@ -1033,9 +1049,12 @@ func (rt *Runtime) MemoryFactsAsOf(ctx context.Context, opts MemoryFactsAsOfOpts
 		maxBytes = 6000
 	}
 
+	dept := strings.TrimSpace(opts.Department)
+	tag := strings.TrimSpace(opts.Tag)
+
 	// MCP-first — no lean HTTP /memory/facts_as_of on platform (document, do not invent).
 	if !rt.mcpMemoryReady() {
-		return formatFactsAsOfOffline(rt.memory.Server, asOf), nil
+		return formatFactsAsOfOffline(rt.memory.Server, asOf, dept), nil
 	}
 	c := rt.mcp.ClientByName(rt.memory.Server)
 	args := map[string]any{
@@ -1058,6 +1077,7 @@ func (rt *Runtime) MemoryFactsAsOf(ctx context.Context, opts MemoryFactsAsOfOpts
 	if sid != "" {
 		args["session_id"] = sid
 	}
+	applyMemoryDepartmentMCPArgs(args, dept, tag)
 	start := time.Now()
 	out, err := c.CallTool(ctx, "memory_facts_as_of", args)
 	latMS := int(time.Since(start).Milliseconds())
@@ -1065,48 +1085,77 @@ func (rt *Runtime) MemoryFactsAsOf(ctx context.Context, opts MemoryFactsAsOfOpts
 	rt.lastMemoryRetrieveCacheHit.Store(false)
 	if err != nil {
 		// Fail-open residual-honest call failure — do not invent facts.
-		return formatFactsAsOfCallFailed(asOf, err), nil
+		return formatFactsAsOfCallFailed(asOf, err, dept), nil
 	}
-	if formatted := formatFactsAsOfJSON(out, maxBytes); formatted != "" {
+	if formatted := formatFactsAsOfJSON(out, maxBytes, dept); formatted != "" {
 		return formatted, nil
 	}
 	// Unknown payload — pass through with honesty footer (never invent structure).
 	raw := strings.TrimSpace(out)
 	if raw == "" {
-		return formatFactsAsOf(asOf, nil, maxBytes), nil
+		return formatFactsAsOf(asOf, nil, maxBytes, dept), nil
 	}
 	return truncateBytes(raw+"\n"+factsAsOfHonestyFooter, maxBytes), nil
 }
 
+// applyMemoryDepartmentMCPArgs adds department and/or tag=dept:{id} when set.
+// Empty department is no extra filter. Does not overwrite session_id.
+func applyMemoryDepartmentMCPArgs(args map[string]any, department, tag string) {
+	if args == nil {
+		return
+	}
+	dept := strings.TrimSpace(department)
+	tag = strings.TrimSpace(tag)
+	if dept != "" {
+		args["department"] = dept
+		if tag == "" {
+			tag = "dept:" + dept
+		}
+	}
+	if tag != "" {
+		args["tag"] = tag
+	}
+}
+
+// factsAsOfHeader is the residual-honest facts-as-of first line.
+// Department is printed only when set (empty ≠ invent a filter).
+func factsAsOfHeader(asOf, department string) string {
+	s := fmt.Sprintf("facts-as-of as_of=%s", emptyDash(asOf))
+	if d := strings.TrimSpace(department); d != "" {
+		s += " department=" + d
+	}
+	return s
+}
+
 // formatFactsAsOfOffline is residual-honest fail-open when MCP memory server is unavailable.
 // Explicitly not empty-facts success (empty ≠ invent memories).
-func formatFactsAsOfOffline(server, asOf string) string {
+func formatFactsAsOfOffline(server, asOf, department string) string {
 	if server == "" {
 		server = "memory"
 	}
 	return fmt.Sprintf(
-		"facts-as-of as_of=%s\nstatus: unavailable · mcp server %q not connected · MCP-first (no lean HTTP /memory/facts_as_of)\n%s · fail-open (empty ≠ invent memories)",
-		emptyDash(asOf), server, factsAsOfHonestyFooter,
+		"%s\nstatus: unavailable · mcp server %q not connected · MCP-first (no lean HTTP /memory/facts_as_of)\n%s · fail-open (empty ≠ invent memories)",
+		factsAsOfHeader(asOf, department), server, factsAsOfHonestyFooter,
 	)
 }
 
 // formatFactsAsOfCallFailed is residual-honest fail-open when MCP tool call errors.
-func formatFactsAsOfCallFailed(asOf string, err error) string {
+func formatFactsAsOfCallFailed(asOf string, err error, department string) string {
 	msg := "error"
 	if err != nil {
 		msg = err.Error()
 	}
 	return fmt.Sprintf(
-		"facts-as-of as_of=%s\nstatus: unavailable · mcp call failed: %s\n%s · fail-open (empty ≠ invent memories)",
-		emptyDash(asOf), msg, factsAsOfHonestyFooter,
+		"%s\nstatus: unavailable · mcp call failed: %s\n%s · fail-open (empty ≠ invent memories)",
+		factsAsOfHeader(asOf, department), msg, factsAsOfHonestyFooter,
 	)
 }
 
 // formatFactsAsOf turns as_of + fact hits into a compact residual-honest listing.
 // Empty facts → "facts: (none)" + honesty footer (never invent memories).
-func formatFactsAsOf(asOf string, facts []iomesh.MemoryHit, maxBytes int) string {
+func formatFactsAsOf(asOf string, facts []iomesh.MemoryHit, maxBytes int, department string) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "facts-as-of as_of=%s\n", emptyDash(asOf))
+	fmt.Fprintf(&b, "%s\n", factsAsOfHeader(asOf, department))
 	if len(facts) == 0 {
 		b.WriteString("facts: (none)\n")
 	} else {
@@ -1139,7 +1188,7 @@ func formatFactsAsOf(asOf string, facts []iomesh.MemoryHit, maxBytes int) string
 
 // formatFactsAsOfJSON parses MCP memory_facts_as_of JSON {as_of, facts:[...]} into
 // the same human-readable layout as formatFactsAsOf. Returns empty when parse fails.
-func formatFactsAsOfJSON(raw string, maxBytes int) string {
+func formatFactsAsOfJSON(raw string, maxBytes int, department string) string {
 	raw = strings.TrimSpace(raw)
 	if raw == "" || raw[0] != '{' {
 		return ""
@@ -1151,7 +1200,7 @@ func formatFactsAsOfJSON(raw string, maxBytes int) string {
 	// Require as_of or facts key presence-ish: accept empty facts with as_of; if both
 	// absent after unmarshal of unrelated {}, still format honestly with empty.
 	asOf := strings.TrimSpace(res.AsOf)
-	return formatFactsAsOf(asOf, res.Facts, maxBytes)
+	return formatFactsAsOf(asOf, res.Facts, maxBytes, department)
 }
 
 // MemorySupersedeOpts for opt-in HITL A3 lite entity supersession (s1282 / mesh s640).
