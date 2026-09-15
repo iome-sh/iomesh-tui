@@ -93,6 +93,19 @@ func TestFullscreenModel_TTFHFirstRunChrome(t *testing.T) {
 			t.Fatalf("first-run Help missing one-walk %q:\n%s", want, joined)
 		}
 	}
+	for _, want := range []string{
+		"domain output port",
+		"consume-clock",
+		"after R4 pull",
+		"kind chips filter consume ≠ palace search",
+		"Beta empty until a signed event",
+		"fail-closed",
+		"local fail-open",
+	} {
+		if !strings.Contains(joined, want) {
+			t.Fatalf("first-run chrome missing D4 ports needle %q:\n%s", want, joined)
+		}
+	}
 	if !strings.Contains(joined, "empty until consume") {
 		t.Fatalf("missing empty until consume:\n%s", joined)
 	}

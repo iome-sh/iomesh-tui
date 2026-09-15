@@ -422,6 +422,19 @@ func TestDashboardHelp_EvalPreviewTenancyNotConsume(t *testing.T) {
 	if !strings.Contains(h, "R1 is iomesh ttfh --live fail-open, not this page") {
 		t.Fatalf("help must name R1 as ttfh --live, not this page:\n%s", h)
 	}
+	for _, want := range []string{
+		"domain output port",
+		"consume-clock",
+		"after R4 pull",
+		"kind chips filter consume ≠ palace search",
+		"Beta empty until a signed event",
+		"fail-closed",
+		"local fail-open",
+	} {
+		if !strings.Contains(h, want) {
+			t.Fatalf("help missing D4 ports needle %q:\n%s", want, h)
+		}
+	}
 }
 
 func TestHandleSlash_Dashboard(t *testing.T) {

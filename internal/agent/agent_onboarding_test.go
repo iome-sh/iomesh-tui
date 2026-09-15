@@ -384,6 +384,13 @@ func TestMeshAgentOnboardingNextTTFHLane_HonestyNeedles(t *testing.T) {
 		"Optional mesh",
 		"dept-rca/support",
 		"mesh miss is success",
+		"domain output port",
+		"consume-clock",
+		"after R4 pull",
+		"kind chips filter consume ≠ palace search",
+		"Beta empty until a signed event",
+		"fail-closed",
+		"local fail-open",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("ttfh lane missing %q in:\n%s", want, out)
