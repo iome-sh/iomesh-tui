@@ -95,6 +95,35 @@ func TestMemoryIDsFromHits(t *testing.T) {
 	}
 }
 
+func TestPalaceProvenance_LeftoverIsBindOpenDefaultDNE(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv(EnvMemoryPalaceRoot, "")
+	t.Setenv(EnvPalaceRoot, "")
+	got := FormatPalaceProvenanceLine("", LocalOverlaySessionID, nil)
+	if !strings.Contains(got, "palace=-") {
+		t.Fatalf("empty path must not invent default palace: %s", got)
+	}
+	def := ExpandPalaceRoot(DefaultPalaceRoot)
+	if strings.Contains(got, def) {
+		t.Fatalf("leftover_is_bind OPEN: must not present DNE default: %s", got)
+	}
+	if path := PalaceProvenancePath("", nil); path != "" {
+		t.Fatalf("default DNE provenance path must be empty, got %q", path)
+	}
+	explicit := "/no/such/palace-root"
+	if path := PalaceProvenancePath(explicit, nil); path != explicit {
+		t.Fatalf("explicit DNE still prints: %q", path)
+	}
+	rt := &Runtime{memory: MemoryConfig{Enabled: true, DualWrite: false}}
+	line := rt.withPalaceProvenance("ok", LocalOverlaySessionID, nil)
+	if strings.Contains(line, def) {
+		t.Fatalf("runtime provenance must not invent default DNE: %s", line)
+	}
+	if !strings.Contains(line, "palace=-") {
+		t.Fatalf("want palace=-: %s", line)
+	}
+}
+
 func TestPalaceProvenanceForbidsInventedClaims(t *testing.T) {
 	line := FormatPalaceProvenanceLine("~/.iomesh/palace", LocalOverlaySessionID, nil)
 	low := strings.ToLower(line)

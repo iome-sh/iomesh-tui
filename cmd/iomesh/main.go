@@ -2749,7 +2749,7 @@ func cmdMemoryIngest(args []string) int {
 	if s := strings.TrimSpace(out); s != "" {
 		fmt.Println(s)
 	}
-	palace := agent.ResolvePalaceRoot(cfg.Memory.PalaceRoot, nil)
+	palace := agent.PalaceProvenancePath(cfg.Memory.PalaceRoot, nil)
 	fmt.Println(agent.FormatPalaceProvenanceLine(palace, sid, agent.ExtractMemoryIDsFromWire(out)))
 	return 0
 }
@@ -2808,10 +2808,9 @@ func cmdMemoryIngestDir(args []string) int {
 		return 1
 	}
 	sid, minted := agent.ResolveIngestDirSessionID(opts, "", "")
-	palace := agent.ResolvePalaceRoot("", nil)
 	if *dryRun {
 		fmt.Println(agent.FormatIngestDirPlan(plan, sid, minted, true, opts))
-		fmt.Println(agent.FormatPalaceProvenanceLine(palace, sid, nil))
+		fmt.Println(agent.FormatPalaceProvenanceLine(agent.PalaceProvenancePath("", nil), sid, nil))
 		return 0
 	}
 	cfg, err := loadConfig(*configPath)
@@ -2877,8 +2876,7 @@ func cmdMemoryIngestDir(args []string) int {
 	for _, s := range plan.Skipped {
 		fmt.Printf("  skip %s\n", s)
 	}
-	palace = agent.ResolvePalaceRoot(cfg.Memory.PalaceRoot, nil)
-	fmt.Println(agent.FormatPalaceProvenanceLine(palace, sid, ids))
+	fmt.Println(agent.FormatPalaceProvenanceLine(agent.PalaceProvenancePath(cfg.Memory.PalaceRoot, nil), sid, ids))
 	if agent.IngestDirFailClosed(failed) {
 		fmt.Fprintln(os.Stderr, agent.IngestDirHalfWriteLine)
 		return 1

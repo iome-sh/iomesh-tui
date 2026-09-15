@@ -38,12 +38,31 @@ func (rt *Runtime) palaceSessionID(explicit, department string) (sid string, min
 	return ResolvePalaceSessionID(explicit, rt.memory.SessionID, rt.sessionID, department)
 }
 
+// PalaceProvenancePath is the palace path allowed on the V2-B footer: configured,
+// MCP -palace-root args, or env. Default DNE (leftover_is_bind OPEN) is empty so
+// FormatPalaceProvenanceLine prints palace=-. Never invent ls-able bind.
+func PalaceProvenancePath(configured string, mcpArgs []string) string {
+	path, explicit := resolvePalaceRoot(configured, mcpArgs)
+	if palaceDirExists(path) || explicit {
+		return path
+	}
+	return ""
+}
+
+func (rt *Runtime) palaceProvenancePath() string {
+	if rt == nil {
+		return PalaceProvenancePath("", nil)
+	}
+	return PalaceProvenancePath(rt.memory.PalaceRoot, rt.mcpPalaceArgs())
+}
+
 // FormatPalaceProvenanceLine is one operator-visible footer from wire/config only:
 // palace path, session_id, memory ids if present. Never invents model/tenant/mesh.
+// Empty palace path prints palace=- (leftover_is_bind OPEN · do not invent default DNE).
 func FormatPalaceProvenanceLine(palacePath, sessionID string, memoryIDs []string) string {
 	path := strings.TrimSpace(palacePath)
 	if path == "" {
-		path = ExpandPalaceRoot(DefaultPalaceRoot)
+		path = "-"
 	}
 	sid := strings.TrimSpace(sessionID)
 	if sid == "" {
@@ -74,7 +93,7 @@ func appendPalaceProvenance(text, palacePath, sessionID string, memoryIDs []stri
 func (rt *Runtime) withPalaceProvenance(text, sessionID string, memoryIDs []string) string {
 	path := ""
 	if rt != nil {
-		path = rt.PalacePath()
+		path = rt.palaceProvenancePath()
 	}
 	return appendPalaceProvenance(text, path, sessionID, memoryIDs)
 }
