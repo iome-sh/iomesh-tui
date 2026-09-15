@@ -513,12 +513,37 @@ func citeDigestReceipt(r iomesh.MemoryOpsDigestReceipt) string {
 	return sum
 }
 
+// digestCiteBothMissClass maps require-sources missing= mesh|private to V2-A
+// named miss ids. Same-SoR token only — not a classifier engine.
+// conflict / linked_pr_miss / public_vs_internal / no_memo / crm_only_restatement
+// are sticky-help vocabulary and must never be invented from receipts.
+func digestCiteBothMissClass(missing []string) string {
+	if len(missing) == 0 {
+		return ""
+	}
+	ids := make([]string, 0, len(missing))
+	for _, m := range missing {
+		switch m {
+		case DigestSourceMesh:
+			ids = append(ids, "no_mesh_pulse")
+		case DigestSourcePrivate:
+			ids = append(ids, "no_private_overlay")
+		}
+	}
+	if len(ids) == 0 {
+		return ""
+	}
+	return "miss_class=" + strings.Join(ids, ",")
+}
+
 // FormatRequireSourcesCheck returns an explicit cite-both ok or miss line (#373/#419).
 // Classification uses source_hint, provenance, and tags (palace_timeline must not
 // mask source_hint:mesh). Catalog/grant/external receipts never satisfy mesh or
 // private (#370). A miss names the newest-first receipt window when mesh/private
-// is absent from the fetched set. First-party consume remains the only path that
-// fills mesh citations. dual_write OFF pin always.
+// is absent from the fetched set. V2-A appends miss_class= on the miss branch
+// only (never the ok line — ok must not contain the substring "miss").
+// First-party consume remains the only path that fills mesh citations.
+// dual_write OFF pin always.
 func FormatRequireSourcesCheck(res *iomesh.MemoryOpsDigestResult, required []string) string {
 	if len(required) == 0 {
 		return ""
@@ -563,6 +588,9 @@ func FormatRequireSourcesCheck(res *iomesh.MemoryOpsDigestResult, required []str
 	if len(missing) > 0 {
 		msg := fmt.Sprintf("require-sources: miss · required=%s · cited=%s · missing=%s",
 			strings.Join(required, ","), citedStr, strings.Join(missing, ","))
+		if class := digestCiteBothMissClass(missing); class != "" {
+			msg += " · " + class
+		}
 		if catalogOrGrant {
 			msg += " · catalog/grant do not satisfy cite-both"
 		}

@@ -18,6 +18,15 @@ func TestFormatOpsDigest_InsufficientSignalWhenEmpty(t *testing.T) {
 	if !strings.Contains(out, digestInsufficientSignal) {
 		t.Fatalf("want insufficient-signal, got %q", out)
 	}
+	if digestInsufficientSignal != "insufficient-signal · nothing reliable today" {
+		t.Fatalf("digest body must stay hyphenated insufficient-signal: %q", digestInsufficientSignal)
+	}
+	if strings.Contains(digestInsufficientSignal, "insufficient_signal") {
+		t.Fatalf("digest body must not use underscore alias: %q", digestInsufficientSignal)
+	}
+	if !strings.Contains(ModeADigestStickyHelp, "insufficient_signal") {
+		t.Fatalf("help aliases insufficient_signal: %s", ModeADigestStickyHelp)
+	}
 	if strings.Contains(out, "patterns: (none)") {
 		t.Fatalf("legacy empty marker should not appear: %q", out)
 	}

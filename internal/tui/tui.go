@@ -1248,7 +1248,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
   /load <id>           restore session
   /cost                session usage meter + sample estimate
   /setup [init|preflight|reload]  /setup init local-memory · /setup preflight · /setup reload (dual_write OFF · PASS ≠ invent Connected)
-  /memory [ingest|digest|facts-as-of|patterns|status|…]  ingest RCA (source_hint=private) · Mode A sticky: /memory digest --require-sources mesh,private — cite-both or explicit miss · ACK via /dashboard ack · patterns (Beta) · facts-as-of [--department] · status (advanced: recall|related|timeline|compact-status|trigger-compact|semantic|ingest-event|anomalies|supersede|extract|ingest-dir)
+  /memory [ingest|digest|facts-as-of|patterns|status|…]  ingest RCA (source_hint=private) · `+agent.ModeADigestStickyHelp+` · patterns (Beta) · facts-as-of [--department] · status (advanced: recall|related|timeline|compact-status|trigger-compact|semantic|ingest-event|anomalies|supersede|extract|ingest-dir)
   /dashboard [help|preview|focus|ack]  empty until consume · preview = eval not your org · PULSE only after ≥1 decoded broker message · CLIENT ≠ PULSE · ack = brief ritual (aliases /heartbeat /mesh-console)
   /mesh                I/O Mesh status + usage (optional · needs IOMESH_ENDPOINT)
   /onboard [help|checklist|status|next]  I/O Mesh TTFH: one walk R0–R4 (R1 --live ≠ R3 overlay PULSE) · setup → ingest RCA → cite-both digest (aliases /agent-onboard; /onboard next ttfh|rollout) · rollout R0–R4 · mesh optional until overlay PULSE (parked)
@@ -2498,7 +2498,7 @@ func parseMemoryRecallArgs(args []string) (query string, opts agent.MemoryRecall
 
 // parseMemoryDigestArgs extracts ops digest flags (s1200 + #373 require-sources).
 // Supports: --window day|week, --horizon ops|knowledge|analytical|all, --limit N,
-// --as-of RFC3339, --require-sources mesh,private (cite-both or explicit miss).
+// --as-of RFC3339, --require-sources mesh,private (cite-both or explicit miss; named miss_class= on miss only).
 // Returns errMsg when a flag is malformed or values are invalid.
 func parseMemoryDigestArgs(args []string) (opts agent.MemoryOpsDigestOpts, errMsg string) {
 	for i := 0; i < len(args); i++ {

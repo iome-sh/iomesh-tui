@@ -103,6 +103,9 @@ func TestFormatRequireSourcesCheck_MissingMeshPrintsWindowReason(t *testing.T) {
 	if !strings.Contains(out, "require-sources: miss") || !strings.Contains(out, "missing=mesh") {
 		t.Fatalf("want mesh miss: %q", out)
 	}
+	if !strings.Contains(out, "miss_class=no_mesh_pulse") {
+		t.Fatalf("want miss_class=no_mesh_pulse: %q", out)
+	}
 	if !strings.Contains(out, "cited=private") {
 		t.Fatalf("want private cited: %q", out)
 	}
@@ -282,6 +285,9 @@ func TestMemoryOpsDigest_RequireSourcesDoesNotInventMesh(t *testing.T) {
 	if !strings.Contains(out, "require-sources: miss") || !strings.Contains(out, "missing=mesh") {
 		t.Fatalf("palace_timeline alone must not invent mesh: %q", out)
 	}
+	if !strings.Contains(out, "miss_class=no_mesh_pulse") {
+		t.Fatalf("want miss_class=no_mesh_pulse: %q", out)
+	}
 	if !strings.Contains(out, "receipt window newest-first") || !strings.Contains(out, "mesh not in this receipt set") {
 		t.Fatalf("want honest window reason: %q", out)
 	}
@@ -350,6 +356,9 @@ func TestFormatRequireSourcesCheck_PrivatePresentNotCitedNone(t *testing.T) {
 	}
 	if !strings.Contains(out, "cited=private") || !strings.Contains(out, "missing=mesh") {
 		t.Fatalf("want private cited / mesh miss: %q", out)
+	}
+	if !strings.Contains(out, "miss_class=no_mesh_pulse") {
+		t.Fatalf("want miss_class=no_mesh_pulse: %q", out)
 	}
 	for _, want := range []string{"receipt window newest-first", "limit=50", "n=2", "since=", "as_of="} {
 		if !strings.Contains(out, want) {

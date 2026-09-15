@@ -140,6 +140,9 @@ func TestFormatRequireSourcesCheck_ExternalNeverSatisfiesCiteBoth(t *testing.T) 
 	if !strings.Contains(out, "require-sources: miss") || !strings.Contains(out, "missing=mesh") {
 		t.Fatalf("want mesh miss when only external+private: %q", out)
 	}
+	if !strings.Contains(out, "miss_class=no_mesh_pulse") {
+		t.Fatalf("want miss_class=no_mesh_pulse: %q", out)
+	}
 	if !strings.Contains(out, "cited=private") {
 		t.Fatalf("want private cited: %q", out)
 	}
@@ -161,6 +164,9 @@ func TestFormatRequireSourcesCheck_ExternalOnlyMissBoth(t *testing.T) {
 	out := FormatRequireSourcesCheck(res, []string{"mesh", "private"})
 	if !strings.Contains(out, "missing=mesh,private") || !strings.Contains(out, "cited=(none)") {
 		t.Fatalf("want both missing: %q", out)
+	}
+	if !strings.Contains(out, "miss_class=no_mesh_pulse,no_private_overlay") {
+		t.Fatalf("want both miss classes: %q", out)
 	}
 	if !strings.Contains(out, digestExternalCitePin) {
 		t.Fatalf("want external pin: %q", out)
