@@ -3344,6 +3344,7 @@ Usage:
   iomesh memory ingest           TTFH RCA ingest
   iomesh ttfh [--unit|--live]     TTFH smoke (EMPTY · --live light consume · never invent PULSE)
   scripts/ttfh-demo.sh          residual-honest TTFH demo (unit then optional --live · not E-G1)
+  scripts/revops-sitting.sh     V2-C RevOps sitting (support.theme living memo · not overlay PULSE · not E-G1)
   iomesh mesh smoke              optional (needs IOMESH_ENDPOINT · dashboard empty until consume)
   iomesh models | sessions | mcp | version
 
