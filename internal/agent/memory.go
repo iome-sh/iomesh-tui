@@ -725,6 +725,10 @@ func (rt *Runtime) MemoryOpsDigest(ctx context.Context, opts ...MemoryOpsDigestO
 		res = digestResultOrStub(nil, fetchLimit)
 	}
 
+	if len(required) > 0 {
+		// Day window can cite only fresh private while mesh sits on the palace (#460).
+		rt.supplementCiteBothReceipts(ctx, res, required, window, horizon, fetchLimit, strings.TrimSpace(call.AsOf))
+	}
 	finalizeDigestForRequireSources(res, required, fetchLimit, displayLimit)
 	out := applyRequireSources(formatOpsDigest(res, maxBytes), res, required)
 	sid, _ := rt.palaceSessionID("", "")

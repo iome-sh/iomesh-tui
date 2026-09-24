@@ -1,23 +1,45 @@
 package agent
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/fs"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/iome-sh/iomesh-tui/internal/iomesh"
 )
 
-// Sticky cite-both (#419): classify receipts from provenance/tags as well as
-// source_hint, pin older mesh-stamped turns into the active set when they are
-// in the fetched export, and print an explicit newest-first window reason when
-// a required class is still missing. Never invent mesh. dual_write OFF.
+// Sticky cite-both (#419 / #460): classify receipts from provenance/tags as
+// well as source_hint, pin older mesh-stamped turns into the active set when
+// they are in the fetched export or inside the week supplement window, and
+// print an explicit newest-first window reason when a required class is still
+// missing. Mesh on the palace older than that week is a named miss
+// (mesh on palace outside window) — never invented into cite-both.
+// dual_write OFF.
 
 const (
 	opsDigestLimitDefault  = 20
 	opsDigestLimitCiteBoth = 50 // MCP ops_digest_export cap
+	// citeBothSupplementWindow is the widest ops digest window (week).
+	// A day export drops older mesh when only fresh private lands in-window (#460).
+	citeBothSupplementWindow = 7 * 24 * time.Hour
+	palaceCiteScanFileCap    = 8000
+	palaceCiteScanMaxBytes   = 1 << 20
 )
+
+// palaceCiteTiers are the on-disk palace tiers that hold turns (kernel layout).
+// Indexes, wal, and other org directories are not walked.
+var palaceCiteTiers = []string{
+	"tier-1-working",
+	"tier-2-contextual",
+	"tier-3-archival",
+	"tier-4-semantic",
+}
 
 // digestCiteLimits returns fetch vs display caps for one digest call.
 // --require-sources with no explicit --limit fetches up to the export cap so
@@ -441,5 +463,335 @@ func formatDigestReceiptWindowReason(res *iomesh.MemoryOpsDigestResult, missing 
 		fmt.Fprintf(&b, " · oldest=%s", s)
 	}
 	fmt.Fprintf(&b, " · %s not in this receipt set", strings.Join(missing, ","))
+	if extra := formatPalaceOutsideWindow(res, missing); extra != "" {
+		fmt.Fprintf(&b, " · %s", extra)
+	}
 	return b.String()
+}
+
+func formatPalaceOutsideWindow(res *iomesh.MemoryOpsDigestResult, missing []string) string {
+	if res == nil || len(res.PalaceOutsideWindow) == 0 || len(missing) == 0 {
+		return ""
+	}
+	want := map[string]bool{}
+	for _, m := range missing {
+		want[m] = true
+	}
+	var parts []string
+	for _, o := range res.PalaceOutsideWindow {
+		if o.Count <= 0 || !want[o.Class] {
+			continue
+		}
+		newest := strings.TrimSpace(o.Newest)
+		if newest == "" {
+			newest = "(none)"
+		}
+		parts = append(parts, fmt.Sprintf("%s on palace outside window · %s_on_disk=%d · newest_%s=%s",
+			o.Class, o.Class, o.Count, o.Class, newest))
+	}
+	return strings.Join(parts, " · ")
+}
+
+// supplementCiteBothReceipts fills required classes the day export omitted (#460).
+// It merges a week ops-digest export (the widest product window), then reads the
+// named local palace for this tenant. Stamps inside the week window are pinned.
+// Stamps older than that week stay out of the receipt set and are named on the miss.
+// An unnamed default palace is not scanned. Never invents mesh. dual_write OFF.
+func (rt *Runtime) supplementCiteBothReceipts(ctx context.Context, res *iomesh.MemoryOpsDigestResult, required []string, window, horizon string, fetchLimit int, asOf string) {
+	if rt == nil || res == nil || len(required) == 0 {
+		return
+	}
+	if len(missingCiteClasses(res.Receipts, required)) == 0 {
+		return
+	}
+	if !strings.EqualFold(strings.TrimSpace(window), "week") {
+		bound := strings.TrimSpace(asOf)
+		if bound == "" {
+			bound = strings.TrimSpace(res.AsOf)
+		}
+		rt.mergeCiteWindowReceipts(ctx, res, horizon, fetchLimit, bound)
+	}
+	missing := missingCiteClasses(res.Receipts, required)
+	if len(missing) == 0 {
+		return
+	}
+	root, explicit := resolvePalaceRoot(rt.memory.PalaceRoot, rt.mcpPalaceArgs())
+	if !explicit || !palaceDirExists(root) {
+		return
+	}
+	pins, outside := scanPalaceCiteClasses(root, rt.memoryTenant(), missing, digestBoundAsOf(res, asOf))
+	if len(pins) > 0 {
+		res.Receipts = mergeDigestReceipts(res.Receipts, pins)
+	}
+	if len(outside) > 0 {
+		res.PalaceOutsideWindow = outside
+	}
+}
+
+func (rt *Runtime) mergeCiteWindowReceipts(ctx context.Context, res *iomesh.MemoryOpsDigestResult, horizon string, fetchLimit int, asOf string) {
+	if res == nil {
+		return
+	}
+	if rt.syncMemoryReady() {
+		wider, err := rt.mesh.ExportOpsDigest(ctx, rt.memoryTenant(), iomesh.MemoryOpsDigestOptions{
+			Window:  "week",
+			Horizon: horizon,
+			Limit:   fetchLimit,
+			AsOf:    asOf,
+		})
+		if err == nil && wider != nil {
+			res.Receipts = mergeDigestReceipts(res.Receipts, wider.Receipts)
+		}
+	}
+	if !rt.mcpMemoryReady() {
+		return
+	}
+	mcpRes, mcpText, err := rt.fetchMCPOpsDigest(ctx, "week", horizon, fetchLimit, asOf, 0)
+	if err == nil && mcpRes != nil {
+		res.Receipts = mergeDigestReceipts(res.Receipts, mcpRes.Receipts)
+		return
+	}
+	if err == nil {
+		if salvaged := salvageDigestReceiptsJSON(mcpText); len(salvaged) > 0 {
+			res.Receipts = mergeDigestReceipts(res.Receipts, salvaged)
+		}
+	}
+}
+
+func missingCiteClasses(receipts []iomesh.MemoryOpsDigestReceipt, required []string) []string {
+	present := map[string]bool{}
+	for _, r := range receipts {
+		if c := ClassifyDigestReceipt(r); c != "" {
+			present[c] = true
+		}
+	}
+	var missing []string
+	for _, req := range required {
+		if !present[req] {
+			missing = append(missing, req)
+		}
+	}
+	return missing
+}
+
+func digestBoundAsOf(res *iomesh.MemoryOpsDigestResult, asOf string) time.Time {
+	candidates := []string{strings.TrimSpace(asOf)}
+	if res != nil {
+		candidates = append(candidates, strings.TrimSpace(res.AsOf))
+	}
+	for _, s := range candidates {
+		if t, ok := parseCiteRFC3339(s); ok {
+			return t
+		}
+	}
+	return time.Now().UTC()
+}
+
+func parseCiteRFC3339(s string) (time.Time, bool) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return time.Time{}, false
+	}
+	if t, err := time.Parse(time.RFC3339, s); err == nil && citeTimeUsable(t) {
+		return t.UTC(), true
+	}
+	if t, err := time.Parse(time.RFC3339Nano, s); err == nil && citeTimeUsable(t) {
+		return t.UTC(), true
+	}
+	return time.Time{}, false
+}
+
+func citeTimeUsable(t time.Time) bool {
+	return !t.IsZero() && t.Year() >= 2000
+}
+
+// scanPalaceCiteClasses reads one tenant palace for required classes the export
+// missed. In-week stamps are returned as real receipts. Older stamps are named
+// and not returned as citations. Other org directories are not read.
+func scanPalaceCiteClasses(root, tenant string, classes []string, asOf time.Time) (pins []iomesh.MemoryOpsDigestReceipt, outside []iomesh.MemoryOpsDigestPalaceOutside) {
+	dir, ok := palaceTenantDir(root, tenant)
+	if !ok || len(classes) == 0 {
+		return nil, nil
+	}
+	if !citeTimeUsable(asOf) {
+		asOf = time.Now().UTC()
+	}
+	asOf = asOf.UTC()
+	start := asOf.Add(-citeBothSupplementWindow)
+	end := asOf.Add(2 * time.Minute)
+
+	want := map[string]bool{}
+	for _, c := range classes {
+		want[c] = true
+	}
+	type palaceCiteHit struct {
+		receipt iomesh.MemoryOpsDigestReceipt
+		when    time.Time
+	}
+	type palaceCiteClass struct {
+		count       int
+		newest      palaceCiteHit
+		hasNewest   bool
+		inWindow    palaceCiteHit
+		hasInWindow bool
+	}
+	byClass := map[string]*palaceCiteClass{}
+	scanned := 0
+	for _, tier := range palaceCiteTiers {
+		tierDir := filepath.Join(dir, tier)
+		_ = filepath.WalkDir(tierDir, func(path string, d fs.DirEntry, err error) error {
+			if err != nil || d == nil || d.IsDir() {
+				return nil
+			}
+			if !strings.HasSuffix(strings.ToLower(d.Name()), ".json") {
+				return nil
+			}
+			if scanned >= palaceCiteScanFileCap {
+				return fs.SkipAll
+			}
+			scanned++
+			r, ok := readPalaceTurn(path)
+			if !ok {
+				return nil
+			}
+			class := ClassifyDigestReceipt(r)
+			if !want[class] {
+				return nil
+			}
+			acc := byClass[class]
+			if acc == nil {
+				acc = &palaceCiteClass{}
+				byClass[class] = acc
+			}
+			acc.count++
+			when := receiptEventTime(r)
+			if !citeTimeUsable(when) {
+				return nil
+			}
+			if !acc.hasNewest || when.After(acc.newest.when) {
+				acc.newest = palaceCiteHit{receipt: r, when: when}
+				acc.hasNewest = true
+			}
+			if !when.Before(start) && !when.After(end) {
+				if !acc.hasInWindow || when.After(acc.inWindow.when) {
+					acc.inWindow = palaceCiteHit{receipt: r, when: when}
+					acc.hasInWindow = true
+				}
+			}
+			return nil
+		})
+	}
+	for _, class := range classes {
+		acc := byClass[class]
+		if acc == nil || acc.count == 0 {
+			continue
+		}
+		if acc.hasInWindow {
+			pins = append(pins, acc.inWindow.receipt)
+			continue
+		}
+		newest := ""
+		if acc.hasNewest {
+			newest = strings.TrimSpace(acc.newest.receipt.EventTime)
+			if newest == "" {
+				newest = acc.newest.when.UTC().Format(time.RFC3339)
+			}
+		}
+		outside = append(outside, iomesh.MemoryOpsDigestPalaceOutside{
+			Class:  class,
+			Count:  acc.count,
+			Newest: newest,
+		})
+	}
+	return pins, outside
+}
+
+func palaceTenantDir(root, tenant string) (string, bool) {
+	root = filepath.Clean(strings.TrimSpace(root))
+	tenant = strings.TrimSpace(tenant)
+	if root == "" || root == "." || tenant == "" {
+		return "", false
+	}
+	if tenant != filepath.Base(tenant) || tenant == "." || tenant == ".." {
+		return "", false
+	}
+	dir := filepath.Join(root, tenant)
+	rel, err := filepath.Rel(root, dir)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", false
+	}
+	st, err := os.Stat(dir)
+	if err != nil || !st.IsDir() {
+		return "", false
+	}
+	return dir, true
+}
+
+func readPalaceTurn(path string) (iomesh.MemoryOpsDigestReceipt, bool) {
+	f, err := os.Open(path)
+	if err != nil {
+		return iomesh.MemoryOpsDigestReceipt{}, false
+	}
+	defer f.Close()
+	st, err := f.Stat()
+	if err != nil || !st.Mode().IsRegular() || st.Size() <= 0 || st.Size() > palaceCiteScanMaxBytes {
+		return iomesh.MemoryOpsDigestReceipt{}, false
+	}
+	raw, err := io.ReadAll(io.LimitReader(f, palaceCiteScanMaxBytes+1))
+	if err != nil || len(raw) == 0 || len(raw) > palaceCiteScanMaxBytes {
+		return iomesh.MemoryOpsDigestReceipt{}, false
+	}
+	var r iomesh.MemoryOpsDigestReceipt
+	if json.Unmarshal(raw, &r) != nil {
+		return iomesh.MemoryOpsDigestReceipt{}, false
+	}
+	var m map[string]any
+	if json.Unmarshal(raw, &m) != nil {
+		return iomesh.MemoryOpsDigestReceipt{}, false
+	}
+	if strings.TrimSpace(r.Summary) == "" {
+		if c, ok := m["content"].(map[string]any); ok {
+			if s, ok := c["summary"].(string); ok && strings.TrimSpace(s) != "" {
+				r.Summary = strings.TrimSpace(s)
+			} else if s, ok := c["full"].(string); ok {
+				r.Summary = strings.TrimSpace(s)
+			}
+		}
+	}
+	if extra := stringListFromAny(m["temporal_tags"]); len(extra) > 0 {
+		r.Tags = unionDigestTags(r.Tags, extra)
+	}
+	if strings.TrimSpace(r.ID) == "" {
+		return iomesh.MemoryOpsDigestReceipt{}, false
+	}
+	if strings.TrimSpace(r.EventTime) == "" {
+		if s, ok := m["timestamp"].(string); ok {
+			r.EventTime = strings.TrimSpace(s)
+		}
+	}
+	return r, true
+}
+
+func stringListFromAny(v any) []string {
+	switch t := v.(type) {
+	case nil:
+		return nil
+	case []any:
+		out := make([]string, 0, len(t))
+		for _, item := range t {
+			s, ok := item.(string)
+			if !ok {
+				continue
+			}
+			s = strings.TrimSpace(s)
+			if s != "" {
+				out = append(out, s)
+			}
+		}
+		return out
+	case []string:
+		return t
+	default:
+		return nil
+	}
 }
