@@ -89,44 +89,44 @@ CLI / TUI / ACP
 8. ~~MCP client + skills loader~~ **done** — see [mcp.md](mcp.md), [skills.md](skills.md)
 9. ~~ACP WebSocket serve~~ **done** — `iomesh agent serve` (see [acp.md](acp.md))
 10. ~~MCP HTTP/SSE (streamable HTTP)~~ **done** — see [mcp.md](mcp.md)
-11. ~~Stage mesh dogfood~~ **done** — see [mesh-dogfood.md](mesh-dogfood.md)
+11. ~~Stage mesh dogfood~~ **done** — see internal note removed from this public repository
 12. ~~TUI polish (multi-line edit, themes)~~ **done** — see [tui.md](tui.md)
 13. ~~MCP resources/prompts + OAuth helpers~~ **done** — see [mcp.md](mcp.md)
 14. ~~Deeper I/O Mesh: lineage-aware context, Rego policy gates, local metering~~ **done** — see [mesh-deeper.md](mesh-deeper.md)
 15. ~~Mesh catalog composition + TUI cost/mesh slash cmds~~ **done** — see [mesh-deeper.md](mesh-deeper.md)
 16. ~~Portal catalog federation + dogfood JSON~~ **done** — see [mesh-deeper.md](mesh-deeper.md)
-17. ~~Memory Palace MCP Phase 0–1~~ **done** — local-primary MCP palace path (not hosted cloud GPU); see [memory-mcp.md](memory-mcp.md) (stdio attach, auto-recall, `/memory`, opt-in ingest · [naming honesty s771](memory-mcp.md#naming-honesty-s771-pin) · [buyer claim pin s774](memory-mcp.md#buyer-claim-pin-s774) — MIT TUI ≠ hosted mesh CP · [org-pulse edge framing s785](mesh-dogfood.md#org-pulse-edge-framing-s785-pin))
+17. ~~Memory Palace MCP Phase 0–1~~ **done** — local-primary MCP palace path (not hosted cloud GPU); see [memory-mcp.md](memory-mcp.md) (stdio attach, auto-recall, `/memory`, opt-in ingest · [naming honesty s771](memory-mcp.md#naming-honesty-s771-pin) · [buyer claim pin s774](memory-mcp.md#buyer-claim-pin-s774) — MIT TUI ≠ hosted mesh CP · internal note removed from this public repository)
 18. ~~Memory Phase 2~~ **done** — HTTP MCP path + optional dual-write `MEMORY_INGEST` (default OFF; v0.3.0); see [memory-mcp.md](memory-mcp.md)
-19. ~~Dogfood async MEMORY_RPC recall (session correlation)~~ **done** — see [mesh-dogfood.md](mesh-dogfood.md)
-20. ~~Sync HTTP memory retrieve + dogfood `memory_retrieve`~~ **done** — see [mesh-dogfood.md](mesh-dogfood.md) / [memory-mcp.md](memory-mcp.md)
+19. ~~Dogfood async MEMORY_RPC recall (session correlation)~~ **done** — see internal note removed from this public repository
+20. ~~Sync HTTP memory retrieve + dogfood `memory_retrieve`~~ **done** — see internal note removed from this public repository / [memory-mcp.md](memory-mcp.md)
 21. ~~Agent auto-recall prefer sync HTTP~~ **done** — mesh `RetrieveMemory` first, MCP fallback; see [memory-mcp.md](memory-mcp.md)
-22. ~~Stage warm memory plane / sidecar dogfood~~ **done** — `[memory].endpoint` / `IOMESH_MEMORY_ENDPOINT`; see [mesh-dogfood.md](mesh-dogfood.md)
+22. ~~Stage warm memory plane / sidecar dogfood~~ **done** — `[memory].endpoint` / `IOMESH_MEMORY_ENDPOINT`; see internal note removed from this public repository
 23. ~~Release v0.4.0~~ **done** — Memory Phase 3+ + dogfood evidence packaged (tag on merge)
 24. ~~GoReleaser multi-platform binaries + usage JSON~~ **done** — see [RELEASING.md](../../RELEASING.md) / [mesh-deeper.md](mesh-deeper.md)
 25. ~~Release v0.5.0~~ **done** — GoReleaser packaging + usage JSON
-26. ~~Remote metering emit path (org/workspace + llm_meter dogfood)~~ **done** — see [mesh-deeper.md](mesh-deeper.md) / [mesh-dogfood.md](mesh-dogfood.md)
+26. ~~Remote metering emit path (org/workspace + llm_meter dogfood)~~ **done** — see [mesh-deeper.md](mesh-deeper.md) / internal note removed from this public repository
 27. ~~Release v0.6.0~~ **done** — multi-tenant metering emit packaging
 28. ~~Dept emit publish wire parity (SDK + TUI)~~ **done** — `/v1/streams/dept/publish` + SDK `EmitLLMCall`
 29. ~~GoReleaser SPDX SBOM on release assets~~ **done** — see [RELEASING.md](../../RELEASING.md)
 30. ~~Keyless cosign on release checksums~~ **done** — see [RELEASING.md](../../RELEASING.md)
 31. ~~Mesh User-Agent + local release-snapshot --skip=sign~~ **done** — SDK Health/Ready parity sibling
-32. ~~Dogfood / StatusLine User-Agent evidence~~ **done** — report `user_agent` + StatusLine `ua=` for CI/ops; see [mesh-dogfood.md](mesh-dogfood.md)
-33. ~~WaitReady + `iomesh mesh wait` preflight~~ **done** — poll Ready (optional Health) until OK or deadline; see [mesh-dogfood.md](mesh-dogfood.md)
-34. ~~Dogfood catalog plane evidence~~ **done** — report `catalog_source` / `catalog_count` for CI; see [mesh-dogfood.md](mesh-dogfood.md)
-35. ~~Dogfood context plane evidence + `mesh status`~~ **done** — report `context_chars` / `context_lineage_count` + operator status CLI; see [mesh-dogfood.md](mesh-dogfood.md)
-36. ~~Dogfood WaitReady soft preflight~~ **done** — optional `--wait-ready` inside mesh dogfood + report `wait_ready_ms`; see [mesh-dogfood.md](mesh-dogfood.md)
+32. ~~Dogfood / StatusLine User-Agent evidence~~ **done** — report `user_agent` + StatusLine `ua=` for CI/ops; see internal note removed from this public repository
+33. ~~WaitReady + `iomesh mesh wait` preflight~~ **done** — poll Ready (optional Health) until OK or deadline; see internal note removed from this public repository
+34. ~~Dogfood catalog plane evidence~~ **done** — report `catalog_source` / `catalog_count` for CI; see internal note removed from this public repository
+35. ~~Dogfood context plane evidence + `mesh status`~~ **done** — report `context_chars` / `context_lineage_count` + operator status CLI; see internal note removed from this public repository
+36. ~~Dogfood WaitReady soft preflight~~ **done** — optional `--wait-ready` inside mesh dogfood + report `wait_ready_ms`; see internal note removed from this public repository
 37. ~~Lean mesh stream discovery + `mesh streams` CLI~~ **done** — `ListStreams` / `GetStream` + `iomesh mesh streams`; see [mesh-deeper.md](mesh-deeper.md)
-38. ~~Dogfood streams list evidence~~ **done** — soft `streams` step + report `streams_count`; see [mesh-dogfood.md](mesh-dogfood.md)
-39. ~~Dogfood `streams_names` + gated streams delete~~ **done** — report name sample + `mesh streams --delete --name --yes`; see [mesh-dogfood.md](mesh-dogfood.md) / [mesh-deeper.md](mesh-deeper.md)
+38. ~~Dogfood streams list evidence~~ **done** — soft `streams` step + report `streams_count`; see internal note removed from this public repository
+39. ~~Dogfood `streams_names` + gated streams delete~~ **done** — report name sample + `mesh streams --delete --name --yes`; see internal note removed from this public repository / [mesh-deeper.md](mesh-deeper.md)
 40. ~~Lean stream message list + `mesh streams --messages`~~ **done** — `ListStreamMessages` + CLI message inspection; see [mesh-deeper.md](mesh-deeper.md)
-41. ~~Dogfood policy evidence~~ **done** — report `policy_mode` / `policy_source` / `policy_allow`; see [mesh-dogfood.md](mesh-dogfood.md)
+41. ~~Dogfood policy evidence~~ **done** — report `policy_mode` / `policy_source` / `policy_allow`; see internal note removed from this public repository
 42. ~~Lean mesh KV read + `mesh kv` CLI~~ **done** — `KVGet` / `KVListKeys` + `iomesh mesh kv`; see [mesh-deeper.md](mesh-deeper.md)
-43. ~~Gated mesh KV put/delete + soft dogfood kv probe~~ **done** — `KVPut` / `KVDelete` + `--yes` CLI gates + `--kv-bucket` list-keys evidence; see [mesh-deeper.md](mesh-deeper.md) / [mesh-dogfood.md](mesh-dogfood.md)
+43. ~~Gated mesh KV put/delete + soft dogfood kv probe~~ **done** — `KVPut` / `KVDelete` + `--yes` CLI gates + `--kv-bucket` list-keys evidence; see [mesh-deeper.md](mesh-deeper.md) / internal note removed from this public repository
 44. ~~Lean mesh KV create-bucket~~ **done** — `KVCreateBucket` + `iomesh mesh kv --create-bucket --yes` (idempotent 409); see [mesh-deeper.md](mesh-deeper.md)
-45. ~~Dogfood kv-ensure + ephemeral mesh pub~~ **done** — `--kv-ensure` / `kv_ensured` + `Pub` / `iomesh mesh pub --yes`; see [mesh-dogfood.md](mesh-dogfood.md) / [mesh-deeper.md](mesh-deeper.md)
+45. ~~Dogfood kv-ensure + ephemeral mesh pub~~ **done** — `--kv-ensure` / `kv_ensured` + `Pub` / `iomesh mesh pub --yes`; see internal note removed from this public repository / [mesh-deeper.md](mesh-deeper.md)
 46. ~~Agent-native setup lifecycle `/setup` (s1525–s1542)~~ **done** — init/preflight/portal/reload/pull/analyze/drift/repair; dual_write OFF · package wire ≠ Connected · Cloud Memory GA; see [setup-lifecycle.md](setup-lifecycle.md)
 47. ~~Edge user journey + soft residual-check lanes (s1554–s1586 continuum)~~ **done** — journey/wizard/portal-hitl/e4/tool-call/human-gates/e10 soft residual-checks; E10 Open · book-demo OFF · residual PASS ≠ invent Connected/GA; see [edge-user-journey.md](edge-user-journey.md)
-48. ~~OSS packaging boundary + marketing demo path + Python SDK peer (s1582/s1590/s1666)~~ **done** — MIT harness vs private control plane honesty · `/onboard next marketing-demo` · Go+Python client SDK peers; see [oss-packaging-boundary.md](oss-packaging-boundary.md) · [marketing-demo-path.md](marketing-demo-path.md)
+48. ~~OSS packaging boundary + marketing demo path + Python SDK peer (s1582/s1590/s1666)~~ **done** — MIT harness vs private control plane honesty · `/onboard next marketing-demo` · Go+Python client SDK peers; see [oss-packaging-boundary.md](oss-packaging-boundary.md) · internal note removed from this public repository
 49. ~~Easy first-run + skills reload (s1670)~~ **done** — `/setup reload` re-scans skills · README first-run honesty; skills re-scan ≠ invent Connected
 50. ~~Release v0.72.0 packaging cut~~ **done** — setup lifecycle + edge first-run continuum + residual soft checks + OSS packaging honesty
 51. ~~Setup first-run residual continuum + release v0.73.0 (s1686/s1695/s1699)~~ **done** — CLI init dual-path next-step · preflight dual-path next-step · Memory Ops Pack local-primary honesty (not first-run required) · dual_write OFF · package wire ≠ Connected · Ops Pack optional · CLI has no setup reload

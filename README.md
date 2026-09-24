@@ -87,7 +87,7 @@ Any other **OpenAI-compatible** chat endpoint can be added under `[model.<name>]
 | Advanced memory install | Optional ONNX / extra host knobs · lean path does not require Qdrant | [memory-advanced-install.md](docs/architecture/memory-advanced-install.md) |
 | Packaging boundary | MIT harness vs private platform surfaces | [oss-packaging-boundary.md](docs/architecture/oss-packaging-boundary.md) |
 
-Optional mesh client docs (broker you run or subscribe to): [mesh smoke](docs/architecture/mesh-dogfood.md). Kernel TTFH walking skeleton: [TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md). Security model: [SECURITY.md](SECURITY.md).
+Optional mesh client docs (broker you run or subscribe to): internal note removed from this public repository. Kernel TTFH walking skeleton: [TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md). Security model: [SECURITY.md](SECURITY.md).
 
 ## Quick start
 

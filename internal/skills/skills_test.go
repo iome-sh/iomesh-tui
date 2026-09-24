@@ -826,7 +826,7 @@ func TestLoadBuiltin_S1363MeshAgentOnboardingSkillDogfood(t *testing.T) {
 		"local agent + local memory",
 		"mesh optional",
 		"free eng s1590",
-		"marketing-demo-path.md",
+		"internal note removed from this public repository",
 		// s1582 OSS packaging residual stamp
 		"oss-packaging-boundary.md",
 		"OSS packaging boundary",

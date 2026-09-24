@@ -3307,7 +3307,7 @@ func TestHandleSlash_OnboardNextE4Lane(t *testing.T) {
 		"iomesh mcp --connect",
 		"iomesh-memory-mcp",
 		"local-primary",
-		"docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md",
+		"internal note removed from this public repository",
 		"dual_write OFF",
 		"Cloud Memory GA",
 		"residual PASS ≠ invent Connected",
