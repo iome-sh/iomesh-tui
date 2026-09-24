@@ -748,6 +748,26 @@ Operators can export a **day/week pattern + receipts pack** without changing def
 
 **Kernel TTFH (walking skeleton):** [memory/docs/TTFH.md](https://github.com/iome-sh/memory/blob/main/docs/TTFH.md). Host path: `/memory ingest` three RCA turns (private overlay) then `/memory digest --require-sources mesh,private` (cite-both **or explicit miss**). Honest miss is success. Do not invent mesh. 
 
+## Cloud Memory palace bind
+
+**Status: Gap / Partial** (US-CM-JOURNEY-05). Not an Exists Connected bind.
+
+Entitled path, with no live host URL:
+
+1. Console entitlement is the primary attach. The workspace is the principal. Entitlement ≠ live bind and is not Connected.
+2. Keep private notes on the local palace disk. **One write path — not mirrored to a second store.** Local and Cloud Memory stay on separate paths.
+3. **Cloud Memory GA** is optional beside TTFH. TTFH/heartbeat is the system of record. Cloud Memory is not required for heartbeat. Empty until consume. Catalog ≠ Connected.
+4. `/memory digest --require-sources mesh,private` is cite-both or an honest miss. `/memory`, `/memory status`, setup preflight, and `/onboard next memory` print the same Gap / Partial stamp.
+5. Stop. Do not invent a Connected host URL. Do not stamp a Connected badge.
+
+**B5 · TUI host bind** — Cloud Memory as a remote palace target stays Gap until QA evidence.
+
+**C4 · SDK palace URL bind** — binding a client to a Cloud Memory palace URL when entitled is the same Gap / Partial. Entitlement ≠ live bind. Empty until consume. This repository does not ship that bind.
+
+Multi-human palace read/write stays Gap. No host APPLY from this path.
+
+Wire residual: digest `ops_pulse` may still be `ga_path`, and healthz may still include `not_memory_ga`. The TUI displays `cloud_memory_ga`. Those host fields are not a Connected rename and are not a product stamp.
+
 **Notes:** ops pulse **Cloud Memory GA** · knowledge/analytical digests **Beta** · dual_write default OFF · **Cloud Memory GA** · **not** full graph RAG · human owns irreversible decisions. **#369:** may emit **insufficient-signal / nothing reliable today** · rate claims need **n of N + window** (else rejected) · receipts are **pointers + hashes** (not raw customer text) · catalog list ≠ consume. **#373:** `--require-sources mesh,private` cites both or explicit miss (catalog/grant ≠ cite-both). **#370:** briefs are a **change vs the prior window** (no-delta / “what is true” recap → insufficient-signal) · `source=external` is a **third labeled pane**, never the heartbeat, and never satisfies cite-both. A mesh citation is a stamped turn already in the export or on the explicit tenant palace — not an invented mesh pulse.
 
 **Market-telling / voc_brief (#372):** `/gtm brief` writes a named palace entry (`kind=market_telling|voc_brief`, `source=agent-brief`, tenant `gtm/founder`) to the **local palace** (`palace/gtm-founder/market_telling.json` beside user config). That file is the system of record — not a git markdown. `source=agent-brief` classifies as **private** for cite-both (never mesh; catalog/grant/external still do not satisfy). Hypothesis ledger: shipped / moved / killed (dropped ≠ falsified) vs falsified + contradiction vs yesterday. Cadence `daily|weekly|on_threshold`; daily refused below event floor. One RevOps **support-theme** recipe uses the same receipt metadata as incidents (id · event_time · summary · source_hint · pointer · account_hash · kind · subject) with ≤3 first-party sources (`mesh`, `private`, `github`). No Slack persist. CRM ≠ Connected. Hands (win-back, price change) stay off this plane. dual_write OFF.

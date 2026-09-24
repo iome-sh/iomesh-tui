@@ -193,6 +193,7 @@ func newFullscreenModel(ctx context.Context, cancel context.CancelFunc, rt *agen
 	m.appendLine(m.theme.Help.Render(agent.TTFHStreamsAsDomainPortsLine()))
 	m.appendLine(m.theme.Help.Render("companion: scripts/ttfh-demo.sh · /onboard next ttfh"))
 	m.appendLine(m.theme.Dim.Render("dual_write OFF · catalog ≠ Connected · Cloud Memory GA · never invent Connected · empty until consume · CLIENT ≠ PULSE"))
+	m.appendLine(m.theme.Dim.Render(agent.CloudMemoryBindDigestChrome()))
 	m.appendLine("")
 	return m
 }

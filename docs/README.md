@@ -15,7 +15,7 @@
 | [architecture/agent-plugins.md](architecture/agent-plugins.md) | Agent Plugins package client (discover · opt-in wire · samples · dogfood) |
 | [architecture/mcp.md](architecture/mcp.md) | MCP stdio/HTTP, resources, prompts, OAuth |
 | [architecture/mesh-deeper.md](architecture/mesh-deeper.md) | Lineage context, policy gates, local metering, portal catalog |
-| [architecture/memory-mcp.md](architecture/memory-mcp.md) | Memory Palace + temporal MCP integration plan |
+| [architecture/memory-mcp.md](architecture/memory-mcp.md) | Memory Palace + temporal MCP integration plan · Cloud Memory palace bind is Gap / Partial (US-CM-JOURNEY-05) |
 | [architecture/edge-user-journey.md](architecture/edge-user-journey.md) | **SSOT** edge-first 7-stage user journey (signup → download → auth → setup → connectors → local store → analyze) |
 | [architecture/oss-packaging-boundary.md](architecture/oss-packaging-boundary.md) | **SSOT** MIT OSS packaging boundary (harness vs control plane · Edge path first · residual-check anti-claims · free eng s1582) |
 | [architecture/memory-edge-usage-demo.md](architecture/memory-edge-usage-demo.md) | Residual-honest signup → integrations → local memory (kernel + MCP) → show usage demo |

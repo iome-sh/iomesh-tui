@@ -9,6 +9,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/iome-sh/iomesh-tui/internal/honesty"
 	"github.com/iome-sh/iomesh-tui/internal/iomesh"
 	"github.com/iome-sh/iomesh-tui/internal/mcp"
 	"github.com/iome-sh/iomesh-tui/internal/router"
@@ -881,7 +882,8 @@ func formatOpsDigest(res *iomesh.MemoryOpsDigestResult, maxBytes int) string {
 		fmt.Fprintf(&b, "\n  note: %s", note)
 	}
 	out := b.String()
-	return truncateBytes(out, maxBytes)
+	// Gap chrome stays visible even when the pack is truncated.
+	return truncateBytes(out, maxBytes) + "\n" + honesty.DigestChrome()
 }
 
 // displayOpsPulse maps the digest wire enum onto buyer-facing honesty.
@@ -2379,6 +2381,8 @@ func (rt *Runtime) MemoryAdvancedStatus(ctx context.Context) (string, error) {
 		b.WriteString("\n")
 		b.WriteString(line)
 	}
+	b.WriteString("\n")
+	b.WriteString(CloudMemoryBindGapText())
 	return strings.TrimSpace(b.String()), nil
 }
 

@@ -316,6 +316,7 @@ func handleSlash(out io.Writer, rt runtimeAdapter, line string) (quit bool, err 
 			for _, line := range agent.MemoryNextStepLines() {
 				fmt.Fprintln(out, line)
 			}
+			fmt.Fprintln(out, agent.CloudMemoryBindGapText())
 			return false, nil
 		}
 		sub := strings.ToLower(parts[1])
