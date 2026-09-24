@@ -19,7 +19,7 @@ ticket: ZD-1001
 
 HMAC-signed consumer returned **5xx** at `2026-06-15T14:08:00Z`. CS overlay is a **Sev-1 customer packet** on that same incident — extend **PD-HMAC-5xx**; do not invent a new page. Account **ACC-1001** and ticket **ZD-1001** are overlay pointers only (not a live Zendesk consume).
 
-Palace (local overlay, not Memory GA):
+Palace (local overlay, Cloud Memory GA):
 
 ```
 iomesh memory ingest-dir --yes --department customer_success examples/dept-rca/customer_success
@@ -30,4 +30,4 @@ ingest-dir is enough. Do not invent a mesh heartbeat from this packet. `/memory 
 
 ## Honesty
 
-private overlay · `source_hint=private` · dual_write **OFF** · catalog ≠ Connected · catalog ≠ heartbeat · CLIENT ≠ PULSE · empty until consume · not Memory GA · **not E-G1** · **V2 ≠ E-G1** · D5b/D6 parked · V2-F parked · never YAML APPLY · mesh miss is success · overlay does not GET Salesforce/CRM · never mesh stamp
+private overlay · `source_hint=private` · dual_write **OFF** · catalog ≠ Connected · catalog ≠ heartbeat · CLIENT ≠ PULSE · empty until consume · Cloud Memory GA · **not E-G1** · **V2 ≠ E-G1** · D5b/D6 parked · V2-F parked · never YAML APPLY · mesh miss is success · overlay does not GET Salesforce/CRM · never mesh stamp

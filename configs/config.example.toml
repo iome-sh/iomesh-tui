@@ -187,8 +187,8 @@ enabled = false
 
 # --- Memory Palace (product edge: iomesh-memory-mcp · s1517 product-only) ---
 # See docs/architecture/memory-mcp.md · Edge OSS Option A · public product attach (s1478).
-# Honesty: dual_write OFF · not Memory GA · package load ≠ Memory GA · offline dogfood tip ≠ invent live dogfood as green ·
-# flip complete residual ≠ invent Memory GA · public OSS ≠ invent platform GA · control-plane / broker private ·
+# Honesty: dual_write OFF · Cloud Memory GA · package load ≠ Connected · offline dogfood tip ≠ invent live dogfood as green ·
+# Cloud Memory GA · public edge ≠ invent Connected · Cloud Memory GA · public OSS ≠ invent Connected · control-plane / broker private ·
 # PASS ≠ invent full platform sidecar parity.
 #
 # PUBLIC product install (no GOPRIVATE / PAT · both edge repos public):

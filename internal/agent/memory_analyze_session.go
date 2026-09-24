@@ -18,8 +18,8 @@ const (
 // Maps from [memory] analyze_* knobs. Opt-in only (analyze_continuous default OFF).
 // Reuses MemoryStatusLine / MemoryOpsDigest — does not reimplement digest.
 //
-// Honesty: analyze tick ≠ invent Connected / Memory GA · dual_write OFF ·
-// not Memory GA · catalog ≠ Connected · portal HITL.
+// Honesty: analyze tick ≠ invent Connected · dual_write OFF ·
+// Cloud Memory GA · catalog ≠ Connected · portal HITL.
 type AnalyzeTickConfig struct {
 	Enabled     bool
 	IntervalSec int    // default 300; min floor 30
@@ -43,7 +43,7 @@ type AnalyzeTickStatus struct {
 }
 
 // DriftSnapshot residual-honest runtime state for /setup drift (no invent green).
-// Does not claim Memory GA or Connected from presence of hooks alone.
+// Cloud Memory GA · does not invent Connected from presence of hooks alone.
 type DriftSnapshot struct {
 	MCPAttached    bool
 	MCPServerCount int
@@ -162,7 +162,7 @@ func (rt *Runtime) startAnalyzeTick(cfg AnalyzeTickConfig) error {
 	}
 	// Digest mode needs memory hooks enabled-ish (MemoryOpsDigest fails closed otherwise).
 	if mode == "digest" && !rt.memory.Enabled {
-		return fmt.Errorf("analyze tick: digest mode requires [memory] enabled (status mode still works with limited memory; analyze ≠ invent Memory GA)")
+		return fmt.Errorf("analyze tick: digest mode requires [memory] enabled (status mode still works with limited memory; analyze ≠ invent Connected · Cloud Memory GA)")
 	}
 
 	interval := cfg.IntervalSec

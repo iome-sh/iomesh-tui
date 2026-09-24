@@ -32,4 +32,4 @@ iomesh memory ingest-dir --dry-run examples/dept-rca/sales
 
 Temporal ask: what was the list-seat price **as-of** `2026-02-28T18:00:00Z` (before the **2026-03-01** price change)? Cite-both vs entitled `dept.sales` heartbeats is **after R4 pull**, not this overlay.
 
-**not E-G1.** **not Memory GA.** 1.6 E-G1 **Parked**. **D5c ≠ E-G1**. empty until consume · CLIENT ≠ PULSE · catalog ≠ Connected · dual_write **OFF** · never YAML APPLY.
+**not E-G1.** **Cloud Memory GA.** 1.6 E-G1 **Parked**. **D5c ≠ E-G1**. empty until consume · CLIENT ≠ PULSE · catalog ≠ Connected · dual_write **OFF** · never YAML APPLY.

@@ -22,7 +22,7 @@
   <circle cx="22" cy="18" r="5" fill="#3d4440"/>
   <circle cx="40" cy="18" r="5" fill="#3d4440"/>
   <circle cx="58" cy="18" r="5" fill="#3d4440"/>
-  <text x="80" y="22" class="chrome">iomesh-tui  ·  /dashboard  ·  eval template</text>
+  <text x="80" y="22" class="chrome">iomesh-tui ·  /dashboard ·  eval template</text>
   <text x="780" y="22" class="chrome">not Connected</text>
 
   <circle cx="28" cy="58" r="4" fill="#7f9a88"/>
@@ -32,7 +32,7 @@
 
   <path d="M24 84 H140 L156 84 L168 70 L184 104 L200 76 L214 84 H340 L356 84 L370 68 L388 108 L406 78 L420 84 H560 L576 84 L590 72 L606 102 L622 78 L636 84 H780 L796 84 L810 70 L826 104 L842 80 L856 84 H896"
         fill="none" stroke="#7f9a88" stroke-width="1.4" stroke-linejoin="round"/>
-  <text x="24" y="128" class="mono dim">analysis  ops 3 · knowledge 1 · analytics 1  ·  knowledge/analytics Beta</text>
+  <text x="24" y="128" class="mono dim">analysis  ops 3 · knowledge 1 · analytics 1 ·  knowledge/analytics Beta</text>
   <line x1="24" y1="140" x2="896" y2="140" stroke="#2a2e2b"/>
 
   <text x="24" y="162" class="label">Tenancy</text>
@@ -93,5 +93,5 @@
 
   <line x1="24" y1="484" x2="896" y2="484" stroke="#2a2e2b"/>
   <text x="24" y="508" class="mono faint">eval template · same feed as iome.sh MeshConsole · catalog ≠ Connected · dual_write OFF</text>
-  <text x="24" y="526" class="mono faint">knowledge/analytics Beta · not Memory GA · demo feed ≠ fleet-GA · not live APPLY</text>
+  <text x="24" y="526" class="mono faint">knowledge/analytics Beta · Cloud Memory GA · demo feed ≠ fleet-GA · not live APPLY</text>
 </svg>

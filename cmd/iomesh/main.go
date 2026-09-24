@@ -257,7 +257,7 @@ func run(args []string) int {
 
 	// s1534 P6: opt-in in-session analyze ticks (default OFF).
 	// Fail-open log warn on start error — do not fail process start.
-	// analyze tick ≠ invent Connected / Memory GA · dual_write OFF.
+	// analyze tick ≠ invent Connected · dual_write OFF.
 	if cfg.Memory.AnalyzeContinuous {
 		mode := strings.TrimSpace(cfg.Memory.AnalyzeMode)
 		if err := rt.StartAnalyzeTick(agent.AnalyzeTickConfig{
@@ -512,7 +512,7 @@ func mcpServerFromTOML(s config.MCPServerTOML, cfg *config.Config) mcp.ServerCon
 }
 
 // cmdSetup is setup lifecycle CLI (s1525 P1–P2): init managed config + residual-honest preflight.
-// dual_write OFF · not Memory GA · catalog ≠ Connected · portal HITL · PASS ≠ invent install green.
+// dual_write OFF · Cloud Memory GA · catalog ≠ Connected · portal HITL · PASS ≠ invent install green.
 func cmdSetup(args []string) int {
 	if len(args) == 0 {
 		printSetupUsage()
@@ -722,7 +722,7 @@ func hoistFlags(args []string) []string {
 
 // cmdPlugins is operator DX for Agent Plugins packages (s1336 list/validate · s1357 dogfood).
 // Residual honesty: list/validate/dogfood ≠ invent Agent Plugins GA · dual_write OFF ·
-// Discover ≠ Connected · not Memory GA · PATH residual for binary · book-demo OFF.
+// Discover ≠ Connected · Cloud Memory GA · PATH residual for binary · book-demo OFF.
 // Fail-open discover; validate exits non-zero on fatal package errors or zero plugins when dirs set.
 // Dogfood validates both in-repo samples offline — no MCP dial / connect.
 func cmdPlugins(args []string) int {
@@ -3319,7 +3319,7 @@ Flags:
 Always prints the TTFH walk and EMPTY dashboard snapshot. dual_write OFF.
 --unit never dials. --live without endpoint prints no-IOMESH_ENDPOINT honesty and exits 0.
 --live with endpoint probes streams/messages (~5s). Network/4xx/5xx → broker unreachable, exit 0.
-Never invents Connected / PULSE / Memory GA / live APPLY. catalog ≠ Connected.
+Never invents Connected / PULSE / live APPLY. catalog ≠ Connected.
 R1 --live ≠ R3 overlay PULSE (parked).
 
 `+agent.TTFHPhasedRolloutLines()+"\n"+agent.TTFHStreamsAsDomainPortsLine()+"\n")
@@ -3380,7 +3380,7 @@ Agent serve (WebSocket) flags:
 
 `+agent.TTFHPhasedRolloutLines()+`
 `+agent.TTFHStreamsAsDomainPortsLine()+`
-Honesty: dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · knowledge Beta empty · eval template · not live APPLY
+Honesty: dual_write OFF · catalog ≠ Connected · Cloud Memory GA · never invent Connected · knowledge Beta empty · eval template · not live APPLY
 
 Default model cascade: deepseek-v4-flash → deepseek-v4-pro → grok-4.5
   Optional Google: gemini-2.5-flash|pro (GEMINI_API_KEY) · vertex-gemini-2.5-* (VERTEX_API_KEY + GOOGLE_CLOUD_PROJECT)

@@ -8,7 +8,7 @@ import (
 )
 
 // DefaultRecallCacheTTLMS is the default short-TTL for sync retrieve reuse (s1069).
-// Client-side fail-open only — not product Memory GA; 0 disables.
+// Client-side fail-open only — Cloud Memory GA; 0 disables.
 const DefaultRecallCacheTTLMS = 3000
 
 // memoryRecallCacheKey uniquely identifies a sync RetrieveMemory call.

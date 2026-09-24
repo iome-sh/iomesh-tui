@@ -32,4 +32,4 @@ iomesh memory ingest-dir --dry-run examples/dept-rca/support
 
 Temporal ask: what was the unused-seat refund rule **as-of ticket created_at** `2026-06-15T14:22:00Z`? Policy effective 2026-01-01 was in force. Cite-both vs entitled `dept.support` heartbeats is **after R4 pull**, not this overlay.
 
-**not E-G1.** **not Memory GA.** 1.6 E-G1 **Parked**. empty until consume · CLIENT ≠ PULSE · catalog ≠ Connected · dual_write **OFF** · never YAML APPLY.
+**not E-G1.** **Cloud Memory GA.** 1.6 E-G1 **Parked**. empty until consume · CLIENT ≠ PULSE · catalog ≠ Connected · dual_write **OFF** · never YAML APPLY.

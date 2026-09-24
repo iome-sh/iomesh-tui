@@ -41,7 +41,7 @@ func TestGtmDraftOnlyAgentGuidanceNote_HonestyNeedles(t *testing.T) {
 		t.Fatalf("must not invent auto-send/suite GA claim: %s", out)
 	}
 	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "dual_write ON") {
-		t.Fatalf("must not invent Memory GA / dual_write ON: %s", out)
+		t.Fatalf("must not invent / dual_write ON: %s", out)
 	}
 }
 

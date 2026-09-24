@@ -21,7 +21,7 @@ var skillToolNames = []string{
 // setup continuum vs cold start. Peer of PluginsNextStepLines (s1829) · OnboardNextStepLines
 // (s1825) · MemoryNextStepLines (s1831) · IntegrationsNextStepLines (s1727).
 // skills re-scan ≠ invent Connected · package wire ≠ Connected · dual_write OFF ·
-// not Agent Plugins GA · not Memory GA · free eng s1837. Never invent success/Connected
+// not Agent Plugins GA · Cloud Memory GA · free eng s1837. Never invent success/Connected
 // from list/read alone (no dedicated /skills slash — catalog + tools + reload only).
 func SkillsNextStepLines() []string {
 	return []string{

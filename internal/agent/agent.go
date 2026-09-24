@@ -76,7 +76,7 @@ type Runtime struct {
 	// sessionSeq is a monotonic counter for dual-write memory_ingest envelopes.
 	sessionSeq atomic.Int64
 
-	// s1069 short-TTL sync retrieve cache + last latency (fail-open, not Memory GA).
+	// s1069 short-TTL sync retrieve cache + last latency (fail-open, Cloud Memory GA).
 	memoryCache                *memoryRecallCache
 	lastMemoryRetrieveMS       atomic.Int64
 	lastMemoryRetrieveCacheHit atomic.Bool
@@ -87,7 +87,7 @@ type Runtime struct {
 	sessionAllow map[string]bool
 
 	// Continuous memory pull (s1530 P5 · opt-in [memory].pull_continuous).
-	// pull running ≠ invent install green / Ops Pack GA · dual_write OFF · not Memory GA.
+	// pull running ≠ invent install green / Ops Pack GA · dual_write OFF · Cloud Memory GA.
 	pullMu      sync.Mutex
 	pullCancel  context.CancelFunc
 	pullRunning atomic.Bool
@@ -97,7 +97,7 @@ type Runtime struct {
 	pullLastErr string
 
 	// Analyze ticks (s1534 P6 · opt-in [memory].analyze_continuous).
-	// analyze tick ≠ invent Connected / Memory GA · dual_write OFF · not Memory GA.
+	// analyze tick ≠ invent Connected · dual_write OFF · Cloud Memory GA.
 	analyzeMu      sync.Mutex
 	analyzeCancel  context.CancelFunc
 	analyzeRunning atomic.Bool
@@ -284,7 +284,7 @@ func (rt *Runtime) attachSkillsLocked(cat *skills.Catalog) {
 // "detached" skills system note (does not invent Connected / Agent Plugins GA).
 //
 // Residual honesty: skills re-scan / package wire ≠ Connected · dual_write OFF ·
-// not Memory GA · not Agent Plugins GA · Discover/map ≠ install APPLY green.
+// Cloud Memory GA · not Agent Plugins GA · Discover/map ≠ install APPLY green.
 func (rt *Runtime) ReplaceSkills(cat *skills.Catalog) {
 	if rt == nil {
 		return
@@ -307,7 +307,7 @@ func (rt *Runtime) ReplaceSkills(cat *skills.Catalog) {
 // memory guidance (s1291) so multi-hop / HITL supersede / ops pulse stay opt-in,
 // mesh agent onboarding guidance (s1363) for TUI ↔ mesh CP/MCP residual path,
 // and setup lifecycle guidance (s1526 P3) for init/preflight without inventing
-// Connected / Memory GA.
+// Connected · Cloud Memory GA.
 // System notes upsert by tag (safe to re-attach after ReplaceMCP).
 func (rt *Runtime) AttachMCP(mgr *mcp.Manager) {
 	if rt == nil || mgr == nil || mgr.Len() == 0 {

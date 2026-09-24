@@ -9,7 +9,7 @@
 // Runtime.ReplaceSkills, and Runtime.ReplaceMesh.
 //
 // Residual honesty:
-//   - package wire ≠ Connected / install APPLY green / Agent Plugins GA / Memory GA
+//   - package wire ≠ Connected / install APPLY green / Agent Plugins GA · Cloud Memory GA
 //   - dual_write OFF (not flipped here)
 //   - Discover / map success ≠ process Connected
 //   - skills re-scan ≠ invent Connected

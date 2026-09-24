@@ -155,7 +155,7 @@ func newFullscreenModel(ctx context.Context, cancel context.CancelFunc, rt *agen
 	}
 
 	ta := textarea.New()
-	ta.Placeholder = "/setup preflight  ·  /memory ingest  ·  /onboard next ttfh  ·  /help"
+	ta.Placeholder = "/setup preflight ·  /memory ingest ·  /onboard next ttfh ·  /help"
 	ta.Focus()
 	ta.CharLimit = 32 * 1024
 	ta.SetWidth(80)
@@ -188,11 +188,11 @@ func newFullscreenModel(ctx context.Context, cancel context.CancelFunc, rt *agen
 	if sid := rt.SessionID(); sid != "" {
 		m.appendLine(m.theme.Status.Render("session " + sid))
 	}
-	m.appendLine(m.theme.Status.Render(fmt.Sprintf("model %s  ·  mutating tools prompt y/n/a unless --yolo", displayModel(rt.Router()))))
+	m.appendLine(m.theme.Status.Render(fmt.Sprintf("model %s ·  mutating tools prompt y/n/a unless --yolo", displayModel(rt.Router()))))
 	m.appendLine(m.theme.Help.Render(agent.TTFHPhasedRolloutLines()))
 	m.appendLine(m.theme.Help.Render(agent.TTFHStreamsAsDomainPortsLine()))
 	m.appendLine(m.theme.Help.Render("companion: scripts/ttfh-demo.sh · /onboard next ttfh"))
-	m.appendLine(m.theme.Dim.Render("dual_write OFF · catalog ≠ Connected · not Memory GA · never invent Connected · empty until consume · CLIENT ≠ PULSE"))
+	m.appendLine(m.theme.Dim.Render("dual_write OFF · catalog ≠ Connected · Cloud Memory GA · never invent Connected · empty until consume · CLIENT ≠ PULSE"))
 	m.appendLine("")
 	return m
 }
@@ -580,7 +580,7 @@ func (m *fullscreenModel) handleDashboardSlash(parts []string) tea.Cmd {
 func (m *fullscreenModel) handleThemeSlash(parts []string) tea.Cmd {
 	if len(parts) < 2 {
 		m.appendLine(m.theme.Status.Render("themes: " + strings.Join(ThemeNames(), ", ")))
-		m.appendLine(m.theme.Dim.Render("current: " + m.theme.Name + "  ·  usage: /theme <name>"))
+		m.appendLine(m.theme.Dim.Render("current: " + m.theme.Name + " ·  usage: /theme <name>"))
 		m.refreshViewport(true)
 		return nil
 	}
@@ -695,18 +695,18 @@ func (m *fullscreenModel) renderHeader() string {
 func (m *fullscreenModel) renderFooter() string {
 	sep := m.theme.Dim.Render(strings.Repeat("─", max(1, m.width)))
 	if m.approval != nil {
-		hint := m.theme.Approve.Render(" APPROVE ") + m.theme.Help.Render(" y=once  n=deny  a=always  ·  tool "+m.approval.tool)
+		hint := m.theme.Approve.Render(" APPROVE ") + m.theme.Help.Render(" y=once  n=deny  a=always ·  tool "+m.approval.tool)
 		return sep + "\n" + hint + "\n" + m.theme.Dim.Render("keyboard focus: approval")
 	}
 	if m.dash != nil {
-		hint := m.theme.Help.Render("esc/q close  ·  tab cycle tenancy  ·  1–4 eval tenancy (preview) · TTFH consume is broker /v1 messages · empty until consume")
+		hint := m.theme.Help.Render("esc/q close ·  tab cycle tenancy ·  1–4 eval tenancy (preview) · TTFH consume is broker /v1 messages · empty until consume")
 		return sep + "\n" + hint
 	}
 	ws := ""
 	if m.rt != nil {
 		ws = truncate(m.rt.Workspace().Root(), 40)
 	}
-	meta := fmt.Sprintf("%s  ·  %s  ·  enter send · ctrl+j ⏎", ws, m.status)
+	meta := fmt.Sprintf("%s ·  %s ·  enter send · ctrl+j ⏎", ws, m.status)
 	const ttfhHint = " · /onboard next ttfh"
 	if m.width <= 0 || lipgloss.Width(meta)+lipgloss.Width(ttfhHint) <= m.width {
 		meta += ttfhHint

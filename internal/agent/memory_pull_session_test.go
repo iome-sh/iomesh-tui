@@ -124,7 +124,7 @@ func TestStartContinuousMemoryPull_MCPMissingNonDryRun(t *testing.T) {
 	}
 	// Residual honesty: package wire ≠ Connected is fine to mention.
 	if strings.Contains(err.Error(), "Memory GA") {
-		t.Fatalf("must not invent Memory GA: %v", err)
+		t.Fatalf("must not invent: %v", err)
 	}
 }
 

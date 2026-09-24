@@ -95,8 +95,11 @@ func TestMemoryIngestTurn_MintsLocalOverlaySessionID(t *testing.T) {
 	if !strings.Contains(out, "palace:") || !strings.Contains(out, "ls this path") {
 		t.Fatalf("ingest must print palace path: %q", out)
 	}
-	if strings.Contains(out, "Memory GA") && !strings.Contains(out, "not") {
-		t.Fatalf("must not stamp Memory GA: %q", out)
+	if strings.Contains(out, "not Memory GA") || strings.Contains(out, "Memory GA shipped") {
+		t.Fatalf("must not deny Cloud Memory GA: %q", out)
+	}
+	if !strings.Contains(out, "Cloud Memory GA") {
+		t.Fatalf("ingest palace line must name Cloud Memory GA: %q", out)
 	}
 }
 
@@ -159,8 +162,8 @@ func TestListIngestDirFiles_TextAndSkipBinary(t *testing.T) {
 			t.Fatalf("plan missing %q: %s", want, text)
 		}
 	}
-	if strings.Contains(text, "Memory GA") {
-		t.Fatalf("must not stamp Memory GA: %s", text)
+	if strings.Contains(text, "not Memory GA") || strings.Contains(text, "Memory GA shipped") {
+		t.Fatalf("must not deny Cloud Memory GA: %s", text)
 	}
 	if strings.Contains(text, "source_hint=mesh") {
 		t.Fatalf("must not stamp mesh: %s", text)
@@ -364,7 +367,7 @@ func TestListIngestDirFiles_SupportDeptRCAKit(t *testing.T) {
 		"/memory digest --require-sources mesh,private",
 		"2026-06-15T14:22:00Z",
 		"not E-G1",
-		"not Memory GA",
+		"Cloud Memory GA",
 	} {
 		if !strings.Contains(readme, want) {
 			t.Fatalf("kit README missing %q", want)
@@ -434,7 +437,7 @@ func TestListIngestDirFiles_OpsDeptRCAKit(t *testing.T) {
 		"private overlay",
 		"dept.ops.events.*",
 		"not E-G1",
-		"not Memory GA",
+		"Cloud Memory GA",
 	} {
 		if !strings.Contains(kit, want) {
 			t.Fatalf("ops kit missing %q", want)
@@ -448,7 +451,7 @@ func TestListIngestDirFiles_OpsDeptRCAKit(t *testing.T) {
 		"/memory digest --require-sources mesh,private",
 		"2026-06-15T14:08:00Z",
 		"not E-G1",
-		"not Memory GA",
+		"Cloud Memory GA",
 	} {
 		if !strings.Contains(readme, want) {
 			t.Fatalf("kit README missing %q", want)
@@ -518,7 +521,7 @@ func TestListIngestDirFiles_SalesDeptRCAKit(t *testing.T) {
 		"private overlay",
 		"dept.sales.events.*",
 		"not E-G1",
-		"not Memory GA",
+		"Cloud Memory GA",
 	} {
 		if !strings.Contains(kit, want) {
 			t.Fatalf("sales kit missing %q", want)
@@ -542,7 +545,7 @@ func TestListIngestDirFiles_SalesDeptRCAKit(t *testing.T) {
 		"/memory digest --require-sources mesh,private",
 		"2026-02-28T18:00:00Z",
 		"not E-G1",
-		"not Memory GA",
+		"Cloud Memory GA",
 	} {
 		if !strings.Contains(readme, want) {
 			t.Fatalf("kit README missing %q", want)
@@ -619,7 +622,7 @@ func TestListIngestDirFiles_CSDeptRCAKit(t *testing.T) {
 		"THM-1001",
 		"2026-08-20T15:00:00Z",
 		"not a health score",
-		"not Memory GA",
+		"Cloud Memory GA",
 		"does not GET Salesforce/CRM",
 		"ingest-dir is enough",
 	} {
@@ -650,7 +653,7 @@ func TestListIngestDirFiles_CSDeptRCAKit(t *testing.T) {
 		"PD-HMAC-5xx",
 		"2026-06-15T14:08:00Z",
 		"ingest-dir is enough",
-		"not Memory GA",
+		"Cloud Memory GA",
 		"does not GET Salesforce/CRM",
 	} {
 		if !strings.Contains(packet, want) {
@@ -682,7 +685,7 @@ func TestListIngestDirFiles_CSDeptRCAKit(t *testing.T) {
 		"private overlay",
 		"dept.customer_success.events.*",
 		"not E-G1",
-		"not Memory GA",
+		"Cloud Memory GA",
 	} {
 		if !strings.Contains(kit, want) {
 			t.Fatalf("cs kit missing %q", want)
@@ -716,7 +719,7 @@ func TestListIngestDirFiles_CSDeptRCAKit(t *testing.T) {
 		"/memory digest --require-sources mesh,private",
 		"2026-08-31T18:00:00Z",
 		"not E-G1",
-		"not Memory GA",
+		"Cloud Memory GA",
 		"ingest-dir is enough",
 		"Mesh miss is success",
 		"living-memo.md",

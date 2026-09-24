@@ -112,7 +112,7 @@ Post-surface dual path:
 2. **If TUI/session running** → `/setup preflight` · `/setup reload` · optional `/onboard next portal-hitl`
 3. **Else cold start** → restart `iomesh` · `iomesh setup preflight` (CLI has **no** invent install green)
 
-**Honesty:** catalog ≠ Connected · template= ≠ install APPLY · dual_write **OFF** · not Memory GA · free eng **s1727**.
+**Honesty:** catalog ≠ Connected · template= ≠ install APPLY · dual_write **OFF** · Cloud Memory GA · free eng **s1727**.
 
 ## mesh v178 / v30 wire (TUI parse parity · s1242)
 
@@ -227,7 +227,7 @@ No invented catalog rows. No invented plan success. No invented signing secrets.
 - Not OAuth authorize/callback completion
 - Not mesh install secret mint / checklist write
 - Not API-key mint (Agent/MCP onboarding stays credential → copy connection → test invoke)
-- Not product Memory GA / INSTALL_STORE green
+- Cloud Memory GA / INSTALL_STORE green
 
 ## Peer continuum
 

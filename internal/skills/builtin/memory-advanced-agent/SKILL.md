@@ -5,7 +5,7 @@ description: Residual-honest agent path for advanced memory surfaces (related ho
 
 # Memory advanced agent (residual-honest)
 
-Agent path for **advanced Memory Palace surfaces** already wired in iomesh-tui (slash + MCP). Default auto-recall stays **single-hop** `memory_retrieve` / sync retrieve. These surfaces are **opt-in** only — never invent Memory GA, full graph RAG, dual-clock Graphiti, or silent mutates.
+Agent path for **advanced Memory Palace surfaces** already wired in iomesh-tui (slash + MCP). Default auto-recall stays **single-hop** `memory_retrieve` / sync retrieve. These surfaces are **opt-in** only — never invent Connected, full graph RAG, dual-clock Graphiti, or silent mutates.
 
 **System note (s1291):** when MCP is attached (`AttachMCP`), runtime also injects a residual-honest `<memory-advanced>` system note (`MemoryAdvancedAgentGuidanceNote`) that steers the same locks below. Skill + note stay consistent; skill is the full playbook.
 
@@ -18,7 +18,7 @@ Agent path for **advanced Memory Palace surfaces** already wired in iomesh-tui (
 | **facts-as-of** (s1276) | List facts valid at a point in time (`as_of` RFC3339) | Auto-recall; inventing lean HTTP route; dual-clock KG |
 | **digest** (s1200) | Ops heartbeat day/week pattern + receipts pack | Claiming knowledge/analytical digests as GA |
 | **patterns / anomalies** (shipped s1287) | MCP ops pulse Beta list of patterns or anomalies | Medical diagnosis; inventing GA window engine |
-| **timeline** (s1296) | Temporal event-ordered palace slice (`since`/`until`/`query`/`limit`) | Auto-recall; inventing lean HTTP timeline; claiming Memory GA |
+| **timeline** (s1296) | Temporal event-ordered palace slice (`since`/`until`/`query`/`limit`) | Auto-recall; inventing lean HTTP timeline; claiming Connected |
 | **compact-status** (s1296 · read-only) | Palace tier counts + last compaction residual | Auto-compact product claims; inventing compaction green |
 | **trigger-compact** (s1311 · HITL) | Human-confirmed RecMem compaction advisory (`memory.compact.trigger`) | Silent auto-trigger; inventing compaction green; calling without HITL |
 | **semantic** (s1301) | Tier-4 semantic facts search (`query` / `limit`) | Auto-recall; inventing lean HTTP semantic; inventing empty-as-success |
@@ -61,7 +61,7 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conver
    - K4 bi-temporal **lite** · not full dual-clock Graphiti · empty facts ≠ invent memories.
 
 5. **Ops digest (opt-in)** — call `ops_digest_export` with `window` (`day`|`week`), `horizon` (`ops`|`knowledge`|`analytical`|`all`), `limit`.
-   - ops pulse **GA-path** · knowledge/analytical **Beta** · never invent GA.
+   - ops pulse **Cloud Memory GA** · knowledge/analytical **Beta**.
 
 6. **Supersede (opt-in · HITL mutating)** — call `memory_supersede_entity` only after **explicit human confirm**.
    - Slash requires `--i-confirm` (aliases `--confirm` / `--yes`). Agent must refuse residual-honestly without HITL.
@@ -69,7 +69,7 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conver
    - Never invent `superseded_count` offline.
 
 7. **Patterns / anomalies (shipped s1287 · MCP ops pulse Beta)** — when tools present, list via `memory_patterns_list` / `memory_anomalies_list`.
-   - Ops pulse Beta · not medical · not invent GA window engine · dual_write OFF.
+   - Ops pulse Beta · not medical · Cloud Memory GA · dual_write OFF.
 
 8. **Timeline (s1296 · MCP-first · opt-in)** — call `memory_timeline` with optional `since`, `until`, `query`, `limit`, `session_id`, `tenant`.
    - Temporal timeline · filters before limit · empty entries ≠ invent memories.
@@ -101,7 +101,7 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conver
 | K4 lite ≠ dual-clock | facts-as-of is bi-temporal lite validity listing — not full dual-clock Graphiti KG |
 | patterns/anomalies not medical | Ops pulse Beta lists only — not clinical/diagnostic claims |
 | dual_write OFF | Default dual-write audit OFF; local-primary palace honesty |
-| no invent GA | No invent GA window engine, lean HTTP for supersede/facts-as-of/patterns/timeline/compact, or empty-as-success |
+| Cloud Memory GA | Suggestive pulse only · no lean HTTP invent for supersede/facts-as-of/patterns/timeline/compact · empty ≠ success |
 | opt-in only | Never auto multi-hop on default recall; never auto-mutate supersede / trigger-compact |
 | fail-open | Offline / missing tool → residual status, not invented payloads |
 | empty ≠ invent | Empty facts / zero superseded_count / empty digest / empty timeline / empty semantic = honest empty |
@@ -116,13 +116,13 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conver
 - Do **not** silent supersede (always HITL / `--i-confirm`).
 - Do **not** silent trigger-compact (always HITL / `--i-confirm`; s1311).
 - Do **not** invent lean HTTP for supersede, facts-as-of, patterns/anomalies, timeline, compact-status, trigger-compact, semantic, or ingest-event.
-- Do **not** invent Memory GA, full graph RAG, dual-clock Graphiti, or medical diagnosis.
+- Do **not** invent Connected, full graph RAG, dual-clock Graphiti, or medical diagnosis.
 - Do **not** claim dual_write ON or book-demo ON by default.
-- Do **not** invent GA window engine from digest / patterns / anomalies Beta surfaces.
-- Do **not** treat knowledge/analytical digest horizons as ops GA-path.
+- Cloud Memory is GA. Patterns and anomalies stay a suggestive Beta pulse.
+- Do **not** treat knowledge/analytical digest horizons as the ops horizon.
 - Do **not** invent memories, superseded_count, digests, timeline entries, semantic facts, memory_id, triggered/cluster_size, or compaction green when offline / empty.
 - Do **not** treat `memory_ingest_event` / `/memory ingest-event` as conversation turn ingest (use `memory_ingest_turn` / `/memory ingest`).
-- Do **not** treat advanced tool presence as product Memory GA green.
+- Do **not** treat advanced tool presence as Connected.
 
 ## Related
 

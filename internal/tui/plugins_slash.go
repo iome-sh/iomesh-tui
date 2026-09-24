@@ -42,7 +42,7 @@ func pluginsHelp() string {
   status              residual plugins pulse: samples_ok|samples_missing · dogfood_not_run
 
 smoke = discover/validate only · no MCP dial · PATH residual · soft offline ≠ live smoke
-Discover/list ≠ Connected · package load ≠ Memory GA · soft offline smoke ≠ invent Agent Plugins GA
+Discover/list ≠ Connected · package load ≠ Connected · soft offline smoke ≠ invent Agent Plugins GA
 never invent install green / Connected / INSTALL_STORE APPLY · dual_write OFF · book-demo OFF · portal HITL
 CLI twin: iomesh plugins list|validate|smoke · continuum: /onboard next plugins · /onboard next status
 ` + agentplugins.ResidualSlashHonesty + "\n" + strings.Join(agentplugins.PluginsNextStepLines(), "\n"))
@@ -76,7 +76,7 @@ func handlePluginsList(out io.Writer, args []string) {
 			fmt.Fprintf(out, "plugins %s: %s\n", p.Manifest.Name, w)
 		}
 	}
-	fmt.Fprintln(out, "note: Discover ≠ Connected · list ≠ invent Agent Plugins GA · package load ≠ Memory GA")
+	fmt.Fprintln(out, "note: Discover ≠ Connected · list ≠ invent Agent Plugins GA · package load ≠ Connected")
 	writePluginsResidualFooter(out)
 }
 
@@ -156,7 +156,7 @@ func handlePluginsDogfood(out io.Writer) {
 	pass := agentplugins.DogfoodPass(outcomes)
 	markPluginsSlashDogfoodSession(pass)
 	// Residual-honest framing: soft offline ≠ live dogfood ≠ Agent Plugins GA.
-	fmt.Fprintln(out, "note: soft offline smoke PASS ≠ invent Agent Plugins GA · residual PASS ≠ live dogfood · Discover ≠ Connected · package load ≠ Memory GA")
+	fmt.Fprintln(out, "note: soft offline smoke PASS ≠ invent Agent Plugins GA · residual PASS ≠ live dogfood · Discover ≠ Connected · package load ≠ Connected")
 	fmt.Fprintln(out, "session marker: "+agentplugins.SoftDogfoodSessionLabel()+" · session soft ≠ live dogfood · board/export evidence ≠ invent Connected")
 	// s1397: tip re-run status board + export so session soft state refreshes residual evidence.
 	fmt.Fprintln(out, "tip: re-run /onboard next status then /onboard next export — session soft smoke refreshes plugins lane (≠ invent Agent Plugins GA · ≠ live dogfood · board ≠ invent Connected)")
@@ -175,8 +175,8 @@ func handlePluginsStatus(out io.Writer) {
   samples: %s
   smoke: %s
   note: samples soft-check only · dogfood_not_run default · session soft marker ≠ live dogfood
-  · soft offline dogfood ≠ invent Agent Plugins GA · Discover ≠ Connected · package load ≠ Memory GA
-  · never invent install green / Connected / INSTALL_STORE APPLY · dual_write OFF · book-demo OFF
+ · soft offline dogfood ≠ invent Agent Plugins GA · Discover ≠ Connected · package load ≠ Connected
+ · never invent install green / Connected / INSTALL_STORE APPLY · dual_write OFF · book-demo OFF
   slash: /plugins smoke (aliases dogfood|soft|samples|offline) · /plugins list · /plugins validate
   continuum: /onboard next plugins · /onboard next status · /onboard next export · iomesh plugins smoke
 %s

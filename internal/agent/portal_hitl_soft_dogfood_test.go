@@ -84,7 +84,7 @@ func TestRunPortalHITLSoftDogfood_SoftPass(t *testing.T) {
 		"template= ≠ install APPLY",
 		"dual_write OFF",
 		"book-demo OFF",
-		"Edge Memory GA candidacy only",
+		"Cloud Memory GA",
 		"console.iome.sh/integrations",
 		"console.iome.sh/settings/agent",
 		"/onboard next portal-hitl dogfood",

@@ -250,7 +250,7 @@ func TestDiscover_HelloIomeExample(t *testing.T) {
 }
 
 // TestDiscover_IomeshMemoryMCPExample pins s1478 product sample package under
-// examples/agent-plugins/iomesh-memory-mcp (public product stdio map · not Memory GA ·
+// examples/agent-plugins/iomesh-memory-mcp (public product stdio map · Cloud Memory GA ·
 // dual_write OFF · package load ≠ Connected · binary on PATH required for connect).
 func TestDiscover_IomeshMemoryMCPExample(t *testing.T) {
 	root := filepath.Join(moduleRoot(t), "examples", "agent-plugins", "iomesh-memory-mcp")

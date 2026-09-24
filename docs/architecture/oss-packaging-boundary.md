@@ -8,7 +8,7 @@
 This document is the **packaging boundary** for the public MIT repo.  
 Edge harness and local-primary path come first. Platform residual honesty rails stay labeled **optional anti-claim residual** — not product claims that this MIT surface is the multi-tenant control plane.
 
-**Summary:** MIT OSS · dual_write **OFF** · Edge Memory GA **candidacy only** · residual PASS ≠ invent control plane in MIT repo · soft residual-check (`… dogfood` slash token) = offline residual honesty check · session soft ≠ live dogfood · free eng **s1582** · free-floor peer **s1584+** mention only.
+**Summary:** MIT OSS · dual_write **OFF** · Cloud Memory GA · residual PASS ≠ invent control plane in MIT repo · soft residual-check (`… dogfood` slash token) = offline residual honesty check · session soft ≠ live dogfood · free eng **s1582** · free-floor peer **s1584+** mention only.
 
 ---
 
@@ -54,10 +54,10 @@ These rails exist so residual eng and operators **do not invent** platform green
 | **Soft residual-check** (`dogfood` slash token) | Offline string/board honesty check; never dial MCP / never start host | `/onboard next <lane> dogfood` (aliases `soft`/`samples`/`offline`/…) |
 | **Still-human APPLY soft residual** | Reaffirm open boxes after Wave A–C continuum | `/onboard next human-gates dogfood` |
 | **Tool-call residual** | Deeper E4 path map residual (ingest→retrieve→list→as-of) without inventing GA | `/onboard next tool-call` · soft residual-check |
-| **E10 Open reaffirm (s1586)** | Pin E10 Open after packaging continuum; residual PASS ≠ invent E10 closed / Edge Memory GA declared | `/onboard next e10` · soft residual-check `/onboard next e10 dogfood` |
+| **E10 Open reaffirm (s1586)** | Pin E10 Open after packaging continuum; residual PASS ≠ invent E10 closed / Connected | `/onboard next e10` · soft residual-check `/onboard next e10 dogfood` |
 | **Serial stamps (`sNNNN`)** | Internal residual/roadmap labels in CHANGELOG/docs | free eng serials · free-floor peer mention only |
 
-**Locks shared with Edge path:** dual_write **OFF** · Edge Memory GA **candidacy only** · residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ invent E10 closed · residual PASS ≠ invent control plane in MIT repo · E10 Open · catalog ≠ Connected · portal HITL when connect.
+**Locks shared with Edge path:** dual_write **OFF** · Cloud Memory GA · residual PASS ≠ invent Connected · residual PASS ≠ invent E10 closed · residual PASS ≠ invent control plane in MIT repo · E10 Open · catalog ≠ Connected · portal HITL when connect.
 
 Keep soft residual-check harnesses — they are **anti-claim rails**, not live customer dogfood.
 
@@ -71,8 +71,8 @@ Keep soft residual-check harnesses — they are **anti-claim rails**, not live c
 |------|---------------------------|
 | **soft dogfood** / **soft residual-check** | Offline residual honesty string/board check in-process · **≠** live customer dogfood · **≠** invent platform green · slash token remains `dogfood` for compatibility; user-facing phrase prefers **residual-check** |
 | **session soft** | In-session marker after a soft residual-check run (`*_soft_not_run` · `soft_offline_*_session_pass|fail`) · **session soft ≠ live dogfood** |
-| **residual PASS** | Offline board/soft harness PASS · **≠** invent Connected · Memory GA · dual_write ON · book-demo ON · control plane in MIT repo · forever-green product dogfood |
-| **Edge Memory GA candidacy only** | Public edge attach path residual may candidacy; **not** bare Memory GA · **not** Edge Memory GA declared · **E10 Open** |
+| **residual PASS** | Offline board/soft harness PASS · **≠** invent Connected · dual_write ON · book-demo ON · control plane in MIT repo · forever-green product dogfood |
+| **Cloud Memory GA** | Public edge attach path residual may candidacy; **not** Connected · Cloud Memory GA · **E10 Open** |
 | **free eng `sNNNN`** | Internal free-engineering residual serial for continuum work · not a public product version claim |
 | **free-floor peer** | Separate free-floor ownership serial continuum · **mention only** · packaging residual does not rewrite free-floor |
 | **control plane** | Private multi-tenant platform (control plane / portal / install-store fleet) · **not** shipped as open control-plane code in this MIT harness |
@@ -112,23 +112,23 @@ Helper `OnboardNextStepLines()` (alias `MeshAgentOnboardingNextStepLines`) dual 
 1. **If TUI/session running** → `/setup preflight` · `/setup reload` · optional `/integrations list` · `/onboard next portal-hitl|setup|memory`
 2. **Else cold start** → restart `iomesh` · `iomesh setup preflight`
 
-**Notes:** dual_write **OFF** · package wire ≠ Connected · catalog ≠ Connected · agent MCP cannot write installs · free eng **s1825**. Never invent Connected / Memory GA from onboard maps alone.
+**Notes:** dual_write **OFF** · package wire ≠ Connected · catalog ≠ Connected · agent MCP cannot write installs · free eng **s1825**. Never invent Connected · Cloud Memory GA from onboard maps alone.
 
 ---
 
 ## Limits
 
 - MIT OSS harness · **not** control plane in this repo  
-- dual_write **OFF** · Edge Memory GA **candidacy only**  
+- dual_write **OFF** · Cloud Memory GA  
 - residual PASS ≠ invent control plane in MIT repo  
-- residual PASS ≠ invent Edge Memory GA declared · residual PASS ≠ live dogfood  
+- residual PASS ≠ invent Connected · residual PASS ≠ live dogfood  
 - soft residual-check (`… dogfood`) = offline residual honesty check · session soft ≠ live dogfood · ≠ invent platform green  
-- public OSS ≠ invent platform GA · control-plane / broker **private**  
+- Cloud Memory GA · public OSS ≠ invent Connected · control-plane / broker **private**  
 - free eng **s1582** · free-floor peer **s1584+** mention only (do not rewrite free-floor)
 
 ## Non-goals
 
-- Do **not** invent Edge Memory GA / Connected / dual_write ON / book-demo ON  
+- Do **not** invent Connected / dual_write ON / book-demo ON  
 - Do **not** delete soft residual-check (soft dogfood) harnesses — keep residual anti-claim rails  
 - Do **not** rewrite free-floor  
 - Do **not** treat residual PASS / session soft as live customer dogfood or platform green  

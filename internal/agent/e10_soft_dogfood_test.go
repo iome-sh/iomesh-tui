@@ -74,12 +74,12 @@ func TestRunE10OpenSoftDogfood_SoftPass(t *testing.T) {
 		"E10 Open",
 		"E10 Open reaffirm",
 		"residual PASS ≠ invent E10 closed",
-		"residual PASS ≠ invent Edge Memory GA declared",
-		"Edge Memory GA candidacy only",
+		"residual PASS ≠ invent Connected",
+		"Cloud Memory GA",
 		"dual_write OFF",
 		"book-demo OFF",
-		"founder sign-off only if declaring Edge Memory GA",
-		"candidacy allowed without E10",
+		"Cloud Memory GA · E10 stays Open",
+		"Cloud Memory GA ≠ close E10",
 		"PASS ≠ live APPLY",
 		"residual-check",
 		"session soft ≠ live dogfood",
@@ -101,7 +101,7 @@ func TestRunE10OpenSoftDogfood_SoftPass(t *testing.T) {
 		}
 	}
 	// Must not invent GA declared / dual_write ON / E10 closed / live APPLY green.
-	// Note: honest residual phrases contain "invent Edge Memory GA declared" / "invent E10 closed" — ban invent-claim shapes only.
+	// Note: honest residual phrases contain "invent Connected" / "invent E10 closed" — ban invent-claim shapes only.
 	for _, bad := range []string{
 		"dual_write ON",
 		"Connected: yes",

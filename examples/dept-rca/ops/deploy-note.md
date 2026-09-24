@@ -19,7 +19,7 @@ Human `decision_stub` only. **Never YAML APPLY.**
 
 ## Temporal note
 
-Palace (local overlay, not Memory GA):
+Palace (local overlay, Cloud Memory GA):
 
 ```
 /memory facts-as-of --as-of 2026-06-15T14:08:00Z [--department ops]
@@ -29,4 +29,4 @@ Palace (local overlay, not Memory GA):
 
 ## Honesty
 
-private overlay · dual_write **OFF** · catalog ≠ Connected · CLIENT ≠ PULSE · empty until consume · not Memory GA · **not E-G1** · never YAML APPLY · mesh miss is success
+private overlay · dual_write **OFF** · catalog ≠ Connected · CLIENT ≠ PULSE · empty until consume · Cloud Memory GA · **not E-G1** · never YAML APPLY · mesh miss is success

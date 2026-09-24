@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Residual-honest TTFH demo (V1.5 tracker 5.4).
 #
-# not E-G1 · not Memory GA · dual_write OFF · never invent PULSE/Connected
+# not E-G1 · Cloud Memory GA · dual_write OFF · never invent PULSE/Connected
 # empty until consume · CLIENT ≠ PULSE
 #
 # Always runs `iomesh ttfh --unit` (offline). If IOMESH_ENDPOINT is set, also
@@ -25,7 +25,7 @@ else
   IOMESH=(go run ./cmd/iomesh)
 fi
 
-echo "ttfh-demo: residual-honest · not E-G1 · not Memory GA · dual_write OFF"
+echo "ttfh-demo: residual-honest · not E-G1 · Cloud Memory GA · dual_write OFF"
 echo "ttfh-demo: never invent PULSE/Connected · empty until consume · CLIENT ≠ PULSE"
 echo "ttfh-demo: unit (offline) via ${IOMESH[*]}"
 
@@ -55,7 +55,7 @@ else
 fi
 
 echo
-echo "Walk (one list · mesh not required for R0–R2 · do not invent PULSE / Connected / Memory GA / dual_write ON / APPLY):"
+echo "Walk (one list · mesh not required for R0–R2 · do not invent PULSE / Connected · Cloud Memory GA / dual_write ON / APPLY):"
 echo "  R0  iomesh ttfh --unit                 offline · no mesh · not E-G1"
 echo "  R1  optional iomesh ttfh --live        fail-open probe · EMPTY unless decoded · not overlay PULSE"
 echo "      Optional mesh: IOMESH_ENDPOINT for R1 only. Overlay /dashboard consume is R3, not this."
@@ -63,7 +63,7 @@ echo "  R2  ingest: iomesh memory ingest   # three RCA-shaped turns, source_hint
 echo "      digest cite-both-or-miss: /memory digest --require-sources mesh,private"
 echo "      named miss: no_mesh_pulse · no_private_overlay · conflict · insufficient_signal · linked_pr_miss (SRE private eval · not MTTR) · public_vs_internal (only if public page) · no_memo · crm_only_restatement"
 echo "      patterns (Beta): /memory patterns [--limit N]   # empty ≠ invent · never APPLY"
-echo "      facts-as-of: /memory facts-as-of --as-of <RFC3339>   # palace SoT · not Memory GA"
+echo "      facts-as-of: /memory facts-as-of --as-of <RFC3339>   # palace SoT · Cloud Memory GA"
 echo "  R3  /dashboard consume                 entitled overlay PULSE (parked · required for E-G1)"
 echo "  R4  after PULSE (optional): iomesh memory pull   # mesh → local palace · dual_write OFF · pull ≠ invent Connected"
 

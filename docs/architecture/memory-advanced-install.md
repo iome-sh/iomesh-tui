@@ -5,7 +5,7 @@
 **Product host:** [`iomesh-memory-mcp`](https://github.com/iome-sh/iomesh-memory-mcp)  
 **Kernel:** [`github.com/iome-sh/memory`](https://github.com/iome-sh/memory)
 
-This guide layers **requirements that improve Memory quality** for the TUI path. It does **not** invent Memory GA, freemium hosted palace, or dual_write ON.
+This guide layers **requirements that improve Memory quality** for the TUI path. Cloud Memory is GA. It does **not** invent Connected, a freemium hosted palace, or dual_write ON.
 
 ---
 
@@ -51,7 +51,7 @@ iomesh-memory-mcp \
   -http-path /mcp
 
 curl -fsS http://127.0.0.1:8080/healthz
-# dual_write=off · not_memory_ga=true · embeddings=hash · qdrant=off
+# dual_write=off · embeddings=hash · qdrant=off · residual not_memory_ga is not a product stamp · Cloud Memory GA
 ```
 
 **Docker / Podman (product compose):**
@@ -159,7 +159,7 @@ docker compose up --build
 ```
 
 **Requirements:** disk for model · CPU (or ORT/CUDA residual per kernel docs) · more RAM than hash path.  
-**Notes:** ONNX ≠ Memory GA · dual_write OFF · Qdrant still off for lean host.
+**Notes:** ONNX · Cloud Memory GA · dual_write OFF · Qdrant still off for lean host.
 
 ---
 
@@ -219,5 +219,5 @@ Do **not** claim hosted multi-tenant Qdrant palace or freemium cloud Memory from
 - Auto-provision Memory on signup  
 - Require Qdrant for TUI Memory  
 - dual_write ON as primary path  
-- Invent Memory GA / freemium hosted palace  
+- Invent Connected / freemium hosted palace  
 - Claim lean host uses Qdrant when `qdrant=off`

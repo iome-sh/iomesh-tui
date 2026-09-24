@@ -234,7 +234,7 @@ type MemoryRetrieveOptions struct {
 
 // MemoryRelatedOptions are request fields for sync POST /v1|/v5/memory/related (s1135).
 // Multi-hop lite associative recall over entity graph + entry entity tags.
-// At least one of SeedEntity or Query is required. Not full graph RAG; not Memory GA.
+// At least one of SeedEntity or Query is required. Not full graph RAG; Cloud Memory GA.
 // Hop ranking is path-aware lite (PreferShorterHops); dual_write OFF by default.
 // Parity with peer SDK RetrieveMemoryRelated / platform MCP memory_related (mesh s1277).
 type MemoryRelatedOptions struct {
@@ -365,7 +365,7 @@ func (c *Client) RetrieveMemoryWithOptions(ctx context.Context, tenantID string,
 // Base URL: cfg.MemoryEndpoint when set (stage warm sidecar), else mesh Endpoint.
 // Empty hits are a successful 200 with memories=[]. Optional hop_distance on each hit.
 // Fail-open callers treat transport/404 as fallback to MCP memory_related.
-// Not full graph RAG; not product Memory GA; dual_write independent/OFF by default.
+// Not full graph RAG; Cloud Memory GA; dual_write independent/OFF by default.
 // Hop ranking path-aware lite: PreferShorterHops omit/nil = platform default true (s1067/s1277).
 func (c *Client) RetrieveMemoryRelated(ctx context.Context, tenantID string, opts MemoryRelatedOptions) (*MemoryRetrieveResult, error) {
 	if c == nil || !c.SyncMemoryReady() {
@@ -470,8 +470,8 @@ func (c *Client) RetrieveMemoryRelated(ctx context.Context, tenantID string, opt
 // MemoryOpsDigestOptions are request fields for sync POST /v1|/v5/memory/ops_digest (s1200).
 // Parity with mesh s1198 HTTP / MCP ops_digest_export (s1197) and peer SDK ExportOpsDigest (s1199).
 // Window defaults to day; Horizon defaults to ops when empty.
-// Honesty: ops GA-path framing · knowledge/analytical Beta · never invent GA ·
-// dual_write OFF · book-demo OFF · not product Memory GA · not full graph RAG.
+// Honesty: Cloud Memory GA · knowledge/analytical Beta  ·
+// dual_write OFF · book-demo OFF · Cloud Memory GA · not full graph RAG.
 type MemoryOpsDigestOptions struct {
 	Window  string // day|week (default day)
 	Horizon string // ops|knowledge|analytical|all (default ops)
@@ -923,8 +923,8 @@ func decodeDigestReceiptList(v any) []MemoryOpsDigestReceipt {
 // Base URL: cfg.MemoryEndpoint when set (stage warm sidecar), else mesh Endpoint.
 // Empty patterns/receipts are a successful 200 with [].
 // Fail-open callers treat transport/404 as fallback to MCP ops_digest_export.
-// Honesty: ops GA-path · knowledge/analytical Beta · never invent GA · dual_write OFF ·
-// not product Memory GA · not full graph RAG. Human owns irreversible decisions.
+// Honesty: Cloud Memory GA · knowledge/analytical Beta  ·  dual_write OFF ·
+// Cloud Memory GA · not full graph RAG. Human owns irreversible decisions.
 func (c *Client) ExportOpsDigest(ctx context.Context, tenantID string, opts MemoryOpsDigestOptions) (*MemoryOpsDigestResult, error) {
 	if c == nil || !c.SyncMemoryReady() {
 		return nil, fmt.Errorf("iomesh: sync memory not configured (mesh endpoint or memory sidecar)")

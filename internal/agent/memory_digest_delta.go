@@ -13,7 +13,7 @@ import (
 //   - source=external never satisfies require-sources mesh,private.
 //   - External color is a third labeled pane, never the heartbeat.
 //   - First-party consume remains the only path that fills mesh citations.
-//   - dual_write OFF · not Memory GA · do not invent an external demand-feed connector.
+//   - dual_write OFF · Cloud Memory GA · do not invent an external demand-feed connector.
 
 const (
 	digestExternalColorPane = "external color"

@@ -262,7 +262,7 @@ type MemorySection struct {
 	PullMaxWaitMS int    `toml:"pull_max_wait_ms"` // default 2000
 	// PullContinuous opt-in in-session continuous memory pull on agent Runtime (s1530 P5).
 	// Default OFF. Requires pull_consumer. Env: IOMESH_MEMORY_PULL_CONTINUOUS.
-	// pull running ≠ invent install green / Ops Pack GA · dual_write OFF · not Memory GA.
+	// pull running ≠ invent install green / Ops Pack GA · dual_write OFF · Cloud Memory GA.
 	PullContinuous bool `toml:"pull_continuous"`
 	// PullRole optional X-IOMesh-Role on mesh auth (operator|admin|agent|auditor|viewer|memory|custom).
 	// Fail-open empty → omit header. Beta federated ACL (s675/s687); not full IdP RBAC.
@@ -273,7 +273,7 @@ type MemorySection struct {
 	PullAllowSuffix string `toml:"pull_allow_suffix"`
 	// AnalyzeContinuous opt-in in-session analyze ticks on agent Runtime (s1534 P6).
 	// Default OFF. Env: IOMESH_MEMORY_ANALYZE_CONTINUOUS.
-	// analyze tick ≠ invent Connected / Memory GA · dual_write OFF · not Memory GA.
+	// analyze tick ≠ invent Connected · dual_write OFF · Cloud Memory GA.
 	AnalyzeContinuous bool `toml:"analyze_continuous"`
 	// AnalyzeIntervalSec tick period seconds (default 0 → treat as 300; Runtime floors at 30).
 	// Env: IOMESH_MEMORY_ANALYZE_INTERVAL_SEC.

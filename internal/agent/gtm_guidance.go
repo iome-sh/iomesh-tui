@@ -5,7 +5,7 @@ import "strings"
 // GtmDraftOnlyAgentGuidanceNote residual-honest system note (s1347).
 // Injected on AttachSkills when the skills catalog attaches (builtin always present
 // when skills enabled). Molds MemoryAdvancedAgentGuidanceNote / integrations note.
-// Does not invent auto-send, suite ops GA, dual_write ON, or Memory GA.
+// Does not invent auto-send, suite ops GA, dual_write ON, · Cloud Memory GA.
 func GtmDraftOnlyAgentGuidanceNote() string {
 	return strings.TrimSpace(`gtm draft-only agent (residual-honest · s1347 / skill s1341):
 Drafts and plans only — no auto-send · no auto-publish · human publish · human CRM commercial.

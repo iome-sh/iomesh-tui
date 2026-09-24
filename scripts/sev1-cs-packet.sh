@@ -2,7 +2,7 @@
 # V2-D Sev-1 CS packet overlay (PD-HMAC-5xx). Copy/code overlay — CS sitting stays unchecked.
 #
 # This overlay is not E-G1. leftover_is_bind OPEN.
-# dual_write OFF · not Memory GA · catalog ≠ Connected · catalog ≠ heartbeat
+# dual_write OFF · Cloud Memory GA · catalog ≠ Connected · catalog ≠ heartbeat
 # EMPTY until consume · CLIENT ≠ PULSE · overlay does not GET CRM
 # --live is not overlay PULSE (not this overlay).
 # Zendesk pulse does not exist · V2-F parked · D5b/D6 parked · V2 ≠ E-G1
@@ -82,7 +82,7 @@ else
   IOMESH=(go run ./cmd/iomesh)
 fi
 
-echo "sev1-cs-packet: V2-D PD-HMAC-5xx · not E-G1 · leftover_is_bind OPEN · not Memory GA"
+echo "sev1-cs-packet: V2-D PD-HMAC-5xx · not E-G1 · leftover_is_bind OPEN · Cloud Memory GA"
 echo "sev1-cs-packet: dual_write OFF · catalog ≠ Connected · catalog ≠ heartbeat · EMPTY until consume · CLIENT ≠ PULSE"
 echo "sev1-cs-packet: overlay does not GET CRM · never mesh stamp · sev1-packet.md in ${KIT}"
 echo "sev1-cs-packet: --live is not overlay PULSE · CS sitting stays unchecked"
@@ -111,6 +111,6 @@ echo "  digest miss ≠ known · ACK via /dashboard ack (local ritual · no send
 echo
 echo "heartbeat vs catalog:"
 echo "  catalog ≠ Connected · catalog ≠ heartbeat · EMPTY until consume · CLIENT ≠ PULSE"
-echo "  this overlay is not E-G1 · leftover_is_bind OPEN · dual_write OFF · not Memory GA"
+echo "  this overlay is not E-G1 · leftover_is_bind OPEN · dual_write OFF · Cloud Memory GA"
 
 exit 0

@@ -42,7 +42,7 @@ type MemoryConfig struct {
 	// RecallSessionSeq optional session_seq lower-bound filter for temporal recall; 0 omits.
 	RecallSessionSeq int
 	// RecallCacheTTLMS short-TTL client-side sync RetrieveMemory reuse (s1069).
-	// Default 3000; 0 disables. Fail-open process-local only — not product Memory GA.
+	// Default 3000; 0 disables. Fail-open process-local only — Cloud Memory GA.
 	// Key includes tenant + session + query + limit + since/until.
 	RecallCacheTTLMS int
 	// RelatedMaxHops default BFS hops for opt-in multi-hop related recall (s1135).
@@ -394,7 +394,7 @@ func (rt *Runtime) MemoryRecallWithOpts(ctx context.Context, query string, opts 
 // Zero MaxHops falls back to MemoryConfig.RelatedMaxHops (default 2); when that is
 // also 0, hops default to 2 for operator convenience. Zero Limit uses config Limit.
 // PreferShorterHops: omit/nil = kernel default true (s1067/s1277); false = legacy seed-first.
-// Multi-hop lite ≠ full graph RAG · not Memory GA · dual_write OFF · hop ranking path-aware lite.
+// Multi-hop lite ≠ full graph RAG · Cloud Memory GA · dual_write OFF · hop ranking path-aware lite.
 type MemoryRelatedOpts struct {
 	MaxHops           int
 	Limit             int
@@ -408,7 +408,7 @@ type MemoryRelatedOpts struct {
 // digest must cite each required source via receipt source_hint, provenance, or
 // tags, or an explicit miss + receipt-window reason is printed.
 // Catalog/grant hints never satisfy mesh or private.
-// dual_write stays OFF · not hosted Memory GA · local palace on disk.
+// dual_write stays OFF · Cloud Memory GA · local palace on disk.
 type MemoryOpsDigestOpts struct {
 	Window         string // day|week
 	Horizon        string // ops|knowledge|analytical|all
@@ -633,8 +633,8 @@ func applyRequireSources(text string, res *iomesh.MemoryOpsDigestResult, require
 // When RequireSources is set (#373), prefixes an explicit cite-both ok or miss
 // line from receipt source_hint (catalog/grant never satisfy mesh|private).
 // Does NOT run on default auto-recall (slash/CLI opt-in only).
-// Honesty: ops GA-path · knowledge/analytical Beta · never invent GA · dual_write OFF ·
-// not product Memory GA · not full graph RAG. Human owns irreversible decisions.
+// Honesty: Cloud Memory GA · knowledge/analytical Beta  ·  dual_write OFF ·
+// Cloud Memory GA · not full graph RAG. Human owns irreversible decisions.
 // #369: insufficient-signal allowed · rate claims need n of N + window · receipts=pointers+hashes ·
 // catalog list ≠ consume.
 func (rt *Runtime) MemoryOpsDigest(ctx context.Context, opts ...MemoryOpsDigestOpts) (string, error) {
@@ -854,12 +854,10 @@ func formatOpsDigest(res *iomesh.MemoryOpsDigestResult, maxBytes int) string {
 		}
 	}
 
-	// Honesty line — residual framing pin (never invent GA · dual_write OFF · catalog ≠ consume).
+	// Honesty line — Cloud Memory is GA. Wire ops_pulse=ga_path is a host enum,
+	// not a buyer stance that Memory is pre-GA. dual_write OFF · catalog ≠ consume.
 	h := res.Honesty
-	opsPulse := h.OpsPulse
-	if opsPulse == "" {
-		opsPulse = "ga_path"
-	}
+	opsPulse := displayOpsPulse(h.OpsPulse)
 	know := h.Knowledge
 	if know == "" {
 		know = "beta"
@@ -877,13 +875,25 @@ func formatOpsDigest(res *iomesh.MemoryOpsDigestResult, maxBytes int) string {
 	if !neverInvent && h.OpsPulse == "" && h.Knowledge == "" {
 		neverInvent = true
 	}
-	fmt.Fprintf(&b, "honesty: ops=%s knowledge=%s analytical=%s never_invent_ga=%v dual_write=%s · not full graph RAG · %s",
+	fmt.Fprintf(&b, "honesty: ops=%s knowledge=%s analytical=%s never_invent_ga=%v dual_write=%s · Cloud Memory GA · not full graph RAG · %s",
 		opsPulse, know, anal, neverInvent, dw, digestHonestyExtraPin)
 	if note := strings.TrimSpace(h.Note); note != "" {
 		fmt.Fprintf(&b, "\n  note: %s", note)
 	}
 	out := b.String()
 	return truncateBytes(out, maxBytes)
+}
+
+// displayOpsPulse maps the digest wire enum onto buyer-facing honesty.
+// Empty and ops_pulse=ga_path display as cloud_memory_ga. The JSON field
+// stays the host value; it is not a product stamp that Cloud Memory is pre-GA.
+func displayOpsPulse(raw string) string {
+	switch strings.TrimSpace(raw) {
+	case "", "ga_path":
+		return "cloud_memory_ga"
+	default:
+		return strings.TrimSpace(raw)
+	}
 }
 
 // formatOpsDigestJSON attempts to parse MCP ops_digest_export JSON into the same
@@ -1033,7 +1043,7 @@ func looksLikeJSONObject(raw json.RawMessage) bool {
 //
 // MCP-first: platform ships MCP tool memory_facts_as_of; there is no lean HTTP
 // POST /v1|/v5/memory/facts_as_of route today — do not invent one.
-// Honesty: bi-temporal lite · not full dual-clock Graphiti · not Memory GA · dual_write OFF.
+// Honesty: bi-temporal lite · not full dual-clock Graphiti · Cloud Memory GA · dual_write OFF.
 type MemoryFactsAsOfOpts struct {
 	AsOf      string // required RFC3339 validity instant
 	Entity    string // optional entity filter
@@ -1047,7 +1057,7 @@ type MemoryFactsAsOfOpts struct {
 }
 
 // factsAsOfHonestyFooter is the residual-honest pin for facts-as-of output.
-// Locked: bi-temporal lite · not full dual-clock Graphiti · not Memory GA · dual_write OFF.
+// Locked: bi-temporal lite · not full dual-clock Graphiti · Cloud Memory GA · dual_write OFF.
 const factsAsOfHonestyFooter = "honesty: bi-temporal lite · not full dual-clock Graphiti · dual_write OFF"
 
 // memoryFactsAsOfResult is the mesh MCP memory_facts_as_of JSON wire shape.
@@ -1245,7 +1255,7 @@ func formatFactsAsOfJSON(raw string, maxBytes int, department string) string {
 //
 // MCP-first: platform ships MCP tool memory_supersede_entity; do not invent lean HTTP supersede.
 // Honesty: A3 lite · closes valid_until · not NLP contradiction · not full dual-clock Graphiti ·
-// not Memory GA · dual_write OFF · mutating (valid_until close).
+// Cloud Memory GA · dual_write OFF · mutating (valid_until close).
 type MemorySupersedeOpts struct {
 	Entity  string
 	AsOf    string // optional RFC3339; empty = server default now
@@ -1253,7 +1263,7 @@ type MemorySupersedeOpts struct {
 }
 
 // supersedeHonestyFooter is the residual-honest pin for supersede output (s1282).
-// Locked: A3 lite · not NLP contradiction · not full dual-clock Graphiti · not Memory GA ·
+// Locked: A3 lite · not NLP contradiction · not full dual-clock Graphiti · Cloud Memory GA ·
 // dual_write OFF · mutating (valid_until close).
 const supersedeHonestyFooter = "honesty: A3 lite supersede · not NLP contradiction · not full dual-clock Graphiti · dual_write OFF · mutating (valid_until close)"
 
@@ -1268,7 +1278,7 @@ type memorySupersedeResult struct {
 // MemorySupersede closes open validity windows for entity tags (s1282 · mesh A3 lite / s640).
 // Prefers MCP tool memory_supersede_entity on the configured memory server (MCP-first;
 // no lean HTTP supersede invent). Mutating: sets valid_until=as_of for open facts tagged
-// with the entity — NOT NLP contradiction detection; NOT full dual-clock Graphiti; NOT Memory GA.
+// with the entity — NOT NLP contradiction detection; NOT full dual-clock Graphiti; Cloud Memory GA.
 //
 // HITL gate: Confirm must be true or the call is refused residual-honestly (string, not error)
 // without invoking MCP. Offline / tool failure is residual-honest fail-open messaging
@@ -1404,7 +1414,7 @@ func formatSupersedeJSON(raw string) string {
 //
 // MCP-first: platform ships MCP tool memory_patterns_list; do not invent lean HTTP patterns routes.
 // Honesty: ops pulse Beta · suggestive only · not medical diagnosis · not OTel host metrics ·
-// not invent GA window engine · dual_write OFF · not Memory GA · book-demo OFF.
+// Cloud Memory GA · dual_write OFF · Cloud Memory GA · book-demo OFF.
 type MemoryPatternsOpts struct {
 	Limit int
 }
@@ -1414,16 +1424,16 @@ type MemoryPatternsOpts struct {
 //
 // MCP-first: platform ships MCP tool memory_anomalies_list; do not invent lean HTTP anomalies routes.
 // Honesty: ops pulse Beta · suggestive only · not medical diagnosis · not OTel host metrics ·
-// not invent GA window engine · dual_write OFF · not Memory GA · book-demo OFF.
+// Cloud Memory GA · dual_write OFF · Cloud Memory GA · book-demo OFF.
 type MemoryAnomaliesOpts struct {
 	Limit int
 }
 
 // pulseHonestyFooter is the residual-honest pin for patterns/anomalies ops-pulse output (s1287).
 // Locked: ops pulse Beta · suggestive only · not medical diagnosis · not OTel host metrics ·
-// not invent GA window engine · dual_write OFF · not Memory GA.
+// Cloud Memory GA · dual_write OFF · Cloud Memory GA.
 // (s138 T2 · s789 Beta framing; offline analysis; empty ≠ invent patterns/anomalies.)
-const pulseHonestyFooter = "honesty: ops pulse Beta · suggestive only · not medical diagnosis · not OTel host metrics · not invent GA window engine · dual_write OFF"
+const pulseHonestyFooter = "honesty: ops pulse Beta · suggestive only · not medical diagnosis · not OTel host metrics · Cloud Memory GA · dual_write OFF"
 
 // pulseSignal is a defensive wire shape for mesh PatternSignal / AnomalySignal.
 // Typical fields: subject, kind, count, score, summary/note, window — all optional for residual-honest parse.
@@ -1718,7 +1728,7 @@ func formatAnomaliesJSON(raw string, maxBytes int) string {
 //
 // MCP-first: platform ships MCP tool memory_timeline; there is no lean HTTP
 // POST /v1|/v5/memory/timeline route today — do not invent one.
-// Honesty: temporal timeline · filters before limit · not Memory GA · dual_write OFF.
+// Honesty: temporal timeline · filters before limit · Cloud Memory GA · dual_write OFF.
 // Mutating compact: use MemoryTriggerCompact HITL (s1311) — not auto from timeline.
 type MemoryTimelineOpts struct {
 	Since     string // optional RFC3339 inclusive lower bound
@@ -1733,16 +1743,16 @@ type MemoryTimelineOpts struct {
 // Read-only; does NOT run on default auto-recall.
 //
 // MCP-first: platform ships MCP tool memory_compact_status; do not invent lean HTTP.
-// Honesty: Palace tier counts residual · not Memory GA · not auto-compact product · dual_write OFF.
+// Honesty: Palace tier counts residual · Cloud Memory GA · not auto-compact product · dual_write OFF.
 // Mutating compact: use MemoryTriggerCompact HITL (s1311) — not auto from compact-status.
 type MemoryCompactStatusOpts struct{}
 
 // timelineHonestyFooter is the residual-honest pin for timeline output (s1296).
-// Locked: temporal timeline · filters before limit · not Memory GA · dual_write OFF · MCP-first.
+// Locked: temporal timeline · filters before limit · Cloud Memory GA · dual_write OFF · MCP-first.
 const timelineHonestyFooter = "honesty: temporal timeline · filters before limit · dual_write OFF · MCP-first (no lean HTTP timeline invent)"
 
 // compactStatusHonestyFooter is the residual-honest pin for compact-status output (s1296).
-// Locked: Palace tier counts residual · not Memory GA · not auto-compact product · dual_write OFF.
+// Locked: Palace tier counts residual · Cloud Memory GA · not auto-compact product · dual_write OFF.
 const compactStatusHonestyFooter = "honesty: Palace tier counts residual · not auto-compact product · dual_write OFF · MCP-first (no lean HTTP invent)"
 
 // timelineEntry is a defensive wire shape for mesh memory_timeline entries (memoryHit-like).
@@ -1846,7 +1856,7 @@ func (rt *Runtime) MemoryTimeline(ctx context.Context, opts MemoryTimelineOpts) 
 
 // MemoryCompactStatus returns Palace tier counts + last_compaction (s1296 · mesh memory_compact_status).
 // Prefers MCP tool memory_compact_status on the configured memory server (MCP-first;
-// no lean HTTP invent). Read-only residual — not auto-compact product · not Memory GA.
+// no lean HTTP invent). Read-only residual — not auto-compact product · Cloud Memory GA.
 // Offline / tool failure is residual-honest fail-open messaging. Opt-in only — not auto-recall.
 // Does NOT call memory_trigger_compact (mutating RecMem advisory; use MemoryTriggerCompact HITL s1311).
 func (rt *Runtime) MemoryCompactStatus(ctx context.Context, _ MemoryCompactStatusOpts) (string, error) {
@@ -2140,13 +2150,13 @@ func compactStatusString(m map[string]any, keys ...string) (string, bool) {
 //
 // MCP-first: platform ships MCP tool memory_trigger_compact (publishes memory.compact.trigger
 // advisory for RecMem worker). Do not invent lean HTTP trigger. Honesty: RecMem advisory ·
-// not invent compaction green · dual_write OFF · not Memory GA · mutating HITL.
+// not invent compaction green · dual_write OFF · Cloud Memory GA · mutating HITL.
 type MemoryTriggerCompactOpts struct {
 	Confirm bool // must be true to call MCP
 }
 
 // triggerCompactHonestyFooter is the residual-honest pin for trigger-compact output (s1311).
-// Locked: RecMem advisory · not invent compaction green · dual_write OFF · not Memory GA · mutating HITL.
+// Locked: RecMem advisory · not invent compaction green · dual_write OFF · Cloud Memory GA · mutating HITL.
 const triggerCompactHonestyFooter = "honesty: RecMem advisory · not invent compaction green · dual_write OFF · mutating HITL · MCP-first"
 
 // memoryTriggerCompactResult is the mesh MCP memory_trigger_compact JSON wire shape.
@@ -2159,7 +2169,7 @@ type memoryTriggerCompactResult struct {
 // MemoryTriggerCompact publishes a RecMem compaction advisory (s1311 · mesh memory_trigger_compact).
 // Prefers MCP tool memory_trigger_compact on the configured memory server (MCP-first;
 // no lean HTTP invent). Mutating advisory for RecMem worker — NOT auto-compact product green;
-// NOT Memory GA; dual_write OFF.
+// Cloud Memory GA; dual_write OFF.
 //
 // HITL gate: Confirm must be true or the call is refused residual-honestly (string, not error)
 // without invoking MCP. Offline / tool failure is residual-honest fail-open messaging
@@ -2297,7 +2307,7 @@ var advancedMemoryTools = []struct {
 	{"memory_extract_facts", "extract", "HITL structural · not NLP"},
 	{"memory_patterns_list", "patterns", "ops pulse Beta"},
 	{"memory_anomalies_list", "anomalies", "ops pulse Beta"},
-	{"ops_digest_export", "digest", "ops GA-path framing"},
+	{"ops_digest_export", "digest", "Cloud Memory GA"},
 	{"memory_trigger_compact", "trigger-compact", "HITL mutating RecMem advisory"},
 }
 
@@ -2310,7 +2320,7 @@ const advancedStatusHonestyFooter = "honesty: advanced MCP inventory residual ·
 // surfaces: related, facts-as-of, supersede, timeline, compact-status, semantic,
 // ingest-event, extract, patterns, anomalies, ops digest, trigger-compact.
 //
-// Always includes dual_write OFF + not Memory GA + integrations one-liner pointer.
+// Always includes dual_write OFF + Cloud Memory GA + integrations one-liner pointer.
 // Does not call tools (presence probe only) — no invent of tool results.
 func (rt *Runtime) MemoryAdvancedStatus(ctx context.Context) (string, error) {
 	_ = ctx // reserved for future optional live probes; presence-only today
@@ -2358,7 +2368,7 @@ func (rt *Runtime) MemoryAdvancedStatus(ctx context.Context) (string, error) {
 	// 4) Residual pins always
 	b.WriteString("dual_write: OFF (default local-primary honesty)\n")
 	if rt != nil && rt.memory.Enabled && rt.memory.DualWrite {
-		// Config override — still residual; do not invent GA.
+		// Config override — still residual; do not invent a newer pin.
 		b.WriteString("  note: config dual_write=true is optional mesh audit only\n")
 	}
 	b.WriteString("presence ≠ Connected / product green\n")
@@ -2376,7 +2386,7 @@ func (rt *Runtime) MemoryAdvancedStatus(ctx context.Context) (string, error) {
 // Query required. Limit optional (zero → config Limit). Does NOT run on default auto-recall.
 //
 // MCP-first: platform ships MCP tool memory_search_semantic; there is no lean HTTP
-// semantic-search invent. Honesty: tier-4 semantic facts residual · not Memory GA · dual_write OFF.
+// semantic-search invent. Honesty: tier-4 semantic facts residual · Cloud Memory GA · dual_write OFF.
 // Empty facts ≠ invent memories.
 type MemorySemanticOpts struct {
 	Query string
@@ -2388,7 +2398,7 @@ type MemorySemanticOpts struct {
 // This is **not** a conversation turn (use MemoryIngestTurn / /memory ingest for turns).
 //
 // MCP-first: platform ships MCP tool memory_ingest_event (s138 T1 temporal event telemetry).
-// Honesty: s138 T1 temporal event telemetry · not conversation turn · not Memory GA · dual_write OFF.
+// Honesty: s138 T1 temporal event telemetry · not conversation turn · Cloud Memory GA · dual_write OFF.
 // Never invent memory_id when offline / call failed.
 type MemoryIngestEventOpts struct {
 	Subject      string
@@ -2401,11 +2411,11 @@ type MemoryIngestEventOpts struct {
 }
 
 // semanticHonestyFooter is the residual-honest pin for semantic search output (s1301).
-// Locked: tier-4 semantic facts residual · not Memory GA · dual_write OFF · MCP-first.
+// Locked: tier-4 semantic facts residual · Cloud Memory GA · dual_write OFF · MCP-first.
 const semanticHonestyFooter = "honesty: tier-4 semantic facts residual · dual_write OFF · MCP-first (no lean HTTP invent) · empty ≠ invent"
 
 // ingestEventHonestyFooter is the residual-honest pin for ingest-event output (s1301).
-// Locked: s138 T1 temporal event telemetry · not conversation turn · not Memory GA · dual_write OFF · MCP-first.
+// Locked: s138 T1 temporal event telemetry · not conversation turn · Cloud Memory GA · dual_write OFF · MCP-first.
 const ingestEventHonestyFooter = "honesty: s138 T1 temporal event telemetry · not conversation turn · dual_write OFF · MCP-first"
 
 // semanticFact is a defensive wire shape for mesh memory_search_semantic facts.
@@ -2723,7 +2733,7 @@ func formatIngestEventJSON(raw, subject string, maxBytes int) string {
 // to MCP memory_related when sync fails or mesh is unavailable.
 // At least one of seedEntity or query is required.
 // Does NOT run on default auto-recall (honesty: multi-hop lite is slash/CLI opt-in).
-// Not full graph RAG; not product Memory GA; dual_write OFF by default.
+// Not full graph RAG; Cloud Memory GA; dual_write OFF by default.
 // Hop ranking path-aware lite: PreferShorterHops nil = kernel default true (s1067/s1277/s1281).
 func (rt *Runtime) MemoryRelated(ctx context.Context, seedEntity, query string, opts ...MemoryRelatedOpts) (string, error) {
 	if rt == nil || !rt.memory.Enabled {
@@ -2874,7 +2884,7 @@ func formatMemoryHits(hits []iomesh.MemoryHit, maxBytes int) string {
 const memoryExtractFactsTool = "memory_extract_facts"
 
 // extractFactsHonestyFooter is the residual-honest pin for /memory extract.
-// Locked: optional HITL structural extract after persist · not NLP · not Memory GA · dual_write OFF.
+// Locked: optional HITL structural extract after persist · not NLP · Cloud Memory GA · dual_write OFF.
 const extractFactsHonestyFooter = "honesty: optional HITL structural extract after persist · not NLP · dual_write OFF"
 
 // MemoryExtractFacts runs MCP memory_extract_facts for one persisted memory_id.

@@ -420,7 +420,7 @@ func TestFormatRepairPlan_DualPathNextStep(t *testing.T) {
 			t.Fatalf("must pin repair apply ≠ invent Connected:\n%s", text)
 		}
 		if strings.Contains(text, "Memory GA shipped") {
-			t.Fatalf("must not invent Memory GA shipped:\n%s", text)
+			t.Fatalf("must not print Memory GA shipped:\n%s", text)
 		}
 	}
 }

@@ -27,4 +27,4 @@ Ticket **ZD-1001** was created `2026-06-15T14:22:00Z`. This policy (effective 20
 
 ## Honesty
 
-private overlay · dual_write **OFF** · catalog ≠ Connected · CLIENT ≠ PULSE · empty until consume · not Memory GA · **not E-G1** · never YAML APPLY · mesh miss is success
+private overlay · dual_write **OFF** · catalog ≠ Connected · CLIENT ≠ PULSE · empty until consume · Cloud Memory GA · **not E-G1** · never YAML APPLY · mesh miss is success

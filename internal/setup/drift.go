@@ -51,7 +51,7 @@ type DriftReport struct {
 }
 
 // BuildDriftReport compares config intent with a runtime DriftSnapshot (report-only).
-// Never invents Connected / Memory GA / install green.
+// Never invents Connected / install green.
 // Next steps point at guided /setup repair plan · apply --yes (safe steps only).
 func BuildDriftReport(cfg *config.Config, snap DriftSnapshot) DriftReport {
 	rep := DriftReport{

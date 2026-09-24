@@ -97,7 +97,7 @@ For **institutional recall** on the operator box, optional **Memory Ops Pack** /
 - Do **not** auto-send email, auto-tweet, auto-post to LinkedIn/SNS, or unattended schedule.
 - Do **not** invent install green / Connected / INSTALL_STORE APPLY / suite ops GA.
 - Do **not** invent empty-as-none org installs from unavailable residual tools.
-- Do **not** claim dual_write ON, book-demo ON, Memory GA, or Agent Plugins GA.
+- Do **not** claim dual_write ON, book-demo ON, or Agent Plugins GA.
 - Do **not** treat residual PASS as live dogfood publish or live AAA green.
 - Do **not** APPLY connector installs from the agent — portal HITL only.
 - Do **not** invent freemium palace / dual-write audit as product green.

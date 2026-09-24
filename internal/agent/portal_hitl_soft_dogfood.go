@@ -97,8 +97,8 @@ var portalHITLSoftDogfoodNeedles = []string{
 	// Policy locks
 	"dual_write OFF",
 	"book-demo OFF",
-	"Edge Memory GA candidacy only",
-	"residual PASS ≠ invent Edge Memory GA",
+	"Cloud Memory GA",
+	"residual PASS ≠ invent Connected",
 	// Soft / residual honesty
 	"residual PASS ≠ live dogfood",
 	"soft offline ≠ invent Connected",
@@ -131,9 +131,9 @@ func RunPortalHITLSoftDogfood() string {
 	var b strings.Builder
 	b.WriteString("mesh onboard next portal HITL soft offline dogfood (residual-honest · s1562 · no MCP dial · not live dogfood):\n")
 	b.WriteString("  Path: soft offline residual check of portal-hitl board honesty + proven portal path shapes (journey stage 5)\n")
-	b.WriteString("  · never dial MCP · never invent Connected · never invent install APPLY · portal HITL when connect\n")
-	b.WriteString("  · soft offline ≠ invent Connected · residual PASS ≠ live dogfood · session soft ≠ live dogfood · portal HITL still\n")
-	b.WriteString("  · agent MCP cannot write installs · catalog ≠ Connected · template= ≠ install APPLY\n")
+	b.WriteString(" · never dial MCP · never invent Connected · never invent install APPLY · portal HITL when connect\n")
+	b.WriteString(" · soft offline ≠ invent Connected · residual PASS ≠ live dogfood · session soft ≠ live dogfood · portal HITL still\n")
+	b.WriteString(" · agent MCP cannot write installs · catalog ≠ Connected · template= ≠ install APPLY\n")
 	b.WriteString("\n")
 	if pass {
 		b.WriteString("  result: PASS (soft offline residual only)\n")
@@ -147,16 +147,16 @@ func RunPortalHITLSoftDogfood() string {
 	}
 	b.WriteString("\n")
 	b.WriteString("  Proven portal paths checked (static offline):\n")
-	b.WriteString("    · /integrations/{id}\n")
-	b.WriteString("    · /integrations/add?template={id}\n")
-	b.WriteString("    · /integrations\n")
+	b.WriteString(" · /integrations/{id}\n")
+	b.WriteString(" · /integrations/add?template={id}\n")
+	b.WriteString(" · /integrations\n")
 	b.WriteString("  Companion portal surfaces checked (static offline):\n")
-	b.WriteString("    · console.iome.sh/integrations\n")
-	b.WriteString("    · console.iome.sh/settings/agent\n")
+	b.WriteString(" · console.iome.sh/integrations\n")
+	b.WriteString(" · console.iome.sh/settings/agent\n")
 	b.WriteString("  Honesty locks checked: portal_hitl_still · portal HITL when connect · portal HITL still\n")
-	b.WriteString("    · catalog ≠ Connected · template= ≠ install APPLY · agent MCP cannot write installs\n")
-	b.WriteString("    · dual_write OFF · book-demo OFF · Edge Memory GA candidacy only\n")
-	b.WriteString("    · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ live dogfood\n")
+	b.WriteString(" · catalog ≠ Connected · template= ≠ install APPLY · agent MCP cannot write installs\n")
+	b.WriteString(" · dual_write OFF · book-demo OFF · Cloud Memory GA\n")
+	b.WriteString(" · residual PASS ≠ invent Connected · residual PASS ≠ live dogfood\n")
 	b.WriteString("\n")
 	b.WriteString(fmt.Sprintf("  session marker: %s\n", label))
 	b.WriteString("  note: soft offline ≠ invent Connected · residual PASS ≠ live dogfood · session soft ≠ live dogfood · portal HITL still\n")
@@ -165,6 +165,6 @@ func RunPortalHITLSoftDogfood() string {
 	b.WriteString("  slash: /onboard next portal-hitl dogfood (aliases soft|samples|offline|portal-hitl-soft) · bare /onboard next portal-hitl stays board\n")
 	b.WriteString("  companion: /onboard next agentic · /onboard next agentic dogfood · /onboard next journey · /onboard portal mint/copy/probe · /integrations list|plan|status\n")
 	b.WriteString("\n")
-	b.WriteString("Locks: dual_write OFF · book-demo OFF · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · template= ≠ install APPLY · agent MCP cannot write installs · portal HITL when connect · portal HITL still · portal_hitl_still · soft offline ≠ invent Connected · session soft ≠ live dogfood · free eng s1562 · free-floor peer s1564+ mention only")
+	b.WriteString("Locks: dual_write OFF · book-demo OFF · Cloud Memory GA · residual PASS ≠ invent Connected · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · template= ≠ install APPLY · agent MCP cannot write installs · portal HITL when connect · portal HITL still · portal_hitl_still · soft offline ≠ invent Connected · session soft ≠ live dogfood · free eng s1562 · free-floor peer s1564+ mention only")
 	return b.String()
 }

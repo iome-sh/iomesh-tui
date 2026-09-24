@@ -30,7 +30,7 @@ func TestSetupInitNextStepLines_HonestyNeedles(t *testing.T) {
 		t.Fatalf("must not advertise CLI setup reload without honesty:\n%s", out)
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", out)
+		t.Fatalf("must not invent dual_write ON · Cloud Memory GA shipped:\n%s", out)
 	}
 }
 
@@ -91,7 +91,7 @@ func TestSetupPreflightNextStepLines_HonestyNeedles(t *testing.T) {
 		t.Fatalf("must not advertise CLI setup reload without honesty:\n%s", out)
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", out)
+		t.Fatalf("must not invent dual_write ON · Cloud Memory GA shipped:\n%s", out)
 	}
 }
 
@@ -126,7 +126,7 @@ func TestSetupDriftNextStepLines_HonestyNeedles(t *testing.T) {
 		t.Fatalf("must not advertise CLI setup reload without honesty:\n%s", out)
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", out)
+		t.Fatalf("must not invent dual_write ON · Cloud Memory GA shipped:\n%s", out)
 	}
 }
 
@@ -169,7 +169,7 @@ func TestSetupRepairNextStepLines_HonestyNeedles(t *testing.T) {
 		t.Fatalf("must not invent dual_write ON:\n%s", out)
 	}
 	if strings.Contains(out, "Memory GA shipped") {
-		t.Fatalf("must not invent Memory GA shipped:\n%s", out)
+		t.Fatalf("must not print Memory GA shipped:\n%s", out)
 	}
 	// repair apply ≠ invent Connected
 	if !strings.Contains(out, "repair apply ≠ invent Connected") {
@@ -200,7 +200,7 @@ func TestSetupReloadNextStepLines_HonestyNeedles(t *testing.T) {
 		t.Fatalf("must not advertise CLI setup reload without honesty:\n%s", out)
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", out)
+		t.Fatalf("must not invent dual_write ON · Cloud Memory GA shipped:\n%s", out)
 	}
 }
 
@@ -222,7 +222,7 @@ func TestSetupPullNextStepLines_HonestyNeedles(t *testing.T) {
 		}
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", out)
+		t.Fatalf("must not invent dual_write ON · Cloud Memory GA shipped:\n%s", out)
 	}
 }
 
@@ -244,7 +244,7 @@ func TestSetupAnalyzeNextStepLines_HonestyNeedles(t *testing.T) {
 		}
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", out)
+		t.Fatalf("must not invent dual_write ON · Cloud Memory GA shipped:\n%s", out)
 	}
 }
 
@@ -278,7 +278,7 @@ func TestSetupPortalNextStepLines_HonestyNeedles(t *testing.T) {
 		t.Fatalf("must not advertise CLI setup reload without honesty:\n%s", out)
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", out)
+		t.Fatalf("must not invent dual_write ON · Cloud Memory GA shipped:\n%s", out)
 	}
 }
 
@@ -290,8 +290,8 @@ func TestSetupLifecycleAgentGuidanceNote_HonestyNeedles(t *testing.T) {
 	}
 	for _, want := range []string{
 		"dual_write OFF",
-		"Edge Memory GA candidacy only",
-		"residual PASS ≠ invent Edge Memory GA",
+		"Cloud Memory GA",
+		"residual PASS ≠ invent Connected",
 		"Connected",
 		"portal HITL",
 		"setup-lifecycle-agent",
@@ -331,7 +331,7 @@ func TestSetupLifecycleAgentGuidanceNote_HonestyNeedles(t *testing.T) {
 	}
 	// Must not invent product green language.
 	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "dual_write ON") {
-		t.Fatalf("must not invent Memory GA / dual_write ON: %s", out)
+		t.Fatalf("must not invent / dual_write ON: %s", out)
 	}
 	if strings.Contains(out, "Connected shipped") || strings.Contains(out, "INSTALL_STORE green shipped") {
 		t.Fatalf("must not invent Connected/INSTALL_STORE green: %s", out)
@@ -357,7 +357,7 @@ func TestSetupLifecycleHonestyOneLiner(t *testing.T) {
 	s := SetupLifecycleHonestyOneLiner
 	for _, want := range []string{
 		"dual_write OFF",
-		"Edge Memory GA candidacy only",
+		"Cloud Memory GA",
 		"Connected",
 		"iomesh memory pull",
 		"pull_continuous",
@@ -392,8 +392,8 @@ func TestSetupLifecycleFirstRunJourneyOneLiner(t *testing.T) {
 		"Local store",
 		"Analyze",
 		"dual_write OFF",
-		"Edge Memory GA candidacy only",
-		"residual PASS ≠ invent Edge Memory GA",
+		"Cloud Memory GA",
+		"residual PASS ≠ invent Connected",
 		"portal HITL",
 		"host not auto",
 		"no invent TUI portal SSO",
@@ -404,6 +404,6 @@ func TestSetupLifecycleFirstRunJourneyOneLiner(t *testing.T) {
 		}
 	}
 	if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON / Memory GA shipped: %s", s)
+		t.Fatalf("must not invent dual_write ON · Cloud Memory GA shipped: %s", s)
 	}
 }

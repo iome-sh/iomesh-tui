@@ -347,7 +347,7 @@ func TestLoadBuiltin_S1288MemoryAdvancedSkillDogfood(t *testing.T) {
 			t.Fatalf("description missing residual needle %q: %q", want, sk.Description)
 		}
 	}
-	// Description must not invent Memory GA product green.
+	// Description must not invent product green.
 	if strings.Contains(desc, "memory ga green") || strings.Contains(sk.Description, "Memory GA product") {
 		t.Fatalf("description invents Memory GA: %q", sk.Description)
 	}
@@ -684,7 +684,7 @@ func TestLoadBuiltin_S1363MeshAgentOnboardingSkillDogfood(t *testing.T) {
 		"no auto-send",
 		"human publish",
 		"iomesh-memory-mcp", // product host (s1517: residual private sample removed)
-		"package load ≠ Memory GA",
+		"package load ≠ Connected",
 		"freemium palace",
 		"MeshAgentOnboardingNextLanes",
 		// s1377 per-lane drills
@@ -706,7 +706,7 @@ func TestLoadBuiltin_S1363MeshAgentOnboardingSkillDogfood(t *testing.T) {
 		"public product attach",
 		"go install",
 		"no GOPRIVATE",
-		"flip complete residual ≠ invent Memory GA",
+		"Cloud Memory GA · public edge ≠ invent Connected",
 		"mesh optional for pull",
 		"Palace sunset",
 		// s1402 mesh streaming lane
@@ -776,7 +776,7 @@ func TestLoadBuiltin_S1363MeshAgentOnboardingSkillDogfood(t *testing.T) {
 		"E4 client attach",
 		"tools=6",
 		"iomesh mcp --connect",
-		"residual PASS ≠ invent Edge Memory GA declared",
+		"residual PASS ≠ invent Connected",
 		"E10 Open",
 		"tip ≠ invent forever-green product dogfood",
 		"free eng s1566",
@@ -931,7 +931,7 @@ func TestLoadBuiltin_S1363MeshAgentOnboardingSkillDogfood(t *testing.T) {
 		"first-run",
 		"edge_user_journey",
 		"free eng s1558",
-		"Edge Memory GA candidacy only",
+		"Cloud Memory GA",
 		"plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|e4|tool-call|e10|planes|sales|demo|marketing-demo|operator|setup|journey|wizard|status|export|human-gates",
 		// s1413+s1546+s1550+s1574 human-gates honesty board + still-human APPLY soft dogfood
 		"/onboard next human-gates",
@@ -941,8 +941,8 @@ func TestLoadBuiltin_S1363MeshAgentOnboardingSkillDogfood(t *testing.T) {
 		"Slack HMAC punted",
 		"portal HITL when connect",
 		"dual_write OFF",
-		"Edge Memory GA candidacy only",
-		"residual PASS ≠ invent Edge Memory GA",
+		"Cloud Memory GA",
+		"residual PASS ≠ invent Connected",
 		"PASS ≠ invent Connected",
 		"leave ON_SIGNAL unset",
 		"apply-gates",
@@ -1031,7 +1031,7 @@ func TestS1363SkillDescriptionResidualHonest(t *testing.T) {
 		"R3 overlay PULSE",
 		"dual_write OFF",
 		"catalog ≠ Connected",
-		"not Memory GA",
+		"Cloud Memory GA",
 	} {
 		if !strings.Contains(sk.Description, want) {
 			t.Fatalf("description missing one-walk needle %q: %q", want, sk.Description)
@@ -1127,6 +1127,6 @@ func TestLoadBuiltin_S1526SetupLifecycleAgentSkillDogfood(t *testing.T) {
 		t.Fatal("body missing dual_write OFF lock")
 	}
 	if strings.Contains(sk.Body, "Memory GA shipped") {
-		t.Fatalf("must not invent Memory GA shipped in skill body")
+		t.Fatalf("must not print Memory GA shipped in skill body")
 	}
 }

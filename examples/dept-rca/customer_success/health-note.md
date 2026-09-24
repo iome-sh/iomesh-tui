@@ -21,7 +21,7 @@ Account-health snapshot for **ACC-1001** dated **2026-08-15**. Account: `account
 
 The operator question is temporal: **what was the entitled seat count as-of `2026-08-31T18:00:00Z`?** (before the **2026-09-01** renewal window)
 
-Palace (local overlay, not Memory GA):
+Palace (local overlay, Cloud Memory GA):
 
 ```
 /memory facts-as-of --as-of 2026-08-31T18:00:00Z [--department customer_success]
@@ -31,4 +31,4 @@ Do not invent a mesh heartbeat from this snapshot. `/memory digest --require-sou
 
 ## Honesty
 
-private overlay · dual_write **OFF** · catalog ≠ Connected · CLIENT ≠ PULSE · empty until consume · not Memory GA · **not E-G1** · **D5d ≠ E-G1** · never YAML APPLY · mesh miss is success · overlay does not GET CRM/docs
+private overlay · dual_write **OFF** · catalog ≠ Connected · CLIENT ≠ PULSE · empty until consume · Cloud Memory GA · **not E-G1** · **D5d ≠ E-G1** · never YAML APPLY · mesh miss is success · overlay does not GET CRM/docs

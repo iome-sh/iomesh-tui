@@ -1,6 +1,6 @@
 ---
 name: hello-iome
-description: Residual-honest operator welcome and mesh orientation playbook (sample plugin skill; not install APPLY · not Memory GA)
+description: Residual-honest operator welcome and mesh orientation playbook (sample plugin skill; not install APPLY · Cloud Memory GA)
 ---
 
 # Hello IOME (sample plugin skill)
@@ -27,7 +27,7 @@ This skill is a **playbook only** — guidance text the agent may load when plug
 | Do **not** claim | Truth |
 |------------------|--------|
 | Agent Plugins GA | Sample package + client candidacy only |
-| Memory GA | Orthogonal surface; this skill is not memory product green |
+| Memory GA | Orthogonal surface; orthogonal to this sample · Cloud Memory GA |
 | dual_write ON | dual_write remains **OFF** (unchanged default) |
 | install APPLY / Connected green | Discover/load ≠ install success |
 | Auto-send outbound | Skills are playbooks only; no auto-send |
