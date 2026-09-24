@@ -544,7 +544,8 @@ func digestCiteBothMissClass(missing []string) string {
 // private (#370). A miss names the newest-first receipt window when mesh/private
 // is absent from the fetched set. V2-A appends miss_class= on the miss branch
 // only (never the ok line — ok must not contain the substring "miss").
-// First-party consume remains the only path that fills mesh citations.
+// A missing class may be filled from a stamped turn already on the explicit
+// tenant palace (any age). Citations are read from those turns, not invented.
 // dual_write OFF pin always.
 func FormatRequireSourcesCheck(res *iomesh.MemoryOpsDigestResult, required []string) string {
 	if len(required) == 0 {
@@ -726,7 +727,7 @@ func (rt *Runtime) MemoryOpsDigest(ctx context.Context, opts ...MemoryOpsDigestO
 	}
 
 	if len(required) > 0 {
-		// Day window can cite only fresh private while mesh sits on the palace (#460).
+		// Day/week export can cite only fresh private while stamped mesh sits on the palace (#460).
 		rt.supplementCiteBothReceipts(ctx, res, required, window, horizon, fetchLimit, strings.TrimSpace(call.AsOf))
 	}
 	finalizeDigestForRequireSources(res, required, fetchLimit, displayLimit)
