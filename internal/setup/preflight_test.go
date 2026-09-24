@@ -88,6 +88,18 @@ dual_write = false
 	if strings.Contains(text, "not Memory GA") || strings.Contains(text, "GA-path") {
 		t.Fatalf("preflight must not deny Cloud Memory GA:\n%s", text)
 	}
+	for _, want := range []string{
+		"GAP / Partial",
+		"US-CM-JOURNEY-05",
+		"not an Exists Connected bind",
+		"One write path — not mirrored to a second store.",
+		"B5 · TUI host bind",
+		"Do not invent a Connected host URL",
+	} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("preflight missing %q:\n%s", want, text)
+		}
+	}
 }
 
 func TestPreflight_MeshOrgEmptyNote(t *testing.T) {

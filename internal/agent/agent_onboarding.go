@@ -104,7 +104,7 @@ func MeshAgentOnboardingStartHere() string {
         Optional mesh: IOMESH_ENDPOINT for R1 only. Overlay /dashboard consume is R3, not this.
     R2  /memory ingest ×3 (source_hint=private)
         /memory digest --require-sources mesh,private — cite-both or explicit miss (miss is success)
-        named miss: ` + ModeADigestNamedMissVocab + `
+        named miss: `+ModeADigestNamedMissVocab+`
         /memory patterns (Beta) · /memory facts-as-of --as-of <RFC3339> [--department support]
         Miss ACK: /dashboard ack (local ritual · no send/pay/ship)
     R3  /dashboard consume                 entitled overlay PULSE (parked · required for E-G1)
@@ -112,7 +112,7 @@ func MeshAgentOnboardingStartHere() string {
     R4  iomesh memory pull                 after PULSE · dual_write OFF · pull ≠ Connected
 CLI: iomesh setup preflight · iomesh memory ingest · iomesh mesh smoke (needs endpoint)
 operator: /onboard next ttfh  (aliases time-to-first-heartbeat|cite-both|rollout) · never invent Connected · dual_write OFF · catalog ≠ Connected · Cloud Memory GA
-empty until consume · CLIENT ≠ PULSE · Mesh consume is optional for R0–R2. Overlay /dashboard PULSE (R3) is required for E-G1 and stays parked.`)
+empty until consume · CLIENT ≠ PULSE · Mesh consume is optional for R0–R2. Overlay /dashboard PULSE (R3) is required for E-G1 and stays parked.`) + "\n\n" + CloudMemoryBindGapText()
 }
 
 func MeshAgentOnboardingGuidanceNote() string {
@@ -277,7 +277,7 @@ func MeshAgentOnboardingNextTTFHLane() string {
   ` + ModeAPinHonestyLine() + `
 
 Locks: dual_write OFF · catalog ≠ Connected · Cloud Memory GA · never invent Connected · knowledge Beta empty · eval template · empty until consume · not live APPLY · PULSE only after ≥1 decoded broker message · CLIENT ≠ PULSE · miss is success · no send/pay/ship
-  ` + TTFHStreamsAsDomainPortsLine())
+  ` + TTFHStreamsAsDomainPortsLine() + "\n\n" + CloudMemoryBindGapText())
 }
 
 // MeshAgentOnboardingNextPluginsLane residual-honest plugins dogfood drill for /onboard next plugins (s1377+s1392).
@@ -384,7 +384,7 @@ func MeshAgentOnboardingNextMemoryLane() string {
   Companion: /onboard next e4 (s1566 · journey stage 6 E4 client-attach soft dogfood residual) · /onboard next e4 dogfood · /onboard next tool-call (s1578 · deeper tool-call residual after attach) · /onboard next tool-call dogfood · /onboard next memory-pull (optional Ops Pack pull path only when mesh configured · s1695 · not first-run required) · /onboard next operator · docs/architecture/memory-mcp.md Edge OSS Option A · public product attach (s1478) · E4 client attach (s1508) · docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md
   Back: /onboard next · /memory status · portal Agent/MCP https://console.iome.sh/settings/agent
 
-Locks: dual_write OFF · book-demo OFF · Palace sunset · residual PASS ≠ live dogfood · offline dogfood tip ≠ invent live dogfood as green · PASS ≠ live APPLY · PASS ≠ invent full platform sidecar parity · Cloud Memory GA · public edge ≠ invent Connected · Cloud Memory GA · public OSS ≠ invent Connected · Cloud Memory GA · residual PASS ≠ invent Connected · E10 Open · tip ≠ invent forever-green product dogfood · no GOPRIVATE · go install · package load ≠ Connected · ≠ freemium palace · not freemium hosted palace · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · rates ~$88/$119 optional · Memory Ops Pack optional · Ops Pack not first-run required · OSS first-run complete without mesh · mesh ≠ memory · mesh optional · mesh optional for pull · Ops Pack ≠ GPU fleet · TUI OSS · iomesh-memory-mcp · control-plane / broker private · control-plane still private · s1517 product-only memory sample (iomesh-memory-mcp) · companion E4 soft residual s1566 · deeper tool-call soft residual s1578 · free eng s1695`)
+Locks: dual_write OFF · book-demo OFF · Palace sunset · residual PASS ≠ live dogfood · offline dogfood tip ≠ invent live dogfood as green · PASS ≠ live APPLY · PASS ≠ invent full platform sidecar parity · Cloud Memory GA · public edge ≠ invent Connected · Cloud Memory GA · public OSS ≠ invent Connected · Cloud Memory GA · residual PASS ≠ invent Connected · E10 Open · tip ≠ invent forever-green product dogfood · no GOPRIVATE · go install · package load ≠ Connected · ≠ freemium palace · not freemium hosted palace · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · rates ~$88/$119 optional · Memory Ops Pack optional · Ops Pack not first-run required · OSS first-run complete without mesh · mesh ≠ memory · mesh optional · mesh optional for pull · Ops Pack ≠ GPU fleet · TUI OSS · iomesh-memory-mcp · control-plane / broker private · control-plane still private · s1517 product-only memory sample (iomesh-memory-mcp) · companion E4 soft residual s1566 · deeper tool-call soft residual s1578 · free eng s1695`) + "\n\n" + CloudMemoryBindGapText()
 }
 
 // MeshAgentOnboardingNextMeshLane residual-honest mesh streaming lane for /onboard next mesh (s1402+s2057).

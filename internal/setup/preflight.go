@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/iome-sh/iomesh-tui/internal/config"
+	"github.com/iome-sh/iomesh-tui/internal/honesty"
 )
 
 // PreflightReport is always-emit JSON for `iomesh setup preflight --json`.
@@ -259,6 +260,7 @@ func FormatPreflightText(r *PreflightReport) string {
 	}
 	fmt.Fprintf(&b, "  mesh.enabled=%v endpoint=%q org=%q\n", r.MeshEnabled, r.MeshEndpoint, r.MeshOrg)
 	fmt.Fprintf(&b, "  honesty: %s\n", r.Honesty)
+	fmt.Fprintf(&b, "%s\n", honesty.HostBindGap())
 	for _, n := range r.Notes {
 		fmt.Fprintf(&b, "  note: %s\n", n)
 	}

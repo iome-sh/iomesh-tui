@@ -48,6 +48,12 @@ func TestMeshAgentOnboardingStartHere_LeanPath(t *testing.T) {
 		"/onboard next ttfh",
 		"never invent Connected",
 		"dual_write OFF",
+		"GAP / Partial",
+		"US-CM-JOURNEY-05",
+		"not an Exists Connected bind",
+		"One write path — not mirrored to a second store.",
+		"workspace-as-principal",
+		"Entitlement ≠ live bind",
 		"catalog ≠ Connected",
 		"Cloud Memory GA",
 	} {

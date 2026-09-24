@@ -80,6 +80,7 @@ Any other **OpenAI-compatible** chat endpoint can be added under `[model.<name>]
 | Topic | Summary | Doc |
 |-------|---------|-----|
 | Local memory (MCP host + kernel) | Install/attach `iomesh-memory-mcp` | [memory-mcp.md](docs/architecture/memory-mcp.md) |
+| Cloud Memory palace bind | Gap / Partial · entitled path · no live host URL | [memory-mcp.md](docs/architecture/memory-mcp.md#cloud-memory-palace-bind) |
 | Setup lifecycle | Agent-native `/setup` init · preflight · reload · opt-in pull/analyze | [setup-lifecycle.md](docs/architecture/setup-lifecycle.md) |
 | User journey | Signup (optional) → TUI → keys → setup → connectors (optional) → local store → analyze | [edge-user-journey.md](docs/architecture/edge-user-journey.md) |
 | Usage / demo walkthrough | Operator example end-to-end | [memory-edge-usage-demo.md](docs/architecture/memory-edge-usage-demo.md) |
@@ -144,6 +145,14 @@ The first-run walk **is** R0–R4 (R1 `iomesh ttfh --live` fail-open ≠ R3 over
 7. Miss ACK: `/dashboard ack` (local ritual · no send/pay/ship). Map: `/onboard next ttfh` (alias `rollout`).
 
 Residual-honest TTFH demo (R0 then optional R1; not E-G1): `scripts/ttfh-demo.sh`. Mesh is optional for `--unit` / palace (R0–R2); overlay `/dashboard` PULSE (R3) is required for E-G1 and stays parked. Support department RCA kit (private overlay): `iomesh memory ingest-dir --yes examples/dept-rca/support` (or `--dry-run`; `--department support --scenario support`) · 128×64 KiB · `source_hint=private` (never mesh) · mesh miss is success · not E-G1 · Cloud Memory GA. Ops department RCA kit (private overlay, one palace with support): `iomesh memory ingest-dir --yes examples/dept-rca/ops` (or `--dry-run`; `--department ops`) · one-tenant two-kit composition · ≠ two-org · HMAC 200 is not a consume receipt · not E-G1 · Cloud Memory GA · D5 ≠ E-G1. Sales department RCA kit (private overlay, one palace with support+ops): `iomesh memory ingest-dir --yes examples/dept-rca/sales` (or `--dry-run`; `--department sales`) · one-tenant composition · ≠ two-org · facts-as-of before price change 2026-03-01 · not a Salesforce Connected install · mesh miss is success · not E-G1 · Cloud Memory GA · D5c ≠ E-G1. Customer success department RCA kit (private overlay, one palace with support+ops+sales): `iomesh memory ingest-dir --yes examples/dept-rca/customer_success` (or `--dry-run`; `--department customer_success`) · one-tenant composition · ≠ two-org · facts-as-of before renewal 2026-09-01 · not a Salesforce Connected install · mesh miss is success · not E-G1 · Cloud Memory GA · D5d ≠ E-G1. V2-C RevOps sitting recipe (`support.theme`, copy/code; laptop sitting unchecked): living memo in the CS kit + `scripts/revops-sitting.sh` (ingest-dir `--department customer_success` · digest cite-both or named miss · `/dashboard ack` · `--live` is not overlay PULSE · not E-G1 · Cloud Memory GA). V2-D Sev-1 CS packet overlay (`PD-HMAC-5xx`, copy/code; CS sitting unchecked): `sev1-packet.md` in the CS kit + `scripts/sev1-cs-packet.sh` (ingest-dir `--department customer_success --source-hint private` · digest cite-both or named miss · `/dashboard ack` · `--live` is not overlay PULSE · Zendesk optional · pulse does not exist · not E-G1 · Cloud Memory GA).
+
+### Cloud Memory palace bind (Gap / Partial)
+
+Cloud Memory GA is optional beside TTFH. TTFH/heartbeat is the system of record. Cloud Memory is not required for heartbeat. Local private notes stay on disk. **One write path — not mirrored to a second store.** Local and Cloud Memory stay on separate paths. Empty until consume. Catalog ≠ Connected.
+
+Console entitlement is the primary attach (workspace-as-principal). Entitlement ≠ live bind. Binding this TUI to a remote Cloud Memory palace (B5), and binding an SDK client to a palace URL (C4), are **Gap / Partial** until QA evidence (US-CM-JOURNEY-05). Do not invent a Connected host URL. This repository does not ship an Exists Connected bind. Multi-human palace read/write stays Gap.
+
+`/memory`, `/memory digest`, `/memory status`, and `/onboard next memory` print the same stamp. Detail: [memory-mcp.md](docs/architecture/memory-mcp.md#cloud-memory-palace-bind).
 
 Optional: copy [`.env.example`](.env.example) for local env vars (iomesh reads the **process environment**; it does not auto-load `.env` files yet). Copy [`configs/config.example.toml`](configs/config.example.toml) to `~/.iomesh/config.toml` to customize.
 

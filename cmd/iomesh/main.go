@@ -569,6 +569,7 @@ Notes: memory dual-write defaults off · secrets via env refs only ·
   portal HITL for OAuth/install · setup PASS ≠ invent Connected / INSTALL_STORE green ·
   package wire ≠ Connected.
   Continuous pull: iomesh memory pull (in-session /setup pull). Analyze: /memory digest.
+  `+agent.CloudMemoryBindGapText()+`
 `)
 }
 
@@ -3322,7 +3323,7 @@ Always prints the TTFH walk and EMPTY dashboard snapshot. dual_write OFF.
 Never invents Connected / PULSE / live APPLY. catalog ≠ Connected.
 R1 --live ≠ R3 overlay PULSE (parked).
 
-`+agent.TTFHPhasedRolloutLines()+"\n"+agent.TTFHStreamsAsDomainPortsLine()+"\n")
+`+agent.TTFHPhasedRolloutLines()+"\n"+agent.TTFHStreamsAsDomainPortsLine()+"\n"+agent.CloudMemoryBindDigestChrome()+"\n")
 }
 
 func newLogger(verbose bool) *slog.Logger {
@@ -3381,6 +3382,7 @@ Agent serve (WebSocket) flags:
 `+agent.TTFHPhasedRolloutLines()+`
 `+agent.TTFHStreamsAsDomainPortsLine()+`
 Honesty: dual_write OFF · catalog ≠ Connected · Cloud Memory GA · never invent Connected · knowledge Beta empty · eval template · not live APPLY
+`+agent.CloudMemoryBindDigestChrome()+`
 
 Default model cascade: deepseek-v4-flash → deepseek-v4-pro → grok-4.5
   Optional Google: gemini-2.5-flash|pro (GEMINI_API_KEY) · vertex-gemini-2.5-* (VERTEX_API_KEY + GOOGLE_CLOUD_PROJECT)
