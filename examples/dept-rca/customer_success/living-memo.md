@@ -23,7 +23,7 @@ Operators seeing unused-seat refund tickets (ZD-1001 shape) cluster as a **suppo
 
 Account **ACC-1001** is the overlay pointer only. Entitled seats stay a **count** in `renewal.md` (two dated figures with sales list-seat; do not collapse to one percentage). This memo does not replace the health snapshot and does not GET Salesforce/CRM.
 
-Palace (local overlay, not Memory GA):
+Palace (local overlay, Cloud Memory GA):
 
 ```
 iomesh memory ingest-dir --yes --department customer_success examples/dept-rca/customer_success
@@ -34,4 +34,4 @@ ingest-dir is enough. Do not invent a mesh heartbeat from this memo. `/memory di
 
 ## Honesty
 
-private overlay · `source_hint=private` · dual_write **OFF** · catalog ≠ Connected · catalog ≠ heartbeat · CLIENT ≠ PULSE · empty until consume · not Memory GA · **not E-G1** · **V2 ≠ E-G1** · D5b/D6 parked · never YAML APPLY · mesh miss is success · overlay does not GET CRM/docs · never mesh stamp · not a health score · not a churn % · linked_pr_miss ≠ MTTR
+private overlay · `source_hint=private` · dual_write **OFF** · catalog ≠ Connected · catalog ≠ heartbeat · CLIENT ≠ PULSE · empty until consume · Cloud Memory GA · **not E-G1** · **V2 ≠ E-G1** · D5b/D6 parked · never YAML APPLY · mesh miss is success · overlay does not GET CRM/docs · never mesh stamp · not a health score · not a churn % · linked_pr_miss ≠ MTTR

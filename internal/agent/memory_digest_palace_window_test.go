@@ -236,8 +236,11 @@ func TestMemoryOpsDigest_PalaceMeshOutsideWeekCitesBoth(t *testing.T) {
 	if strings.Contains(out, "mesh on palace outside window") || strings.Contains(out, "mesh_on_disk=") || strings.Contains(out, "missing=mesh") {
 		t.Fatalf("outside-week stamped mesh must cite, not name a window miss: %q", out)
 	}
-	if strings.Contains(out, "Connected") || strings.Contains(out, "Memory GA") {
-		t.Fatalf("must not invent Connected / Memory GA: %q", out)
+	if strings.Contains(out, "Connected") || strings.Contains(out, "not Memory GA") || strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "ga_path") {
+		t.Fatalf("must not invent Connected or a pre-GA stance: %q", out)
+	}
+	if !strings.Contains(out, "Cloud Memory GA") {
+		t.Fatalf("digest honesty must name Cloud Memory GA: %q", out)
 	}
 	if rt.memory.DualWrite {
 		t.Fatal("dual_write must remain OFF")
@@ -412,7 +415,10 @@ func assertCiteBothOK(t *testing.T, out, meshCite string) {
 	if !strings.Contains(out, "dual_write OFF") {
 		t.Fatalf("dual_write pin missing: %q", out)
 	}
-	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected") || strings.Contains(out, "Memory GA") {
-		t.Fatalf("must not invent dual_write ON / Connected / Memory GA: %q", out)
+	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected") || strings.Contains(out, "not Memory GA") || strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "ga_path") {
+		t.Fatalf("must not invent dual_write ON / Connected or a pre-GA stance: %q", out)
+	}
+	if !strings.Contains(out, "Cloud Memory GA") {
+		t.Fatalf("digest honesty must name Cloud Memory GA: %q", out)
 	}
 }

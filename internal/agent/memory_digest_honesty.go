@@ -18,7 +18,7 @@ import (
 //   - No-delta / "what is true" recaps are rejected (briefs must be a change vs prior window).
 //   - Receipts default to pointers + hashes, not raw customer text.
 //   - source=external is a third labeled pane; never satisfies cite-both mesh,private.
-//   - dual_write stays off · catalog list ≠ consume · not Memory GA.
+//   - dual_write stays off · catalog list ≠ consume · Cloud Memory GA.
 
 const (
 	digestInsufficientSignal = "insufficient-signal · nothing reliable today"

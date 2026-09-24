@@ -143,7 +143,7 @@ func DefaultModels() []ModelConfig {
 		},
 		// --- Ollama (local OpenAI-compat /v1) — pin-only; not cascade default ---
 		// ollama serve && ollama pull llama3.2
-		// iomesh -m ollama-llama3.2  ·  /model ollama-llama3.2  ·  IOMESH_DEFAULT_MODEL=ollama-llama3.2
+		// iomesh -m ollama-llama3.2 ·  /model ollama-llama3.2 ·  IOMESH_DEFAULT_MODEL=ollama-llama3.2
 		// Optional: OLLAMA_URL / OLLAMA_HOST override BaseURL; no API key required.
 		{
 			Name:           OllamaLlama32ModelName,

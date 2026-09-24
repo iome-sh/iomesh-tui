@@ -69,8 +69,8 @@ func TestStartAnalyzeTick_DigestRequiresMemoryEnabled(t *testing.T) {
 		t.Fatalf("want residual-honest enabled: %v", err)
 	}
 	if strings.Contains(err.Error(), "Memory GA") && !strings.Contains(err.Error(), "≠ invent") && !strings.Contains(err.Error(), "not") {
-		// Must not invent Memory GA as a positive claim.
-		t.Fatalf("must not invent Memory GA: %v", err)
+		// Must Cloud Memory GA as a positive claim.
+		t.Fatalf("must not invent: %v", err)
 	}
 	st := rt.AnalyzeTickStatus()
 	if st.Running {

@@ -632,7 +632,7 @@ func TestIntegrationsNextStepLines_HonestyNeedles(t *testing.T) {
 		t.Fatalf("next-step must mention portal HITL:\n%s", out)
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", out)
+		t.Fatalf("must not invent dual_write ON · Cloud Memory GA shipped:\n%s", out)
 	}
 	if strings.Contains(out, "Connected: yes") {
 		t.Fatalf("must not invent Connected green:\n%s", out)

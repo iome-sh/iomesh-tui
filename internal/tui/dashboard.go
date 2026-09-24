@@ -305,7 +305,7 @@ func (d *dashboardState) Render(th Theme, width int) string {
 	analysis := ""
 	if !emptyHeartbeat {
 		analysis = th.Dim.Render(fmt.Sprintf(
-			"analysis  ops %d · knowledge %d · analytics %d  ·  knowledge/analytics Beta",
+			"analysis  ops %d · knowledge %d · analytics %d ·  knowledge/analytics Beta",
 			opsN, knN, anN,
 		))
 		if knN == 0 || anN == 0 {
@@ -510,7 +510,7 @@ func FormatDashboardSnapshot(meshAttached bool, focus string) string {
 }
 
 // FormatTTFHUnitReport is the offline TTFH smoke: walk + EMPTY dashboard honesty.
-// Never dials the broker. Never invents Connected, Memory GA, PULSE, or live APPLY.
+// Never dials the broker. Never invents Connected, PULSE, or live APPLY.
 func FormatTTFHUnitReport() string {
 	var b strings.Builder
 	b.WriteString(agent.MeshAgentOnboardingNextTTFHLane())

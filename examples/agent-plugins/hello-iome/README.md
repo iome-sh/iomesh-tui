@@ -8,7 +8,7 @@ Residual-honest **skills-only** sample package for operator dogfood of iomesh-tu
 |-------|--------|
 | sample package | ≠ invent **Agent Plugins GA** |
 | skills | playbooks only · no secrets in `plugin.json` · no auto-send outbound |
-| Memory | ≠ Memory GA (orthogonal) |
+| Memory | Cloud Memory GA (orthogonal) |
 | dual_write | **OFF** (unchanged) |
 | Discover / map success | ≠ install APPLY / Connected green |
 | loading | requires **opt-in** `[plugins]` |

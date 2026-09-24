@@ -50,7 +50,7 @@ func TestMemoryNextStepLines_HonestyNeedles(t *testing.T) {
 		}
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", out)
+		t.Fatalf("must not invent dual_write ON · Cloud Memory GA shipped:\n%s", out)
 	}
 	if strings.Contains(out, "Connected: yes") {
 		t.Fatalf("must not invent Connected green:\n%s", out)
@@ -94,7 +94,7 @@ func TestMemoryAdvancedAgentGuidanceNote_HonestyNeedles(t *testing.T) {
 		"multi-hop lite",
 		"patterns/anomalies",
 		"not OTel",
-		"not invent GA window engine",
+		"Cloud Memory GA",
 		"facts-as-of",
 		"supersede",
 		"/memory related",
@@ -119,9 +119,9 @@ func TestMemoryAdvancedAgentGuidanceNote_HonestyNeedles(t *testing.T) {
 			t.Fatalf("guidance missing %q in:\n%s", want, out)
 		}
 	}
-	// Must not invent Memory GA product success language.
+	// Must Cloud Memory GA product success language.
 	if strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "Memory GA green") {
-		t.Fatalf("must not invent Memory GA claim: %s", out)
+		t.Fatalf("must not invent claim: %s", out)
 	}
 }
 

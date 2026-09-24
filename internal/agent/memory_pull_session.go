@@ -14,7 +14,7 @@ import (
 // Reuses iomesh.Client.RunMemoryPull — does not reimplement the pull loop.
 //
 // Honesty: pull running ≠ invent install green / Ops Pack GA · dual_write OFF ·
-// not Memory GA · catalog ≠ Connected · portal HITL.
+// Cloud Memory GA · catalog ≠ Connected · portal HITL.
 type ContinuousPullConfig struct {
 	Enabled   bool // pull_continuous
 	Stream    string

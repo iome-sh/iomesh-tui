@@ -40,4 +40,4 @@ iomesh memory ingest-dir --dry-run --department customer_success examples/dept-r
 
 Temporal ask: what was the entitled seat count **as-of** `2026-08-31T18:00:00Z` (before the **2026-09-01** renewal window)? Cite-both vs entitled `dept.customer_success` heartbeats is **after R4 pull**, not this overlay. RevOps sitting: ingest-dir is enough · digest cite-both **or** named miss · `/dashboard ack` (no send/pay/ship). Sev-1 CS packet: ingest-dir is enough · digest cite-both **or** named miss · `/dashboard ack` (no send/pay/ship). CS sitting unchecked. Zendesk optional · pulse does not exist (V2-F parked).
 
-**not E-G1.** **not Memory GA.** 1.6 E-G1 **Parked**. **D5d ≠ E-G1**. **V2 ≠ E-G1**. empty until consume · CLIENT ≠ PULSE · catalog ≠ Connected · catalog ≠ heartbeat · dual_write **OFF** · never YAML APPLY.
+**not E-G1.** **Cloud Memory GA.** 1.6 E-G1 **Parked**. **D5d ≠ E-G1**. **V2 ≠ E-G1**. empty until consume · CLIENT ≠ PULSE · catalog ≠ Connected · catalog ≠ heartbeat · dual_write **OFF** · never YAML APPLY.

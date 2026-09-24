@@ -2,7 +2,7 @@
 # V2-C RevOps sitting recipe (support.theme). Copy/code sitting — laptop sitting stays unchecked.
 #
 # This sitting is not E-G1. leftover_is_bind OPEN.
-# dual_write OFF · not Memory GA · catalog ≠ Connected · catalog ≠ heartbeat
+# dual_write OFF · Cloud Memory GA · catalog ≠ Connected · catalog ≠ heartbeat
 # EMPTY until consume · CLIENT ≠ PULSE · overlay does not GET CRM
 # --live is not overlay PULSE (not this sitting).
 # summarize_account_health is not a health score · linked_pr_miss ≠ MTTR
@@ -81,7 +81,7 @@ else
   IOMESH=(go run ./cmd/iomesh)
 fi
 
-echo "revops-sitting: V2-C support.theme · not E-G1 · leftover_is_bind OPEN · not Memory GA"
+echo "revops-sitting: V2-C support.theme · not E-G1 · leftover_is_bind OPEN · Cloud Memory GA"
 echo "revops-sitting: dual_write OFF · catalog ≠ Connected · catalog ≠ heartbeat · EMPTY until consume · CLIENT ≠ PULSE"
 echo "revops-sitting: overlay does not GET CRM · never mesh stamp · living memo in ${KIT}"
 echo "revops-sitting: --live is not overlay PULSE · laptop sitting stays unchecked"
@@ -109,6 +109,6 @@ echo "  digest miss ≠ known · ACK via /dashboard ack (local ritual · no send
 echo
 echo "heartbeat vs catalog:"
 echo "  catalog ≠ Connected · catalog ≠ heartbeat · EMPTY until consume · CLIENT ≠ PULSE"
-echo "  this sitting is not E-G1 · leftover_is_bind OPEN · dual_write OFF · not Memory GA"
+echo "  this sitting is not E-G1 · leftover_is_bind OPEN · dual_write OFF · Cloud Memory GA"
 
 exit 0

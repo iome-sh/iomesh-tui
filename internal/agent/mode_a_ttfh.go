@@ -8,7 +8,7 @@ import (
 // Mode A TTFH polish (#399) — Collision demo chrome only.
 // Cite-both (#373) and brief ACK (#371) already exist; this package names
 // the sticky command, prints the palace path, and keeps air-gap / pin honesty.
-// dual_write OFF · not Memory GA · catalog ≠ Connected · do not invent GA.
+// dual_write OFF · Cloud Memory GA · catalog ≠ Connected · do not invent a newer pin.
 
 const (
 	// Published tip class (do not invent a newer GA tag).
@@ -29,8 +29,8 @@ const (
 	EnvPalaceRoot = "PALACE_ROOT"
 
 	// ModeAPalaceRootResidualHint is printed when the resolved path is unset or DNE.
-	// Never invent Connected / Memory GA. HTTP MCP needs palace_root to match -palace-root.
-	ModeAPalaceRootResidualHint = "unset or DNE · set [memory] palace_root / IOMESH_MEMORY_PALACE_ROOT to match MCP -palace-root · never invent Connected · not hosted Memory GA"
+	// Never invent Connected · Cloud Memory GA. HTTP MCP needs palace_root to match -palace-root.
+	ModeAPalaceRootResidualHint = "unset or DNE · set [memory] palace_root / IOMESH_MEMORY_PALACE_ROOT to match MCP -palace-root · never invent Connected · Cloud Memory GA"
 
 	// ModeADigestStickyCommand is the Mode A cite-both walk.
 	ModeADigestStickyCommand = "/memory digest --require-sources mesh,private"
@@ -53,7 +53,7 @@ const (
 
 // ModeAPinHonestyLine names current published TUI / MCP / memory tags.
 func ModeAPinHonestyLine() string {
-	return "Published pins (tip class · do not invent GA): TUI " + ModeATUIPin +
+	return "Published pins (tip class · Cloud Memory GA · do not invent a newer pin): TUI " + ModeATUIPin +
 		" · MCP " + ModeAMCPPin + " · memory kernel " + ModeAMemoryPin
 }
 
@@ -70,11 +70,11 @@ func ModeAPalaceVisibilityLine(path string) string {
 	if p == "" {
 		p = ExpandPalaceRoot(DefaultPalaceRoot)
 	}
-	return "palace: " + p + " · ls this path · local disk · not hosted Memory GA"
+	return "palace: " + p + " · ls this path · local disk · Cloud Memory GA"
 }
 
 // ModeAPalaceRootResidualLine is the honest line when the path is unset or DNE.
-// Do not present a missing default as the ls target. Never invent Connected / Memory GA.
+// Do not present a missing default as the ls target. Never invent Connected · Cloud Memory GA.
 func ModeAPalaceRootResidualLine(path string) string {
 	p := strings.TrimSpace(path)
 	if p == "" {
@@ -181,7 +181,7 @@ func (rt *Runtime) PalacePath() string {
 
 // PalaceVisibilityLine is the attach/ingest chrome line.
 // If the resolved default path DNE and no config/env/args named a root, print residual
-// (path unset or DNE · set palace_root to match MCP -palace-root). Never invent Connected / Memory GA.
+// (path unset or DNE · set palace_root to match MCP -palace-root). Never invent Connected · Cloud Memory GA.
 func (rt *Runtime) PalaceVisibilityLine() string {
 	if rt == nil {
 		def := ExpandPalaceRoot(DefaultPalaceRoot)

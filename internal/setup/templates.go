@@ -203,7 +203,7 @@ func BuildManagedFragment(profiles []Profile, opt InitOptions) (string, error) {
 		fmt.Fprintf(&b, "palace_root = %q  # match MCP -palace-root · HTTP MCP has no stdio args · IOMESH_MEMORY_PALACE_ROOT\n", palaceRoot)
 		fmt.Fprintf(&b, "auto_recall = %v\n", opt.AutoRecall)
 		fmt.Fprintf(&b, "auto_ingest = %v\n", opt.AutoIngest)
-		b.WriteString("dual_write = false  # OFF · local-primary · setup never invents Memory GA\n")
+		b.WriteString("dual_write = false  # OFF · local-primary · Cloud Memory GA · setup ≠ invent Connected\n")
 		fmt.Fprintf(&b, "pull_stream = %q\n", opt.PullStream)
 		fmt.Fprintf(&b, "pull_consumer = %q  # required for continuous pull\n", opt.PullConsumer)
 		// pull_continuous default false: in-session opt-in via /setup pull start or set true + reload/restart.

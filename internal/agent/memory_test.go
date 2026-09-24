@@ -559,8 +559,11 @@ func TestMemoryOpsDigest_PrefersSyncHTTP(t *testing.T) {
 	if !strings.Contains(out, "provenance:") || !strings.Contains(out, "session_id=sess-digest") || !strings.Contains(out, "palace=") {
 		t.Fatalf("digest provenance: %q", out)
 	}
-	if !strings.Contains(out, "honesty:") || !strings.Contains(out, "ga_path") || !strings.Contains(out, "never_invent_ga=true") {
+	if !strings.Contains(out, "honesty:") || !strings.Contains(out, "ops=cloud_memory_ga") || !strings.Contains(out, "Cloud Memory GA") || !strings.Contains(out, "never_invent_ga=true") {
 		t.Fatalf("honesty missing: %q", out)
+	}
+	if strings.Contains(out, "ga_path") || strings.Contains(out, "not Memory GA") || strings.Contains(out, "GA-path") {
+		t.Fatalf("digest must not echo pre-GA stance: %q", out)
 	}
 	if !strings.Contains(out, "catalog list ≠ consume") {
 		t.Fatalf("honesty pin missing: %q", out)
@@ -1962,7 +1965,7 @@ func TestFormatPatternsJSON_Fixture(t *testing.T) {
 	if !strings.Contains(out, "ops pulse Beta") || !strings.Contains(out, "not medical diagnosis") {
 		t.Fatalf("honesty pin missing: %q", out)
 	}
-	if !strings.Contains(out, "not OTel host metrics") || !strings.Contains(out, "not invent GA window engine") {
+	if !strings.Contains(out, "not OTel host metrics") || !strings.Contains(out, "Cloud Memory GA") {
 		t.Fatalf("OTel/GA pin missing: %q", out)
 	}
 	if !strings.Contains(out, "dual_write OFF") {
@@ -2417,7 +2420,7 @@ func TestFormatIngestEventJSON_Fixture(t *testing.T) {
 		t.Fatalf("honesty pin missing: %q", out)
 	}
 	if !strings.Contains(out, "not conversation turn") {
-		t.Fatalf("turn / Memory GA pin missing: %q", out)
+		t.Fatalf("turn · Cloud Memory GA pin missing: %q", out)
 	}
 	if !strings.Contains(out, "dual_write OFF") || !strings.Contains(out, "MCP-first") {
 		t.Fatalf("dual_write / MCP-first pin missing: %q", out)
@@ -2695,7 +2698,7 @@ func TestMemoryAdvancedStatus_OfflineResidual(t *testing.T) {
 	}
 	// Must not invent product green.
 	if strings.Contains(out, "Memory GA green") || strings.Contains(out, "Memory GA shipped") {
-		t.Fatalf("must not invent Memory GA claim: %s", out)
+		t.Fatalf("must not invent claim: %s", out)
 	}
 	if !strings.Contains(out, "mcp-manager-empty (0 servers) · fail-open") {
 		t.Fatalf("want mcp-manager-empty: %s", out)

@@ -26,4 +26,4 @@ Human `decision_stub` only.
 
 ## Honesty
 
-private overlay · dual_write **OFF** · catalog ≠ Connected · CLIENT ≠ PULSE · empty until consume · not Memory GA · **not E-G1** · **D5d ≠ E-G1** · never YAML APPLY · mesh miss is success · overlay does not GET CRM/docs
+private overlay · dual_write **OFF** · catalog ≠ Connected · CLIENT ≠ PULSE · empty until consume · Cloud Memory GA · **not E-G1** · **D5d ≠ E-G1** · never YAML APPLY · mesh miss is success · overlay does not GET CRM/docs

@@ -83,9 +83,9 @@ func TestRunStillHumanApplySoftDogfood_SoftPass(t *testing.T) {
 		"book-demo OFF",
 		"leave ON_SIGNAL unset",
 		"dual_write OFF",
-		"Edge Memory GA candidacy only",
+		"Cloud Memory GA",
 		"E10 Open",
-		"residual PASS ≠ invent Edge Memory GA declared",
+		"residual PASS ≠ invent Connected",
 		"session soft ≠ live dogfood",
 		"soft offline ≠ invent Connected",
 		"/onboard next human-gates dogfood",
@@ -100,7 +100,7 @@ func TestRunStillHumanApplySoftDogfood_SoftPass(t *testing.T) {
 		}
 	}
 	// Must not invent GA declared / dual_write ON / E10 closed / human-gate green live.
-	// Note: honest residual phrases contain "invent Edge Memory GA declared" — ban invent-claim shapes only.
+	// Note: honest residual phrases contain "invent Connected" — ban invent-claim shapes only.
 	for _, bad := range []string{
 		"dual_write ON",
 		"Connected: yes",

@@ -44,7 +44,7 @@ type RepairPlan struct {
 
 // PlanRepair builds ordered residual-honest steps from a DriftReport (no side effects).
 // Order: dual_write note → memory host note → reload_mcp → mesh note → start_pull → start_analyze.
-// Never invents Connected / Memory GA / dual_write ON; notes never auto-flip honesty flags.
+// Never invents Connected / dual_write ON; notes never auto-flip honesty flags.
 func PlanRepair(rep DriftReport) RepairPlan {
 	plan := RepairPlan{Steps: []RepairStep{}}
 
@@ -285,7 +285,7 @@ func residualSkipResult(kind RepairKind) string {
 	case RepairNoteDualWrite:
 		return "skipped · manual: set dual_write=false · never auto-flip dual_write ON · ≠ invent Connected"
 	case RepairNoteMemoryHost:
-		return "skipped · human: start iomesh-memory-mcp host · repair ≠ invent Memory GA / Connected"
+		return "skipped · human: start iomesh-memory-mcp host · Cloud Memory GA · repair ≠ invent Connected"
 	case RepairNoteMeshConfig:
 		return "skipped · human: configure [iomesh] enabled + endpoint · package wire ≠ Connected"
 	case RepairNoteNoop:
@@ -298,7 +298,7 @@ func residualSkipResult(kind RepairKind) string {
 func safeApplyResult(kind RepairKind) string {
 	switch kind {
 	case RepairReloadMCP:
-		return "applied reload_mcp · MCP reload attempted · ≠ invent Connected / Memory GA"
+		return "applied reload_mcp · MCP reload attempted · ≠ invent Connected"
 	case RepairStartPull:
 		return "applied start_pull · continuous pull start attempted · ≠ invent Connected"
 	case RepairStartAnalyze:

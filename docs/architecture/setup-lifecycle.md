@@ -5,14 +5,14 @@
 **Shipped P7:** `/setup repair` plan + apply `--yes` (safe steps only · notes stay human)  
 **Shipped s1542:** residual-honest `/onboard next setup` consolidates P1–P7 map story  
 **Related (s1546):** still-human APPLY reaffirm after closeout — setup residual complete ≠ invent human-gate green / live APPLY / E10 (`/onboard next human-gates`)  
-**Related (s1550):** edge-first human-gates residual pin — knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect · dual_write OFF · Edge Memory GA candidacy only (`/onboard next human-gates`)  
+**Related (s1550):** edge-first human-gates residual pin — knowledge multi-tenant punted · Slack HMAC punted · portal HITL when connect · dual_write OFF · Cloud Memory GA (`/onboard next human-gates`)  
 **Related (s1574):** still-human APPLY soft dogfood residual after Wave C continuum — open boxes stay open · PASS ≠ invent human-gate green / live APPLY (`/onboard next human-gates dogfood`)  
 **Related (s1554):** edge-user-journey SSOT — this doc is **stage 4 (Setup wizard)** in the 7-stage narrative · see [edge-user-journey.md](./edge-user-journey.md)  
 **Related (s1558 Wave B first-run polish):** setup is stage 4 of edge-user-journey · full first-run map `/onboard next journey` · setup guidance maps stages 1–7 residual-honest · free eng **s1558**
 
 ## Goal
 
-Enable the map story without inventing Connected / Memory GA:
+Enable the map story without inventing Connected:
 
 ```text
 setup init → write managed config → start memory host → preflight probe
@@ -53,7 +53,7 @@ Post-write next steps are residual-honest (helper `setup.SetupInitNextStepLines`
 
 After **mesh** / **platform-mcp** profiles, also append `SetupInitMeshNextStepLines`: `export IOMESH_TOKEN` → `/setup reload` → `iomesh mesh streams --create --yes` → `--messages`. Create ≠ PULSE · catalog MCP ≠ hooks streams · mesh pub ephemeral ≠ `/dashboard` consume.
 
-**Honesty:** CLI has **no** `iomesh setup reload` subcommand — in-session `/setup reload` only · dual_write **OFF** · not Memory GA · catalog ≠ Connected · package wire ≠ Connected · infer ≠ Connected · free eng **s1686** · slash init next-step parity free eng **s1723** · mesh flags slash parity **s2055**.
+**Honesty:** CLI has **no** `iomesh setup reload` subcommand — in-session `/setup reload` only · dual_write **OFF** · Cloud Memory GA · catalog ≠ Connected · package wire ≠ Connected · infer ≠ Connected · free eng **s1686** · slash init next-step parity free eng **s1723** · mesh flags slash parity **s2055**.
 
 ### After `iomesh setup preflight` / `/setup preflight` (s1699 dual path)
 
@@ -65,7 +65,7 @@ Post-probe next steps are residual-honest (helper `setup.SetupPreflightNextStepL
 | **Host/secrets missing** | Probe not ok · host or env still missing | start `iomesh-memory-mcp` · set secret env · re-run preflight |
 | **Cold start** | Preflight ok · no session / CLI-only | **restart `iomesh`** (CLI has **no** `setup reload`) · then `/setup reload` in session if needed |
 
-**Honesty:** CLI has **no** `iomesh setup reload` · dual_write **OFF** · not Memory GA · catalog ≠ Connected · PASS ≠ invent install green · package wire ≠ Connected · free eng **s1699** (peer of s1686 init next-step). Preflight **warns** (does not invent Connected) when `[iomesh].endpoint` host looks like `apiv1.*` — that is portal/catalog CP, not broker streams; streams/consumers live on `hooks.*`.
+**Honesty:** CLI has **no** `iomesh setup reload` · dual_write **OFF** · Cloud Memory GA · catalog ≠ Connected · PASS ≠ invent install green · package wire ≠ Connected · free eng **s1699** (peer of s1686 init next-step). Preflight **warns** (does not invent Connected) when `[iomesh].endpoint` host looks like `apiv1.*` — that is portal/catalog CP, not broker streams; streams/consumers live on `hooks.*`.
 
 ### Profiles
 
@@ -118,7 +118,7 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 
 | Subcommand | Behavior |
 |------------|----------|
-| bare / `help` | usage + honesty one-liner (dual_write OFF · not Memory GA · pull/analyze opt-in · drift · guided repair) |
+| bare / `help` | usage + honesty one-liner (dual_write OFF · Cloud Memory GA · pull/analyze opt-in · drift · guided repair) |
 | `init` | `setup.BuildManagedFragment` + `config.WriteSetupManagedUser` (or `--print-only`) · s1723 appends `SetupInitNextStepLines` (CLI parity with s1686) · mesh/platform-mcp also `SetupInitMeshNextStepLines` (IOMESH_TOKEN → reload → `--create --yes` → `--messages` · create ≠ PULSE) |
 | `preflight` / `status` / `check` | `setup.Preflight` + `FormatPreflightText` (s1699 dual-path next-step appended) · inherits process `--config` / `IOMESH_CONFIG` when slash `--config` omitted |
 | `portal` | browser HITL URLs (`SetupLifecyclePortalHandoff`) · s1723 appends `SetupPortalNextStepLines` |
@@ -130,7 +130,7 @@ Agent-native operator surface (alias `/setup-lifecycle`):
 
 Simple flags on slash `init`: `--stdio` · `--print-only` · `--plugins-dir path` · `--memory-url URL` · `--mesh-endpoint URL` · `--mesh-tenant id` · `--mesh-org id` · `--platform-mcp-url URL`. Mesh endpoint writes **hooks** (not portal `/v7/mcp`). When the portal URL is `apiv1.iome.sh`, infer `https://hooks.iome.sh`. Infer ≠ Connected. `[iomesh].endpoint` comments never stamp `apiv1.*` as broker streams — `apiv1.*` is portal/catalog CP; streams/consumers live on `hooks.*` (e.g. `hooks.example.com`). Preflight **warns** (does not invent Connected) when the residual endpoint host looks like `apiv1.*`. `--mesh-org` persists `[iomesh].org` / `IOMESH_ORG` (empty writes a commented residual; empty org fail-opens after broker empty-org fail-open).
 
-**Process config inheritance:** in-session `/setup preflight` (and `/setup` probes that load config: reload · pull start/once · analyze start/once · drift · repair) use the same path the running process loaded (`iomesh --config` / `--repl --config` / `IOMESH_CONFIG` / user default) when slash `--config` is omitted. Slash `--config PATH` still overrides. CLI `iomesh setup preflight --config PATH` is unchanged. Slash `/setup init` still writes the user config path (CLI `--config` remains the custom write target). dual_write **OFF** · not Memory GA · PASS ≠ invent Connected.
+**Process config inheritance:** in-session `/setup preflight` (and `/setup` probes that load config: reload · pull start/once · analyze start/once · drift · repair) use the same path the running process loaded (`iomesh --config` / `--repl --config` / `IOMESH_CONFIG` / user default) when slash `--config` is omitted. Slash `--config PATH` still overrides. CLI `iomesh setup preflight --config PATH` is unchanged. Slash `/setup init` still writes the user config path (CLI `--config` remains the custom write target). dual_write **OFF** · Cloud Memory GA · PASS ≠ invent Connected.
 
 After init: start memory host (if needed) · set secret env vars · `/setup reload` (or restart TUI) · optional `/setup pull start` when mesh + consumer configured · optional `/setup analyze start` · `/setup drift` for residual next steps · optional `/setup repair apply --yes` for safe guided steps only. Slash `/setup init` uses the **same** `SetupInitNextStepLines` helper as CLI `iomesh setup init` (s1723 parity with s1686).
 
@@ -143,7 +143,7 @@ Post-portal handoff next steps are residual-honest (helper `setup.SetupPortalNex
 | **In-session** | Browser OAuth/install complete · TUI/session running | `/setup preflight` · **`/setup reload`** (package wire ≠ Connected) |
 | **Cold start** | No session / CLI-only | **restart `iomesh`** · `iomesh setup preflight` (CLI has **no** setup portal/reload) |
 
-**Honesty:** agent MCP **cannot write installs** · catalog ≠ Connected · dual_write **OFF** · not Memory GA · package wire ≠ Connected · browser HITL only · free eng **s1723**.
+**Honesty:** agent MCP **cannot write installs** · catalog ≠ Connected · dual_write **OFF** · Cloud Memory GA · package wire ≠ Connected · browser HITL only · free eng **s1723**.
 
 ## Continuous pull (s1530 P5 + s1711 next-step)
 
@@ -166,7 +166,7 @@ Post-pull status/start/once/stop next steps are residual-honest (helper `setup.S
 | **In-session** | TUI/session running | `/setup pull status` · optional `/setup analyze start` · `/setup drift` · `/memory digest` |
 | **CLI** | No session / operator prefers CLI | `iomesh memory pull` (once or continuous · mesh + consumer required) |
 
-**Honesty:** dual_write **OFF** · not Memory GA · **pull ≠ invent Connected** · idle/status must not invent green · CLI still valid · free eng **s1711** (peer of s1686 init · s1699 preflight · s1707 drift/repair).
+**Honesty:** dual_write **OFF** · Cloud Memory GA · **pull ≠ invent Connected** · idle/status must not invent green · CLI still valid · free eng **s1711** (peer of s1686 init · s1699 preflight · s1707 drift/repair).
 
 ## Analyze ticks (s1534 P6 + s1711 next-step)
 
@@ -189,7 +189,7 @@ Post-analyze status/start/once/stop next steps are residual-honest (helper `setu
 | **In-session** | TUI/session running | `/setup analyze status` · optional `/setup pull start` · `/setup drift` · re-run analyze |
 | **One-shot digest** | Prefer residual ops pulse without tick | **`/memory digest`** (still valid · not invent Connected) |
 
-**Honesty:** dual_write **OFF** · not Memory GA · **analyze tick ≠ invent Connected** · `/memory digest` still valid · idle/status must not invent green · free eng **s1711** (peer of s1686 init · s1699 preflight · s1707 drift/repair).
+**Honesty:** dual_write **OFF** · Cloud Memory GA · **analyze tick ≠ invent Connected** · `/memory digest` still valid · idle/status must not invent green · free eng **s1711** (peer of s1686 init · s1699 preflight · s1707 drift/repair).
 
 ## Drift / maintain (s1534 P6 + s1707 dual-path next-step)
 
@@ -209,7 +209,7 @@ Post-report next steps are residual-honest (helper `setup.SetupDriftNextStepLine
 | **In-session** | TUI/session running | `/setup repair plan` · `/setup repair apply --yes` (safe only) · `/setup reload` when MCP drift · optional `/setup pull\|analyze start` |
 | **Cold start** | No session / CLI-only | fix host/config · `iomesh setup preflight` · **restart `iomesh`** (CLI has **no** setup drift/repair/reload) |
 
-**Honesty:** drift report-only · dual_write **OFF** · package wire ≠ Connected · not Memory GA · CLI has **no** setup drift/repair/reload as full product · free eng **s1707** (peer of s1686 init · s1699 preflight). Residual notes still point at guided `/setup repair plan` · `/setup repair apply --yes` (safe steps only · dual_write never auto ON).
+**Honesty:** drift report-only · dual_write **OFF** · package wire ≠ Connected · Cloud Memory GA · CLI has **no** setup drift/repair/reload as full product · free eng **s1707** (peer of s1686 init · s1699 preflight). Residual notes still point at guided `/setup repair plan` · `/setup repair apply --yes` (safe steps only · dual_write never auto ON).
 
 ## Guided repair (s1538 P7 + s1707 dual-path next-step)
 
@@ -235,7 +235,7 @@ Post-plan / post-apply next steps are residual-honest (helper `setup.SetupRepair
 | **In-session** | TUI/session running | re-run `/setup drift` · `/setup reload` after safe apply · optional pull/analyze |
 | **Cold start** | No session / CLI-only | **restart `iomesh`** · `iomesh setup preflight` (CLI has **no** setup repair/reload) |
 
-**Honesty:** dual_write OFF · not Memory GA · **repair apply ≠ invent Connected** · package wire ≠ Connected · portal HITL still human · dual_write never auto-flipped ON · no auto-repair without explicit `apply --yes` · free eng **s1707**.
+**Honesty:** dual_write OFF · Cloud Memory GA · **repair apply ≠ invent Connected** · package wire ≠ Connected · portal HITL still human · dual_write never auto-flipped ON · no auto-repair without explicit `apply --yes` · free eng **s1707**.
 
 ## Agent surfaces (s1526 P3 + s1530 P5 + s1534 P6 + s1538 P7)
 
@@ -252,7 +252,7 @@ Skill + note + slash share honesty locks; skill is the full playbook.
 | Lock | Rule |
 |------|------|
 | dual_write OFF | Managed fragment refuses `dual_write = true` |
-| not Memory GA | Preflight never stamps Memory GA |
+| Cloud Memory GA | Preflight never stamps Memory GA |
 | catalog ≠ Connected | Setup PASS ≠ invent install green |
 | secrets | Env **names** only (`api_key_env`, `oauth_token_env`) |
 | portal HITL | OAuth/install still browser |
@@ -260,7 +260,7 @@ Skill + note + slash share honesty locks; skill is the full playbook.
 | analyze ticks opt-in | `/setup analyze` · `analyze_continuous` · `/memory digest` still valid · analyze tick ≠ invent Connected |
 | drift report-only | `/setup drift` · `/setup maintain` · residual next steps · drift ≠ invent install green · package wire ≠ Connected |
 | guided repair explicit | `/setup repair` · `apply --yes` only · safe steps · repair apply ≠ invent Connected · no auto-repair without `--yes` |
-| onboard next setup (s1542) | `/onboard next setup` offline map · `setup_not_probed` · offline static ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA · E10 Open |
+| onboard next setup (s1542) | `/onboard next setup` offline map · `setup_not_probed` · offline static ≠ live dogfood · Cloud Memory GA · setup closeout ≠ invent Connected · E10 Open |
 
 ## Onboard next setup lane (s1542)
 
@@ -274,7 +274,7 @@ Residual-honest offline static continuum for the full setup lifecycle map (no MC
 | Map steps | init → memory host/secrets → preflight → reload → portal HITL → optional pull/analyze → drift → repair plan/apply `--yes` → `/memory digest` still valid |
 | Companion | `/onboard next journey` (s1558 first-run map) · `/onboard next wizard` (s1570 Wave C guided residual) · `memory` · `memory-pull` · `human-gates` · `operator` · skill `setup-lifecycle-agent` · [edge-user-journey.md](./edge-user-journey.md) · [memory-edge-usage-demo.md](./memory-edge-usage-demo.md) |
 
-**Honesty:** dual_write OFF · not Memory GA · package wire ≠ Connected · PASS ≠ invent Connected · repair apply ≠ invent Connected · dual_write never auto ON · portal HITL still human · still-human APPLY open · **E10 Open** · offline static lane ≠ live dogfood · setup closeout residual ≠ invent Edge Memory GA · stage 4 of edge-user-journey · free eng **s1558**.
+**Honesty:** dual_write OFF · Cloud Memory GA · package wire ≠ Connected · PASS ≠ invent Connected · repair apply ≠ invent Connected · dual_write never auto ON · portal HITL still human · still-human APPLY open · **E10 Open** · offline static lane ≠ live dogfood · Cloud Memory GA · setup closeout ≠ invent Connected · stage 4 of edge-user-journey · free eng **s1558**.
 
 ## Onboard next journey lane (s1558 Wave B)
 
@@ -288,7 +288,7 @@ Residual-honest offline static first-run map of the 7-stage edge-user-journey (n
 | Stage 4 detail | `/onboard next setup` · `/setup` · this document |
 | Docs | [edge-user-journey.md](./edge-user-journey.md) · this file · [memory-edge-usage-demo.md](./memory-edge-usage-demo.md) |
 
-**Honesty:** dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · portal HITL · agent MCP cannot write installs · catalog ≠ Connected · book-demo OFF · no invent TUI portal SSO · host not auto · free eng **s1558** · free-floor peer **s1560+** mention only.
+**Honesty:** dual_write OFF · Cloud Memory GA · residual PASS ≠ invent Connected · portal HITL · agent MCP cannot write installs · catalog ≠ Connected · book-demo OFF · no invent TUI portal SSO · host not auto · free eng **s1558** · free-floor peer **s1560+** mention only.
 
 ## Onboard next wizard lane (s1570 Wave C)
 
@@ -303,7 +303,7 @@ Residual-honest offline guided first-run wizard residual after Wave B journey ma
 | Companion | `/onboard next journey` (Wave B) · setup · portal-hitl · e4 · human-gates |
 | Docs | [edge-user-journey.md](./edge-user-journey.md) Wave C row · this file |
 
-**Honesty:** dual_write OFF · not Memory GA · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA declared · E10 Open · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · no invent TUI portal SSO · host not auto · residual PASS ≠ invent full interactive auto wizard · free eng **s1570** · free-floor peer **s1572+** mention only.
+**Honesty:** dual_write OFF · Cloud Memory GA · residual PASS ≠ invent Connected · E10 Open · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · no invent TUI portal SSO · host not auto · residual PASS ≠ invent full interactive auto wizard · free eng **s1570** · free-floor peer **s1572+** mention only.
 
 ## Preflight states
 
@@ -337,7 +337,7 @@ Post-reload next steps are residual-honest (helper `setup.SetupReloadNextStepLin
 | **In-session** | After successful hot-swap | optional `/setup pull start` · `/setup analyze start` · `/setup drift` · `/memory digest` |
 | **CLI** | — | **none** — CLI has **no** `iomesh setup reload` (in-session only · peers s1686/s1699) |
 
-**Honesty:** package wire ≠ Connected · dual_write **OFF** · not Memory GA · skills re-scan ≠ invent Connected · CLI has **no** setup reload · free eng **s1711** (peer of s1686 init · s1699 preflight · s1707 drift/repair).
+**Honesty:** package wire ≠ Connected · dual_write **OFF** · Cloud Memory GA · skills re-scan ≠ invent Connected · CLI has **no** setup reload · free eng **s1711** (peer of s1686 init · s1699 preflight · s1707 drift/repair).
 
 ## Phases (plan)
 

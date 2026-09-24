@@ -240,6 +240,6 @@ func TestFormatDriftText_DualPathNextStep(t *testing.T) {
 		t.Fatalf("must not invent Connected green:\n%s", text)
 	}
 	if strings.Contains(text, "dual_write ON") || strings.Contains(text, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", text)
+		t.Fatalf("must not invent dual_write ON · Cloud Memory GA shipped:\n%s", text)
 	}
 }

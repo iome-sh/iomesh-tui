@@ -23,7 +23,7 @@ Account owner requested a refund for an **unused seat**. Purchase of the seat wa
 
 The operator question is temporal: **what was the unused-seat refund rule as-of ticket created_at `2026-06-15T14:22:00Z`?**
 
-Palace (local overlay, not Memory GA):
+Palace (local overlay, Cloud Memory GA):
 
 ```
 /memory facts-as-of --as-of 2026-06-15T14:22:00Z
@@ -33,4 +33,4 @@ Do not invent a mesh heartbeat from this export. `/memory digest --require-sourc
 
 ## Honesty
 
-private overlay · dual_write **OFF** · catalog ≠ Connected · CLIENT ≠ PULSE · empty until consume · not Memory GA · **not E-G1** · never YAML APPLY · mesh miss is success
+private overlay · dual_write **OFF** · catalog ≠ Connected · CLIENT ≠ PULSE · empty until consume · Cloud Memory GA · **not E-G1** · never YAML APPLY · mesh miss is success

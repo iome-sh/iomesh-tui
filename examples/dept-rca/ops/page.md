@@ -21,7 +21,7 @@ HMAC-signed consumer returned **5xx** at `2026-06-15T14:08:00Z`. Same incident w
 
 The operator question is temporal: **what was the HMAC/consume rule as-of page created_at `2026-06-15T14:08:00Z`?**
 
-Palace (local overlay, not Memory GA):
+Palace (local overlay, Cloud Memory GA):
 
 ```
 /memory facts-as-of --as-of 2026-06-15T14:08:00Z [--department ops]
@@ -31,4 +31,4 @@ Do not invent a mesh heartbeat from this page. `/memory digest --require-sources
 
 ## Honesty
 
-private overlay · dual_write **OFF** · catalog ≠ Connected · CLIENT ≠ PULSE · empty until consume · not Memory GA · **not E-G1** · never YAML APPLY · mesh miss is success
+private overlay · dual_write **OFF** · catalog ≠ Connected · CLIENT ≠ PULSE · empty until consume · Cloud Memory GA · **not E-G1** · never YAML APPLY · mesh miss is success

@@ -16,19 +16,19 @@ func TestModeAPins_PublishedTipClass(t *testing.T) {
 		t.Fatalf("TUI pin=%q", ModeATUIPin)
 	}
 	if ModeAMCPPin != "v0.4.2" {
-		t.Fatalf("MCP pin=%q want v0.4.2 (kernel v1.5.12 companion · do not invent GA)", ModeAMCPPin)
+		t.Fatalf("MCP pin=%q want v0.4.2 (kernel v1.5.12 companion · do not invent a newer pin)", ModeAMCPPin)
 	}
 	if ModeAMemoryPin != "v1.5.12" {
 		t.Fatalf("memory pin=%q", ModeAMemoryPin)
 	}
 	line := ModeAPinHonestyLine()
-	for _, want := range []string{"v1.3.7", "v0.4.2", "v1.5.12", "do not invent GA", "tip class"} {
+	for _, want := range []string{"v1.3.7", "v0.4.2", "v1.5.12", "do not invent a newer pin", "tip class"} {
 		if !strings.Contains(line, want) {
 			t.Fatalf("pin line missing %q: %s", want, line)
 		}
 	}
 	if strings.Contains(line, "Memory GA") && !strings.Contains(line, "do not invent") {
-		t.Fatalf("must not invent Memory GA: %s", line)
+		t.Fatalf("must not invent: %s", line)
 	}
 }
 
@@ -247,8 +247,8 @@ func TestRuntimePalaceVisibility_DefaultDNEResidual(t *testing.T) {
 	if strings.Contains(line, "Connected") && !strings.Contains(line, "never invent Connected") {
 		t.Fatalf("must not invent Connected: %s", line)
 	}
-	if strings.Contains(line, "Memory GA") && !strings.Contains(line, "not hosted Memory GA") {
-		t.Fatalf("must not invent Memory GA: %s", line)
+	if strings.Contains(line, "Memory GA") && !strings.Contains(line, "Cloud Memory GA") {
+		t.Fatalf("must not invent: %s", line)
 	}
 	status := rt.MemoryStatusLine()
 	if !strings.Contains(status, ModeAPalaceRootResidualHint) {
@@ -265,7 +265,7 @@ func TestModeAPalaceRootResidual_Honesty(t *testing.T) {
 		"IOMESH_MEMORY_PALACE_ROOT",
 		"MCP -palace-root",
 		"never invent Connected",
-		"not hosted Memory GA",
+		"Cloud Memory GA",
 	} {
 		if !strings.Contains(line, want) {
 			t.Fatalf("residual missing %q: %s", want, line)
@@ -275,7 +275,7 @@ func TestModeAPalaceRootResidual_Honesty(t *testing.T) {
 		t.Fatalf("residual must not tell operator to ls a DNE path: %s", line)
 	}
 	if strings.Contains(line, "Connected: yes") || strings.Contains(line, "Memory GA shipped") {
-		t.Fatalf("must not invent Connected / Memory GA: %s", line)
+		t.Fatalf("must not invent Connected · Cloud Memory GA: %s", line)
 	}
 }
 

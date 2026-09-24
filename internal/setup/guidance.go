@@ -9,15 +9,15 @@ const (
 )
 
 // SetupLifecycleHonestyOneLiner is the bare /setup status honesty line (s1526 P3 + s1530 P5 + s1534 P6 + s1538 P7 + s1558 Wave B).
-const SetupLifecycleHonestyOneLiner = "dual_write OFF · Edge Memory GA candidacy only · catalog ≠ Connected · portal HITL · setup PASS ≠ invent install green · continuous pull opt-in (/setup pull · pull_continuous) · analyze ticks opt-in (/setup analyze · analyze_continuous) · drift report-only (/setup drift) · guided repair (/setup repair · apply --yes only) · CLI iomesh memory pull still valid · /memory digest still valid · pull/analyze/repair ≠ invent Connected · drift ≠ invent install green · repair apply ≠ invent Connected · stage 4 of edge-user-journey · free eng s1558 · full first-run /onboard next journey"
+const SetupLifecycleHonestyOneLiner = "dual_write OFF · Cloud Memory GA · catalog ≠ Connected · portal HITL · setup PASS ≠ invent install green · continuous pull opt-in (/setup pull · pull_continuous) · analyze ticks opt-in (/setup analyze · analyze_continuous) · drift report-only (/setup drift) · guided repair (/setup repair · apply --yes only) · CLI iomesh memory pull still valid · /memory digest still valid · pull/analyze/repair ≠ invent Connected · drift ≠ invent install green · repair apply ≠ invent Connected · stage 4 of edge-user-journey · free eng s1558 · full first-run /onboard next journey"
 
 // SetupLifecycleFirstRunJourneyOneLiner residual-honest companion for 7-stage first-run map (s1558 Wave B).
-const SetupLifecycleFirstRunJourneyOneLiner = "edge-user-journey 7 stages · free eng s1558 · Signup → Download TUI → TUI auth/keys → Setup wizard (this lifecycle · stage 4) → Connectors portal HITL → Local store iomesh-memory-mcp → Analyze · dual_write OFF · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · portal HITL · host not auto · no invent TUI portal SSO · free-floor peer s1560+ mention only"
+const SetupLifecycleFirstRunJourneyOneLiner = "edge-user-journey 7 stages · free eng s1558 · Signup → Download TUI → TUI auth/keys → Setup wizard (this lifecycle · stage 4) → Connectors portal HITL → Local store iomesh-memory-mcp → Analyze · dual_write OFF · Cloud Memory GA · residual PASS ≠ invent Connected · portal HITL · host not auto · no invent TUI portal SSO · free-floor peer s1560+ mention only"
 
 // SetupLifecycleAgentGuidanceNote is the residual-honest system note injected on
 // AttachMCP (s1526 P3 + s1530 P5 + s1534 P6 + s1538 P7 + s1558 Wave B). Steers the LLM: setup init →
 // preflight → portal HITL → in-session opt-in continuous pull / analyze ticks / drift
-// report / guided repair — without inventing Connected / Memory GA / INSTALL_STORE green.
+// report / guided repair — without inventing Connected / INSTALL_STORE green.
 // s1558: maps onto stages 4–7 of edge-user-journey; full first-run map via /onboard next journey.
 // Unit-tested for honesty needles.
 func SetupLifecycleAgentGuidanceNote() string {
@@ -33,7 +33,7 @@ First-run journey map (s1558 · residual-honest · free eng s1558): 1 Signup (po
 8. Skill: read_skill setup-lifecycle-agent when available · operator slash /setup (alias /setup-lifecycle) · companion /onboard next journey (s1558 first-run map) · /onboard next setup (stage 4 detail)
 
 Locks (never violate):
-- dual_write OFF · Edge Memory GA candidacy only · residual PASS ≠ invent Edge Memory GA · book-demo OFF · free eng s1558
+- dual_write OFF · Cloud Memory GA · residual PASS ≠ invent Connected · book-demo OFF · free eng s1558
 - never invent install green / Connected / INSTALL_STORE APPLY / GA
 - catalog status ≠ install Connected
 - portal HITL for OAuth/install · secrets as env names only · no invent TUI portal SSO · host not auto on signup
@@ -58,7 +58,7 @@ func SetupLifecyclePortalHandoff() string {
 // CLI `iomesh setup init` (s1686). Dual path: in-session /setup reload when a
 // TUI/session is already running · cold start → restart iomesh. CLI has no
 // `iomesh setup reload` subcommand — do not invent it. package wire ≠ Connected ·
-// dual_write OFF · not Memory GA · free eng s1686.
+// dual_write OFF · Cloud Memory GA · free eng s1686.
 func SetupInitNextStepLines() []string {
 	return []string{
 		"next: ensure iomesh-memory-mcp is running (if local-memory) · set secret env vars",
@@ -95,7 +95,7 @@ func SetupPreflightNextStepLines() []string {
 // SetupDriftNextStepLines residual-honest post-drift next-step (s1707).
 // Dual path: in-session /setup repair · /setup reload vs cold restart.
 // CLI has no setup drift/repair/reload as full product surface. dual_write OFF ·
-// package wire ≠ Connected · not Memory GA · free eng s1707.
+// package wire ≠ Connected · Cloud Memory GA · free eng s1707.
 func SetupDriftNextStepLines() []string {
 	return []string{
 		"next: if TUI/session running → /setup repair plan · /setup repair apply --yes (safe only) · /setup reload when MCP drift · optional /setup pull|analyze start",
@@ -118,7 +118,7 @@ func SetupRepairNextStepLines() []string {
 
 // SetupReloadNextStepLines residual-honest post-reload next-step (s1711).
 // Reload is in-session only. After hot-swap: optional pull/analyze · drift residual.
-// package wire ≠ Connected · dual_write OFF · not Memory GA · free eng s1711.
+// package wire ≠ Connected · dual_write OFF · Cloud Memory GA · free eng s1711.
 func SetupReloadNextStepLines() []string {
 	return []string{
 		"next: optional /setup pull start (mesh+consumer) · /setup analyze start · /setup drift for residual",
@@ -129,7 +129,7 @@ func SetupReloadNextStepLines() []string {
 
 // SetupPullNextStepLines residual-honest post-pull status/start next-step (s1711).
 // Dual path: in-session /setup pull vs cold CLI iomesh memory pull.
-// pull ≠ invent Connected · dual_write OFF · not Memory GA · free eng s1711.
+// pull ≠ invent Connected · dual_write OFF · Cloud Memory GA · free eng s1711.
 func SetupPullNextStepLines() []string {
 	return []string{
 		"next: if TUI/session running → /setup pull start|once after mesh+pull_consumer · /setup pull status · optional /setup analyze|drift",
@@ -140,7 +140,7 @@ func SetupPullNextStepLines() []string {
 
 // SetupAnalyzeNextStepLines residual-honest post-analyze status/start next-step (s1711).
 // Dual path: in-session /setup analyze vs one-shot /memory digest.
-// analyze tick ≠ invent Connected · dual_write OFF · not Memory GA · free eng s1711.
+// analyze tick ≠ invent Connected · dual_write OFF · Cloud Memory GA · free eng s1711.
 func SetupAnalyzeNextStepLines() []string {
 	return []string{
 		"next: if TUI/session running → /setup analyze start|once · /setup analyze status · optional /setup drift",
@@ -153,7 +153,7 @@ func SetupAnalyzeNextStepLines() []string {
 // Dual path: complete OAuth/install in browser HITL · then TUI/session → /setup preflight ·
 // /setup reload (package wire ≠ Connected) · else cold → restart iomesh · iomesh setup preflight.
 // CLI has no setup portal/reload as product invent. agent MCP cannot write installs ·
-// catalog ≠ Connected · dual_write OFF · not Memory GA · free eng s1723.
+// catalog ≠ Connected · dual_write OFF · Cloud Memory GA · free eng s1723.
 func SetupPortalNextStepLines() []string {
 	return []string{
 		"next: complete OAuth/install in browser HITL · then if TUI/session running → /setup preflight · /setup reload (package wire ≠ Connected)",

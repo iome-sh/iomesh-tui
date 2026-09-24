@@ -31,4 +31,4 @@ Opportunity **OPP-1001** call notes were created `2026-02-20T16:00:00Z`. QBR not
 
 ## Honesty
 
-private overlay · dual_write **OFF** · catalog ≠ Connected · CLIENT ≠ PULSE · empty until consume · not Memory GA · **not E-G1** · **D5c ≠ E-G1** · never YAML APPLY · mesh miss is success · overlay does not GET CRM/docs
+private overlay · dual_write **OFF** · catalog ≠ Connected · CLIENT ≠ PULSE · empty until consume · Cloud Memory GA · **not E-G1** · **D5c ≠ E-G1** · never YAML APPLY · mesh miss is success · overlay does not GET CRM/docs

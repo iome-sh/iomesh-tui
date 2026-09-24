@@ -1,6 +1,6 @@
 ---
 name: iomesh-memory-local
-description: Residual-honest product edge memory playbook (sample plugin skill; public iomesh-memory-mcp · not Memory GA · dual_write OFF · package load ≠ Connected)
+description: Residual-honest product edge memory playbook (sample plugin skill; public iomesh-memory-mcp · Cloud Memory GA · dual_write OFF · package load ≠ Connected)
 ---
 
 # iomesh-memory-mcp local edge (sample plugin skill)
@@ -13,7 +13,7 @@ This skill is a **playbook only** — guidance text the agent may load when plug
 
 1. **What this package is** — portable product sample under `examples/agent-plugins/iomesh-memory-mcp` with closed `plugin.json`, `mcp.json` (stdio `memory` → `iomesh-memory-mcp`), and this skill. Map-only; binary not shipped.
 2. **How it loads** — only when the operator **opts in** via TOML `[plugins] enabled = true` and a `dirs` entry pointing at this package root (or a parent of package roots). Default is **disabled**.
-3. **Discover / map vs Connected** — `agentplugins.Discover` and `MCPServersFromPlugins` success means the package validated and mapped. It is **not** process Connected, install APPLY green, marketplace install, Agent Plugins product GA, or Memory GA.
+3. **Discover / map vs Connected** — `agentplugins.Discover` and `MCPServersFromPlugins` success means the package validated and mapped. It is **not** process Connected, install APPLY green, marketplace install, or Agent Plugins product GA. Cloud Memory is GA.
 4. **Connect requirement** — the operator must install **`iomesh-memory-mcp`** (public) and put it on **PATH**. Attach is **fail-open** if the binary is missing (no invent green).
 
 ## Public install (s1478 · residual-honest)
@@ -50,11 +50,11 @@ Attach after install:
 | Do **not** claim | Truth |
 |------------------|--------|
 | Agent Plugins GA | Sample package + client candidacy only |
-| Memory GA | Local-primary edge residual · not product Memory green |
+| Memory GA | Local-primary edge residual · Cloud Memory GA |
 | dual_write ON | dual_write remains **OFF** (unchanged default) |
 | freemium hosted palace | Hosted Palace sunset until scale · local-primary only |
 | install APPLY / Connected green | Discover/load/map ≠ install or process Connected |
-| public OSS = platform GA | Public edge packages ≠ invent Memory GA / freemium palace |
+| public OSS = platform GA | Public edge packages · Cloud Memory GA / freemium palace |
 | Secrets in plugin.json / mcp.json | Portable package fields must not carry secrets |
 | Map success = tools always available | Connect needs binary on PATH; MCP tools stay **approval-gated** |
 | residual private Memory sample | **Removed** from TUI tree (s1517) · product host is `iomesh-memory-mcp` only |
@@ -68,7 +68,7 @@ Attach after install:
 
 ## Advanced install tip (s1525)
 
-- Default: hash embeddings · no Qdrant · dual_write OFF · not Memory GA.
+- Default: hash embeddings · no Qdrant · dual_write OFF · Cloud Memory GA.
 - Maximize semantic: set `MEMORY_ONNX_MODEL_PATH` on the **MCP host** (not only TUI env).
 - Qdrant docker/podman is **optional residual** (kernel VectorStore) — lean host does not wire it into search.
 - Operator doc: `docs/architecture/memory-advanced-install.md`.

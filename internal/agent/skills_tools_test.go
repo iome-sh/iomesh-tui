@@ -40,7 +40,7 @@ func TestSkillsNextStepLines_HonestyNeedles(t *testing.T) {
 		}
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON / Memory GA shipped:\n%s", out)
+		t.Fatalf("must not invent dual_write ON · Cloud Memory GA shipped:\n%s", out)
 	}
 	if strings.Contains(out, "Connected: yes") || strings.Contains(out, "Agent Plugins GA shipped") {
 		t.Fatalf("must not invent Connected green / Agent Plugins GA shipped:\n%s", out)
