@@ -800,15 +800,16 @@ type MemoryOpsDigestResult struct {
 	FetchedN      int    `json:"-"`
 	FetchedNewest string `json:"-"`
 	FetchedOldest string `json:"-"`
-	// PalaceOutsideWindow is TUI-side (#460). A required class exists on the
-	// local palace but its newest stamp is older than the cite-both supplement
-	// window (week). Not a citation. Never invented.
+	// PalaceOutsideWindow is TUI-side. When set, a miss line can name a required
+	// class seen outside a window. The #460 cite path does not set this: a
+	// stamped turn of a missing class on the explicit tenant palace is pinned
+	// at any age. Never invented.
 	PalaceOutsideWindow []MemoryOpsDigestPalaceOutside `json:"-"`
 }
 
-// MemoryOpsDigestPalaceOutside is a required cite class found on the local
-// palace outside the week supplement window (#460). Count and Newest come
-// from stamped turns on disk — never invented.
+// MemoryOpsDigestPalaceOutside is an optional miss annotation for a required
+// cite class. Count and Newest come from stamped turns on disk — never invented.
+// The #460 cite path pins those turns instead of recording this annotation.
 type MemoryOpsDigestPalaceOutside struct {
 	Class  string
 	Count  int

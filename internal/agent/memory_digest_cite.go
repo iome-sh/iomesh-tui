@@ -15,21 +15,19 @@ import (
 )
 
 // Sticky cite-both (#419 / #460): classify receipts from provenance/tags as
-// well as source_hint, pin older mesh-stamped turns into the active set when
-// they are in the fetched export or inside the week supplement window, and
-// print an explicit newest-first window reason when a required class is still
-// missing. Mesh on the palace older than that week is a named miss
-// (mesh on palace outside window) — never invented into cite-both.
-// dual_write OFF.
+// well as source_hint, and pin older mesh-stamped turns into the active set
+// when they are in the fetched export. When --require-sources still misses a
+// class, pin the newest stamped turn of that class from the explicit tenant
+// palace. That palace pin is age-agnostic: a day or week ops window does not
+// drop a stamp that is already on disk. A class with no stamped turns stays
+// an honest miss. Unstamped palace_timeline and other-org palaces do not
+// satisfy. Never invent mesh. dual_write OFF.
 
 const (
 	opsDigestLimitDefault  = 20
 	opsDigestLimitCiteBoth = 50 // MCP ops_digest_export cap
-	// citeBothSupplementWindow is the widest ops digest window (week).
-	// A day export drops older mesh when only fresh private lands in-window (#460).
-	citeBothSupplementWindow = 7 * 24 * time.Hour
-	palaceCiteScanFileCap    = 8000
-	palaceCiteScanMaxBytes   = 1 << 20
+	palaceCiteScanFileCap  = 8000
+	palaceCiteScanMaxBytes = 1 << 20
 )
 
 // palaceCiteTiers are the on-disk palace tiers that hold turns (kernel layout).
@@ -493,10 +491,10 @@ func formatPalaceOutsideWindow(res *iomesh.MemoryOpsDigestResult, missing []stri
 }
 
 // supplementCiteBothReceipts fills required classes the day export omitted (#460).
-// It merges a week ops-digest export (the widest product window), then reads the
-// named local palace for this tenant. Stamps inside the week window are pinned.
-// Stamps older than that week stay out of the receipt set and are named on the miss.
-// An unnamed default palace is not scanned. Never invents mesh. dual_write OFF.
+// It merges a week ops-digest export, then reads the named local palace for this
+// tenant. The newest stamped turn of each still-missing class is pinned with no
+// day/week age gate. An unnamed default palace is not scanned. Other orgs are
+// not read. Never invents mesh. dual_write OFF.
 func (rt *Runtime) supplementCiteBothReceipts(ctx context.Context, res *iomesh.MemoryOpsDigestResult, required []string, window, horizon string, fetchLimit int, asOf string) {
 	if rt == nil || res == nil || len(required) == 0 {
 		return
@@ -519,12 +517,9 @@ func (rt *Runtime) supplementCiteBothReceipts(ctx context.Context, res *iomesh.M
 	if !explicit || !palaceDirExists(root) {
 		return
 	}
-	pins, outside := scanPalaceCiteClasses(root, rt.memoryTenant(), missing, digestBoundAsOf(res, asOf))
+	pins := scanPalaceCiteClasses(root, rt.memoryTenant(), missing)
 	if len(pins) > 0 {
 		res.Receipts = mergeDigestReceipts(res.Receipts, pins)
-	}
-	if len(outside) > 0 {
-		res.PalaceOutsideWindow = outside
 	}
 }
 
@@ -574,52 +569,21 @@ func missingCiteClasses(receipts []iomesh.MemoryOpsDigestReceipt, required []str
 	return missing
 }
 
-func digestBoundAsOf(res *iomesh.MemoryOpsDigestResult, asOf string) time.Time {
-	candidates := []string{strings.TrimSpace(asOf)}
-	if res != nil {
-		candidates = append(candidates, strings.TrimSpace(res.AsOf))
-	}
-	for _, s := range candidates {
-		if t, ok := parseCiteRFC3339(s); ok {
-			return t
-		}
-	}
-	return time.Now().UTC()
-}
-
-func parseCiteRFC3339(s string) (time.Time, bool) {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return time.Time{}, false
-	}
-	if t, err := time.Parse(time.RFC3339, s); err == nil && citeTimeUsable(t) {
-		return t.UTC(), true
-	}
-	if t, err := time.Parse(time.RFC3339Nano, s); err == nil && citeTimeUsable(t) {
-		return t.UTC(), true
-	}
-	return time.Time{}, false
-}
-
 func citeTimeUsable(t time.Time) bool {
 	return !t.IsZero() && t.Year() >= 2000
 }
 
-// scanPalaceCiteClasses reads one tenant palace for required classes the export
-// missed. In-week stamps are returned as real receipts. Older stamps are named
-// and not returned as citations. Other org directories are not read.
-func scanPalaceCiteClasses(root, tenant string, classes []string, asOf time.Time) (pins []iomesh.MemoryOpsDigestReceipt, outside []iomesh.MemoryOpsDigestPalaceOutside) {
+// scanPalaceCiteClasses reads one explicit tenant palace for required classes
+// the export missed. The newest stamped turn of each class is returned as a
+// real receipt, including stamps older than the day/week ops window (#460).
+// A stamp with no usable event time is used only when no timed stamp exists.
+// Unstamped palace_timeline does not match a missing mesh class. Other org
+// directories are not read. Never invents a turn.
+func scanPalaceCiteClasses(root, tenant string, classes []string) []iomesh.MemoryOpsDigestReceipt {
 	dir, ok := palaceTenantDir(root, tenant)
 	if !ok || len(classes) == 0 {
-		return nil, nil
+		return nil
 	}
-	if !citeTimeUsable(asOf) {
-		asOf = time.Now().UTC()
-	}
-	asOf = asOf.UTC()
-	start := asOf.Add(-citeBothSupplementWindow)
-	end := asOf.Add(2 * time.Minute)
-
 	want := map[string]bool{}
 	for _, c := range classes {
 		want[c] = true
@@ -629,11 +593,10 @@ func scanPalaceCiteClasses(root, tenant string, classes []string, asOf time.Time
 		when    time.Time
 	}
 	type palaceCiteClass struct {
-		count       int
-		newest      palaceCiteHit
-		hasNewest   bool
-		inWindow    palaceCiteHit
-		hasInWindow bool
+		newest     palaceCiteHit
+		hasNewest  bool
+		untimed    iomesh.MemoryOpsDigestReceipt
+		hasUntimed bool
 	}
 	byClass := map[string]*palaceCiteClass{}
 	scanned := 0
@@ -663,47 +626,36 @@ func scanPalaceCiteClasses(root, tenant string, classes []string, asOf time.Time
 				acc = &palaceCiteClass{}
 				byClass[class] = acc
 			}
-			acc.count++
 			when := receiptEventTime(r)
-			if !citeTimeUsable(when) {
+			if citeTimeUsable(when) {
+				if !acc.hasNewest || when.After(acc.newest.when) {
+					acc.newest = palaceCiteHit{receipt: r, when: when}
+					acc.hasNewest = true
+				}
 				return nil
 			}
-			if !acc.hasNewest || when.After(acc.newest.when) {
-				acc.newest = palaceCiteHit{receipt: r, when: when}
-				acc.hasNewest = true
-			}
-			if !when.Before(start) && !when.After(end) {
-				if !acc.hasInWindow || when.After(acc.inWindow.when) {
-					acc.inWindow = palaceCiteHit{receipt: r, when: when}
-					acc.hasInWindow = true
-				}
+			if !acc.hasUntimed {
+				acc.untimed = r
+				acc.hasUntimed = true
 			}
 			return nil
 		})
 	}
+	var pins []iomesh.MemoryOpsDigestReceipt
 	for _, class := range classes {
 		acc := byClass[class]
-		if acc == nil || acc.count == 0 {
+		if acc == nil {
 			continue
 		}
-		if acc.hasInWindow {
-			pins = append(pins, acc.inWindow.receipt)
-			continue
-		}
-		newest := ""
 		if acc.hasNewest {
-			newest = strings.TrimSpace(acc.newest.receipt.EventTime)
-			if newest == "" {
-				newest = acc.newest.when.UTC().Format(time.RFC3339)
-			}
+			pins = append(pins, acc.newest.receipt)
+			continue
 		}
-		outside = append(outside, iomesh.MemoryOpsDigestPalaceOutside{
-			Class:  class,
-			Count:  acc.count,
-			Newest: newest,
-		})
+		if acc.hasUntimed {
+			pins = append(pins, acc.untimed)
+		}
 	}
-	return pins, outside
+	return pins
 }
 
 func palaceTenantDir(root, tenant string) (string, bool) {

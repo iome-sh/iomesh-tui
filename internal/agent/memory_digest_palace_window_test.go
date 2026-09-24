@@ -14,7 +14,7 @@ import (
 	"github.com/iome-sh/iomesh-tui/internal/iomesh"
 )
 
-func TestScanPalaceCiteClasses_InWeekMeshPinsOutsideNamesDisk(t *testing.T) {
+func TestScanPalaceCiteClasses_PinsNewestStampedAnyAge(t *testing.T) {
 	asOf := time.Date(2026, 9, 24, 2, 14, 8, 0, time.UTC)
 	root := t.TempDir()
 	tenant := "org_ybq5j16vgr3b7uagfzkeoy7l"
@@ -38,12 +38,9 @@ func TestScanPalaceCiteClasses_InWeekMeshPinsOutsideNamesDisk(t *testing.T) {
 		Prov:      "mesh", Tags: []string{"source_hint:mesh"},
 	})
 
-	pins, outside := scanPalaceCiteClasses(root, tenant, []string{"mesh"}, asOf)
-	if len(outside) != 0 {
-		t.Fatalf("in-week mesh must pin, not name outside: %+v", outside)
-	}
+	pins := scanPalaceCiteClasses(root, tenant, []string{"mesh"})
 	if len(pins) != 1 || pins[0].ID != "mesh-in-week" {
-		t.Fatalf("want newest in-week mesh pin, got %+v", pins)
+		t.Fatalf("want newest stamped mesh pin, got %+v", pins)
 	}
 	if ClassifyDigestReceipt(pins[0]) != DigestSourceMesh {
 		t.Fatalf("pinned class=%q", ClassifyDigestReceipt(pins[0]))
@@ -53,20 +50,24 @@ func TestScanPalaceCiteClasses_InWeekMeshPinsOutsideNamesDisk(t *testing.T) {
 	}
 
 	oldRoot := t.TempDir()
+	older := asOf.Add(-30 * 24 * time.Hour)
+	newestOld := time.Date(2026, 9, 10, 6, 49, 4, 0, time.UTC)
 	writePalaceTurn(t, oldRoot, tenant, "tier-2-contextual", "mesh-old.json", palaceTurn{
 		ID: "mesh-old", Summary: "ancient mesh",
-		Timestamp: asOf.Add(-30 * 24 * time.Hour).Format(time.RFC3339),
+		Timestamp: older.Format(time.RFC3339),
 		Prov:      "mesh",
 	})
-	pins, outside = scanPalaceCiteClasses(oldRoot, tenant, []string{"mesh"}, asOf)
-	if len(pins) != 0 {
-		t.Fatalf("mesh older than week must not be cited: %+v", pins)
+	writePalaceTurn(t, oldRoot, tenant, "tier-3-archival", "mesh-sep.json", palaceTurn{
+		ID: "mesh-sep10", Summary: "newest old mesh",
+		Timestamp: newestOld.Format(time.RFC3339),
+		Prov:      "mesh", Tags: []string{"source_hint:mesh"},
+	})
+	pins = scanPalaceCiteClasses(oldRoot, tenant, []string{"mesh"})
+	if len(pins) != 1 || pins[0].ID != "mesh-sep10" {
+		t.Fatalf("mesh older than week must still pin newest stamp, got %+v", pins)
 	}
-	if len(outside) != 1 || outside[0].Class != "mesh" || outside[0].Count != 1 {
-		t.Fatalf("outside=%+v", outside)
-	}
-	if outside[0].Newest != asOf.Add(-30*24*time.Hour).Format(time.RFC3339) {
-		t.Fatalf("newest_mesh=%q", outside[0].Newest)
+	if pins[0].EventTime != newestOld.Format(time.RFC3339) {
+		t.Fatalf("newest event_time=%q", pins[0].EventTime)
 	}
 
 	onlyPrivate := t.TempDir()
@@ -74,9 +75,19 @@ func TestScanPalaceCiteClasses_InWeekMeshPinsOutsideNamesDisk(t *testing.T) {
 		ID: "priv-unstamped", Summary: "palace timeline only",
 		Timestamp: asOf.Add(-time.Hour).Format(time.RFC3339),
 	})
-	pins, outside = scanPalaceCiteClasses(onlyPrivate, tenant, []string{"mesh"}, asOf)
-	if len(pins) != 0 || len(outside) != 0 {
-		t.Fatalf("unstamped palace_timeline must not invent mesh pins=%+v outside=%+v", pins, outside)
+	pins = scanPalaceCiteClasses(onlyPrivate, tenant, []string{"mesh"})
+	if len(pins) != 0 {
+		t.Fatalf("unstamped palace_timeline must not invent mesh pins=%+v", pins)
+	}
+
+	untimed := t.TempDir()
+	writePalaceTurn(t, untimed, tenant, "tier-1-working", "mesh-notime.json", palaceTurn{
+		ID: "mesh-notime", Summary: "mesh without time",
+		Prov: "mesh", Tags: []string{"source_hint:mesh"},
+	})
+	pins = scanPalaceCiteClasses(untimed, tenant, []string{"mesh"})
+	if len(pins) != 1 || pins[0].ID != "mesh-notime" {
+		t.Fatalf("stamped mesh with no event time must still pin, got %+v", pins)
 	}
 }
 
@@ -196,14 +207,14 @@ func TestMemoryOpsDigest_PalaceMeshInsideWeekCitesBoth(t *testing.T) {
 	}
 }
 
-func TestMemoryOpsDigest_PalaceMeshOutsideWeekNamesDisk(t *testing.T) {
-	asOf := time.Date(2026, 9, 24, 2, 14, 8, 0, time.UTC)
+func TestMemoryOpsDigest_PalaceMeshOutsideWeekCitesBoth(t *testing.T) {
+	asOf := time.Date(2026, 9, 24, 3, 47, 32, 0, time.UTC)
 	tenant := "org_ybq5j16vgr3b7uagfzkeoy7l"
-	newest := asOf.Add(-30 * 24 * time.Hour)
+	newest := time.Date(2026, 9, 10, 6, 49, 4, 0, time.UTC)
 	root := t.TempDir()
 	writePalaceTurn(t, root, tenant, "tier-1-working", "mesh-a.json", palaceTurn{
 		ID: "mesh-a", Summary: "older mesh",
-		Timestamp: newest.Add(-time.Hour).Format(time.RFC3339),
+		Timestamp: newest.Add(-24 * time.Hour).Format(time.RFC3339),
 		Prov:      "mesh", Tags: []string{"source_hint:mesh"},
 	})
 	writePalaceTurn(t, root, tenant, "tier-3-archival", "mesh-b.json", palaceTurn{
@@ -221,22 +232,12 @@ func TestMemoryOpsDigest_PalaceMeshOutsideWeekNamesDisk(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{
-		"require-sources: miss",
-		"cited=private",
-		"missing=mesh",
-		"mesh not in this receipt set",
-		"mesh on palace outside window",
-		"mesh_on_disk=2",
-		"newest_mesh=" + newest.Format(time.RFC3339),
-		"dual_write OFF",
-	} {
-		if !strings.Contains(out, want) {
-			t.Fatalf("missing %q in %q", want, out)
-		}
+	assertCiteBothOK(t, out, "newest old mesh")
+	if strings.Contains(out, "mesh on palace outside window") || strings.Contains(out, "mesh_on_disk=") || strings.Contains(out, "missing=mesh") {
+		t.Fatalf("outside-week stamped mesh must cite, not name a window miss: %q", out)
 	}
-	if strings.Contains(out, "require-sources: ok") || strings.Contains(out, "Connected") || strings.Contains(out, "Memory GA") {
-		t.Fatalf("must not invent cite-both / Connected / Memory GA: %q", out)
+	if strings.Contains(out, "Connected") || strings.Contains(out, "Memory GA") {
+		t.Fatalf("must not invent Connected / Memory GA: %q", out)
 	}
 	if rt.memory.DualWrite {
 		t.Fatal("dual_write must remain OFF")
@@ -266,14 +267,63 @@ func TestMemoryOpsDigest_OtherOrgAndUnstampedDoNotInventMesh(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(out, "require-sources: miss") || !strings.Contains(out, "missing=mesh") {
-		t.Fatalf("want mesh miss: %q", out)
+	for _, want := range []string{
+		"require-sources: miss",
+		"missing=mesh",
+		"miss_class=no_mesh_pulse",
+		"mesh not in this receipt set",
+		"cited=private",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("missing %q in %q", want, out)
+		}
 	}
 	if strings.Contains(out, "mesh on palace outside window") || strings.Contains(out, "mesh_on_disk=") {
 		t.Fatalf("must not claim mesh on this org palace: %q", out)
 	}
-	if strings.Contains(out, "require-sources: ok") || strings.Contains(out, "other org mesh") {
+	if strings.Contains(out, "require-sources: ok") || strings.Contains(out, "other org mesh") || strings.Contains(out, "Connected") {
 		t.Fatalf("must not invent mesh from another org: %q", out)
+	}
+}
+
+func TestMemoryOpsDigest_PalacePrivateOutsideWeekCitesBoth(t *testing.T) {
+	asOf := time.Date(2026, 9, 24, 3, 47, 32, 0, time.UTC)
+	tenant := "org_ybq5j16vgr3b7uagfzkeoy7l"
+	root := t.TempDir()
+	writePalaceTurn(t, root, tenant, "tier-2-contextual", "private-old.json", palaceTurn{
+		ID: "priv-old", Summary: "old private RCA",
+		Timestamp: time.Date(2026, 8, 1, 0, 0, 0, 0, time.UTC).Format(time.RFC3339),
+		Prov:      "private", Tags: []string{"source_hint:private"},
+	})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"window": "day", "horizon": "ops",
+			"since": asOf.Add(-24 * time.Hour).Format(time.RFC3339),
+			"as_of": asOf.Format(time.RFC3339),
+			"honesty": map[string]any{
+				"ops_pulse": "ga_path", "never_invent_ga": true, "dual_write_default": "off",
+			},
+			"patterns": []any{},
+			"receipts": []map[string]any{
+				{
+					"id": "m1", "event_time": asOf.Add(-time.Hour).Format(time.RFC3339),
+					"summary": "durable mesh pull", "source_hint": "mesh",
+				},
+			},
+		})
+	}))
+	defer srv.Close()
+
+	rt := digestRuntime(srv.URL, tenant, root)
+	out, err := rt.MemoryOpsDigest(context.Background(), MemoryOpsDigestOpts{
+		RequireSources: []string{"mesh", "private"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertCiteBothOK(t, out, "durable mesh pull")
+	if !strings.Contains(out, "private=old private RCA") {
+		t.Fatalf("want outside-week private pin: %q", out)
 	}
 }
 
