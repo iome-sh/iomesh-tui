@@ -800,6 +800,19 @@ type MemoryOpsDigestResult struct {
 	FetchedN      int    `json:"-"`
 	FetchedNewest string `json:"-"`
 	FetchedOldest string `json:"-"`
+	// PalaceOutsideWindow is TUI-side (#460). A required class exists on the
+	// local palace but its newest stamp is older than the cite-both supplement
+	// window (week). Not a citation. Never invented.
+	PalaceOutsideWindow []MemoryOpsDigestPalaceOutside `json:"-"`
+}
+
+// MemoryOpsDigestPalaceOutside is a required cite class found on the local
+// palace outside the week supplement window (#460). Count and Newest come
+// from stamped turns on disk — never invented.
+type MemoryOpsDigestPalaceOutside struct {
+	Class  string
+	Count  int
+	Newest string
 }
 
 // UnmarshalJSON lifts receipts from nested MCP/sidecar envelopes (data/result/pack)
