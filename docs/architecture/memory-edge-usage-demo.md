@@ -51,7 +51,7 @@ This is a **runbook-style example**, not a product claim that every step is auto
 | **mesh optional** | Optional mesh commercial overlay exists on the private platform · **do not invent a priced SKU on the MIT local path** · local memory is free MIT · not required for local-primary Memory |
 | **rates honesty** | Do **not** invent a priced SKU on the MIT local path · local memory is free MIT · optional mesh overlay stays on the private platform |
 
-Deep architecture: [memory-mcp.md](./memory-mcp.md) · integrations: [agent-integrations-setup.md](./agent-integrations-setup.md) · MCP client: [mcp.md](./mcp.md) · E4 stamp: [EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md](../EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md).
+Deep architecture: [memory-mcp.md](./memory-mcp.md) · integrations: [agent-integrations-setup.md](./agent-integrations-setup.md) · MCP client: [mcp.md](./mcp.md) · E4 stamp: internal note removed from this public repository.
 
 ---
 
@@ -314,7 +314,7 @@ dirs = ["/absolute/path/to/iomesh-tui/examples/agent-plugins/iomesh-memory-mcp"]
 #   memory_list, memory_compact_status, memory_facts_as_of
 ```
 
-Pinned residual stamp (do not invent more): [EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md](../EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md) · `connected=1` · `tools=6` · UTC `2026-08-09T06:23:34Z`.
+Pinned residual stamp (do not invent more): internal note removed from this public repository · `connected=1` · `tools=6` · UTC `2026-08-09T06:23:34Z`.
 
 ---
 
@@ -504,7 +504,6 @@ curl -fsS http://127.0.0.1:8080/healthz
 | [memory-mcp.md](./memory-mcp.md) | Full Memory phases, slash table, edge OSS honesty |
 | [agent-integrations-setup.md](./agent-integrations-setup.md) | `/integrations` MCP tools + portal HITL |
 | [mcp.md](./mcp.md) | MCP client transports + `iomesh mcp --connect` |
-| [EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md](../EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md) | Pinned E4 attach stamp |
 | [examples/agent-plugins/iomesh-memory-mcp](../../examples/agent-plugins/iomesh-memory-mcp/) | Product sample plugin map |
 | Peer [iomesh-memory-mcp](https://github.com/iome-sh/iomesh-memory-mcp) | Product host README · compose · tools |
 | Peer [memory](https://github.com/iome-sh/memory) | Kernel library API |

@@ -160,7 +160,7 @@ func RunDeeperToolCallSoftDogfood() string {
 	b.WriteString("  note: residual PASS ≠ live dogfood · tip ≠ invent forever-green product dogfood · free eng s1578\n")
 	b.WriteString("  tip: re-run /onboard next status then /onboard next export — companion e4 lane + memory lane + journey stage 6/7 remain independent\n")
 	b.WriteString("  slash: /onboard next tool-call dogfood (aliases soft|samples|offline|tool-call-soft) · bare /onboard next tool-call stays board\n")
-	b.WriteString("  companion: /onboard next e4 · /onboard next memory · /onboard next journey · /memory status · docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md\n")
+	b.WriteString("  companion: /onboard next e4 · /onboard next memory · /onboard next journey · /memory status · internal note removed from this public repository\n")
 	b.WriteString("\n")
 	b.WriteString("Locks: dual_write OFF · book-demo OFF · Cloud Memory GA · residual PASS ≠ invent Connected · E10 Open · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · E10 stays Open (never invent closed) · soft offline ≠ invent Connected · session soft ≠ live dogfood · free eng s1578 · free-floor peer s1580+ mention only")
 	return b.String()

@@ -97,7 +97,7 @@ This document describes the security posture of **iomesh-tui** for operators and
 
 ### Buyer claim pin (s774) · org-pulse edge (s785)
 
-MIT OSS TUI is an **agent harness** + optional mesh **client** — not the hosted multi-tenant mesh control plane. Local agent on the **org pulse plane** (publish/pull `dept.*` heartbeats / pulses — not OTel/APM). Memory = **local-primary** (MCP palace + optional pull); **Cloud Memory GA**; dual_write default OFF; hosted Palace sunset; local Ollama ≠ platform GPU. Full table: [architecture/memory-mcp.md](architecture/memory-mcp.md#buyer-claim-pin-s774) · [mesh-dogfood.md org-pulse s785](architecture/mesh-dogfood.md#org-pulse-edge-framing-s785-pin).
+MIT OSS TUI is an **agent harness** + optional mesh **client** — not the hosted multi-tenant mesh control plane. Local agent on the **org pulse plane** (publish/pull `dept.*` heartbeats / pulses — not OTel/APM). Memory = **local-primary** (MCP palace + optional pull); **Cloud Memory GA**; dual_write default OFF; hosted Palace sunset; local Ollama ≠ platform GPU. Full table: [architecture/memory-mcp.md](architecture/memory-mcp.md#buyer-claim-pin-s774) · internal note removed from this public repository.
 
 ## Operator recommendations
 

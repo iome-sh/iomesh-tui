@@ -155,7 +155,7 @@ func RunE10OpenSoftDogfood() string {
 	b.WriteString("  note: residual PASS ≠ invent E10 closed · PASS ≠ live APPLY · residual-check · free eng s1586\n")
 	b.WriteString("  tip: re-run /onboard next status then /onboard next export — companion e4 · human-gates · OSS packaging remain independent\n")
 	b.WriteString("  slash: /onboard next e10 dogfood (aliases soft|samples|offline|e10-soft|residual-check) · bare /onboard next e10 stays board\n")
-	b.WriteString("  companion: /onboard next e4 · /onboard next human-gates · /onboard next tool-call · /onboard next · docs/architecture/oss-packaging-boundary.md · docs/architecture/edge-user-journey.md · docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md\n")
+	b.WriteString("  companion: /onboard next e4 · /onboard next human-gates · /onboard next tool-call · /onboard next · docs/architecture/oss-packaging-boundary.md · docs/architecture/edge-user-journey.md · internal note removed from this public repository\n")
 	b.WriteString("\n")
 	b.WriteString("Locks: dual_write OFF · book-demo OFF · Cloud Memory GA · residual PASS ≠ invent Connected · residual PASS ≠ invent E10 closed · E10 Open · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · E10 stays Open (never invent closed) · soft offline ≠ invent Connected · session soft ≠ live dogfood · residual-check · free eng s1586 · free-floor peer s1588+ mention only")
 	return b.String()

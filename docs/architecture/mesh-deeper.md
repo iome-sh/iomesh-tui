@@ -2,7 +2,7 @@
 
 Extends the offline-first mesh client beyond health/context/emit dogfood.
 
-**Org event streams / heartbeats (docs framing):** mesh streams and `dept.*` publishes are organizational **heartbeats / pulses** on the org pulse plane — signed work events agents and operators share — not host/APM MELT. Public lexicon = **heartbeat / pulse** only. TUI remains a lean local-edge client (publish/pull · local-primary memory); not the hosted multi-tenant control plane. See [mesh-dogfood.md org-pulse edge framing (s785)](mesh-dogfood.md#org-pulse-edge-framing-s785-pin).
+**Org event streams / heartbeats (docs framing):** mesh streams and `dept.*` publishes are organizational **heartbeats / pulses** on the org pulse plane — signed work events agents and operators share — not host/APM MELT. Public lexicon = **heartbeat / pulse** only. TUI remains a lean local-edge client (publish/pull · local-primary memory); not the hosted multi-tenant control plane. See internal note removed from this public repository.
 
 ## Lineage-aware context
 

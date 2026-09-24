@@ -350,7 +350,7 @@ func MeshAgentOnboardingNextMemoryLane() string {
         attach: streamable HTTP http://127.0.0.1:8080/mcp or stdio command iomesh-memory-mcp
         docker compose still valid: docker compose up --build → image iomesh-memory-mcp:local → http://127.0.0.1:8080/mcp · healthz
  · history (s1458–s1469 residual): M2 lean host · M3 edge dogfood tip · M4 public flip readiness (kernel first · then iomesh-memory-mcp) — flip is now complete for edge packs; readiness tip · Cloud Memory GA
- · s1508 E4 MCP client attach dogfood tip: lean host HTTP → iomesh mcp --connect · connected=1 · tools=6 stamp residual · Cloud Memory GA · residual PASS ≠ invent Connected · E10 Open · tip ≠ invent forever-green product dogfood · dual_write OFF · Cloud Memory GA · docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md
+ · s1508 E4 MCP client attach dogfood tip: lean host HTTP → iomesh mcp --connect · connected=1 · tools=6 stamp residual · Cloud Memory GA · residual PASS ≠ invent Connected · E10 Open · tip ≠ invent forever-green product dogfood · dual_write OFF · Cloud Memory GA · internal note removed from this public repository
  · offline gate mention: peer mcp make edge-dogfood-gate (mention only) · TUI docs docs/architecture/memory-mcp.md
  · dual_write OFF · control-plane / broker private (cloud CP stays private · not OSS edge pack) · control-plane still private
  · flip complete residual: public OSS edge · Cloud Memory GA · ≠ freemium palace · dual_write OFF · package load ≠ Connected
@@ -381,7 +381,7 @@ func MeshAgentOnboardingNextMemoryLane() string {
  · mesh ≠ memory · mesh optional · mesh optional for pull only · memory lane is local-edge palace, not streaming org heartbeats
  · iomesh-memory-mcp product host only · TUI OSS · control-plane / broker private · s1517 product-only memory sample
  · rates ~$88 mesh / ~$119 Memory Ops Pack optional · package load ≠ Connected · Ops Pack ≠ GPU fleet
-  Companion: /onboard next e4 (s1566 · journey stage 6 E4 client-attach soft dogfood residual) · /onboard next e4 dogfood · /onboard next tool-call (s1578 · deeper tool-call residual after attach) · /onboard next tool-call dogfood · /onboard next memory-pull (optional Ops Pack pull path only when mesh configured · s1695 · not first-run required) · /onboard next operator · docs/architecture/memory-mcp.md Edge OSS Option A · public product attach (s1478) · E4 client attach (s1508) · docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md
+  Companion: /onboard next e4 (s1566 · journey stage 6 E4 client-attach soft dogfood residual) · /onboard next e4 dogfood · /onboard next tool-call (s1578 · deeper tool-call residual after attach) · /onboard next tool-call dogfood · /onboard next memory-pull (optional Ops Pack pull path only when mesh configured · s1695 · not first-run required) · /onboard next operator · docs/architecture/memory-mcp.md Edge OSS Option A · public product attach (s1478) · E4 client attach (s1508) · internal note removed from this public repository
   Back: /onboard next · /memory status · portal Agent/MCP https://console.iome.sh/settings/agent
 
 Locks: dual_write OFF · book-demo OFF · Palace sunset · residual PASS ≠ live dogfood · offline dogfood tip ≠ invent live dogfood as green · PASS ≠ live APPLY · PASS ≠ invent full platform sidecar parity · Cloud Memory GA · public edge ≠ invent Connected · Cloud Memory GA · public OSS ≠ invent Connected · Cloud Memory GA · residual PASS ≠ invent Connected · E10 Open · tip ≠ invent forever-green product dogfood · no GOPRIVATE · go install · package load ≠ Connected · ≠ freemium palace · not freemium hosted palace · never invent install green / Connected / INSTALL_STORE APPLY · catalog ≠ Connected · portal HITL · agent MCP cannot write installs · rates ~$88/$119 optional · Memory Ops Pack optional · Ops Pack not first-run required · OSS first-run complete without mesh · mesh ≠ memory · mesh optional · mesh optional for pull · Ops Pack ≠ GPU fleet · TUI OSS · iomesh-memory-mcp · control-plane / broker private · control-plane still private · s1517 product-only memory sample (iomesh-memory-mcp) · companion E4 soft residual s1566 · deeper tool-call soft residual s1578 · free eng s1695`)
@@ -539,7 +539,7 @@ func MeshAgentOnboardingNextJourneyLane() string {
   Residual gaps (do not invent closed):
  · no SSO invent · host not auto · portal HITL still human · dual_write OFF · Cloud Memory GA
  · free-floor peer s1560+ mention only (do not rewrite free-floor)
-  Docs: docs/architecture/edge-user-journey.md · docs/architecture/setup-lifecycle.md · docs/architecture/memory-edge-usage-demo.md · docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md
+  Docs: docs/architecture/edge-user-journey.md · docs/architecture/setup-lifecycle.md · docs/architecture/memory-edge-usage-demo.md · internal note removed from this public repository
   Companion: /onboard next wizard (s1570 Wave C guided residual) · /onboard next wizard dogfood · /onboard next setup (stage 4 P1–P7) · /onboard next portal-hitl (stage 5) · /onboard next portal-hitl dogfood · /onboard next e4 (stage 6) · /onboard next e4 dogfood · /onboard next tool-call (s1578 deeper tool residual) · /onboard next tool-call dogfood · /onboard next agentic · /onboard next memory · /onboard next human-gates · /onboard next operator
   Slash: /onboard next journey (aliases edge-journey|user-journey|first-run|edge_user_journey)
   Back: /onboard next · /onboard next wizard · /onboard next status · /onboard next export
@@ -675,7 +675,7 @@ func MeshAgentOnboardingNextE4Lane() string {
   Steps:
     1. Product host local-primary — iomesh-memory-mcp only (public · go install / compose) · dual_write OFF
     2. E4 client attach residual — lean host HTTP → iomesh mcp --connect · tools=6 stamp residual · Cloud Memory GA
-    3. Evidence stamp (static offline) — docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md · residual PASS ≠ invent Connected · E10 Open
+    3. Evidence stamp (static offline) — internal note removed from this public repository · residual PASS ≠ invent Connected · E10 Open
     4. Soft offline E4 dogfood residual — /onboard next e4 dogfood · soft offline ≠ invent Connected · session soft ≠ live dogfood · residual PASS ≠ live dogfood
     5. Companion memory lane — /onboard next memory · /memory status · tip ≠ invent forever-green product dogfood
   Soft offline E4 dogfood (s1566 · session soft ≠ live dogfood):
@@ -699,7 +699,7 @@ func MeshAgentOnboardingNextE4Lane() string {
  · E10 Open reaffirm: /onboard next e10 (s1586) · soft residual-check /onboard next e10 dogfood
  · NOT bare mcp|palace under /onboard next (memory lane) · NOT live host start · dual_write stays OFF (never invent primary ON)
   Back: /onboard next · /onboard next journey · /onboard next memory · /onboard next tool-call · /onboard next e10 · /onboard next status · /onboard next export
-  Docs: docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md · docs/architecture/edge-user-journey.md stage 6 · docs/architecture/memory-mcp.md · docs/architecture/oss-packaging-boundary.md
+  Docs: internal note removed from this public repository · docs/architecture/edge-user-journey.md stage 6 · docs/architecture/memory-mcp.md · docs/architecture/oss-packaging-boundary.md
 
 Locks: dual_write OFF · book-demo OFF · Cloud Memory GA · residual PASS ≠ invent Connected · E10 Open · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · E10 stays Open (never invent closed) · soft offline ≠ invent Connected · session soft ≠ live dogfood · free eng s1566 · free-floor peer s1568+ mention only · companion deeper tool-call s1578 · companion E10 Open reaffirm s1586 · %s`, softLabel, softLabel))
 }
@@ -719,7 +719,7 @@ func MeshAgentOnboardingNextToolCallLane() string {
   Steps:
     1. Companion E4 attach residual — /onboard next e4 · tools=6 · iomesh mcp --connect · s1508/s1566 attach stamp residual · dual_write OFF
     2. Deeper tool path names (operator map · soft offline residual): memory_ingest_turn → memory_retrieve → memory_search_semantic → memory_list → memory_compact_status → memory_facts_as_of
-    3. Evidence / stamp residual — Partial→client-attach-evidence · docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md · residual PASS ≠ invent Connected · E10 Open
+    3. Evidence / stamp residual — Partial→client-attach-evidence · internal note removed from this public repository · residual PASS ≠ invent Connected · E10 Open
     4. Soft offline deeper tool-call dogfood residual — /onboard next tool-call dogfood · soft offline ≠ invent Connected · session soft ≠ live dogfood · residual PASS ≠ live dogfood
     5. Companion memory / journey — /onboard next memory · /onboard next journey · /memory status · tip ≠ invent forever-green product dogfood
   Soft offline deeper tool-call dogfood (s1578 · session soft ≠ live dogfood):
@@ -744,7 +744,7 @@ func MeshAgentOnboardingNextToolCallLane() string {
  · E10 Open reaffirm: /onboard next e10 (s1586) · soft residual-check /onboard next e10 dogfood
  · NOT bare mcp|palace under /onboard next (memory lane) · NOT bare e4 (E4 attach lane) · NOT live host start · dual_write stays OFF (never invent primary ON)
   Back: /onboard next · /onboard next e4 · /onboard next e10 · /onboard next journey · /onboard next memory · /onboard next status · /onboard next export
-  Docs: docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md · docs/architecture/edge-user-journey.md stage 6/7 · docs/architecture/memory-mcp.md · docs/architecture/oss-packaging-boundary.md
+  Docs: internal note removed from this public repository · docs/architecture/edge-user-journey.md stage 6/7 · docs/architecture/memory-mcp.md · docs/architecture/oss-packaging-boundary.md
 
 Locks: dual_write OFF · book-demo OFF · Cloud Memory GA · residual PASS ≠ invent Connected · E10 Open · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · E10 stays Open (never invent closed) · soft offline ≠ invent Connected · session soft ≠ live dogfood · free eng s1578 · free-floor peer s1580+ mention only · Partial→client-attach-evidence · deeper tool-call residual candidacy (not forever-green full product dogfood) · companion E10 Open reaffirm /onboard next e10 (s1586) · %s`, softLabel, softLabel))
 }
@@ -781,12 +781,12 @@ func MeshAgentOnboardingNextE10Lane() string {
  · residual-check · residual PASS ≠ live dogfood · session soft ≠ live dogfood · soft offline ≠ invent Connected
  · OSS packaging · MIT harness · not control plane · residual PASS ≠ invent control plane in MIT repo
  · free eng s1586 · free-floor peer s1588+ mention only (do not rewrite free-floor)
-  Companion: /onboard next e4 · /onboard next e4 dogfood · /onboard next tool-call · /onboard next human-gates · /onboard next human-gates dogfood · /onboard next e10 dogfood · /onboard next · docs/architecture/oss-packaging-boundary.md · docs/architecture/edge-user-journey.md · docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md
+  Companion: /onboard next e4 · /onboard next e4 dogfood · /onboard next tool-call · /onboard next human-gates · /onboard next human-gates dogfood · /onboard next e10 dogfood · /onboard next · docs/architecture/oss-packaging-boundary.md · docs/architecture/edge-user-journey.md · internal note removed from this public repository
   Slash: /onboard next e10 (aliases e10-open|edge-memory-e10|ga-signoff|e10_open)
  · dogfood / residual-check: /onboard next e10 dogfood (aliases soft|samples|offline|e10-soft|residual-check)
  · NOT bare e4 (E4 attach lane) · NOT bare human-gates · NOT invent E10 closed · dual_write stays OFF (never invent primary ON)
   Back: /onboard next · /onboard next e4 · /onboard next human-gates · /onboard next tool-call · /onboard next status · /onboard next export
-  Docs: docs/architecture/oss-packaging-boundary.md · docs/architecture/edge-user-journey.md · docs/EDGE_MEMORY_E4_CLIENT_ATTACH_EVIDENCE.md · docs/architecture/memory-mcp.md
+  Docs: docs/architecture/oss-packaging-boundary.md · docs/architecture/edge-user-journey.md · internal note removed from this public repository · docs/architecture/memory-mcp.md
 
 Locks: dual_write OFF · book-demo OFF · Cloud Memory GA · residual PASS ≠ invent Connected · residual PASS ≠ invent E10 closed · E10 Open · Cloud Memory GA · E10 stays Open · Cloud Memory GA ≠ close E10 · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · E10 stays Open (never invent closed) · soft offline ≠ invent Connected · session soft ≠ live dogfood · residual-check · MIT harness · not control plane · free eng s1586 · free-floor peer s1588+ mention only · %s`, softLabel, softLabel))
 }
@@ -923,7 +923,7 @@ func MeshAgentOnboardingNextMarketingDemoLane() string {
  · /onboard next setup — full setup lifecycle map
  · /onboard next demo — packaging readiness board (Lighthouse · Landgrab NOT READY)
  · /onboard next sales — may claim / must not claim board
-  Docs: docs/architecture/marketing-demo-path.md · docs/architecture/memory-edge-usage-demo.md · docs/architecture/edge-user-journey.md
+  Docs: internal note removed from this public repository · docs/architecture/memory-edge-usage-demo.md · docs/architecture/edge-user-journey.md
 
   Slash: /onboard next marketing-demo (aliases marketing|sales-demo|demo-script|gtm-demo)
  · NOT bare demo|demo-ready|readiness|lighthouse|landgrab (those stay demo readiness s1442)
