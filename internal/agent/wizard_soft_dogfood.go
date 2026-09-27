@@ -95,7 +95,7 @@ var wizardSoftDogfoodNeedles = []string{
 	"/onboard next journey",
 	// Policy / GA locks
 	"dual_write OFF",
-	"Cloud Memory GA",
+	"available, optional beside TTFH",
 	"E10 Open",
 	// Connect / install honesty
 	"portal HITL when connect",
@@ -132,7 +132,7 @@ func RunFirstRunWizardSoftDogfood() string {
 	b.WriteString("  Path: soft offline residual check of wizard board honesty + guided first-run residual map (7 stages)\n")
 	b.WriteString(" · never dial MCP · never start host · residual PASS ≠ invent Connected · dual_write stays OFF · E10 Open\n")
 	b.WriteString(" · no invent TUI portal SSO · host not auto · residual PASS ≠ invent full interactive auto wizard · session soft ≠ live dogfood · soft offline ≠ invent Connected\n")
-	b.WriteString(" · residual PASS ≠ invent Connected · Cloud Memory GA · dual_write OFF · free eng s1570\n")
+	b.WriteString(" · residual PASS ≠ invent Connected · available, optional beside TTFH · dual_write OFF · free eng s1570\n")
 	b.WriteString("\n")
 	if pass {
 		b.WriteString("  result: PASS (soft offline residual only)\n")
@@ -149,7 +149,7 @@ func RunFirstRunWizardSoftDogfood() string {
 	b.WriteString(" · Wave C · first-run wizard residual · free eng s1570\n")
 	b.WriteString(" · 1. Signup · 2. Download TUI · 3. TUI auth/keys · 4. Setup · 5. Connectors · 6. Local store · 7. Analyze\n")
 	b.WriteString(" · companions: /onboard next setup · /onboard next portal-hitl · /onboard next e4 · /onboard next journey\n")
-	b.WriteString("  Honesty locks checked: dual_write OFF · Cloud Memory GA · E10 Open\n")
+	b.WriteString("  Honesty locks checked: dual_write OFF · available, optional beside TTFH · E10 Open\n")
 	b.WriteString(" · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected\n")
 	b.WriteString(" · residual PASS ≠ invent Connected · no invent TUI portal SSO · host not auto\n")
 	b.WriteString(" · residual PASS ≠ live dogfood · session soft ≠ live dogfood · soft offline ≠ invent Connected\n")
@@ -161,6 +161,6 @@ func RunFirstRunWizardSoftDogfood() string {
 	b.WriteString("  slash: /onboard next wizard dogfood (aliases soft|samples|offline|wizard-soft) · bare /onboard next wizard stays board\n")
 	b.WriteString("  companion: /onboard next journey · /onboard next setup · /onboard next portal-hitl · /onboard next e4 · /onboard next human-gates · docs/architecture/edge-user-journey.md\n")
 	b.WriteString("\n")
-	b.WriteString("Locks: dual_write OFF · book-demo OFF · Cloud Memory GA · residual PASS ≠ invent Connected · E10 Open · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · no invent TUI portal SSO · host not auto · residual PASS ≠ invent full interactive auto wizard · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · E10 stays Open (never invent closed) · soft offline ≠ invent Connected · session soft ≠ live dogfood · free eng s1570 · free-floor peer s1572+ mention only")
+	b.WriteString("Locks: dual_write OFF · book-demo OFF · available, optional beside TTFH · residual PASS ≠ invent Connected · E10 Open · portal HITL when connect · agent MCP cannot write installs · catalog ≠ Connected · no invent TUI portal SSO · host not auto · residual PASS ≠ invent full interactive auto wizard · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · E10 stays Open (never invent closed) · soft offline ≠ invent Connected · session soft ≠ live dogfood · free eng s1570 · free-floor peer s1572+ mention only")
 	return b.String()
 }

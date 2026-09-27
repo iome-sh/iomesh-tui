@@ -55,7 +55,7 @@ func TestMeshAgentOnboardingStartHere_LeanPath(t *testing.T) {
 		"workspace-as-principal",
 		"Entitlement ≠ live bind",
 		"catalog ≠ Connected",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("start-here missing %q in:\n%s", want, out)
@@ -88,7 +88,7 @@ func TestMeshAgentOnboardingGuidanceNote_HonestyNeedles(t *testing.T) {
 		"read_skill",
 		"dual_write OFF",
 		"catalog ≠ Connected",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"never invent Connected",
 		"never invent install green",
 		"INSTALL_STORE APPLY",
@@ -149,7 +149,7 @@ func TestMeshAgentOnboardingChecklist_HonestyNeedles(t *testing.T) {
 		"no send/pay/ship",
 		"/onboard next ttfh",
 		"catalog ≠ Connected",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"never invent Connected",
 		"never invent install green",
 		"INSTALL_STORE APPLY",
@@ -161,7 +161,7 @@ func TestMeshAgentOnboardingChecklist_HonestyNeedles(t *testing.T) {
 		}
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON · Cloud Memory GA: %s", out)
+		t.Fatalf("must not invent dual_write ON · available, optional beside TTFH: %s", out)
 	}
 	if strings.Contains(out, "/gtm checklist") || strings.Contains(out, "iomesh plugins dogfood") {
 		t.Fatalf("default checklist must not advertise hidden drills: %s", out)
@@ -227,7 +227,7 @@ func TestMeshAgentOnboardingStatus_HonestyNeedles(t *testing.T) {
 		"dual_write OFF",
 		"local-primary",
 		"catalog ≠ Connected",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"never invent Connected",
 		"empty until consume",
 		"CLIENT ≠ PULSE",
@@ -265,7 +265,7 @@ func TestOSSPackagingHonestyOneLiner_Needles(t *testing.T) {
 		"MIT OSS harness",
 		"not control plane",
 		"dual_write OFF",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"book-demo OFF",
 		"residual PASS ≠ invent control plane in MIT repo",
 		"residual-check",
@@ -321,7 +321,7 @@ func TestMeshAgentOnboardingNextLanes_HonestyNeedles(t *testing.T) {
 		"no send/pay/ship",
 		"dual_write OFF",
 		"catalog ≠ Connected",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"never invent Connected",
 		"knowledge Beta empty",
 		"eval template",
@@ -390,7 +390,7 @@ func TestMeshAgentOnboardingNextTTFHLane_HonestyNeedles(t *testing.T) {
 		"never APPLY",
 		"dual_write OFF",
 		"catalog ≠ Connected",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"never invent Connected",
 		"v1.3.7",
 		"v0.4.2",
@@ -556,7 +556,7 @@ func TestMeshAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 		"s1508",
 		"s1695",
 		"E4 MCP client attach",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"E10 Open",
 		"tip ≠ invent forever-green product dogfood",
@@ -574,8 +574,8 @@ func TestMeshAgentOnboardingNextMemoryLane_HonestyNeedles(t *testing.T) {
 		"healthz",
 		"edge-dogfood-gate",
 		"offline dogfood tip ≠ invent live dogfood as green",
-		"Cloud Memory GA · public edge ≠ invent Connected",
-		"Cloud Memory GA · public OSS ≠ invent Connected",
+		"available, optional beside TTFH · public edge ≠ invent Connected",
+		"available, optional beside TTFH · public OSS ≠ invent Connected",
 		"PASS ≠ invent full platform sidecar parity",
 		"tool parity may be lean",
 		"Palace sunset",
@@ -827,8 +827,8 @@ func TestMeshAgentOnboardingNextSetupLane_HonestyNeedles(t *testing.T) {
 		"E10 Open",
 		"setup_not_probed",
 		"offline static lane ≠ live dogfood",
-		"Cloud Memory GA · setup closeout ≠ invent Connected",
-		"Cloud Memory GA",
+		"available, optional beside TTFH · setup closeout ≠ invent Connected",
+		"available, optional beside TTFH",
 		"free eng s1558",
 		"/onboard next setup",
 		"setup-lifecycle|lifecycle|setup_lifecycle",
@@ -901,7 +901,7 @@ func TestMeshAgentOnboardingNextWizardLane_HonestyNeedles(t *testing.T) {
 		"/memory digest",
 		// honesty locks
 		"dual_write OFF",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"E10 Open",
 		"agent MCP cannot write installs",
@@ -982,7 +982,7 @@ func TestMeshAgentOnboardingNextJourneyLane_HonestyNeedles(t *testing.T) {
 		"/setup analyze",
 		// honesty locks
 		"dual_write OFF",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"agent MCP cannot write installs",
 		"catalog ≠ Connected",
@@ -1055,7 +1055,7 @@ func TestMeshAgentOnboardingNextPortalHITLLane_HonestyNeedles(t *testing.T) {
 		"portal_hitl_still",
 		"dual_write OFF",
 		"book-demo OFF",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"residual PASS ≠ live dogfood",
 		"soft offline ≠ invent Connected",
@@ -1114,7 +1114,7 @@ func TestMeshAgentOnboardingNextE4Lane_HonestyNeedles(t *testing.T) {
 		"internal note removed from this public repository",
 		"dual_write OFF",
 		"book-demo OFF",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"E10 Open",
 		"tip ≠ invent forever-green product dogfood",
@@ -1183,7 +1183,7 @@ func TestMeshAgentOnboardingNextToolCallLane_HonestyNeedles(t *testing.T) {
 		"internal note removed from this public repository",
 		"dual_write OFF",
 		"book-demo OFF",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"E10 Open",
 		"tip ≠ invent forever-green product dogfood",
@@ -1239,11 +1239,11 @@ func TestMeshAgentOnboardingNextE10Lane_HonestyNeedles(t *testing.T) {
 		"residual-check",
 		"residual PASS ≠ invent E10 closed",
 		"residual PASS ≠ invent Connected",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"dual_write OFF",
 		"book-demo OFF",
-		"Cloud Memory GA · E10 stays Open",
-		"Cloud Memory GA ≠ close E10",
+		"available, optional beside TTFH · E10 stays Open",
+		"available, optional beside TTFH ≠ close E10",
 		"PASS ≠ live APPLY",
 		"session soft ≠ live dogfood",
 		"residual PASS ≠ live dogfood",
@@ -1819,7 +1819,7 @@ func TestMeshAgentOnboardingNextOperatorMatrix_HonestyNeedles(t *testing.T) {
 		"portal HITL when connect",
 		"/onboard next human-gates",
 		"dual_write OFF",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"PASS ≠ invent Connected",
 		"H1/H2 not launch gate",
@@ -2082,7 +2082,7 @@ func TestMeshAgentHumanGatesHonestyBoard_HonestyNeedles(t *testing.T) {
 		"Stripe",
 		// offline / shipped
 		"agent MCP list/plan",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"residual PASS ≠ invent Connected",
 		"PASS ≠ invent Connected",
@@ -2190,12 +2190,12 @@ func TestMeshAgentOnboardingNextLaneStatus_HonestyNeedles(t *testing.T) {
 		"no GOPRIVATE",
 		"docker compose still valid",
 		"offline dogfood tip ≠ invent live dogfood as green",
-		"Cloud Memory GA · public edge ≠ invent Connected",
-		"Cloud Memory GA · public OSS ≠ invent Connected",
+		"available, optional beside TTFH · public edge ≠ invent Connected",
+		"available, optional beside TTFH · public OSS ≠ invent Connected",
 		"PASS ≠ invent full platform sidecar parity",
 		"control-plane / broker private",
 		"s1508",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"E10 Open",
 		"tip ≠ invent forever-green product dogfood",
@@ -2422,12 +2422,12 @@ func TestMeshAgentOnboardingNextLaneStatusExport_HonestyNeedles(t *testing.T) {
 		"no GOPRIVATE",
 		"docker compose still valid",
 		"offline dogfood tip ≠ invent live dogfood as green",
-		"Cloud Memory GA · public edge ≠ invent Connected",
-		"Cloud Memory GA · public OSS ≠ invent Connected",
+		"available, optional beside TTFH · public edge ≠ invent Connected",
+		"available, optional beside TTFH · public OSS ≠ invent Connected",
 		"PASS ≠ invent full platform sidecar parity",
 		"control-plane / broker private",
 		"s1508",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"E10 Open",
 		"tip ≠ invent forever-green product dogfood",
@@ -2612,7 +2612,7 @@ func TestAttachMCP_InjectsAionOnboardingGuidance(t *testing.T) {
 		"dual_write OFF",
 		"never invent Connected",
 		"catalog ≠ Connected",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"portal HITL when connect",
 		"mesh-agent-onboarding",
 		"/onboard next ttfh",
@@ -2644,7 +2644,7 @@ func TestAttachMCP_InjectsAionOnboardingGuidance(t *testing.T) {
 
 // TestOnboardNextStepLines_HonestyNeedles pins residual-honest next-step
 // after /onboard status|checklist|next|portal (peer of IntegrationsNextStepLines s1727).
-// Operator-facing lines keep dual_write OFF · catalog ≠ Connected · Cloud Memory GA
+// Operator-facing lines keep dual_write OFF · catalog ≠ Connected · available, optional beside TTFH
 // and omit the internal s1825 serial.
 func TestOnboardNextStepLines_HonestyNeedles(t *testing.T) {
 	lines := OnboardNextStepLines()
@@ -2668,7 +2668,7 @@ func TestOnboardNextStepLines_HonestyNeedles(t *testing.T) {
 		"package wire ≠ Connected",
 		"catalog ≠ Connected",
 		"agent MCP cannot write installs",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"never invent Connected",
 	} {
 		if !strings.Contains(out, want) {
@@ -2679,7 +2679,7 @@ func TestOnboardNextStepLines_HonestyNeedles(t *testing.T) {
 		t.Fatalf("onboard next-step must not print internal serial:\n%s", out)
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON · Cloud Memory GA shipped:\n%s", out)
+		t.Fatalf("must not invent dual_write ON · available, optional beside TTFH as shipped:\n%s", out)
 	}
 	if strings.Contains(out, "Connected: yes") {
 		t.Fatalf("must not invent Connected green:\n%s", out)
@@ -2692,7 +2692,7 @@ func TestOnboardNextStepLines_HonestyNeedles(t *testing.T) {
 }
 
 // TestOnboardSurfaces_S1825NextStep pins next-step footers on onboard maps
-// (dual_write OFF · catalog ≠ Connected · Cloud Memory GA; no printed s1825).
+// (dual_write OFF · catalog ≠ Connected · available, optional beside TTFH; no printed s1825).
 func TestOnboardSurfaces_S1825NextStep(t *testing.T) {
 	for name, out := range map[string]string{
 		"status":    MeshAgentOnboardingStatus(),
@@ -2707,7 +2707,7 @@ func TestOnboardSurfaces_S1825NextStep(t *testing.T) {
 			"catalog ≠ Connected",
 			"agent MCP cannot write installs",
 			"dual_write OFF",
-			"Cloud Memory GA",
+			"available, optional beside TTFH",
 		} {
 			if !strings.Contains(out, want) {
 				t.Fatalf("%s surface missing %q in:\n%s", name, want, out)
@@ -2717,7 +2717,7 @@ func TestOnboardSurfaces_S1825NextStep(t *testing.T) {
 			t.Fatalf("%s must not print internal next-step serial:\n%s", name, out)
 		}
 		if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
-			t.Fatalf("%s must not invent dual_write ON · Cloud Memory GA:\n%s", name, out)
+			t.Fatalf("%s must not invent dual_write ON · available, optional beside TTFH:\n%s", name, out)
 		}
 		if strings.Contains(out, "Connected: yes") {
 			t.Fatalf("%s must not invent Connected green:\n%s", name, out)

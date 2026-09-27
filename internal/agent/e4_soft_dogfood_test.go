@@ -80,7 +80,7 @@ func TestRunE4SoftDogfood_SoftPass(t *testing.T) {
 		"internal note removed from this public repository",
 		"dual_write OFF",
 		"book-demo OFF",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"E10 Open",
 		"tip ≠ invent forever-green product dogfood",

@@ -1191,7 +1191,7 @@ func TestHandleSlash_Onboard(t *testing.T) {
 		"/onboard next ttfh",
 		"empty until consume",
 		"CLIENT ≠ PULSE",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 	} {
 		if !strings.Contains(s, want) {
 			t.Fatalf("/onboard missing %q in:\n%s", want, s)
@@ -1264,7 +1264,7 @@ func TestHandleSlash_OnboardHelpChecklist(t *testing.T) {
 			}
 		}
 		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Memory GA shipped") {
-			t.Fatalf("%s must not invent dual_write ON · Cloud Memory GA: %s", line, s)
+			t.Fatalf("%s must not invent dual_write ON · available, optional beside TTFH: %s", line, s)
 		}
 	}
 
@@ -1412,7 +1412,7 @@ func TestHandleSlash_OnboardNext(t *testing.T) {
 		"/memory digest --require-sources mesh,private",
 		"dual_write OFF",
 		"catalog ≠ Connected",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"never invent Connected",
 		"empty until consume",
 		"CLIENT ≠ PULSE",
@@ -1687,7 +1687,7 @@ func TestHandleSlash_OnboardNextMemoryLane(t *testing.T) {
 		"s1478",
 		"s1508",
 		"E4 client attach",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"E10 Open",
 		"tip ≠ invent forever-green product dogfood",
@@ -1698,8 +1698,8 @@ func TestHandleSlash_OnboardNextMemoryLane(t *testing.T) {
 		"healthz",
 		"offline dogfood tip ≠ invent live dogfood as green",
 		"PASS ≠ invent full platform sidecar parity",
-		"Cloud Memory GA · public edge ≠ invent Connected",
-		"Cloud Memory GA · public OSS ≠ invent Connected",
+		"available, optional beside TTFH · public edge ≠ invent Connected",
+		"available, optional beside TTFH · public OSS ≠ invent Connected",
 		"control-plane / broker private",
 		"control-plane still private",
 		"Memory Ops Pack",
@@ -1740,7 +1740,7 @@ func TestHandleSlash_OnboardNextMemoryLane(t *testing.T) {
 			t.Fatalf("%s missing residual footer: %s", line, s)
 		}
 		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Memory GA shipped") {
-			t.Fatalf("%s must not invent dual_write ON · Cloud Memory GA: %s", line, s)
+			t.Fatalf("%s must not invent dual_write ON · available, optional beside TTFH: %s", line, s)
 		}
 	}
 }
@@ -1797,7 +1797,7 @@ func TestHandleSlash_OnboardNextMeshLane(t *testing.T) {
 			t.Fatalf("%s missing residual footer: %s", line, s)
 		}
 		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Memory GA shipped") {
-			t.Fatalf("%s must not invent dual_write ON · Cloud Memory GA: %s", line, s)
+			t.Fatalf("%s must not invent dual_write ON · available, optional beside TTFH: %s", line, s)
 		}
 		if strings.Contains(s, "stream green: yes") || strings.Contains(s, "Connected: yes") {
 			t.Fatalf("%s must not invent stream/Connected green: %s", line, s)
@@ -1889,7 +1889,7 @@ func TestHandleSlash_OnboardNextMemoryPullLane(t *testing.T) {
 			t.Fatalf("%s missing residual footer: %s", line, s)
 		}
 		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Memory GA shipped") {
-			t.Fatalf("%s must not invent dual_write ON · Cloud Memory GA: %s", line, s)
+			t.Fatalf("%s must not invent dual_write ON · available, optional beside TTFH: %s", line, s)
 		}
 		if strings.Contains(s, "pull green: yes") || strings.Contains(s, "Connected: yes") {
 			t.Fatalf("%s must not invent pull/Connected green: %s", line, s)
@@ -1931,7 +1931,7 @@ func TestHandleSlash_OnboardNextSetupLane(t *testing.T) {
 		"E10 Open",
 		"setup_not_probed",
 		"offline static lane ≠ live dogfood",
-		"Cloud Memory GA · setup closeout ≠ invent Connected",
+		"available, optional beside TTFH · setup closeout ≠ invent Connected",
 		"/onboard next journey",
 		"portal HITL",
 		"catalog ≠ Connected",
@@ -1962,7 +1962,7 @@ func TestHandleSlash_OnboardNextSetupLane(t *testing.T) {
 			t.Fatalf("%s missing residual footer: %s", line, s)
 		}
 		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Memory GA shipped") {
-			t.Fatalf("%s must not invent dual_write ON · Cloud Memory GA: %s", line, s)
+			t.Fatalf("%s must not invent dual_write ON · available, optional beside TTFH: %s", line, s)
 		}
 		if strings.Contains(s, "Connected: yes") || strings.Contains(s, "E10 closed") {
 			t.Fatalf("%s must not invent Connected / E10 closed: %s", line, s)
@@ -1998,7 +1998,7 @@ func TestHandleSlash_OnboardNextWizardLane(t *testing.T) {
 		"/onboard next e4",
 		"/onboard next journey",
 		"dual_write OFF",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"E10 Open",
 		"portal HITL when connect",
@@ -2153,7 +2153,7 @@ func TestHandleSlash_OnboardNextJourneyLane(t *testing.T) {
 		"6. Local store",
 		"7. Analyze",
 		"dual_write OFF",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"portal HITL",
 		"agent MCP cannot write installs",
@@ -2197,7 +2197,7 @@ func TestHandleSlash_OnboardNextJourneyLane(t *testing.T) {
 			t.Fatalf("%s missing residual footer: %s", line, s)
 		}
 		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Memory GA shipped") {
-			t.Fatalf("%s must not invent dual_write ON · Cloud Memory GA: %s", line, s)
+			t.Fatalf("%s must not invent dual_write ON · available, optional beside TTFH: %s", line, s)
 		}
 		if strings.Contains(s, "Connected: yes") || strings.Contains(s, "Edge Memory GA is declared") {
 			t.Fatalf("%s must not invent Connected / Edge Memory GA is declared: %s", line, s)
@@ -2886,7 +2886,7 @@ func TestHandleSlash_OnboardNextAgenticLane(t *testing.T) {
 			t.Fatalf("%s must not auto-run soft dogfood (bare agentic = board):\n%s", line, s)
 		}
 		if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Memory GA shipped") {
-			t.Fatalf("%s must not invent dual_write ON · Cloud Memory GA: %s", line, s)
+			t.Fatalf("%s must not invent dual_write ON · available, optional beside TTFH: %s", line, s)
 		}
 		if strings.Contains(s, "Connected: yes") || strings.Contains(s, "INSTALL_STORE APPLY success") {
 			t.Fatalf("%s must not invent Connected/APPLY green: %s", line, s)
@@ -3171,7 +3171,7 @@ func TestHandleSlash_OnboardNextPortalHITLLane(t *testing.T) {
 		"console.iome.sh/integrations",
 		"console.iome.sh/settings/agent",
 		"dual_write OFF",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"soft offline ≠ invent Connected",
 		"portal_hitl_soft_not_run",
 		"/onboard next portal-hitl dogfood",
@@ -3309,7 +3309,7 @@ func TestHandleSlash_OnboardNextE4Lane(t *testing.T) {
 		"local-primary",
 		"internal note removed from this public repository",
 		"dual_write OFF",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"E10 Open",
 		"tip ≠ invent forever-green product dogfood",
@@ -3386,7 +3386,7 @@ func TestHandleSlash_OnboardNextToolCallLane(t *testing.T) {
 		"tools=6",
 		"iomesh mcp --connect",
 		"dual_write OFF",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"E10 Open",
 		"tip ≠ invent forever-green product dogfood",
@@ -3451,9 +3451,9 @@ func TestHandleSlash_OnboardNextE10Lane(t *testing.T) {
 		"E10 Open reaffirm",
 		"residual PASS ≠ invent E10 closed",
 		"residual PASS ≠ invent Connected",
-		"Cloud Memory GA",
-		"Cloud Memory GA · E10 stays Open",
-		"Cloud Memory GA ≠ close E10",
+		"available, optional beside TTFH",
+		"available, optional beside TTFH · E10 stays Open",
+		"available, optional beside TTFH ≠ close E10",
 		"PASS ≠ live APPLY",
 		"dual_write OFF",
 		"book-demo OFF",
@@ -3877,7 +3877,7 @@ func TestHandleSlash_OnboardNextHumanGates(t *testing.T) {
 		"book-demo OFF",
 		"ON_SIGNAL",
 		"dual_write OFF",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"residual PASS ≠ invent Connected",
 		"PASS ≠ invent Connected",
@@ -3971,7 +3971,7 @@ func TestHandleSlash_OnboardNextStillHumanSoftDogfood(t *testing.T) {
 		"PASS ≠ invent human-gate green",
 		"dual_write OFF",
 		"book-demo OFF",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"E10 Open",
 		"portal HITL when connect",
@@ -5068,7 +5068,7 @@ func TestHandleSlash_SetupPreflight_InheritsProcessConfig(t *testing.T) {
 		t.Fatalf("must not fall back to default user path:\n%s", text)
 	}
 	if strings.Contains(text, "Connected: yes") || strings.Contains(text, "Memory GA shipped") || strings.Contains(text, "dual_write ON") {
-		t.Fatalf("must not invent Connected · Cloud Memory GA / dual_write ON:\n%s", text)
+		t.Fatalf("must not invent Connected · available, optional beside TTFH / dual_write ON:\n%s", text)
 	}
 
 	missing := filepath.Join(dir, "slash-override-missing.toml")

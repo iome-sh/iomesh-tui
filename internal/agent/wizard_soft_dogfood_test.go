@@ -86,7 +86,7 @@ func TestRunFirstRunWizardSoftDogfood_SoftPass(t *testing.T) {
 		"/onboard next journey",
 		"dual_write OFF",
 		"book-demo OFF",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"E10 Open",
 		"portal HITL when connect",

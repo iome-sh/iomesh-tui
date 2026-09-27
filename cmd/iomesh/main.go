@@ -512,7 +512,7 @@ func mcpServerFromTOML(s config.MCPServerTOML, cfg *config.Config) mcp.ServerCon
 }
 
 // cmdSetup is setup lifecycle CLI (s1525 P1–P2): init managed config + residual-honest preflight.
-// dual_write OFF · Cloud Memory GA · catalog ≠ Connected · portal HITL · PASS ≠ invent install green.
+// dual_write OFF · available, optional beside TTFH · catalog ≠ Connected · portal HITL · PASS ≠ invent install green.
 func cmdSetup(args []string) int {
 	if len(args) == 0 {
 		printSetupUsage()
@@ -723,7 +723,7 @@ func hoistFlags(args []string) []string {
 
 // cmdPlugins is operator DX for Agent Plugins packages (s1336 list/validate · s1357 dogfood).
 // Residual honesty: list/validate/dogfood ≠ invent Agent Plugins GA · dual_write OFF ·
-// Discover ≠ Connected · Cloud Memory GA · PATH residual for binary · book-demo OFF.
+// Discover ≠ Connected · available, optional beside TTFH · PATH residual for binary · book-demo OFF.
 // Fail-open discover; validate exits non-zero on fatal package errors or zero plugins when dirs set.
 // Dogfood validates both in-repo samples offline — no MCP dial / connect.
 func cmdPlugins(args []string) int {
@@ -3381,7 +3381,7 @@ Agent serve (WebSocket) flags:
 
 `+agent.TTFHPhasedRolloutLines()+`
 `+agent.TTFHStreamsAsDomainPortsLine()+`
-Honesty: dual_write OFF · catalog ≠ Connected · Cloud Memory GA · never invent Connected · knowledge Beta empty · eval template · not live APPLY
+Honesty: dual_write OFF · catalog ≠ Connected · available, optional beside TTFH · never invent Connected · knowledge Beta empty · eval template · not live APPLY
 `+agent.CloudMemoryBindDigestChrome()+`
 
 Default model cascade: deepseek-v4-flash → deepseek-v4-pro → grok-4.5
