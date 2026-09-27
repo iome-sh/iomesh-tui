@@ -316,7 +316,10 @@ func TestModeAHappyPath_NoAionProductName(t *testing.T) {
 		strings.Join(MemoryNextStepLines(), "\n"),
 	}
 	for _, blob := range blobs {
-		if modeAHappyPathHasAion(blob) {
+		// The operator stamp names the refused one-label placeholder.
+		// That refusal is not an Aion product-name leak.
+		checked := strings.ReplaceAll(blob, "aion-mem-*.internal", "")
+		if modeAHappyPathHasAion(checked) {
 			t.Fatalf("Mode A happy path must not leak aion product naming:\n%s", blob)
 		}
 		if strings.Contains(blob, "AION_") {

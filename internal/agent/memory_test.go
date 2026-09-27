@@ -568,7 +568,7 @@ func TestMemoryOpsDigest_PrefersSyncHTTP(t *testing.T) {
 	if strings.Contains(out, "ga_path") || strings.Contains(out, "not Memory GA") || strings.Contains(out, "GA-path") {
 		t.Fatalf("digest must not echo pre-GA stance: %q", out)
 	}
-	if !strings.Contains(out, "memory pin · one write path") || !strings.Contains(out, "GAP · B5 host bind · Partial") || !strings.Contains(out, "not mirrored to a second store") {
+	if !strings.Contains(out, "memory pin · one write path") || !strings.Contains(out, "B5 host bind · Partial") || !strings.Contains(out, "qq14l3dmqgu5sz8hu7wchom8") || !strings.Contains(out, "not mirrored to a second store") {
 		t.Fatalf("digest missing palace-bind gap chrome: %q", out)
 	}
 	if strings.Contains(out, "Connected") {

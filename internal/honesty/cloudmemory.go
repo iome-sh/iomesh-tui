@@ -33,7 +33,7 @@ const LaptopPalaceNotBind = "Laptop default ~/.iomesh/palace is not a Cloud Memo
 
 // HostBindGapDigest is B5 chrome appended to /memory digest.
 // Digest output must not contain the substring "Connected" (cite tests).
-const HostBindGapDigest = "GAP · B5 host bind · Partial — Cloud Memory as a remote palace target is Gap until QA evidence. Console entitlement is the primary attach. Entitlement ≠ live bind. Do not invent a live host URL. US-CM-JOURNEY-05 after QA."
+const HostBindGapDigest = "B5 host bind · Partial — 2026-09-27 the laptop retrieved qq14l3dmqgu5sz8hu7wchom8 from the stage dedicated disk. Local palace was not used. Entitlement ≠ live bind. Unbound workspaces stay palace=-."
 
 // DigestChrome is the digest secondary frame: write-path pin plus B5 gap.
 // No Connected substring. The catalog / PATCH / OpenGates sentence stays on
@@ -55,7 +55,7 @@ func HostBindGap() string {
 ` + NotBindSignals + `
 ` + LaptopPalaceNotBind + `
 Entitlement is not Connected. Cloud Memory is not required for heartbeat. Catalog ≠ Connected. workspace-as-principal. Multi-human palace read/write stays Gap.
-B5 · TUI host bind · Gap until QA evidence. Console entitlement is the primary attach. Entitlement ≠ live bind. Do not invent a Connected host URL. No Connected badge.
-C4 · SDK palace URL bind · Gap until QA evidence. Entitlement ≠ live bind. Empty until consume. Do not invent a live host URL. This TUI does not ship that bind.
+B5 · TUI host bind · 2026-09-27 laptop retrieve qq14l3dmqgu5sz8hu7wchom8 from the stage dedicated disk. Local palace was not used. Entitlement ≠ live bind. No Connected badge.
+C4 · SDK palace URL bind · that sitting used the dedicated host, not HostedPalaceEnabled, not a shared cfg.MemoryURL, and not the one-label aion-mem-*.internal placeholder. This TUI process was not the client.
 Entitled path: confirm Console entitlement for the workspace (primary attach · not a live host) · keep private notes on the local palace · run TTFH/heartbeat as the system of record · cite-both or an honest miss · stop before any host URL.`)
 }
