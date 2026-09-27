@@ -562,6 +562,9 @@ func TestMemoryOpsDigest_PrefersSyncHTTP(t *testing.T) {
 	if !strings.Contains(out, "honesty:") || !strings.Contains(out, "ops=cloud_memory_ga") || !strings.Contains(out, "available, optional beside TTFH") || !strings.Contains(out, "never_invent_ga=true") {
 		t.Fatalf("honesty missing: %q", out)
 	}
+	if !strings.Contains(out, "Cloud Memory is the $199 add-on, available beside TTFH.") || !strings.Contains(out, "palace=-") {
+		t.Fatalf("digest chrome missing Cloud Memory offer or palace=-: %q", out)
+	}
 	if strings.Contains(out, "ga_path") || strings.Contains(out, "not Memory GA") || strings.Contains(out, "GA-path") {
 		t.Fatalf("digest must not echo pre-GA stance: %q", out)
 	}

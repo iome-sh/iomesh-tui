@@ -94,7 +94,11 @@ dual_write = false
 		"not an Exists Connected bind",
 		"One write path — not mirrored to a second store.",
 		"B5 · TUI host bind",
+		"C4 · SDK palace URL bind",
 		"Do not invent a Connected host URL",
+		"Cloud Memory is the $199 add-on, available beside TTFH.",
+		"palace=-",
+		"A catalog row, a workspace PATCH, or an empty OpenGates list is not Connected.",
 	} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("preflight missing %q:\n%s", want, text)
