@@ -247,7 +247,7 @@ func TestRuntimePalaceVisibility_DefaultDNEResidual(t *testing.T) {
 	if strings.Contains(line, "Connected") && !strings.Contains(line, "never invent Connected") {
 		t.Fatalf("must not invent Connected: %s", line)
 	}
-	if strings.Contains(line, "Memory GA") && !strings.Contains(line, "Cloud Memory GA") {
+	if strings.Contains(line, "Memory GA") && !strings.Contains(line, "available, optional beside TTFH") {
 		t.Fatalf("must not invent: %s", line)
 	}
 	status := rt.MemoryStatusLine()
@@ -265,7 +265,7 @@ func TestModeAPalaceRootResidual_Honesty(t *testing.T) {
 		"IOMESH_MEMORY_PALACE_ROOT",
 		"MCP -palace-root",
 		"never invent Connected",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 	} {
 		if !strings.Contains(line, want) {
 			t.Fatalf("residual missing %q: %s", want, line)
@@ -275,7 +275,7 @@ func TestModeAPalaceRootResidual_Honesty(t *testing.T) {
 		t.Fatalf("residual must not tell operator to ls a DNE path: %s", line)
 	}
 	if strings.Contains(line, "Connected: yes") || strings.Contains(line, "Memory GA shipped") {
-		t.Fatalf("must not invent Connected · Cloud Memory GA: %s", line)
+		t.Fatalf("must not invent Connected · available, optional beside TTFH: %s", line)
 	}
 }
 

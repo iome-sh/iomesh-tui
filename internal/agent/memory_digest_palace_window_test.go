@@ -239,8 +239,8 @@ func TestMemoryOpsDigest_PalaceMeshOutsideWeekCitesBoth(t *testing.T) {
 	if strings.Contains(out, "Connected") || strings.Contains(out, "not Memory GA") || strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "ga_path") {
 		t.Fatalf("must not invent Connected or a pre-GA stance: %q", out)
 	}
-	if !strings.Contains(out, "Cloud Memory GA") {
-		t.Fatalf("digest honesty must name Cloud Memory GA: %q", out)
+	if !strings.Contains(out, "available, optional beside TTFH") {
+		t.Fatalf("digest honesty must name \"available, optional beside TTFH\": %q", out)
 	}
 	if rt.memory.DualWrite {
 		t.Fatal("dual_write must remain OFF")
@@ -418,7 +418,7 @@ func assertCiteBothOK(t *testing.T, out, meshCite string) {
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected") || strings.Contains(out, "not Memory GA") || strings.Contains(out, "Memory GA shipped") || strings.Contains(out, "ga_path") {
 		t.Fatalf("must not invent dual_write ON / Connected or a pre-GA stance: %q", out)
 	}
-	if !strings.Contains(out, "Cloud Memory GA") {
-		t.Fatalf("digest honesty must name Cloud Memory GA: %q", out)
+	if !strings.Contains(out, "available, optional beside TTFH") {
+		t.Fatalf("digest honesty must name \"available, optional beside TTFH\": %q", out)
 	}
 }

@@ -84,7 +84,7 @@ func TestRunDeeperToolCallSoftDogfood_SoftPass(t *testing.T) {
 		"s1566",
 		"Partial→client-attach-evidence",
 		"dual_write OFF",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"E10 Open",
 		"tip ≠ invent forever-green product dogfood",

@@ -6,8 +6,8 @@ import "strings"
 // Dual path after status/help/digest (and peer honesty footers): in-session setup continuum
 // vs cold start. Peer of OnboardNextStepLines (s1825) · IntegrationsNextStepLines (s1727) ·
 // setup next-step continuum (s1686–s1723).
-// dual_write OFF · Cloud Memory GA · local-primary · package wire ≠ Connected ·
-// soft ≠ invent live dogfood · free eng s1831. Never invent Connected · Cloud Memory GA from memory slash alone.
+// dual_write OFF · available, optional beside TTFH · local-primary · package wire ≠ Connected ·
+// soft ≠ invent live dogfood · free eng s1831. Never invent Connected from memory slash alone · available, optional beside TTFH.
 func MemoryNextStepLines() []string {
 	return []string{
 		"next: dual path residual-honest after memory surfaces",
@@ -19,15 +19,15 @@ func MemoryNextStepLines() []string {
 }
 
 // MemoryAdvancedAgentGuidanceNote residual-honest system note (s1291 + s1296 + s1301 + s1311).
-// Injected on AttachMCP. Cloud Memory GA. Does not silent-supersede or auto multi-hop.
+// Injected on AttachMCP. Available, optional beside TTFH. Does not silent-supersede or auto multi-hop.
 func MemoryAdvancedAgentGuidanceNote() string {
 	return strings.TrimSpace(`memory advanced (residual-honest agent path · s1291):
 Opt-in advanced memory only — default auto-recall stays single-hop memory_retrieve.
 1. related: multi-hop lite · prefer_shorter_hops omit=true · not full graph RAG
 2. facts-as-of: MCP-first K4 lite · not dual-clock Graphiti
 3. supersede: MCP-first A3 lite · requires HITL / --i-confirm · not NLP contradiction
-4. digest: Cloud Memory GA · knowledge/analytical Beta
-5. patterns/anomalies: ops pulse Beta · not medical · not OTel · Cloud Memory GA
+4. digest: available, optional beside TTFH · knowledge/analytical Beta
+5. patterns/anomalies: ops pulse Beta · not medical · not OTel · available, optional beside TTFH
 6. timeline: MCP-first temporal timeline · filters before limit · read-only (s1296)
 7. compact-status: MCP-first Palace tier counts residual · read-only · not auto-compact product (s1296)
 8. semantic: MCP-first tier-4 semantic facts residual · empty ≠ invent (s1301)
@@ -39,7 +39,7 @@ Slash mirrors: /memory related|facts-as-of|supersede|digest|patterns|anomalies|t
 Skill: read_skill memory-advanced-agent when available
 
 Locks (never violate):
-- dual_write OFF · Cloud Memory GA
+- dual_write OFF · available, optional beside TTFH
 - multi-hop lite ≠ graph RAG · PreferShorterHops omit=true
 - supersede requires HITL / --i-confirm · never silent mutate
 - patterns/anomalies not medical · not OTel · suggestive pulse only

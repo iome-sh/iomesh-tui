@@ -559,7 +559,7 @@ func TestMemoryOpsDigest_PrefersSyncHTTP(t *testing.T) {
 	if !strings.Contains(out, "provenance:") || !strings.Contains(out, "session_id=sess-digest") || !strings.Contains(out, "palace=") {
 		t.Fatalf("digest provenance: %q", out)
 	}
-	if !strings.Contains(out, "honesty:") || !strings.Contains(out, "ops=cloud_memory_ga") || !strings.Contains(out, "Cloud Memory GA") || !strings.Contains(out, "never_invent_ga=true") {
+	if !strings.Contains(out, "honesty:") || !strings.Contains(out, "ops=cloud_memory_ga") || !strings.Contains(out, "available, optional beside TTFH") || !strings.Contains(out, "never_invent_ga=true") {
 		t.Fatalf("honesty missing: %q", out)
 	}
 	if strings.Contains(out, "ga_path") || strings.Contains(out, "not Memory GA") || strings.Contains(out, "GA-path") {
@@ -1971,7 +1971,7 @@ func TestFormatPatternsJSON_Fixture(t *testing.T) {
 	if !strings.Contains(out, "ops pulse Beta") || !strings.Contains(out, "not medical diagnosis") {
 		t.Fatalf("honesty pin missing: %q", out)
 	}
-	if !strings.Contains(out, "not OTel host metrics") || !strings.Contains(out, "Cloud Memory GA") {
+	if !strings.Contains(out, "not OTel host metrics") || !strings.Contains(out, "available, optional beside TTFH") {
 		t.Fatalf("OTel/GA pin missing: %q", out)
 	}
 	if !strings.Contains(out, "dual_write OFF") {
@@ -2426,7 +2426,7 @@ func TestFormatIngestEventJSON_Fixture(t *testing.T) {
 		t.Fatalf("honesty pin missing: %q", out)
 	}
 	if !strings.Contains(out, "not conversation turn") {
-		t.Fatalf("turn · Cloud Memory GA pin missing: %q", out)
+		t.Fatalf("turn honesty pin missing: %q", out)
 	}
 	if !strings.Contains(out, "dual_write OFF") || !strings.Contains(out, "MCP-first") {
 		t.Fatalf("dual_write / MCP-first pin missing: %q", out)
