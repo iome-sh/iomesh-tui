@@ -83,7 +83,7 @@ func TestRunStillHumanApplySoftDogfood_SoftPass(t *testing.T) {
 		"book-demo OFF",
 		"leave ON_SIGNAL unset",
 		"dual_write OFF",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"E10 Open",
 		"residual PASS ≠ invent Connected",
 		"session soft ≠ live dogfood",

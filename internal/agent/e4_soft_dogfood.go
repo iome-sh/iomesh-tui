@@ -88,7 +88,7 @@ var e4SoftDogfoodNeedles = []string{
 	"local-primary",
 	// Policy / GA locks
 	"dual_write OFF",
-	"Cloud Memory GA",
+	"available, optional beside TTFH",
 	"residual PASS ≠ invent Connected",
 	"E10 Open",
 	// Soft / residual honesty
@@ -123,7 +123,7 @@ func RunE4SoftDogfood() string {
 	b.WriteString("  Path: soft offline residual check of e4 board honesty + E4 client attach path (journey stage 6 local store / MCP attach)\n")
 	b.WriteString(" · never dial MCP · never start host · residual PASS ≠ invent Connected · dual_write stays OFF · E10 Open\n")
 	b.WriteString(" · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · session soft ≠ live dogfood · soft offline ≠ invent Connected\n")
-	b.WriteString(" · residual PASS ≠ invent Connected · Cloud Memory GA · dual_write OFF · local-primary\n")
+	b.WriteString(" · residual PASS ≠ invent Connected · available, optional beside TTFH · dual_write OFF · local-primary\n")
 	b.WriteString("\n")
 	if pass {
 		b.WriteString("  result: PASS (soft offline residual only)\n")
@@ -140,7 +140,7 @@ func RunE4SoftDogfood() string {
 	b.WriteString(" · E4 client attach · tools=6 · iomesh mcp --connect\n")
 	b.WriteString(" · iomesh-memory-mcp · local-primary\n")
 	b.WriteString(" · internal note removed from this public repository\n")
-	b.WriteString("  Honesty locks checked: dual_write OFF · Cloud Memory GA\n")
+	b.WriteString("  Honesty locks checked: dual_write OFF · available, optional beside TTFH\n")
 	b.WriteString(" · residual PASS ≠ invent Connected · E10 Open · tip ≠ invent forever-green product dogfood\n")
 	b.WriteString(" · residual PASS ≠ live dogfood · session soft ≠ live dogfood · soft offline ≠ invent Connected\n")
 	b.WriteString("\n")
@@ -151,6 +151,6 @@ func RunE4SoftDogfood() string {
 	b.WriteString("  slash: /onboard next e4 dogfood (aliases soft|samples|offline|e4-soft) · bare /onboard next e4 stays board\n")
 	b.WriteString("  companion: /onboard next memory · /onboard next journey · /onboard next memory-pull · /memory status · internal note removed from this public repository\n")
 	b.WriteString("\n")
-	b.WriteString("Locks: dual_write OFF · book-demo OFF · Cloud Memory GA · residual PASS ≠ invent Connected · E10 Open · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · E10 stays Open (never invent closed) · soft offline ≠ invent Connected · session soft ≠ live dogfood · free eng s1566 · free-floor peer s1568+ mention only")
+	b.WriteString("Locks: dual_write OFF · book-demo OFF · available, optional beside TTFH · residual PASS ≠ invent Connected · E10 Open · tip ≠ invent forever-green product dogfood · residual PASS ≠ live dogfood · PASS ≠ live APPLY · open boxes stay open · never invent install green / Connected / INSTALL_STORE APPLY · dual_write stays OFF (never invent primary ON) · E10 stays Open (never invent closed) · soft offline ≠ invent Connected · session soft ≠ live dogfood · free eng s1566 · free-floor peer s1568+ mention only")
 	return b.String()
 }
