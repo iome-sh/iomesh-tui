@@ -33,7 +33,7 @@ func WriteToPath(path string, cfg *Config) error {
 	if err != nil {
 		return fmt.Errorf("config: marshal: %w", err)
 	}
-	header := fmt.Sprintf("# iomesh-tui config written %s (UTC)\n# dual_write honesty: product default OFF · Cloud Memory GA · setup ≠ invent Connected\n",
+	header := fmt.Sprintf("# iomesh-tui config written %s (UTC)\n# dual_write honesty: product default OFF · available, optional beside TTFH · setup ≠ invent Connected\n",
 		time.Now().UTC().Format(time.RFC3339))
 	return atomicWrite(path, append([]byte(header), data...))
 }

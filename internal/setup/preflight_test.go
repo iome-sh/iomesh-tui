@@ -82,11 +82,11 @@ dual_write = false
 		t.Fatal("dual_write must be false")
 	}
 	text := FormatPreflightText(rep)
-	if !strings.Contains(text, "not_memory_ga") || !strings.Contains(text, "Cloud Memory GA") || !strings.Contains(text, "not a product stamp") {
+	if !strings.Contains(text, "not_memory_ga") || !strings.Contains(text, "available, optional beside TTFH") || !strings.Contains(text, "not a product stamp") {
 		t.Fatalf("healthz residual must not be a product non-GA stamp:\n%s", text)
 	}
 	if strings.Contains(text, "not Memory GA") || strings.Contains(text, "GA-path") {
-		t.Fatalf("preflight must not deny Cloud Memory GA:\n%s", text)
+		t.Fatalf("preflight must not deny available, optional beside TTFH:\n%s", text)
 	}
 	for _, want := range []string{
 		"GAP / Partial",
@@ -307,6 +307,6 @@ func TestFormatPreflightText_DualPathNextStep(t *testing.T) {
 		t.Fatalf("must not invent Connected green:\n%s", text)
 	}
 	if strings.Contains(text, "dual_write ON") || strings.Contains(text, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON · Cloud Memory GA shipped:\n%s", text)
+		t.Fatalf("must not invent dual_write ON · available, optional beside TTFH shipped:\n%s", text)
 	}
 }
