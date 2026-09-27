@@ -30,7 +30,7 @@ func TestSetupInitNextStepLines_HonestyNeedles(t *testing.T) {
 		t.Fatalf("must not advertise CLI setup reload without honesty:\n%s", out)
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON · Cloud Memory GA shipped:\n%s", out)
+		t.Fatalf("must not invent dual_write ON · available, optional beside TTFH shipped:\n%s", out)
 	}
 }
 
@@ -91,7 +91,7 @@ func TestSetupPreflightNextStepLines_HonestyNeedles(t *testing.T) {
 		t.Fatalf("must not advertise CLI setup reload without honesty:\n%s", out)
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON · Cloud Memory GA shipped:\n%s", out)
+		t.Fatalf("must not invent dual_write ON · available, optional beside TTFH shipped:\n%s", out)
 	}
 }
 
@@ -126,7 +126,7 @@ func TestSetupDriftNextStepLines_HonestyNeedles(t *testing.T) {
 		t.Fatalf("must not advertise CLI setup reload without honesty:\n%s", out)
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON · Cloud Memory GA shipped:\n%s", out)
+		t.Fatalf("must not invent dual_write ON · available, optional beside TTFH shipped:\n%s", out)
 	}
 }
 
@@ -200,7 +200,7 @@ func TestSetupReloadNextStepLines_HonestyNeedles(t *testing.T) {
 		t.Fatalf("must not advertise CLI setup reload without honesty:\n%s", out)
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON · Cloud Memory GA shipped:\n%s", out)
+		t.Fatalf("must not invent dual_write ON · available, optional beside TTFH shipped:\n%s", out)
 	}
 }
 
@@ -222,7 +222,7 @@ func TestSetupPullNextStepLines_HonestyNeedles(t *testing.T) {
 		}
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON · Cloud Memory GA shipped:\n%s", out)
+		t.Fatalf("must not invent dual_write ON · available, optional beside TTFH shipped:\n%s", out)
 	}
 }
 
@@ -244,7 +244,7 @@ func TestSetupAnalyzeNextStepLines_HonestyNeedles(t *testing.T) {
 		}
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON · Cloud Memory GA shipped:\n%s", out)
+		t.Fatalf("must not invent dual_write ON · available, optional beside TTFH shipped:\n%s", out)
 	}
 }
 
@@ -278,7 +278,7 @@ func TestSetupPortalNextStepLines_HonestyNeedles(t *testing.T) {
 		t.Fatalf("must not advertise CLI setup reload without honesty:\n%s", out)
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON · Cloud Memory GA shipped:\n%s", out)
+		t.Fatalf("must not invent dual_write ON · available, optional beside TTFH shipped:\n%s", out)
 	}
 }
 
@@ -290,7 +290,7 @@ func TestSetupLifecycleAgentGuidanceNote_HonestyNeedles(t *testing.T) {
 	}
 	for _, want := range []string{
 		"dual_write OFF",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"Connected",
 		"portal HITL",
@@ -357,7 +357,7 @@ func TestSetupLifecycleHonestyOneLiner(t *testing.T) {
 	s := SetupLifecycleHonestyOneLiner
 	for _, want := range []string{
 		"dual_write OFF",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"Connected",
 		"iomesh memory pull",
 		"pull_continuous",
@@ -392,7 +392,7 @@ func TestSetupLifecycleFirstRunJourneyOneLiner(t *testing.T) {
 		"Local store",
 		"Analyze",
 		"dual_write OFF",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"portal HITL",
 		"host not auto",
@@ -404,6 +404,6 @@ func TestSetupLifecycleFirstRunJourneyOneLiner(t *testing.T) {
 		}
 	}
 	if strings.Contains(s, "dual_write ON") || strings.Contains(s, "Memory GA shipped") {
-		t.Fatalf("must not invent dual_write ON · Cloud Memory GA shipped: %s", s)
+		t.Fatalf("must not invent dual_write ON · available, optional beside TTFH shipped: %s", s)
 	}
 }

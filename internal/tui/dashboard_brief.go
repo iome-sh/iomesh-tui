@@ -78,7 +78,7 @@ func loadBriefAckStatus() BriefAckStatus {
 }
 
 // ackTodayBrief writes today's local ACK marker. Does not send/pay/ship.
-// Optional local palace write only — dual_write OFF · Cloud Memory GA.
+// Optional local palace write only — dual_write OFF · available, optional beside TTFH.
 func ackTodayBrief() (string, error) {
 	path, err := briefAckPathFn()
 	if err != nil {

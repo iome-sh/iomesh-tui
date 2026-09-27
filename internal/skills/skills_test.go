@@ -706,7 +706,7 @@ func TestLoadBuiltin_S1363MeshAgentOnboardingSkillDogfood(t *testing.T) {
 		"public product attach",
 		"go install",
 		"no GOPRIVATE",
-		"Cloud Memory GA · public edge ≠ invent Connected",
+		"available, optional beside TTFH · public edge ≠ invent Connected",
 		"mesh optional for pull",
 		"Palace sunset",
 		// s1402 mesh streaming lane
@@ -931,7 +931,7 @@ func TestLoadBuiltin_S1363MeshAgentOnboardingSkillDogfood(t *testing.T) {
 		"first-run",
 		"edge_user_journey",
 		"free eng s1558",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"plugins|gtm|memory|mesh|memory-pull|agentic|portal-hitl|e4|tool-call|e10|planes|sales|demo|marketing-demo|operator|setup|journey|wizard|status|export|human-gates",
 		// s1413+s1546+s1550+s1574 human-gates honesty board + still-human APPLY soft dogfood
 		"/onboard next human-gates",
@@ -941,7 +941,7 @@ func TestLoadBuiltin_S1363MeshAgentOnboardingSkillDogfood(t *testing.T) {
 		"Slack HMAC punted",
 		"portal HITL when connect",
 		"dual_write OFF",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 		"residual PASS ≠ invent Connected",
 		"PASS ≠ invent Connected",
 		"leave ON_SIGNAL unset",
@@ -1021,7 +1021,7 @@ func TestS1363SkillDescriptionResidualHonest(t *testing.T) {
 	if !strings.Contains(desc, "connected") && !strings.Contains(sk.Description, "Connected") {
 		t.Fatalf("description should say never invent Connected: %q", sk.Description)
 	}
-	if !strings.Contains(desc, "memory") {
+	if !strings.Contains(sk.Description, "available, optional beside TTFH") {
 		t.Fatalf("description should mention memory honesty: %q", sk.Description)
 	}
 	for _, want := range []string{
@@ -1031,7 +1031,7 @@ func TestS1363SkillDescriptionResidualHonest(t *testing.T) {
 		"R3 overlay PULSE",
 		"dual_write OFF",
 		"catalog ≠ Connected",
-		"Cloud Memory GA",
+		"available, optional beside TTFH",
 	} {
 		if !strings.Contains(sk.Description, want) {
 			t.Fatalf("description missing one-walk needle %q: %q", want, sk.Description)

@@ -285,7 +285,7 @@ func residualSkipResult(kind RepairKind) string {
 	case RepairNoteDualWrite:
 		return "skipped · manual: set dual_write=false · never auto-flip dual_write ON · ≠ invent Connected"
 	case RepairNoteMemoryHost:
-		return "skipped · human: start iomesh-memory-mcp host · Cloud Memory GA · repair ≠ invent Connected"
+		return "skipped · human: start iomesh-memory-mcp host · available, optional beside TTFH · repair ≠ invent Connected"
 	case RepairNoteMeshConfig:
 		return "skipped · human: configure [iomesh] enabled + endpoint · package wire ≠ Connected"
 	case RepairNoteNoop:

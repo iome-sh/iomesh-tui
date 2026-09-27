@@ -5,13 +5,13 @@ description: Residual-honest agent-native setup lifecycle (init/preflight · dua
 
 # Setup lifecycle agent (residual-honest · s1526 P3 + s1530 P5 + s1534 P6 + s1538 P7 + s1542 closeout + s1558 Wave B first-run)
 
-Agent-native path to **bootstrap** local TUI config planes via managed fragment write + preflight probes + in-session opt-in continuous pull / analyze ticks + report-only drift + **guided repair** (safe steps only with explicit `--yes`) — **not** invent Connected · Cloud Memory GA / INSTALL_STORE green.
+Agent-native path to **bootstrap** local TUI config planes via managed fragment write + preflight probes + in-session opt-in continuous pull / analyze ticks + report-only drift + **guided repair** (safe steps only with explicit `--yes`) — **not** invent Connected · available, optional beside TTFH / INSTALL_STORE green.
 
 Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the operator is at a terminal. Use this skill when planning setup steps in chat.
 
-**Onboard companion (s1542):** residual-honest offline map via `/onboard next setup` (aliases `setup-lifecycle` / `lifecycle` / `setup_lifecycle`) → `MeshAgentOnboardingNextSetupLane` — consolidates P1–P7 map story · **setup_not_probed** · dual_write OFF · package wire ≠ Connected · repair apply ≠ invent Connected · dual_write never auto ON · E10 Open · offline static ≠ live dogfood · Cloud Memory GA · setup closeout ≠ invent Connected.
+**Onboard companion (s1542):** residual-honest offline map via `/onboard next setup` (aliases `setup-lifecycle` / `lifecycle` / `setup_lifecycle`) → `MeshAgentOnboardingNextSetupLane` — consolidates P1–P7 map story · **setup_not_probed** · dual_write OFF · package wire ≠ Connected · repair apply ≠ invent Connected · dual_write never auto ON · E10 Open · offline static ≠ live dogfood · available, optional beside TTFH · setup closeout ≠ invent Connected.
 
-**Wave B first-run (s1558):** setup is **stage 4** of the 7-stage edge-user-journey. Full first-run map via companion `/onboard next journey` (aliases `edge-journey` / `user-journey` / `first-run` / `edge_user_journey`) → `MeshAgentOnboardingNextJourneyLane` — Signup → Download TUI → TUI auth/keys → Setup wizard → Connectors → Local store → Analyze · dual_write OFF · Cloud Memory GA · residual PASS ≠ invent Connected · portal HITL · host not auto · no invent TUI portal SSO · free eng **s1558** · free-floor peer **s1560+** mention only · docs `edge-user-journey.md` · `setup-lifecycle.md` · `memory-edge-usage-demo.md`.
+**Wave B first-run (s1558):** setup is **stage 4** of the 7-stage edge-user-journey. Full first-run map via companion `/onboard next journey` (aliases `edge-journey` / `user-journey` / `first-run` / `edge_user_journey`) → `MeshAgentOnboardingNextJourneyLane` — Signup → Download TUI → TUI auth/keys → Setup wizard → Connectors → Local store → Analyze · dual_write OFF · available, optional beside TTFH · residual PASS ≠ invent Connected · portal HITL · host not auto · no invent TUI portal SSO · free eng **s1558** · free-floor peer **s1560+** mention only · docs `edge-user-journey.md` · `setup-lifecycle.md` · `memory-edge-usage-demo.md`.
 
 **Wave C first-run wizard residual (s1570):** deeper guided residual via companion `/onboard next wizard` (aliases `first-run-wizard` / `guided` / `wave-c` / `wave_c` / `wizard-residual`) → `MeshAgentOnboardingNextWizardLane` · soft `/onboard next wizard dogfood` · NOT invent full interactive auto wizard · free eng **s1570** · free-floor peer **s1572+** mention only.
 
@@ -38,7 +38,7 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
    - CLI: `iomesh setup preflight [--json]`
    - Slash: `/setup preflight` (aliases `status` · `check`)
    - States: `not_started` · `config_present` / `config_written` · `awaiting_memory_host` · `local_memory_probe_ok`
-   - **PASS ≠ invent Connected / INSTALL_STORE green · Cloud Memory GA**
+   - **PASS ≠ invent Connected / INSTALL_STORE green · available, optional beside TTFH**
    - After preflight report (s1699 dual path · peer of s1686 init next-step · `SetupPreflightNextStepLines` / `FormatPreflightText`):
      - **Preflight ok · TUI/session already running** → **`/setup reload`** (hot-swap MCP + skills · package wire ≠ Connected)
      - **Host/secrets still missing** → start `iomesh-memory-mcp` · set secret env · re-run preflight
@@ -117,7 +117,7 @@ Prefer slash `/setup` (alias `/setup-lifecycle`) or CLI `iomesh setup` when the 
 | reload in-session only | `/setup reload` · CLI has **no** setup reload · package wire ≠ Connected · s1711 next-step |
 | drift report-only | `/setup drift` · `/setup maintain` · residual next steps · drift ≠ invent install green · package wire ≠ Connected |
 | guided repair explicit | `/setup repair` · `/setup repair apply --yes` only · safe steps · repair apply ≠ invent Connected · no auto-repair without `--yes` |
-| never invent green | No Connected / INSTALL_STORE green · Cloud Memory GA from setup alone |
+| never invent green | No Connected / INSTALL_STORE green · available, optional beside TTFH from setup alone |
 
 ## Non-goals (never do)
 

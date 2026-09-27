@@ -16,7 +16,7 @@ import (
 )
 
 // PreflightReport is always-emit JSON for `iomesh setup preflight --json`.
-// Empty strings / false honest; never invent Connected · Cloud Memory GA.
+// Empty strings / false honest; never invent Connected · available, optional beside TTFH.
 type PreflightReport struct {
 	OK              bool   `json:"ok"`
 	ConfigPath      string `json:"config_path"`
@@ -49,12 +49,12 @@ type PreflightReport struct {
 // meshOrgEmptyNote is residual-honest when mesh is on and [iomesh].org /
 // IOMESH_ORG is empty. Hosted brokers isolate catalog/consume by X-IOMesh-Org
 // and may 400 without it. Local/dev stays fail-open — not a hard fail.
-// dual_write OFF · catalog ≠ Connected · Cloud Memory GA.
+// dual_write OFF · catalog ≠ Connected · available, optional beside TTFH.
 const meshOrgEmptyNote = "mesh org empty — X-IOMesh-Org omitted · hosted brokers isolate catalog/consume by org and may 400 without it · local/dev stays fail-open · set [iomesh].org or IOMESH_ORG · catalog ≠ Connected"
 
 // meshPortalAPIv1AsBrokerNote is residual-honest when [iomesh].endpoint host
 // looks like apiv1.* (portal/catalog CP). Streams/consumers live on hooks.*.
-// Warn only — do not invent Connected · Cloud Memory GA.
+// Warn only — do not invent Connected · available, optional beside TTFH.
 const meshPortalAPIv1AsBrokerNote = "mesh endpoint host looks like apiv1.* — that is portal/catalog CP, not broker streams · streams/consumers live on hooks.* (e.g. hooks.example.com) · catalog ≠ Connected · infer ≠ Connected"
 
 // Preflight loads config and probes local memory when configured.
@@ -193,7 +193,7 @@ func Preflight(ctx context.Context, cfgPath string) (*PreflightReport, error) {
 	}
 
 	rep.Notes = append(rep.Notes,
-		"preflight PASS ≠ invent Connected / INSTALL_STORE green · Cloud Memory GA",
+		"preflight PASS ≠ invent Connected / INSTALL_STORE green · available, optional beside TTFH",
 		"portal HITL still required for connector OAuth/install",
 		"continuous pull: opt-in /setup pull start|once or pull_continuous=true · CLI iomesh memory pull still valid · after mesh + consumer configured · pull ≠ invent Connected",
 		"continuous analyze: opt-in /setup analyze start or analyze_continuous=true (default false) · analyze ≠ invent Connected",
@@ -256,7 +256,7 @@ func FormatPreflightText(r *PreflightReport) string {
 		fmt.Fprintf(&b, "  memory.health_body: %s\n", r.MemoryHealthBody)
 	}
 	if strings.Contains(r.MemoryHealthBody, "not_memory_ga") {
-		fmt.Fprintf(&b, "  memory.health_note: residual host field not_memory_ga · Cloud Memory GA · not a product stamp\n")
+		fmt.Fprintf(&b, "  memory.health_note: residual host field not_memory_ga · available, optional beside TTFH · not a product stamp\n")
 	}
 	fmt.Fprintf(&b, "  mesh.enabled=%v endpoint=%q org=%q\n", r.MeshEnabled, r.MeshEndpoint, r.MeshOrg)
 	fmt.Fprintf(&b, "  honesty: %s\n", r.Honesty)
