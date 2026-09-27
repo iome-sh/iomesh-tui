@@ -239,6 +239,7 @@ func TestTTFHDemoScriptHonesty(t *testing.T) {
 		"--unit",
 		"--live",
 		"not E-G1",
+		"available, optional beside TTFH",
 		"CLIENT ≠ PULSE",
 		"dual_write OFF",
 		"patterns",
@@ -277,7 +278,7 @@ func TestRevopsSittingScriptHonesty(t *testing.T) {
 		"--unit",
 		"--dry-run",
 		"support.theme",
-		"Cloud Memory " + "GA", // scripts/ still use the prior stamp
+		"available, optional beside TTFH",
 		"dual_write OFF",
 		"command -v iomesh",
 		"go run ./cmd/iomesh",
@@ -327,7 +328,7 @@ func TestSev1CSPacketScriptHonesty(t *testing.T) {
 		"--yes",
 		"PD-HMAC-5xx",
 		"sev1-packet.md",
-		"Cloud Memory " + "GA", // scripts/ still use the prior stamp
+		"available, optional beside TTFH",
 		"dual_write OFF",
 		"command -v iomesh",
 		"go run ./cmd/iomesh",

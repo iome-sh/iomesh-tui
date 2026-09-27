@@ -55,7 +55,7 @@ else
 fi
 
 echo
-echo "Walk (one list · mesh not required for R0–R2 · do not invent PULSE / Connected · available, optional beside TTFH / dual_write ON / APPLY):"
+echo "Walk (one list · mesh not required for R0–R2 · available, optional beside TTFH · do not invent PULSE / Connected / dual_write ON / APPLY):"
 echo "  R0  iomesh ttfh --unit                 offline · no mesh · not E-G1"
 echo "  R1  optional iomesh ttfh --live        fail-open probe · EMPTY unless decoded · not overlay PULSE"
 echo "      Optional mesh: IOMESH_ENDPOINT for R1 only. Overlay /dashboard consume is R3, not this."
