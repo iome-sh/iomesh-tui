@@ -11,8 +11,8 @@ const WritePathPin = "memory pin · one write path"
 const WritePathChip = "One write path — not mirrored to a second store."
 
 // SeparatePaths states local disk and Cloud Memory stay apart.
-// Cloud Memory GA is optional beside TTFH. TTFH/heartbeat is the SoR.
-const SeparatePaths = "Local and Cloud Memory stay on separate paths. Local private on disk. Cloud Memory GA and optional beside TTFH — not a substitute. TTFH/heartbeat is the SoR. Empty until consume."
+// Cloud Memory is available, optional beside TTFH. TTFH/heartbeat is the SoR.
+const SeparatePaths = "Local and Cloud Memory stay on separate paths. Local private on disk. Available, optional beside TTFH — not a substitute. TTFH/heartbeat is the SoR. Empty until consume."
 
 // HostBindGapDigest is B5 chrome appended to /memory digest.
 // Digest output must not contain the substring "Connected" (cite tests).

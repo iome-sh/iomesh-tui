@@ -61,7 +61,7 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conver
    - K4 bi-temporal **lite** · not full dual-clock Graphiti · empty facts ≠ invent memories.
 
 5. **Ops digest (opt-in)** — call `ops_digest_export` with `window` (`day`|`week`), `horizon` (`ops`|`knowledge`|`analytical`|`all`), `limit`.
-   - ops pulse **Cloud Memory GA** · knowledge/analytical **Beta**.
+   - ops pulse **available, optional beside TTFH** · knowledge/analytical **Beta**.
 
 6. **Supersede (opt-in · HITL mutating)** — call `memory_supersede_entity` only after **explicit human confirm**.
    - Slash requires `--i-confirm` (aliases `--confirm` / `--yes`). Agent must refuse residual-honestly without HITL.
@@ -69,7 +69,7 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conver
    - Never invent `superseded_count` offline.
 
 7. **Patterns / anomalies (shipped s1287 · MCP ops pulse Beta)** — when tools present, list via `memory_patterns_list` / `memory_anomalies_list`.
-   - Ops pulse Beta · not medical · Cloud Memory GA · dual_write OFF.
+   - Ops pulse Beta · not medical · available, optional beside TTFH · dual_write OFF.
 
 8. **Timeline (s1296 · MCP-first · opt-in)** — call `memory_timeline` with optional `since`, `until`, `query`, `limit`, `session_id`, `tenant`.
    - Temporal timeline · filters before limit · empty entries ≠ invent memories.
@@ -101,7 +101,7 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conver
 | K4 lite ≠ dual-clock | facts-as-of is bi-temporal lite validity listing — not full dual-clock Graphiti KG |
 | patterns/anomalies not medical | Ops pulse Beta lists only — not clinical/diagnostic claims |
 | dual_write OFF | Default dual-write audit OFF; local-primary palace honesty |
-| Cloud Memory GA | Suggestive pulse only · no lean HTTP invent for supersede/facts-as-of/patterns/timeline/compact · empty ≠ success |
+| available, optional beside TTFH | Suggestive pulse only · no lean HTTP invent for supersede/facts-as-of/patterns/timeline/compact · empty ≠ success |
 | opt-in only | Never auto multi-hop on default recall; never auto-mutate supersede / trigger-compact |
 | fail-open | Offline / missing tool → residual status, not invented payloads |
 | empty ≠ invent | Empty facts / zero superseded_count / empty digest / empty timeline / empty semantic = honest empty |
@@ -118,7 +118,7 @@ Also inventory: `memory_retrieve` (default recall), `memory_ingest_turn` (conver
 - Do **not** invent lean HTTP for supersede, facts-as-of, patterns/anomalies, timeline, compact-status, trigger-compact, semantic, or ingest-event.
 - Do **not** invent Connected, full graph RAG, dual-clock Graphiti, or medical diagnosis.
 - Do **not** claim dual_write ON or book-demo ON by default.
-- Cloud Memory is GA. Patterns and anomalies stay a suggestive Beta pulse.
+- Cloud Memory is available, optional beside TTFH. Patterns and anomalies stay a suggestive Beta pulse.
 - Do **not** treat knowledge/analytical digest horizons as the ops horizon.
 - Do **not** invent memories, superseded_count, digests, timeline entries, semantic facts, memory_id, triggered/cluster_size, or compaction green when offline / empty.
 - Do **not** treat `memory_ingest_event` / `/memory ingest-event` as conversation turn ingest (use `memory_ingest_turn` / `/memory ingest`).
