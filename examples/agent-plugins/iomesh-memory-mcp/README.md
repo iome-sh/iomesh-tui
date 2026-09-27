@@ -8,7 +8,7 @@ Residual-honest **stdio map** sample package for operator dogfood of iomesh-tui 
 |-------|--------|
 | sample package | ≠ invent **Agent Plugins GA** |
 | MCP map success | ≠ process **Connected** / install APPLY green |
-| Memory | **Cloud Memory GA** · local-primary edge only |
+| Memory | **available, optional beside TTFH** · local-primary edge only |
 | dual_write | **OFF** (unchanged) |
 | freemium hosted palace | **not** claimed |
 | secrets in package JSON | **none** — portable map only |
@@ -52,7 +52,7 @@ No secrets belong in `plugin.json` or `mcp.json`.
 
 ```toml
 # Agent Plugins package wire — opt-in (default enabled=false).
-# dual_write OFF · package wire ≠ Agent Plugins GA · Discover ≠ install green · Cloud Memory GA.
+# dual_write OFF · package wire ≠ Agent Plugins GA · Discover ≠ install green · available, optional beside TTFH.
 [plugins]
 enabled = true
 dirs = ["/absolute/path/to/iomesh-tui/examples/agent-plugins/iomesh-memory-mcp"]
@@ -123,12 +123,12 @@ curl -fsS http://127.0.0.1:8080/healthz   # embeddings=onnx when load OK · qdra
 
 Full ladder + Docker/Podman notes: [memory-advanced-install.md](../../../docs/architecture/memory-advanced-install.md).
 
-**Honesty:** ONNX optional · Qdrant **not required** for TUI · dual_write OFF · Cloud Memory GA · sample map ≠ Connected.
+**Honesty:** ONNX optional · Qdrant **not required** for TUI · dual_write OFF · available, optional beside TTFH · sample map ≠ Connected.
 
 ## Non-goals
 
 - No marketplace / install UX
-- No invent “plugins Connected” · Cloud Memory GA
+- No invent “plugins Connected” · available, optional beside TTFH
 - No secrets in portable package fields
 - No freemium hosted palace claim
 - No auto dual_write
