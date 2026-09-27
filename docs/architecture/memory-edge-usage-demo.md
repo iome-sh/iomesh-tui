@@ -40,7 +40,7 @@ This is a **runbook-style example**, not a product claim that every step is auto
 |-------|--------|
 | **local-primary** | Customer-edge FS palace via MCP host + kernel · not freemium hosted palace |
 | **dual_write** | **OFF** by default · optional mesh audit only · not primary palace |
-| **Cloud Memory GA** | Cloud Memory is GA · **PASS ≠ invent Connected** |
+| **available, optional beside TTFH** | available, optional beside TTFH · **PASS ≠ invent Connected** |
 | **E10 Open** | Founder/GTM sign-off remains open · tip ≠ invent E10 closed |
 | **control-plane / broker private** | Cloud control plane stays private · not OSS edge pack · product host is `iomesh-memory-mcp` only |
 | **integrations ≠ install APPLY** | MCP `list` / `plan` + portal deep links · human finishes OAuth/install in browser |
@@ -92,7 +92,7 @@ iomesh-tui  ──MCP──►  iomesh-memory-mcp  ──►  memory kernel (Pal
 
 | Step | Not invent |
 |------|------------|
-| Signup complete | · Cloud Memory GA · ≠ freemium hosted palace |
+| Signup complete | · available, optional beside TTFH · ≠ freemium hosted palace |
 | Org exists | ≠ connectors Connected · ≠ INSTALL_STORE green |
 | API key minted | ≠ dual_write ON · ≠ Connected |
 
@@ -224,7 +224,7 @@ iomesh-memory-mcp \
 
 # other terminal:
 curl -fsS http://127.0.0.1:8080/healthz
-# healthz may include residual not_memory_ga · not a product stamp · Cloud Memory GA · dual_write=off
+# healthz may include residual not_memory_ga · not a product stamp · available, optional beside TTFH · dual_write=off
 ```
 
 **Docker alternate (product repo):**
@@ -336,7 +336,7 @@ Run interactive TUI with the config above:
 /memory compact-status
 ```
 
-Expect residual-honest status lines (`mcp=true` when attached · `dual_write=false` · Cloud Memory GA). Empty recall → honest empty · **never invent memories**.
+Expect residual-honest status lines (`mcp=true` when attached · `dual_write=false` · available, optional beside TTFH). Empty recall → honest empty · **never invent memories**.
 
 ### 5b. Ingest then recall (show the loop)
 
