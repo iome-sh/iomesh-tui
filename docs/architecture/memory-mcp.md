@@ -759,10 +759,13 @@ Entitled path, with no live host URL:
 3. **Available, optional beside TTFH**. TTFH/heartbeat is the system of record. Cloud Memory is not required for heartbeat. Empty until consume. Catalog ≠ Connected.
 4. `/memory digest --require-sources mesh,private` is cite-both or an honest miss. `/memory`, `/memory status`, setup preflight, and `/onboard next memory` print the same Gap / Partial stamp.
 5. Stop. Do not invent a Connected host URL. Do not stamp a Connected badge.
+6. Cloud Memory is the $199 add-on, available beside TTFH. Default when no bind has succeeded: `palace=-`.
+7. A catalog row, a workspace PATCH, or an empty OpenGates list is not Connected. Entitlement is not Connected.
+8. Session palace selection uses a workspace MemoryURL only when that URL is a real customer host. It is not empty, not the synthetic one-label `aion-mem-<slug>.internal` placeholder, not a shared cfg.MemoryURL, and not chosen because HostedPalaceEnabled is true. Otherwise the displayed palace is `palace=-`. The laptop default `~/.iomesh/palace` is not a Cloud Memory bind. leftover_is_bind stays OPEN. This page does not claim a dated QA sitting has happened, and it does not claim the operator laptop retrieved from the dedicated disk.
 
-**B5 · TUI host bind** — Cloud Memory as a remote palace target stays Gap until QA evidence.
+**B5 · TUI host bind** — Cloud Memory as a remote palace target stays Gap until QA evidence. B5 stays Gap / Partial until a dated QA sitting.
 
-**C4 · SDK palace URL bind** — binding a client to a Cloud Memory palace URL when entitled is the same Gap / Partial. Entitlement ≠ live bind. Empty until consume. This repository does not ship that bind.
+**C4 · SDK palace URL bind** — binding a client to a Cloud Memory palace URL when entitled is the same Gap / Partial. Entitlement ≠ live bind. Empty until consume. This repository does not ship that bind. C4 stays Gap / Partial until a dated QA sitting.
 
 Multi-human palace read/write stays Gap. No host APPLY from this path.
 

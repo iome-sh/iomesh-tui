@@ -148,9 +148,9 @@ Residual-honest TTFH demo (R0 then optional R1; not E-G1): `scripts/ttfh-demo.sh
 
 ### Cloud Memory palace bind (Gap / Partial)
 
-Cloud Memory is available, optional beside TTFH. TTFH/heartbeat is the system of record. Cloud Memory is not required for heartbeat. Local private notes stay on disk. **One write path — not mirrored to a second store.** Local and Cloud Memory stay on separate paths. Empty until consume. Catalog ≠ Connected.
+Cloud Memory is the $199 add-on, available beside TTFH. Cloud Memory is available, optional beside TTFH. TTFH/heartbeat is the system of record. Cloud Memory is not required for heartbeat. Local private notes stay on disk. **One write path — not mirrored to a second store.** Local and Cloud Memory stay on separate paths. Empty until consume. Catalog ≠ Connected. Default when no bind has succeeded: `palace=-`. A catalog row, a workspace PATCH, or an empty OpenGates list is not Connected. The laptop default `~/.iomesh/palace` is not a Cloud Memory bind.
 
-Console entitlement is the primary attach (workspace-as-principal). Entitlement ≠ live bind. Binding this TUI to a remote Cloud Memory palace (B5), and binding an SDK client to a palace URL (C4), are **Gap / Partial** until QA evidence (US-CM-JOURNEY-05). Do not invent a Connected host URL. This repository does not ship an Exists Connected bind. Multi-human palace read/write stays Gap.
+Console entitlement is the primary attach (workspace-as-principal). Entitlement ≠ live bind. Entitlement is not Connected. Binding this TUI to a remote Cloud Memory palace (B5), and binding an SDK client to a palace URL (C4), are **Gap / Partial** until QA evidence (US-CM-JOURNEY-05) and until a dated QA sitting. Do not invent a Connected host URL. This repository does not ship an Exists Connected bind. A session palace is a real workspace MemoryURL only: not empty, not the synthetic one-label `aion-mem-<slug>.internal` placeholder, not a shared cfg.MemoryURL, and not chosen because HostedPalaceEnabled is true. Otherwise the displayed palace is `palace=-`. Multi-human palace read/write stays Gap. The sitting has not happened.
 
 `/memory`, `/memory digest`, `/memory status`, and `/onboard next memory` print the same stamp. Detail: [memory-mcp.md](docs/architecture/memory-mcp.md#cloud-memory-palace-bind).
 

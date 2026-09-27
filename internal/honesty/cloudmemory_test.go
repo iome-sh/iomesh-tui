@@ -16,6 +16,10 @@ func TestDigestChrome_GapPartialWithoutConnectedTheater(t *testing.T) {
 		"Local and Cloud Memory stay on separate paths",
 		"Local and Cloud Memory stay on separate paths. Local private on disk. Available, optional beside TTFH — not a substitute. TTFH/heartbeat is the SoR. Empty until consume.",
 		"optional beside TTFH",
+		CloudMemoryOffer,
+		"available beside TTFH",
+		UnboundPalaceLine,
+		UnboundPalaceToken,
 		"TTFH/heartbeat is the SoR",
 		"Empty until consume",
 		"GAP · B5 host bind · Partial",
@@ -45,6 +49,12 @@ func TestHostBindGap_GapPartialNotExists(t *testing.T) {
 		WritePathChip,
 		"Local and Cloud Memory stay on separate paths. Local private on disk. Available, optional beside TTFH — not a substitute. TTFH/heartbeat is the SoR. Empty until consume.",
 		"optional beside TTFH",
+		CloudMemoryOffer,
+		"available beside TTFH",
+		UnboundPalaceToken,
+		NotBindSignals,
+		LaptopPalaceNotBind,
+		"Entitlement is not Connected",
 		"not required for heartbeat",
 		"Catalog ≠ Connected",
 		"workspace-as-principal",
@@ -66,6 +76,10 @@ func TestHostBindGap_GapPartialNotExists(t *testing.T) {
 	if strings.Contains(s, "Exists Connected bind") && !strings.Contains(s, "not an Exists Connected bind") {
 		t.Fatalf("must not claim an Exists Connected bind:\n%s", s)
 	}
+	assertNoProductGAClaim(t, s)
+	if strings.Contains(DigestChrome(), "Connected") {
+		t.Fatal("digest chrome picked up the operator Connected sentence")
+	}
 }
 
 func TestShippedDocs_NameTheGap(t *testing.T) {
@@ -85,6 +99,18 @@ func TestShippedDocs_NameTheGap(t *testing.T) {
 		if !strings.Contains(text, "US-CM-JOURNEY-05") || !strings.Contains(text, "Gap / Partial") {
 			t.Fatalf("%s missing Gap / Partial stamp", rel)
 		}
+		for _, want := range []string{
+			CloudMemoryOffer,
+			UnboundPalaceToken,
+			NotBindSignals,
+			"B5",
+			"C4",
+		} {
+			if !strings.Contains(text, want) {
+				t.Fatalf("%s missing %q", rel, want)
+			}
+		}
+		assertNoProductGAClaim(t, text)
 		low := strings.ToLower(text)
 		for _, bad := range []string{"soft" + "r", "not memory ga", "ga-path", "path-to-ga"} {
 			if strings.Contains(low, bad) {
@@ -123,6 +149,20 @@ func TestRepo_BannedBrandNounAbsent(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func assertNoProductGAClaim(t *testing.T, s string) {
+	t.Helper()
+	for _, bad := range []string{
+		"Cloud Memory is GA",
+		"Cloud Memory GA",
+		"leftover_is_bind CLOSED",
+		"leftover_is_bind close",
+	} {
+		if strings.Contains(s, bad) {
+			t.Fatalf("banned claim %q", bad)
+		}
 	}
 }
 

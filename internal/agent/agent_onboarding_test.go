@@ -56,6 +56,11 @@ func TestMeshAgentOnboardingStartHere_LeanPath(t *testing.T) {
 		"Entitlement ≠ live bind",
 		"catalog ≠ Connected",
 		"available, optional beside TTFH",
+		"Cloud Memory is the $199 add-on, available beside TTFH.",
+		"palace=-",
+		"A catalog row, a workspace PATCH, or an empty OpenGates list is not Connected.",
+		"B5 · TUI host bind",
+		"C4 · SDK palace URL bind",
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("start-here missing %q in:\n%s", want, out)
@@ -63,6 +68,11 @@ func TestMeshAgentOnboardingStartHere_LeanPath(t *testing.T) {
 	}
 	if strings.Contains(out, "dual_write ON") || strings.Contains(out, "Connected: yes") {
 		t.Fatalf("must not invent dual_write ON / Connected: %s", out)
+	}
+	for _, bad := range []string{"Cloud Memory is GA", "Cloud Memory GA", "leftover_is_bind CLOSED", "leftover_is_bind close"} {
+		if strings.Contains(out, bad) {
+			t.Fatalf("start-here must not contain %q", bad)
+		}
 	}
 	if strings.Contains(out, "/gtm checklist") || strings.Contains(out, "iomesh plugins dogfood") {
 		t.Fatalf("start-here must not advertise hidden lanes: %s", out)

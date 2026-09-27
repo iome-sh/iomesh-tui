@@ -14,13 +14,32 @@ const WritePathChip = "One write path — not mirrored to a second store."
 // Cloud Memory is available, optional beside TTFH. TTFH/heartbeat is the SoR.
 const SeparatePaths = "Local and Cloud Memory stay on separate paths. Local private on disk. Available, optional beside TTFH — not a substitute. TTFH/heartbeat is the SoR. Empty until consume."
 
+// CloudMemoryOffer is the buyer and operator price line.
+// It does not say the product is GA, and entitlement is not a bind.
+const CloudMemoryOffer = "Cloud Memory is the $199 add-on, available beside TTFH."
+
+// UnboundPalaceToken is the exact displayed palace when no bind has succeeded.
+const UnboundPalaceToken = "palace=-"
+
+// UnboundPalaceLine names that default. It is not a host URL.
+const UnboundPalaceLine = "Default when no bind has succeeded: palace=-."
+
+// NotBindSignals is operator copy. Digest chrome must not include it:
+// cite tests reject the substring Connected.
+const NotBindSignals = "A catalog row, a workspace PATCH, or an empty OpenGates list is not Connected."
+
+// LaptopPalaceNotBind keeps the local default off a Cloud Memory bind.
+const LaptopPalaceNotBind = "Laptop default ~/.iomesh/palace is not a Cloud Memory bind."
+
 // HostBindGapDigest is B5 chrome appended to /memory digest.
 // Digest output must not contain the substring "Connected" (cite tests).
 const HostBindGapDigest = "GAP · B5 host bind · Partial — Cloud Memory as a remote palace target is Gap until QA evidence. Console entitlement is the primary attach. Entitlement ≠ live bind. Do not invent a live host URL. US-CM-JOURNEY-05 after QA."
 
 // DigestChrome is the digest secondary frame: write-path pin plus B5 gap.
+// No Connected substring. The catalog / PATCH / OpenGates sentence stays on
+// the operator stamp.
 func DigestChrome() string {
-	return WritePathPin + "\n" + WritePathChip + "\n" + SeparatePaths + "\n" + HostBindGapDigest
+	return WritePathPin + "\n" + WritePathChip + "\n" + SeparatePaths + "\n" + CloudMemoryOffer + "\n" + UnboundPalaceLine + "\n" + HostBindGapDigest
 }
 
 // HostBindGap is the operator stamp for slash, onboard, preflight, and help.
@@ -31,7 +50,11 @@ func HostBindGap() string {
 ` + WritePathPin + `
 ` + WritePathChip + `
 ` + SeparatePaths + `
-Cloud Memory is not required for heartbeat. Catalog ≠ Connected. workspace-as-principal. Multi-human palace read/write stays Gap.
+` + CloudMemoryOffer + `
+` + UnboundPalaceLine + `
+` + NotBindSignals + `
+` + LaptopPalaceNotBind + `
+Entitlement is not Connected. Cloud Memory is not required for heartbeat. Catalog ≠ Connected. workspace-as-principal. Multi-human palace read/write stays Gap.
 B5 · TUI host bind · Gap until QA evidence. Console entitlement is the primary attach. Entitlement ≠ live bind. Do not invent a Connected host URL. No Connected badge.
 C4 · SDK palace URL bind · Gap until QA evidence. Entitlement ≠ live bind. Empty until consume. Do not invent a live host URL. This TUI does not ship that bind.
 Entitled path: confirm Console entitlement for the workspace (primary attach · not a live host) · keep private notes on the local palace · run TTFH/heartbeat as the system of record · cite-both or an honest miss · stop before any host URL.`)
