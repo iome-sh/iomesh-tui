@@ -4,7 +4,7 @@
 
 Checklist completed for making **iomesh-tui** a public repository. Visibility flip is **complete** (public MIT). Re-run the process bar before each major release. Do **not** re-run a visibility flip.
 
-Honesty locks: dual_write **OFF** · **Cloud Memory GA** · catalog ≠ Connected. Public MIT · Cloud Memory GA.
+Honesty locks: dual_write **OFF** · **available, optional beside TTFH** · catalog ≠ Connected. Public MIT · available, optional beside TTFH.
 
 ## Security
 

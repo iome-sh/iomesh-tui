@@ -4,11 +4,11 @@
 **Pin:** free eng **s1331** — **opt-in runtime wire** of package skills + MCP into existing Skills / MCP runtimes.  
 **Pin:** free eng **s1336** — operator DX CLI `iomesh plugins list|validate`.
 **Pin:** free eng **s1337** — residual-honest **sample package** [`examples/agent-plugins/hello-iome`](../../examples/agent-plugins/hello-iome) (skills-only dogfood).
-**Pin:** free eng **s1478** / **s1517** — product sample [`examples/agent-plugins/iomesh-memory-mcp`](../../examples/agent-plugins/iomesh-memory-mcp) (stdio map of public product host · dual_write OFF · Cloud Memory GA). Residual private Memory sample **removed** (s1517).
+**Pin:** free eng **s1478** / **s1517** — product sample [`examples/agent-plugins/iomesh-memory-mcp`](../../examples/agent-plugins/iomesh-memory-mcp) (stdio map of public product host · dual_write OFF · available, optional beside TTFH). Residual private Memory sample **removed** (s1517).
 **Pin:** free eng **s1357** — offline residual-honest `iomesh plugins dogfood` (validates **both** product samples; no MCP dial · PATH residual for binary).
 **Pin:** free eng **s1478** — product sample [`examples/agent-plugins/iomesh-memory-mcp`](../../examples/agent-plugins/iomesh-memory-mcp) (public product host stdio map · dogfood primary with hello-iome).
 
-Residual-honest: **package wire ≠ invent Agent Plugins GA**. Cloud Memory GA. Discover/load success ≠ Connected / install APPLY green. dual_write **OFF** (unchanged). book-demo **OFF**. Sample package ≠ GA. list/validate/dogfood ≠ invent Agent Plugins GA. dogfood PASS ≠ Connected · Cloud Memory GA · PATH residual for `iomesh-memory-mcp` binary.
+Residual-honest: **package wire ≠ invent Agent Plugins GA**. Available, optional beside TTFH. Discover/load success ≠ Connected / install APPLY green. dual_write **OFF** (unchanged). book-demo **OFF**. Sample package ≠ GA. list/validate/dogfood ≠ invent Agent Plugins GA. dogfood PASS ≠ Connected · available, optional beside TTFH · PATH residual for `iomesh-memory-mcp` binary.
 
 ## What this is
 
@@ -28,7 +28,7 @@ Residual-honest: **package wire ≠ invent Agent Plugins GA**. Cloud Memory GA. 
 | Install / marketplace / enable UX | **out of scope** |
 | Full Agent Plugins client GA | **not claimed** |
 | Sample skills-only package (`hello-iome`) | **done** (s1337 · dogfood primary · opt-in `[plugins]`) |
-| Sample product stdio memory map (`iomesh-memory-mcp`) | **done** (s1478 · public product map · binary on PATH for connect · Cloud Memory GA · dual_write OFF) |
+| Sample product stdio memory map (`iomesh-memory-mcp`) | **done** (s1478 · public product map · binary on PATH for connect · available, optional beside TTFH · dual_write OFF) |
 | Sample residual stdio memory map (private residual Memory sample) | **removed (s1517)** — product sample is `iomesh-memory-mcp` only |
 
 Package API entrypoint:
@@ -68,7 +68,7 @@ In-repo **product** dogfood package that **maps** public product edge Memory MCP
 - Operator must put binary on **PATH**; connect is fail-open if missing
 - Mapped runtime name: `iomesh-memory-mcp-memory` (`<manifest.name>-<serverName>`)
 - Enable via opt-in `[plugins]` — see that package's [README](../../examples/agent-plugins/iomesh-memory-mcp/README.md)
-- Discover/map success ≠ process Connected / install APPLY · **Cloud Memory GA** · dual_write **OFF** · not freemium hosted palace
+- Discover/map success ≠ process Connected / install APPLY · **available, optional beside TTFH** · dual_write **OFF** · not freemium hosted palace
 - TOML `[[mcp.servers]]` remains the **primary** attach path; package map is portable dogfood
 
 ### Private residual Memory sample — **removed (s1517)**
@@ -182,7 +182,7 @@ Helpers: `SamplePluginRelPaths` / `DefaultSamplePluginDirs` / `FindModuleRoot` /
 ### Honesty (CLI)
 
 - list/validate/dogfood ≠ invent Agent Plugins GA
-- dual_write **OFF** · Discover ≠ Connected · Cloud Memory GA · book-demo **OFF**
+- dual_write **OFF** · Discover ≠ Connected · available, optional beside TTFH · book-demo **OFF**
 - dogfood PASS ≠ invent Agent Plugins GA · PATH residual for binary · connect skip
 - CLI success ≠ runtime wire / MCP attach / install APPLY green
 - `[plugins]` remains opt-in (`enabled=false` default); CLI can inspect packages via `-dir` without enabling
@@ -208,7 +208,7 @@ Post-surface dual path:
 |-------|--------|
 | package client candidacy | discover/validate + opt-in runtime wire + operator CLI + samples dogfood |
 | ≠ Agent Plugins GA | no marketplace/install UX · no product “plugins green” |
-| Cloud Memory GA | orthogonal surface · iomesh-memory-mcp sample is map only |
+| available, optional beside TTFH | orthogonal surface · iomesh-memory-mcp sample is map only |
 | dual_write | **OFF** (unchanged default; not a package concern) |
 | book-demo | **OFF** |
 | fail-open | per dir / component / entry (list); validate/dogfood surfaces fatals |
